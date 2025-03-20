@@ -61,10 +61,10 @@ const togglePasswordVisibility = () => {
             >
                 <div class="login-header">
                     <h1 class="text-2xl font-bold text-gray-800">Welcome Back</h1>
-                    <p class="text-gray-600 text-sm mt-1">Sign in to your account to continue</p>
+                    <p class="text-gray-600 text-sm">Sign in to your account to continue</p>
                 </div>
                 
-                <div v-if="status" class="status-message mb-4">
+                <div v-if="status" class="status-message">
                     {{ status }}
                 </div>
 
@@ -195,11 +195,7 @@ const togglePasswordVisibility = () => {
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 0.5rem;
+    gap: 1rem;
 }
 
 .label-enhanced {

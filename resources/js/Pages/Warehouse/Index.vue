@@ -27,8 +27,8 @@
         </div>
 
         <div class="">
-            <div class="max-w-7xl mx-auto">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="mx-auto">
+                <div class="bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <div v-if="loading" class="flex justify-center items-center py-8">
                             <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg"
@@ -43,7 +43,7 @@
                         </div>
                         <div v-else>
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
+                                <table class="divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th scope="col"

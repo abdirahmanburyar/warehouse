@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\DosageController;
+use App\Http\Controllers\InventoryController; // Added this line
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -113,6 +114,14 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    
+    // Inventory Routes
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/inventories', [InventoryController::class, 'index'])->name('inventories.index');
+        Route::post('/inventories', [InventoryController::class, 'store'])->name('inventories.store');
+        Route::get('/inventories/{inventory}', [InventoryController::class, 'show'])->name('inventories.show');
+        Route::delete('/inventories/{inventory}', [InventoryController::class, 'destroy'])->name('inventories.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

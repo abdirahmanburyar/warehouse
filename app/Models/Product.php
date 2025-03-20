@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Models\Inventory;
 
 class Product extends Model
 {
@@ -44,5 +45,13 @@ class Product extends Model
     public function dosage()
     {
         return $this->belongsTo(Dosage::class);
+    }
+    
+    /**
+     * Get the inventories for the product.
+     */
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class);
     }
 }

@@ -99,6 +99,20 @@
                 </div>
                 </Link>
 
+                <Link :href="route('inventories.index')" class="menu-item"
+                    :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
+                            <path
+                                d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-1 18H5V9h14v11zm1-13H4V4h16v3z"
+                                fill="currentColor" />
+                        </svg>
+                    </div>
+                    <span class="menu-text">Inventory</span>
+                </div>
+                </Link>
+
             </div>
         </div>
 
@@ -222,7 +236,7 @@ export default {
 
 /* Sidebar Styles */
 .sidebar {
-    width: 120px;
+    width: 100px;
     background: linear-gradient(to bottom, #2BCA89, #2BCA89, #FA8603);
     border-right: 1px solid #e5e7eb;
     transition: all 0.3s ease;
@@ -385,7 +399,7 @@ export default {
 /* Main Content Styles */
 .main-content {
     flex-grow: 1;
-    margin-left: 120px;
+    margin-left: 100px;
     transition: margin-left 0.3s ease;
     display: flex;
     flex-direction: column;
