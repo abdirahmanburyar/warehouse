@@ -33,7 +33,8 @@ createInertiaApp({
                 hideProgressBar: false,
                 closeButton: "button",
                 icon: true,
-                rtl: false
+                rtl: false,
+                zIndex: 9999
             })
             .mount(el);
     },

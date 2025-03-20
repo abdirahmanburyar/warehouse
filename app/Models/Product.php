@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Warehouse;
 use App\Models\Category;
+use App\Models\Dosage;
 
 class Product extends Model
 {
@@ -21,20 +21,9 @@ class Product extends Model
         'sku',
         'barcode',
         'description',
-        'price',
-        'stock_quantity',
-        'warehouse_id',
         'category_id',
+        'dosage_id',
         'active_ingredient',
-        'dosage_form',
-        'strength',
-        'manufacturer',
-        'batch_number',
-        'manufacturing_date',
-        'expiry_date',
-        'storage_conditions',
-        'prescription_required',
-        'regulatory_status',
         'is_active',
     ];
 
@@ -44,25 +33,16 @@ class Product extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'price' => 'decimal:2',
-        'manufacturing_date' => 'date',
-        'expiry_date' => 'date',
         'is_active' => 'boolean',
     ];
 
-    /**
-     * Get the warehouse that owns the product.
-     */
-    public function warehouse()
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
-
-    /**
-     * Get the category that owns the product.
-     */
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+    
+    public function dosage()
+    {
+        return $this->belongsTo(Dosage::class);
     }
 }

@@ -50,61 +50,128 @@ class CategoryController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'id' => 'nullable|exists:categories,id',
-                'name' => 'required|string|max:255|unique:categories,name,' . $request->id,
-                'description' => 'nullable|string',
-                'is_active' => 'boolean',
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:1000',
             ]);
             
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors()
-                ], 422);
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+                
+                return back()->withErrors($validator)->withInput();
             }
             
-            $category = Category::updateOrCreate(
-                ['id' => $request->id],
-                [
-                    'name' => $request->name,
-                    'description' => $request->description,
-                    'is_active' => $request->is_active ?? true,
-                ]
-            );
+            if ($request->id) {
+                $category = Category::findOrFail($request->id);
+                $category->update($request->all());
+                $message = 'Category updated successfully';
+            } else {
+                $category = Category::create($request->all());
+                $message = 'Category created successfully';
+            }
             
-            $action = $request->id ? 'updated' : 'created';
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'category' => new CategoryResource($category)
+                ]);
+            }
             
-            return response()->json([
-                'success' => true,
-                'message' => "Category {$action} successfully",
-                'category' => new CategoryResource($category)
-            ]);
+            return redirect()->route('categories.index')->with('success', $message);
         } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while saving the category',
-                'error' => $e->getMessage()
-            ], 500);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
         }
+    }
+
+    /**
+     * API endpoint to get categories for AJAX requests
+     */
+    public function getCategories(Request $request)
+    {
+        $query = Category::query();
+        
+        // Handle search
+        if ($request->has('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Handle sorting
+        $sortField = $request->input('sort_field', 'id');
+        $sortDirection = $request->input('sort_direction', 'desc');
+        
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Get paginated results
+        $categories = $query->paginate(10)->withQueryString();
+        
+        return response()->json([
+            'success' => true,
+            'categoriesPaginated' => CategoryResource::collection($categories),
+            'allCategories' => CategoryResource::collection(Category::all())
+        ]);
     }
 
     /**
      * Remove the specified category from storage.
      */
-    public function destroy(Category $category)
+    public function destroy(Category $category, Request $request)
     {
         try {
-            $category->delete();
+            // Check if the category is being used by any products
+            $productsCount = $category->products()->count();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Category deleted successfully'
-            ]);
+            if ($productsCount > 0) {
+                $message = 'Cannot delete category. It is being used by ' . $productsCount . ' product(s).';
+                
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 422);
+                }
+                
+                return back()->with('error', $message);
+            }
+            
+            $category->delete();
+            $message = 'Category deleted successfully';
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message
+                ]);
+            }
+            
+            return redirect()->route('categories.index')->with('success', $message);
         } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while deleting the category',
-                'error' => $e->getMessage()
-            ], 500);
+            $message = 'An error occurred: ' . $e->getMessage();
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+            
+            return back()->with('error', $message);
         }
     }
 }

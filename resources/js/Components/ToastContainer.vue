@@ -5,7 +5,7 @@
                 v-for="toast in toasts" 
                 :key="toast.id"
                 :class="[
-                    'fixed z-50 p-4 rounded-md shadow-lg transition-all duration-300 transform',
+                    'fixed z-[9999] p-4 rounded-md shadow-lg transition-all duration-300 transform',
                     getPositionClasses(toast.position),
                     getTypeClasses(toast.type)
                 ]"

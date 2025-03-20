@@ -48,36 +48,64 @@ class RolesAndPermissionsSeeder extends Seeder
             'report.export',
         ];
 
+        // Create permissions for approvals
+        $approvalPermissions = [
+            'approval.view',
+            'approval.create',
+            'approval.edit',
+            'approval.delete',
+        ];
+
+        // Create permissions for dosages
+        $dosagePermissions = [
+            'dosage.view',
+            'dosage.create',
+            'dosage.edit',
+            'dosage.delete',
+        ];
+
+        // Create permissions for products
+        $productPermissions = [
+            'product.view',
+            'product.create',
+            'product.edit',
+            'product.delete',
+        ];
+
         // Combine all permissions
         $allPermissions = array_merge(
             $warehousePermissions,
             $categoryPermissions,
             $userPermissions,
-            $reportPermissions
+            $reportPermissions,
+            $approvalPermissions,
+            $productPermissions
         );
 
-        // Create each permission
+        // Create permissions if they don't exist
         foreach ($allPermissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Create roles and assign permissions
         
         // Admin role - has all permissions
-        $adminRole = Role::create(['name' => 'admin']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
 
         // Manager role - can manage warehouses and categories but not users
-        $managerRole = Role::create(['name' => 'manager']);
+        $managerRole = Role::firstOrCreate(['name' => 'manager']);
         $managerRole->givePermissionTo([
             ...$warehousePermissions,
             ...$categoryPermissions,
+            ...$productPermissions,
+            ...$approvalPermissions,
             ...$reportPermissions,
             'user.view',
         ]);
 
         // Warehouse operator role - can view and edit warehouses but not delete
-        $operatorRole = Role::create(['name' => 'operator']);
+        $operatorRole = Role::firstOrCreate(['name' => 'operator']);
         $operatorRole->givePermissionTo([
             'warehouse.view',
             'warehouse.edit',
@@ -86,7 +114,7 @@ class RolesAndPermissionsSeeder extends Seeder
         ]);
 
         // Viewer role - can only view data
-        $viewerRole = Role::create(['name' => 'viewer']);
+        $viewerRole = Role::firstOrCreate(['name' => 'viewer']);
         $viewerRole->givePermissionTo([
             'warehouse.view',
             'category.view',

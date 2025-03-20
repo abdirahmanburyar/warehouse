@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('dosages', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('sku')->unique();
-            $table->string('barcode')->nullable()->unique();
+            $table->string('name')->unique();
             $table->text('description')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('dosage_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('dosages');
     }
 };

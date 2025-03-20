@@ -4,8 +4,8 @@
         <div :class="['sidebar', { 'sidebar-collapsed': !sidebarOpen }]">
             <div class="white-box" style="border-color: white;">
                 <Link :href="route('dashboard')" class="logo-container">
-                <img src="/assets/images/moh.png" class="moh-logo" style="height: 70px" />
-                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 60px" />
+                <img src="/assets/images/moh.png" class="moh-logo" style="height: 40px" />
+                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 40px" />
                 </Link>
 
             </div>
@@ -30,91 +30,49 @@
                 </div>
                 </Link>
 
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'orders' }"
-                    @click="setCurrentPage('orders')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Orders</span>
-                </div>
-                </Link>
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'supplies' }"
-                    @click="setCurrentPage('supplies')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 5h-1.5v5.5H11V13h3.5v1.5H9V8H7.5v8H11V14.5h-1.5V13h3.5v-1.5h-3.5V10H17V8z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Supplies</span>
-                </div>
-                </Link>
-
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'business' }"
-                    @click="setCurrentPage('business')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Business</span>
-                </div>
-                </Link>
-
                 <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
                     @click="setCurrentPage('users')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                                fill="currentColor" />
-                        </svg>
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
+                                <path
+                                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                                    fill="currentColor" />
+                            </svg>
+                        </div>
+                        <span class="menu-text">Users</span>
                     </div>
-                    <span class="menu-text">Users</span>
-                </div>
                 </Link>
-                
+
                 <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
                     @click="setCurrentPage('roles')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
                             <path
-                                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+                                d="M12 14c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-1.1 0-2 .9-2 2h2c0-1.1-.9-2-2-2z"
                                 fill="currentColor" />
                         </svg>
                     </div>
                     <span class="menu-text">Roles</span>
                 </div>
                 </Link>
-                
-                <Link :href="route('categories.index')" class="menu-item" :class="{ active: route().current('categories.*') }"
-                    @click="setCurrentPage('categories')">
+
+                <Link :href="route('approvals.index')" class="menu-item"
+                    :class="{ active: route().current('approvals.*') }" @click="setCurrentPage('approvals')"
+                    v-if="$page.props.auth.permissions.includes('approval.view')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-                                fill="currentColor" />
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor" />
                         </svg>
                     </div>
-                    <span class="menu-text">Categories</span>
+                    <span class="menu-text">Approvals</span>
                 </div>
                 </Link>
-                
-                <Link :href="route('warehouses.index')" class="menu-item" :class="{ active: route().current('warehouses.*') }"
-                    @click="setCurrentPage('warehouses')">
+
+                <Link :href="route('warehouses.index')" class="menu-item"
+                    :class="{ active: route().current('warehouses.*') }" @click="setCurrentPage('warehouses')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
@@ -127,8 +85,8 @@
                 </div>
                 </Link>
 
-                <Link :href="route('products.index')" class="menu-item" :class="{ active: route().current('products.*') }"
-                    @click="setCurrentPage('products')">
+                <Link :href="route('products.index')" class="menu-item"
+                    :class="{ active: route().current('products.*') }" @click="setCurrentPage('products')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
@@ -137,51 +95,10 @@
                                 fill="currentColor" />
                         </svg>
                     </div>
-                    <span class="menu-text">Products</span>
+                    <span class="menu-text">Product List</span>
                 </div>
                 </Link>
 
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'reports' }"
-                    @click="setCurrentPage('reports')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 5h-1.5v5.5H11V13h3.5v1.5H9V8H7.5v8H11V14.5h-1.5V13h3.5v-1.5h-3.5V10H17V8z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Reports</span>
-                </div>
-                </Link>
-
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'support' }"
-                    @click="setCurrentPage('support')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.34 8-7 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-3.5h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Support</span>
-                </div>
-                </Link>
-
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: currentPage === 'settings' }"
-                    @click="setCurrentPage('settings')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62-.94l-2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Settings</span>
-                </div>
-                </Link>
             </div>
         </div>
 
@@ -221,7 +138,7 @@
                                 </div>
                                 <div class="user-details">
                                     <span class="user-role">Pharmaceutical Manager</span>
-                                    <span class="user-name">{{$page.props.user?.name}}</span>
+                                    <span class="user-name">{{ $page.props.auth.user?.name }}</span>
                                 </div>
                             </div>
                             <button class="logout-button" @click="logout">
@@ -234,7 +151,8 @@
                                 </svg>
                             </button>
                         </div>
-                        <img src="/assets/images/10873037.webp" alt="Inventory illustration" class="svg-image hidden sm:block" />
+                        <img src="/assets/images/10873037.webp" alt="Inventory illustration"
+                            class="svg-image hidden sm:block" />
                     </div>
                 </div>
             </div>
@@ -304,7 +222,7 @@ export default {
 
 /* Sidebar Styles */
 .sidebar {
-    width: 187.5px;
+    width: 120px;
     background: linear-gradient(to bottom, #2BCA89, #2BCA89, #FA8603);
     border-right: 1px solid #e5e7eb;
     transition: all 0.3s ease;
@@ -314,10 +232,11 @@ export default {
     height: 100vh;
     z-index: 50;
     padding: 0;
+    border-right: none;
 }
 
 .sidebar-collapsed {
-    width: 90px;
+    width: 0px;
 }
 
 .white-box {
@@ -398,14 +317,15 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 0.25rem;
     color: white;
     text-decoration: none;
     transition: all 0.3s ease;
     border-left: 0;
     position: relative;
     margin: 0;
+    padding: 0;
     border-radius: 0;
+    border-right-color: transparent;
 }
 
 .menu-item:hover {
@@ -414,13 +334,18 @@ export default {
 
 .menu-item.active {
     background: white;
-    box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.2);
+    /* box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.2); */
+    text-align: center;
     color: #111827;
     border-radius: 0;
     margin-right: 0;
-    border-right: none;
-    border-top-left-radius: 20%;
-    border-bottom-left-radius: 20%;
+    border-right: 0;
+    border-top-left-radius: 50px;
+    margin: 0;
+    padding: 0;
+    border-bottom-left-radius: 50px;
+    border-top-right-radius: -50px;
+    border-bottom-right-radius: -50px;
 }
 
 .menu-item.active::after {
@@ -460,14 +385,14 @@ export default {
 /* Main Content Styles */
 .main-content {
     flex-grow: 1;
-    margin-left: 187.5px;
+    margin-left: 120px;
     transition: margin-left 0.3s ease;
     display: flex;
     flex-direction: column;
 }
 
 .main-content-expanded {
-    margin-left: 90px;
+    margin-left: 0px;
 }
 
 /* Top Navigation Styles */
@@ -619,7 +544,7 @@ main {
 
     .sidebar.sidebar-collapsed {
         transform: translateX(0);
-        width: 187.5px;
+        width: 160px;
     }
 
     .sidebar-collapsed .logo-text,

@@ -7,6 +7,8 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\DosageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -71,6 +73,21 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
     
+    // Category Routes
+    Route::get('/categories', [CategoryController::class, 'index'])->middleware(PermissionMiddleware::class.':category.view')->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('categories.store');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('categories.destroy');
+    Route::get('/api/categories', [CategoryController::class, 'getCategories'])->middleware(PermissionMiddleware::class.':category.view')->name('api.categories');
+    
+    // Approval Routes
+    Route::middleware(PermissionMiddleware::class.':approval.view')->group(function () {
+        Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+        Route::get('/approvals/create', [ApprovalController::class, 'create'])->name('approvals.create');
+        Route::get('/approvals/{approval}/edit', [ApprovalController::class, 'edit'])->name('approvals.edit');
+    });
+    Route::post('/approvals', [ApprovalController::class, 'store'])->middleware(PermissionMiddleware::class.':approval.create')->name('approvals.store');
+    Route::delete('/approvals/{approval}', [ApprovalController::class, 'destroy'])->middleware(PermissionMiddleware::class.':approval.delete')->name('approvals.destroy');
+    
     // Warehouse Management Routes
     Route::controller(WarehouseController::class)
         ->prefix('/warehouses')
@@ -79,6 +96,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':warehouse.create')->name('warehouses.store');
             Route::put('/{warehouse}', 'update')->middleware(PermissionMiddleware::class.':warehouse.edit')->name('warehouses.update');
             Route::delete('/{warehouse}', 'destroy')->middleware(PermissionMiddleware::class.':warehouse.delete')->name('warehouses.destroy');
+        });
+
+    // Dosage Management Routes
+    Route::controller(DosageController::class)
+        ->prefix('/dosages')
+        ->group(function () {
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':dosage.view')->name('dosages.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':dosage.create')->name('dosages.store');
+            Route::delete('/{dosage}', 'destroy')->middleware(PermissionMiddleware::class.':dosage.delete')->name('dosages.destroy');
+            Route::get('/by-category/{category}', 'getByCategory')->name('dosages.by-category');
         });
     
     // Product Management Routes
