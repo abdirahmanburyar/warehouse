@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
@@ -65,11 +66,27 @@ class InventoryController extends Controller
         // Get warehouses for dropdown
         $warehouses = \App\Models\Warehouse::select('id', 'name', 'code')->get();
 
+        // Get inventory status counts
+        $inStockCount = Inventory::where('quantity', '>', DB::raw('reorder_level'))->where('is_active', true)->count();
+        $lowStockCount = Inventory::where('quantity', '>', 0)->where('quantity', '<=', DB::raw('reorder_level'))->where('is_active', true)->count();
+        $outOfStockCount = Inventory::where('quantity', 0)->where('is_active', true)->count();
+        $soonExpiringCount = Inventory::where('expiry_date', '>', now())->where('expiry_date', '<=', now()->addDays(30))->where('is_active', true)->count();
+        $expiredCount = Inventory::where('expiry_date', '<', now())->where('is_active', true)->count();
+        
+        $inventoryStatusCounts = [
+            ['status' => 'in_stock', 'count' => $inStockCount],
+            ['status' => 'low_stock', 'count' => $lowStockCount],
+            ['status' => 'out_of_stock', 'count' => $outOfStockCount],
+            ['status' => 'soon_expiring', 'count' => $soonExpiringCount],
+            ['status' => 'expired', 'count' => $expiredCount],
+        ];
+
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),
             'products' => $products,
             'warehouses' => $warehouses,
             'filters' => $request->all(['search', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page']),
+            'inventoryStatusCounts' => $inventoryStatusCounts,
         ]);
     }
 

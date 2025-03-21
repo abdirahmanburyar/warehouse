@@ -165,8 +165,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <img src="/assets/images/10873037.webp" alt="Inventory illustration"
-                            class="svg-image hidden sm:block" />
+                        <h5>PSI</h5>
                     </div>
                 </div>
             </div>

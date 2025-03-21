@@ -19,7 +19,6 @@ class Warehouse extends Model
     protected $fillable = [
         'name',
         'code',
-        'category_id',
         'address',
         'city',
         'state',
@@ -58,13 +57,6 @@ class Warehouse extends Model
         'is_active' => 'boolean',
     ];
     
-    /**
-     * Get the category that the warehouse belongs to.
-     */
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
 
     /**
      * Get the users associated with the warehouse.

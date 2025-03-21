@@ -17,40 +17,36 @@ class WarehouseController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            $search = $request->input('search', '');
-            $sort = $request->input('sort', 'name');
-            $order = $request->input('order', 'asc');
-            $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+        $sort = $request->input('sort', 'name');
+        $order = $request->input('order', 'asc');
+        $perPage = $request->input('per_page', 10);
 
-            $query = Warehouse::query();
+        $query = Warehouse::query();
 
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('address', 'like', "%{$search}%")
-                      ->orWhere('city', 'like', "%{$search}%")
-                      ->orWhere('country', 'like', "%{$search}%");
-                });
-            }
-
-            $warehouses = $query->with('category')->orderBy($sort, $order)->paginate($perPage);
-            $categories = Category::where('is_active', true)->get();
-
-            return Inertia::render('Warehouse/Index', [
-                'warehouses' => WarehouseResource::collection($warehouses),
-                'categories' => $categories,
-                'filters' => [
-                    'search' => $search,
-                    'sort' => $sort,
-                    'order' => $order,
-                    'per_page' => $perPage,
-                ],
-            ]);
-        } catch (Throwable $e) {
-            return redirect()->back()->with('error', 'Error loading warehouses: ' . $e->getMessage());
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('country', 'like', "%{$search}%");
+            });
         }
+
+        $warehouses = $query->orderBy($sort, $order)->paginate($perPage);
+        $categories = Category::where('is_active', true)->get();
+
+        return Inertia::render('Warehouse/Index', [
+            'warehouses' => WarehouseResource::collection($warehouses),
+            'categories' => $categories,
+            'filters' => [
+                'search' => $search,
+                'sort' => $sort,
+                'order' => $order,
+                'per_page' => $perPage,
+            ],
+        ]);
     }
 
     /**
@@ -64,7 +60,6 @@ class WarehouseController extends Controller
             'id' => 'nullable|exists:warehouses,id',
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:warehouses,code,' . $request->id,
-            'category_id' => 'nullable|exists:categories,id',
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
@@ -92,7 +87,6 @@ class WarehouseController extends Controller
                 [
                     'name' => $request->name,
                     'code' => $request->code,
-                    'category_id' => $request->category_id,
                     'address' => $request->address,
                     'city' => $request->city,
                     'state' => $request->state,

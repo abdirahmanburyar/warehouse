@@ -9,7 +9,9 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\DosageController;
-use App\Http\Controllers\InventoryController; // Added this line
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\SupplyController;
+use App\Http\Controllers\SupplierController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -121,6 +123,32 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/inventories', [InventoryController::class, 'store'])->name('inventories.store');
         Route::get('/inventories/{inventory}', [InventoryController::class, 'show'])->name('inventories.show');
         Route::delete('/inventories/{inventory}', [InventoryController::class, 'destroy'])->name('inventories.destroy');
+    });
+
+    // Supply Routes
+    Route::controller(SupplyController::class)
+    ->prefix('/supplies')->group(function () {
+        Route::get('/', 'index')->name('supplies.index');
+        Route::get('/create', 'create')->name('supplies.create');
+        Route::post('/', 'store')->name('supplies.store');
+        Route::post('/batch', 'storeBatch')->name('supplies.store-batch');
+        Route::get('/{supply}', 'show')->name('supplies.show');
+        Route::get('/{supply}/edit', 'edit')->name('supplies.edit');
+        Route::put('/{supply}', 'update')->name('supplies.update');
+        Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
+    });
+    
+    // Supplier Routes
+    Route::controller(SupplierController::class)
+    ->prefix('/suppliers')->group(function () {
+        // Redirect to supplies index with suppliers tab active
+        Route::get('/', function() {
+            return redirect()->route('supplies.index', ['tab' => 'suppliers']);
+        })->name('suppliers.index');
+        Route::post('/', 'store')->name('suppliers.store');
+        Route::get('/{supplier}', 'show')->name('suppliers.show');
+        Route::put('/{supplier}', 'update')->name('suppliers.update');
+        Route::delete('/{supplier}', 'destroy')->name('suppliers.destroy');
     });
 });
 

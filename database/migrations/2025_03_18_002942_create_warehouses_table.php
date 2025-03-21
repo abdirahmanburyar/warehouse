@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->unique();
-            $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->text('address')->nullable();
             $table->string('city')->nullable();
             $table->string('state')->nullable();

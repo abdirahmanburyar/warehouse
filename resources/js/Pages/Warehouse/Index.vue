@@ -3,13 +3,12 @@
     <Head title="Warehouses" />
 
     <AuthenticatedLayout>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center p-4 sticky top-0 bg-white z-20 border-b">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Warehouses</h2>
-            <div class="flex items-center">
+            <div class="flex items-center gap-2">
                 <div class="relative mr-4">
                     <input type="text" v-model="search" placeholder="Search warehouses..."
-                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4 pl-10 w-64"
-                        @input="debouncedSearch" />
+                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4 pl-10 w-64" />
                     <div class="absolute left-3 top-2.5 text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -18,210 +17,156 @@
                         </svg>
                     </div>
                 </div>
-                <div>
-                    <PrimaryButton @click="openModal">
-                        <i class="fas fa-plus mr-2"></i> Add Warehouse
-                    </PrimaryButton>
-                </div>
+                <select v-model="perPage"
+                    class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
+                    <option value="10">10 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+                <PrimaryButton @click="openModal(null)">
+                    <i class="fas fa-plus mr-2"></i> Add Warehouse
+                </PrimaryButton>
             </div>
         </div>
 
-        <div class="">
-            <div class="mx-auto">
-                <div class="bg-white shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
-                        <div v-if="loading" class="flex justify-center items-center py-8">
-                            <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg"
-                                fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            <span class="ml-3 text-gray-600">Loading warehouses...</span>
-                        </div>
-                        <div v-else>
-                            <div class="overflow-x-auto">
-                                <table class="divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                @click="updateSort('name')">
-                                                Name
-                                                <span v-if="sort === 'name' && direction === 'asc'"
-                                                    class="ml-1">↑</span>
-                                                <span v-else-if="sort === 'name' && direction === 'desc'"
-                                                    class="ml-1">↓</span>
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                @click="updateSort('code')">
-                                                Code
-                                                <span v-if="sort === 'code' && direction === 'asc'"
-                                                    class="ml-1">↑</span>
-                                                <span v-else-if="sort === 'code' && direction === 'desc'"
-                                                    class="ml-1">↓</span>
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Address
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Type
-                                            </th>
+        <div class="mt-4" style="max-width: 90rem">
+            <div class="bg-white mx-auto overflow-hidden">
+                <div class="text-gray-900 overflow-hidden">
+                    <div
+                        class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-lg">
+                        <table class="w-full divide-y divide-gray-200 border-collapse table-auto">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sticky left-0 bg-gray-50 z-20"
+                                        @click="updateSort('name')">
+                                        Name
+                                        <span v-if="sort === 'name' && direction === 'asc'" class="ml-1">↑</span>
+                                        <span v-else-if="sort === 'name' && direction === 'desc'" class="ml-1">↓</span>
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        @click="updateSort('code')">
+                                        Code
+                                        <span v-if="sort === 'code' && direction === 'asc'" class="ml-1">↑</span>
+                                        <span v-else-if="sort === 'code' && direction === 'desc'" class="ml-1">↓</span>
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Address
+                                    </th>
 
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                @click="updateSort('city')">
-                                                Location
-                                                <span v-if="sort === 'city' && direction === 'asc'"
-                                                    class="ml-1">↑</span>
-                                                <span v-else-if="sort === 'city' && direction === 'desc'"
-                                                    class="ml-1">↓</span>
-                                            </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        @click="updateSort('city')">
+                                        Location
+                                        <span v-if="sort === 'city' && direction === 'asc'" class="ml-1">↑</span>
+                                        <span v-else-if="sort === 'city' && direction === 'desc'" class="ml-1">↓</span>
+                                    </th>
 
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Manager
-                                            </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Manager
+                                    </th>
 
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                @click="updateSort('capacity')">
-                                                Capacity
-                                                <span v-if="sort === 'capacity' && direction === 'asc'"
-                                                    class="ml-1">↑</span>
-                                                <span v-else-if="sort === 'capacity' && direction === 'desc'"
-                                                    class="ml-1">↓</span>
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                @click="updateSort('created_at')">
-                                                Created
-                                                <span v-if="sort === 'created_at' && direction === 'asc'"
-                                                    class="ml-1">↑</span>
-                                                <span v-else-if="sort === 'created_at' && direction === 'desc'"
-                                                    class="ml-1">↓</span>
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Status
-                                            </th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id"
-                                            class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="font-medium text-gray-900">{{ warehouse.name }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-500">{{ warehouse.code }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">
-                                                    {{ warehouse.city }}, {{ warehouse.country || 'N/A' }}
-                                                </div>
-                                                <div class="text-sm text-gray-500">{{ warehouse.address || 'No address'
-                                                }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div v-if="warehouse.category" class="text-sm text-gray-900">
-                                                    {{ warehouse.category.name }}
-                                                </div>
-                                                <div v-else class="text-sm text-gray-500">No category</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div v-if="warehouse.latitude && warehouse.longitude"
-                                                    class="text-sm text-gray-500">
-                                                    <span
-                                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-pointer"
-                                                        @click="openMapModal(warehouse)">
-                                                        {{ formatCoordinates(warehouse.latitude, warehouse.longitude) }}
-                                                    </span>
-                                                </div>
-                                                <div v-else class="text-sm text-gray-500">No coordinates</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">
-                                                    {{ warehouse.manager_name || 'N/A' }}
-                                                </div>
-                                                <div class="text-sm text-gray-500">{{ warehouse.manager_email || 'No email'  }}</div>
-                                                <div class="text-sm text-gray-500">{{ warehouse.manager_phone || 'No phone' }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">{{ warehouse.capacity ?
-                                                    `${warehouse.capacity} m³` : 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">
-                                                    <span
-                                                        v-if="warehouse.temperature_min !== null && warehouse.temperature_max !== null">
-                                                        {{ warehouse.temperature_min }}°C - {{ warehouse.temperature_max
-                                                        }}°C
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                                    :class="warehouse.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                                                    {{ warehouse.is_active ? 'Active' : 'Inactive' }}
-                                                </span>
-                                                <div class="mt-1 flex flex-wrap gap-1">
-                                                    <span v-if="warehouse.has_cold_storage"
-                                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        Cold Storage
-                                                    </span>
-                                                    <span v-if="warehouse.has_hazardous_storage"
-                                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                        Hazardous
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button @click="openModal(warehouse)"
-                                                    class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                                    Edit
-                                                </button>
-                                                <button @click="confirmDelete(warehouse)"
-                                                    class="text-red-600 hover:text-red-900">
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="props.warehouses.data.length === 0">
-                                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                                No warehouses found
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        @click="updateSort('capacity')">
+                                        Capacity
+                                        <span v-if="sort === 'capacity' && direction === 'asc'" class="ml-1">↑</span>
+                                        <span v-else-if="sort === 'capacity' && direction === 'desc'"
+                                            class="ml-1">↓</span>
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id"
+                                    class="hover:bg-gray-50">
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
+                                        <div class="font-medium text-gray-900">{{ warehouse.name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ warehouse.code }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            {{ warehouse.city }}, {{ warehouse.country || 'N/A' }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ warehouse.address || 'No address' }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div v-if="warehouse.latitude && warehouse.longitude"
+                                            class="text-sm text-gray-500">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-pointer"
+                                                @click="openMapModal(warehouse)">
+                                                {{ formatCoordinates(warehouse.latitude,
+                                                    warehouse.longitude) }}
+                                            </span>
+                                        </div>
+                                        <div v-else class="text-sm text-gray-500">No coordinates</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            {{ warehouse.manager_name || 'N/A' }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ warehouse.manager_email || 'No email' }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ warehouse.manager_phone || 'No phone' }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ warehouse.capacity ?
+                                            `${warehouse.capacity} m³` : 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500">
+                                            <span
+                                                v-if="warehouse.temperature_min !== null && warehouse.temperature_max !== null">
+                                                {{ warehouse.temperature_min }}°C - {{
+                                                    warehouse.temperature_max
+                                                }}°C
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                            :class="warehouse.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                            {{ warehouse.is_active ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @click="openModal(warehouse)"
+                                            class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                            Edit
+                                        </button>
+                                        <button @click="confirmDelete(warehouse)"
+                                            class="text-red-600 hover:text-red-900">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="props.warehouses.data.length === 0">
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        No warehouses found
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <!-- Pagination -->
-                            <div class="mt-4 flex justify-between items-center">
-                                <div class="flex items-center">
-                                    <span class="mr-2 text-sm text-gray-600">Show</span>
-                                    <select v-model="perPage"
-                                        class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
-                                        <option value="10">10</option>
-                                        <option value="25">25</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                    <span class="ml-2 text-sm text-gray-600">entries</span>
-                                </div>
-
-                                <Pagination :links="props.warehouses.meta.links" />
-                            </div>
-                        </div>
+                    <!-- Pagination -->
+                    <div class="mt-4 flex justify-end items-center mt-3">
+                        <Pagination :links="props.warehouses.meta.links" />
                     </div>
                 </div>
             </div>
@@ -272,18 +217,6 @@
                                 <TextInput id="manager_phone" type="text" class="mt-1 block w-full"
                                     v-model="form.manager_phone" />
                             </div>
-                        </div>
-
-                        <!-- Category -->
-                        <div>
-                            <InputLabel for="category_id" value="Category" />
-                            <select id="category_id" v-model="form.category_id"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option :value="null">-- Select Category --</option>
-                                <option v-for="category in props.categories" :key="category.id" :value="category.id">
-                                    {{ category.name }}
-                                </option>
-                            </select>
                         </div>
 
                         <!-- Location Information -->
@@ -458,7 +391,8 @@
                     </div>
                     <div>
                         <span class="font-medium">Coordinates:</span>
-                        <span>{{ formatCoordinates(selectedWarehouse.latitude, selectedWarehouse.longitude) }}</span>
+                        <span>{{ formatCoordinates(selectedWarehouse.latitude, selectedWarehouse.longitude)
+                            }}</span>
                     </div>
                 </div>
 
@@ -491,7 +425,6 @@ const toast = useToast();
 // Props
 const props = defineProps({
     warehouses: Object,
-    categories: Array,
     filters: Object,
     errors: Object
 });
@@ -505,42 +438,29 @@ const loading = ref(false);
 
 // Debounced search function
 const debouncedSearch = debounce(() => {
-    loading.value = true;
-    window.Inertia.get(
+    const query = {}
+    if (search.value) query.search = search.value
+    if (sort.value) query.sort = sort.value
+    if (direction.value) query.direction = direction.value
+    if (perPage.value) query.perPage = perPage.value
+    router.get(
         route('warehouses.index'),
-        {
-            search: search.value,
-            sort: sort.value,
-            direction: direction.value,
-            perPage: perPage.value
-        },
+        query,
         {
             preserveState: true,
             replace: true,
-            onSuccess: () => {
-                loading.value = false;
-            },
-            onError: () => {
-                loading.value = false;
-            }
+            only: ['warehouses']
         }
     );
 }, 500);
 
 // Watch for search and filter changes
-watch(search, () => {
-    debouncedSearch();
-});
-
-watch(sort, () => {
-    debouncedSearch();
-});
-
-watch(direction, () => {
-    debouncedSearch();
-});
-
-watch(perPage, () => {
+watch([
+    () => search.value,
+    () => sort.value,
+    () => direction.value,
+    () => perPage.value
+], () => {
     debouncedSearch();
 });
 
@@ -565,19 +485,18 @@ const form = ref({
     id: null,
     name: '',
     code: '',
-    category_id: '',
     address: '',
     city: '',
     state: '',
     country: '',
     postal_code: '',
-    latitude: null,
-    longitude: null,
-    capacity: null,
-    temperature_min: null,
-    temperature_max: null,
-    humidity_min: null,
-    humidity_max: null,
+    latitude: '',
+    longitude: '',
+    capacity: '',
+    temperature_min: '',
+    temperature_max: '',
+    humidity_min: '',
+    humidity_max: '',
     status: 'active',
     has_cold_storage: false,
     has_hazardous_storage: false,
@@ -689,51 +608,48 @@ const closeMapModal = () => {
 
 // Open create/edit modal
 const openModal = (warehouse = null) => {
-    console.log(warehouse);
     if (warehouse) {
         form.value.id = warehouse.id;
-        form.value.name = warehouse.name;
-        form.value.code = warehouse.code;
-        form.value.category_id = warehouse.category_id;
-        form.value.address = warehouse.address;
-        form.value.city = warehouse.city;
-        form.value.state = warehouse.state;
-        form.value.country = warehouse.country;
-        form.value.postal_code = warehouse.postal_code;
-        form.value.latitude = warehouse.latitude;
-        form.value.longitude = warehouse.longitude;
-        form.value.capacity = warehouse.capacity;
-        form.value.temperature_min = warehouse.temperature_min;
-        form.value.temperature_max = warehouse.temperature_max;
-        form.value.humidity_min = warehouse.humidity_min;
-        form.value.humidity_max = warehouse.humidity_max;
-        form.value.status = warehouse.status;
-        form.value.has_cold_storage = warehouse.has_cold_storage;
-        form.value.has_hazardous_storage = warehouse.has_hazardous_storage;
-        form.value.is_active = warehouse.is_active;
-        form.value.notes = warehouse.notes;
-        form.value.manager_name = warehouse.manager_name;
-        form.value.manager_email = warehouse.manager_email;
-        form.value.manager_phone = warehouse.manager_phone;
+        form.value.name = warehouse.name || '';
+        form.value.code = warehouse.code || '';
+        form.value.address = warehouse.address || '';
+        form.value.city = warehouse.city || '';
+        form.value.state = warehouse.state || '';
+        form.value.country = warehouse.country || '';
+        form.value.postal_code = warehouse.postal_code || '';
+        form.value.latitude = warehouse.latitude || '';
+        form.value.longitude = warehouse.longitude || '';
+        form.value.capacity = warehouse.capacity || '';
+        form.value.temperature_min = warehouse.temperature_min || '';
+        form.value.temperature_max = warehouse.temperature_max || '';
+        form.value.humidity_min = warehouse.humidity_min || '';
+        form.value.humidity_max = warehouse.humidity_max || '';
+        form.value.status = warehouse.status || 'active';
+        form.value.has_cold_storage = !!warehouse.has_cold_storage;
+        form.value.has_hazardous_storage = !!warehouse.has_hazardous_storage;
+        form.value.is_active = warehouse.is_active !== false;
+        form.value.notes = warehouse.notes || '';
+        form.value.manager_name = warehouse.manager_name || '';
+        form.value.manager_email = warehouse.manager_email || '';
+        form.value.manager_phone = warehouse.manager_phone || '';
         editMode.value = true;
     } else {
         form.value = {
             id: null,
             name: '',
             code: '',
-            category_id: null,
             address: '',
             city: '',
             state: '',
             country: '',
             postal_code: '',
-            latitude: null,
-            longitude: null,
-            capacity: null,
-            temperature_min: null,
-            temperature_max: null,
-            humidity_min: null,
-            humidity_max: null,
+            latitude: '',
+            longitude: '',
+            capacity: '',
+            temperature_min: '',
+            temperature_max: '',
+            humidity_min: '',
+            humidity_max: '',
             status: 'active',
             has_cold_storage: false,
             has_hazardous_storage: false,
