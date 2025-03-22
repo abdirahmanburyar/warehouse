@@ -79,6 +79,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $userPermissions,
             $reportPermissions,
             $approvalPermissions,
+            $dosagePermissions,
             $productPermissions
         );
 
@@ -99,6 +100,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ...$warehousePermissions,
             ...$categoryPermissions,
             ...$productPermissions,
+            ...$dosagePermissions,
             ...$approvalPermissions,
             ...$reportPermissions,
             'user.view',
@@ -110,6 +112,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'warehouse.view',
             'warehouse.edit',
             'category.view',
+            'product.view',
+            'dosage.view',
             'report.view',
         ]);
 
@@ -118,6 +122,8 @@ class RolesAndPermissionsSeeder extends Seeder
         $viewerRole->givePermissionTo([
             'warehouse.view',
             'category.view',
+            'product.view',
+            'dosage.view',
             'report.view',
         ]);
 
