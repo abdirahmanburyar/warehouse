@@ -25,7 +25,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Garowe Central Warehouse',
                 'code' => 'GCW001',
-                'category_id' => $distributionId,
                 'address' => 'Main Street, Garowe',
                 'city' => 'Garowe',
                 'state' => 'Nugal',
@@ -50,7 +49,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Eyl Cold Storage Facility',
                 'code' => 'ECS002',
-                'category_id' => $coldStorageId,
                 'address' => 'Port Road, Eyl',
                 'city' => 'Eyl',
                 'state' => 'Nugal',
@@ -75,7 +73,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Burtinle Distribution Center',
                 'code' => 'BDC003',
-                'category_id' => $generalStorageId,
                 'address' => 'Central Avenue, Burtinle',
                 'city' => 'Burtinle',
                 'state' => 'Nugal',
@@ -100,7 +97,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Dangorayo Agricultural Storage',
                 'code' => 'DAS004',
-                'category_id' => $generalStorageId,
                 'address' => 'Farm Road, Dangorayo',
                 'city' => 'Dangorayo',
                 'state' => 'Nugal',
@@ -125,7 +121,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Garowe E-commerce Fulfillment',
                 'code' => 'GEF005',
-                'category_id' => $ecommerceId,
                 'address' => 'Technology Park, Garowe',
                 'city' => 'Garowe',
                 'state' => 'Nugal',
@@ -150,7 +145,6 @@ class WarehouseSeeder extends Seeder
             [
                 'name' => 'Garowe Medical Supplies',
                 'code' => 'GMS006',
-                'category_id' => $hazardousId,
                 'address' => 'Hospital Road, Garowe',
                 'city' => 'Garowe',
                 'state' => 'Nugal',
