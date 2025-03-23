@@ -23,19 +23,20 @@ Route::get('/broadcasting/auth', function () {
     return \Laravel\Echo\Broadcasting\Auth::check();
 })->middleware('auth')->name('broadcasting.auth');
 
-// Dashboard route - protected by auth and 2FA
-Route::get('/', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])->name('dashboard');
-
-// Two-Factor Authentication Routes
+// Two-Factor Authentication Routes - These must be accessible without 2FA
 Route::middleware('auth')->group(function () {
     Route::get('/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
     Route::post('/two-factor', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
     Route::post('/two-factor/resend', [TwoFactorController::class, 'resend'])->name('two-factor.resend');
 });
 
+// All routes that require 2FA
 Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])->group(function () {
+    // Dashboard route
+    Route::get('/', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -131,14 +132,28 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/batch', 'storeBatch')->name('supplies.store-batch');
         Route::get('/{supply}', 'show')->name('supplies.show');
         Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
-        Route::get('/approvals', [ApprovalController::class, 'index'])->middleware(PermissionMiddleware::class.':approval.view')->name('approvals.index');
-        Route::get('/approvals/create', [ApprovalController::class, 'create'])->middleware(PermissionMiddleware::class.':approval.create')->name('approvals.create');
-        Route::get('/approvals/{approval}/edit', [ApprovalController::class, 'edit'])->middleware(PermissionMiddleware::class.':approval.edit')->name('approvals.edit');
-        Route::post('/approvals', [ApprovalController::class, 'store'])->middleware(PermissionMiddleware::class.':approval.create')->name('approvals.store');
-        Route::delete('/approvals/{approval}', [ApprovalController::class, 'destroy'])->middleware(PermissionMiddleware::class.':approval.delete')->name('approvals.destroy');
         Route::post('/supply-items/{id}/approve', [SupplyController::class, 'approveItem'])->name('supply-items.approve');
         Route::post('/approve-bulk', 'approveBulk')->name('supplies.approve-bulk');
         Route::get('/{supply}/items', [SupplyController::class, 'getItems'])->name('supplies.items');
+    });
+
+    // Approval Routes
+    Route::prefix('approvals')->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])->group(function () {
+        Route::get('/', [ApprovalController::class, 'index'])
+            ->middleware('permission:approval.view')
+            ->name('approvals.index');
+        Route::get('/create', [ApprovalController::class, 'create'])
+            ->middleware('permission:approval.create')
+            ->name('approvals.create');
+        Route::get('/{approval}/edit', [ApprovalController::class, 'edit'])
+            ->middleware('permission:approval.edit')
+            ->name('approvals.edit');
+        Route::post('/', [ApprovalController::class, 'store'])
+            ->middleware('permission:approval.create')
+            ->name('approvals.store');
+        Route::delete('/{approval}', [ApprovalController::class, 'destroy'])
+            ->middleware('permission:approval.delete')
+            ->name('approvals.destroy');
     });
     
     // Supplier Routes
@@ -153,10 +168,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
 
     });
     
-    Route::middleware('role:admin')->group(function () {
-        Route::resource('users', UserController::class);
-        Route::resource('roles', RoleController::class);
-    });
+    // Remove duplicate resource routes since we already have individual routes defined above
+    // Route::middleware('role:admin')->group(function () {
+    //     Route::resource('users', UserController::class);
+    //     Route::resource('roles', RoleController::class);
+    // });
 });
 
 require __DIR__.'/auth.php';

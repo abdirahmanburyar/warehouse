@@ -14,22 +14,17 @@ class TwoFactorAuth
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request, Closure $next): Response
     {
         // If user is authenticated but hasn't completed 2FA
         if (auth()->check() && !Session::has('two_factor_authenticated')) {
             // Store intended URL in session
-            Session::put('url.intended', $request->url());
+            Session::put('url.intended', url()->current());
             
-            // Check if the two-factor.show route exists
-            if (Route::has('two-factor.show')) {
-                // Redirect to 2FA verification page
-                return redirect()->route('two-factor.show');
-            }
-            
-            // If the route doesn't exist, mark as authenticated to prevent redirect loop
-            Session::put('two_factor_authenticated', true);
+            // Redirect to 2FA verification page
+            return redirect()->route('two-factor.show');
         }
 
         return $next($request);
