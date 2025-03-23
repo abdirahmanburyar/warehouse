@@ -91,45 +91,81 @@ class SupplyController extends Controller
      */
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
+            'invoice_number' => 'required|string',
+            'supply_date' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'nullable|exists:supply_items,id',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.batch_number' => 'nullable|string',
+            'items.*.manufacturing_date' => 'nullable|date',
+            'items.*.expiry_date' => 'nullable|date|after:manufacturing_date',
+        ]);
+
         try {
-            return DB::transaction(function () use ($request) {
-                $validated = $request->validate([
-                    'supplier_id' => 'required|exists:suppliers,id',
-                    'supply_date' => 'required|date',
-                    'invoice_number' => 'nullable|string|max:255',
-                    'notes' => 'nullable|string',
-                    'products' => 'required|array|min:1',
-                    'products.*.product_id' => 'required|exists:products,id',
-                    'products.*.quantity' => 'required|integer|min:1',
-                    'products.*.manufacturing_date' => 'nullable|date',
-                    'products.*.expiry_date' => 'nullable|date|after_or_equal:manufacturing_date',
-                    'products.*.batch_number' => 'nullable|string|max:255',
-                ]);
+            DB::beginTransaction();
 
-                // Create the main supply record
-                $supply = Supply::create([
+            // Create or update supply
+            $supply = Supply::updateOrCreate(
+                ['id' => $request->id],
+                [
                     'supplier_id' => $validated['supplier_id'],
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'supply_date' => $validated['supply_date'],
                     'invoice_number' => $validated['invoice_number'],
+                    'supply_date' => $validated['supply_date'],
                     'notes' => $validated['notes'],
-                ]);
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                ]
+            );
 
-                // Create supply items
-                foreach ($validated['products'] as $product) {
+            // Get current item IDs
+            $currentItemIds = collect($validated['items'])
+                ->pluck('id')
+                ->filter()
+                ->toArray();
+
+            // Delete items that are not in the request (only pending items can be deleted)
+            if ($request->id) {
+                $supply->items()
+                    ->where('status', 'pending')
+                    ->whereNotIn('id', $currentItemIds)
+                    ->delete();
+            }
+
+            // Process each item
+            foreach ($validated['items'] as $itemData) {
+                // If item has ID, update it, otherwise create new
+                if (!empty($itemData['id'])) {
+                    // Only update if item is still pending
+                    SupplyItem::where('id', $itemData['id'])
+                        ->where('status', 'pending')
+                        ->update([
+                            'product_id' => $itemData['product_id'],
+                            'quantity' => $itemData['quantity'],
+                            'batch_number' => $itemData['batch_number'] ?? null,
+                            'manufacturing_date' => $itemData['manufacturing_date'] ?? null,
+                            'expiry_date' => $itemData['expiry_date'] ?? null,
+                        ]);
+                } else {
+                    // Create new item
                     $supply->items()->create([
-                        'product_id' => $product['product_id'],
-                        'quantity' => $product['quantity'],
-                        'batch_number' => $product['batch_number'],
-                        'manufacturing_date' => $product['manufacturing_date'],
-                        'expiry_date' => $product['expiry_date'],
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $itemData['quantity'],
+                        'batch_number' => $itemData['batch_number'] ?? null,
+                        'manufacturing_date' => $itemData['manufacturing_date'] ?? null,
+                        'expiry_date' => $itemData['expiry_date'] ?? null,
                         'status' => 'pending'
                     ]);
                 }
+            }
 
-                return response()->json('Supply added successfully', 200);
-            });
-        } catch (\Throwable $e) {
+            DB::commit();
+            return response()->json('Supply saved successfully');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
     }
@@ -265,39 +301,62 @@ class SupplyController extends Controller
     }
 
     /**
-     * Approve or reject a supply item.
+     * Get items for a supply
+     */
+    public function getItems(Supply $supply)
+    {
+        return $supply->items()
+            ->with('product')
+            ->get();
+    }
+
+    /**
+     * Approve or reject a supply item
      */
     public function approveItem(Request $request, $id)
     {
         try {
-            return DB::transaction(function () use ($request, $id) {
-                // Update the item with approval info
-                $item = SupplyItem::findOrFail($id);
-                $item->update([
-                    'approved_by' => auth()->id(),
-                    'approved_at' => now(),
-                ]);
+            DB::beginTransaction();
+            
+            $validated = $request->validate([
+                'status' => 'required|in:approved,rejected',
+            ]);
 
-                // If approved, update inventory
+            $item = SupplyItem::with(['supply', 'product'])->findOrFail($id);
+            
+            $item->update([
+                'status' => $validated['status'],
+                'approved_at' => now(),
+                'approved_by' => auth()->id()
+            ]);
+
+            // If approved, update inventory
+            if ($validated['status'] === 'approved') {
+                // Then, update or create inventory record
                 $inventory = Inventory::firstOrNew([
                     'product_id' => $item->product_id,
-                    'warehouse_id' => $item->warehouse_id,
-                    'batch_number' => $item->batch_number,
+                    'warehouse_id' => $item->supply->warehouse_id,
+                    'batch_number' => $item->batch_number
                 ]);
 
+                // If new inventory record, set the dates
                 if (!$inventory->exists) {
                     $inventory->manufacturing_date = $item->manufacturing_date;
                     $inventory->expiry_date = $item->expiry_date;
                     $inventory->quantity = 0;
                 }
 
+                // Add the quantity
                 $inventory->quantity += $item->quantity;
                 $inventory->save();
+            }
 
-                return response()->json('Approved successfully', 200);
-            });
-        } catch (\Throwable $e) {
-            return response()->json($e->getMessage(), 500);
+            DB::commit();
+            return response()->json(['message' => 'Item status updated successfully']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to update item status: ' . $e->getMessage()], 500);
         }
     }
 

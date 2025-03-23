@@ -25,15 +25,6 @@ class Supply extends Model
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'supply_date' => 'date',
-    ];
-
-    /**
      * Get the supplier that this supply belongs to.
      */
     public function supplier(): BelongsTo

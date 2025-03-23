@@ -177,7 +177,12 @@ const formatDate = (date) => {
 
 // Check if inventory is low
 const isLowStock = (inventory) => {
-    return inventory.quantity <= inventory.reorder_level;
+    return inventory.quantity > 0 && inventory.quantity <= inventory.reorder_level;
+};
+
+// Check if inventory is out of stock
+const isOutOfStock = (inventory) => {
+    return inventory.quantity === 0;
 };
 
 // Check if product is expiring soon (within 30 days)
@@ -242,20 +247,6 @@ function editInventory(inventory) {
 
 const echo = ref(null);
 
-onMounted(() => {
-    console.log('Subscribing to inventory channel', window.Echo);
-    echo.value = window.Echo.channel('inventory')
-        .listen('refresh', (e) => {
-            console.log('Received message:', e.message);
-            toast.success("Done");
-            applyFilters();
-        });
-});
-
-onUnmounted(() => {
-    console.log('Unsubscribing from inventory channel');
-    echo.value?.unsubscribe('inventory');
-});
 
 </script>
 
@@ -441,7 +432,11 @@ onUnmounted(() => {
                                         Location: {{ inventory.location || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4">
+                                <td class="whitespace-nowrap px-6 py-4 flex justify-between">
+                                    <img v-if="isLowStock(inventory)" src="/assets/images/low_stock.png" class="w-6 h-6" alt="Low Stock" />
+                                    <img v-if="isExpiringSoon(inventory)" src="/assets/images/expired_stock.png" class="w-6 h-6" alt="Expired" />
+                                    <img v-if="isExpired(inventory)" src="/assets/images/low_stock.png" class="w-6 h-6" alt="Expired" />
+                                    <img v-if="isOutOfStock(inventory)" src="/assets/images/out_stock.png" class="w-6 h-6" alt="Out of Stock" />
                                     <span :class="{
                                         'inline-flex rounded-full px-2 text-xs font-semibold leading-5': true,
                                         'bg-green-100 text-green-800': inventory.is_active,

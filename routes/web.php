@@ -136,8 +136,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::get('/approvals/{approval}/edit', [ApprovalController::class, 'edit'])->middleware(PermissionMiddleware::class.':approval.edit')->name('approvals.edit');
         Route::post('/approvals', [ApprovalController::class, 'store'])->middleware(PermissionMiddleware::class.':approval.create')->name('approvals.store');
         Route::delete('/approvals/{approval}', [ApprovalController::class, 'destroy'])->middleware(PermissionMiddleware::class.':approval.delete')->name('approvals.destroy');
-        Route::get('/supply-items/{id}', 'approveItem')->name('supply-items.update');
+        Route::post('/supply-items/{id}/approve', [SupplyController::class, 'approveItem'])->name('supply-items.approve');
         Route::post('/approve-bulk', 'approveBulk')->name('supplies.approve-bulk');
+        Route::get('/{supply}/items', [SupplyController::class, 'getItems'])->name('supplies.items');
     });
     
     // Supplier Routes
