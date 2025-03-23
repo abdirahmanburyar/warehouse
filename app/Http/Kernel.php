@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Spatie\Permission\Middlewares;
 
 class Kernel extends HttpKernel
 {
@@ -67,9 +68,9 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'two-factor' => \App\Http\Middleware\TwoFactorAuth::class,
-        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
-        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
-        'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
+        'role' => Middlewares\RoleMiddleware::class,
+        'permission' => Middlewares\PermissionMiddleware::class,
+        'role_or_permission' => Middlewares\RoleOrPermissionMiddleware::class,
         'check.permission' => \App\Http\Middleware\CheckPermission::class,
     ];
 }

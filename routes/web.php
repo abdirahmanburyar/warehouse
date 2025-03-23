@@ -116,11 +116,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
     
     // Inventory Routes
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/inventories', [InventoryController::class, 'index'])->name('inventories.index');
-        Route::post('/inventories/store', [InventoryController::class, 'store'])->name('inventories.store');
-        Route::get('/inventories/{inventory}', [InventoryController::class, 'show'])->name('inventories.show');
-        Route::delete('/inventories/{inventory}', [InventoryController::class, 'destroy'])->name('inventories.destroy');
+    Route::controller(InventoryController::class)
+    ->prefix('/inventories')
+    ->group(function () {
+        Route::get('/', 'index')->name('inventories.index');
+        Route::post('/store', 'store')->name('inventories.store');
+        Route::get('/{inventory}', 'show')->name('inventories.show');
+        Route::delete('/{inventory}', 'destroy')->name('inventories.destroy');
     });
 
     // Supply Routes
@@ -138,21 +140,19 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     });
 
     // Approval Routes
-    Route::prefix('approvals')->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])->group(function () {
-        Route::get('/', [ApprovalController::class, 'index'])
-            ->middleware('permission:approval.view')
-            ->name('approvals.index');
-        Route::get('/create', [ApprovalController::class, 'create'])
-            ->middleware('permission:approval.create')
-            ->name('approvals.create');
-        Route::get('/{approval}/edit', [ApprovalController::class, 'edit'])
-            ->middleware('permission:approval.edit')
+    Route::controller(ApprovalController::class)
+    ->prefix('approvals')
+        // ->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])
+        ->group(function () {
+            Route::get('/', 'index')
+                ->name('approvals.index');
+            Route::get('/create', 'create')
+                ->name('approvals.create');
+            Route::get('/{approval}/edit', 'edit')
             ->name('approvals.edit');
-        Route::post('/', [ApprovalController::class, 'store'])
-            ->middleware('permission:approval.create')
+        Route::post('/', 'store')
             ->name('approvals.store');
-        Route::delete('/{approval}', [ApprovalController::class, 'destroy'])
-            ->middleware('permission:approval.delete')
+        Route::delete('/{approval}', 'destroy')
             ->name('approvals.destroy');
     });
     
