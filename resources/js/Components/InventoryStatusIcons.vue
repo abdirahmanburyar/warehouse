@@ -5,7 +5,7 @@
         <!-- In Stock -->
         <div class="flex items-center mb-4">
             <div class="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center mr-3">
-                <img src="/assets/images/in_stock.svg" alt="In Stock" style="width: 100%; height: 100%;">
+                <img src="/assets/images/in_stock.png" alt="In Stock" style="width: 100%; height: 100%;">
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800">
@@ -17,8 +17,8 @@
         
         <!-- Low Stock -->
         <div class="flex items-center mb-4">
-            <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center mr-3">
-                <img src="/assets/images/low_stock.png" alt="Low Stock" style="width: 70%; height: 70%;">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="/assets/images/low_stock.png" alt="Low Stock" style="width: 100%; height: 100%;">
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800">
@@ -30,8 +30,8 @@
         
         <!-- Out of Stock -->
         <div class="flex items-center mb-4">
-            <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center mr-3">
-                <img src="/assets/images/out_stock.png" alt="Out of Stock" style="width: 70%; height: 70%;">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                <img src="/assets/images/out_stock.png" alt="Out of Stock" style="width: 100%; height: 100%;">
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800">
@@ -44,7 +44,7 @@
         <!-- Expired Stock -->
         <div class="flex items-center">
             <div class="w-12 h-12 rounded-full bg-danger-500 flex items-center justify-center mr-3">
-                <img src="/assets/images/in_stock.svg" alt="Expired Stock" style="width: 100%; height: 100%;">
+                <img src="/assets/images/expired_stock.png" alt="Expired Stock" style="width: 100%; height: 100%;">
             </div>
             <div>
                 <div class="text-lg font-bold text-danger-800">

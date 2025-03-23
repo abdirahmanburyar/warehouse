@@ -21,10 +21,6 @@ class Supplier extends Model
         'email',
         'phone',
         'address',
-        'city',
-        'state',
-        'postal_code',
-        'country',
         'notes',
         'is_active',
     ];

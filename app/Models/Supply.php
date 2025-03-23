@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supply extends Model
 {
@@ -16,17 +17,10 @@ class Supply extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'product_id',
         'warehouse_id',
         'supplier_id',
-        'quantity',
-        'unit_price',
-        'total_price',
         'supply_date',
         'invoice_number',
-        'batch_number',
-        'manufacturing_date',
-        'expiry_date',
         'notes',
     ];
 
@@ -37,18 +31,14 @@ class Supply extends Model
      */
     protected $casts = [
         'supply_date' => 'date',
-        'manufacturing_date' => 'date',
-        'expiry_date' => 'date',
-        'unit_price' => 'decimal:2',
-        'total_price' => 'decimal:2',
     ];
 
     /**
-     * Get the product that this supply belongs to.
+     * Get the supplier that this supply belongs to.
      */
-    public function product(): BelongsTo
+    public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Supplier::class);
     }
 
     /**
@@ -58,12 +48,12 @@ class Supply extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
-    
+
     /**
-     * Get the supplier that this supply belongs to.
+     * Get the items that belong to this supply.
      */
-    public function supplier(): BelongsTo
+    public function items(): HasMany
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->hasMany(SupplyItem::class);
     }
 }

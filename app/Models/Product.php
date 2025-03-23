@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
 use App\Models\Dosage;
 use App\Models\Inventory;
+use App\Models\Supply;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
@@ -53,5 +55,15 @@ class Product extends Model
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    /**
+     * Get the supplies for the product.
+     */
+    public function supplies(): BelongsToMany
+    {
+        return $this->belongsToMany(Supply::class, 'supply_items')
+            ->withPivot(['quantity', 'batch_number', 'manufacturing_date', 'expiry_date'])
+            ->withTimestamps();
     }
 }

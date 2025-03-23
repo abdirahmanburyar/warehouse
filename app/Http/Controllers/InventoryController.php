@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Events\InventoryEvent;
+use Illuminate\Support\Facades\Event;
 
 class InventoryController extends Controller
 {
@@ -96,36 +98,29 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'quantity' => 'required|integer|min:0',
-                'reorder_level' => 'nullable|integer|min:0',
-                'unit_cost' => 'nullable|numeric|min:0',
-                'unit_price' => 'nullable|numeric|min:0',
-                'manufacturing_date' => 'nullable|date',
-                'expiry_date' => 'nullable|date|after_or_equal:manufacturing_date',
-                'batch_number' => 'nullable|string|max:255',
-                'location' => 'nullable|string|max:255',
-                'notes' => 'nullable|string',
-                'is_active' => 'boolean',
-            ]);
-    
-            $inventory = Inventory::updateOrCreate(['id' => $request->id], [
-                'product_id' => $request->product_id,
-                'warehouse_id' => $request->warehouse_id,
-                'quantity' => $request->quantity,
-                'reorder_level' => $request->reorder_level,
-                'manufacturing_date' => $request->manufacturing_date,
-                'expiry_date' => $request->expiry_date,
-                'batch_number' => $request->batch_number,
-                'location' => $request->location,
-                'notes' => $request->notes,
-                'is_active' => $request->is_active,
-            ]);
-    
-            return response()->json($request->id ? 'Inventory item updated successfully' : 'Inventory item created successfully', 200);
-        
+           
+        $validated = $request->validate([
+            'id' => 'nullable|exists:inventories,id',
+            'product_id' => 'required|exists:products,id',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'quantity' => 'required|numeric|min:0',
+            'reorder_level' => 'required|numeric|min:0',
+            'manufacturing_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after:manufacturing_date',
+            'batch_number' => 'nullable|string',
+            'location' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $inventory = Inventory::updateOrCreate(
+            ['id' => $request->id],
+            $validated
+        );
+
+        // event(new InventoryEvent());
+        logger()->info("done");
+        return response()->json( $request->id ? 'Inventory updated successfully' : 'Inventory created successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -155,4 +150,5 @@ class InventoryController extends Controller
             'message' => 'Inventory item deleted successfully',
         ]);
     }
+    
 }

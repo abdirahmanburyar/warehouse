@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InventoryStatusIcons from '@/Components/InventoryStatusIcons.vue';
@@ -46,8 +46,8 @@ const inventoryToDelete = ref(null);
 const form = ref({
     product_id: '',
     warehouse_id: '',
-    quantity: "0",
-    reorder_level: "10",
+    quantity: 0,
+    reorder_level: 10,
     manufacturing_date: '',
     expiry_date: '',
     batch_number: '',
@@ -122,8 +122,8 @@ const addInventory = () => {
     form.value = {
         product_id: '',
         warehouse_id: '',
-        quantity: "0",
-        reorder_level: "10",
+        quantity: 0,
+        reorder_level: 10,
         manufacturing_date: '',
         expiry_date: '',
         batch_number: '',
@@ -132,6 +132,7 @@ const addInventory = () => {
         is_active: true,
     };
     showAddModal.value = true;
+    showEditModal.value = false;
 };
 
 // Submit form
@@ -145,6 +146,7 @@ const submitForm = async () => {
             applyFilters();
         })
         .catch((errors) => {
+            console.log(errors);
             formErrors.value = errors;
             isSubmitting.value = false;
             toast.error(errors.response.data);
@@ -220,7 +222,6 @@ const isExpired = (inventory) => {
 // Edit inventory item
 const showEditModal = ref(false);
 
-
 function editInventory(inventory) {
     form.value = {
         id: inventory.id,
@@ -238,6 +239,24 @@ function editInventory(inventory) {
     showAddModal.value = true;
     showEditModal.value = true;
 }
+
+const echo = ref(null);
+
+onMounted(() => {
+    console.log('Subscribing to inventory channel', window.Echo);
+    echo.value = window.Echo.channel('inventory')
+        .listen('refresh', (e) => {
+            console.log('Received message:', e.message);
+            toast.success("Done");
+            applyFilters();
+        });
+});
+
+onUnmounted(() => {
+    console.log('Unsubscribing from inventory channel');
+    echo.value?.unsubscribe('inventory');
+});
+
 </script>
 
 <template>

@@ -169,8 +169,8 @@
                                 <TextareaInput
                                     id="notes"
                                     v-model="form.notes"
+                                    :rows="3"
                                     class="mt-1 block w-full"
-                                    rows="3"
                                 />
                                 <InputError :message="form.errors.notes" class="mt-2" />
                             </div>

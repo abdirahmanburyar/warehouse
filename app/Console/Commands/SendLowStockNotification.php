@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\LowStockNotification;
+use App\Events\LowStockAlert;
 
 class SendLowStockNotification extends Command
 {
@@ -43,6 +44,10 @@ class SendLowStockNotification extends Command
             // Send email notification
             Mail::to('buryar313@gmail.com')->send(new LowStockNotification($lowStockItems));
             // Mail::to('faysal@gmail.com')->send(new LowStockNotification($lowStockItems));
+            
+            // Broadcast real-time events for each low stock item
+            event(new LowStockAlert());
+            $this->info("Broadcasted low stock alert for");
             
             $this->info('Low stock notification email sent successfully.');
         } else {

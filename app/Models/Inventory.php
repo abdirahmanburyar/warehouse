@@ -11,11 +11,6 @@ class Inventory extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'product_id',
         'warehouse_id',
@@ -29,11 +24,6 @@ class Inventory extends Model
         'is_active',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'manufacturing_date' => 'date',
         'expiry_date' => 'date',
@@ -42,19 +32,14 @@ class Inventory extends Model
         'unit_price' => 'decimal:2',
     ];
 
-    /**
-     * Get the product that owns the inventory.
-     */
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Get the warehouse that owns the inventory.
-     */
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
     }
+
 }

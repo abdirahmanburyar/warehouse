@@ -1,7 +1,9 @@
 <?php
 
-return [
+use Reverb\Broadcasting\ReverbConnector;
 
+
+return [
     /*
     |--------------------------------------------------------------------------
     | Default Broadcaster
@@ -11,11 +13,9 @@ return [
     | framework when an event needs to be broadcast. You may set this to
     | any of the connections defined in the "connections" array below.
     |
-    | Supported: "pusher", "ably", "redis", "log", "null"
-    |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'pusher'),
+    'default' => env('BROADCAST_DRIVER', 'reverb'),
 
     /*
     |--------------------------------------------------------------------------
@@ -29,39 +29,43 @@ return [
     */
 
     'connections' => [
-
-        'pusher' => [
-            'driver' => 'pusher',
-            'key' => env('PUSHER_APP_KEY', '6f14b3912007b57c9ffa'),
-            'secret' => env('PUSHER_APP_SECRET', 'f7c7dd93b06dd0ed77b2'),
-            'app_id' => env('PUSHER_APP_ID', '1960245'),
+        'reverb' => [
+            'connector' => ReverbConnector::class,
+            'driver' => 'reverb',
+            'app_id' => env('REVERB_APP_ID'),
+            'key' => env('REVERB_APP_KEY'),
+            'secret' => env('REVERB_APP_SECRET'),
+            'host' => env('REVERB_HOST', '127.0.0.1'),
+            'port' => env('REVERB_PORT', 8080),
+            'scheme' => env('REVERB_SCHEME', 'http'),
+            'path' => env('REVERB_PATH', '/api'),
             'options' => [
-                'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
-                'useTLS' => true,
-            ],
-            'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // 'cluster' => env('PUSHER_APP_CLUSTER'),
+                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
             ],
         ],
+
+        // 'pusher' => [
+        //     'driver' => 'pusher',
+        //     'key' => env('PUSHER_APP_KEY'),
+        //     'secret' => env('PUSHER_APP_SECRET'),
+        //     'app_id' => env('PUSHER_APP_ID'),
+        //     'options' => [
+        //         'cluster' => env('PUSHER_APP_CLUSTER'),
+        //         'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+        //         'port' => env('PUSHER_PORT', 443),
+        //         'scheme' => env('PUSHER_SCHEME', 'https'),
+        //         'encrypted' => true,
+        //         'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+        //     ],
+        //     'client_options' => [
+        //         // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+        //     ],
+        // ],
 
         'ably' => [
             'driver' => 'ably',
             'key' => env('ABLY_KEY'),
         ],
-
-        'redis' => [
-            'driver' => 'redis',
-            'connection' => 'default',
-        ],
-
-        'log' => [
-            'driver' => 'log',
-        ],
-
-        'null' => [
-            'driver' => 'null',
-        ],
-
     ],
-
 ];
