@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'pusher'),
+    'default' => env('BROADCAST_DRIVER', 'reverb'),
 
     /*
     |--------------------------------------------------------------------------
@@ -30,7 +30,7 @@ return [
 
     'connections' => [
         'reverb' => [
-            'connector' => ReverbConnector::class,
+            'connector' => 'reverb',
             'driver' => 'reverb',
             'app_id' => env('REVERB_APP_ID'),
             'key' => env('REVERB_APP_KEY'),
