@@ -30,7 +30,7 @@
                 </div>
                 </Link>
 
-                <!-- <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
+                <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
                     @click="setCurrentPage('users')">
                     <div class="menu-content">
                         <div class="menu-icon">
@@ -42,9 +42,9 @@
                         </div>
                         <span class="menu-text">Users</span>
                     </div>
-                </Link> -->
+                </Link>
 
-                <!-- <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
+                <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
                     @click="setCurrentPage('roles')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -56,7 +56,7 @@
                     </div>
                     <span class="menu-text">Roles</span>
                 </div>
-                </Link> -->
+                </Link>
 
                 <Link :href="route('approvals.index')" class="menu-item"
                     :class="{ active: route().current('approvals.*') }" @click="setCurrentPage('approvals')"
