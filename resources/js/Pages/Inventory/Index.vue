@@ -347,7 +347,7 @@ const echo = ref(null);
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                                <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[10px]"
                                     @click="sort('id')">
                                     SN
                                     <span v-if="sortField === 'id'">
