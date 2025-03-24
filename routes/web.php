@@ -183,6 +183,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::controller(ExpiredController::class)
     ->prefix('/expired')->group(function () {
         Route::get('/', 'index')->name('expired.index');
+        Route::post('/dispose', 'markAsDisposed')->name('expired.dispose');
     });
     
     // Remove duplicate resource routes since we already have individual routes defined above

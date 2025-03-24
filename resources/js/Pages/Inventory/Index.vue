@@ -46,6 +46,7 @@ const inventoryToDelete = ref(null);
 // Form states
 const form = ref({
     product_id: null,
+    product: null,
     warehouse_id: '',
     quantity: 0,
     reorder_level: 10,
@@ -58,6 +59,15 @@ const form = ref({
 });
 
 const formErrors = ref({});
+
+// Watch for product changes to update product_id
+watch(() => form.value.product, (newProduct) => {
+    if (newProduct && newProduct.id) {
+        form.value.product_id = newProduct.id;
+    } else {
+        form.value.product_id = null;
+    }
+}, { deep: true });
 
 // Reset filters
 const resetFilters = () => {
@@ -121,7 +131,8 @@ const sort = (field) => {
 const addInventory = () => {
     formErrors.value = {};
     form.value = {
-        product_id: '',
+        product_id: null,
+        product: null,
         warehouse_id: '',
         quantity: 0,
         reorder_level: 10,
@@ -139,6 +150,12 @@ const addInventory = () => {
 // Submit form
 const submitForm = async () => {
     isSubmitting.value = true;
+    
+    // Set product_id from the selected product object if it exists
+    if (form.value.product && form.value.product.id) {
+        form.value.product_id = form.value.product.id;
+    }
+    
     await axios.post(route('inventories.store'), form.value)
         .then(() => {
             showAddModal.value = false;
@@ -202,28 +219,28 @@ const isExpired = (inventory) => {
     const expiryDate = new Date(inventory.expiry_date);
     const today = new Date();
     return expiryDate < today;
-
-    // Computed properties for inventory status counts
-    const inStockCount = computed(() => {
-        return props.inventories.data.filter(item => item.quantity > item.reorder_level && item.is_active).length;
-    });
-
-    const lowStockCount = computed(() => {
-        return props.inventories.data.filter(item =>
-            item.quantity > 0 &&
-            item.quantity <= item.reorder_level &&
-            item.is_active
-        ).length;
-    });
-
-    const outOfStockCount = computed(() => {
-        return props.inventories.data.filter(item => item.quantity === 0 && item.is_active).length;
-    });
-
-    const expiredCount = computed(() => {
-        return props.inventories.data.filter(item => isExpired(item) && item.is_active).length;
-    });
 };
+
+// Computed properties for inventory status counts
+const inStockCount = computed(() => {
+    return props.inventories.data.filter(item => item.quantity > item.reorder_level && item.is_active).length;
+});
+
+const lowStockCount = computed(() => {
+    return props.inventories.data.filter(item =>
+        item.quantity > 0 &&
+        item.quantity <= item.reorder_level &&
+        item.is_active
+    ).length;
+});
+
+const outOfStockCount = computed(() => {
+    return props.inventories.data.filter(item => item.quantity === 0 && item.is_active).length;
+});
+
+const expiredCount = computed(() => {
+    return props.inventories.data.filter(item => isExpired(item) && item.is_active).length;
+});
 
 // Edit inventory item
 const showEditModal = ref(false);
@@ -270,7 +287,7 @@ const echo = ref(null);
                 <div class="mb-6 flex flex-wrap items-center gap-4">
                     <div class="flex-grow">
                         <TextInput v-model="search" type="text" class="w-full"
-                            placeholder="Search by product name, SKU, or barcode" @keyup.enter="applyFilters" />
+                            placeholder="Search by product name, SKU, category or barcode" @keyup.enter="applyFilters" />
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4">
@@ -343,7 +360,7 @@ const echo = ref(null);
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Warehouse
+                                    Category
                                 </th>
                                 <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                                     @click="sort('quantity')">
@@ -383,7 +400,6 @@ const echo = ref(null);
                                         <div class="font-medium text-gray-900">{{ inventory.product.name }}</div>
                                         <div class="text-sm text-gray-500">SKU: {{ inventory.product.sku }}</div>
                                         <div class="text-sm text-gray-500">
-                                            {{ inventory.product.category ? inventory.product.category.name : 'No Category' }} /
                                             {{ inventory.product.dosage ? inventory.product.dosage.name : 'No Dosage' }}
                                         </div>
                                         <div class="text-sm text-gray-500">
@@ -393,10 +409,12 @@ const echo = ref(null);
                                     <div v-else class="text-sm text-gray-500">Product not found</div>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
-                                    <div v-if="inventory.warehouse">
+                                    {{ inventory.product.category ? inventory.product.category.name : 'No Category' }}
+
+                                    <!-- <div v-if="inventory.warehouse">
                                         {{ inventory.warehouse.name }}
                                     </div>
-                                    <div v-else class="text-sm text-gray-500">Warehouse not found</div>
+                                    <div v-else class="text-sm text-gray-500">Warehouse not found</div> -->
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <div :class="{
@@ -433,8 +451,8 @@ const echo = ref(null);
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 flex justify-between">
                                     <img v-if="isLowStock(inventory)" src="/assets/images/low_stock.png" class="w-6 h-6" alt="Low Stock" />
-                                    <img v-if="isExpiringSoon(inventory)" src="/assets/images/expired_stock.png" class="w-6 h-6" alt="Expired" />
-                                    <img v-if="isExpired(inventory)" src="/assets/images/low_stock.png" class="w-6 h-6" alt="Expired" />
+                                    <img v-if="isExpiringSoon(inventory)" src="/assets/images/soon_expire.png" class="w-6 h-6" alt="Expire soon" />
+                                    <img v-if="isExpired(inventory)" src="/assets/images/expired_stock.png" class="w-6 h-6" alt="Expired" />
                                     <img v-if="isOutOfStock(inventory)" src="/assets/images/out_stock.png" class="w-6 h-6" alt="Out of Stock" />
                                     <span :class="{
                                         'inline-flex rounded-full px-2 text-xs font-semibold leading-5': true,
