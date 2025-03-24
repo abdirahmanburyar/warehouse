@@ -327,19 +327,36 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                 <div>
-                                    <InputLabel :for="`product_id_${index}`" value="Product" />
-                                    <select :id="`product_id_${index}`" v-model="item.product_id"
-                                        class="mt-1 block w-full" placeholder="Select product" required>
-                                        <option v-for="product in products" :key="product.id" :value="product.id">
-                                            {{ product.name }}
-                                        </option>
-                                    </select>
+                                    <InputLabel :for="`product_${index}`" value="Product" />
+                                    <Multiselect
+                                        v-model="item.product_id"
+                                        :options="searchResults"
+                                        :searchable="true"
+                                        :loading="isLoading"
+                                        :internal-search="false"
+                                        :clear-on-select="true"
+                                        :close-on-select="true"
+                                        :options-limit="300"
+                                        :limit="3"
+                                        :max-height="600"
+                                        :show-no-results="true"
+                                        :hide-selected="true"
+                                        @search-change="searchProduct"
+                                        placeholder="Search by product name or barcode"
+                                        label="product_name"
+                                        track-by="product_id"
+                                        :preselect-first="false"
+                                        @select="selectProduct(index, $event)"
+                                    >
+                                        <template v-slot:noResult>
+                                            No products found.
+                                        </template>
+                                    </Multiselect>
                                 </div>
                                 <div>
                                     <InputLabel :for="`batch_number_${index}`" value="Batch Number" />
-                                    <TextInput :id="`batch_number_${index}`" type="text" v-model="item.batch_number"
-                                        class="mt-1 block w-full" placeholder="Enter batch number"
-                                        :disabled="isSubmitting" />
+                                    <TextInput :id="`batch_number_${index}`" v-model="item.batch_number"
+                                        class="mt-1 block w-full" required />
                                 </div>
                             </div>
 
@@ -583,7 +600,7 @@
 </template>
 
 <script setup>
-    import { ref, computed, watch } from 'vue';
+    import { ref, computed, watch, nextTick } from 'vue';
     import { router, Head } from '@inertiajs/vue3';
     import { useToast } from 'vue-toastification';
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -599,6 +616,8 @@
     import Pagination from '@/Components/Pagination.vue';
     import axios from 'axios';
     import Swal from 'sweetalert2';
+    import Multiselect from 'vue-multiselect';
+    import 'vue-multiselect/dist/vue-multiselect.css';
 
     // Initialize toast
     const toast = useToast();
@@ -607,7 +626,6 @@
         supplies: Object,
         suppliers: Object,
         warehouses: Array,
-        products: Array,
         activeTab: {
             type: String,
             default: 'supplies'
@@ -616,6 +634,8 @@
         auth: Object,
         flash: Object
     });
+
+    const product = ref({});
 
     // Active tab state - initialized from prop but managed locally
     const currentTab = ref(props.activeTab);
@@ -643,15 +663,50 @@
     const isSubmitting = ref(false);
     const processing = ref(false);
 
+    const products = ref([]);
+
+    const searchResults = ref([]);
+    const isLoading = ref(false);
+
+    async function searchProduct(query) {
+        if (!query) {
+            searchResults.value = [];
+            return;
+        }
+
+        isLoading.value = true;
+        await axios.post(route('products.search'), { search: query })
+            .then((response) => {
+                console.log(response.data);
+                isLoading.value = false;
+                const data = response.data;
+                searchResults.value = data;
+            })
+            .catch((error) => {
+                isLoading.value = false;
+                console.error('Error searching products:', error);
+                searchResults.value = [];
+            });
+    }
+
     // Form states
     const supplyForm = ref({
         id: null,
         supplier_id: '',
+        warehouse_id: '',
         invoice_number: '',
         supply_date: '',
         notes: '',
-        items: [],
-        errors: {}
+        items: [{
+            id: null,
+            product_id: null,
+            product_name: '',
+            quantity: 1,
+            batch_number: '',
+            manufacturing_date: '',
+            expiry_date: '',
+            notes: ''
+        }]
     });
 
     const form = ref({
@@ -722,7 +777,7 @@
     };
 
     watch([
-        () => supplyFilters.value
+        () => supplyFilters
     ], (newFilters) => {
         getSupplies();
     });
@@ -734,17 +789,6 @@
         };
         getSuppliers();
     };
-
-    // Computed properties
-    const productOptions = computed(() => {
-        if (!props.products || !Array.isArray(props.products)) {
-            return [];
-        }
-        return props.products.map(product => ({
-            value: product.id,
-            label: product.name
-        }));
-    });
 
     const warehouseOptions = computed(() => {
         if (!props.warehouses || !Array.isArray(props.warehouses)) {
@@ -790,36 +834,47 @@
         supplyForm.value = {
             id: null,
             supplier_id: '',
+            warehouse_id: '',
             invoice_number: '',
             supply_date: '',
             notes: '',
-            items: [],
-            errors: {}
+            items: [{
+                id: null,
+                product_id: null,
+                product_name: '',
+                quantity: 1,
+                batch_number: '',
+                manufacturing_date: '',
+                expiry_date: '',
+                notes: ''
+            }]
         };
     };
 
     // Open edit supply modal
     const openEditSupplyModal = (supply) => {
         resetForm();
-
-        // Ensure supply.products exists and has items
-        const products = supply.items || [];
-
         supplyForm.value = {
             id: supply.id,
             supplier_id: supply.supplier_id,
+            warehouse_id: supply.warehouse_id,
             invoice_number: supply.invoice_number,
             supply_date: formatDateForInput(supply.supply_date),
-            notes: supply.notes,
-            items: products.map(item => ({
+            notes: supply.notes || '',
+            items: supply.items?.map(item => ({
                 id: item.id,
-                product_id: item.product_id,
+                product_id: {
+                    product_id: item.product_id,
+                    product_name: item.product_name
+                },
+                product_name: item.product_name,
                 quantity: item.quantity,
                 status: item.status,
-                batch_number: item.batch_number,
+                batch_number: item.batch_number || '',
                 manufacturing_date: formatDateForInput(item.manufacturing_date),
-                expiry_date: formatDateForInput(item.expiry_date)
-            }))
+                expiry_date: formatDateForInput(item.expiry_date),
+                notes: item.notes || ''
+            })) || []
         };
 
         showSupplyModal.value = true;
@@ -829,11 +884,13 @@
     const addProduct = () => {
         supplyForm.value.items.push({
             id: null,
-            product_id: '',
+            product_id: null,
+            product_name: '',
             quantity: 1,
             batch_number: '',
             manufacturing_date: '',
-            expiry_date: ''
+            expiry_date: '',
+            notes: ''
         });
     };
 
@@ -842,28 +899,35 @@
         if (supplyForm.value.items[index].id && supplyForm.value.items[index].status !== 'pending') {
             return;
         }
-        alert("hi");
         supplyForm.value.items.splice(index, 1);
     };
 
     // Submit supply
-    const submitSupply = async () => {
-        if (isSubmitting.value) return;
-
+    async function submitSupply() {
         isSubmitting.value = true;
-        supplyForm.value.errors = {};
 
-        await axios.post(route('supplies.store'), supplyForm.value)
+        // Format the data before sending
+        const formData = {
+            ...supplyForm.value,
+            items: supplyForm.value.items.map(item => ({
+                ...item,
+                product_id: item.product_id?.product_id || item.product_id,
+                product_name: item.product_id?.product_name || item.product_name
+            }))
+        };
+
+        await axios.post(route('supplies.store'), formData)
             .then((response) => {
-                isSubmitting.value = false;
-                toast.success(`Supply ${supplyForm.value.id ? 'updated' : 'created'} successfully`);
+                toast.success(response.data);
                 closeSupplyModal();
                 getSupplies();
+                isSubmitting.value = false;
             })
             .catch((error) => {
-                console.log(error.response);
+                products.value = [];
+                console.log(error.response.data);
                 isSubmitting.value = false;
-                toast.error(error.response?.data || `Failed to ${supplyForm.value.id ? 'update' : 'create'} supply`);
+                toast.error(error.response?.data);
             });
     };
 
@@ -1031,4 +1095,10 @@
             isSubmitting.value = false;
         }
     };
+
+    function selectProduct(index, product) {
+        supplyForm.value.items[index].product_id = product;
+        supplyForm.value.items[index].product_name = product.product_name;
+    }
+
 </script>

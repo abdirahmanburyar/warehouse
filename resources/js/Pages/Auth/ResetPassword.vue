@@ -35,8 +35,8 @@ const submit = () => {
     <GuestLayout>
         <Head title="Reset Password" />
 
-        <form @submit.prevent="submit">
-            <div>
+        <form @submit.prevent="submit" class="bg-white p-4">
+            <div class="">
                 <InputLabel for="email" value="Email" />
 
                 <TextInput
@@ -47,6 +47,8 @@ const submit = () => {
                     required
                     autofocus
                     autocomplete="username"
+                    :disabled="form.processing"
+                    placeholder="Enter your email"
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
@@ -62,6 +64,8 @@ const submit = () => {
                     v-model="form.password"
                     required
                     autocomplete="new-password"
+                    :disabled="form.processing"
+                    placeholder="Enter your password"
                 />
 
                 <InputError class="mt-2" :message="form.errors.password" />
@@ -80,6 +84,8 @@ const submit = () => {
                     v-model="form.password_confirmation"
                     required
                     autocomplete="new-password"
+                    :disabled="form.processing"
+                    placeholder="Confirm Password"
                 />
 
                 <InputError

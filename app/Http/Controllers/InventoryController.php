@@ -63,7 +63,7 @@ class InventoryController extends Controller
         $inventories = $query->paginate($request->input('per_page', 10));
 
         // Get products for dropdown
-        $products = Product::where('is_active', true)->get();
+        $products = Product::where('is_active', true)->select('id', 'name')->get();
 
         // Get warehouses for dropdown
         $warehouses = \App\Models\Warehouse::select('id', 'name', 'code')->get();

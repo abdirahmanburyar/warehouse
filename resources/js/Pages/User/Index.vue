@@ -439,7 +439,7 @@ const showDeleteModal = ref(false);
 const processing = ref(false);
 const isSubmitted = ref(false);
 const errors = ref(null);
-const search = ref(props.filters.search || '');
+const search = ref('');
 const showPassword = ref(false);
 
 // Form data

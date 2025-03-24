@@ -13,6 +13,8 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ReverbTestController;
+use App\Http\Controllers\ExpiredController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -110,10 +112,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
     
     // Product Management Routes
-    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::controller(ProductController::class)
+        ->prefix('/products')
+        ->group(function () {
+            Route::get('/', 'index')->middleware('can:product.view')->name('products.index');
+            Route::post('/store', 'store')->middleware('can:product.create')->name('products.store');
+            Route::put('/{product}', 'update')->middleware('can:product.edit')->name('products.update');
+            Route::delete('/{product}', 'destroy')->middleware('can:product.delete')->name('products.destroy');
+            Route::post('/search', 'search')->name('products.search');
+        });
     
     // Inventory Routes
     Route::controller(InventoryController::class)
@@ -166,6 +173,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/store', 'store')->name('suppliers.store');
         Route::delete('/{supplier}', 'destroy')->name('suppliers.destroy');
 
+    });
+    
+    // Settings Routes
+    Route::middleware(PermissionMiddleware::class.':settings.view')->group(function () {
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    });
+    // Expired Routes
+    Route::controller(ExpiredController::class)
+    ->prefix('/expired')->group(function () {
+        Route::get('/', 'index')->name('expired.index');
     });
     
     // Remove duplicate resource routes since we already have individual routes defined above

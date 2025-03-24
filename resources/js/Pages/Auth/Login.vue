@@ -60,8 +60,8 @@ const togglePasswordVisibility = () => {
                 :class="{ 'login-animation': loginAnimation }"
             >
                 <div class="login-header">
-                    <h1 class="text-2xl font-bold text-gray-800">Welcome Back</h1>
-                    <p class="text-gray-600 text-sm">Sign in to your account to continue</p>
+                    <h1 class="text-2xl font-bold text-gray-800">Sign In</h1>
+                    <p class="text-gray-600 text-sm">Let's get you Dive in to VISTA</p>
                 </div>
                 
                 <div v-if="status" class="status-message">
@@ -153,14 +153,12 @@ const togglePasswordVisibility = () => {
     justify-content: center;
     align-items: center;
     /* min-height: 100%; */
-    padding: 1.5rem;
+    /* padding: 1.5rem; */
 }
 
 .login-card {
-    width: 100%;
-    max-width: 650px;
+    max-width: 400px;
     background: white;
-    border-radius: 12px;
     padding: 2.5rem;
     transition: all 0.3s ease;
     transform: translateY(0);
@@ -179,7 +177,7 @@ const togglePasswordVisibility = () => {
 
 .login-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .status-message {

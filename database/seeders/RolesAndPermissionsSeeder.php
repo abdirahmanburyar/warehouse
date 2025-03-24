@@ -33,6 +33,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'category.delete',
         ];
 
+        // Create permissions for settings
+        $settingsPermissions = [
+            'settings.view',
+            'settings.create',
+            'settings.edit',
+            'settings.delete',
+        ];
+
         // Create permissions for users
         $userPermissions = [
             'user.view',
@@ -72,6 +80,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'product.delete',
         ];
 
+        // Create permissions for inventories
+        $inventoryPermissions = [
+            'inventory.view',
+            'inventory.create',
+            'inventory.edit',
+            'inventory.delete',
+        ];
+
         // Combine all permissions
         $allPermissions = array_merge(
             $warehousePermissions,
@@ -80,7 +96,9 @@ class RolesAndPermissionsSeeder extends Seeder
             $reportPermissions,
             $approvalPermissions,
             $dosagePermissions,
-            $productPermissions
+            $productPermissions,
+            $inventoryPermissions,
+            $settingsPermissions
         );
 
         // Create permissions if they don't exist

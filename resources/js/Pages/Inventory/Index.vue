@@ -1,18 +1,19 @@
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch, computed } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InventoryStatusIcons from '@/Components/InventoryStatusIcons.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import Modal from '@/Components/Modal.vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
 
 const props = defineProps({
     inventories: Object,
@@ -44,7 +45,7 @@ const inventoryToDelete = ref(null);
 
 // Form states
 const form = ref({
-    product_id: '',
+    product_id: null,
     warehouse_id: '',
     quantity: 0,
     reorder_level: 10,
@@ -230,6 +231,11 @@ const showEditModal = ref(false);
 function editInventory(inventory) {
     form.value = {
         id: inventory.id,
+        product: {
+            id: inventory.product_id,
+            name: inventory.product?.name,
+            product_id: inventory.product?.id
+        },
         product_id: inventory.product_id,
         warehouse_id: inventory.warehouse_id,
         quantity: inventory.quantity,
@@ -237,13 +243,14 @@ function editInventory(inventory) {
         manufacturing_date: inventory.manufacturing_date,
         expiry_date: inventory.expiry_date,
         batch_number: inventory.batch_number,
-        location: inventory.location,
-        notes: inventory.notes,
+        location: inventory.location || '',
+        notes: inventory.notes || '',
         is_active: inventory.is_active,
     };
     showAddModal.value = true;
     showEditModal.value = true;
 }
+
 
 const echo = ref(null);
 
@@ -267,17 +274,6 @@ const echo = ref(null);
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4">
-                        <div class="w-48">
-                            <select v-model="productId"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                @change="applyFilters">
-                                <option value="">All Products</option>
-                                <option v-for="product in products" :key="product.id" :value="product.id">
-                                    {{ product.name }}
-                                </option>
-                            </select>
-                        </div>
-
                         <div class="w-48">
                             <select v-model="warehouse_id"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -390,6 +386,9 @@ const echo = ref(null);
                                             {{ inventory.product.category ? inventory.product.category.name : 'No Category' }} /
                                             {{ inventory.product.dosage ? inventory.product.dosage.name : 'No Dosage' }}
                                         </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ inventory.product.category ? inventory.product.barcode : 'No Barcode' }}
+                                        </div>
                                     </div>
                                     <div v-else class="text-sm text-gray-500">Product not found</div>
                                 </td>
@@ -500,18 +499,10 @@ const echo = ref(null);
                                     {{ warehouse.name }} ({{ warehouse.code }})
                                 </option>
                             </select>
-                            <InputError :message="formErrors.warehouse_id" class="mt-2" />
                         </div>
                         <div>
                             <InputLabel for="product_id" value="Product" />
-                            <select id="product_id" v-model="form.product_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Select Product</option>
-                                <option v-for="product in products" :key="product.id" :value="product.id">
-                                    {{ product.name }} ({{ product.sku }})
-                                </option>
-                            </select>
-                            <InputError :message="formErrors.product_id" class="mt-2" />
+                            <Multiselect id="product_id" v-model="form.product" :options="products" option-label="name" track-by="id" label="name"/>
                         </div>
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -519,14 +510,12 @@ const echo = ref(null);
                                 <InputLabel for="quantity" value="Quantity" />
                                 <TextInput id="quantity" v-model="form.quantity" type="number" class="mt-1 block w-full"
                                     min="0" />
-                                <InputError :message="formErrors.quantity" class="mt-2" />
                             </div>
 
                             <div>
                                 <InputLabel for="reorder_level" value="Reorder Level" />
                                 <TextInput id="reorder_level" v-model="form.reorder_level" type="number"
                                     class="mt-1 block w-full" min="0" />
-                                <InputError :message="formErrors.reorder_level" class="mt-2" />
                             </div>
                         </div>
 
@@ -535,14 +524,12 @@ const echo = ref(null);
                                 <InputLabel for="manufacturing_date" value="Manufacturing Date" />
                                 <TextInput id="manufacturing_date" v-model="form.manufacturing_date" type="date"
                                     class="mt-1 block w-full" />
-                                <InputError :message="formErrors.manufacturing_date" class="mt-2" />
                             </div>
 
                             <div>
                                 <InputLabel for="expiry_date" value="Expiry Date" />
                                 <TextInput id="expiry_date" v-model="form.expiry_date" type="date"
                                     class="mt-1 block w-full" />
-                                <InputError :message="formErrors.expiry_date" class="mt-2" />
                             </div>
                         </div>
 
@@ -551,14 +538,12 @@ const echo = ref(null);
                                 <InputLabel for="batch_number" value="Batch Number" />
                                 <TextInput id="batch_number" v-model="form.batch_number" type="text"
                                     class="mt-1 block w-full" />
-                                <InputError :message="formErrors.batch_number" class="mt-2" />
                             </div>
 
                             <div>
                                 <InputLabel for="location" value="Location" />
                                 <TextInput id="location" v-model="form.location" type="text"
                                     class="mt-1 block w-full" />
-                                <InputError :message="formErrors.location" class="mt-2" />
                             </div>
                         </div>
 
@@ -567,14 +552,12 @@ const echo = ref(null);
                             <textarea id="notes" v-model="form.notes"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 rows="3"></textarea>
-                            <InputError :message="formErrors.notes" class="mt-2" />
                         </div>
 
                         <div class="flex items-center">
                             <input id="is_active" v-model="form.is_active" type="checkbox"
                                 class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                             <label for="is_active" class="ml-2 block text-sm text-gray-900">Active</label>
-                            <InputError :message="formErrors.is_active" class="mt-2" />
                         </div>
                     </div>
 

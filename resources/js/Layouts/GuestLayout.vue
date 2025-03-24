@@ -5,18 +5,17 @@ import { Link } from '@inertiajs/vue3';
 
 <template>
     <div
-        class="flex min-h-screen flex-col items-center pt-6 sm:justify-center sm:pt-0 bg-cover bg-center bg-no-repeat"
+        class="flex min-h-screen flex-col items-center sm:justify-center sm:pt-0 bg-cover bg-center bg-no-repeat"
         style="background-image: url('/assets/images/bg.jpg');"
     >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
-        </div>
 
         <div
-            class="mt-6 w-full max-w-2xl overflow-hidden bg-white px-6 py-4 shadow-md sm:rounded-lg">
+            class="mt-6 min-w-[250px] w-full max-w-2xl overflow-hidden shadow-md sm:rounded-lg">
             <slot />
+        </div>
+        <div class="flex justify-between gap-2 w-full ">
+            <img src="/assets/images/psi.jpg" class="h-20 w-20 fill-current text-gray-500" />
+            <img src="/assets/images/moh.png" class="h-20 w-20 fill-cover rounded-full text-gray-500" />
         </div>
     </div>
 </template>

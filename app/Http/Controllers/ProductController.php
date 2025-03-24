@@ -211,4 +211,28 @@ class ProductController extends Controller
         return redirect()->route('products.index')
             ->with('success', 'Product deleted successfully.');
     }
+
+    /**
+     * Search for products by name or barcode
+     */
+    public function search(Request $request)
+    {
+        try {
+            $search = $request->input('search');
+            $products = Product::where('name', 'like', '%' . $search . '%')
+                ->orWhere('barcode', 'like', '%' . $search . '%')
+                ->select('id', 'name', 'barcode')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                    ];
+                });
+                    
+            return response()->json($products, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 }

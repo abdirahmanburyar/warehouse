@@ -91,21 +91,22 @@ class SupplyController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'invoice_number' => 'required|string',
-            'supply_date' => 'required|date',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'nullable|exists:supply_items,id',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.batch_number' => 'nullable|string',
-            'items.*.manufacturing_date' => 'nullable|date',
-            'items.*.expiry_date' => 'nullable|date|after:manufacturing_date',
-        ]);
-
+        
         try {
+            $validated = $request->validate([
+                'supplier_id' => 'required|exists:suppliers,id',
+                'invoice_number' => 'required|string',
+                'supply_date' => 'required|date',
+                'notes' => 'nullable|string',
+                'items' => 'required|array|min:1',
+                'items.*.id' => 'nullable|exists:supply_items,id',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.product_name' => 'required|string',
+                'items.*.quantity' => 'required|numeric|min:1',
+                'items.*.batch_number' => 'nullable|string',
+                'items.*.manufacturing_date' => 'nullable|date',
+                'items.*.expiry_date' => 'nullable|date|after:manufacturing_date',
+            ]);
             DB::beginTransaction();
 
             // Create or update supply
@@ -143,6 +144,7 @@ class SupplyController extends Controller
                         ->where('status', 'pending')
                         ->update([
                             'product_id' => $itemData['product_id'],
+                            'product_name' => $itemData['product_name'],
                             'quantity' => $itemData['quantity'],
                             'batch_number' => $itemData['batch_number'] ?? null,
                             'manufacturing_date' => $itemData['manufacturing_date'] ?? null,
@@ -152,6 +154,7 @@ class SupplyController extends Controller
                     // Create new item
                     $supply->items()->create([
                         'product_id' => $itemData['product_id'],
+                        'product_name' => $itemData['product_name'],
                         'quantity' => $itemData['quantity'],
                         'batch_number' => $itemData['batch_number'] ?? null,
                         'manufacturing_date' => $itemData['manufacturing_date'] ?? null,

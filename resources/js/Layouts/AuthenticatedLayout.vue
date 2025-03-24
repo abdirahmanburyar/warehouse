@@ -30,7 +30,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
+                <!-- <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
                     @click="setCurrentPage('users')">
                     <div class="menu-content">
                         <div class="menu-icon">
@@ -42,9 +42,9 @@
                         </div>
                         <span class="menu-text">Users</span>
                     </div>
-                </Link>
+                </Link> -->
 
-                <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
+                <!-- <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
                     @click="setCurrentPage('roles')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -56,7 +56,7 @@
                     </div>
                     <span class="menu-text">Roles</span>
                 </div>
-                </Link>
+                </Link> -->
 
                 <Link :href="route('approvals.index')" class="menu-item"
                     :class="{ active: route().current('approvals.*') }" @click="setCurrentPage('approvals')"
@@ -113,6 +113,20 @@
                 </div>
                 </Link>
 
+                <Link :href="route('expired.index')" class="menu-item"
+                    :class="{ active: route().current('expired.*') }" @click="setCurrentPage('expired')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
+                            <path
+                                d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"
+                                fill="currentColor" />
+                        </svg>
+                    </div>
+                    <span class="menu-text">Expired</span>
+                </div>
+                </Link>
+
                 <Link :href="route('supplies.index')" class="menu-item"
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
                 <div class="menu-content">
@@ -124,6 +138,20 @@
                         </svg>
                     </div>
                     <span class="menu-text">Supplies</span>
+                </div>
+                </Link>
+
+                <Link :href="route('settings.index')" class="menu-item"
+                    :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Zm0 18.37C6.01 20.37 2 15.75 2 12C2 8.25 6.01 5.63 12 5.63C17.99 5.63 22 8.25 22 12C22 15.75 17.99 20.37 12 20.37Z"
+                                fill="currentColor" />
+                        </svg>
+                    </div>
+                    <span class="menu-text">Settings</span>
                 </div>
                 </Link>
 

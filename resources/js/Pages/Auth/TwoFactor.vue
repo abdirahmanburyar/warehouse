@@ -2,17 +2,18 @@
     <GuestLayout>
         <Head title="Two-Factor Authentication" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            Please enter the 6-digit verification code sent to your email address.
-        </div>
+        <div class="bg-white p-4">
+            <div class="mb-4 text-sm text-gray-600">
+                Please enter the 6-digit verification code sent to your email address.
+            </div>
 
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-            {{ status }}
-        </div>
+            <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
+                {{ status }}
+            </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="code" value="Verification Code" />
+            <form @submit.prevent="submit" class="bg-white p-4">
+                <div>
+                    <InputLabel for="code" value="Verification Code" />
 
                 <TextInput
                     id="code"
@@ -44,6 +45,7 @@
                 </PrimaryButton>
             </div>
         </form>
+        </div>
     </GuestLayout>
 </template>
 

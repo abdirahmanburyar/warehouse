@@ -13,6 +13,7 @@ class SupplyItem extends Model
     protected $fillable = [
         'supply_id',
         'product_id',
+        'product_name',
         'quantity',
         'batch_number',
         'manufacturing_date',

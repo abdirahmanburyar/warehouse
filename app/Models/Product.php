@@ -26,7 +26,6 @@ class Product extends Model
         'description',
         'category_id',
         'dosage_id',
-        'active_ingredient',
         'is_active',
     ];
 
