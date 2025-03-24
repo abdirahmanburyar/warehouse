@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Http\Resources\UserResource;
 use Throwable;
 
 class UserController extends Controller
@@ -43,7 +44,7 @@ class UserController extends Controller
         $warehouses = Warehouse::where('is_active', true)->get();
         
         return Inertia::render('User/Index', [
-            'users' => $users,
+            'users' => UserResource::collection($users),
             'roles' => $roles,
             'warehouses' => $warehouses,
             'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
@@ -102,12 +103,25 @@ class UserController extends Controller
                 $message = 'User created successfully.';
             }
 
+            // Check if request from settings page
+            $isFromSettings = $request->header('X-From-Settings') || 
+                             ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+            
+            if ($isFromSettings) {
+                return redirect()->route('settings.index', ['tab' => 'users'])->with('success', $message);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'user' => $user
             ]);
         } catch (Throwable $e) {
+            if ($request->header('X-From-Settings') || 
+                ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']))) {
+                return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()]);
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
@@ -137,6 +151,13 @@ class UserController extends Controller
         try {
             // Prevent deleting your own account
             if ($user->id === auth()->id()) {
+                $isFromSettings = request()->header('X-From-Settings') || 
+                                 (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+                
+                if ($isFromSettings) {
+                    return redirect()->back()->withErrors(['error' => 'You cannot delete your own account.']);
+                }
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'You cannot delete your own account.'
@@ -145,15 +166,59 @@ class UserController extends Controller
             
             $user->delete();
 
+            $isFromSettings = request()->header('X-From-Settings') || 
+                             (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+            
+            if ($isFromSettings) {
+                return redirect()->route('settings.index', ['tab' => 'users'])->with('success', 'User deleted successfully.');
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'User deleted successfully.'
             ]);
         } catch (Throwable $e) {
+            $isFromSettings = request()->header('X-From-Settings') || 
+                             (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+            
+            if ($isFromSettings) {
+                return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()]);
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Assign roles to a user.
+     */
+    public function assignRoles(Request $request, User $user)
+    {
+        $request->validate([
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
+        ]);
+
+        $user->syncRoles($request->roles);
+
+        $isFromSettings = $request->header('X-From-Settings') || 
+                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'users'])->with('success', 'Roles assigned successfully');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Roles assigned successfully',
+                'user' => $user->load('roles')
+            ]);
+        }
+
+        return back()->with('success', 'Roles assigned successfully');
     }
 }

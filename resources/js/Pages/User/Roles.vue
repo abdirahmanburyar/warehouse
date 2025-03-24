@@ -91,8 +91,8 @@
                     <Link :href="route('users.index')" class="text-sm text-gray-600 hover:text-gray-900">
                       Back to Users
                     </Link>
-                    <PrimaryButton :disabled="form.processing">
-                      Save Role Assignments
+                    <PrimaryButton :disabled="form.processing || isSubmitted">
+                      {{ isSubmitted ? 'Saving...' : 'Save Role Assignments' }}
                     </PrimaryButton>
                   </div>
                 </div>
@@ -122,16 +122,23 @@ const form = useForm({
   roles: props.user.roles.map(role => role.id)
 });
 
+const isSubmitted = ref(false);
+
 // Assign roles to the user
 const assignRoles = () => {
+  isSubmitted.value = true;
   form.post(route('users.roles.assign', props.user.id), {
     onSuccess: () => {
+      isSubmitted.value = false;
       Swal.fire({
         title: 'Roles Assigned!',
         text: 'The roles have been successfully assigned to the user.',
         icon: 'success',
         confirmButtonColor: '#3085d6'
       });
+    },
+    onError: () => {
+      isSubmitted.value = false;
     }
   });
 };

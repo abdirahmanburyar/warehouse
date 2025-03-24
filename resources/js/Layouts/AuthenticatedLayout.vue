@@ -30,33 +30,6 @@
                 </div>
                 </Link>
 
-                <Link :href="route('users.index')" class="menu-item" :class="{ active: route().current('users.*') }"
-                    @click="setCurrentPage('users')">
-                    <div class="menu-content">
-                        <div class="menu-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                                <path
-                                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                                    fill="currentColor" />
-                            </svg>
-                        </div>
-                        <span class="menu-text">Users</span>
-                    </div>
-                </Link>
-
-                <Link :href="route('roles.index')" class="menu-item" :class="{ active: route().current('roles.*') }"
-                    @click="setCurrentPage('roles')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M12 14c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-1.1 0-2 .9-2 2h2c0-1.1-.9-2-2-2z"
-                                fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Roles</span>
-                </div>
-                </Link>
 
                 <Link :href="route('approvals.index')" class="menu-item"
                     :class="{ active: route().current('approvals.*') }" @click="setCurrentPage('approvals')"
@@ -113,8 +86,8 @@
                 </div>
                 </Link>
 
-                <Link :href="route('expired.index')" class="menu-item"
-                    :class="{ active: route().current('expired.*') }" @click="setCurrentPage('expired')">
+                <Link :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
+                    @click="setCurrentPage('expired')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">

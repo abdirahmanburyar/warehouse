@@ -1,10 +1,6 @@
 <template>
-    <Head title="User Management" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">User Management</h2>
-        </template>
-
+    <div>
+        <Head title="User Management" />
         <div class="">
             <div class="bg-white overflow-hidden sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
@@ -21,7 +17,6 @@
                                 type="text"
                                 placeholder="Search by name, username or email..."
                                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                                @input="debouncedSearch"
                             />
                             <div v-if="processing" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                 <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -49,31 +44,31 @@
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" @click="sort('id')">
                                         <div class="flex items-center">
                                             <span>ID</span>
-                                            <SortIcon :field="'id'" :current-sort="filters.sort_field" :direction="filters.sort_direction" />
+                                            <SortIcon :field="'id'" :current-sort="sort_field" :direction="sort_direction" />
                                         </div>
                                     </th>
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" @click="sort('name')">
                                         <div class="flex items-center">
                                             <span>Name</span>
-                                            <SortIcon :field="'name'" :current-sort="filters.sort_field" :direction="filters.sort_direction" />
+                                            <SortIcon :field="'name'" :current-sort="sort_field" :direction="sort_direction" />
                                         </div>
                                     </th>
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" @click="sort('username')">
                                         <div class="flex items-center">
                                             <span>Username</span>
-                                            <SortIcon :field="'username'" :current-sort="filters.sort_field" :direction="filters.sort_direction" />
+                                            <SortIcon :field="'username'" :current-sort="sort_field" :direction="sort_direction" />
                                         </div>
                                     </th>
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" @click="sort('email')">
                                         <div class="flex items-center">
                                             <span>Email</span>
-                                            <SortIcon :field="'email'" :current-sort="filters.sort_field" :direction="filters.sort_direction" />
+                                            <SortIcon :field="'email'" :current-sort="sort_field" :direction="sort_direction" />
                                         </div>
                                     </th>
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" @click="sort('created_at')">
                                         <div class="flex items-center">
                                             <span>Created</span>
-                                            <SortIcon :field="'created_at'" :current-sort="filters.sort_field" :direction="filters.sort_direction" />
+                                            <SortIcon :field="'created_at'" :current-sort="sort_field" :direction="sort_direction" />
                                         </div>
                                     </th>
                                     <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition">
@@ -146,7 +141,7 @@
 
                     <!-- Pagination -->
                     <div class="mt-6 flex justify-center">
-                        <Pagination :links="users.links" />
+                        <Pagination :links="users.meta.links" />
                     </div>
                 </div>
             </div>
@@ -348,7 +343,7 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                Save Roles
+                                {{ isSubmitted ? 'Saving Roles...' : 'Save Roles' }}
                             </button>
                         </div>
                     </form>
@@ -405,12 +400,11 @@
                 </div>
             </div>
         </Modal>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -418,8 +412,6 @@ import SelectInput from '@/Components/SelectInput.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SortIcon from '@/Components/SortIcon.vue';
 import { ref, watch, computed } from 'vue';
-import { router, usePage, Link } from '@inertiajs/vue3';
-import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
 // Define props
@@ -431,7 +423,7 @@ const props = defineProps({
 });
 
 // Component state
-const page = usePage();
+// const page = usePage();
 const toast = useToast();
 const showModal = ref(false);
 const showRolesModal = ref(false);
@@ -439,11 +431,13 @@ const showDeleteModal = ref(false);
 const processing = ref(false);
 const isSubmitted = ref(false);
 const errors = ref(null);
-const search = ref('');
+const search = ref(props.filters?.search || '');
 const showPassword = ref(false);
+const sort_direction = ref(props.filters?.sort_direction || 'desc');
+const sort_field = ref(props.filters?.sort_field || 'created_at');
 
 // Form data
-const form = ref({
+const form = useForm({
     id: null,
     name: '',
     username: '',
@@ -465,101 +459,87 @@ const formattedRoles = computed(() => {
     }));
 });
 
+// Watch search field and call debounced search
 watch([
     () => search.value,
+    () => sort_field.value,
+    () => sort_direction.value
+], () => debouncedSearch());
 
-], () => {
-    reloadUser();
-});
-
-function reloadUser(){
-    const query = {}
-    router.get(route('users.index'), query, { 
-        preserveState: true,
-        preserveScroll: true,
-        only: ['users', 'filters']
-    });
-}
-
-// Search with debounce
-let searchTimeout;
-const debouncedSearch = () => {
-    clearTimeout(searchTimeout);
-    processing.value = true;
-    searchTimeout = setTimeout(() => {
-        const query = {};
-        
-        if (search.value) {
-            query.search = search.value;
-        }
-        
-        if (props.filters.sort_field) {
-            query.sort_field = props.filters.sort_field;
-        }
-        
-        if (props.filters.sort_direction) {
-            query.sort_direction = props.filters.sort_direction;
-        }
-        
-        router.get(route('users.index'), query, { 
+// Debounced search function
+function debouncedSearch() {
+    const currentUrl = window.location.pathname;
+    const params = {};
+    
+    // Only include non-empty values
+    if(search.value) params.search = search.value;
+    if (sort_field.value) params.sort_field = sort_field.value;
+    if (sort_direction.value) params.sort_direction = sort_direction.value;
+    
+    if (currentUrl.includes('settings')) {
+        router.visit(route('settings.index', { tab: 'users', ...params }), {
             preserveState: true,
             preserveScroll: true,
-            onFinish: () => {
-                processing.value = false;
-            }
+            replace: true,
+            only: ['users', 'filters']
         });
-    }, 300);
-};
+    } else {
+        router.visit(route('users.index', params), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters']
+        });
+    }
+}
 
-// Sort table columns
-const sort = (field) => {
-    processing.value = true;
-    let direction = 'asc';
+// Sort function
+function sort(field) {
+    sort_field.value = field;
+    sort_direction.value = sort_direction.value === 'asc' ? 'desc' : 'asc';
     
-    // If already sorting by this field, toggle direction
-    if (props.filters.sort_field === field) {
-        direction = props.filters.sort_direction === 'asc' ? 'desc' : 'asc';
+    const currentUrl = window.location.pathname;
+    const params = {};
+    
+    // Only include non-empty values
+    if (search.value) params.search = search.value;
+    if (sort_field.value) params.sort_field = sort_field.value;
+    if (sort_direction.value) params.sort_direction = sort_direction.value;
+    
+    if (currentUrl.includes('settings')) {
+        router.visit(route('settings.index', { tab: 'users', ...params }), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters']
+        });
+    } else {
+        router.visit(route('users.index', params), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters']
+        });
     }
-    
-    const query = {
-        sort_field: field,
-        sort_direction: direction
-    };
-    
-    if (search.value) {
-        query.search = search.value;
-    }
-    
-    router.get(route('users.index'), query, { 
-        preserveState: true,
-        preserveScroll: true,
-        onFinish: () => {
-            processing.value = false;
-        }
-    });
-};
+}
 
 // Open modal for create/edit
 const openModal = (user = null) => {
     errors.value = null;
     if (user) {
-        form.value = {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            email: user.email,
-            password: '',
-            warehouse_id: user.warehouse_id
-        };
+        form.id = user.id;
+        form.name = user.name;
+        form.username = user.username;
+        form.email = user.email;
+        form.password = '';
+        form.warehouse_id = user.warehouse_id;
     } else {
-        form.value = {
-            id: null,
-            name: '',
-            username: '',
-            email: '',
-            password: '',
-            warehouse_id: ''
-        };
+        form.id = null;
+        form.name = '';
+        form.username = '';
+        form.email = '';
+        form.password = '';
+        form.warehouse_id = '';
     }
     showModal.value = true;
 };
@@ -569,36 +549,79 @@ const closeModal = () => {
     showModal.value = false;
 };
 
+// When a form is submitted successfully
+const handleFormSuccess = (message) => {
+    closeModal();
+    toast.success(message);
+    
+    // Determine current page context
+    const isInSettingsPage = window.location.href.includes('settings');
+    
+    // Refresh data based on context
+    if (isInSettingsPage) {
+        // When on settings page, refresh the users list
+        const params = {};
+        if (search.value) params.search = search.value;
+        if (sort_field.value) params.sort_field = sort_field.value;
+        if (sort_direction.value) params.sort_direction = sort_direction.value;
+        
+        router.visit(route('settings.index', { tab: 'users', ...params }), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters']
+        });
+    } else {
+        // When on users page, refresh data
+        const params = {};
+        if (search.value) params.search = search.value;
+        if (sort_field.value) params.sort_field = sort_field.value;
+        if (sort_direction.value) params.sort_direction = sort_direction.value;
+        
+        router.visit(route('users.index', params), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters']
+        });
+    }
+    
+    // Reset processing and isSubmitted flags
+    processing.value = false;
+    isSubmitted.value = false;
+}
+
 // Submit form
-const submitForm = async () => {
+const submitForm = () => {
+    // Set processing and isSubmitted flags
     processing.value = true;
-    errors.value = null;
     isSubmitted.value = true;
     
-    try {
-        const response = await axios.post(route('users.store'), form.value);
-        if (response.data.success) {
-            closeModal();
-            isSubmitted.value = false;
-            // Show success toast notification
-            toast.success(response.data.message);
-            // Refresh the page to show updated data
-            router.reload({ only: ['users'] });
-        }
-    } catch (error) {
-        isSubmitted.value = false;
-        if (error.response && error.response.data.errors) {
-            errors.value = error.response.data.errors;
-            // Show error toast for validation errors
+    // Determine if we're in settings page
+    const isInSettingsPage = window.location.href.includes('settings');
+    
+    // Use withHeaders to pass the X-From-Settings header
+    const headers = isInSettingsPage 
+        ? { 'X-From-Settings': 'true' } 
+        : {};
+        
+    form.transform(data => ({
+        ...data,
+        _headers: headers
+    }))
+    .post(route('users.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            handleFormSuccess(form.id ? 'User updated successfully' : 'User created successfully');
+        },
+        onError: (errors) => {
             toast.error("Please correct the errors in the form");
-        } else {
-            errors.value = { general: 'An error occurred while processing your request.' };
-            // Show general error toast
-            toast.error(error.response?.data?.message || 'An error occurred while processing your request');
+            
+            // Reset processing and isSubmitted flags
+            processing.value = false;
+            isSubmitted.value = false;
         }
-    } finally {
-        processing.value = false;
-    }
+    });
 };
 
 // Open roles modal
@@ -624,36 +647,35 @@ const closeRolesModal = () => {
 };
 
 // Submit roles form
-const submitRolesForm = async () => {
+const submitRolesForm = () => {
+    // Set processing and isSubmitted flags
     processing.value = true;
     isSubmitted.value = true;
     
-    try {
-        const response = await axios.post(route('users.roles.assign', rolesForm.value.id), {
-            roles: rolesForm.value.roles
-        });
-        
-        if (response.data.success) {
+    // Determine if we're in settings page
+    const isInSettingsPage = window.location.href.includes('settings');
+    
+    const roleAssignForm = useForm({
+        roles: rolesForm.value.roles,
+        _headers: isInSettingsPage 
+            ? { 'X-From-Settings': 'true' } 
+            : {}
+    });
+    
+    roleAssignForm.post(route('users.roles.assign', rolesForm.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
             closeRolesModal();
-            // Show success toast notification
-            toast.success(response.data.message || 'Roles updated successfully');
-            // Refresh the page to show updated data
-            router.reload({ only: ['users'] });
-        }
-    } catch (error) {
-        if (error.response && error.response.data.errors) {
-            errors.value = error.response.data.errors;
-            // Show error toast for validation errors
+            handleFormSuccess('Roles updated successfully');
+        },
+        onError: (errors) => {
             toast.error("Please correct the errors in the form");
-        } else {
-            errors.value = { general: 'An error occurred while processing your request.' };
-            // Show general error toast
-            toast.error(error.response?.data?.message || 'An error occurred while processing your request');
+            
+            // Reset processing and isSubmitted flags
+            processing.value = false;
+            isSubmitted.value = false;
         }
-    } finally {
-        processing.value = false;
-        isSubmitted.value = false;
-    }
+    });
 };
 
 // Delete user
@@ -668,28 +690,36 @@ const closeDeleteModal = () => {
     userToDelete.value = null;
 };
 
-const deleteUser = async () => {
+const deleteUser = () => {
     if (!userToDelete.value) return;
     
+    // Set processing and isSubmitted flags
     processing.value = true;
     isSubmitted.value = true;
     
-    try {
-        const response = await axios.delete(route('users.destroy', userToDelete.value.id));
-        if (response.data.success) {
+    // Determine if we're in settings page
+    const isInSettingsPage = window.location.href.includes('settings');
+    
+    const deleteForm = useForm({
+        _headers: isInSettingsPage 
+            ? { 'X-From-Settings': 'true' } 
+            : {}
+    });
+    
+    deleteForm.delete(route('users.destroy', userToDelete.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
             closeDeleteModal();
-            // Show success toast notification
-            toast.success(response.data.message);
-            // Refresh the page to show updated data
-            router.reload({ only: ['users'] });
+            handleFormSuccess('User deleted successfully');
+        },
+        onError: (errors) => {
+            toast.error(errors.error || 'An error occurred while deleting the user');
+            
+            // Reset processing and isSubmitted flags
+            processing.value = false;
+            isSubmitted.value = false;
         }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        // Show error toast notification
-        toast.error(error.response?.data?.message || 'An error occurred while deleting the user');
-    } finally {
-        processing.value = false;
-    }
+    });
 };
 
 // Format date

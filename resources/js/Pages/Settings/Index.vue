@@ -22,22 +22,22 @@
                     </nav>
                 </div>
 
-                <!-- Users Tab Content -->
+                <!-- General Tab Content -->
                 <div v-show="currentTab === 'General'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'General', 'opacity-0': currentTab !== 'General'}">
-                    <!-- <UserIndex :users="users" :roles="roles" /> -->
-                    <span>General</span>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-medium mb-4">General Settings</h3>
+                        <p class="text-gray-600">Configure your general application settings here.</p>
+                    </div>
                 </div>
 
                 <!-- Users Tab Content -->
                 <div v-show="currentTab === 'users'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'users', 'opacity-0': currentTab !== 'users'}">
-                    <!-- <UserIndex :users="users" :roles="roles" /> -->
-                    <span>Users</span>
+                    <UserIndex :users="users" :roles="roles" :warehouses="warehouses" :filters="filters" />
                 </div>
 
                 <!-- Roles Tab Content -->
                 <div v-show="currentTab === 'roles'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'roles', 'opacity-0': currentTab !== 'roles'}">
-                    <!-- <RolesComponent :roles="roles" :permissions="permissions" /> -->
-                    <span>Roles</span>
+                    <RoleIndex :roles="roles" :permissions="permissions" :filters="filters" />
                 </div>
             </div>
         </div>
@@ -48,12 +48,20 @@
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import UserIndex from '@/Pages/User/Index.vue';
+import RoleIndex from '@/Pages/Role/Index.vue';
 
-defineProps({
+const props = defineProps({
     users: Object,
     roles: Array,
-    permissions: Array
+    permissions: Array,
+    warehouses: Array,
+    filters: Object,
+    activeTab: {
+        type: String,
+        default: 'General'
+    }
 });
 
-const currentTab = ref('users');
+const currentTab = ref(props.activeTab);
 </script>

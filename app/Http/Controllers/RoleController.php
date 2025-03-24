@@ -63,6 +63,14 @@ class RoleController extends Controller
             ]);
         }
 
+        // Check if request from settings page
+        $isFromSettings = $request->header('X-From-Settings') || 
+                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role created successfully');
+        }
+
         return redirect()->route('roles.index')->with('success', 'Role created successfully');
     }
 
@@ -91,6 +99,14 @@ class RoleController extends Controller
             ]);
         }
 
+        // Check if request from settings page
+        $isFromSettings = $request->header('X-From-Settings') || 
+                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role updated successfully');
+        }
+
         return redirect()->route('roles.index')->with('success', 'Role updated successfully');
     }
 
@@ -100,11 +116,19 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         if ($role->name === 'admin') {
+            // Check if request from settings page
+            $isFromSettings = request()->header('X-From-Settings') || 
+                             (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+            
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot delete the admin role'
                 ], 403);
+            }
+            
+            if ($isFromSettings) {
+                return redirect()->route('settings.index', ['tab' => 'roles'])->with('error', 'Cannot delete the admin role');
             }
             
             return redirect()->route('roles.index')->with('error', 'Cannot delete the admin role');
@@ -117,6 +141,14 @@ class RoleController extends Controller
                 'success' => true,
                 'message' => 'Role deleted successfully'
             ]);
+        }
+
+        // Check if request from settings page
+        $isFromSettings = request()->header('X-From-Settings') || 
+                         (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role deleted successfully');
         }
 
         return redirect()->route('roles.index')->with('success', 'Role deleted successfully');
