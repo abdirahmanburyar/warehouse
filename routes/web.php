@@ -130,6 +130,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/store', 'store')->name('inventories.store');
         Route::get('/{inventory}', 'show')->name('inventories.show');
         Route::delete('/{inventory}', 'destroy')->name('inventories.destroy');
+        Route::get('/debug/pusher', 'debugPusher')->name('inventories.debug-pusher');
     });
 
     // Supply Routes

@@ -11,6 +11,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Events\InventoryEvent;
 use Illuminate\Support\Facades\Event;
+use App\Events\InventoryUpdated;
+use Illuminate\Support\Facades\Log;
 
 class InventoryController extends Controller
 {
@@ -116,15 +118,18 @@ class InventoryController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $isNew = !$request->id;
+        
         $inventory = Inventory::updateOrCreate(
             ['id' => $request->id],
             $validated
         );
 
-        // event(new InventoryEvent());
-        logger()->info("done");
+        event(new InventoryUpdated());
+        
         return response()->json( $request->id ? 'Inventory updated successfully' : 'Inventory created successfully', 200);
         } catch (\Throwable $th) {
+            logger()->error('[PUSHER-DEBUG] Error in store method: ' . $th->getMessage());
             return response()->json($th->getMessage(), 500);
         }
     }
@@ -146,6 +151,27 @@ class InventoryController extends Controller
      */
     public function destroy(Inventory $inventory)
     {
+        logger()->debug('[PUSHER-DEBUG] About to broadcast delete event for inventory ID: ' . $inventory->id);
+        
+        // Debug Pusher event dispatch for delete
+        Log::debug('Broadcasting InventoryEvent for deleted inventory ID: ' . $inventory->id, [
+            'inventory_id' => $inventory->id,
+            'action' => 'deleted',
+            'broadcast_driver' => config('broadcasting.default'),
+            'pusher_key' => config('broadcasting.connections.pusher.key'),
+            'channel' => 'inventory'
+        ]);
+
+        try {
+            event(new InventoryEvent());
+            Log::info('Successfully dispatched InventoryEvent for deleted inventory ID: ' . $inventory->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to dispatch InventoryEvent for deleted inventory: ' . $e->getMessage(), [
+                'exception' => $e,
+                'inventory_id' => $inventory->id
+            ]);
+        }
+        
         $inventory->delete();
 
         return response()->json([
@@ -154,4 +180,31 @@ class InventoryController extends Controller
         ]);
     }
     
+    /**
+     * Debug Pusher configuration
+     */
+    public function debugPusher()
+    {
+        Log::info('Pusher Configuration Debug', [
+            'broadcast_driver' => config('broadcasting.default'),
+            'pusher_enabled' => config('broadcasting.connections.pusher.driver') === 'pusher',
+            'pusher_key' => config('broadcasting.connections.pusher.key'),
+            'pusher_cluster' => config('broadcasting.connections.pusher.options.cluster'),
+            'pusher_tls' => config('broadcasting.connections.pusher.options.useTLS'),
+            'env_pusher_key' => env('PUSHER_APP_KEY'),
+            'env_pusher_cluster' => env('PUSHER_APP_CLUSTER'),
+            'vite_pusher_key' => env('VITE_PUSHER_APP_KEY'),
+            'vite_pusher_cluster' => env('VITE_PUSHER_APP_CLUSTER'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pusher configuration logged. Check your Laravel log file.',
+            'config' => [
+                'broadcast_driver' => config('broadcasting.default'),
+                'pusher_key' => config('broadcasting.connections.pusher.key'),
+                'pusher_cluster' => config('broadcasting.connections.pusher.options.cluster'),
+            ]
+        ]);
+    }
 }

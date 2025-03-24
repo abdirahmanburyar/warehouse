@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
+import { Head, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InventoryStatusIcons from '@/Components/InventoryStatusIcons.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -14,6 +14,7 @@ import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
+import PusherDebugPanel from '@/Components/PusherDebugPanel.vue';
 
 const props = defineProps({
     inventories: Object,
@@ -60,6 +61,38 @@ const form = ref({
 
 const formErrors = ref({});
 
+// Create reactive copy of inventory data for real-time updates
+const currentInventories = reactive({
+    data: [...props.inventories.data],
+    meta: { ...props.inventories.meta }
+});
+
+// Add a watcher to update currentInventories when props.inventories changes
+watch(() => props.inventories, (newInventories) => {
+    console.log('[PUSHER-DEBUG] Props updated, syncing with currentInventories');
+    currentInventories.data = [...newInventories.data];
+    currentInventories.meta = { ...newInventories.meta };
+}, { deep: true });
+
+// Pusher debugging variables
+const pusherStatus = ref('Not connected');
+const lastEventTime = ref(null);
+const pusherEvents = ref([]);
+const pusherError = ref(null);
+const maxEvents = 5;
+
+// Listen for inventory changes with detailed debugging
+onMounted(() => {
+    window.Echo.channel('inventory')
+        .listen('.refresh', (event) => {
+            applyFilters();
+        });
+});
+
+onBeforeUnmount(() => {
+    window.Echo.leaveChannel('inventory');
+});
+
 // Watch for product changes to update product_id
 watch(() => form.value.product, (newProduct) => {
     if (newProduct && newProduct.id) {
@@ -83,6 +116,7 @@ const resetFilters = () => {
 
 // Apply filters
 const applyFilters = () => {
+    console.log('[PUSHER-DEBUG] Applying filters');
     const query = {}
     if (search.value) query.search = search.value
     if (productId.value) query.product_id = productId.value
@@ -99,7 +133,8 @@ const applyFilters = () => {
         route('inventories.index'), query,
         {
             preserveState: true,
-            replace: true,
+            preserveScroll: true,
+            only: ['inventories', 'products', 'warehouses', 'filters', 'inventoryStatusCounts'],
         }
     );
 };
@@ -281,6 +316,38 @@ const echo = ref(null);
     <AuthenticatedLayout>
         <h2 class="text-2xl font-semibold leading-tight text-gray-800">Inventory Management</h2>
 
+        <div v-if="pusherError" class="mb-4 p-4 bg-red-100 text-red-700 rounded">
+            <span class="font-medium">Pusher Error:</span> {{ pusherError }}
+        </div>
+        
+        <!-- Pusher Debug Panel (can be shown/hidden with a toggle) -->
+        <div class="mb-4 p-4 bg-gray-100 rounded">
+            <div class="flex justify-between">
+                <h3 class="font-medium text-gray-900">Pusher Debug</h3>
+                <span :class="{
+                    'px-2 py-1 rounded text-xs font-bold': true,
+                    'bg-green-100 text-green-800': pusherStatus === 'Connected',
+                    'bg-yellow-100 text-yellow-800': pusherStatus === 'Connecting...',
+                    'bg-red-100 text-red-800': pusherStatus === 'Disconnected' || pusherStatus === 'Connection Failed' || pusherStatus === 'Error' || pusherStatus === 'No Pusher Instance',
+                }">
+                    {{ pusherStatus }}
+                </span>
+            </div>
+            
+            <div v-if="lastEventTime" class="mt-2">
+                <span class="text-sm text-gray-600">Last event received: {{ lastEventTime }}</span>
+            </div>
+            
+            <div v-if="pusherEvents.length > 0" class="mt-2">
+                <h4 class="text-sm font-medium text-gray-900">Recent events:</h4>
+                <ul class="mt-1 space-y-1">
+                    <li v-for="(event, i) in pusherEvents" :key="i" class="text-xs text-gray-600">
+                        {{ event.time }} - {{ event.type }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <div class="overflow-auto bg-white shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
                 <!-- Search and Filters -->
@@ -391,7 +458,7 @@ const echo = ref(null);
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(inventory, i) in inventories.data" :key="inventory.id">
+                            <tr v-for="(inventory, i) in currentInventories.data" :key="inventory.id">
                                 <td class="whitespace-nowrap px-6 py-4">
                                     {{ i + 1 }}
                                 </td>
@@ -481,7 +548,7 @@ const echo = ref(null);
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-if="inventories.data.length === 0">
+                            <tr v-if="currentInventories.data.length === 0">
                                 <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                     No inventory items found
                                 </td>
@@ -496,7 +563,7 @@ const echo = ref(null);
 
                 <!-- Pagination -->
                 <div class="mt-4">
-                    <Pagination :links="inventories.meta.links" />
+                    <Pagination :links="currentInventories.meta.links" />
                 </div>
             </div>
         </div>
@@ -604,5 +671,7 @@ const echo = ref(null);
             </div>
         </Modal>
 
+        <!-- Add at the end of the template, just before closing AuthenticatedLayout -->
+        <!-- <PusherDebugPanel :debug="true" channel="inventory" class="mb-8" /> -->
     </AuthenticatedLayout>
 </template>
