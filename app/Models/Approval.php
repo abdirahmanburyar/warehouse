@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Role;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Approval extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'role_id',
         'activity_type',
