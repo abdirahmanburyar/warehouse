@@ -204,9 +204,6 @@
                                                 <span v-if="inventory.is_expired" class="ml-1 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-md border border-red-300 font-semibold">
                                                     Expired
                                                 </span>
-                                                <span v-else-if="inventory.is_near_expiry" class="ml-1 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md border border-yellow-300 font-semibold">
-                                                    {{ inventory.days_until_expiry }} days left
-                                                </span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -239,7 +236,10 @@
 
                         <!-- Pagination -->
                         <div class="mt-4">
-                            <Pagination :links="inventories.meta.links" />
+                            <Pagination 
+                                :links="inventories.meta.links" 
+                                @page-change="handlePageChange"
+                            />
                         </div>
                     </div>
                     
@@ -532,4 +532,24 @@ function getStatusClass(inventory) {
         default: return 'bg-blue-100 text-blue-800 border border-blue-400 font-semibold';
     }
 }
+
+// Add pagination handling
+const handlePageChange = (page) => {
+    const query = {
+        page,
+        tab: currentTab.value,
+        search: search.value,
+        sort_field: sort_field.value,
+        sort_direction: sort_direction.value
+    };
+
+    if (warehouseFilter.value) {
+        query.warehouse_id = warehouseFilter.value;
+    }
+
+    router.get(route('expired.index'), query, {
+        preserveState: true,
+        preserveScroll: true
+    });
+};
 </script>

@@ -34,8 +34,7 @@ class ExpiredController extends Controller
                 // Items expiring in the next 30 days
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
                     ->whereDate('inventories.expiry_date', '>', Carbon::now())
-                    ->whereDate('inventories.expiry_date', '<=', Carbon::now()->addDays(30))
-                    ->where('inventories.is_active', true);
+                    ->whereDate('inventories.expiry_date', '<=', Carbon::now()->addDays(30));
                 break;
                 
             case 'expired':
@@ -70,7 +69,7 @@ class ExpiredController extends Controller
                         })->orWhere(function($q) {
                             // Low stock items
                             $q->where('inventories.quantity', '<=', DB::raw('inventories.reorder_level'))
-                              ->where('inventories.quantity', '>', 0);
+                              ->where('inventories.quantity', '<', 0);
                         });
                     });
                 break;
@@ -105,7 +104,7 @@ class ExpiredController extends Controller
         }
         
         // Paginate the results
-        $inventories = $inventoryQuery->paginate(10)->withQueryString();
+        $inventories = $inventoryQuery->paginate(1)->withQueryString();
         
         // Extract non-empty filters
         $filters = [];
