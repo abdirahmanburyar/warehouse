@@ -16,15 +16,16 @@
         
         <!-- Low Stock -->
         <div class="flex items-center mb-6">
+            <div class="w-16 h-16 flex items-center justify-center mr-4">
+                <img src="/assets/images/low_stock.png" alt="Low Stock">
+            </div>
             <div>
                 <div class="text-xl font-bold text-gray-800">
                     {{ currentStatusCounts.low_stock }}
                 </div>
                 <div class="text-base text-gray-600">Low Stock</div>
             </div>
-            <div class="w-16 h-16 flex items-center justify-center mr-4">
-                <img src="/assets/images/low_stock.png" alt="Low Stock">
-            </div>
+           
         </div>
         
         <!-- Out of Stock -->
