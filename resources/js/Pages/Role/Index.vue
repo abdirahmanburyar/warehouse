@@ -12,8 +12,6 @@
           {{ $page.props.flash.error }}
         </div>
 
-        {{ props }}
-
         <!-- Role Creation Form -->
         <div class="mb-8 p-4 bg-gray-50 rounded-lg">
           <h3 class="text-lg font-medium mb-4">Create New Role</h3>
