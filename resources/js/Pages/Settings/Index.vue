@@ -19,6 +19,10 @@
                             :class="[currentTab === 'roles' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
                             Roles
                         </button>
+                        <button @click="currentTab = 'approval'"
+                            :class="[currentTab === 'approval' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                            Approval
+                        </button>
                     </nav>
                 </div>
 
@@ -32,16 +36,21 @@
 
                 <!-- Users Tab Content -->
                 <div v-show="currentTab === 'users'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'users', 'opacity-0': currentTab !== 'users'}">
-                    <UserIndex :users="users" :roles="roles" :warehouses="warehouses" :filters="filters" />
+                    <UserIndex :users="props.users" :roles="props.roles" :warehouses="props.warehouses" :filters="props.filters" />
                 </div>
 
                 <!-- Roles Tab Content -->
                 <div v-show="currentTab === 'roles'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'roles', 'opacity-0': currentTab !== 'roles'}">
-                    <RoleIndex :roles="roles" :permissions="permissions" :filters="filters" />
+                    <RoleIndex :roles="props.roles" :permissions="props.permissions" :filters="props.filters" />
+                </div>
+
+                <!-- Approval Tab Content -->
+                <div v-show="currentTab === 'approval'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'approval', 'opacity-0': currentTab !== 'approval'}">
+                    <ApprovalIndex :filters="props.filters" :approvals="props.approvals" :roles="props.roles" />
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AuthenticatedLayout>a
 </template>
 
 <script setup>
@@ -50,8 +59,10 @@ import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import UserIndex from '@/Pages/User/Index.vue';
 import RoleIndex from '@/Pages/Role/Index.vue';
+import ApprovalIndex from '@/Pages/Approval/Index.vue';
 
 const props = defineProps({
+    approvals: Object,
     users: Object,
     roles: Array,
     permissions: Array,

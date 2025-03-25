@@ -1,27 +1,27 @@
 <template>
     <div class="app-container">
         <!-- Sidebar -->
-        <div :class="['sidebar', { 'sidebar-collapsed': !sidebarOpen }]">
+        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
             <div class="white-box" style="border-color: white;">
                 <Link :href="route('dashboard')" class="logo-container">
-                <img src="/assets/images/moh.png" class="moh-logo" style="height: 40px" />
-                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 40px" />
+                <img src="/assets/images/moh.png" class="moh-logo" style="height: 50px" />
+                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 50px" />
                 </Link>
 
             </div>
             <button @click="toggleSidebar" class="sidebar-toggle">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                    <path v-if="sidebarOpen" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
-                    <path v-else d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor" />
+                    <path v-if="!sidebarOpen" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor" />
+                    <path v-else d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
                 </svg>
             </button>
 
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 5.2rem;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 3.2rem;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
                                 fill="currentColor" />
                         </svg>
@@ -30,31 +30,16 @@
                 </div>
                 </Link>
 
-
-                <Link :href="route('approvals.index')" class="menu-item"
-                    :class="{ active: route().current('approvals.*') }" @click="setCurrentPage('approvals')"
-                    v-if="$page.props.auth.permissions.includes('approval.view')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor" />
-                        </svg>
-                    </div>
-                    <span class="menu-text">Approvals</span>
-                </div>
-                </Link>
-
                 <Link :href="route('warehouses.index')" class="menu-item"
                     :class="{ active: route().current('warehouses.*') }" @click="setCurrentPage('warehouses')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
-                    <span class="menu-text">Warehouses</span>
+                    <span class="menu-text">Transfers</span>
                 </div>
                 </Link>
 
@@ -62,9 +47,8 @@
                     :class="{ active: route().current('products.*') }" @click="setCurrentPage('products')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.44-6.19l-2.35 3.02-1.56-1.88c-.2-.25-.58-.24-.78.01l-1.74 2.23c-.2.25-.2.61 0 .86.2.25.58.26.78.01l1.35-1.73 1.58 1.9c.2.25.58.24.78-.01l2.55-3.27c.2-.25.19-.61-.02-.86-.21-.25-.59-.24-.79.01z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M19 5v14H5V5h14m1.1-2H3.9c-.5 0-.9.4-.9.9v16.2c0 .4.4.9.9.9h16.2c.4 0 .9-.5.9-.9V3.9c0-.5-.5-.9-.9-.9zM11 7h6v2h-6V7zm0 4h6v2h-6v-2zm0 4h6v2h-6v-2zM7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
@@ -76,9 +60,8 @@
                     :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-1 18H5V9h14v11zm1-13H4V4h16v3z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2h2V7h-4v2h2z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
@@ -90,13 +73,12 @@
                     @click="setCurrentPage('expired')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
-                    <span class="menu-text">Expired</span>
+                    <span class="menu-text">Expires</span>
                 </div>
                 </Link>
 
@@ -104,9 +86,8 @@
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zm-6.25-7h2.75V9h-3.25c-.83 0-1.5.67-1.5 1.5v.75h3.75V15h-5V9.5c0-1.48 1.02-2.5 2.5-2.5h3.75c.55 0 1 .45 1 1V14c0 .55-.45 1-1 1h-3V12z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
@@ -118,9 +99,8 @@
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="35" height="35">
-                            <path
-                                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Zm0 18.37C6.01 20.37 2 15.75 2 12C2 8.25 6.01 5.63 12 5.63C17.99 5.63 22 8.25 22 12C22 15.75 17.99 20.37 12 20.37Z"
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.09-.16-.26-.25-.44-.25-.06 0-.12.01-.17.03l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.06-.02-.12-.03-.18-.03-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.09.16.26.25.44.25.06 0 .12-.01.17-.03l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" 
                                 fill="currentColor" />
                         </svg>
                     </div>
@@ -140,7 +120,10 @@
                         <div class="flex flex-col">
                             <button @click="toggleSidebar" class="back-button">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                                    <path v-if="sidebarOpen"
+                                        d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                                        fill="currentColor" />
+                                    <path v-else d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
                                         fill="currentColor" />
                                 </svg>
                             </button>
@@ -180,7 +163,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <h5>PSI</h5>
+                        <img src="/assets/images/head_web.gif" alt="Inventory illustration" class="svg-image" />
                     </div>
                 </div>
             </div>
@@ -224,7 +207,18 @@ export default {
             sidebarOpen: true,
             currentPage: 'dashboard',
             userMenuOpen: false,
+            windowWidth: window.innerWidth,
+            hasResized: false,
         };
+    },
+    mounted() {
+        // Add event listener for window resize
+        window.addEventListener('resize', this.handleResize);
+        this.handleResize(); // Initial check
+    },
+    beforeUnmount() {
+        // Clean up event listener
+        window.removeEventListener('resize', this.handleResize);
     },
     methods: {
         toggleSidebar() {
@@ -235,6 +229,18 @@ export default {
         },
         logout() {
             this.$inertia.post(route('logout'));
+        },
+        handleResize() {
+            const newWidth = window.innerWidth;
+            this.windowWidth = newWidth;
+
+            // Only auto-collapse the sidebar on initial load, not on resize
+            if (!this.hasResized && newWidth <= 1024) {
+                this.sidebarOpen = false;
+            }
+
+            // Mark that we've done at least one resize check
+            this.hasResized = true;
         }
     },
 };
@@ -250,26 +256,33 @@ export default {
 
 /* Sidebar Styles */
 .sidebar {
-    width: 100px;
-    background: linear-gradient(to bottom, #2BCA89, #2BCA89, #FA8603);
-    border-right: 1px solid #e5e7eb;
-    transition: all 0.3s ease;
+    width: 0;
+    min-width: 0;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
-    position: fixed;
-    height: 100vh;
+    transition: all 0.3s ease;
     z-index: 50;
-    padding: 0;
-    border-right: none;
+    background: linear-gradient(to bottom, #14D399, #FF8500);
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
 }
 
-.sidebar-collapsed {
-    width: 0px;
+.sidebar-open {
+    width: 130px;
+    min-width: 130px;
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 .white-box {
     background-color: white;
-    padding: 1rem 0;
+    padding: 1.5rem 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -278,23 +291,15 @@ export default {
     position: relative;
 }
 
-.logo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
-
 .moh-logo {
-    height: 60px;
+    height: 45px;
     width: auto;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     object-fit: contain;
 }
 
 .psi-logo {
-    height: 45px;
+    height: 35px;
     width: auto;
     object-fit: contain;
 }
@@ -336,9 +341,10 @@ export default {
     display: flex;
     flex-direction: column;
     padding: 0;
-    margin: 0;
+    margin: -12px;
     flex-grow: 1;
-    overflow-y: auto;
+    width: 100%;
+    align-items: center;
 }
 
 .menu-item {
@@ -348,54 +354,90 @@ export default {
     color: white;
     text-decoration: none;
     transition: all 0.3s ease;
-    border-left: 0;
     position: relative;
-    margin: 0;
+    margin: 0.4rem 0;
     padding: 0;
-    border-radius: 0;
-    border-right-color: transparent;
+    z-index: 1;
+    width: 100%;
+    height: 44px;
 }
 
 .menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .menu-item.active {
     background: white;
-    /* box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.2); */
-    text-align: center;
     color: #111827;
-    border-radius: 0;
-    margin-right: 0;
-    border-right: 0;
-    border-top-left-radius: 50px;
-    margin: 0;
-    padding: 0;
-    border-bottom-left-radius: 50px;
-    border-top-right-radius: -50px;
-    border-bottom-right-radius: -50px;
+    position: relative;
+    border-top-left-radius: 25px;
+    border-bottom-left-radius: 25px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: -25px;
+    padding-right: 25px;
+    z-index: 5;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    left: 0;
 }
 
+/* Create the curved effect for the top-right corner */
+.menu-item.active::before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    right: 0;
+    width: 25px;
+    height: 24px;
+    background-color: transparent;
+    border-bottom-right-radius: 20px;
+    box-shadow: 10px 10px 0 0 white;
+    z-index: 2;
+}
+
+/* Create the curved effect for the bottom-right corner */
 .menu-item.active::after {
-    display: none;
+    content: "";
+    position: absolute;
+    bottom: -24px;
+    right: 0;
+    width: 25px;
+    height: 25px;
+    background-color: transparent;
+    border-top-right-radius: 20px;
+    box-shadow: 10px -10px 0 0 white;
+    z-index: 2;
+    display: block;
+}
+
+/* Ensure icon in active menu is colored correctly */
+.menu-item.active .menu-icon svg {
+    fill: #111827;
 }
 
 .menu-content {
+    margin-left: 15px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
+    padding: 0;
+    position: relative;
+    z-index: 10;
+    height: 100%;
 }
 
 .menu-icon {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.5rem;
-    flex-shrink: 0;
+    margin-bottom: 3px;
 }
 
 .sidebar-collapsed .menu-icon {
@@ -406,21 +448,24 @@ export default {
     white-space: nowrap;
     transition: opacity 0.3s ease;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    line-height: 1;
+    width: 100%;
 }
 
 /* Main Content Styles */
 .main-content {
     flex-grow: 1;
-    margin-left: 100px;
-    transition: margin-left 0.3s ease;
+    margin-left: 0;
+    transition: margin-left 0.3s ease, width 0.3s ease;
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 
 .main-content-expanded {
-    margin-left: 0px;
+    margin-left: 0;
 }
 
 /* Top Navigation Styles */
@@ -435,11 +480,11 @@ export default {
 .inventory-banner {
     display: flex;
     align-items: center;
-    background-color: #60a5fa;
+    background-color: #81C4F6;
     color: white;
     padding: 0.5rem 1.5rem;
     width: 100%;
-    height: 175px;
+    height: 156px;
     position: relative;
     overflow: hidden;
     border-top-left-radius: 40px;
@@ -564,51 +609,28 @@ main {
 }
 
 /* Responsive Styles */
-@media (max-width: 1024px) {
-    .sidebar {
-        transform: translateX(-100%);
-        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar.sidebar-collapsed {
+@media (min-width: 1025px) {
+    .sidebar-open {
         transform: translateX(0);
-        width: 160px;
-    }
-
-    .sidebar-collapsed .logo-text,
-    .sidebar-collapsed .menu-text {
-        display: block;
+        width: 130px;
+        min-width: 130px;
+        opacity: 1;
+        visibility: visible;
     }
 
     .main-content {
-        margin-left: 0 !important;
+        margin-left: 0;
     }
 
-    .user-info {
-        display: none;
+    .main-content-expanded {
+        margin-left: 0;
     }
+}
 
-    .menu-item.active {
-        border-radius: 0.5rem;
-        margin-right: 0.5rem;
-    }
-
-    .menu-item.active::after {
-        display: none;
-    }
-
-    .menu-content {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .menu-icon {
-        margin-bottom: 0;
-        margin-right: 0.5rem;
-    }
-
-    .menu-text {
-        font-size: 0.8rem;
+/* When sidebar is open, adjust the main content margin on desktop */
+@media (min-width: 1025px) {
+    .sidebar-open+.main-content {
+        margin-left: 130px;
     }
 }
 
@@ -628,5 +650,22 @@ main {
     .banner-subtitle {
         font-size: 0.75rem;
     }
+}
+
+/* Adjust margin for Dashboard menu item specifically */
+.menu-item[href="/"] {
+    margin-top: 2rem;
+}
+
+/* Add helper class for SVG icons */
+.menu-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* When sidebar is open, set appropriate margin */
+.sidebar-open+.main-content {
+    width: calc(100% - 130px);
 }
 </style>

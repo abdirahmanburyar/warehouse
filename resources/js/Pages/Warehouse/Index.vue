@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="mt-4" style="max-width: 90rem">
+        <div class="mt-4">
             <div class="bg-white mx-auto overflow-hidden">
                 <div class="text-gray-900 overflow-hidden">
                     <div

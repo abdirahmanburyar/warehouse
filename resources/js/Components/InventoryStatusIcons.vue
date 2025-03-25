@@ -7,7 +7,7 @@
                 <img src="/assets/images/in_stock.png" alt="In Stock">
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">
+                <div class="text-xl font-bold text-gray-800">
                     {{ currentStatusCounts.in_stock }}
                 </div>
                 <div class="text-base text-gray-600">In Stock</div>
@@ -16,14 +16,14 @@
         
         <!-- Low Stock -->
         <div class="flex items-center mb-6">
-            <div class="w-16 h-16 flex items-center justify-center mr-4">
-                <img src="/assets/images/low_stock.png" alt="Low Stock">
-            </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">
+                <div class="text-xl font-bold text-gray-800">
                     {{ currentStatusCounts.low_stock }}
                 </div>
                 <div class="text-base text-gray-600">Low Stock</div>
+            </div>
+            <div class="w-16 h-16 flex items-center justify-center mr-4">
+                <img src="/assets/images/low_stock.png" alt="Low Stock">
             </div>
         </div>
         
@@ -33,7 +33,7 @@
                 <img src="/assets/images/out_stock.png" alt="Out of Stock">
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">
+                <div class="text-xl font-bold text-gray-800">
                     {{ currentStatusCounts.out_of_stock }}
                 </div>
                 <div class="text-base text-gray-600">Out of Stock</div>
@@ -46,7 +46,7 @@
                 <img src="/assets/images/expired_stock.png" alt="Expired Stock">
             </div>
             <div>
-                <div class="text-2xl font-bold text-red-800">
+                <div class="text-xl font-bold text-red-800">
                     {{ currentStatusCounts.expired }}
                 </div>
                 <div class="text-base text-gray-600">Expired Stock</div>

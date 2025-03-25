@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Approvals">
+    <!-- <AuthenticatedLayout title="Approvals"> -->
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Approvals
         </h2>
@@ -7,8 +7,8 @@
         <div>
             <div class="bg-white overflow-hidden sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex justify-between mb-6">
-                        <input type="text" v-model="search" placeholder="Search" class="w-1/2" />
+                    <div class="flex justify-between items-center mb-6">
+                        <input type="text" v-model="search" placeholder="Search" class="w-1/2 rounded border-2 border-gray-300" />
                         <div class="flex justify-between mb-6">
                             <button v-if="hasPermission('approval.create')" 
                                     @click="openCreateModal()"
@@ -202,7 +202,7 @@
                 </div>
             </div>
         </Modal>
-    </AuthenticatedLayout>
+    <!-- </AuthenticatedLayout> -->
 </template>
 
 <script setup>
@@ -223,10 +223,7 @@ import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
 const props = defineProps({
-    approvals: {
-        type: Object,
-        required: true
-    },
+    approvals: Object,
     roles: {
         type: Array,
         required: true
@@ -305,7 +302,7 @@ const closeApprovalModal = () => {
 function reloadApproval(){
     const query = {}
     if(search.value) query.search = search.value
-    router.get(route('approvals.index'), query, { preserveState: true, preserveScroll: true , only: ['approvals', 'roles']})
+    router.get(route('settings.index'), { tab: 'approvals', ...query }, { preserveState: true, preserveScroll: true , only: ['approvals', 'roles']})
 }
 
 const submitApproval = async () => {

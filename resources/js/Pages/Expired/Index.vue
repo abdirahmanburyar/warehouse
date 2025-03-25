@@ -73,27 +73,27 @@
                     
                     <!-- Table section - 85% width on large screens -->
                     <div class="lg:w-10/12 lg:order-1">
-                        <!-- Tabs -->
-                        <div class="border-b border-gray-200 mb-4">
-                            <nav class="-mb-px flex space-x-8">
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 mb-4">
+                    <nav class="-mb-px flex space-x-8">
                                 <button @click="navigateToTab('all')"
                                     :class="[currentTab === 'all' ? 'border-blue-600 text-blue-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
-                                    All Expiration
-                                </button>
+                            All Expiration
+                        </button>
                                 <button @click="navigateToTab('near')"
                                     :class="[currentTab === 'near' ? 'border-yellow-600 text-yellow-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
-                                    Near to Expiration
-                                </button>
+                            Near to Expiration
+                        </button>
                                 <button @click="navigateToTab('expired')"
                                     :class="[currentTab === 'expired' ? 'border-red-600 text-red-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
-                                    Expired
-                                </button>
+                            Expired
+                        </button>
                                 <button @click="navigateToTab('disposed')"
                                     :class="[currentTab === 'disposed' ? 'border-green-600 text-green-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
-                                    Disposed
-                                </button>
-                            </nav>
-                        </div>
+                            Disposed
+                        </button>
+                    </nav>
+                </div>
 
                         <!-- Search and Filter Bar -->
                         <div class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -282,8 +282,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
-                        </div>
-                        
+                </div>
+
                         <div class="bg-emerald-400 p-4 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer text-white" @click="navigateToTab('disposed')">
                             <div class="flex items-start justify-between">
                                 <div>
@@ -298,7 +298,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Dispose Modal -->
                 <Modal :show="showDisposeModal" @close="showDisposeModal = false">
                     <div class="p-6">
@@ -313,8 +313,8 @@
                         <div class="mb-4">
                             <InputLabel for="disposal_notes" value="Notes (Optional)" />
                             <TextArea id="disposal_notes" v-model="disposalNotes" class="mt-1 block w-full" placeholder="Reason for disposal" />
-                        </div>
-                        
+                </div>
+
                         <div class="mt-6 flex justify-end space-x-3">
                             <SecondaryButton @click="showDisposeModal = false">
                                 Cancel
@@ -323,7 +323,7 @@
                                 {{ processing ? 'Processing...' : 'Confirm Disposal' }}
                             </PrimaryButton>
                         </div>
-                    </div>
+                </div>
                 </Modal>
             </div>
         </div>
