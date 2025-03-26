@@ -10,6 +10,7 @@ use App\Events\InventoryUpdated;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use Illuminate\Http\Request;
+use App\Http\Resources\SupplyResource;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -48,8 +49,10 @@ class SupplyController extends Controller
                 $query->whereDate('supply_date', '<=', $request->date_to);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
+
+        $supplies->setPath('supplies');
             
         // Get suppliers data
         $suppliers = Supplier::query()
@@ -74,7 +77,7 @@ class SupplyController extends Controller
         $products = Product::all();
 
         return Inertia::render('Supplies/Index', [
-            'supplies' => $supplies,
+            'supplies' => SupplyResource::collection($supplies),
             'suppliers' => $suppliers,
             'warehouses' => $warehouses,
             'products' => $products,

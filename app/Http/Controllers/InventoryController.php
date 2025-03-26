@@ -65,7 +65,7 @@ class InventoryController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $inventories = $query->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+        $inventories = $query->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         // Get products for dropdown

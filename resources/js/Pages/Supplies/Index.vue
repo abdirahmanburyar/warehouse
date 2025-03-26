@@ -143,7 +143,7 @@
                         </div>
 
                         <!-- Pagination -->
-                        <Pagination :links="supplies.links" class="mt-4" />
+                        <Pagination :links="supplies.meta.links" class="flex justify-end mt-4" />
                     </div>
 
                     <!-- Suppliers Tab -->

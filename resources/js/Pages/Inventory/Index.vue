@@ -566,7 +566,7 @@ const echo = ref(null);
                                 </tr>
                             </tbody>
                         </table>
-                        <div class="mt-4 flex justify-between">
+                        <div class="mt-4 flex justify-end">
                             <Pagination :links="currentInventories.meta.links" />
                         </div>
                     </div>
