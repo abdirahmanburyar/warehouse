@@ -345,21 +345,10 @@ class SupplyController extends Controller
                     ->where('batch_number', $item->batch_number)
                     ->latest()
                     ->first();
-                logger()->info($inventory->expiry_date);
-                logger()->info($item->expiry_date);
-                // 'warehouse_id' => $item->supply->warehouse_id,
-
-                // If new inventory record, set the dates
-                // if (!$inventory->exists) {
-                //     $inventory->manufacturing_date = $item->manufacturing_date;
-                //     $inventory->expiry_date = $item->expiry_date;
-                //     $inventory->quantity = 0;
-                // }
 
                 // Add the quantity
                 if ($inventory && Carbon::parse($inventory->expiry_date)->equalTo(Carbon::parse($item->expiry_date))) {
-                    $inventory->quantity += $item->quantity;
-                    $inventory->save();
+                    $inventory->increment('quantity', $item->quantity);
                 } else {
                     $newInventory = Inventory::create([
                         'product_id' => $item->product_id,
