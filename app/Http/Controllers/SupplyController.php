@@ -12,6 +12,7 @@ use App\Models\SupplyItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class SupplyController extends Controller
 {
@@ -351,7 +352,7 @@ class SupplyController extends Controller
                 // }
 
                 // Add the quantity
-                if ($inventory->exists && $inventory->expiry_date == $item->expiry_date) {
+                if ($inventory->exists && Carbon::parse($inventory->expiry_date)->equalTo(Carbon::parse($item->expiry_date))) {
                     $inventory->quantity += $item->quantity;
                     $inventory->save();
                 } else {
