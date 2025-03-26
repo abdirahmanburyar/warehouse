@@ -104,7 +104,7 @@ class ExpiredController extends Controller
         }
         
         // Paginate the results
-        $inventories = $inventoryQuery->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
+        $inventories = $inventoryQuery->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
 
         $inventories->setPath(route('expired.index'));

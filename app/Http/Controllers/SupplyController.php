@@ -49,7 +49,7 @@ class SupplyController extends Controller
                 $query->whereDate('supply_date', '<=', $request->date_to);
             })
             ->latest()
-            ->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
+            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $supplies->setPath('supplies');
