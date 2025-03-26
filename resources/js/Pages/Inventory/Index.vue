@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InventoryStatusIcons from '@/Components/InventoryStatusIcons.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -21,7 +21,7 @@ const props = defineProps({
     products: Array,
     warehouses: Array,
     filters: Object,
-    inventoryStatusCounts: Array,
+    inventoryStatusCounts: Array
 });
 
 const toast = useToast();
@@ -185,12 +185,12 @@ const addInventory = () => {
 // Submit form
 const submitForm = async () => {
     isSubmitting.value = true;
-    
+
     // Set product_id from the selected product object if it exists
     if (form.value.product && form.value.product.id) {
         form.value.product_id = form.value.product.id;
     }
-    
+
     await axios.post(route('inventories.store'), form.value)
         .then(() => {
             showAddModal.value = false;
@@ -319,7 +319,7 @@ const echo = ref(null);
         <div v-if="pusherError" class="mb-4 p-4 bg-red-100 text-red-700 rounded">
             <span class="font-medium">Pusher Error:</span> {{ pusherError }}
         </div>
-        
+
         <!-- Pusher Debug Panel (can be shown/hidden with a toggle) -->
         <div class="mb-4 p-4 bg-gray-100 rounded">
             <div class="flex justify-between">
@@ -333,11 +333,11 @@ const echo = ref(null);
                     {{ pusherStatus }}
                 </span>
             </div>
-            
+
             <div v-if="lastEventTime" class="mt-2">
                 <span class="text-sm text-gray-600">Last event received: {{ lastEventTime }}</span>
             </div>
-            
+
             <div v-if="pusherEvents.length > 0" class="mt-2">
                 <h4 class="text-sm font-medium text-gray-900">Recent events:</h4>
                 <ul class="mt-1 space-y-1">
@@ -354,7 +354,8 @@ const echo = ref(null);
                 <div class="mb-6 flex flex-wrap items-center gap-4">
                     <div class="flex-grow">
                         <TextInput v-model="search" type="text" class="w-full"
-                            placeholder="Search by product name, SKU, category or barcode" @keyup.enter="applyFilters" />
+                            placeholder="Search by product name, SKU, category or barcode"
+                            @keyup.enter="applyFilters" />
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4">
@@ -408,162 +409,170 @@ const echo = ref(null);
                     <PrimaryButton @click="addInventory">Add Inventory Item</PrimaryButton>
                 </div>
 
-               <div class="flex">
-                 <!-- Inventory Table -->
-                 <div class="flex-1 overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[10px]"
-                                    @click="sort('id')">
-                                    SN
-                                    <span v-if="sortField === 'id'">
-                                        {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                    </span>
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Product
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Category
-                                </th>
-                                <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                                    @click="sort('quantity')">
-                                    In Stock
-                                    <span v-if="sortField === 'quantity'">
-                                        {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                    </span>
-                                </th>
-                                <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                                    @click="sort('expiry_date')">
-                                    Expiry Date
-                                    <span v-if="sortField === 'expiry_date'">
-                                        {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                    </span>
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Batch/Location
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Status
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(inventory, i) in currentInventories.data" :key="inventory.id">
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    {{ i + 1 }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <div v-if="inventory.product">
-                                        <div class="font-medium text-gray-900">{{ inventory.product.name }}</div>
-                                        <div class="text-sm text-gray-500">SKU: {{ inventory.product.sku }}</div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ inventory.product.dosage ? inventory.product.dosage.name : 'No Dosage' }}
+                <div class="flex">
+                    <!-- Inventory Table -->
+                    <div class="flex-1 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[10px]"
+                                        @click="sort('id')">
+                                        SN
+                                        <span v-if="sortField === 'id'">
+                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Product
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Category
+                                    </th>
+                                    <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                                        @click="sort('quantity')">
+                                        In Stock
+                                        <span v-if="sortField === 'quantity'">
+                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    </th>
+                                    <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                                        @click="sort('expiry_date')">
+                                        Expiry Date
+                                        <span v-if="sortField === 'expiry_date'">
+                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Batch/Location
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Status
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                <tr v-for="(inventory, i) in currentInventories.data" :key="inventory.id">
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        {{ i + 1 }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div v-if="inventory.product">
+                                            <div class="font-medium text-gray-900">{{ inventory.product.name }}</div>
+                                            <div class="text-sm text-gray-500">SKU: {{ inventory.product.sku }}</div>
+                                            <div class="text-sm text-gray-500">
+                                                {{ inventory.product.dosage ? inventory.product.dosage.name : 'No Dosage' }}
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                {{ inventory.product.category ? inventory.product.barcode : 'No Barcode'
+                                                }}
+                                            </div>
                                         </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ inventory.product.category ? inventory.product.barcode : 'No Barcode' }}
-                                        </div>
-                                    </div>
-                                    <div v-else class="text-sm text-gray-500">Product not found</div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    {{ inventory.product.category ? inventory.product.category.name : 'No Category' }}
+                                        <div v-else class="text-sm text-gray-500">Product not found</div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        {{ inventory.product.category ? inventory.product.category.name : 'No Category'
+                                        }}
 
-                                    <!-- <div v-if="inventory.warehouse">
+                                        <!-- <div v-if="inventory.warehouse">
                                         {{ inventory.warehouse.name }}
                                     </div>
                                     <div v-else class="text-sm text-gray-500">Warehouse not found</div> -->
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <div :class="{
-                                        'font-medium': true,
-                                        'text-red-600': isLowStock(inventory),
-                                        'text-gray-900': !isLowStock(inventory),
-                                    }">
-                                        {{ inventory.quantity }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        Reorder Level: {{ inventory.reorder_level }}
-                                    </div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <div :class="{
-                                        'text-sm': true,
-                                        'text-red-600': isExpired(inventory),
-                                        'text-orange-500': isExpiringSoon(inventory) && !isExpired(inventory),
-                                        'text-gray-900': !isExpiringSoon(inventory) && !isExpired(inventory),
-                                    }">
-                                        {{ formatDate(inventory.expiry_date) }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        Mfg: {{ formatDate(inventory.manufacturing_date) }}
-                                    </div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <div class="text-sm text-gray-900">
-                                        Batch: {{ inventory.batch_number || 'N/A' }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        Location: {{ inventory.location || 'N/A' }}
-                                    </div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 flex justify-between">
-                                    <img v-if="isLowStock(inventory)" src="/assets/images/low_stock.png" class="w-6 h-6" alt="Low Stock" />
-                                    <img v-if="isExpiringSoon(inventory)" src="/assets/images/soon_expire.png" class="w-6 h-6" alt="Expire soon" />
-                                    <img v-if="isExpired(inventory)" src="/assets/images/expired_stock.png" class="w-6 h-6" alt="Expired" />
-                                    <img v-if="isOutOfStock(inventory)" src="/assets/images/out_stock.png" class="w-6 h-6" alt="Out of Stock" />
-                                    <span :class="{
-                                        'inline-flex rounded-full px-2 text-xs font-semibold leading-5': true,
-                                        'bg-green-100 text-green-800': inventory.is_active,
-                                        'bg-red-100 text-red-800': !inventory.is_active,
-                                    }">
-                                        {{ inventory.is_active ? 'Active' : 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                    <div class="flex space-x-2">
-                                        <button @click="confirmDelete(inventory)" class="flex items-center space-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                        <button @click="editInventory(inventory)" class="flex items-center space-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="currentInventories.data.length === 0">
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                    No inventory items found
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4 p-3">
-                    <InventoryStatusIcons :statusCounts="inventoryStatusCounts" />
-                </div>
-               </div>
-
-                <!-- Pagination -->
-                <div class="mt-4">
-                    <Pagination :links="currentInventories.meta.links" />
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div :class="{
+                                            'font-medium': true,
+                                            'text-red-600': isLowStock(inventory),
+                                            'text-gray-900': !isLowStock(inventory),
+                                        }">
+                                            {{ inventory.quantity }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Reorder Level: {{ inventory.reorder_level }}
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div :class="{
+                                            'text-sm': true,
+                                            'text-red-600': isExpired(inventory),
+                                            'text-orange-500': isExpiringSoon(inventory) && !isExpired(inventory),
+                                            'text-gray-900': !isExpiringSoon(inventory) && !isExpired(inventory),
+                                        }">
+                                            {{ formatDate(inventory.expiry_date) }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Mfg: {{ formatDate(inventory.manufacturing_date) }}
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div class="text-sm text-gray-900">
+                                            Batch: {{ inventory.batch_number || 'N/A' }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Location: {{ inventory.location || 'N/A' }}
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4 flex justify-between">
+                                        <img v-if="isLowStock(inventory)" src="/assets/images/low_stock.png"
+                                            class="w-6 h-6" alt="Low Stock" />
+                                        <img v-if="isExpiringSoon(inventory)" src="/assets/images/soon_expire.png"
+                                            class="w-6 h-6" alt="Expire soon" />
+                                        <img v-if="isExpired(inventory)" src="/assets/images/expired_stock.png"
+                                            class="w-6 h-6" alt="Expired" />
+                                        <img v-if="isOutOfStock(inventory)" src="/assets/images/out_stock.png"
+                                            class="w-6 h-6" alt="Out of Stock" />
+                                        <span :class="{
+                                            'inline-flex rounded-full px-2 text-xs font-semibold leading-5': true,
+                                            'bg-green-100 text-green-800': inventory.is_active,
+                                            'bg-red-100 text-red-800': !inventory.is_active,
+                                        }">
+                                            {{ inventory.is_active ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                        <div class="flex space-x-2">
+                                            <button @click="confirmDelete(inventory)"
+                                                class="flex items-center space-x-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                            <button @click="editInventory(inventory)"
+                                                class="flex items-center space-x-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="currentInventories.data.length === 0">
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        No inventory items found
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-4 flex justify-between">
+                            <Pagination :links="currentInventories.meta.links" />
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3">
+                        <InventoryStatusIcons :statusCounts="inventoryStatusCounts" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -587,7 +596,8 @@ const echo = ref(null);
                         </div>
                         <div>
                             <InputLabel for="product_id" value="Product" />
-                            <Multiselect id="product_id" v-model="form.product" :options="products" option-label="name" track-by="id" label="name"/>
+                            <Multiselect id="product_id" v-model="form.product" :options="products" option-label="name"
+                                track-by="id" label="name" />
                         </div>
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -65,7 +65,8 @@ class InventoryController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $inventories = $query->paginate($request->input('per_page', 10));
+        $inventories = $query->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
 
         // Get products for dropdown
         $products = Product::where('is_active', true)->select('id', 'name')->get();
@@ -88,11 +89,14 @@ class InventoryController extends Controller
             ['status' => 'expired', 'count' => $expiredCount],
         ];
 
+        $inventories->setPath(url()->current()); // Force Laravel to use full URLs
+
+
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),
             'products' => $products,
             'warehouses' => $warehouses,
-            'filters' => $request->all(['search', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page']),
+            'filters' => $request->all(['search', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page', 'page']),
             'inventoryStatusCounts' => $inventoryStatusCounts,
         ]);
     }

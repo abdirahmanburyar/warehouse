@@ -15,6 +15,7 @@ class ExpiredResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // return parent::toArray($request);
         $expiryDate = $this->expiry_date ? Carbon::parse($this->expiry_date) : null;
         $today = Carbon::now();
         

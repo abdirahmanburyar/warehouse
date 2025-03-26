@@ -104,7 +104,10 @@ class ExpiredController extends Controller
         }
         
         // Paginate the results
-        $inventories = $inventoryQuery->paginate(1)->withQueryString();
+        $inventories = $inventoryQuery->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+
+        $inventories->setPath(route('expired.index'));
         
         // Extract non-empty filters
         $filters = [];
@@ -112,6 +115,7 @@ class ExpiredController extends Controller
         if ($request->filled('sort_field')) $filters['sort_field'] = $request->input('sort_field');
         if ($request->filled('sort_direction')) $filters['sort_direction'] = $request->input('sort_direction');
         if ($warehouseId) $filters['warehouse_id'] = $warehouseId;
+
         
         // Count expired items for dashboard metrics (using more efficient queries)
         $nearExpiryCount = Inventory::whereNotNull('expiry_date')
@@ -137,7 +141,7 @@ class ExpiredController extends Controller
                 return $query->where('warehouse_id', $warehouseId);
             })
             ->count();
-        
+        logger()->info($inventories);
         return Inertia::render('Expired/Index', [
             'inventories' => ExpiredResource::collection($inventories),
             'activeTab' => $tab,
