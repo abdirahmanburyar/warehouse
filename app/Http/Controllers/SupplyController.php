@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Supply;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Events\InventoryUpdated;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use Illuminate\Http\Request;
@@ -343,16 +344,29 @@ class SupplyController extends Controller
                 ]);
 
                 // If new inventory record, set the dates
-                if (!$inventory->exists) {
-                    $inventory->manufacturing_date = $item->manufacturing_date;
-                    $inventory->expiry_date = $item->expiry_date;
-                    $inventory->quantity = 0;
-                }
+                // if (!$inventory->exists) {
+                //     $inventory->manufacturing_date = $item->manufacturing_date;
+                //     $inventory->expiry_date = $item->expiry_date;
+                //     $inventory->quantity = 0;
+                // }
 
                 // Add the quantity
-                $inventory->quantity += $item->quantity;
-                $inventory->save();
+                if ($inventory->exists && $inventory->expiry_date == $item->expiry_date) {
+                    $inventory->quantity += $item->quantity;
+                    $inventory->save();
+                } else {
+                    $newInventory = Inventory::create([
+                        'product_id' => $item->product_id,
+                        'warehouse_id' => $item->supply->warehouse_id,
+                        'batch_number' => $item->batch_number,
+                        'manufacturing_date' => $item->manufacturing_date,
+                        'expiry_date' => $item->expiry_date,
+                        'quantity' => $item->quantity,
+                    ]);
+                }
             }
+
+            event(new InventoryUpdated());
 
             DB::commit();
             return response()->json(['message' => 'Item status updated successfully']);
