@@ -14,7 +14,7 @@ import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
-import PusherDebugPanel from '@/Components/PusherDebugPanel.vue';
+import moment from 'moment';
 
 const props = defineProps({
     inventories: Object,
@@ -225,7 +225,7 @@ const deleteInventory = () => {
 // Format date
 const formatDate = (date) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString();
+    return moment(date).format('LL');
 };
 
 // Check if inventory is low
@@ -241,19 +241,18 @@ const isOutOfStock = (inventory) => {
 // Check if product is expiring soon (within 30 days)
 const isExpiringSoon = (inventory) => {
     if (!inventory.expiry_date) return false;
-    const expiryDate = new Date(inventory.expiry_date);
-    const today = new Date();
-    const diffTime = expiryDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const expiryDate = moment(inventory.expiry_date);
+    const today = moment();
+    const diffDays = expiryDate.diff(today, 'days');
     return diffDays <= 30 && diffDays > 0;
 };
 
 // Check if product is expired
 const isExpired = (inventory) => {
     if (!inventory.expiry_date) return false;
-    const expiryDate = new Date(inventory.expiry_date);
-    const today = new Date();
-    return expiryDate < today;
+    const expiryDate = moment(inventory.expiry_date);
+    const today = moment();
+    return expiryDate.isBefore(today);
 };
 
 // Computed properties for inventory status counts
@@ -411,11 +410,12 @@ const echo = ref(null);
 
                 <div class="flex">
                     <!-- Inventory Table -->
-                    <div class="flex-1 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[10px]"
+                    <div>
+                        <div class="flex-1 overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[10px]"
                                         @click="sort('id')">
                                         SN
                                         <span v-if="sortField === 'id'">
@@ -478,13 +478,19 @@ const echo = ref(null);
                                         <div v-else class="text-sm text-gray-500">Product not found</div>
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4">
-                                        {{ inventory.product.category ? inventory.product.category.name : 'No Category'
-                                        }}
-
-                                        <!-- <div v-if="inventory.warehouse">
-                                        {{ inventory.warehouse.name }}
-                                    </div>
-                                    <div v-else class="text-sm text-gray-500">Warehouse not found</div> -->
+                                        {{ inventory.product.category ? inventory.product.category.name : 'No Category' }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div :class="{
+                                            'font-medium': true,
+                                            'text-red-600': isLowStock(inventory),
+                                            'text-gray-900': !isLowStock(inventory),
+                                        }">
+                                            {{ inventory.quantity }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Reorder Level: {{ inventory.reorder_level }}
+                                        </div>
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4">
                                         <div :class="{
@@ -508,7 +514,7 @@ const echo = ref(null);
                                             {{ formatDate(inventory.expiry_date) }}
                                         </div>
                                         <div class="text-sm text-gray-500">
-                                            Mfg: {{ formatDate(inventory.manufacturing_date) }}
+                                            {{ formatDate(inventory.manufacturing_date) }}
                                         </div>
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4">
@@ -566,11 +572,10 @@ const echo = ref(null);
                                 </tr>
                             </tbody>
                         </table>
-                        <div class="mt-4 flex justify-end">
-                            <Pagination :links="currentInventories.meta.links" />
-                        </div>
                     </div>
-                    <div class="mt-4 p-3">
+                    <Pagination :links="currentInventories.meta.links" />
+                </div>
+                    <div class="sticky top-0 z-10 bg-white shadow-sm p-3">
                         <InventoryStatusIcons :statusCounts="inventoryStatusCounts" />
                     </div>
                 </div>

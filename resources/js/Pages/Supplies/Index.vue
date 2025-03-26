@@ -618,6 +618,7 @@
     import Swal from 'sweetalert2';
     import Multiselect from 'vue-multiselect';
     import 'vue-multiselect/dist/vue-multiselect.css';
+    import moment from 'moment';
 
     // Initialize toast
     const toast = useToast();
@@ -807,14 +808,13 @@
     // Format date
     const formatDate = (dateString) => {
         if (!dateString) return '—';
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
+        return moment(dateString).format('LL');
     };
 
     // Format date to YYYY-MM-DD
     const formatDateForInput = (date) => {
         if (!date) return '';
-        return date.split('T')[0];
+        return moment(date).format('YYYY-MM-DD');
     };
 
     // Open create supply modal

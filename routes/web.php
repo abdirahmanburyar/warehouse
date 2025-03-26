@@ -170,9 +170,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         // Redirect to supplies index with suppliers tab active
         Route::get('/', function() {
             return redirect()->route('supplies.index', ['tab' => 'suppliers']);
-        })->name('suppliers.index');
-        Route::post('/store', 'store')->name('suppliers.store');
-        Route::delete('/{supplier}', 'destroy')->name('suppliers.destroy');
+        })->name('suppliers.index')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.view');
+        Route::post('/store', 'store')->name('suppliers.store')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.create');
+        Route::delete('/{supplier}', 'destroy')->name('suppliers.destroy')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.delete');
 
     });
     

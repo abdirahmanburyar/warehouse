@@ -113,7 +113,7 @@
                                     class="w-full md:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
                                     <span class="flex items-center justify-center">
                                         <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                         Reset
                                     </span>
@@ -222,7 +222,7 @@
                                                     stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                 </svg>
                                                 <p>No products found</p>
                                             </div>
@@ -233,9 +233,7 @@
                         </div>
 
                         <!-- Pagination -->
-                        <div class="mt-6 flex justify-center">
-                            <Pagination :links="props.products.meta.links" />
-                        </div>
+                        <Pagination :links="props.products.meta.links" class="mt-6 flex justify-end"/>
                     </div>
                 </div>
             </div>
@@ -394,9 +392,7 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-4 flex justify-center">
-                        <Pagination :links="props.categories.meta.links" />
-                    </div>
+                    <Pagination :links="props.categories.meta.links" />
                 </div>
             </div>
         </div>
@@ -558,9 +554,7 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-4 flex justify-center">
-                        <Pagination :links="dosages.meta.links" />
-                    </div>
+                    <Pagination :links="dosages.meta.links" class="mt-4 flex justify-end"/>
                 </div>
             </div>
         </div>
@@ -656,7 +650,7 @@
                         <!-- Form Actions -->
                         <div class="flex items-center justify-end pt-4 border-t border-gray-200">
                             <button type="button"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition mr-2 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 disabled:opacity-50"
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition mr-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50"
                                 @click="closeModal" :disabled="isSubmitted || processing">
                                 Cancel
                             </button>
@@ -704,11 +698,9 @@
                         @click="deleteProduct" :disabled="processing">
                         <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         Delete
                     </button>
@@ -794,11 +786,9 @@
                             :disabled="dosageIsSubmitted">
                             <svg v-if="dosageProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                 <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
                             {{ dosageForm.id ? 'Update Dosage' : 'Save Dosage' }}
                         </button>
@@ -827,11 +817,9 @@
                         @click="deleteDosage" :disabled="dosageProcessing">
                         <svg v-if="dosageProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         Delete Dosage
                     </button>
@@ -887,14 +875,11 @@
                             :disabled="categoryIsSubmitted || categoryProcessing">
                             <svg v-if="categoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                 <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
-                            {{ categoryForm.id ? (categoryIsSubmitted ? 'Updating...' : 'Update') : (categoryIsSubmitted
-                                ? 'Creating...' : 'Create') }}
+                            {{ categoryForm.id ? 'Update' : 'Create' }}
                         </button>
                     </div>
                 </form>
@@ -923,11 +908,9 @@
                         @click="deleteCategory" :disabled="categoryProcessing">
                         <svg v-if="categoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         Delete
                     </button>
@@ -940,10 +923,9 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { ref, watch, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
-import dayjs from 'dayjs';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Modal from '@/Components/Modal.vue';
@@ -992,7 +974,9 @@ const dosageErrors = ref(null);
 const dosage_per_page = ref(props.dosageFilters?.dosage_per_page || 10);
 const filteredDosages = ref([]);
 
-const params = ref({});
+const params = ref({
+    page: route().params.page || 1
+});
 
 // Category form
 const categoryForm = ref({
@@ -1093,10 +1077,13 @@ function reloadProducts() {
         delete params.value.dosage_id;
     }
 
+    // Always include the page parameter
+    params.value.page = route().params.page || 1;
+
     router.get(route('products.index'), params.value, {
         preserveState: true,
         preserveScroll: true,
-        replace: true,
+        replace: false,
         only: ['products']
     });
 }
@@ -1120,7 +1107,7 @@ function reloadCategories() {
     router.get(route('products.index'), params.value, {
         preserveState: true,
         preserveScroll: true,
-        replace: true,
+        replace: false,
         only: ['categories']
     });
 }
@@ -1138,7 +1125,7 @@ function reloadDosages() {
     }
     router.get(route('products.index'), params.value, {
         preserveState: true,
-        replace: true,
+        replace: false,
         only: ['dosages']
     });
 }
@@ -1154,7 +1141,8 @@ const sortCategory = (field) => {
 
     router.get(route('products.index'), params.value, {
         preserveState: true,
-        replace: true,
+        preserveScroll: true,
+        replace: false,
         only: ['categories']
     });
 };
@@ -1170,7 +1158,8 @@ const sortDosage = (field) => {
 
     router.get(route('products.index'), params.value, {
         preserveState: true,
-        replace: true,
+        preserveScroll: true,
+        replace: false,
         only: ['dosages']
     });
 };

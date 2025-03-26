@@ -379,6 +379,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextArea from '@/Components/TextArea.vue';
 import debounce from 'lodash/debounce';
+import moment from 'moment';
 
 const props = defineProps({
     inventories: Object,
@@ -431,10 +432,7 @@ const disposalDate = computed(() => {
 // Simple date formatter for card display (MM/DD/YYYY)
 function formatDateShort(date) {
     if (!date) return 'N/A';
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
+    return moment(date).format('LL');
 }
 
 // Watch for search input changes
@@ -537,14 +535,10 @@ function confirmDisposal() {
 }
 
 // Helper functions for date formatting and status
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return moment(date).format('LL');
+};
 
 // Functions using pre-computed values from the resource
 function getExpiryClass(inventory) {

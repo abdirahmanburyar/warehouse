@@ -52,7 +52,11 @@ class ProductController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
         
-        $products = $query->with(['dosage.category'])->paginate($request->input('per_page', 10));
+        $products = $query->with(['dosage.category'])
+            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        $products->setPath(url()->current());
         
         // Handle category listing functionality
         $categoryQuery = Category::query();
@@ -76,7 +80,11 @@ class ProductController extends Controller
         $categoryQuery->orderBy($categorySortField, $categorySortDirection);
         
         // Get paginated category results
-        $categories = $categoryQuery->paginate($request->input('category_per_page', 10));
+        $categories = $categoryQuery
+            ->paginate($request->input('category_per_page', 10), ['*'], 'category_page', $request->input('category_page', 1))
+            ->withQueryString();
+
+        $categories->setPath(url()->current());
         
         // Handle dosage listing functionality
         $dosageQuery = Dosage::query();
@@ -97,15 +105,19 @@ class ProductController extends Controller
         $dosageQuery->orderBy($dosageSortField, $dosageSortDirection);
         
         // Get paginated dosage results
-        $dosages = $dosageQuery->with('category')->paginate($request->input('dosage_per_page', 10));
+        $dosages = $dosageQuery->with('category')
+            ->paginate($request->input('dosage_per_page', 10), ['*'], 'dosage_page', $request->input('dosage_page', 1))
+            ->withQueryString();
+
+        $dosages->setPath(url()->current());
         
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
-            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page']),
-            'categoryFilters' => $request->only(['categorySearch', 'category_sort_field', 'category_sort_direction', 'category_per_page']),
+            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page']),
+            'categoryFilters' => $request->only(['categorySearch', 'category_sort_field', 'category_sort_direction', 'category_per_page', 'category_page']),
             'categories' => CategoryResource::collection($categories),
             'dosages' => DosageResource::collection($dosages),
-            'dosageFilters' => $request->only(['dosageSearch', 'dosage_sort_field', 'dosage_sort_direction', 'dosage_per_page']),
+            'dosageFilters' => $request->only(['dosageSearch', 'dosage_sort_field', 'dosage_sort_direction', 'dosage_per_page', 'dosage_page']),
         ]);
     }
 

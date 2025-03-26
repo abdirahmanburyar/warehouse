@@ -340,23 +340,24 @@ class SupplyController extends Controller
 
             // If approved, update inventory
             if ($validated['status'] === 'approved') {
-                // Then, update or create inventory record
+                // Check for existing inventory with same product and expiry date
                 $inventory = Inventory::where('product_id', $item->product_id)
-                    ->where('batch_number', $item->batch_number)
-                    ->latest()
+                    ->where('expiry_date', $item->expiry_date)
                     ->first();
 
-                // Add the quantity
-                if ($inventory && Carbon::parse($inventory->expiry_date)->equalTo(Carbon::parse($item->expiry_date))) {
+                if ($inventory) {
+                    // Update existing inventory quantity
                     $inventory->increment('quantity', $item->quantity);
                 } else {
-                    $newInventory = Inventory::create([
+                    // Create new inventory record
+                    Inventory::create([
                         'product_id' => $item->product_id,
-                        'warehouse_id' => $item->supply->warehouse_id,
                         'batch_number' => $item->batch_number,
-                        'manufacturing_date' => $item->manufacturing_date,
-                        'expiry_date' => $item->expiry_date,
                         'quantity' => $item->quantity,
+                        'expiry_date' => $item->expiry_date,
+                        'manufacturing_date' => $item->manufacturing_date,
+                        'warehouse_id' => $item->supply->warehouse_id,
+                        'created_by' => auth()->id()
                     ]);
                 }
             }
