@@ -341,11 +341,13 @@ class SupplyController extends Controller
             // If approved, update inventory
             if ($validated['status'] === 'approved') {
                 // Then, update or create inventory record
-                $inventory = Inventory::firstOrNew([
-                    'product_id' => $item->product_id,
-                    'warehouse_id' => $item->supply->warehouse_id,
-                    'batch_number' => $item->batch_number
-                ]);
+                $inventory = Inventory::where('product_id', $item->product_id)
+                    ->where('batch_number', $item->batch_number)
+                    ->latest()
+                    ->first();
+                logger()->info($inventory->expiry_date);
+                logger()->info($item->expiry_date);
+                // 'warehouse_id' => $item->supply->warehouse_id,
 
                 // If new inventory record, set the dates
                 // if (!$inventory->exists) {
@@ -355,7 +357,7 @@ class SupplyController extends Controller
                 // }
 
                 // Add the quantity
-                if ($inventory->exists && Carbon::parse($inventory->expiry_date)->equalTo(Carbon::parse($item->expiry_date))) {
+                if ($inventory && Carbon::parse($inventory->expiry_date)->equalTo(Carbon::parse($item->expiry_date))) {
                     $inventory->quantity += $item->quantity;
                     $inventory->save();
                 } else {
