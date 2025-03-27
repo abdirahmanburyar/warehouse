@@ -81,14 +81,8 @@
                                 <tr v-for="supply in props.supplies.data" :key="supply.id">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <input type="checkbox" 
-                                            :checked="isSelected(supply.id)"
-                                            @change="(event) => {
-                                                if (event.target.checked) {
-                                                    selectedSupplies.value.push(supply.id);
-                                                } else {
-                                                    selectedSupplies.value = selectedSupplies.value.filter(id => id !== supply.id);
-                                                }
-                                            }"
+                                            :checked="selectedSupplies.includes(supply.id)"
+                                            @change="() => toggleSupply(supply.id)"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -822,13 +816,6 @@ const supplyFilters = ref({
 
 // Selection states
 const selectedSupplies = ref([]);
-const isAllSelected = computed(() => {
-    return props.supplies.data.length > 0 && selectedSupplies.value.length === props.supplies.data.length;
-});
-
-const isSelected = (supplyId) => {
-    return selectedSupplies.value.includes(supplyId);
-};
 
 // Toggle all supplies selection
 const toggleSelectAll = (event) => {
@@ -840,6 +827,21 @@ const toggleSelectAll = (event) => {
         selectedSupplies.value = [];
     }
 };
+
+// Toggle individual supply selection
+const toggleSupply = (supplyId) => {
+    const index = selectedSupplies.value.indexOf(supplyId);
+    if (index === -1) {
+        selectedSupplies.value.push(supplyId);
+    } else {
+        selectedSupplies.value = selectedSupplies.value.filter(id => id !== supplyId);
+    }
+};
+
+// Check if all supplies are selected
+const isAllSelected = computed(() => {
+    return props.supplies.data.length > 0 && selectedSupplies.value.length === props.supplies.data.length;
+});
 
 // Methods for supplies
 const getSupplies = async () => {
