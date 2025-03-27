@@ -82,14 +82,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::delete('/categories/{category}/delete', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
-    
-    // Category Routes
-    Route::get('/categories', [CategoryController::class, 'index'])->middleware(PermissionMiddleware::class.':category.view')->name('categories.index');
-    Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('categories.store');
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('categories.destroy');
-    Route::get('/api/categories', [CategoryController::class, 'getCategories'])->middleware(PermissionMiddleware::class.':category.view')->name('api.categories');
     
     // Warehouse Management Routes
     Route::controller(WarehouseController::class)
@@ -115,41 +109,40 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::controller(ProductController::class)
         ->prefix('/products')
         ->group(function () {
-            Route::get('/', 'index')->middleware('can:product.view')->name('products.index');
-            Route::post('/store', 'store')->middleware('can:product.create')->name('products.store');
-            Route::put('/{product}', 'update')->middleware('can:product.edit')->name('products.update');
-            Route::delete('/{product}', 'destroy')->middleware('can:product.delete')->name('products.destroy');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':product.view')->name('products.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':product.create')->name('products.store');
+            Route::put('/{product}', 'update')->middleware(PermissionMiddleware::class.':product.edit')->name('products.update');
+            Route::delete('/{product}', 'destroy')->middleware(PermissionMiddleware::class.':product.delete')->name('products.destroy');
+            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':product.delete')->name('products.bulk');
             Route::post('/search', 'search')->name('products.search');
         });
     
     // Inventory Routes
     Route::controller(InventoryController::class)
-    ->prefix('/inventories')
-    ->group(function () {
-        Route::get('/', 'index')->name('inventories.index');
-        Route::post('/store', 'store')->name('inventories.store');
-        Route::get('/{inventory}', 'show')->name('inventories.show');
-        Route::delete('/{inventory}', 'destroy')->name('inventories.destroy');
-        Route::get('/debug/pusher', 'debugPusher')->name('inventories.debug-pusher');
-    });
+        ->prefix('/inventories')
+        ->group(function () {
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':inventory.view')->name('inventories.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':inventory.create')->name('inventories.store');
+            Route::put('/{inventory}', 'update')->middleware(PermissionMiddleware::class.':inventory.edit')->name('inventories.update');
+            Route::delete('/{inventory}', 'destroy')->middleware(PermissionMiddleware::class.':inventory.delete')->name('inventories.destroy');
+            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':inventory.delete')->name('inventories.bulk');
+        });
 
     // Supply Routes
     Route::controller(SupplyController::class)
-    ->prefix('/supplies')->group(function () {
-        Route::get('/', 'index')->name('supplies.index');
-        Route::get('/create', 'create')->name('supplies.create');
-        Route::post('/store', 'store')->name('supplies.store');
-        Route::post('/batch', 'storeBatch')->name('supplies.store-batch');
-        Route::get('/{supply}', 'show')->name('supplies.show');
-        Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
-        Route::post('/supply-items/{id}/approve', [SupplyController::class, 'approveItem'])->name('supply-items.approve');
-        Route::post('/approve-bulk', 'approveBulk')->name('supplies.approve-bulk');
-        Route::get('/{supply}/items', [SupplyController::class, 'getItems'])->name('supplies.items');
-    });
+        ->prefix('/supplies')
+        ->group(function () {
+            Route::get('/', 'index')->name('supplies.index');
+            Route::post('/store', 'store')->name('supplies.store');
+            Route::get('/items/{supply}', 'getItems')->name('supplies.items');
+            Route::patch('/items/{item}/status', 'updateItemStatus')->name('supplies.items.update-status');
+            Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
+            Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
+        });
 
     // Approval Routes
     Route::controller(ApprovalController::class)
-    ->prefix('approvals')
+        ->prefix('approvals')
         // ->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])
         ->group(function () {
             Route::get('/', 'index')
@@ -166,15 +159,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     
     // Supplier Routes
     Route::controller(SupplierController::class)
-    ->prefix('/suppliers')->group(function () {
-        // Redirect to supplies index with suppliers tab active
-        Route::get('/', function() {
-            return redirect()->route('supplies.index', ['tab' => 'suppliers']);
-        })->name('suppliers.index')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.view');
-        Route::post('/store', 'store')->name('suppliers.store')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.create');
-        Route::delete('/{supplier}', 'destroy')->name('suppliers.destroy')->middleware(\App\Http\Middleware\PermissionMiddleware::class.':suppliers.delete');
+        ->prefix('/suppliers')->group(function () {
+            // Redirect to supplies index with suppliers tab active
+            Route::get('/', function() {
+                return redirect()->route('supplies.index', ['tab' => 'suppliers']);
+            })->name('suppliers.index');
+            Route::post('/store', 'store')->name('suppliers.store');
+            Route::delete('/{supplier}/destroy', 'destroy')->name('suppliers.destroy');
 
-    });
+        });
     
     // Settings Routes
     Route::middleware(PermissionMiddleware::class.':settings.view')->group(function () {
@@ -182,10 +175,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     });
     // Expired Routes
     Route::controller(ExpiredController::class)
-    ->prefix('/expired')->group(function () {
-        Route::get('/', 'index')->name('expired.index');
-        Route::post('/dispose', 'markAsDisposed')->name('expired.dispose');
-    });
+        ->prefix('/expired')->group(function () {
+            Route::get('/', 'index')->name('expired.index');
+            Route::post('/dispose', 'markAsDisposed')->name('expired.dispose');
+        });
     
     // Remove duplicate resource routes since we already have individual routes defined above
     // Route::middleware('role:admin')->group(function () {

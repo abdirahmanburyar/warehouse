@@ -131,47 +131,47 @@ class CategoryController extends Controller
     /**
      * Remove the specified category from storage.
      */
-    public function destroy(Category $category, Request $request)
+    public function destroy(Category $category)
     {
         try {
-            // Check if the category is being used by any products
-            $productsCount = $category->products()->count();
-            
-            if ($productsCount > 0) {
-                $message = 'Cannot delete category. It is being used by ' . $productsCount . ' product(s).';
-                
-                if ($request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $message
-                    ], 422);
-                }
-                
-                return back()->with('error', $message);
+            // Check if category has any products
+            if ($category->products()->exists()) {
+                return response()->json("Cannot delete category. It is being used by {$category->products()->count()} product(s).", 500);
             }
-            
+
             $category->delete();
-            $message = 'Category deleted successfully';
+            return response()->json('Category deleted successfully', 200);
+        } catch (Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Bulk delete categories
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'exists:categories,id'
+            ]);
+
+            $categories = Category::whereIn('id', $request->ids)->get();
             
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $message
-                ]);
+            // Check each category for products
+            foreach ($categories as $category) {
+                if ($category->products()->exists()) {
+                    return response()->json("Cannot delete category '{$category->name}'. It is being used by {$category->products()->count()} product(s).", 500);
+                }
             }
-            
-            return redirect()->route('categories.index')->with('success', $message);
-        } catch (Throwable $e) {
-            $message = 'An error occurred: ' . $e->getMessage();
-            
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $message
-                ], 500);
-            }
-            
-            return back()->with('error', $message);
+
+            // Delete all categories if none have products
+            Category::whereIn('id', $request->ids)->delete();
+
+            return response()->json('Categories deleted successfully', 200);
+        } catch (Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
 }

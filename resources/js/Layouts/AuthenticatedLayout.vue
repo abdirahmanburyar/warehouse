@@ -148,8 +148,23 @@
             </div>
 
             <!-- Page Content -->
-            <main>
-                <slot />
+            <main class="flex flex-col relative pb-16">
+                <div class="flex-1">
+                    <slot />
+                </div>
+                <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+                    <div class="container mx-auto py-2">
+                        <div class="flex justify-center items-center gap-4">
+                            <img src="/assets/images/vista.png" alt="Vista" class="w-[80px]" />
+                            <span class="flex items-center text-gray-400">|</span>
+                            <span class="flex items-center text-gray-600">Copyright 2025 Vista. All rights reserved.</span>
+                            <span class="flex items-center text-gray-400">|</span>
+                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Terms of Use</span>
+                            <span class="flex items-center text-gray-400">|</span>
+                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Privacy</span>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
 
@@ -508,7 +523,7 @@ export default {
 }
 
 .svg-image {
-    height: 120px;
+    height: 110px;
 }
 
 .user-section {

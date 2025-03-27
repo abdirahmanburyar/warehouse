@@ -50,19 +50,16 @@ class SupplierController extends Controller
      */
     public function destroy(Supplier $supplier)
     {
-        // Check if the supplier has any associated supplies
-        if ($supplier->supplies()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete supplier with associated supplies.',
-            ], 422);
+        try {
+            if ($supplier->supplies()->count() > 0) {
+                return response()->json('Cannot delete supplier with associated supplies.', 500);
+            }
+
+            $supplier->delete();
+
+            return response()->json('Supplier deleted successfully.', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
-
-        $supplier->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Supplier deleted successfully.'
-        ]);
     }
 }

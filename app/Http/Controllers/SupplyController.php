@@ -27,7 +27,7 @@ class SupplyController extends Controller
         // Get supplies data with relationships
         $supplies = Supply::query()
             ->with(['supplier', 'items.product', 'warehouse'])
-            ->when($request->filled('search'), function ($query) use ($request) {
+            ->when($request->filled('search') && $activeTab === 'supplies', function ($query) use ($request) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->whereHas('items.product', function ($q) use ($search) {
@@ -39,9 +39,6 @@ class SupplyController extends Controller
                     ->orWhere('invoice_number', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('supplier'), function ($query) use ($request) {
-                $query->where('supplier_id', $request->supplier);
-            })
             ->when($request->filled('date_from'), function ($query) use ($request) {
                 $query->whereDate('supply_date', '>=', $request->date_from);
             })
@@ -49,10 +46,8 @@ class SupplyController extends Controller
                 $query->whereDate('supply_date', '<=', $request->date_to);
             })
             ->latest()
-            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->paginate($request->input('per_page', 5))
             ->withQueryString();
-
-        $supplies->setPath('supplies');
             
         // Get suppliers data
         $suppliers = Supplier::query()
@@ -81,11 +76,13 @@ class SupplyController extends Controller
             'suppliers' => $suppliers,
             'warehouses' => $warehouses,
             'products' => $products,
-            'filters' => [
+            'supplyFilters' => [
                 'search' => $request->search,
-                'supplier' => $request->supplier,
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
+            ],
+            'supplierFilters' => [
+                'search' => $request->search,
             ],
             'activeTab' => $activeTab,
         ]);
@@ -309,13 +306,27 @@ class SupplyController extends Controller
     }
 
     /**
-     * Get items for a supply
+     * Get items for a specific supply
      */
     public function getItems(Supply $supply)
     {
-        return $supply->items()
-            ->with('product')
-            ->get();
+        return $supply->items()->with('product')->get();
+    }
+
+    /**
+     * Update the status of a supply item
+     */
+    public function updateItemStatus(Request $request, SupplyItem $item)
+    {
+        $request->validate([
+            'is_approved' => 'required|boolean'
+        ]);
+
+        $item->update([
+            'is_approved' => $request->is_approved
+        ]);
+
+        return response()->json(['message' => 'Item status updated successfully']);
     }
 
     /**
@@ -419,6 +430,99 @@ class SupplyController extends Controller
             });
         } catch (\Throwable $e) {
             return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Delete multiple supplies at once
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:supplies,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Delete supplies that have no approved items
+            $supplies = Supply::whereIn('id', $request->ids)
+                ->whereDoesntHave('items', function ($query) {
+                    $query->whereNot('status', 'approved');
+                })
+                ->get();
+
+            if ($supplies->isEmpty()) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Cannot delete supplies because they have approved items.'
+                ], 422);
+            }
+
+            // Delete the supply items first
+            foreach ($supplies as $supply) {
+                $supply->items()->delete();
+                $supply->delete();
+            }
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Supplies deleted successfully',
+                'deleted_count' => $supplies->count()
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete supplies: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk delete supplies after checking if they can be deleted
+     */
+    public function bulkDeleteSupplies(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:supplies,id'
+        ]);
+
+        $supplies = Supply::whereIn('id', $request->ids)
+            ->with('items')
+            ->get();
+
+        // Check if any supply has approved items
+        foreach ($supplies as $supply) {
+            if ($supply->items->contains('is_approved', true)) {
+                return response()->json([
+                    'message' => 'Cannot delete supplies that have approved items.',
+                    'supply_id' => $supply->id
+                ], 500);
+            }
+        }
+
+        // If we get here, none of the supplies have approved items
+        try {
+            DB::beginTransaction();
+            
+            // Delete all supply items first
+            SupplyItem::whereIn('supply_id', $request->ids)->delete();
+            
+            // Then delete the supplies
+            Supply::whereIn('id', $request->ids)->delete();
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Supplies deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete supplies: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -122,23 +122,14 @@ class DosageController extends Controller
             
             // Check if the dosage is associated with any products
             if ($dosage->products()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete dosage. It is associated with one or more products.'
-                ], 422);
+                return response()->json('Cannot delete dosage. It is associated with one or more products.', 500);
             }
             
             $dosage->delete();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Dosage deleted successfully'
-            ]);
+            return response()->json('Dosage deleted successfully', 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ], 500);
+            return response()->json($e->getMessage(), 500);
         }
     }
 

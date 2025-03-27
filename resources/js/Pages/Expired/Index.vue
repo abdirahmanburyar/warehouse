@@ -2,7 +2,6 @@
 
     <Head title="Expired" />
     <AuthenticatedLayout>
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Manage Expiration</h2>
         <div class="bg-white overflow-hidden sm:rounded-lg">
             <div class="p-6 text-gray-900">
                 <!-- Flash messages -->
@@ -88,21 +87,25 @@
                     <div class="lg:w-10/12 lg:order-1">
                         <!-- Tabs -->
                         <div class="border-b border-gray-200 mb-4">
-                            <nav class="-mb-px flex space-x-8">
+                            <nav class="-mb-px flex w-full">
                                 <button @click="navigateToTab('all')"
-                                    :class="[currentTab === 'all' ? 'border-blue-600 text-blue-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
+                                    class="flex-1 text-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                                    :class="[currentTab === 'all' ? 'border-blue-600 text-blue-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']">
                                     All Expiration
                                 </button>
                                 <button @click="navigateToTab('near')"
-                                    :class="[currentTab === 'near' ? 'border-yellow-600 text-yellow-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
-                                    Near to Expiration
+                                    class="flex-1 text-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                                    :class="[currentTab === 'near' ? 'border-yellow-600 text-yellow-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']">
+                                    Near Expiry
                                 </button>
                                 <button @click="navigateToTab('expired')"
-                                    :class="[currentTab === 'expired' ? 'border-red-600 text-red-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
+                                    class="flex-1 text-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                                    :class="[currentTab === 'expired' ? 'border-red-600 text-red-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']">
                                     Expired
                                 </button>
                                 <button @click="navigateToTab('disposed')"
-                                    :class="[currentTab === 'disposed' ? 'border-green-600 text-green-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm']">
+                                    class="flex-1 text-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                                    :class="[currentTab === 'disposed' ? 'border-emerald-600 text-emerald-700 border-b-4' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']">
                                     Disposed
                                 </button>
                             </nav>
@@ -135,122 +138,99 @@
 
                         <!-- Inventory Table -->
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                            <table class="min-w-full border-2 border-black divide-y divide-black">
+                                <thead class="bg-gray-50 border-b-2 border-black">
                                     <tr>
                                         <th v-if="currentTab === 'expired' || currentTab === 'near'" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider border-r-2 border-black">
                                             <input type="checkbox" v-model="selectAll" @change="toggleSelectAll">
                                         </th>
                                         <th @click="sort('product_name')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider cursor-pointer border-r-2 border-black">
                                             Product
                                             <span v-if="sort_field === 'product_name'" class="ml-1">
                                                 {{ sort_direction === 'asc' ? '↑' : '↓' }}
                                             </span>
                                         </th>
                                         <th @click="sort('batch_number')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider cursor-pointer border-r-2 border-black">
                                             Batch Number
                                             <span v-if="sort_field === 'batch_number'" class="ml-1">
                                                 {{ sort_direction === 'asc' ? '↑' : '↓' }}
                                             </span>
                                         </th>
+                                        <th @click="sort('expiry_date')" scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider cursor-pointer border-r-2 border-black">
+                                            Expiry Date
+                                            <span v-if="sort_field === 'expiry_date'" class="ml-1">
+                                                {{ sort_direction === 'asc' ? '↑' : '↓' }}
+                                            </span>
+                                        </th>
                                         <th @click="sort('quantity')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider cursor-pointer border-r-2 border-black">
                                             Quantity
                                             <span v-if="sort_field === 'quantity'" class="ml-1">
                                                 {{ sort_direction === 'asc' ? '↑' : '↓' }}
                                             </span>
                                         </th>
-                                        <th @click="sort('manufacturing_date')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
-                                            Manufactured
-                                            <span v-if="sort_field === 'manufacturing_date'" class="ml-1">
-                                                {{ sort_direction === 'asc' ? '↑' : '↓' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sort('expiry_date')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
-                                            Expires
-                                            <span v-if="sort_field === 'expiry_date'" class="ml-1">
-                                                {{ sort_direction === 'asc' ? '↑' : '↓' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sort('location')" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
-                                            Location
-                                            <span v-if="sort_field === 'location'" class="ml-1">
-                                                {{ sort_direction === 'asc' ? '↑' : '↓' }}
-                                            </span>
-                                        </th>
                                         <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider border-r-2 border-black">
                                             Status
                                         </th>
                                         <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white divide-y divide-black">
+                                    <tr v-if="inventories.data.length === 0">
+                                        <td :colspan="currentTab === 'expired' || currentTab === 'near' ? 7 : 6" class="px-6 py-10 text-center text-gray-500 bg-gray-50">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span class="text-lg font-medium">No {{ currentTab }} inventory items found</span>
+                                            </div>
+                                        </td>
+                                    </tr>
                                     <tr v-for="inventory in inventories.data" :key="inventory.id" :class="{
                                         'bg-red-50': inventory.is_expired,
                                         'bg-yellow-50': inventory.is_near_expiry
                                     }">
                                         <td v-if="currentTab === 'expired' || currentTab === 'near'"
-                                            class="px-6 py-4 whitespace-nowrap">
-                                            <input type="checkbox" :value="inventory.id" v-model="selectedInventories">
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            <input type="checkbox" v-model="selectedInventories" :value="inventory.id">
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ inventory.product_name }}
-                                            </div>
+                                        <td
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            {{ inventory.product_name }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ inventory.batch_number || '-' }}</div>
+                                        <td
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            {{ inventory.batch_number }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ inventory.quantity }}</div>
+                                        <td
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            {{ formatDate(inventory.expiry_date) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{
-                                                formatDate(inventory.manufacturing_date) }}</div>
+                                        <td
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            {{ inventory.quantity }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium" :class="getExpiryClass(inventory)">
-                                                {{ formatDate(inventory.expiry_date) }}
-                                                <span v-if="inventory.is_expired"
-                                                    class="ml-1 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-md border border-red-300 font-semibold">
-                                                    Expired
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ inventory.location || '-' }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span :class="getStatusClass(inventory)"
-                                                class="px-2 inline-flex text-2xs leading-5 font-semibold p-1">
+                                        <td
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r-2 border-black">
+                                            <span :class="getStatusClass(inventory)">
                                                 {{ getStatusText(inventory) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <button
-                                                v-if="inventory.is_active && (inventory.is_expired || inventory.is_near_expiry)"
+                                                v-if="(currentTab === 'expired' || currentTab === 'near') && !inventory.is_disposed"
                                                 @click="openDisposeModal([inventory.id])"
-                                                class="text-red-600 hover:text-red-900 mr-3">
-                                                Dispose
+                                                class="text-red-600 hover:text-red-900">
+                                                Mark as Disposed
                                             </button>
-                                            <!-- <a :href="route('inventories.show', inventory.id)" class="text-indigo-600 hover:text-indigo-900">
-                                                View
-                                            </a> -->
-                                        </td>
-                                    </tr>
-                                    <tr v-if="inventories.data.length === 0">
-                                        <td :colspan="currentTab === 'expired' || currentTab === 'near' ? 9 : 8"
-                                            class="px-6 py-4 text-center text-gray-500">
-                                            No items found.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -258,9 +238,7 @@
                             <!-- Pagination -->
                         </div>
                         <div class="mt-4 flex justify-end">
-                            <Pagination 
-                                :links="inventories.meta.links"
-                            />
+                            <Pagination :links="inventories.meta.links" />
                         </div>
 
                     </div>
@@ -268,66 +246,66 @@
                     <!-- Stats cards - only visible on large screens, vertical on right side -->
                     <div
                         class="hidden lg:grid lg:grid-cols-1 gap-3 lg:w-2/12 lg:order-2 lg:sticky lg:top-0 lg:self-start">
-                        <div class="bg-orange-400 p-4 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer text-white"
+                        <div class="bg-gradient-to-r from-orange-400 to-orange-300 p-4 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer"
                             @click="navigateToTab('all')">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="font-medium mb-1">Expiring within next<br />1 Year</div>
-                                    <div class="text-xl font-bold mb-2">{{ counts.all }} items</div>
-                                    <div class="text-xs opacity-90">{{ oneYearFromNow }}</div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-white">
+                                    <div class="text-sm font-medium">Expiring within next 1 year</div>
+                                    <div class="text-2xl font-bold">{{ counts.all }}</div>
+                                    <div class="text-xs mt-1 opacity-80">{{ oneYearFromNow }}</div>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white opacity-80"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-80"
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                                 </svg>
                             </div>
                         </div>
 
-                        <div class="bg-pink-500 p-4 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer text-white"
+                        <div class="bg-gradient-to-r from-pink-500 to-pink-400 p-4 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer"
                             @click="navigateToTab('near')">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="font-medium mb-1">Expiring within next<br />6 months</div>
-                                    <div class="text-xl font-bold mb-2">{{ counts.near }} items</div>
-                                    <div class="text-xs opacity-90">{{ sixMonthsFromNow }}</div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-white">
+                                    <div class="text-sm font-medium">Expiring within 6 months</div>
+                                    <div class="text-2xl font-bold">{{ counts.near }}</div>
+                                    <div class="text-xs mt-1 opacity-80">{{ sixMonthsFromNow }}</div>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white opacity-80"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-80"
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                                 </svg>
                             </div>
                         </div>
 
-                        <div class="bg-gray-500 p-4 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer text-white"
+                        <div class="bg-gradient-to-r from-gray-600 to-gray-500 p-4 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer"
                             @click="navigateToTab('expired')">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="font-medium mb-1">Expired items</div>
-                                    <div class="text-xl font-bold mb-2">{{ counts.expired }} items</div>
-                                    <div class="text-xs opacity-90">{{ oneYearAgo }}</div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-white">
+                                    <div class="text-sm font-medium">Expired items</div>
+                                    <div class="text-2xl font-bold">{{ counts.expired }}</div>
+                                    <div class="text-xs mt-1 opacity-80">{{ oneYearAgo }}</div>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white opacity-80"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-80"
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                                 </svg>
                             </div>
                         </div>
 
-                        <div class="bg-emerald-400 p-4 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer text-white"
+                        <div class="bg-gradient-to-r from-emerald-400 to-emerald-300 p-4 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer"
                             @click="navigateToTab('disposed')">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="font-medium mb-1">Disposed items</div>
-                                    <div class="text-xl font-bold mb-2">{{ counts.disposed }} items</div>
-                                    <div class="text-xs opacity-90">{{ disposalDate }}</div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-white">
+                                    <div class="text-sm font-medium">Disposed items</div>
+                                    <div class="text-2xl font-bold">{{ counts.disposed }}</div>
+                                    <div class="text-xs mt-1 opacity-80">{{ disposalDate }}</div>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white opacity-80"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-80"
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                                 </svg>
                             </div>
                         </div>

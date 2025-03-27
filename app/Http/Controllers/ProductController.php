@@ -12,6 +12,9 @@ use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -53,7 +56,7 @@ class ProductController extends Controller
         $query->orderBy($sortField, $sortDirection);
         
         $products = $query->with(['dosage.category'])
-            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->paginate($request->input('per_page', 5), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $products->setPath(url()->current());
@@ -81,7 +84,7 @@ class ProductController extends Controller
         
         // Get paginated category results
         $categories = $categoryQuery
-            ->paginate($request->input('category_per_page', 10), ['*'], 'category_page', $request->input('category_page', 1))
+            ->paginate($request->input('category_per_page', 3), ['*'], 'category_page', $request->input('category_page', 1))
             ->withQueryString();
 
         $categories->setPath(url()->current());
@@ -106,7 +109,7 @@ class ProductController extends Controller
         
         // Get paginated dosage results
         $dosages = $dosageQuery->with('category')
-            ->paginate($request->input('dosage_per_page', 10), ['*'], 'dosage_page', $request->input('dosage_page', 1))
+            ->paginate($request->input('dosage_per_page', 3), ['*'], 'dosage_page', $request->input('dosage_page', 1))
             ->withQueryString();
 
         $dosages->setPath(url()->current());
@@ -245,6 +248,55 @@ class ProductController extends Controller
             return response()->json($products, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handle bulk actions for products
+     */
+    public function bulk(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array',
+                'ids.*' => 'exists:products,id',
+                'action' => 'required|string|in:delete'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            }
+
+            DB::beginTransaction();
+            try {
+                if ($request->action === 'delete') {
+                    $products = Product::with(['inventories', 'supplyItems', 'dosage'])
+                        ->whereIn('id', $request->ids)
+                        ->get();
+                    
+                    foreach ($products as $product) {
+                        // Check if product has any related inventories
+                        if ($product->inventories->count() > 0) {
+                            throw new \Exception("Cannot delete product '{$product->name}' because it has related inventory items.");
+                        }
+
+                        // Check if product has any supply items
+                        if ($product->supplyItems->count() > 0) {
+                            throw new \Exception("Cannot delete product '{$product->name}' because it is used in supplies.");
+                        }
+
+                        $product->delete();
+                    }
+                }
+                DB::commit();
+
+                return response()->json(['message' => 'Products deleted successfully']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 }

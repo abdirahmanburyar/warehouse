@@ -65,7 +65,7 @@ class InventoryController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $inventories = $query->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+        $inventories = $query->paginate($request->input('per_page', 6), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         // Get products for dropdown
@@ -154,61 +154,57 @@ class InventoryController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(Inventory $inventory)
-    {
-        logger()->debug('[PUSHER-DEBUG] About to broadcast delete event for inventory ID: ' . $inventory->id);
-        
-        // Debug Pusher event dispatch for delete
-        Log::debug('Broadcasting InventoryEvent for deleted inventory ID: ' . $inventory->id, [
-            'inventory_id' => $inventory->id,
-            'action' => 'deleted',
-            'broadcast_driver' => config('broadcasting.default'),
-            'pusher_key' => config('broadcasting.connections.pusher.key'),
-            'channel' => 'inventory'
-        ]);
-
+    {        
         try {
+            $inventory->delete();
             event(new InventoryEvent());
             Log::info('Successfully dispatched InventoryEvent for deleted inventory ID: ' . $inventory->id);
-        } catch (\Exception $e) {
-            Log::error('Failed to dispatch InventoryEvent for deleted inventory: ' . $e->getMessage(), [
-                'exception' => $e,
-                'inventory_id' => $inventory->id
-            ]);
-        }
-        
-        $inventory->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Inventory item deleted successfully',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Inventory item deleted successfully',
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }   
     }
     
-    /**
-     * Debug Pusher configuration
+      /**
+     * Handle bulk actions for inventory items
      */
-    public function debugPusher()
+    public function bulk(Request $request)
     {
-        Log::info('Pusher Configuration Debug', [
-            'broadcast_driver' => config('broadcasting.default'),
-            'pusher_enabled' => config('broadcasting.connections.pusher.driver') === 'pusher',
-            'pusher_key' => config('broadcasting.connections.pusher.key'),
-            'pusher_cluster' => config('broadcasting.connections.pusher.options.cluster'),
-            'pusher_tls' => config('broadcasting.connections.pusher.options.useTLS'),
-            'env_pusher_key' => env('PUSHER_APP_KEY'),
-            'env_pusher_cluster' => env('PUSHER_APP_CLUSTER'),
-            'vite_pusher_key' => env('VITE_PUSHER_APP_KEY'),
-            'vite_pusher_cluster' => env('VITE_PUSHER_APP_CLUSTER'),
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array',
+                'ids.*' => 'exists:inventories,id',
+                'action' => 'required|string|in:delete'
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Pusher configuration logged. Check your Laravel log file.',
-            'config' => [
-                'broadcast_driver' => config('broadcasting.default'),
-                'pusher_key' => config('broadcasting.connections.pusher.key'),
-                'pusher_cluster' => config('broadcasting.connections.pusher.options.cluster'),
-            ]
-        ]);
+            if ($validator->fails()) {
+                return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            }
+
+            DB::beginTransaction();
+            try {
+                if ($request->action === 'delete') {
+                    $inventories = Inventory::whereIn('id', $request->ids)->get();
+                    foreach ($inventories as $inventory) {
+                        $inventory->delete();
+                    }
+                    
+                    // Broadcast the event to refresh other clients
+                    broadcast(new InventoryUpdated())->toOthers();
+                }
+                DB::commit();
+
+                return response()->json(['message' => 'Bulk action completed successfully']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            Log::error('Bulk action failed: ' . $e->getMessage());
+            return response()->json(['message' => 'An error occurred while processing the bulk action'], 500);
+        }
     }
 }
