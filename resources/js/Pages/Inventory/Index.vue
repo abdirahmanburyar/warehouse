@@ -493,9 +493,9 @@ const echo = ref(null);
                                             </span>
                                         </th>
                                         <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200"
-                                            @click="sort('reorder_level')">
-                                            Reorder Level
-                                            <span v-if="sortField === 'reorder_level'">
+                                            @click="sort('location')">
+                                            Location
+                                            <span v-if="sortField === 'location'">
                                                 {{ sortDirection === 'asc' ? '↑' : '↓' }}
                                             </span>
                                         </th>
@@ -604,16 +604,7 @@ const echo = ref(null);
                                         </td>
                                         <td
                                             class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                            <div :class="{
-                                                'font-medium': true,
-                                                'text-red-600': isLowStock(inventory),
-                                                'text-gray-900': !isLowStock(inventory),
-                                            }">
-                                                {{ inventory.quantity }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                Reorder Level: {{ inventory.reorder_level }}
-                                            </div>
+                                                {{ inventory.location }}
                                         </td>
                                         <td
                                             class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">

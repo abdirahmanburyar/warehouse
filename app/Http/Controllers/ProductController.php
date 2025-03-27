@@ -252,6 +252,23 @@ class ProductController extends Controller
     }
 
     /**
+     * Search for products
+     */
+    public function searchProducts(Request $request)
+    {
+        $query = $request->input('query');
+        
+        $products = Product::where('name', 'like', "%{$query}%")
+            ->orWhere('sku', 'like', "%{$query}%")
+            ->orWhere('barcode', 'like', "%{$query}%")
+            ->select('id', 'name as product_name', 'sku', 'barcode')
+            ->limit(10)
+            ->get();
+            
+        return response()->json($products);
+    }
+
+    /**
      * Handle bulk actions for products
      */
     public function bulk(Request $request)

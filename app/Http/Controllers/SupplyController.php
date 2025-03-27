@@ -314,19 +314,49 @@ class SupplyController extends Controller
     }
 
     /**
-     * Update the status of a supply item
+     * Update the status of a supply item.
      */
     public function updateItemStatus(Request $request, SupplyItem $item)
     {
-        $request->validate([
-            'is_approved' => 'required|boolean'
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $item->update([
-            'is_approved' => $request->is_approved
-        ]);
+            $validated = $request->validate([
+                'status' => 'required|in:pending,approved,rejected'
+            ]);
 
-        return response()->json(['message' => 'Item status updated successfully']);
+            $item->update([
+                'status' => $validated['status']
+            ]);
+
+            // If approved, update inventory
+            if ($validated['status'] === 'approved' && $item->status !== 'approved') {
+                $inventory = Inventory::firstOrCreate(
+                    [
+                        'product_id' => $item->product_id,
+                        'warehouse_id' => $item->supply->warehouse_id,
+                        'batch_number' => $item->batch_number,
+                    ],
+                    [
+                        'quantity' => 0,
+                        'manufacturing_date' => $item->manufacturing_date,
+                        'expiry_date' => $item->expiry_date,
+                    ]
+                );
+
+                $inventory->quantity += $item->quantity;
+                $inventory->save();
+
+                // Fire inventory updated event
+                event(new InventoryUpdated($inventory));
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Item status updated successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to update item status: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -372,6 +402,8 @@ class SupplyController extends Controller
                     ]);
                 }
             }
+
+            logger()->info('Inventory updated for supply item ' . $item->id);
 
             event(new InventoryUpdated());
 
@@ -449,7 +481,7 @@ class SupplyController extends Controller
             // Delete supplies that have no approved items
             $supplies = Supply::whereIn('id', $request->ids)
                 ->whereDoesntHave('items', function ($query) {
-                    $query->whereNot('status', 'approved');
+                    $query->where('status', 'approved');
                 })
                 ->get();
 

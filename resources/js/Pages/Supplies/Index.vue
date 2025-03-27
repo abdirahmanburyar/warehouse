@@ -50,7 +50,7 @@
                                 <tr>
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        <input type="checkbox" v-model="selectAll" @change="toggleSelectAll"
+                                        <input type="checkbox" :checked="selectAll" @change="toggleSelectAll"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     </th>
                                     <th scope="col"
@@ -78,7 +78,9 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="supply in props.supplies.data" :key="supply.id">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <input type="checkbox" v-model="selectedSupplies" :value="supply.id"
+                                        <input type="checkbox" 
+                                            :checked="selectedSupplies.includes(supply.id)"
+                                            @change="toggleSupply(supply.id)"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -131,11 +133,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="mt-4">
-                        <Pagination :links="props.supplies.meta.links" class="flex justify-end" />
                     </div>
 
                     <!-- Floating Delete Button -->
@@ -227,9 +224,19 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div v-if="props.suppliers?.meta?.links" class="mt-4">
-                        <Pagination :links="props.suppliers.meta.links" class="flex justify-end" />
+                    <!-- Floating Delete Button -->
+                    <div v-if="selectedSuppliers.length > 0"
+                        class="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-2 space-x-2">
+                        <span class="text-sm text-gray-600">{{ selectedSuppliers.length }} suppliers selected</span>
+                        <button @click="confirmBulkDeleteSuppliers"
+                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
                     </div>
                 </div>
             </div>
@@ -266,70 +273,150 @@
                         </div>
                     </div>
 
-                    <!-- Product Items -->
+                    <!-- Supply Items -->
                     <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-md font-medium text-gray-700">Products</h3>
-                            <SecondaryButton type="button" @click="addProduct" :disabled="isSubmitting">
-                                <i class="fas fa-plus w-4 h-4 mr-1"></i>
-                                Add Product
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Supply Items</h3>
+                                <span class="text-sm text-gray-500">
+                                    {{ supplyForm.items.length }} item{{ supplyForm.items.length !== 1 ? 's' : '' }}
+                                </span>
+                            </div>
+                            <SecondaryButton 
+                                type="button" 
+                                @click="addProduct" 
+                                :disabled="isSubmitting"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-50 hover:bg-indigo-100"
+                            >
+                                <i class="fas fa-plus w-4 h-4 mr-2"></i>
+                                Add New Item
                             </SecondaryButton>
                         </div>
 
-                        <div v-if="supplyForm.items.length === 0" class="text-center py-4 bg-gray-50 rounded-md">
-                            <p class="text-gray-500">No products added. Click "Add Product" to add products to this
-                                supply.</p>
+                        <!-- Empty State -->
+                        <div v-if="supplyForm.items.length === 0" 
+                            class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <div class="space-y-1">
+                                <i class="fas fa-box text-gray-400 text-3xl mb-2"></i>
+                                <h3 class="text-sm font-medium text-gray-900">No items added</h3>
+                                <p class="text-sm text-gray-500">Click "Add New Item" to start adding items to this supply</p>
+                            </div>
                         </div>
-                        <div v-for="(item, index) in supplyForm.items" :key="index"
-                            class="border rounded-md p-4 mb-3 bg-gray-50">
-                            <div class="flex justify-between mb-2">
-                                <h4 class="font-medium">Product {{ index + 1 }}</h4>
-                                <button type="button" @click="removeProduct(index)"
-                                    class="text-red-600 hover:text-red-800 inline-flex items-center"
-                                    :disabled="isSubmitting || (item.id && item.status !== 'pending')">
-                                    <i class="fas fa-trash w-5 h-5"></i>
-                                    <span class="ml-1">Remove</span>
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                                <div>
-                                    <InputLabel :for="`product_${index}`" value="Product" />
-                                    <Multiselect v-model="item.product_id" :options="searchResults" :searchable="true"
-                                        :loading="isLoading" :internal-search="false" :clear-on-select="true"
-                                        :close-on-select="true" :options-limit="300" :limit="3" :max-height="600"
-                                        :show-no-results="true" :hide-selected="true" @search-change="searchProduct"
-                                        placeholder="Search by product name or barcode" label="product_name"
-                                        track-by="product_id" :preselect-first="false"
-                                        @select="selectProduct(index, $event)">
-                                        <template v-slot:noResult>
-                                            No products found.
-                                        </template>
-                                    </Multiselect>
-                                </div>
-                                <div>
-                                    <InputLabel :for="`batch_number_${index}`" value="Batch Number" />
-                                    <TextInput :id="`batch_number_${index}`" v-model="item.batch_number"
-                                        class="mt-1 block w-full" required />
-                                </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                                <div>
-                                    <InputLabel :for="`quantity_${index}`" value="Quantity" />
-                                    <TextInput :id="`quantity_${index}`" type="number" v-model="item.quantity"
-                                        class="mt-1 block w-full" placeholder="Enter quantity" min="1" required
-                                        :disabled="isSubmitting" />
-                                </div>
-                                <div>
-                                    <InputLabel :for="`manufacturing_date_${index}`" value="Manufacturing Date" />
-                                    <TextInput :id="`manufacturing_date_${index}`" type="date"
-                                        v-model="item.manufacturing_date" class="mt-1 block w-full"
-                                        :disabled="isSubmitting" />
-                                </div>
-                                <div>
-                                    <InputLabel :for="`expiry_date_${index}`" value="Expiry Date" />
-                                    <TextInput :id="`expiry_date_${index}`" type="date" v-model="item.expiry_date"
-                                        class="mt-1 block w-full" :disabled="isSubmitting" />
+                        <!-- Items List -->
+                        <div v-else class="space-y-4">
+                            <div v-for="(item, index) in supplyForm.items" 
+                                :key="index"
+                                class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                            >
+                                <div class="flex flex-wrap items-end gap-4">
+                                    <!-- Product Selection -->
+                                    <div class="flex-1 min-w-[200px]">
+                                        <InputLabel :for="`product_${index}`" value="Item" class="text-gray-700" />
+                                        <Multiselect 
+                                            v-model="item.product_id" 
+                                            :options="searchResults" 
+                                            :searchable="true"
+                                            :loading="isLoading" 
+                                            :internal-search="false" 
+                                            :clear-on-select="true"
+                                            :close-on-select="true" 
+                                            :options-limit="300" 
+                                            :limit="3" 
+                                            :max-height="600"
+                                            :show-no-results="true" 
+                                            :hide-selected="true" 
+                                            @search-change="searchProduct"
+                                            placeholder="Search product by name or barcode" 
+                                            label="product_name"
+                                            track-by="product_id" 
+                                            :preselect-first="false"
+                                            @select="selectProduct(index, $event)"
+                                            class="mt-1"
+                                        >
+                                            <template v-slot:noResult>
+                                                <div class="text-gray-500">No products found</div>
+                                            </template>
+                                        </Multiselect>
+                                    </div>
+
+                                    <!-- Batch Number -->
+                                    <div class="w-40">
+                                        <InputLabel :for="`batch_number_${index}`" value="Batch Number" class="text-gray-700" />
+                                        <TextInput 
+                                            :id="`batch_number_${index}`" 
+                                            v-model="item.batch_number"
+                                            class="mt-1 block w-full" 
+                                            placeholder="Enter batch number" 
+                                            required 
+                                        />
+                                    </div>
+
+                                    <!-- Quantity -->
+                                    <div class="w-32">
+                                        <InputLabel :for="`quantity_${index}`" value="Quantity" class="text-gray-700" />
+                                        <TextInput 
+                                            :id="`quantity_${index}`" 
+                                            type="number" 
+                                            v-model="item.quantity"
+                                            class="mt-1 block w-full" 
+                                            placeholder="Qty" 
+                                            min="1" 
+                                            required
+                                            :disabled="isSubmitting || (item.id && item.status !== 'pending')" 
+                                        />
+                                    </div>
+
+                                    <!-- Manufacturing Date -->
+                                    <div class="w-40">
+                                        <InputLabel :for="`manufacturing_date_${index}`" value="Manufacturing Date" class="text-gray-700" />
+                                        <TextInput 
+                                            :id="`manufacturing_date_${index}`" 
+                                            type="date"
+                                            v-model="item.manufacturing_date" 
+                                            class="mt-1 block w-full"
+                                            :disabled="isSubmitting" 
+                                        />
+                                    </div>
+
+                                    <!-- Expiry Date -->
+                                    <div class="w-40">
+                                        <InputLabel :for="`expiry_date_${index}`" value="Expiry Date" class="text-gray-700" />
+                                        <TextInput 
+                                            :id="`expiry_date_${index}`" 
+                                            type="date" 
+                                            v-model="item.expiry_date"
+                                            class="mt-1 block w-full" 
+                                            :disabled="isSubmitting" 
+                                        />
+                                    </div>
+
+                                    <!-- Remove Button -->
+                                    <div class="flex-none">
+                                        <button 
+                                            type="button" 
+                                            @click="removeProduct(index)"
+                                            class="inline-flex items-center px-3 py-2 border border-red-200 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            :disabled="isSubmitting || (item.id && item.status !== 'pending') || supplyForm.items.length === 1"
+                                            :title="supplyForm.items.length === 1 ? 'Cannot remove the last item' : ''"
+                                        >
+                                            <i class="fas fa-trash w-4 h-4"></i>
+                                            <span class="ml-1">Remove</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Add Item Button -->
+                                    <div class="flex-none">
+                                        <SecondaryButton 
+                                            type="button" 
+                                            @click="addProduct" 
+                                            :disabled="isSubmitting"
+                                            class="h-[38px]"
+                                        >
+                                            <i class="fas fa-plus w-4 h-4 mr-1"></i>
+                                            Add
+                                        </SecondaryButton>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -462,7 +549,7 @@
         </Modal>
 
         <!-- View Supply Items Modal -->
-        <Modal :show="showViewItemsModal" @close="closeViewItemsModal">
+        <Modal :show="showViewItemsModal" @close="closeViewItemsModal" maxWidth="7xl">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">
                     Supply Items
@@ -478,6 +565,18 @@
                                 <th scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Quantity
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Batch Number
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Manufacturing Date
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Expiry Date
                                 </th>
                                 <th scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -503,26 +602,47 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ item.batch_number }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatDate(item.manufacturing_date) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatDate(item.expiry_date) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span :class="[
                                         'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                                        item.is_approved
+                                        item.status === 'approved'
                                             ? 'bg-green-100 text-green-800'
-                                            : 'bg-yellow-100 text-yellow-800'
+                                            : item.status === 'rejected'
+                                                ? 'bg-red-100 text-red-800'
+                                                : 'bg-yellow-100 text-yellow-800'
                                     ]">
-                                        {{ item.is_approved ? 'Approved' : 'Pending' }}
+                                        {{ item.status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button v-if="!item.is_approved" @click="approveItem(item)"
+                                <td v-if="item.status !== 'approved'" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" >
+                                    <button @click="approveItem(item)"
                                         class="text-green-600 hover:text-green-900 mr-2">
                                         Approve
+                                    </button>
+                                    <button @click="rejectItem(item)"
+                                        class="text-red-600 hover:text-red-900">
+                                        Reject
                                     </button>
                                 </td>
                             </tr>
                         </tbody>
                         <tbody v-else>
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                     {{ selectedSupply.items ? 'No items found' : 'Loading items...' }}
                                 </td>
                             </tr>
@@ -553,7 +673,6 @@ import DangerButton from '@/Components/DangerButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import TextareaInput from '@/Components/TextareaInput.vue';
-import Pagination from '@/Components/Pagination.vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Multiselect from 'vue-multiselect';
@@ -602,8 +721,6 @@ const props = defineProps({
     }
 });
 
-const product = ref({});
-
 // Active tab state - initialized with 'supplies' as default
 const currentTab = ref(props.activeTab);
 
@@ -639,25 +756,18 @@ const searchResults = ref([]);
 const isLoading = ref(false);
 
 async function searchProduct(query) {
-    if (!query) {
-        searchResults.value = [];
-        return;
-    }
-
     isLoading.value = true;
-    await axios.post(route('products.search'), { search: query })
-        .then((response) => {
-            console.log(response.data);
-            isLoading.value = false;
-            const data = response.data;
-            searchResults.value = data;
-        })
-        .catch((error) => {
-            isLoading.value = false;
-            console.error('Error searching products:', error);
-            searchResults.value = [];
+    try {
+        const response = await axios.post(route('products.search'), {
+            query: query
         });
-}
+        searchResults.value = response.data;
+    } catch (error) {
+        console.error('Error searching products:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 // Form states
 const supplyForm = ref({
@@ -669,13 +779,13 @@ const supplyForm = ref({
     notes: '',
     items: [{
         id: null,
-        product_id: null,
+        product_id: '',
         product_name: '',
-        quantity: 1,
+        quantity: '',
         batch_number: '',
         manufacturing_date: '',
         expiry_date: '',
-        notes: ''
+        status: 'pending'
     }]
 });
 
@@ -697,16 +807,33 @@ const supplierFilters = ref({
 });
 
 const supplyFilters = ref({
-    search: props.supplyFilters?.search || '',
-    date_from: props.supplyFilters?.date_from || '',
-    date_to: props.supplyFilters?.date_to || ''
+    search: props.supplierFilters?.search || '',
+    date_from: props.supplierFilters?.date_from || '',
+    date_to: props.supplierFilters?.date_to || ''
 });
 
 // Selection states
 const selectedSupplies = ref([]);
-const selectedSuppliers = ref([]);
 const selectAll = ref(false);
+const selectedSuppliers = ref([]);
 const selectAllSuppliers = ref(false);
+
+// Toggle all supplies selection
+const toggleSelectAll = () => {
+    selectedSupplies.value = selectAll.value ? props.supplies.data.map(supply => supply.id) : [];
+};
+
+// Toggle individual supply selection
+const toggleSupply = (supplyId) => {
+    const index = selectedSupplies.value.indexOf(supplyId);
+    if (index === -1) {
+        selectedSupplies.value.push(supplyId);
+    } else {
+        selectedSupplies.value.splice(index, 1);
+    }
+    // Update selectAll based on selection state
+    selectAll.value = selectedSupplies.value.length === props.supplies.data.length;
+};
 
 // Methods for supplies
 const getSupplies = async () => {
@@ -729,7 +856,6 @@ const getSuppliers = () => {
     router.get(route('supplies.index'), {
         ...supplierFilters.value,
         tab: 'suppliers',
-        page: props.suppliers?.meta?.current_page || 1
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -747,38 +873,12 @@ const resetSupplyFilters = () => {
     getSupplies();
 };
 
-watch([
-    () => supplyFilters
-], (newFilters) => {
-    getSupplies();
-});
-
 const resetSupplierFilters = () => {
     supplierFilters.value = {
         search: '',
     };
     getSuppliers();
 };
-
-watch([
-    () => supplierFilters.value?.search,
-], () => {
-    getSuppliers();
-});
-
-const warehouseOptions = computed(() => {
-    if (!props.warehouses || !Array.isArray(props.warehouses)) {
-        return [];
-    }
-    return props.warehouses.map(warehouse => ({
-        value: warehouse.id,
-        label: warehouse.name
-    }));
-});
-
-const hasPendingItems = computed(() => {
-    return selectedSupply.value?.items?.some(item => item.status === 'pending') || false;
-});
 
 // Format date
 const formatDate = (dateString) => {
@@ -815,13 +915,13 @@ const resetForm = () => {
         notes: '',
         items: [{
             id: null,
-            product_id: null,
+            product_id: '',
             product_name: '',
-            quantity: 1,
+            quantity: '',
             batch_number: '',
             manufacturing_date: '',
             expiry_date: '',
-            notes: ''
+            status: 'pending'
         }]
     };
 };
@@ -848,7 +948,7 @@ const openEditSupplyModal = (supply) => {
             batch_number: item.batch_number || '',
             manufacturing_date: formatDateForInput(item.manufacturing_date),
             expiry_date: formatDateForInput(item.expiry_date),
-            notes: item.notes || ''
+            notes: item.notes || '',
         })) || []
     };
 
@@ -859,19 +959,22 @@ const openEditSupplyModal = (supply) => {
 const addProduct = () => {
     supplyForm.value.items.push({
         id: null,
-        product_id: null,
+        product_id: '',
         product_name: '',
-        quantity: 1,
+        quantity: '',
         batch_number: '',
         manufacturing_date: '',
         expiry_date: '',
-        notes: ''
+        status: 'pending'
     });
 };
 
 // Remove product
 const removeProduct = (index) => {
     if (supplyForm.value.items[index].id && supplyForm.value.items[index].status !== 'pending') {
+        return;
+    }
+    if(supplyForm.value.items.length === 1) {
         return;
     }
     supplyForm.value.items.splice(index, 1);
@@ -899,7 +1002,6 @@ async function submitSupply() {
             isSubmitting.value = false;
         })
         .catch((error) => {
-            products.value = [];
             console.log(error.response.data);
             isSubmitting.value = false;
             toast.error(error.response?.data);
@@ -1046,13 +1148,13 @@ const closeViewItemsModal = () => {
 const approveItem = async (item) => {
     try {
         const response = await axios.patch(route('supplies.items.update-status', { item: item.id }), {
-            is_approved: true
+            status: 'approved'
         });
 
         // Update the item in the list
         const index = selectedSupply.value.items.findIndex(i => i.id === item.id);
         if (index !== -1) {
-            selectedSupply.value.items[index].is_approved = true;
+            selectedSupply.value.items[index].status = 'approved';
         }
 
         toast.success('Item status updated successfully');
@@ -1062,7 +1164,27 @@ const approveItem = async (item) => {
     }
 };
 
-function selectProduct(index, product) {
+const rejectItem = async (item) => {
+    try {
+        const response = await axios.patch(route('supplies.items.update-status', { item: item.id }), {
+            status: 'rejected'
+        });
+
+        // Update the item in the list
+        const index = selectedSupply.value.items.findIndex(i => i.id === item.id);
+        if (index !== -1) {
+            selectedSupply.value.items[index].status = 'rejected';
+        }
+
+        toast.success('Item status updated successfully');
+    } catch (error) {
+        console.error('Error updating item status:', error);
+        toast.error(error.response?.data?.message || 'Failed to update item status');
+    }
+};
+
+// Select product
+const selectProduct = (index, product) => {
     supplyForm.value.items[index].product_id = product;
     supplyForm.value.items[index].product_name = product.product_name;
 }

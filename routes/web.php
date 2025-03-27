@@ -135,7 +135,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('supplies.index');
             Route::post('/store', 'store')->name('supplies.store');
             Route::get('/items/{supply}', 'getItems')->name('supplies.items');
-            Route::patch('/items/{item}/status', 'updateItemStatus')->name('supplies.items.update-status');
+            Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
         });
