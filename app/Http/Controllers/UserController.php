@@ -57,76 +57,39 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $userId = $request->id;
-            
-            // Validation rules
-            $rules = [
+            $request->validate([
+                'id' => 'nullable|exists:users,id',
                 'name' => 'required|string|max:255',
                 'username' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255'],
+                'email' => [
+                    'required', 
+                    'string', 
+                    'email', 
+                    'max:255', 
+                    Rule::unique('users', 'email')->ignore($request->id, 'id')
+                ],
                 'warehouse_id' => 'nullable|exists:warehouses,id',
-            ];
-            
-            // Add unique validation with ignore for updates
-            if ($userId) {
-                $rules['username'][] = Rule::unique('users')->ignore($userId);
-                $rules['email'][] = Rule::unique('users')->ignore($userId);
-                $rules['password'] = 'nullable|string|min:8';
-            } else {
-                $rules['username'][] = 'unique:users';
-                $rules['email'][] = 'unique:users';
-                $rules['password'] = 'required|string|min:8';
-            }
-            
-            $validated = $request->validate($rules);
-            
-            // Prepare data for updateOrCreate
-            $userData = [
-                'name' => $validated['name'],
-                'username' => $validated['username'],
-                'email' => $validated['email'],
-                'warehouse_id' => $validated['warehouse_id'] ?? null,
-            ];
-            
-            // Only update password if provided (for updates) or always for new users
-            if ($request->filled('password')) {
-                $userData['password'] = Hash::make($validated['password']);
-            }
-            
-            // UpdateOrCreate based on ID
-            if ($userId) {
-                $user = User::findOrFail($userId);
-                $user->update($userData);
-                $message = 'User updated successfully.';
-            } else {
-                $user = User::create($userData);
-                $message = 'User created successfully.';
-            }
-
-            // Check if request from settings page
-            $isFromSettings = $request->header('X-From-Settings') || 
-                             ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
-            
-            if ($isFromSettings) {
-                return redirect()->route('settings.index', ['tab' => 'users'])->with('success', $message);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'user' => $user
+                'password' => 'nullable|string|min:8',
             ]);
-        } catch (Throwable $e) {
-            if ($request->header('X-From-Settings') || 
-                ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']))) {
-                return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()]);
+
+            if ($request->filled('password')) {
+                $request->merge(['password' => Hash::make($request->password)]);
             }
             
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ], 500);
-        }
+            $user = User::updateOrCreate(
+                ['id' => $request->id],
+                [
+                    'name' => $request->name,
+                    'username' => $request->username,
+                    'email' => $request->email,
+                    'warehouse_id' => $request->warehouse_id,
+                ]
+            );
+            
+            return response()->json($request->id ? 'User updated successfully' : 'User created successfully',200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }             
     }
 
     /**

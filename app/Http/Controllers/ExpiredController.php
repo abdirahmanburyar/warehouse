@@ -15,6 +15,7 @@ class ExpiredController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
         $tab = $request->query('tab', 'all');
         $warehouseId = $request->query('warehouse_id');
         
@@ -22,26 +23,35 @@ class ExpiredController extends Controller
         $inventoryQuery = Inventory::with(['product', 'warehouse'])
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->select('inventories.*', 'products.name as product_name');
-        
-        // Apply warehouse filter if provided
-        if ($warehouseId) {
-            $inventoryQuery->where('warehouse_id', $warehouseId);
+
+        // Apply warehouse filter for non-admin users
+        if (!$user->hasRole('admin') && $user->warehouse_id) {
+            $inventoryQuery->where('inventories.warehouse_id', $user->warehouse_id);
         }
-        
+        // Apply warehouse filter if provided in request
+        elseif ($warehouseId) {
+            $inventoryQuery->where('inventories.warehouse_id', $warehouseId);
+        }
+
         // Apply tab-specific filters
         switch ($tab) {
             case 'near':
                 // Items expiring in the next 30 days
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->whereDate('inventories.expiry_date', '>', Carbon::now())
-                    ->whereDate('inventories.expiry_date', '<=', Carbon::now()->addDays(30));
+                    ->where('inventories.is_active', true)
+                    ->where(function($query) {
+                        $now = now();
+                        $thirtyDaysFromNow = $now->copy()->addDays(30);
+                        $query->whereDate('inventories.expiry_date', '>', $now)
+                            ->whereDate('inventories.expiry_date', '<=', $thirtyDaysFromNow);
+                    });
                 break;
                 
             case 'expired':
                 // Items that have already expired but not marked as disposed
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->whereDate('inventories.expiry_date', '<', Carbon::now())
-                    ->where('inventories.is_active', true);
+                    ->where('inventories.is_active', true)
+                    ->whereDate('inventories.expiry_date', '<=', now());
                 break;
                 
             case 'disposed':
@@ -54,22 +64,21 @@ class ExpiredController extends Controller
                 // All items with issues (near expiry, expired, or disposed)
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
                     ->where(function($query) {
-                        $query->where(function($q) {
+                        $now = now();
+                        $thirtyDaysFromNow = $now->copy()->addDays(30);
+                        
+                        $query->where(function($q) use ($now, $thirtyDaysFromNow) {
                             // Near expiry items
-                            $q->whereDate('inventories.expiry_date', '>', Carbon::now())
-                              ->whereDate('inventories.expiry_date', '<=', Carbon::now()->addDays(30))
-                              ->where('inventories.is_active', true);
-                        })->orWhere(function($q) {
+                            $q->where('inventories.is_active', true)
+                              ->whereDate('inventories.expiry_date', '>', $now)
+                              ->whereDate('inventories.expiry_date', '<=', $thirtyDaysFromNow);
+                        })->orWhere(function($q) use ($now) {
                             // Expired items
-                            $q->whereDate('inventories.expiry_date', '<', Carbon::now())
-                              ->where('inventories.is_active', true);
+                            $q->where('inventories.is_active', true)
+                              ->whereDate('inventories.expiry_date', '<=', $now);
                         })->orWhere(function($q) {
                             // Disposed items
                             $q->where('inventories.is_active', false);
-                        })->orWhere(function($q) {
-                            // Low stock items
-                            $q->where('inventories.quantity', '<=', DB::raw('inventories.reorder_level'))
-                              ->where('inventories.quantity', '<', 0);
                         });
                     });
                 break;
@@ -118,30 +127,36 @@ class ExpiredController extends Controller
 
         
         // Count expired items for dashboard metrics (using more efficient queries)
-        $nearExpiryCount = Inventory::whereNotNull('expiry_date')
-            ->whereDate('expiry_date', '>', Carbon::now())
-            ->whereDate('expiry_date', '<=', Carbon::now()->addDays(30))
-            ->where('is_active', true)
-            ->when($warehouseId, function($query) use ($warehouseId) {
+        $baseQuery = Inventory::query()
+            ->whereNotNull('expiry_date')
+            ->when(!$user->hasRole('admin') && $user->warehouse_id, function($query) use ($user) {
+                return $query->where('warehouse_id', $user->warehouse_id);
+            })
+            ->when($warehouseId && $user->hasRole('admin'), function($query) use ($warehouseId) {
                 return $query->where('warehouse_id', $warehouseId);
+            });
+
+        // Near expiry items (next 30 days)
+        $nearExpiryCount = (clone $baseQuery)
+            ->where('is_active', true)
+            ->where(function($query) {
+                $now = now();
+                $thirtyDaysFromNow = $now->copy()->addDays(30);
+                $query->whereDate('expiry_date', '>', $now)
+                    ->whereDate('expiry_date', '<=', $thirtyDaysFromNow);
             })
             ->count();
             
-        $expiredCount = Inventory::whereNotNull('expiry_date')
-            ->whereDate('expiry_date', '<', Carbon::now())
+        // Already expired items
+        $expiredCount = (clone $baseQuery)
             ->where('is_active', true)
-            ->when($warehouseId, function($query) use ($warehouseId) {
-                return $query->where('warehouse_id', $warehouseId);
-            })
+            ->whereDate('expiry_date', '<=', now())
             ->count();
             
-        $disposedCount = Inventory::whereNotNull('expiry_date')
+        // Disposed items
+        $disposedCount = (clone $baseQuery)
             ->where('is_active', false)
-            ->when($warehouseId, function($query) use ($warehouseId) {
-                return $query->where('warehouse_id', $warehouseId);
-            })
             ->count();
-        logger()->info($inventories);
         return Inertia::render('Expired/Index', [
             'inventories' => ExpiredResource::collection($inventories),
             'activeTab' => $tab,
@@ -159,17 +174,24 @@ class ExpiredController extends Controller
     // Mark expired items as disposed (inactive)
     public function markAsDisposed(Request $request)
     {
+        $user = auth()->user();
         $request->validate([
             'inventory_ids' => 'required|array',
             'inventory_ids.*' => 'exists:inventories,id',
             'notes' => 'nullable|string',
         ]);
         
-        $count = Inventory::whereIn('id', $request->inventory_ids)
-            ->update([
-                'is_active' => false,
-                'notes' => $request->notes ? $request->notes : 'Marked as disposed due to expiration'
-            ]);
+        $query = Inventory::whereIn('id', $request->inventory_ids);
+        
+        // Restrict to user's warehouse if not admin
+        if (!$user->hasRole('admin') && $user->warehouse_id) {
+            $query->where('warehouse_id', $user->warehouse_id);
+        }
+        
+        $count = $query->update([
+            'is_active' => false,
+            'notes' => $request->notes ? $request->notes : 'Marked as disposed due to expiration'
+        ]);
         
         return redirect()->back()->with('success', $count . ' items marked as disposed');
     }

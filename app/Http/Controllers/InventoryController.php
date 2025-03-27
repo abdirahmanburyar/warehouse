@@ -21,7 +21,15 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Inventory::query()->with(['product.dosage.category', 'warehouse']);
+        $query = Inventory::query();
+
+        $user = auth()->user();
+
+        // if(!$user->hasRole('admin')) {
+            $query = $query->where('warehouse_id', $user->warehouse_id);
+        // }
+        
+        $query = $query->with(['product.dosage.category', 'warehouse']);
 
         // Apply filters
         if ($request->has('search')) {
@@ -72,14 +80,14 @@ class InventoryController extends Controller
         $products = Product::where('is_active', true)->select('id', 'name')->get();
 
         // Get warehouses for dropdown
-        $warehouses = \App\Models\Warehouse::select('id', 'name', 'code')->get();
+        $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->get();
 
         // Get inventory status counts
-        $inStockCount = Inventory::where('quantity', '>', DB::raw('reorder_level'))->where('is_active', true)->count();
-        $lowStockCount = Inventory::where('quantity', '>', 0)->where('quantity', '<=', DB::raw('reorder_level'))->where('is_active', true)->count();
-        $outOfStockCount = Inventory::where('quantity', 0)->where('is_active', true)->count();
-        $soonExpiringCount = Inventory::where('expiry_date', '>', now())->where('expiry_date', '<=', now()->addDays(30))->where('is_active', true)->count();
-        $expiredCount = Inventory::where('expiry_date', '<', now())->where('is_active', true)->count();
+        $inStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', '>', DB::raw('reorder_level'))->where('is_active', true)->count();
+        $lowStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', '>', 0)->where('quantity', '<=', DB::raw('reorder_level'))->where('is_active', true)->count();
+        $outOfStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', 0)->where('is_active', true)->count();
+        $soonExpiringCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('expiry_date', '>', now())->where('expiry_date', '<=', now()->addDays(30))->where('is_active', true)->count();
+        $expiredCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('expiry_date', '<', now())->where('is_active', true)->count();
         
         $inventoryStatusCounts = [
             ['status' => 'in_stock', 'count' => $inStockCount],
@@ -168,7 +176,7 @@ class InventoryController extends Controller
         }   
     }
     
-      /**
+    /**
      * Handle bulk actions for inventory items
      */
     public function bulk(Request $request)

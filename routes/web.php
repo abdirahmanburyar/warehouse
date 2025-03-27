@@ -45,27 +45,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // User Management Routes
-    Route::middleware(PermissionMiddleware::class.':user.view')->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::middleware(PermissionMiddleware::class.':user.view')
+    ->prefix('users')
+    ->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('users.index');
         // Create and Edit routes for navigation purposes
-        Route::get('/users/create', function() {
+        Route::get('/create', function() {
             return Inertia::render('User/Create');
         })->middleware(PermissionMiddleware::class.':user.create')->name('users.create');
-        
-        Route::get('/users/{user}/edit', function(App\Models\User $user) {
-            return Inertia::render('User/Edit', [
-                'user' => $user
-            ]);
-        })->middleware(PermissionMiddleware::class.':user.edit')->name('users.edit');
+        Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('users.store');
         
         // User roles management
-        Route::get('/users/{user}/roles', [UserController::class, 'showRoles'])
+        Route::get('/{user}/roles', [UserController::class, 'showRoles'])
             ->middleware(PermissionMiddleware::class.':user.edit')
             ->name('users.roles');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('users.destroy');
     });
-    Route::post('/users', [UserController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('users.store');
-    Route::put('/users/{user}', [UserController::class, 'update'])->middleware(PermissionMiddleware::class.':user.edit')->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('users.destroy');
     
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class.':user.view')->group(function () {

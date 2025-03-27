@@ -413,6 +413,7 @@ import Pagination from '@/Components/Pagination.vue';
 import SortIcon from '@/Components/SortIcon.vue';
 import { ref, watch, computed } from 'vue';
 import { useToast } from 'vue-toastification';
+import axios from 'axios';
 
 // Define props
 const props = defineProps({
@@ -437,7 +438,7 @@ const sort_direction = ref(props.filters?.sort_direction || 'desc');
 const sort_field = ref(props.filters?.sort_field || 'created_at');
 
 // Form data
-const form = useForm({
+const form = ref({
     id: null,
     name: '',
     username: '',
@@ -525,21 +526,21 @@ function sort(field) {
 
 // Open modal for create/edit
 const openModal = (user = null) => {
-    errors.value = null;
+    console.log(user);
     if (user) {
-        form.id = user.id;
-        form.name = user.name;
-        form.username = user.username;
-        form.email = user.email;
-        form.password = '';
-        form.warehouse_id = user.warehouse_id;
+        form.value.id = user.id;
+        form.value.name = user.name;
+        form.value.username = user.username;
+        form.value.email = user.email;
+        form.value.password = '';
+        form.value.warehouse_id = user.warehouse_id;
     } else {
-        form.id = null;
-        form.name = '';
-        form.username = '';
-        form.email = '';
-        form.password = '';
-        form.warehouse_id = '';
+        form.value.id = null;
+        form.value.name = '';
+        form.value.username = '';
+        form.value.email = '';
+        form.value.password = '';
+        form.value.warehouse_id = '';
     }
     showModal.value = true;
 };
@@ -592,7 +593,7 @@ const handleFormSuccess = (message) => {
 }
 
 // Submit form
-const submitForm = () => {
+const submitForm = async () => {
     // Set processing and isSubmitted flags
     processing.value = true;
     isSubmitted.value = true;
@@ -605,22 +606,19 @@ const submitForm = () => {
         ? { 'X-From-Settings': 'true' } 
         : {};
         
-    form.transform(data => ({
-        ...data,
-        _headers: headers
-    }))
-    .post(route('users.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            handleFormSuccess(form.id ? 'User updated successfully' : 'User created successfully');
-        },
-        onError: (errors) => {
-            toast.error("Please correct the errors in the form");
-            
-            // Reset processing and isSubmitted flags
-            processing.value = false;
-            isSubmitted.value = false;
-        }
+    await axios.post(route('users.store'), form.value, {
+        headers: headers
+    })
+    .then(response => {
+        handleFormSuccess(response.data);
+    })
+    .catch(error => {
+        toast.error(error.response.data);
+        console.log(error);
+        
+        // Reset processing and isSubmitted flags
+        processing.value = false;
+        isSubmitted.value = false;
     });
 };
 
