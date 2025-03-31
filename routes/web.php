@@ -15,6 +15,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ReverbTestController;
 use App\Http\Controllers\ExpiredController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -174,12 +175,26 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('expired.index');
             Route::post('/dispose', 'markAsDisposed')->name('expired.dispose');
         });
+
+    Route::controller(OrderController::class)
+        ->prefix('/orders')
+        ->group(function () {
+            Route::get('/', 'index')->name('orders.index');
+            Route::post('/store', 'store')->name('orders.store');
+            Route::get('/{order}', 'show')->name('orders.show');
+            Route::delete('/{order}', 'destroy')->name('orders.destroy');
+            Route::post('/bulk', 'bulk')->name('orders.bulk');
+            Route::post('/search', 'searchProduct')->name('order.product.search');
+            Route::post('/status', 'changeStatus')->name('orders.change-status');   
+        });
+
     
     // Remove duplicate resource routes since we already have individual routes defined above
     // Route::middleware('role:admin')->group(function () {
     //     Route::resource('users', UserController::class);
     //     Route::resource('roles', RoleController::class);
     // });
+
 });
 
 require __DIR__.'/auth.php';

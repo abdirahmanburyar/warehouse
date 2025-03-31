@@ -27,6 +27,16 @@
                 </div>
                 </Link>
 
+                <Link :href="route('orders.index')" class="menu-item"
+                    :class="{ active: route().current('orders.*') }" @click="setCurrentPage('orders')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img src="/assets/images/order.png" class="order-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Orders</span>
+                </div>
+                </Link>
+
                 <Link :href="route('warehouses.index')" class="menu-item"
                     :class="{ active: route().current('warehouses.*') }" @click="setCurrentPage('warehouses')">
                 <div class="menu-content">
