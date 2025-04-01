@@ -18,6 +18,9 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::with(['facility', 'user', 'items.product', 'warehouse'])
+            ->when($request->from && $request->to, function ($query) use ($request) {
+                $query->whereBetween('order_date', [$request->from, $request->to]);
+            })
             ->when($request->search, function ($query, $search) {
                 $query->where('order_number', 'like', "%{$search}%")
                     ->orWhereHas('facility', function ($q) use ($search) {
@@ -60,7 +63,7 @@ class OrderController extends Controller
             'stats' => $stats,
             'orders' => OrderResource::collection($orders),
             'facilities' => Facility::select('id', 'name')->get(),
-            'filters' => $request->only('search', 'status', 'page'),
+            'filters' => $request->only('search', 'status', 'page', 'from', 'to'),
             'warehouses' => Warehouse::select('id', 'name')->get(),
         ]);
     }
@@ -248,22 +251,15 @@ class OrderController extends Controller
             // Trigger Kafka event for order status change
             try {
                 Kafka::publishOrderPlaced("Refreshed");
-                \Log::info('Order status change published to Kafka', [
-                    'order_id' => $order->id,
-                    'status' => $request->status
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to publish order status to Kafka', [
-                    'error' => $e->getMessage(),
-                    'order_id' => $order->id
-                ]);
+            } catch (\Throwable $e) {
+                return response()->json($e->getMessage(), 500);
             }
 
             event(new OrderEvent('Refreshed'));
 
             DB::commit();
             return response()->json('Order status updated successfully.', 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }

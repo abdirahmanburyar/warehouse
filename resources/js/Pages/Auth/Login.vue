@@ -73,7 +73,7 @@ const togglePasswordVisibility = () => {
                         <InputLabel for="username" value="Username" class="label-enhanced" />
 
                         <div class="input-with-icon">
-                            <i class="fa-user input-icon">👤</i>
+                            <i class="fas fa-user input-icon"></i>
                             <TextInput
                                 id="username"
                                 type="text"
@@ -93,7 +93,7 @@ const togglePasswordVisibility = () => {
                         <InputLabel for="password" value="Password" class="label-enhanced" />
 
                         <div class="input-with-icon">
-                            <i class="fa-lock input-icon">🔒</i>
+                            <i class="fas fa-lock input-icon"></i>
                             <TextInput
                                 id="password"
                                 :type="showPassword ? 'text' : 'password'"
@@ -104,9 +104,12 @@ const togglePasswordVisibility = () => {
                                 :disabled="isLoading"
                                 placeholder="Enter your password"
                             />
-                            <button type="button" class="password-toggle" @click="togglePasswordVisibility">
-                                <span v-if="showPassword">👁️</span>
-                                <span v-else>👁️‍🗨️</span>
+                            <button 
+                                type="button" 
+                                @click="togglePasswordVisibility"
+                                class="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            >
+                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                             </button>
                         </div>
                         <InputError class="mt-2" :message="form.errors.password" />
@@ -212,8 +215,8 @@ const togglePasswordVisibility = () => {
 .input-icon {
     position: absolute;
     left: 12px;
-    color: #a0aec0;
-    font-size: 16px;
+    color: #6B7280;
+    font-size: 14px;
 }
 
 .input-enhanced {
@@ -226,9 +229,13 @@ const togglePasswordVisibility = () => {
 }
 
 .input-enhanced:focus {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+    border-color: #3B82F6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     background-color: white;
+}
+
+.input-enhanced:hover {
+    border-color: #94A3B8 !important;
 }
 
 .password-toggle {
@@ -237,7 +244,7 @@ const togglePasswordVisibility = () => {
     background: none;
     border: none;
     cursor: pointer;
-    color: #a0aec0;
+    color: #6B7280;
     transition: color 0.2s ease;
 }
 

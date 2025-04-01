@@ -14,7 +14,7 @@ import { Link } from '@inertiajs/vue3';
             <slot />
         </div>
         <div class="flex justify-between gap-2 w-full ">
-            <img src="/assets/images/psi.jpg" class="h-20 w-20 fill-current text-gray-500" />
+            <img src="/assets/images/psi.png" class="h-20 w-20 fill-current text-gray-500" />
             <img src="/assets/images/moh.png" class="h-20 w-20 fill-cover rounded-full text-gray-500" />
         </div>
     </div>

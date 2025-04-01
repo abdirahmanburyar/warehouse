@@ -21,6 +21,14 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
+// Welcome route - accessible without authentication
+Route::get('/welcome', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return Inertia::render('Welcome');
+})->name('welcome');
+
 // Broadcast routes
 Route::get('/broadcasting/auth', function () {
     return \Laravel\Echo\Broadcasting\Auth::check();
@@ -47,22 +55,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     
     // User Management Routes
     Route::middleware(PermissionMiddleware::class.':user.view')
-    ->prefix('users')
-    ->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('users.index');
-        // Create and Edit routes for navigation purposes
-        Route::get('/create', function() {
-            return Inertia::render('User/Create');
-        })->middleware(PermissionMiddleware::class.':user.create')->name('users.create');
-        Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('users.store');
+        ->prefix('users')
+        ->group(function () {
+            Route::get('/', [UserController::class, 'index'])->name('users.index');
+            // Create and Edit routes for navigation purposes
+            Route::get('/create', function() {
+                return Inertia::render('User/Create');
+            })->middleware(PermissionMiddleware::class.':user.create')->name('users.create');
+            Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('users.store');
+            
+            // User roles management
+            Route::get('/{user}/roles', [UserController::class, 'showRoles'])
+                ->middleware(PermissionMiddleware::class.':user.edit')
+                ->name('users.roles');
+            Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('users.destroy');
+        });
         
-        // User roles management
-        Route::get('/{user}/roles', [UserController::class, 'showRoles'])
-            ->middleware(PermissionMiddleware::class.':user.edit')
-            ->name('users.roles');
-        Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('users.destroy');
-    });
-    
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class.':user.view')->group(function () {
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -72,7 +80,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware(PermissionMiddleware::class.':user.edit')->name('roles.update');
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('roles.destroy');
     Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])->middleware(PermissionMiddleware::class.':user.edit')->name('users.roles.assign');
-    
+        
     // Category Management Routes
     Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class.':category.view'])->group(function () {
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -80,7 +88,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}/delete', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
-    
+        
     // Warehouse Management Routes
     Route::controller(WarehouseController::class)
         ->prefix('/warehouses')
@@ -100,7 +108,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{dosage}', 'destroy')->middleware(PermissionMiddleware::class.':dosage.delete')->name('dosages.destroy');
             Route::get('/by-category/{category}', 'getByCategory')->name('dosages.by-category');
         });
-    
+        
     // Product Management Routes
     Route::controller(ProductController::class)
         ->prefix('/products')
@@ -112,7 +120,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':product.delete')->name('products.bulk');
             Route::post('/search', 'search')->name('products.search');
         });
-    
+        
     // Inventory Routes
     Route::controller(InventoryController::class)
         ->prefix('/inventories')
@@ -152,7 +160,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::delete('/{approval}', 'destroy')
             ->name('approvals.destroy');
     });
-    
+        
     // Supplier Routes
     Route::controller(SupplierController::class)
         ->prefix('/suppliers')->group(function () {
@@ -164,7 +172,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{supplier}/destroy', 'destroy')->name('suppliers.destroy');
 
         });
-    
+        
     // Settings Routes
     Route::middleware(PermissionMiddleware::class.':settings.view')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
