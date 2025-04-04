@@ -3,40 +3,30 @@
 
     <Head title="Product List" />
     <AuthenticatedLayout>
-        <!-- Tab Navigation -->
-        <div class="bg-white">
-            <div class="mx-auto">
-                <div class="flex border-b border-gray-200">
-                    <button @click="activeTab = 'products'" :class="[
-                        'py-4 px-6 border-b-2 font-medium text-sm focus:outline-none',
-                        activeTab === 'products'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    ]">
-                        Products
-                    </button>
-                    <button @click="activeTab = 'categories'" :class="[
-                        'py-4 px-6 border-b-2 font-medium text-sm focus:outline-none',
-                        activeTab === 'categories'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    ]">
-                        Categories
-                    </button>
-                    <button @click="activeTab = 'dosages'" :class="[
-                        'py-4 px-6 border-b-2 font-medium text-sm focus:outline-none',
-                        activeTab === 'dosages'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    ]">
-                        Dosages
-                    </button>
-                </div>
-            </div>
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-4">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="activeTab = 'products'"
+                    :class="[activeTab === 'products' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                    Products
+                </button>
+                <button @click="activeTab = 'categories'"
+                    :class="[activeTab === 'categories' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                    Categories
+                </button>
+                <button @click="activeTab = 'subcategories'"
+                    :class="[activeTab === 'subcategories' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                    Subcategories
+                </button>
+                <button @click="activeTab = 'dosages'"
+                    :class="[activeTab === 'dosages' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                    Dosages
+                </button>
+            </nav>
         </div>
 
-        <!-- Products Tab Content -->
-        <div v-if="activeTab === 'products'">
+        <!-- Tab Content -->
+        <div v-show="activeTab === 'products'" class="transition-opacity duration-150" :class="{'opacity-100': activeTab === 'products', 'opacity-0': activeTab !== 'products'}">
             <div class="bg-white overflow-hidden sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <!-- Search and Filters -->
@@ -75,6 +65,15 @@
                                 <option value="">All Categories</option>
                                 <option v-for="category in props.categories.data" :key="category.id" :value="category.id">
                                     {{ category.name }}
+                                </option>
+                            </select>
+
+                            <!-- Subcategory Filter -->
+                            <select v-model="sub_category_id"
+                                class="w-full md:w-40 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                                <option value="">All Subcategories</option>
+                                <option v-for="subcategory in props.subcategories.data" :key="subcategory.id" :value="subcategory.id">
+                                    {{ subcategory.name }}
                                 </option>
                             </select>
 
@@ -159,6 +158,10 @@
                                     </th>
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Subcategory
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Dosage
                                     </th>
                                     <th scope="col"
@@ -188,6 +191,9 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {{ product.dosage?.category?.name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {{ product.sub_category?.name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {{ product.dosage?.name }}
@@ -272,7 +278,7 @@
         </div>
 
         <!-- Categories Tab Content -->
-        <div v-if="activeTab === 'categories'">
+        <div v-show="activeTab === 'categories'" class="transition-opacity duration-150" :class="{'opacity-100': activeTab === 'categories', 'opacity-0': activeTab !== 'categories'}">
             <div class="p-4 bg-white overflow-hidden sm:rounded-lg">
                 <div class="bg-white border-b border-gray-200">
                     <!-- Search and Add Button -->
@@ -427,8 +433,164 @@
             </div>
         </div>
 
+        <!-- SubCategories Tab Content -->
+        <div v-show="activeTab === 'subcategories'" class="transition-opacity duration-150" :class="{'opacity-100': activeTab === 'subcategories', 'opacity-0': activeTab !== 'subcategories'}">
+            <div class="p-4 bg-white overflow-hidden sm:rounded-lg">
+                <div class="bg-white border-b border-gray-200">
+                    <!-- Search and Add Button -->
+                    <div
+                        class="flex flex-col md:flex-row md:items-center md:justify-between mb-1 space-y-4 md:space-y-0">
+                        <div class="w-full md:w-1/3">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <input v-model="subcategorySearch" type="text"
+                                    placeholder="Search by name or description..."
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                                <div v-if="subcategoryProcessing"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <!-- per page -->
+                            <div class="w-full md:w-auto">
+                                <select v-model="subcategory_per_page"
+                                    class="w-full md:w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                                    <option value="6">6 per page</option>
+                                    <option value="25">25 per page</option>
+                                    <option value="50">50 per page</option>
+                                    <option value="100">100 per page</option>
+                                </select>
+                            </div>
+
+                            <button @click="openSubcategoryModal()"
+                            class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </button>
+                        </div>
+                    </div>
+
+                    <!-- SubCategories Table -->
+                    <div class="overflow-x-auto bg-white rounded-lg overflow-y-auto relative">
+                        <table
+                            class="border-collapse table-auto w-full whitespace-no-wrap bg-white table-striped relative">
+                            <thead>
+                                <tr class="text-left">
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('id')">
+                                        <div class="flex items-center">
+                                            SN
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('name')">
+                                        <div class="flex items-center">
+                                            Name
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                        Description
+                                    </th>
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('is_active')">
+                                        <div class="flex items-center">
+                                            Status
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('created_at')">
+                                        <div class="flex items-center">
+                                            Created At
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(subcategory, i) in props.subcategories.data" :key="subcategory.id"
+                                    class="hover:bg-gray-100 transition-colors duration-150">
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ i + 1 }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ subcategory.name }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200">
+                                        <div class="max-w-xs truncate">{{ subcategory.description || 'No description' }}
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-gray-200">
+                                        <span :class="[
+                                            'px-2 py-1 rounded-full text-xs font-medium',
+                                            subcategory.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        ]">
+                                            {{ subcategory.is_active ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ formatDate(subcategory.created_at) }}
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-gray-200">
+                                        <div class="flex items-center space-x-2">
+                                            <button @click="openSubcategoryModal(subcategory)"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
+                                                title="Edit">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z" />
+                                                </svg>
+                                                <span class="sr-only">Edit</span>
+                                            </button>
+                                            <button @click="confirmDeleteSubcategory(subcategory)"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
+                                                title="Delete">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span class="sr-only">Delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="props.subcategories.data.length === 0">
+                                    <td colspan="6" class="py-6 text-center text-gray-500">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="text-lg font-medium">No subcategories found</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="mt-4">
+                        <Pagination :links="props.subcategories.meta.links" class="flex justify-end"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Dosages Tab Content -->
-        <div v-if="activeTab === 'dosages'" class="bg-white">
+        <div v-show="activeTab === 'dosages'" class="transition-opacity duration-150 bg-white" :class="{'opacity-100': activeTab === 'dosages', 'opacity-0': activeTab !== 'dosages'}">
             <div class="mx-auto py-6 px-4 sm:px-6 lg:px-8">
                 <!-- Search and Add Button -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -441,7 +603,8 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"
                                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
@@ -634,6 +797,18 @@
                                     </select>
                                 </div>
 
+                                <!-- Subcategory -->
+                                <div>
+                                    <label for="sub_category_id">Subcategory</label>
+                                    <select v-model="form.sub_category_id" id="sub_category_id"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md">
+                                        <option value="">Select a subcategory</option>
+                                        <option v-for="subcategory in props.subcategories.data" :key="subcategory.id" :value="subcategory.id">
+                                            {{ subcategory.name }}
+                                        </option>
+                                    </select>
+                                </div>
+
                                 <!-- Dosage -->
                                 <div>
                                     <label for="dosage_id">Dosage</label>
@@ -641,10 +816,17 @@
                                         class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
                                         :disabled="!form.category_id">
                                         <option value="">Select a dosage</option>
-                                        <option v-for="dosage in filteredDosages" :key="dosage.id" :value="dosage.id">
+                                        <option v-for="dosage in filteredFormDosages" :key="dosage.id" :value="dosage.id">
                                             {{ dosage.name }}
                                         </option>
                                     </select>
+                                </div>
+
+                                <!-- Reorder Level -->
+                                <div>
+                                    <label for="reorder_level">Reorder Level</label>
+                                    <input id="reorder_level" type="number" class="mt-1 block w-full" v-model="form.reorder_level"
+                                        placeholder="Enter reorder level" />
                                 </div>
 
                                 <!-- Description -->
@@ -891,7 +1073,7 @@
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
                         <input id="name" type="text"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
                             v-model="categoryForm.name" required :disabled="categoryIsSubmitted || categoryProcessing"
                             placeholder="Enter category name" />
                     </div>
@@ -899,7 +1081,7 @@
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea id="description"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
                             v-model="categoryForm.description" :disabled="categoryIsSubmitted || categoryProcessing"
                             rows="3" placeholder="Enter category description"></textarea>
                     </div>
@@ -965,11 +1147,110 @@
             </div>
         </Modal>
 
+        <!-- Subcategory Modal -->
+        <Modal :show="showSubcategoryModal" @close="closeSubcategoryModal">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        {{ subcategoryForm.id ? 'Edit Subcategory' : 'Add New Subcategory' }}
+                    </h2>
+                    <button @click="closeSubcategoryModal" 
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div v-if="subcategoryErrors" class="mt-3">
+                    <div v-for="(messages, field) in subcategoryErrors" :key="field" class="text-sm text-red-600">
+                        <div v-for="(message, i) in messages" :key="i">{{ message }}</div>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitSubcategoryForm" class="space-y-6 mt-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input id="name" type="text"
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                            v-model="subcategoryForm.name" required :disabled="subcategoryIsSubmitted || subcategoryProcessing"
+                            placeholder="Enter subcategory name" />
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="description"
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                            v-model="subcategoryForm.description" :disabled="subcategoryIsSubmitted || subcategoryProcessing"
+                            rows="3" placeholder="Enter subcategory description"></textarea>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="is_active" type="checkbox"
+                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            v-model="subcategoryForm.is_active" :disabled="subcategoryIsSubmitted || subcategoryProcessing" />
+                        <label for="is_active" class="ml-2">Active</label>
+                    </div>
+
+                    <div class="flex items-center justify-end pt-4 border-t border-gray-200">
+                        <button type="button"
+                            class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
+                            @click="closeSubcategoryModal" :disabled="subcategoryIsSubmitted || subcategoryProcessing">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
+                            :disabled="subcategoryIsSubmitted || subcategoryProcessing">
+                            <svg v-if="subcategoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            {{ subcategoryForm.id ? 'Update Subcategory' : 'Create Subcategory' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Subcategory Delete Confirmation Modal -->
+        <Modal :show="showSubcategoryDeleteModal" @close="closeSubcategoryDeleteModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Delete Subcategory
+                </h2>
+
+                <p class="mt-3 text-sm text-gray-600">
+                    Are you sure you want to delete this subcategory? This action cannot be undone.
+                </p>
+
+                <div class="mt-6 flex justify-end">
+                    <button type="button"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
+                        @click="closeSubcategoryDeleteModal" :disabled="subcategoryProcessing">
+                        Cancel
+                    </button>
+                    <button type="button"
+                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
+                        @click="deleteSubcategory" :disabled="subcategoryProcessing">
+                        <svg v-if="subcategoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -990,19 +1271,35 @@ const props = defineProps({
     categoryFilters: Object,
     dosages: Object,
     dosageFilters: Object,
+    subcategories: {
+        type: Object,
+        required: true
+    },
+    subcategoryFilters: {
+        type: Object,
+        required: true
+    }
 });
 
 // Reactive state
-const activeTab = ref('products'); // Tab state: 'products' or 'categories'
 const search = ref(props.filters?.search || '');
+const category_id = ref(props.filters?.category_id || '');
+const sub_category_id = ref(props.filters?.sub_category_id || '');
+const dosage_id = ref(props.filters?.dosage_id || '');
+const is_active = ref(props.filters?.is_active || '');
+const per_page = ref(props.filters?.per_page || 6);
 const processing = ref(false);
+const params = ref({});
+const activeTab = ref('products');
+
+// Product form state
 const showModal = ref(false);
 const showDeleteModal = ref(false);
+const productToDelete = ref(null);
 const isSubmitted = ref(false);
-const selectedProduct = ref(null);
-const category_id = ref(props.filters?.category_id || '');
-const dosage_id = ref(props.filters?.dosage_id || '');
+const errors = ref(null);
 
+// Category state
 const categorySearch = ref(props.categoryFilters?.search || '');
 const categoryProcessing = ref(false);
 const showCategoryModal = ref(false);
@@ -1012,6 +1309,17 @@ const categoryToDelete = ref(null);
 const categoryErrors = ref(null);
 const category_per_page = ref(props.categoryFilters?.category_per_page || 6);
 
+// SubCategory state
+const subcategorySearch = ref(props.subcategoryFilters?.search || '');
+const subcategoryProcessing = ref(false);
+const showSubcategoryModal = ref(false);
+const showSubcategoryDeleteModal = ref(false);
+const subcategoryIsSubmitted = ref(false);
+const subcategoryToDelete = ref(null);
+const subcategoryErrors = ref(null);
+const subcategory_per_page = ref(props.subcategoryFilters?.subcategory_per_page || 6);
+
+// Dosage state
 const dosageSearch = ref(props.dosageFilters?.search || '');
 const dosageProcessing = ref(false);
 const showDosageModal = ref(false);
@@ -1020,11 +1328,6 @@ const dosageIsSubmitted = ref(false);
 const dosageToDelete = ref(null);
 const dosageErrors = ref(null);
 const dosage_per_page = ref(props.dosageFilters?.dosage_per_page || 6);
-const filteredDosages = ref([]);
-
-const params = ref({
-    page: route().params.page || 1
-});
 
 // Category form
 const categoryForm = ref({
@@ -1043,6 +1346,15 @@ const dosageForm = ref({
     is_active: true,
 });
 
+// Subcategory form
+const subcategoryForm = ref({
+    id: null,
+    name: '',
+    description: '',
+    category_id: '',
+    is_active: true,
+});
+
 // Form for creating/editing products
 const form = ref({
     id: null,
@@ -1051,15 +1363,22 @@ const form = ref({
     barcode: '',
     description: '',
     category_id: '',
+    sub_category_id: '',
     dosage_id: '',
+    reorder_level: 0,
     is_active: true,
 });
 
 // Computed properties
-const is_active = ref(props.filters.is_active || '');
-const sort_field = ref(props.filters.sort_field || 'created_at');
-const sort_direction = ref(props.filters.sort_direction || 'desc');
-const per_page = ref(props.filters.per_page || 6);
+const filteredDosages = computed(() => {
+    if (!category_id.value) return [];
+    return props.dosages.data.filter(dosage => dosage.category_id === category_id.value);
+});
+
+const filteredFormDosages = computed(() => {
+    if (!form.value.category_id) return [];
+    return props.dosages.data.filter(dosage => dosage.category_id === form.value.category_id);
+});
 
 // Bulk delete functionality
 const selectedItems = ref([]);
@@ -1137,11 +1456,11 @@ const bulkDelete = async () => {
 // Watch for changes in search input
 watch([
     () => search.value,
-    () => is_active.value,
-    () => sort_field.value,
-    () => sort_direction.value,
-    () => per_page.value,
+    () => category_id.value,
+    () => sub_category_id.value,
     () => dosage_id.value,
+    () => is_active.value,
+    () => per_page.value,
 ], () => {
     reloadProducts();
 });
@@ -1154,6 +1473,14 @@ watch([
     reloadCategories();
 });
 
+// Watch for changes in subcategory search input
+watch([
+    () => subcategorySearch.value,
+    () => subcategory_per_page.value
+], () => {
+    reloadSubcategories();
+});
+
 // Watch for changes in dosage search input
 watch([
     () => dosageSearch.value,
@@ -1163,19 +1490,6 @@ watch([
 });
 
 function reloadProducts() {
-    if (sort_field.value) {
-        const newDirection = sort_field.value === sort_field.value && sort_direction.value === 'asc' ? 'desc' : 'asc';
-        params.value.sort_field = sort_field.value;
-        params.value.sort_direction = newDirection;
-    } else {
-        delete params.value.sort_field;
-        delete params.value.sort_direction;
-    }
-    if (search.value) {
-        params.value.search = search.value;
-    } else {
-        delete params.value.search;
-    }
     if (is_active.value) {
         params.value.is_active = is_active.value;
     } else {
@@ -1186,10 +1500,20 @@ function reloadProducts() {
     } else {
         delete params.value.per_page;
     }
+    if (search.value) {
+        params.value.search = search.value;
+    } else {
+        delete params.value.search;
+    }
     if (category_id.value) {
         params.value.category_id = category_id.value;
     } else {
         delete params.value.category_id;
+    }
+    if (sub_category_id.value) {
+        params.value.sub_category_id = sub_category_id.value;
+    } else {
+        delete params.value.sub_category_id;
     }
     if (dosage_id.value) {
         params.value.dosage_id = dosage_id.value;
@@ -1235,6 +1559,29 @@ function reloadCategories() {
     });
 }
 
+function reloadSubcategories() {
+    if (subcategorySearch.value) {
+        params.value.subcategorySearch = subcategorySearch.value;
+    } else {
+        delete params.value.subcategorySearch;
+    }
+    if (subcategory_per_page.value) {
+        params.value.subcategory_per_page = subcategory_per_page.value;
+    } else {
+        delete params.value.subcategory_per_page;
+    }
+    if (params.value.subcategory_page) {
+        params.value.subcategory_page = params.value.subcategory_page;
+    } else {
+        params.value.subcategory_page = 1;
+    }
+    router.get(route('products.index'), params.value, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['subcategories']
+    });
+}
+
 function reloadDosages() {
     if (dosageSearch.value) {
         params.value.dosageSearch = dosageSearch.value;
@@ -1256,7 +1603,7 @@ function reloadDosages() {
         preserveScroll: true,
         only: ['dosages']
     });
-}
+};
 
 // Sort categories
 const sortCategory = (field) => {
@@ -1271,6 +1618,22 @@ const sortCategory = (field) => {
         preserveState: true,
         preserveScroll: true,
         only: ['categories']
+    });
+};
+
+// Sort subcategories
+const sortSubcategory = (field) => {
+    if (props.subcategoryFilters.sort_field === field) {
+        params.value.subcategoryDirection = props.subcategoryFilters.sort_direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        params.value.subcategoryField = field;
+        params.value.subcategoryDirection = 'asc';
+    }
+
+    router.get(route('products.index'), params.value, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['subcategories']
     });
 };
 
@@ -1291,37 +1654,14 @@ const sortDosage = (field) => {
 };
 
 // Filter dosages based on selected category
-const onCategoryChange = async () => {
+const onCategoryChange = () => {
     form.value.dosage_id = ''; // Reset dosage selection when category changes
-    if (form.value.category_id) {
-        try {
-            // Use the dedicated endpoint for fetching dosages by category
-            const response = await axios.get(route('dosages.by-category', form.value.category_id));
-            filteredDosages.value = response.data;
-        } catch (error) {
-            console.error('Error loading dosages:', error);
-        }
-    } else {
-        filteredDosages.value = [];
-        form.value.dosage_id = '';
-    }
 };
 
 // Handle category filter change in product listing
-const onCategoryFilterChange = async () => {
-    if (!category_id.value) {
-        filteredDosages.value = [];
-        return;
-    }
-    try {
-        // Use the dedicated endpoint for fetching dosages by category
-        const response = await axios.get(route('dosages.by-category', category_id.value));
-        filteredDosages.value = response.data;
-        reloadProducts();
-    } catch (error) {
-        console.error('Error loading dosages for filter:', error);
-        reloadProducts();
-    }
+const onCategoryFilterChange = () => {
+    dosage_id.value = ''; // Reset dosage selection when category filter changes
+    reloadProducts();
 };
 
 // Watch for tab changes to load appropriate data
@@ -1332,6 +1672,10 @@ watch(activeTab, (newTab) => {
 
     if (newTab === 'products') {
         reloadProducts();
+    }
+
+    if (newTab === 'subcategories') {
+        reloadSubcategories();
     }
 
     if (newTab === 'dosages') {
@@ -1378,7 +1722,9 @@ function resetForm() {
         barcode: '',
         description: '',
         category_id: '',
+        sub_category_id: '',
         dosage_id: '',
+        reorder_level: 0,
         is_active: true
     };
 
@@ -1466,7 +1812,7 @@ const confirmDelete = (product) => {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
-                    text: 'An error occurred while deleting the product',
+                    text: error.response.data || 'An error occurred while deleting the product',
                     confirmButtonText: 'OK'
                 });
             }
@@ -1492,12 +1838,10 @@ const formatDate = (dateString) => {
 const resetFilters = () => {
     search.value = '';
     category_id.value = '';
+    sub_category_id.value = '';
     dosage_id.value = '';
     is_active.value = '';
-    per_page.value = 10;
-    sort_field.value = 'id';
-    sort_direction.value = 'desc';
-    filteredDosages.value = [];
+    per_page.value = 5;
     reloadProducts();
 };
 
@@ -1705,9 +2049,124 @@ const deleteDosage = () => {
         });
 };
 
+// Open subcategory modal for create/edit
+const openSubcategoryModal = (subcategory = null) => {
+    subcategoryErrors.value = null;
+    subcategoryIsSubmitted.value = false;
+
+    if (subcategory) {
+        subcategoryForm.value.id = subcategory.id;
+        subcategoryForm.value.name = subcategory.name;
+        subcategoryForm.value.description = subcategory.description || '';
+        subcategoryForm.value.category_id = subcategory.category_id || '';
+        subcategoryForm.value.is_active = subcategory.is_active;
+    } else {
+        subcategoryFormReset();
+    }
+
+    showSubcategoryModal.value = true;
+};
+
+function subcategoryFormReset() {
+    subcategoryForm.value.id = null;
+    subcategoryForm.value.name = '';
+    subcategoryForm.value.description = '';
+    subcategoryForm.value.category_id = '';
+    subcategoryForm.value.is_active = true;
+}
+
+// Close subcategory modal
+const closeSubcategoryModal = () => {
+    showSubcategoryModal.value = false;
+};
+
+// Submit subcategory form
+const submitSubcategoryForm = async () => {
+    subcategoryIsSubmitted.value = true;
+    subcategoryProcessing.value = true;
+    subcategoryErrors.value = null;
+
+    await axios.post(route('subcategories.store'), subcategoryForm.value)
+        .then(response => {
+            if (response.data.success) {
+                toast.success(response.data.message || 'Subcategory saved successfully');
+                closeSubcategoryModal();
+                reloadSubcategories();
+            } else {
+                toast.error(response.data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            if (error.response && error.response.data && error.response.data.errors) {
+                subcategoryErrors.value = error.response.data.errors;
+                toast.error('Please correct the errors in the form');
+            } else {
+                toast.error('An error occurred while saving the subcategory');
+            }
+        })
+        .finally(() => {
+            subcategoryProcessing.value = false;
+            subcategoryIsSubmitted.value = false;
+        });
+};
+
+// Confirm delete subcategory
+const confirmDeleteSubcategory = (subcategory) => {
+    subcategoryToDelete.value = subcategory;
+    showSubcategoryDeleteModal.value = true;
+};
+
+// Close subcategory delete modal
+const closeSubcategoryDeleteModal = () => {
+    showSubcategoryDeleteModal.value = false;
+    subcategoryToDelete.value = null;
+};
+
+// Delete subcategory
+const deleteSubcategory = () => {
+    if (!subcategoryToDelete.value) return;
+
+    subcategoryProcessing.value = true;
+
+    axios.delete(route('subcategories.destroy', subcategoryToDelete.value.id))
+        .then(response => {
+            if (response.data.success) {
+                toast.success(response.data || 'Subcategory deleted successfully');
+                closeSubcategoryDeleteModal();
+                reloadSubcategories();
+            } else {
+                toast.error(response.data || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response.data || 'An error occurred',
+            });
+            console.error(error);
+        })
+        .finally(() => {
+            subcategoryProcessing.value = false;
+        });
+};
+
 const closeDeleteModal = () => {
     showDeleteModal.value = false;
 };
+
+watch(category_id, (newVal) => {
+    if (!newVal) {
+        sub_category_id.value = '';
+    }
+});
+
+watch(() => form.value.category_id, (newVal) => {
+    if (!newVal) {
+        form.value.sub_category_id = '';
+    }
+});
 </script>
 
 <style scoped>

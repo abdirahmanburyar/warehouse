@@ -2,15 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Product;
-use App\Models\Category;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Dosage extends Model
+class SubCategory extends Model
 {
     use HasFactory;
-
+    
     /**
      * The attributes that are mass assignable.
      *
@@ -19,10 +17,9 @@ class Dosage extends Model
     protected $fillable = [
         'name',
         'description',
-        'category_id',
         'is_active',
     ];
-
+    
     /**
      * The attributes that should be cast.
      *
@@ -31,20 +28,14 @@ class Dosage extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+    
+    public $timestamps = true;
 
     /**
-     * Get the products for the dosage.
+     * Get the products that belong to this subcategory.
      */
     public function products()
     {
-        return $this->hasMany(Product::class);
-    }
-
-    /**
-     * Get the category that owns the dosage.
-     */
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+        return $this->hasMany(Product::class, 'sub_category_id');
     }
 }

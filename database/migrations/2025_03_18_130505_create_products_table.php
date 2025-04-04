@@ -30,7 +30,9 @@ return new class extends Migration
             $table->string('barcode')->nullable()->unique();
             $table->text('description')->nullable();
             $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('sub_category_id')->nullable()->constrained()->onDelete('set null');
             $table->unsignedBigInteger('dosage_id')->nullable();
+            $table->double('reorder_level')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

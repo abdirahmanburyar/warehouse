@@ -9,6 +9,7 @@ use App\Models\Dosage;
 use App\Models\Inventory;
 use App\Models\Supply;
 use App\Models\SupplyItem;
+use App\Models\SubCategory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
@@ -27,6 +28,8 @@ class Product extends Model
         'description',
         'category_id',
         'dosage_id',
+        'reorder_level',
+        'sub_category_id',
         'is_active',
     ];
 
@@ -47,6 +50,11 @@ class Product extends Model
     public function dosage()
     {
         return $this->belongsTo(Dosage::class);
+    }
+
+    public function subCategory()
+    {
+        return $this->belongsTo(SubCategory::class, 'sub_category_id');
     }
 
     /**

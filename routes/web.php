@@ -16,6 +16,8 @@ use App\Http\Controllers\ReverbTestController;
 use App\Http\Controllers\ExpiredController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\PurchaseOrderController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -84,9 +86,17 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     // Category Management Routes
     Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class.':category.view'])->group(function () {
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-        Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-        Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-        Route::delete('/categories/{category}/delete', [CategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('categories.store');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware(PermissionMiddleware::class.':category.edit')->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('categories.destroy');
+    });
+
+    // SubCategory Management Routes
+    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class.':category.view'])->group(function () {
+        Route::get('/subcategories', [SubCategoryController::class, 'index'])->name('subcategories.index');
+        Route::post('/subcategories', [SubCategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('subcategories.store');
+        Route::put('/subcategories/{subcategory}', [SubCategoryController::class, 'update'])->middleware(PermissionMiddleware::class.':category.edit')->name('subcategories.update');
+        Route::delete('/subcategories/{subcategory}', [SubCategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('subcategories.destroy');
     });
         
     // Warehouse Management Routes
@@ -173,6 +183,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
 
         });
         
+    // Purchase Orders
+    Route::prefix('purchase-orders')->group(function () {
+        Route::get('/', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        Route::post('/store', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+        Route::delete('/{purchaseOrder}/destroy', [PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+    });
+
     // Settings Routes
     Route::middleware(PermissionMiddleware::class.':settings.view')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

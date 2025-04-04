@@ -6,12 +6,14 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
+use App\Http\Resources\SubCategoryResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +57,7 @@ class ProductController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
         
-        $products = $query->with(['dosage.category'])
+        $products = $query->with(['dosage.category','subCategory'])
             ->paginate($request->input('per_page', 5), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -109,11 +111,37 @@ class ProductController extends Controller
         
         // Get paginated dosage results
         $dosages = $dosageQuery->with('category')
-            ->paginate($request->input('dosage_per_page', 3), ['*'], 'dosage_page', $request->input('dosage_page', 1))
+            ->paginate($request->input('dosage_per_page', 6), ['*'], 'dosage_page', $request->input('dosage_page', 1))
             ->withQueryString();
 
         $dosages->setPath(url()->current());
+
+        // Handle subcategory listing functionality
+        $subcategoryQuery = SubCategory::query();
         
+        // Handle subcategory search
+        if ($request->has('subcategorySearch')) {
+            $searchTerm = $request->subcategorySearch;
+            $subcategoryQuery->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Handle subcategory sorting
+        $subcategorySortField = $request->input('subcategory_sort_field', 'id');
+        $subcategorySortDirection = $request->input('subcategory_sort_direction', 'desc');
+        
+        $subcategoryQuery->orderBy($subcategorySortField, $subcategorySortDirection);
+        
+        // Get paginated subcategory results with counts
+        $subcategories = $subcategoryQuery
+            ->withCount(['products'])
+            ->paginate($request->input('subcategory_per_page', 6), ['*'], 'subcategory_page', $request->input('subcategory_page', 1))
+            ->withQueryString();
+
+        $subcategories->setPath(url()->current());
+
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
             'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page']),
@@ -121,6 +149,8 @@ class ProductController extends Controller
             'categories' => CategoryResource::collection($categories),
             'dosages' => DosageResource::collection($dosages),
             'dosageFilters' => $request->only(['dosageSearch', 'dosage_sort_field', 'dosage_sort_direction', 'dosage_per_page', 'dosage_page']),
+            'subcategories' => SubCategoryResource::collection($subcategories),
+            'subcategoryFilters' => $request->only(['subcategorySearch', 'subcategory_sort_field', 'subcategory_sort_direction', 'subcategory_per_page', 'subcategory_page']),
         ]);
     }
 
@@ -138,6 +168,8 @@ class ProductController extends Controller
                 'description' => 'nullable|string',
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
+                'reorder_level' => 'nullable|numeric',
+                'sub_category_id' => 'nullable|exists:sub_categories,id',
                 'is_active' => 'boolean',
             ]);
 
@@ -234,39 +266,17 @@ class ProductController extends Controller
     {
         try {
             $search = $request->input('search');
-            $products = Product::where('name', 'like', '%' . $search . '%')
-                ->orWhere('barcode', 'like', '%' . $search . '%')
-                ->select('id', 'name', 'barcode')
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'product_id' => $product->id,
-                        'product_name' => $product->name,
-                    ];
-                });
+            $product = Product::where('name',  $search)
+                ->orWhere('barcode', $search)
+                ->select('name as product_name', 'id as product_id')
+                ->first();
                     
-            return response()->json($products, 200);
+            return response()->json($product, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
     }
 
-    /**
-     * Search for products
-     */
-    public function searchProducts(Request $request)
-    {
-        $query = $request->input('query');
-        
-        $products = Product::where('name', 'like', "%{$query}%")
-            ->orWhere('sku', 'like', "%{$query}%")
-            ->orWhere('barcode', 'like', "%{$query}%")
-            ->select('id', 'name as product_name', 'sku', 'barcode')
-            ->limit(10)
-            ->get();
-            
-        return response()->json($products);
-    }
 
     /**
      * Handle bulk actions for products
