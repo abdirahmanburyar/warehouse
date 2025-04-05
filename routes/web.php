@@ -184,10 +184,19 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
         
     // Purchase Orders
-    Route::prefix('purchase-orders')->group(function () {
-        Route::get('/', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
-        Route::post('/store', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
-        Route::delete('/{purchaseOrder}/destroy', [PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+    Route::prefix('purchase-orders')
+        ->controller(PurchaseOrderController::class)
+        ->group(function () {
+        Route::get('/', 'index')->name('purchase-orders.index');
+        Route::post('/store', 'store')->name('purchase-orders.store');
+        Route::delete('/{purchaseOrder}/destroy', 'destroy')->name('purchase-orders.destroy');
+        Route::post('/back-orders', 'createBackOrder')->name('purchase-orders.back-orders.create');
+
+        // packing list
+        Route::get('/{purchaseOrder}/packing-list', 'packingList')->name('purchase-orders.packing-list');
+        Route::post('/packing-list/store', 'packingListStore')->name('purchase-orders.packing-list.store');
+        Route::get('/{purchaseOrder}/back-orders/{productId}', 'getBackOrders')->name('purchase-orders.back-orders.get');
+
     });
 
     // Settings Routes

@@ -177,11 +177,12 @@
                                                 <td
                                                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <div class="flex justify-end gap-2">
-                                                        <button @click="editOrder(order)"
-                                                            class="text-indigo-600 hover:text-indigo-900">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                                viewBox="0 0 20 20" fill="currentColor">
-                                                                <path
+                                                        <Link :href="route('purchase-orders.packing-list', order.id)">Packing List</Link>
+                                                            <button @click="editOrder(order)"
+                                                                class="text-indigo-600 hover:text-indigo-900">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                                    <path
                                                                     d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                             </svg>
                                                         </button>
@@ -278,10 +279,7 @@
                                                 class="block text-sm font-medium text-gray-700">Status</label>
                                             <select id="status" v-model="form.status" required
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                <option value="draft">Draft</option>
                                                 <option value="pending">Pending</option>
-                                                <option value="approved">Approved</option>
-                                                <option value="rejected">Rejected</option>
                                                 <option value="completed">Completed</option>
                                             </select>
                                         </div>
@@ -588,7 +586,7 @@ const closeModal = () => {
         po_date: new Date().toISOString().split('T')[0],
         total_amount: 0,
         notes: '',
-        status: 'draft',
+        status: 'pending',
         items: []
     };
     errors.value = null;
@@ -630,7 +628,7 @@ const submitForm = async () => {
 
     processing.value = true;
 
-    await axios.post(route('purchase-orders.store'), formData)
+    await axios.post(route('purchase-orders.packing-list.store'), formData)
         .then((response) => {
             processing.value = false;
             toast.success(response.data);
@@ -709,7 +707,7 @@ const form = ref({
     po_date: new Date().toISOString().split('T')[0],
     total_amount: 0,
     notes: '',
-    status: 'draft',
+    status: 'pending',
     items: []
 });
 
@@ -880,7 +878,7 @@ const openModal = (order = null) => {
             supplier_id: '',
             po_date: new Date().toISOString().split('T')[0],
             total_amount: 0,
-            status: 'draft',
+            status: 'pending',
             notes: '',
             items: [],
         };

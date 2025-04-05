@@ -13,12 +13,14 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'product_id',
         'quantity',
+        'received_quantity',
         'unit_cost',
         'total_cost',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
+        'received_quantity' => 'integer',
         'unit_cost' => 'decimal:3',
         'total_cost' => 'decimal:3',
     ];

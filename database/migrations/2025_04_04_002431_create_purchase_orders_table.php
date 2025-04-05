@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('po_date');
             $table->decimal('total_amount', 10, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->enum('status', ['draft', 'pending', 'approved', 'rejected', 'completed'])->default('draft');
+            $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();

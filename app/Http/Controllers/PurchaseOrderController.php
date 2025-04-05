@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
+use App\Models\BackOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -122,7 +123,6 @@ class PurchaseOrderController extends Controller
                     ->whereNotIn('id', $currentItemIds)
                     ->delete();
             }
-
             DB::commit();
 
             return response()->json( $request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
@@ -140,5 +140,146 @@ class PurchaseOrderController extends Controller
         } catch (\Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }
+    }
+
+    public function packingList($id)
+    {
+        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater'])->findOrFail($id);
+
+        return Inertia::render('PurchaseOrder/PackingList', [
+            'purchase_order' => $purchaseOrder,
+        ]);
+    }
+
+    public function createBackOrder(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        try {
+            $request->validate([
+                'items' => 'required|array',
+                'items.*.id' => 'nullable|exists:back_orders,id',
+                'items.*.purchase_order_id' => 'nullable|exists:purchase_orders,id',
+                'items.*.type' => 'required|string|in:damaged,missing',
+                'items.*.quantity' => 'required|integer|min:0',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.notes' => 'nullable|string'
+            ]);
+
+            logger()->info($request->items);
+    
+            foreach ($request->items as $item) {
+                // Find existing back order
+                $backOrder = BackOrder::where([
+                    'product_id' => $item['product_id'],
+                    'purchase_order_id' => $item['purchase_order_id'],
+                    'type' => $item['type'],
+                ])->first();
+
+                if ($item['quantity'] == 0) {
+                    // Delete if exists and quantity is 0
+                    if ($backOrder) {
+                        $backOrder->delete();
+                    }
+                } else {
+                    // Update or create with new quantity
+                    if ($backOrder) {
+                        $backOrder->update([
+                            'quantity' => $item['quantity'],
+                            'notes' => $item['notes'] ?? null,
+                        ]);
+                    } else {
+                        BackOrder::create([
+                            'product_id' => $item['product_id'],
+                            'purchase_order_id' => $item['purchase_order_id'],
+                            'type' => $item['type'],
+                            'quantity' => $item['quantity'],
+                            'notes' => $item['notes'] ?? null,
+                            'created_by' => auth()->id(),
+                            'status' => 'pending'
+                        ]);
+                    }
+                }
+            }
+    
+            return response()->json('Back orders updated successfully', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function packingListStore(Request $request)
+    {
+        try {
+            $request->validate([
+                'total_cost' => 'required|numeric|min:0',
+                'purchase_order_id' => 'nullable|exists:purchase_orders,id',
+                'items' => 'required|array',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|integer|min:0',
+                'items.*.received_quantity' => 'required|integer|min:0',
+                'items.*.unit_cost' => 'required|numeric|min:0',
+            ]);
+
+            $purchaseOrder = PurchaseOrder::find($request->purchase_order_id);
+            
+            // Get all current product IDs in the request
+            $requestProductIds = collect($request->items)->pluck('product_id')->toArray();
+            
+            // Delete items and their back orders that are not in the request
+            $purchaseOrder->items()
+                ->whereNotIn('product_id', $requestProductIds)
+                ->get()
+                ->each(function ($item) use ($request) {
+                    // Delete associated back orders first
+                    BackOrder::where([
+                        'product_id' => $item->product_id,
+                        'purchase_order_id' => $request->purchase_order_id,
+                    ])->delete();
+                    
+                    // Then delete the item itself
+                    $item->delete();
+                });
+
+            // Update or create new items
+            foreach ($request->items as $item) {
+                $purchaseOrder->items()->updateOrCreate(
+                    [
+                        'product_id' => $item['product_id'],
+                    ],
+                    [
+                        'quantity' => $item['quantity'],
+                        'received_quantity' => $item['received_quantity'],
+                        'unit_cost' => $item['unit_cost'],
+                        'total_cost' => $item['unit_cost'] * $item['quantity']
+                    ]
+                );
+
+                // If received quantity equals ordered quantity, delete any back orders
+                if($item['received_quantity'] == $item['quantity']){
+                    BackOrder::where([
+                        'product_id' => $item['product_id'],
+                        'purchase_order_id' => $request->purchase_order_id,
+                    ])->delete();
+                }
+            }
+
+            logger()->info($request->total_cost);
+
+            $purchaseOrder->update([
+                'total_amount' => $request->total_cost
+            ]);
+
+            return response()->json('Packing list updated successfully', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function getBackOrders(PurchaseOrder $purchaseOrder, $productId)
+    {
+        $backOrders = BackOrder::where('purchase_order_id', $purchaseOrder->id)
+            ->where('product_id', $productId)
+            ->get();
+
+        return response()->json($backOrders);
     }
 }
