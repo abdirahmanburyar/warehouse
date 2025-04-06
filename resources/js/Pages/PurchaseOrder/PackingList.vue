@@ -262,7 +262,7 @@
                                             </button>
                                         </td>
                                     </tr>
-                                    <tr v-if="!loadingItems && items.length === 0">
+                                    <tr v-if="loadingItems && items.length == 0">
                                         <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                                             No items added yet. Click "Add Item" to add a new item.
                                         </td>
@@ -344,15 +344,6 @@
                                         </td>
                                     </tr>
                                 </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td class="pt-2 text-right font-medium">Remaining:</td>
-                                        <td class="pt-2 text-right font-medium"
-                                            :class="{ 'text-red-600': getRemainingBackOrderQty < 0 }">
-                                            {{ getRemainingBackOrderQty }}
-                                        </td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -378,7 +369,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
@@ -550,7 +541,21 @@ const createPackingList = async () => {
 const showBackOrderModal = ref(false);
 const selectedItem = ref(null);
 const backOrderForm = ref({
-    items: [],
+    items: [
+        {
+            type: 'damaged',
+            quantity: 0,
+            purchase_order_id: props.purchase_order.id,
+            product_id: null
+        },
+        {
+            type: 'missing',
+            quantity: 0,
+            purchase_order_id: props.purchase_order.id,
+            product_id: null
+        }
+    ],
+    isSubmitted: false
 });
 const isSubmitted = ref(false);
 const existingBackOrders = ref([]);
@@ -573,6 +578,9 @@ const fetchExistingBackOrders = async (item) => {
 const openBackOrderModal = async (item) => {
     selectedItem.value = item;
     await fetchExistingBackOrders(item);
+    
+    // Calculate total remaining quantity
+    const remainingQty = item.quantity - item.received_quantity;
 
     if (existingBackOrders.value.length > 0) {
         // Group existing back orders by type
@@ -595,7 +603,7 @@ const openBackOrderModal = async (item) => {
                 },
                 {
                     type: 'missing',
-                    quantity: groupedBackOrders['missing'] || 0,
+                    quantity: remainingQty - (groupedBackOrders['damaged'] || 0),
                     purchase_order_id: props.purchase_order.id,
                     product_id: selectedItem.value.product_id
                 }
@@ -613,7 +621,7 @@ const openBackOrderModal = async (item) => {
                 },
                 {
                     type: 'missing',
-                    quantity: 0,
+                    quantity: remainingQty,
                     purchase_order_id: props.purchase_order.id,
                     product_id: selectedItem.value.product_id
                 }
@@ -624,11 +632,37 @@ const openBackOrderModal = async (item) => {
     showBackOrderModal.value = true;
 };
 
+watch(() => backOrderForm.value?.items?.[0]?.quantity, (newDamagedQty) => {
+    if (!selectedItem.value || !backOrderForm.value?.items?.[1]) return;
+    
+    const remainingQty = selectedItem.value.quantity - selectedItem.value.received_quantity;
+    // Ensure we're working with numbers and clamp damaged quantity
+    const damaged = Math.min(Math.max(Number(newDamagedQty) || 0, 0), remainingQty);
+    if (backOrderForm.value.items[0]) {
+        backOrderForm.value.items[0].quantity = damaged;
+    }
+    // Update missing quantity
+    backOrderForm.value.items[1].quantity = remainingQty - damaged;
+}, { immediate: true });
+
 const closeBackOrderModal = () => {
     showBackOrderModal.value = false;
     selectedItem.value = null;
     backOrderForm.value = {
-        items: [],
+        items: [
+            {
+                type: 'damaged',
+                quantity: 0,
+                purchase_order_id: props.purchase_order.id,
+                product_id: null
+            },
+            {
+                type: 'missing',
+                quantity: 0,
+                purchase_order_id: props.purchase_order.id,
+                product_id: null
+            }
+        ],
         isSubmitted: false
     };
     existingBackOrders.value = [];

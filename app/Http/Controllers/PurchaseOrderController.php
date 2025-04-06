@@ -74,12 +74,6 @@ class PurchaseOrderController extends Controller
                     'total_amount' => 'required|numeric|min:0',
                     'notes' => 'nullable|string',
                     'status' => 'required|in:draft,pending,approved,rejected,completed',
-                    'items' => 'nullable|array',
-                    'items.*.id' => 'nullable|exists:purchase_order_items,id',
-                    'items.*.product_id' => 'nullable|exists:products,id',
-                    'items.*.quantity' => 'nullable|integer|min:1',
-                    'items.*.unit_cost' => 'nullable|numeric|min:0.001',
-                    'items.*.total_cost' => 'nullable|numeric|min:0.001',
                 ]);
 
                 DB::beginTransaction();
@@ -97,34 +91,6 @@ class PurchaseOrderController extends Controller
                         'updated_by' => $request->input('id') ? Auth::id() : null,
                 ]
             );
-
-            // Handle items
-            $currentItemIds = [];
-            foreach ($request->input('items') as $item) {
-                $itemData = [
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['total_cost'],
-                ];
-
-                $purchaseOrderItem = $purchaseOrder->items()->updateOrCreate(
-                    [
-                        'id' => $item['id'] ?? null,
-                        'purchase_order_id' => $purchaseOrder->id
-                    ],
-                    $itemData
-                );
-                
-                $currentItemIds[] = $purchaseOrderItem->id;
-            }
-
-            // Soft delete items that are no longer in the list
-            if ($request->input('id')) {
-                $purchaseOrder->items()
-                    ->whereNotIn('id', $currentItemIds)
-                    ->delete();
-            }
             DB::commit();
 
             return response()->json( $request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
@@ -211,84 +177,72 @@ class PurchaseOrderController extends Controller
     {
         try {
             $request->validate([
-                'total_cost' => 'required|numeric|min:0',
-                'purchase_order_id' => 'nullable|exists:purchase_orders,id',
                 'items' => 'required|array',
+                'items.*.id' => 'nullable|exists:purchase_order_items,id',
+                'items.*.packing_list_id' => 'required|exists:packing_lists,id',
+                'items.*.purchase_order_id' => 'required|exists:purchase_orders,id',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|integer|min:0',
                 'items.*.warehouse_id' => 'required|exists:warehouses,id',
-                'items.*.packing_list_id' => 'required|exists:packing_lists,id',
                 'items.*.location' => 'required|string',
                 'items.*.expiry_date' => 'nullable|date',
                 'items.*.batch_number' => 'nullable|string',
                 'items.*.generic_name' => 'nullable|string',
-                'items.*.received_quantity' => 'required|integer|min:0',
+                'items.*.received_quantity' => 'required|integer|min:0|lte:items.*.quantity',
                 'items.*.unit_cost' => 'required|numeric|min:0',
                 'items.*.total_cost' => 'required|numeric|min:0',
             ]);
 
-            $purchaseOrder = PurchaseOrder::find($request->purchase_order_id);
-            
-            // Get all current product IDs in the request
-            $requestProductIds = collect($request->items)->pluck('product_id')->toArray();
-            
-            // Delete items and their back orders that are not in the request
-            $purchaseOrder->items()
-                ->whereNotIn('product_id', $requestProductIds)
-                ->get()
-                ->each(function ($item) use ($request) {
-                    // Delete associated back orders first
-                    BackOrder::where([
-                        'product_id' => $item->product_id,
-                        'purchase_order_id' => $request->purchase_order_id,
-                    ])->delete();
-                    
-                    // Then delete the item itself
-                    $item->delete();
-                });
+            DB::beginTransaction();
 
-            // Update or create new items
             foreach ($request->items as $item) {
-                $purchaseOrder->items()->updateOrCreate(
-                    [
-                        'product_id' => $item['product_id'],
-                        'packing_list_id' => $item['packing_list_id'],
-                        'warehouse_id' => $item['warehouse_id'],
-                        'location' => $item['location'],
-                        'expiry_date' => $item['expiry_date'],
-                        'batch_number' => $item['batch_number'],
-                        'generic_name' => $item['generic_name'],
-                    ],
-                    [
-                        'packing_list_id' => $item['packing_list_id'],
-                        'warehouse_id' => $item['warehouse_id'],
-                        'location' => $item['location'],
-                        'expiry_date' => $item['expiry_date'],
-                        'batch_number' => $item['batch_number'],
-                        'generic_name' => $item['generic_name'],
-                        'quantity' => $item['quantity'],
-                        'received_quantity' => $item['received_quantity'],
-                        'unit_cost' => $item['unit_cost'],
-                        'total_cost' => $item['unit_cost'] * $item['quantity']
-                    ]
-                );
+                $purchaseOrderItem = PurchaseOrderItem::findOrNew($item['id'] ?? null);
+                $purchaseOrderItem->fill([
+                    'packing_list_id' => $item['packing_list_id'],
+                    'purchase_order_id' => $item['purchase_order_id'],
+                    'product_id' => $item['product_id'],
+                    'warehouse_id' => $item['warehouse_id'],
+                    'quantity' => $item['quantity'],
+                    'location' => $item['location'],
+                    'received_quantity' => $item['received_quantity'],
+                    'unit_cost' => $item['unit_cost'],
+                    'total_cost' => $item['total_cost'],
+                    'expiry_date' => $item['expiry_date'] ?? null,
+                    'batch_number' => $item['batch_number'] ?? null,
+                    'generic_name' => $item['generic_name'] ?? null,
+                ]);
+                $purchaseOrderItem->save();
 
-                // If received quantity equals ordered quantity, delete any back orders
-                if($item['received_quantity'] == $item['quantity']){
-                    BackOrder::where([
+                // Handle back orders based on type
+                if ($item['received_quantity'] > 0) {
+                    // Get missing type back order
+                    $missingBackOrder = BackOrder::where([
                         'product_id' => $item['product_id'],
-                        'purchase_order_id' => $request->purchase_order_id,
-                    ])->delete();
+                        'purchase_order_id' => $item['purchase_order_id'],
+                        'type' => 'missing'
+                    ])->first();
+
+                    if ($missingBackOrder) {
+                        // Deduct received quantity from missing back order
+                        $newQuantity = $missingBackOrder->quantity - $item['received_quantity'];
+                        if ($newQuantity <= 0) {
+                            $missingBackOrder->delete();
+                        } else {
+                            $missingBackOrder->update(['quantity' => $newQuantity]);
+                        }
+                    }
+
+                    // Note: We don't touch 'damaged' type back orders as they need to be handled separately
                 }
             }
 
-            $purchaseOrder->update([
-                'total_amount' => $request->total_cost
-            ]);
+            DB::commit();
+            return response()->json('Packing list created successfully', 200);
 
-            return response()->json('Packing list updated successfully', 200);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            logger()->error('Error creating packing list: ' . $e->getMessage());
+            return response()->json($e->getMessage(), 500);
         }
     }
 

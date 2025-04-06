@@ -299,91 +299,6 @@
                                         <textarea id="notes" v-model="form.notes" rows="2" placeholder="Enter notes"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
                                     </div>
-
-                                    <!-- Product Items -->
-                                    <div class="border rounded-lg overflow-hidden">
-                                        <table class="min-w-full divide-y divide-gray-200">
-                                            <thead class="bg-gray-50">
-                                                <tr>
-                                                    <th
-                                                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 w-[40%]">
-                                                        Product</th>
-                                                    <th
-                                                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 w-[15%]">
-                                                        Quantity</th>
-                                                    <th
-                                                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 w-[20%]">
-                                                        Unit Cost</th>
-                                                    <th
-                                                        class="px-3 py-2 text-left text-sm font-semibold text-gray-900 w-[20%]">
-                                                        Total Cost</th>
-                                                    <th class="px-3 py-2 w-[5%]"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200 bg-white">
-                                                <tr v-for="(item, index) in form.items" :key="index">
-                                                    <td class="px-3 py-2">
-                                                        <div class="relative">
-                                                            <input type="text" v-model="item.product_name"
-                                                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100"
-                                                                :class="{ 'bg-gray-50': item.product_id }"
-                                                                placeholder="Scan barcode"
-                                                                @keydown.enter.prevent="handleBarcodeInput($event, index)"
-                                                                :ref="el => { if (el) productInputs[index] = el }"
-                                                                :disabled="item.product_id" />
-                                                            <button v-if="item.product_id" type="button"
-                                                                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                                                @click="clearProduct(index)" title="Remove product">
-                                                                ×
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        <input type="number" v-model.number="item.quantity" required min="1"
-                                                            @input="calculateItemTotal(index)"
-                                                            class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        <input type="number" step="0.001" v-model.number="item.unit_cost"
-                                                            required min="0" @input="calculateItemTotal(index)" 
-                                                            class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        <input type="number" step="0.001" v-model.number="item.total_cost"
-                                                            readonly
-                                                            class="w-full rounded-md border-0 py-1.5 text-gray-900 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6" />
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        <button type="button" @click="removeItem(index)"
-                                                            class="rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100">
-                                                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg"
-                                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr v-if="form.items.length === 0">
-                                                    <td colspan="5" class="p-2 text-center  text-gray-500">
-                                                        No items added
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="px-3 py-3 bg-gray-50 border-t flex justify-end">
-                                        <button type="button" @click="addItem"
-                                            class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                            </svg>
-                                            Add Item
-                                        </button>
-                                    </div>
                                     <div class="mt-6 flex justify-end gap-3">
                                         <button type="button" :disabled="processing" @click="closeModal"
                                             class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
@@ -402,26 +317,6 @@
                 </div>
             </Dialog>
         </TransitionRoot>
-
-        <!-- Delete Confirmation Modal -->
-        <Modal :show="showDeleteModal" @close="closeDeleteModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Delete Purchase Order</h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    Are you sure you want to delete this purchase order? This action cannot be undone.
-                </p>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="closeDeleteModal"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                        Cancel
-                    </button>
-                    <button @click="deleteOrder"
-                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </Modal>
 
         <!-- Items Modal -->
         <TransitionRoot appear :show="showItemsModal" as="template">
@@ -587,48 +482,15 @@ const closeModal = () => {
         total_amount: 0,
         notes: '',
         status: 'pending',
-        items: []
     };
     errors.value = null;
 };
 
-// Calculate total cost
-const calculateTotal = () => {
-    form.value.total_amount = form.value.items.reduce((total, item) => total + item.total_cost, 0);
-};
-
-// Remove item
-const removeItem = (index) => {
-    form.value.items.splice(index, 1);
-    calculateTotalAmount();
-};
-
-// Calculate item total
-const calculateItemTotal = (index) => {
-    const item = form.value.items[index];
-    item.total_cost = Number(item.quantity || 0) * Number(item.unit_cost || 0);
-    calculateTotalAmount();
-};
-
-// Calculate total amount
-const calculateTotalAmount = () => {
-    form.value.total_amount = form.value.items.reduce((total, item) => {
-        return total + Number(item.total_cost || 0);
-    }, 0);
-};
-
 // Submit form
 const submitForm = async () => {
-    // Filter out empty items before submission
-    const validItems = form.value.items.filter(item => item.product_id);
-    const formData = {
-        ...form.value,
-        items: validItems
-    };
-
     processing.value = true;
 
-    await axios.post(route('purchase-orders.packing-list.store'), formData)
+    await axios.post(route('purchase-orders.store'), form.value)
         .then((response) => {
             processing.value = false;
             toast.success(response.data);
@@ -642,17 +504,6 @@ const submitForm = async () => {
         });
 };
 
-// Confirm delete
-const confirmDelete = (order) => {
-    selectedOrder.value = order;
-    showDeleteModal.value = true;
-};
-
-// Close delete modal
-const closeDeleteModal = () => {
-    showDeleteModal.value = false;
-    selectedOrder.value = null;
-};
 
 // Delete order
 const deleteOrder = async () => {
@@ -663,7 +514,6 @@ const deleteOrder = async () => {
         const response = await axios.delete(route('purchase-orders.destroy', selectedOrder.value.id));
         if (response.data.success) {
             toast.success(response.data || 'Purchase order deleted successfully');
-            closeDeleteModal();
             reloadOrders();
         } else {
             toast.error(response.data || 'An error occurred');
@@ -715,100 +565,6 @@ const searchResults = ref([]);
 const isLoading = ref(false);
 const productInputs = ref({});
 
-const handleBarcodeInput = (event, index) => {
-    event.preventDefault(); // Prevent form submission
-    const item = form.value.items[index];
-
-    // If this row already has a product, ignore the scan
-    if (item.product_id) {
-        // Clear the input value since it's readonly
-        event.target.value = item.product_name;
-        return;
-    }
-
-    const barcode = event.target.value.trim();
-    if (!barcode) return;
-
-    isLoading.value = true;
-    axios.post(route('products.search'), {
-        search: barcode
-    })
-        .then(response => {
-            if (response.data) {
-                const isExist = form.value.items.some(item => item.product_id === response.data.product_id);
-                if (isExist) {
-                    // Clear the input value since it's readonly
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Product already exists',
-                        text: 'This product has already been added to the list',
-                        showConfirmButton: false,
-                        timer: 2000,
-                    });
-                    item.product_id = null;
-                    item.product_name = '';
-                    return;
-                }
-                if (Object.keys(response.data).length === 0) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Product not found',
-                        text: 'The product with this barcode was not found',
-                        showConfirmButton: false,
-                        timer: 2000,
-                    });
-                    item.product_id = null;
-                    item.product_name = '';
-                    return;
-                }
-                item.product_id = response.data.product_id;
-                item.product_name = response.data.product_name;
-                // After successful scan, add a new row and focus it
-                addItem();
-                // Focus needs to happen after Vue updates the DOM
-                nextTick(() => {
-                    const newIndex = form.value.items.length - 1;
-                    productInputs.value[newIndex]?.focus();
-                });
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response.data,
-                showConfirmButton: false,
-                timer: 2000,
-            });
-        });
-};
-
-// Clear product from a row
-const clearProduct = (index) => {
-    const item = form.value.items[index];
-    item.product_id = null;
-    item.product_name = '';
-    item.quantity = 1;
-    item.unit_cost = 0;
-    item.total_cost = 0;
-    calculateItemTotal(index);
-    // Focus the input after clearing
-    nextTick(() => {
-        productInputs.value[index]?.focus();
-    });
-};
-
-// Add new item
-const addItem = () => {
-    form.value.items.push({
-        id: null,
-        product_id: null,
-        product_name: '',
-        quantity: 1,
-        unit_cost: 0,
-        total_cost: 0
-    });
-};
 
 // Reactive state
 const search = ref(props.filters?.search || '');
@@ -869,7 +625,6 @@ const openModal = (order = null) => {
             total_amount: order.total_amount,
             status: order.status,
             notes: order.notes,
-            items: order.items,
         };
     } else {
         form.value = {
@@ -880,7 +635,6 @@ const openModal = (order = null) => {
             total_amount: 0,
             status: 'pending',
             notes: '',
-            items: [],
         };
     }
     showModal.value = true;
@@ -895,20 +649,7 @@ function editOrder(order) {
         total_amount: order.total_amount,
         status: order.status,
         notes: order.notes,
-        items: order.items.map(item => ({
-            id: item.id,
-            product_id: item.product.id,
-            product_name: item.product.name,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.total_cost
-        })),
     };
-    // Add the selected products to searchResults so they show up in the multiselect
-    searchResults.value = order.items.map(item => ({
-        product_id: item.product.id,
-        product_name: item.product.name,
-    }));
     showModal.value = true;
 }
 </script>
