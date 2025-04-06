@@ -197,6 +197,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/packing-list/store', 'packingListStore')->name('purchase-orders.packing-list.store');
         Route::get('/{purchaseOrder}/back-orders/{productId}', 'getBackOrders')->name('purchase-orders.back-orders.get');
 
+        // create packing list
+        Route::post('/packing-list/create', 'generatePackingList')->name('purchase-orders.packing-list.create');
+
+        // get packing list items
+        Route::get('/{packingList}/items', 'getPackingListItems')->name('purchase-orders.packing-list.items');
+
     });
 
     // Settings Routes

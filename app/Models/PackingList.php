@@ -6,34 +6,36 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class PurchaseOrder extends Model
+class PackingList extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'po_number',
-        'supplier_id',
-        'po_date',
-        'total_amount',
+        'packing_list_number',
+        'purchase_order_id',
+        'packing_date',
+        'warehouse_name',
+        'location',
         'notes',
         'status',
+        'total_amount',
         'created_by',
-        'updated_by',
+        'updated_by'
     ];
 
     protected $casts = [
-        'po_date' => 'date',
-        'total_amount' => 'decimal:2',
+        'packing_date' => 'date',
+        'total_amount' => 'decimal:2'
     ];
 
-    public function supplier()
+    public function purchaseOrder()
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     public function items()
     {
-        return $this->hasMany(PurchaseOrderItem::class);
+        return $this->hasMany(PackingListItem::class);
     }
 
     public function creator()
@@ -44,10 +46,5 @@ class PurchaseOrder extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function packingLists()
-    {
-        return $this->hasMany(PackingList::class, 'purchase_order_id');
     }
 }

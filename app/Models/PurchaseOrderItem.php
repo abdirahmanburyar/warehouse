@@ -11,7 +11,13 @@ class PurchaseOrderItem extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'packing_list_id',
         'product_id',
+        'warehouse_id',
+        'location',
+        'expiry_date',
+        'batch_number',
+        'generic_name',
         'quantity',
         'received_quantity',
         'unit_cost',

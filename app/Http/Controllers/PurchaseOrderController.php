@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\PackingList;
+use App\Models\Warehouse;
 
 class PurchaseOrderController extends Controller
 {
@@ -144,10 +146,11 @@ class PurchaseOrderController extends Controller
 
     public function packingList($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater'])->findOrFail($id);
+        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists'])->findOrFail($id);
 
         return Inertia::render('PurchaseOrder/PackingList', [
             'purchase_order' => $purchaseOrder,
+            'warehouses' => Warehouse::select('id', 'name')->get()
         ]);
     }
 
@@ -163,8 +166,6 @@ class PurchaseOrderController extends Controller
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.notes' => 'nullable|string'
             ]);
-
-            logger()->info($request->items);
     
             foreach ($request->items as $item) {
                 // Find existing back order
@@ -215,8 +216,15 @@ class PurchaseOrderController extends Controller
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|integer|min:0',
+                'items.*.warehouse_id' => 'required|exists:warehouses,id',
+                'items.*.packing_list_id' => 'required|exists:packing_lists,id',
+                'items.*.location' => 'required|string',
+                'items.*.expiry_date' => 'nullable|date',
+                'items.*.batch_number' => 'nullable|string',
+                'items.*.generic_name' => 'nullable|string',
                 'items.*.received_quantity' => 'required|integer|min:0',
                 'items.*.unit_cost' => 'required|numeric|min:0',
+                'items.*.total_cost' => 'required|numeric|min:0',
             ]);
 
             $purchaseOrder = PurchaseOrder::find($request->purchase_order_id);
@@ -244,8 +252,20 @@ class PurchaseOrderController extends Controller
                 $purchaseOrder->items()->updateOrCreate(
                     [
                         'product_id' => $item['product_id'],
+                        'packing_list_id' => $item['packing_list_id'],
+                        'warehouse_id' => $item['warehouse_id'],
+                        'location' => $item['location'],
+                        'expiry_date' => $item['expiry_date'],
+                        'batch_number' => $item['batch_number'],
+                        'generic_name' => $item['generic_name'],
                     ],
                     [
+                        'packing_list_id' => $item['packing_list_id'],
+                        'warehouse_id' => $item['warehouse_id'],
+                        'location' => $item['location'],
+                        'expiry_date' => $item['expiry_date'],
+                        'batch_number' => $item['batch_number'],
+                        'generic_name' => $item['generic_name'],
                         'quantity' => $item['quantity'],
                         'received_quantity' => $item['received_quantity'],
                         'unit_cost' => $item['unit_cost'],
@@ -261,8 +281,6 @@ class PurchaseOrderController extends Controller
                     ])->delete();
                 }
             }
-
-            logger()->info($request->total_cost);
 
             $purchaseOrder->update([
                 'total_amount' => $request->total_cost
@@ -282,4 +300,69 @@ class PurchaseOrderController extends Controller
 
         return response()->json($backOrders);
     }
+
+    public function generatePackingList(Request $request){
+        try {
+            $request->validate([
+                'purchase_order_id' => 'required|exists:purchase_orders,id',
+            ]);
+
+            // Get today's date in YYYYMMDD format
+            $today = now()->format('Ymd');
+            
+            // Find the last packing list number for today
+            $lastPackingList = PackingList::where('packing_list_number', 'like', "PL-{$today}-%")
+                ->orderBy('packing_list_number', 'desc')
+                ->first();
+
+            // Extract sequence number and increment
+            $sequence = 1;
+            if ($lastPackingList) {
+                $parts = explode('-', $lastPackingList->packing_list_number);
+                $sequence = intval(end($parts)) + 1;
+            }
+
+            // Generate new packing list number with sequence
+            $timestamp = now()->format('His');
+            $packingListNumber = sprintf("PL-%s-%s-%s-%03d", 
+                $today,
+                str_pad($request->purchase_order_id, 3, '0', STR_PAD_LEFT),
+                $timestamp,
+                $sequence
+            );
+
+            $packingList = PackingList::create([
+                'purchase_order_id' => $request->purchase_order_id,
+                'created_by' => Auth::id(),
+                'packing_list_number' => $packingListNumber,
+                'packing_date' => now()->toDateTimeString(),
+                'status' => 'pending'
+            ]);
+            
+            return response()->json([
+                'message' => 'Packing list generated successfully',
+                'packing_list' => $packingList
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function getPackingListItems($id)
+    {
+        try {
+            $items = PurchaseOrderItem::where('packing_list_id', $id)
+                ->with('product:id,name')
+                ->get()
+                ->map(function ($item) {
+                    $item['product_name'] = $item->product->name;
+                    $item['product_id'] = $item->product->id;
+                    return $item;
+                });
+            return response()->json($items, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+    
 }
