@@ -3,6 +3,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\User;
+use App\Models\Warehouse;
+use App\Models\Facility;
 
 return new class extends Migration
 {
@@ -13,9 +16,9 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('warehouse_id')->constrained()->onDelete('cascade');
-            $table->foreignId('facility_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignIdFor(Warehouse::class)->cascadeOnDelete();
+            $table->foreignIdFor(Facility::class)->cascadeOnDelete();
+            $table->foreignIdFor(User::class)->cascadeOnDelete();
             $table->string('order_number')->unique();
             $table->enum('status', ['pending', 'approved', 'rejected', 'in processing', 'dispatched', 'delivered'])->default('pending');
             $table->integer('number_items');
@@ -25,7 +28,7 @@ return new class extends Migration
             $table->dateTime('expected_date')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('rejected_at')->nullable();
-            $table->timestamp('processing_at')->nullable();
+            $table->timestamp('in_processing_at')->nullable();
             $table->timestamp('dispatched_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->timestamps();

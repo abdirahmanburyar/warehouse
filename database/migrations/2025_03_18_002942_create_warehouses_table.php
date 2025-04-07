@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\User;
 
 return new class extends Migration
 {
@@ -31,11 +32,15 @@ return new class extends Migration
             $table->decimal('humidity_min', 5, 2)->nullable()->comment('Minimum humidity percentage');
             $table->decimal('humidity_max', 5, 2)->nullable()->comment('Maximum humidity percentage');
             $table->string('status', 50)->default('active');
+            $table->foreignIdFor(User::class)->cascadeOnDelete();
             $table->boolean('has_cold_storage')->default(false);
             $table->boolean('has_hazardous_storage')->default(false);
+            $table->text('special_handling_capabilities')->nullable();
+            $table->boolean('is_24_hour')->default(false);
             $table->boolean('is_active')->default(true);
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
