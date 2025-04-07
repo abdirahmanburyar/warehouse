@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('warehouse_id')->constrained()->onDelete('cascade');
-            $table->foreignId('facility_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('warehouse_id')->onDelete('cascade');
+            $table->foreignId('facility_id')->onDelete('cascade');
+            $table->foreignId('user_id')->onDelete('cascade');
             $table->string('order_number')->unique();
             $table->enum('status', ['pending', 'approved', 'rejected', 'in processing', 'dispatched', 'delivered'])->default('pending');
             $table->integer('number_items');
