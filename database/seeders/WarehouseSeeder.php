@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Warehouse;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -20,6 +21,8 @@ class WarehouseSeeder extends Seeder
         $hazardousId = Category::where('name', 'Hazardous Materials')->first()->id ?? null;
         $ecommerceId = Category::where('name', 'E-commerce')->first()->id ?? null;
         $distributionId = Category::where('name', 'Distribution Center')->first()->id ?? null;
+
+        $admin = User::where('email', 'buryar313@gmail.com')->first();
 
         $warehouses = [
             [
@@ -45,6 +48,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => false,
                 'is_active' => true,
                 'notes' => 'Main distribution hub for Nugal region',
+                'user_id' => $admin->id,
             ],
             [
                 'name' => 'Eyl Cold Storage Facility',
@@ -69,6 +73,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => false,
                 'is_active' => true,
                 'notes' => 'Specialized cold storage facility for seafood and perishable goods from the coast',
+                'user_id' => $admin->id,
             ],
             [
                 'name' => 'Burtinle Distribution Center',
@@ -93,6 +98,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => false,
                 'is_active' => true,
                 'notes' => 'General purpose warehouse serving the western Nugal region',
+                'user_id' => $admin->id,
             ],
             [
                 'name' => 'Dangorayo Agricultural Storage',
@@ -117,6 +123,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => false,
                 'is_active' => true,
                 'notes' => 'Specialized for agricultural product storage and distribution',
+                'user_id' => $admin->id,
             ],
             [
                 'name' => 'Garowe E-commerce Fulfillment',
@@ -141,6 +148,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => false,
                 'is_active' => true,
                 'notes' => 'Modern facility for e-commerce order fulfillment with digital inventory management',
+                'user_id' => $admin->id,
             ],
             [
                 'name' => 'Garowe Medical Supplies',
@@ -165,6 +173,7 @@ class WarehouseSeeder extends Seeder
                 'has_hazardous_storage' => true,
                 'is_active' => true,
                 'notes' => 'Specialized facility for storing medical supplies and pharmaceuticals with temperature control',
+                'user_id' => $admin->id,
             ],
         ];
 

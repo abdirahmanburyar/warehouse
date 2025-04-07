@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('order_number')->unique();
             $table->enum('status', ['pending', 'approved', 'rejected', 'in processing', 'dispatched', 'delivered'])->default('pending');
             $table->integer('number_items');
-            $table->decimal('total_amount', 10, 2);
+            $table->double('total_amount');
             $table->text('notes')->nullable();
             $table->dateTime('order_date');
             $table->dateTime('expected_date')->nullable();
