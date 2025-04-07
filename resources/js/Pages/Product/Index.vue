@@ -272,7 +272,12 @@
                     </div>
 
                     <!-- Pagination -->
-                    <Pagination :links="props.products.meta.links" class="mt-2 flex justify-end"/>
+                    <div class="mt-2 flex justify-between items-center">
+                        <span class="text-sm text-gray-600 mr-3">
+                            Showing {{ props.products.meta.from }} to {{ props.products.meta.to }} of {{ props.products.meta.total }}
+                        </span>
+                        <Pagination :links="props.products.meta.links" />
+                    </div>
                 </div>
             </div>
         </div>

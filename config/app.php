@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Facade;
+
 return [
 
     /*
@@ -134,6 +136,7 @@ return [
          * Package Service Providers...
          */
         Spatie\Permission\PermissionServiceProvider::class,
+        Maatwebsite\Excel\ExcelServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -143,6 +146,11 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\KafkaServiceProvider::class,
+    ],
+
+    'aliases' => [
+        // ... other aliases
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     ],
 
     /*

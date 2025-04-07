@@ -39,7 +39,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Supplier Information -->
                     <div class="border rounded-lg p-4">
                         <h2 class="text-lg font-semibold mb-4">Supplier Information</h2>
@@ -66,10 +66,6 @@
 
                 <!-- Action Buttons -->
                 <div class="mt-6 flex justify-end space-x-3 w-full">
-                    <button type="button" @click.prevent="addItem" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        <i class="fas fa-plus mr-2"></i>
-                        Add Item
-                    </button>
                     <div class="relative inline-block text-left">
                         <button @click="isOpen = !isOpen" type="button"
                             class="inline-flex w-full min-w-[300px] justify-between items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -126,11 +122,30 @@
                     </div>
                 </div>
             </div>
+           
             <!-- Product Items -->
             <form @submit.prevent="submitForm" class="">
                 <div class="p-6 bg-white border-t border-gray-200">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold">Items</h2>
+                        <h2 class="text-lg font-medium">Items</h2>
+                        <div class="flex gap-2">
+                            <button type="button" @click="openImportModal"
+                                class="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 sm:w-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                </svg>
+                                Import Items
+                            </button>
+                            <button type="button" @click="addItem"
+                                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Add Item
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -184,6 +199,7 @@
                                             <input type="number" v-model="item.quantity" min="1"
                                                 @input="calculateItemTotal(item)"
                                                 :disabled="!selectedPackingList"
+                                                readonly
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100">
                                         </td>
                                         <td class="whitespace-nowrap">
@@ -200,22 +216,28 @@
                                                     {{ warehouse.name }}
                                                 </option>
                                             </select>
-                                            <input type="text" v-model="item.location" placeholder="Location" 
+                                            <div class="flex">
+                                                <input type="text" v-model="item.location" placeholder="Location" 
                                                 :disabled="!selectedPackingList"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100">
                                             <input type="date" v-model="item.expiry_date" placeholder="Expiry Date" 
                                                 :disabled="!selectedPackingList"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"> 
+                                           
+                                            </div>
+                                           <div class="flex">
                                             <input type="text" v-model="item.batch_number" placeholder="Batch Number" 
                                                 :disabled="!selectedPackingList"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100">
                                             <input type="text" v-model="item.generic_name" placeholder="Generic Name" 
                                                 :disabled="!selectedPackingList"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100">
+                                           </div>
                                         </td>
                                         <td class="whitespace-nowrap">
                                             <input type="number" v-model="item.unit_cost" min="0" step="0.01"
                                                 @input="calculateItemTotal(item)"
+                                                readonly
                                                 :disabled="!selectedPackingList"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100">
                                         </td>
@@ -362,9 +384,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- Import Items Modal -->
+        <ImportItems 
+            :is-open="showImportModal"
+            :purchase-order-id="props.purchase_order.id"
+            @close="closeImportModal"
+            @uploaded="reloadPo"
+        />
     </AuthenticatedLayout>
 </template>
-
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -373,6 +402,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
+import ImportItems from './ImportItems.vue';
 
 const toast = useToast();
 
@@ -387,7 +417,7 @@ const items = ref([]);
 
 const form = ref({
     purchase_order_id: props.purchase_order.id,
-    items: [
+    items: props.purchase_order.po_items || [
         {
             purchase_order_id: props.purchase_order.id,
             packing_list_id: selectedPackingList.value?.id,
@@ -406,15 +436,13 @@ const form = ref({
     ]
 });
 
-
-
 // Load from local storage on mount
 onMounted(() => {
     const storedPackingList = localStorage.getItem(`selected_packing_list_${props.purchase_order.id}`);
     console.log(JSON.parse(storedPackingList));
     if (storedPackingList) {
         selectedPackingList.value = JSON.parse(storedPackingList);
-        getItems(selectedPackingList.value.id);
+        reloadPo();
     }
 
     // Add visibility change event listener
@@ -426,27 +454,6 @@ onUnmounted(() => {
 });
 
 const loadingItems = ref(false);
-
-async function getItems(id){
-    loadingItems.value = true;
-    form.value.items = [];
-    await axios.get(route('purchase-orders.packing-list.items', id))
-        .then((response) => {
-            console.log(response.data);
-            form.value.items = response.data;
-            loadingItems.value = false;
-        })
-        .catch((error) => {
-            console.log(error);
-            loadingItems.value = false;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response.data,
-                confirmButtonText: 'OK'
-            });
-        });
-}
 
 const handleVisibilityChange = () => {
     // Only clear when tab is closed, not when switching tabs
@@ -476,7 +483,6 @@ const selectPackingList = (packingList) => {
         JSON.stringify(packingList)
     );
     isOpen.value = false;
-    getItems(packingList.id);
 };
 
 const selectedText = computed(() => {
@@ -491,7 +497,6 @@ const calculateTotal = computed(() => {
         return total + (parseFloat(item.unit_cost || 0) * parseFloat(item.received_quantity || 0));
     }, 0).toFixed(2);
 });
-
 
 const createPackingList = async () => {
     Swal.fire({
@@ -520,10 +525,6 @@ const createPackingList = async () => {
                         confirmButtonText: 'OK'
                     });
                     reloadPo();
-                    getItems(response.data?.packing_list.id);
-                    if(!response.data?.packing_list){
-                        addItem();
-                    }
                 })
                 .catch((error) => {
                     Swal.fire({
@@ -879,7 +880,6 @@ const submitForm = async () => {
 
         toast.success('Packing list updated successfully');
         reloadPo();
-        getItems(selectedPackingList.value.id);
     } catch (error) {
         console.error('Error submitting form:', error);
         toast.error(error.response?.data || 'Something went wrong');
@@ -920,11 +920,9 @@ const clearProduct = (index) => {
 };
 
 function reloadPo() {
-    router.get(route('purchase-orders.packing-list', props.purchase_order.id), {}, {
-        preserveState: true,
-        preserveScroll: true,
+    router.reload({
         only: ['purchase_order']
-    })
+    });
 }
 
 function groupBy(arr, key) {
@@ -959,6 +957,19 @@ const filteredPackingLists = computed(() => {
     });
 });
 
+const showImportModal = ref(false);
+
+const openImportModal = () => {
+    showImportModal.value = true;
+};
+
+const closeImportModal = () => {
+    showImportModal.value = false;
+};
+
+const reloadItems = () => {
+    router.reload({ only: ['items'] });
+};
 </script>
 
 <style scoped>

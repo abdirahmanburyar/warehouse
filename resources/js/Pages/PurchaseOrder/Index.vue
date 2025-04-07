@@ -67,15 +67,12 @@
                     </div>
 
                     <!-- Add New PO Button -->
-                    <button @click="openModal()"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        New Purchase Order
-                    </button>
+                    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-4">
+                        <button type="button" @click="openModal"
+                            class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                            Add Purchase Order
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Purchase Orders Table -->
@@ -176,14 +173,21 @@
                                                 </td>
                                                 <td
                                                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    <div class="flex justify-end gap-2">
-                                                        <Link :href="route('purchase-orders.packing-list', order.id)">Packing List</Link>
-                                                            <button @click="editOrder(order)"
-                                                                class="text-indigo-600 hover:text-indigo-900">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                                    viewBox="0 0 20 20" fill="currentColor">
-                                                                    <path
-                                                                    d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                    <div class="flex items-center gap-2">
+                                                        <Link :href="route('purchase-orders.packing-list', order.id)"
+                                                            class="text-indigo-600 hover:text-indigo-900">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                                            </svg>
+                                                        </Link>
+                                                        <button @click="editOrder(order)"
+                                                            class="text-indigo-600 hover:text-indigo-900">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                                viewBox="0 0 20 20" fill="currentColor">
+                                                                <path
+                                                                d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                             </svg>
                                                         </button>
                                                         <button @click="openItemsModal(order)"
@@ -486,6 +490,12 @@ const closeModal = () => {
     errors.value = null;
 };
 
+// Close items modal
+const closeItemsModal = () => {
+    showItemsModal.value = false;
+    selectedOrder.value = null;
+};
+
 // Submit form
 const submitForm = async () => {
     processing.value = true;
@@ -503,7 +513,6 @@ const submitForm = async () => {
             toast.error(error.response.data);
         });
 };
-
 
 // Delete order
 const deleteOrder = async () => {
@@ -524,12 +533,6 @@ const deleteOrder = async () => {
     } finally {
         processing.value = false;
     }
-};
-
-// Close items modal
-const closeItemsModal = () => {
-    showItemsModal.value = false;
-    selectedOrder.value = null;
 };
 
 // Format currency
@@ -564,7 +567,6 @@ const form = ref({
 const searchResults = ref([]);
 const isLoading = ref(false);
 const productInputs = ref({});
-
 
 // Reactive state
 const search = ref(props.filters?.search || '');

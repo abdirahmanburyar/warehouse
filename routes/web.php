@@ -203,6 +203,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         // get packing list items
         Route::get('/{packingList}/items', 'getPackingListItems')->name('purchase-orders.packing-list.items');
 
+        Route::post('/{purchaseOrder}/import-items', 'importItems')->name('purchase-orders.import-items');
     });
 
     // Settings Routes

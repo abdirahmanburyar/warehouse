@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Models\PackingList;
 use App\Models\Warehouse;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PurchaseOrderItemsImport;
 
 class PurchaseOrderController extends Controller
 {
@@ -112,11 +115,42 @@ class PurchaseOrderController extends Controller
 
     public function packingList($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists'])->findOrFail($id);
+        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists', 'po_items' => function($q) {
+            $q->addSelect([
+                'po_items.*',
+                'products.id as product_id',
+                'products.name as product_name'
+            ])
+            ->leftJoin('products', function($join) {
+                $join->on(function($query) {
+                    $query->whereColumn('products.name', 'po_items.item_description')
+                          ->orWhereColumn('products.barcode', 'po_items.item_code');
+                });
+            });
+        }])->findOrFail($id);
+
+        // Transform po_items to match frontend structure
+        $purchaseOrder->po_items->transform(function($item) use ($purchaseOrder) {
+            return [
+                'purchase_order_id' => $purchaseOrder->id,
+                'packing_list_id' => null,
+                'product_id' => $item->product_id,
+                'warehouse_id' => null,
+                'location' => '',
+                'expiry_date' => null,
+                'batch_number' => null,
+                'generic_name' => null,
+                'product_name' => $item->product_name ?? $item->item_description,
+                'quantity' => $item->quantity,
+                'received_quantity' => 0,
+                'unit_cost' => $item->unit_cost,
+                'total_cost' => $item->total_cost
+            ];
+        });
 
         return Inertia::render('PurchaseOrder/PackingList', [
             'purchase_order' => $purchaseOrder,
-            'warehouses' => Warehouse::select('id', 'name')->get()
+            'warehouses' => Warehouse::get(),
         ]);
     }
 
@@ -225,8 +259,14 @@ class PurchaseOrderController extends Controller
                     if ($missingBackOrder) {
                         // Deduct received quantity from missing back order
                         $newQuantity = $missingBackOrder->quantity - $item['received_quantity'];
-                        if ($newQuantity <= 0) {
-                            $missingBackOrder->delete();
+                        if ($newQuantity == 0) {
+                            $missingBackOrder->update([
+                                'quantity' => 0,
+                                'status' => 'received'
+                            ]);
+                            $missingBackOrder->purchaseOrder()->update([
+                                'status' => 'completed'
+                            ]);
                         } else {
                             $missingBackOrder->update(['quantity' => $newQuantity]);
                         }
@@ -318,5 +358,27 @@ class PurchaseOrderController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
-    
+
+    public function importItems(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|mimes:xlsx',
+                'purchase_order_id' => 'required|exists:purchase_orders,id'
+            ]);
+
+            $file = $request->file('file');
+            $purchaseOrderId = $request->purchase_order_id;
+
+            DB::beginTransaction();
+
+            Excel::import(new PurchaseOrderItemsImport($purchaseOrderId), $file);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Items imported successfully'], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }
