@@ -622,7 +622,7 @@ const openModal = (order = null) => {
         form.value = {
             id: order.id,
             po_number: order.po_number,
-            supplier_id: order.supplier.id,
+            supplier_id: order.supplier?.id || '',
             po_date: order.po_date,
             total_amount: order.total_amount,
             status: order.status,
@@ -646,7 +646,7 @@ function editOrder(order) {
     form.value = {
         id: order.id,
         po_number: order.po_number,
-        supplier_id: order.supplier.id,
+        supplier_id: order.supplier?.id || '',
         po_date: order.po_date,
         total_amount: order.total_amount,
         status: order.status,
