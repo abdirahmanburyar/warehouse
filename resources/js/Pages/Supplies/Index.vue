@@ -181,7 +181,7 @@
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <input type="checkbox" v-model="selectAllSuppliers"
-                                            @change="toggleSelectAllSuppliers"
+                                            @change="selectAllSuppliers"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     </th>
                                     <th scope="col"
@@ -816,6 +816,7 @@ const supplyFilters = ref({
 
 // Selection states
 const selectedSupplies = ref([]);
+const selectedSuppliers = ref([]);
 
 // Toggle all supplies selection
 const toggleSelectAll = (event) => {
@@ -841,6 +842,31 @@ const toggleSupply = (supplyId) => {
 // Check if all supplies are selected
 const isAllSelected = computed(() => {
     return props.supplies.data.length > 0 && selectedSupplies.value.length === props.supplies.data.length;
+});
+
+// Toggle all suppliers selection
+const selectAllSuppliers = () => {
+    const allSelected = props.suppliers.data.every(supplier => selectedSuppliers.value.includes(supplier.id));
+    if (allSelected) {
+        selectedSuppliers.value = [];
+    } else {
+        selectedSuppliers.value = props.suppliers.data.map(supplier => supplier.id);
+    }
+};
+
+// Toggle individual supplier selection
+const toggleSupplier = (supplierId) => {
+    const index = selectedSuppliers.value.indexOf(supplierId);
+    if (index === -1) {
+        selectedSuppliers.value.push(supplierId);
+    } else {
+        selectedSuppliers.value = selectedSuppliers.value.filter(id => id !== supplierId);
+    }
+};
+
+// Check if all suppliers are selected
+const isAllSuppliersSelected = computed(() => {
+    return props.suppliers.data.length > 0 && selectedSuppliers.value.length === props.suppliers.data.length;
 });
 
 // Methods for supplies
