@@ -53,22 +53,8 @@ class PurchaseOrderItemsImport implements ToCollection
 
             // Validate all required fields
             if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
-                Log::error('Invalid or missing data:', [
-                    'item_code' => $item_code,
-                    'description' => $item_description,
-                    'quantity' => $quantity,
-                    'unit_cost' => $unit_cost,
-                    'total_cost' => $total_cost
-                ]);
                 continue;
             }
-
-            Log::info('Processing row:', [
-                'item_code' => $item_code,
-                'quantity' => $quantity,
-                'unit_cost' => $unit_cost,
-                'total_cost' => $total_cost
-            ]);
 
             // Check if item exists by code or description
             $item_key = null;
@@ -88,17 +74,6 @@ class PurchaseOrderItemsImport implements ToCollection
                 
                 // Then calculate unit cost by dividing total amount by total quantity
                 $new_unit_cost = round($total_amount / $total_quantity, 2);
-
-                Log::info('Updating existing item:', [
-                    'item_code' => $item_code,
-                    'old_quantity' => $existing['quantity'],
-                    'additional_quantity' => $quantity,
-                    'total_quantity' => $total_quantity,
-                    'old_total_cost' => $existing['total_cost'],
-                    'additional_total_cost' => $total_cost,
-                    'total_amount' => $total_amount,
-                    'new_unit_cost' => $new_unit_cost
-                ]);
 
                 $groupedItems[$item_key] = [
                     'item_code' => $item_code,
@@ -164,12 +139,6 @@ class PurchaseOrderItemsImport implements ToCollection
                             'total_cost' => $new_total_cost
                         ]);
 
-                        Log::info('Successfully updated PO item:', [
-                            'item_code' => $item['item_code'],
-                            'new_quantity' => $new_quantity,
-                            'new_total_cost' => $new_total_cost,
-                            'new_unit_cost' => $new_unit_cost
-                        ]);
                     } catch (\Exception $e) {
                         Log::error('Failed to update PO item:', [
                             'item_code' => $item['item_code'],
