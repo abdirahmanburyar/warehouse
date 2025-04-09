@@ -32,43 +32,94 @@ class PurchaseOrderItemsImport implements ToCollection
                 continue;
             }
 
-            // Validate required fields
-            if (!isset($row[0]) || !isset($row[1]) || !isset($row[2]) || 
-                !isset($row[3]) || !isset($row[4])) {
-                Log::error('Missing required fields in row:', [
-                    'index' => $index,
-                    'data' => $row->toArray()
+            // Log raw data from Excel
+            Log::info('Raw Excel data:', [
+                'row' => $row->toArray(),
+                'item_code' => $row[0],
+                'description' => $row[1],
+                'uom' => $row[2],
+                'quantity' => $row[3],
+                'unit_cost' => $row[4],
+                'total_cost' => $row[5]
+            ]);
+
+            $item_code = trim($row[0]);
+            $item_description = trim($row[1]);
+            $quantity = floatval($row[3]);
+            $unit_cost = floatval($row[4]); 
+            
+            // Calculate total cost since Excel formula comes as string
+            $total_cost = $quantity * $unit_cost;
+
+            // Validate all required fields
+            if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
+                Log::error('Invalid or missing data:', [
+                    'item_code' => $item_code,
+                    'description' => $item_description,
+                    'quantity' => $quantity,
+                    'unit_cost' => $unit_cost,
+                    'total_cost' => $total_cost
                 ]);
                 continue;
             }
 
-            $item_code = $row[0];
-            $quantity = floatval($row[3]);
-            $unit_cost = floatval($row[4]);
-            $row_total = $quantity * $unit_cost;
+            Log::info('Processing row:', [
+                'item_code' => $item_code,
+                'quantity' => $quantity,
+                'unit_cost' => $unit_cost,
+                'total_cost' => $total_cost
+            ]);
 
-            // If item already exists in grouped items, update quantities and costs
-            if (isset($groupedItems[$item_code])) {
-                $existing = $groupedItems[$item_code];
+            // Check if item exists by code or description
+            $item_key = null;
+            foreach ($groupedItems as $key => $existing) {
+                if ($existing['item_code'] === $item_code || $existing['item_description'] === $item_description) {
+                    $item_key = $key;
+                    break;
+                }
+            }
+
+            if ($item_key !== null) {
+                $existing = $groupedItems[$item_key];
+                
+                // First combine quantities and total costs
                 $total_quantity = $existing['quantity'] + $quantity;
-                $total_cost = $existing['total_cost'] + $row_total;
+                $total_amount = $existing['total_cost'] + $total_cost;
+                
+                // Then calculate unit cost by dividing total amount by total quantity
+                $new_unit_cost = round($total_amount / $total_quantity, 2);
 
-                $groupedItems[$item_code] = [
+                Log::info('Updating existing item:', [
                     'item_code' => $item_code,
-                    'item_description' => $row[1],
+                    'old_quantity' => $existing['quantity'],
+                    'additional_quantity' => $quantity,
+                    'total_quantity' => $total_quantity,
+                    'old_total_cost' => $existing['total_cost'],
+                    'additional_total_cost' => $total_cost,
+                    'total_amount' => $total_amount,
+                    'new_unit_cost' => $new_unit_cost
+                ]);
+
+                $groupedItems[$item_key] = [
+                    'item_code' => $item_code,
+                    'item_description' => $item_description,
+                    'original_quantity' => $quantity,
                     'uom' => $row[2],
                     'quantity' => $total_quantity,
-                    'total_cost' => $total_cost,
+                    'unit_cost' => $new_unit_cost,
+                    'total_cost' => $total_amount,
                     'row_index' => $index
                 ];
             } else {
                 // First occurrence of this item
                 $groupedItems[$item_code] = [
                     'item_code' => $item_code,
-                    'item_description' => $row[1],
+                    'item_description' => $item_description,
+                    'original_quantity' => $quantity,
                     'uom' => $row[2],
                     'quantity' => $quantity,
-                    'total_cost' => $row_total,
+                    'unit_cost' => $unit_cost,
+                    'total_cost' => $total_cost,
                     'row_index' => $index
                 ];
             }
@@ -102,27 +153,63 @@ class PurchaseOrderItemsImport implements ToCollection
                     // Update existing PO item
                     $new_quantity = $existingPoItem->quantity + $item['quantity'];
                     $new_total_cost = $existingPoItem->total_cost + $item['total_cost'];
-                    $new_unit_cost = $new_total_cost / $new_quantity;
+                    // Calculate unit cost by dividing total cost by total quantity
+                    $new_unit_cost = round($new_total_cost / $new_quantity, 2);
 
-                    $existingPoItem->update([
-                        'quantity' => $new_quantity,
-                        'unit_cost' => $new_unit_cost,
-                        'total_cost' => $new_total_cost
-                    ]);
+                    try {
+                        $existingPoItem->update([
+                            'quantity' => $new_quantity,
+                            'original_quantity' => $new_quantity,
+                            'unit_cost' => $new_unit_cost,
+                            'total_cost' => $new_total_cost
+                        ]);
+
+                        Log::info('Successfully updated PO item:', [
+                            'item_code' => $item['item_code'],
+                            'new_quantity' => $new_quantity,
+                            'new_total_cost' => $new_total_cost,
+                            'new_unit_cost' => $new_unit_cost
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to update PO item:', [
+                            'item_code' => $item['item_code'],
+                            'error' => $e->getMessage()
+                        ]);
+                        throw $e;
+                    }
                 } else {
-                    // Calculate unit cost from total cost and quantity
-                    $unit_cost = $item['total_cost'] / $item['quantity'];
+                    try {
+                        // Create new PO Item
+                        $data = [
+                            'purchase_order_id' => $this->purchaseOrderId,
+                            'item_code' => $item['item_code'],
+                            'item_description' => $item['item_description'],
+                            'uom' => $item['uom'],
+                            'quantity' => $item['quantity'],
+                            'original_quantity' => $item['quantity'],
+                            'unit_cost' => $item['unit_cost'],
+                            'total_cost' => $item['total_cost']
+                        ];
 
-                    // Create new PO Item
-                    PoItem::create([
-                        'purchase_order_id' => $this->purchaseOrderId,
-                        'item_code' => $item['item_code'],
-                        'item_description' => $item['item_description'],
-                        'uom' => $item['uom'],
-                        'quantity' => $item['quantity'],
-                        'unit_cost' => $unit_cost,
-                        'total_cost' => $item['total_cost']
-                    ]);
+                        Log::info('Creating new PO item with data:', $data);
+                        
+                        $newItem = PoItem::create($data);
+
+                        Log::info('Successfully created PO item:', [
+                            'id' => $newItem->id,
+                            'item_code' => $newItem->item_code,
+                            'quantity' => $newItem->quantity,
+                            'unit_cost' => $newItem->unit_cost,
+                            'total_cost' => $newItem->total_cost
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to create PO item:', [
+                            'item_code' => $item['item_code'],
+                            'error' => $e->getMessage(),
+                            'data' => $data ?? null
+                        ]);
+                        throw $e;
+                    }
                 }
             }
 

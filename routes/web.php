@@ -184,26 +184,28 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
         
     // Purchase Orders
-    Route::prefix('purchase-orders')
-        ->controller(PurchaseOrderController::class)
-        ->group(function () {
-        Route::get('/', 'index')->name('purchase-orders.index');
-        Route::post('/store', 'store')->name('purchase-orders.store');
-        Route::delete('/{purchaseOrder}/destroy', 'destroy')->name('purchase-orders.destroy');
-        Route::post('/back-orders', 'createBackOrder')->name('purchase-orders.back-orders.create');
-
-        // packing list
-        Route::get('/{purchaseOrder}/packing-list', 'packingList')->name('purchase-orders.packing-list');
-        Route::post('/packing-list/store', 'packingListStore')->name('purchase-orders.packing-list.store');
-        Route::get('/{purchaseOrder}/back-orders/{productId}', 'getBackOrders')->name('purchase-orders.back-orders.get');
-
-        // create packing list
-        Route::post('/packing-list/create', 'generatePackingList')->name('purchase-orders.packing-list.create');
-
-        // get packing list items
-        Route::get('/{packingList}/items', 'getPackingListItems')->name('purchase-orders.packing-list.items');
-
-        Route::post('/{purchaseOrder}/import-items', 'importItems')->name('purchase-orders.import-items');
+    Route::controller(PurchaseOrderController::class)
+    ->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{purchaseOrder}', 'show')->name('show');
+        Route::get('/{purchaseOrder}/edit', 'edit')->name('edit');
+        Route::put('/{purchaseOrder}', 'update')->name('update');
+        Route::delete('/{purchaseOrder}', 'destroy')->name('destroy');
+        
+        // Packing List Routes
+        Route::get('/{purchaseOrder}/packing-list', 'packingList')->name('packing-list');
+        Route::post('/packing-list/store', 'packingListStore')->name('packing-list.store');
+        Route::post('/{purchaseOrder}/packing-list/create', 'createPackingList')->name('packing-list.create');
+        Route::get('/packing-list/{id}/items', 'getPackingListItems')->name('packing-list.items');
+        Route::post('/{purchaseOrder}/packing-list/update-item', 'updateItem')->name('packing-list.update-item');
+        Route::post('/{purchaseOrder}/packing-list/bulk-approve', [PurchaseOrderController::class, 'bulkApprove'])->name('packing-list.bulk-approve');
+        Route::get('/{purchaseOrder}/packing-list/export', 'exportPackingList')->name('packing-list.export');
+        
+        // Import Route
+        Route::post('/import-items', 'importItems')->name('import-items');
+        Route::post('/{purchaseOrder}/packing-list/bulk-approve', [PurchaseOrderController::class, 'bulkApprove'])->name('packing-list.bulk-approve');
     });
 
     // Settings Routes

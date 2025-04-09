@@ -20,6 +20,9 @@ return new class extends Migration
             $table->date('manufacturing_date')->nullable();
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
+            $table->string('generic_name')->nullable();
+            $table->double('unit_cost')->nullable();
+            $table->double('total_cost')->nullable();
             $table->string('location')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);

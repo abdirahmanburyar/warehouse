@@ -2,28 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\PurchaseOrderResource;
 use App\Models\Product;
+use App\Models\PoItem;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use App\Models\BackOrder;
+use App\Models\PackingList;
+use App\Models\Warehouse;
+use App\Imports\PurchaseOrderItemsImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use App\Models\PackingList;
-use App\Models\Warehouse;
+use App\Http\Resources\PurchaseOrderResource;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\PurchaseOrderItemsImport;
+use Carbon\Carbon;
 
 class PurchaseOrderController extends Controller
 {
     public function index(Request $request)
     {
         $query = PurchaseOrder::query()
-            ->with(['supplier', 'items.product', 'creator', 'updater']);
+            ->with(['supplier', 'po_items', 'creator', 'updater']);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -32,8 +34,9 @@ class PurchaseOrderController extends Controller
                     ->orWhereHas('supplier', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     })
-                    ->orWhereHas('items.product', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
+                    ->orWhereHas('po_items', function ($q) use ($search) {
+                        $q->where('item_description', 'like', "%{$search}%");
+                        $q->orWhere('item_code', 'like', "%{$search}%");
                     });
             });
         }
@@ -74,9 +77,7 @@ class PurchaseOrderController extends Controller
                     'po_number' => 'required|string|unique:purchase_orders,po_number,' . $request->input('id'),
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_date' => 'required|date',
-                    'total_amount' => 'required|numeric|min:0',
                     'notes' => 'nullable|string',
-                    'status' => 'required|in:draft,pending,approved,rejected,completed',
                 ]);
 
                 DB::beginTransaction();
@@ -87,9 +88,7 @@ class PurchaseOrderController extends Controller
                         'po_number' => $request->input('po_number'),
                         'supplier_id' => $request->input('supplier_id'),
                         'po_date' => $request->input('po_date'),    
-                        'total_amount' => $request->input('total_amount'),
                         'notes' => $request->input('notes'),
-                        'status' => $request->input('status'),
                         'created_by' => $request->input('id') ? Auth::id() : Auth::id(),
                         'updated_by' => $request->input('id') ? Auth::id() : null,
                 ]
@@ -115,41 +114,57 @@ class PurchaseOrderController extends Controller
 
     public function packingList($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists', 'po_items' => function($q) {
-            $q->addSelect([
+        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists.purchaseOrderItems.warehouse', 'packingLists.purchaseOrderItems.product', 'packingLists.creator',  'po_items' => function($q) {
+            $q->where('quantity', '>', 0)
+              ->addSelect([
                 'po_items.*',
                 'products.id as product_id',
                 'products.name as product_name'
-            ])
-            ->leftJoin('products', function($join) {
-                $join->on(function($query) {
-                    $query->whereColumn('products.name', 'po_items.item_description')
-                          ->orWhereColumn('products.barcode', 'po_items.item_code');
-                });
-            });
+              ])
+              ->leftJoin('products', function($join) {
+                  $join->on(function($query) {
+                      $query->whereColumn('products.name', 'po_items.item_description')
+                            ->orWhereColumn('products.barcode', 'po_items.item_code');
+                  });
+              });
         }])->findOrFail($id);
-
-        // Transform po_items to match frontend structure
-        $purchaseOrder->po_items->transform(function($item) use ($purchaseOrder) {
+        
+        $purchaseOrder['po_items'] = $purchaseOrder->po_items->transform(function($item) use ($purchaseOrder) {
             return [
                 'purchase_order_id' => $purchaseOrder->id,
                 'packing_list_id' => null,
+                'damage_quantity' => 0,
                 'product_id' => $item->product_id,
                 'warehouse_id' => null,
                 'location' => '',
                 'expiry_date' => null,
                 'batch_number' => null,
                 'generic_name' => null,
-                'product_name' => $item->product_name ?? $item->item_description,
+                'product_name' => $item->product_name,
                 'quantity' => $item->quantity,
                 'received_quantity' => 0,
                 'unit_cost' => $item->unit_cost,
                 'total_cost' => $item->total_cost
             ];
-        });
+        })->values()->toArray();
+
+        // Flatten all purchase order items from packing lists into one array
+        $flattenedItems = collect();
+        foreach ($purchaseOrder->packingLists as $packingList) {
+            $items = collect($packingList->purchaseOrderItems)->map(function($item) use ($packingList) {
+                return array_merge($item->toArray(), [
+                    'packing_list_number' => $packingList->packing_list_number,
+                    'packing_list_date' => $packingList->created_at,
+                    'packing_list_status' => $packingList->status,
+                    'created_by' => $packingList->creator->name
+                ]); 
+            });
+            $flattenedItems = $flattenedItems->concat($items);
+        }
 
         return Inertia::render('PurchaseOrder/PackingList', [
             'purchase_order' => $purchaseOrder,
+            'packingLists' => $flattenedItems->values()->all(),
             'warehouses' => Warehouse::get(),
         ]);
     }
@@ -207,81 +222,80 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    public function packingListStore(Request $request)
+    public function packingListStore(Request $request, PurchaseOrder $purchaseOrder)
     {
         try {
-            $request->validate([
-                'items' => 'required|array',
-                'items.*.id' => 'nullable|exists:purchase_order_items,id',
-                'items.*.packing_list_id' => 'required|exists:packing_lists,id',
-                'items.*.purchase_order_id' => 'required|exists:purchase_orders,id',
-                'items.*.product_id' => 'required|exists:products,id',
-                'items.*.quantity' => 'required|integer|min:0',
-                'items.*.warehouse_id' => 'required|exists:warehouses,id',
-                'items.*.location' => 'required|string',
-                'items.*.expiry_date' => 'nullable|date',
-                'items.*.batch_number' => 'nullable|string',
-                'items.*.generic_name' => 'nullable|string',
-                'items.*.received_quantity' => 'required|integer|min:0|lte:items.*.quantity',
-                'items.*.unit_cost' => 'required|numeric|min:0',
-                'items.*.total_cost' => 'required|numeric|min:0',
-            ]);
-
             DB::beginTransaction();
-
+            logger()->info($request->items);
+            
+            $validated = $request->validate([
+                'items' => 'required|array',
+                'items.*.packing_list_id' => 'nullable|exists:packing_lists,id',
+                'items.*.purchase_order_id' => 'required|exists:purchase_orders,id',
+                'items.*.id' => 'nullable|exists:purchase_order_items,id',
+                'items.*.quantity' => 'nullable|numeric|min:0',
+                'items.*.received_quantity' => 'nullable|numeric|min:0',
+                'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
+                'items.*.product_name' => 'required',
+                'items.*.generic_name' => 'nullable|string',
+                'items.*.location' => 'nullable|string',
+                'items.*.batch_number' => 'nullable|string',
+                'items.*.expiry_date' => 'nullable|date',
+                'items.*.unit_cost' => 'nullable|numeric|min:0',
+                'items.*.total_cost' => 'nullable|numeric|min:0',
+                'items.*.damage_quantity' => 'nullable|numeric|min:0',
+            ]);
+            
             foreach ($request->items as $item) {
-                $purchaseOrderItem = PurchaseOrderItem::findOrNew($item['id'] ?? null);
-                $purchaseOrderItem->fill([
-                    'packing_list_id' => $item['packing_list_id'],
-                    'purchase_order_id' => $item['purchase_order_id'],
-                    'product_id' => $item['product_id'],
-                    'warehouse_id' => $item['warehouse_id'],
-                    'quantity' => $item['quantity'],
-                    'location' => $item['location'],
-                    'received_quantity' => $item['received_quantity'],
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['total_cost'],
-                    'expiry_date' => $item['expiry_date'] ?? null,
-                    'batch_number' => $item['batch_number'] ?? null,
-                    'generic_name' => $item['generic_name'] ?? null,
-                ]);
-                $purchaseOrderItem->save();
-
-                // Handle back orders based on type
-                if ($item['received_quantity'] > 0) {
-                    // Get missing type back order
-                    $missingBackOrder = BackOrder::where([
-                        'product_id' => $item['product_id'],
+                // Find or create PurchaseOrderItem
+                $purchaseOrderItem = PurchaseOrderItem::updateOrCreate(
+                    ['id' => $item['id']],
+                    [
+                        'packing_list_id' => $item['packing_list_id'],
                         'purchase_order_id' => $item['purchase_order_id'],
-                        'type' => 'missing'
-                    ])->first();
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $item['warehouse_id'],
+                        'location' => $item['location'],
+                        'batch_number' => $item['batch_number'],
+                        'expiry_date' => $item['expiry_date'],
+                        'generic_name' => $item['generic_name'],
+                        'product_name' => $item['product_name'],
+                        'quantity' => $item['quantity'],
+                        'received_quantity' => $item['received_quantity'],
+                        'unit_cost' => $item['unit_cost'],
+                        'total_cost' => $item['total_cost'],
+                        'damage_quantity' => $item['damage_quantity'],
+                    ]
+                );
 
-                    if ($missingBackOrder) {
-                        // Deduct received quantity from missing back order
-                        $newQuantity = $missingBackOrder->quantity - $item['received_quantity'];
-                        if ($newQuantity == 0) {
-                            $missingBackOrder->update([
-                                'quantity' => 0,
-                                'status' => 'received'
-                            ]);
-                            $missingBackOrder->purchaseOrder()->update([
-                                'status' => 'completed'
-                            ]);
-                        } else {
-                            $missingBackOrder->update(['quantity' => $newQuantity]);
-                        }
-                    }
+                // Find and update corresponding PoItem
+                $poItem = PoItem::where('item_description', $item['product_name'])
+                    ->where('purchase_order_id', $item['purchase_order_id'])
+                    ->first();
 
-                    // Note: We don't touch 'damaged' type back orders as they need to be handled separately
+                if ($poItem) {
+                    // Update po_items quantity: original quantity - received quantity
+                    $poItem->quantity = $poItem->quantity - $item['received_quantity'] - $item['damage_quantity'];
+                    $poItem->save();
+                }
+
+                if($item['damage_quantity'] > 0){
+                    BackOrder::updateOrCreate([
+                        'purchase_order_id' => $item['purchase_order_id'],
+                        'product_id' => $item['product_id'],
+                    ], [
+                        'quantity' => $item['damage_quantity'],
+                        'type' => 'damaged',
+                        'created_by' => Auth::id(),
+                        'status' => 'pending'
+                    ]);
                 }
             }
 
             DB::commit();
-            return response()->json('Packing list created successfully', 200);
-
+            return response()->json('Items updated successfully', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            logger()->error('Error creating packing list: ' . $e->getMessage());
             return response()->json($e->getMessage(), 500);
         }
     }
@@ -329,7 +343,7 @@ class PurchaseOrderController extends Controller
                 'purchase_order_id' => $request->purchase_order_id,
                 'created_by' => Auth::id(),
                 'packing_list_number' => $packingListNumber,
-                'packing_date' => now()->toDateTimeString(),
+                'packing_date' => Carbon::now()->toDateString(),
                 'status' => 'pending'
             ]);
             
@@ -379,6 +393,128 @@ class PurchaseOrderController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function createPackingList(Request $request, $id)
+    {
+        try {
+            // Generate a unique packing list number
+            $packingListNumber = 'PL-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+
+            // Create the packing list
+            $packingList = PackingList::create([
+                'purchase_order_id' => $id,
+                'created_by' => Auth::id(),
+                'packing_list_number' => $packingListNumber,
+                'packing_date' => Carbon::now()->toDateString(),
+            ]);
+            
+            return response()->json([
+                'message' => 'Packing list created successfully',
+                'packing_list' => $packingList
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to create packing list',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function bulkApprove(Request $request)
+    {
+        try {
+            $request->validate([
+                'items' => 'required|array',
+                'items.*' => 'exists:purchase_order_items,id',
+                'purchase_order_id' => 'required|exists:purchase_orders,id'
+            ]);
+
+            DB::beginTransaction();
+            try {
+                // Get the purchase order items with their details
+                $items = DB::table('purchase_order_items')
+                    ->whereIn('id', $request->items)
+                    ->get();
+
+                foreach ($items as $item) {
+                    // Update purchase order item status
+                    DB::table('purchase_order_items')
+                        ->where('id', $item->id)
+                        ->update(['status' => 'approved']);
+
+                    // Check if inventory record exists
+                    $inventory = DB::table('inventories')
+                        ->where('product_id', $item->product_id)
+                        ->where('warehouse_id', $item->warehouse_id)
+                        ->first();
+
+                    if ($inventory) {
+                        // Update existing inventory
+                        DB::table('inventories')
+                            ->where('id', $inventory->id)
+                            ->update([
+                                'quantity' => DB::raw('quantity + ' . $item->received_quantity),
+                                'batch_number' => $item->batch_number,
+                                'expiry_date' => $item->expiry_date,
+                                'unit_cost' => $item->unit_cost,
+                                'updated_at' => now()
+                            ]);
+                    } else {
+                        // Create new inventory record
+                        DB::table('inventories')->insert([
+                            'product_id' => $item->product_id,
+                            'warehouse_id' => $item->warehouse_id,
+                            'quantity' => $item->received_quantity,
+                            'batch_number' => $item->batch_number,
+                            'expiry_date' => $item->expiry_date,
+                            'unit_cost' => $item->unit_cost,
+                            'location' => $item->location,
+                            'is_active' => true,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
+                }
+
+                DB::commit();
+                return response()->json(['message' => 'Items approved and inventory updated']);
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateItem(Request $request, $purchaseOrder)
+    {
+        try {
+            $request->validate([
+                'received_quantity' => 'required|integer|min:0',
+                'damage_quantity' => 'nullable|integer|min:0',
+                'batch_number' => 'nullable|string',
+                'expiry_date' => 'nullable|date',
+                'location' => 'nullable|string'
+            ]);
+
+            DB::table('purchase_order_items')
+                ->where('id', $request->id)
+                ->where('purchase_order_id', $purchaseOrder)
+                ->update([
+                    'received_quantity' => $request->received_quantity,
+                    'damage_quantity' => $request->damage_quantity,
+                    'batch_number' => $request->batch_number,
+                    'expiry_date' => $request->expiry_date,
+                    'location' => $request->location,
+                    'updated_at' => now()
+                ]);
+
+            return response()->json(['message' => 'Item updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

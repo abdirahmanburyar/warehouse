@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('po_number')->unique();
             $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
             $table->date('po_date');
-            $table->decimal('total_amount', 10, 2)->default(0);
+            $table->double('total_amount')->default(0);
             $table->text('notes')->nullable();
             $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->foreignId('created_by')->constrained('users');

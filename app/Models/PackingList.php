@@ -14,18 +14,9 @@ class PackingList extends Model
         'packing_list_number',
         'purchase_order_id',
         'packing_date',
-        'warehouse_name',
-        'location',
-        'notes',
-        'status',
-        'total_amount',
         'created_by',
-        'updated_by'
-    ];
-
-    protected $casts = [
-        'packing_date' => 'date',
-        'total_amount' => 'decimal:2'
+        'updated_by',
+        'status'
     ];
 
     public function purchaseOrder()
@@ -46,5 +37,9 @@ class PackingList extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function purchaseOrderItems(){
+        return $this->hasMany(PurchaseOrderItem::class, 'packing_list_id', 'id');
     }
 }

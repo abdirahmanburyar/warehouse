@@ -12,6 +12,7 @@ class PurchaseOrderItem extends Model
     protected $fillable = [
         'purchase_order_id',
         'packing_list_id',
+        'damage_quantity',
         'product_id',
         'warehouse_id',
         'location',
@@ -30,6 +31,11 @@ class PurchaseOrderItem extends Model
         'unit_cost' => 'decimal:3',
         'total_cost' => 'decimal:3',
     ];
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 
     public function purchaseOrder()
     {

@@ -26,7 +26,7 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         // if(!$user->hasRole('admin')) {
-            $query = $query->where('warehouse_id', $user->warehouse_id);
+            // $query = $query->where('warehouse_id', $user->warehouse_id);
         // }
         
         $query = $query->with(['product.dosage.category', 'warehouse']);

@@ -271,7 +271,7 @@
                                     </div>
 
                                     <!-- PO Date, Status, and Total Amount in one row -->
-                                    <div class="grid grid-cols-3 gap-4">
+                                    <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="po_date" class="block text-sm font-medium text-gray-700">PO
                                                 Date</label>
@@ -279,20 +279,11 @@
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
                                         </div>
                                         <div>
-                                            <label for="status"
-                                                class="block text-sm font-medium text-gray-700">Status</label>
-                                            <select id="status" v-model="form.status" required
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                <option value="pending">Pending</option>
-                                                <option value="completed">Completed</option>
-                                            </select>
-                                        </div>
-                                        <div>
                                             <label for="total_amount"
                                                 class="block text-sm font-medium text-gray-700">Total
                                                 Amount</label>
                                             <input type="number" id="total_amount" v-model.number="form.total_amount"
-                                                step="0.001" readonly
+                                                step="0.001"
                                                 class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6" />
                                         </div>
                                     </div>
@@ -362,7 +353,7 @@
                                         <div class="mt-4">
                                             <div class="overflow-x-auto">
                                                 <table class="min-w-full divide-y divide-gray-200"
-                                                    v-if="selectedOrder && selectedOrder.items">
+                                                    v-if="selectedOrder && selectedOrder.po_items">
                                                     <thead class="bg-gray-50">
                                                         <tr>
                                                             <th scope="col"
@@ -380,15 +371,15 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-gray-200 bg-white">
-                                                        <tr v-for="item in selectedOrder.items" :key="item.id"
+                                                        <tr v-for="item in selectedOrder.po_items" :key="item.id"
                                                             class="hover:bg-gray-50">
                                                             <td
                                                                 class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900">
-                                                                {{ item.product?.name }}
+                                                                {{ item.item_description }}
                                                             </td>
                                                             <td
                                                                 class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                                {{ item.quantity }}
+                                                                {{ formatNumber(item.quantity) }}
                                                             </td>
                                                             <td
                                                                 class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -399,21 +390,21 @@
                                                                 {{ formatCurrency(item.total_cost) }}
                                                             </td>
                                                         </tr>
-                                                        <tr v-if="!selectedOrder.items.length">
+                                                        <tr v-if="!selectedOrder.po_items.length">
                                                             <td colspan="4"
                                                                 class="px-3 py-4 text-sm text-center text-gray-500">
                                                                 No items found for this purchase order
                                                             </td>
                                                         </tr>
                                                     </tbody>
-                                                    <tfoot v-if="selectedOrder.items.length" class="bg-gray-50">
+                                                    <tfoot v-if="selectedOrder.po_items.length" class="bg-gray-50">
                                                         <tr>
                                                             <td colspan="3"
                                                                 class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                                                                 Total:</td>
                                                             <td
                                                                 class="whitespace-nowrap px-3 py-3.5 text-sm font-semibold text-gray-900">
-                                                                {{ formatCurrency(selectedOrder.total_amount) }}
+                                                                {{ formatCurrency(selectedOrder.po_items.reduce((total, item) => total + item.total_cost, 0)) }}
                                                             </td>
                                                         </tr>
                                                     </tfoot>
@@ -487,7 +478,14 @@ const closeModal = () => {
         notes: '',
         status: 'pending',
     };
-    errors.value = null;
+    errors.value = null;``
+};
+
+const formatNumber = (num) => {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(num);
 };
 
 // Close items modal
