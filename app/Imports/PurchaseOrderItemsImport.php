@@ -32,25 +32,13 @@ class PurchaseOrderItemsImport implements ToCollection
                 continue;
             }
 
-            // Log raw data from Excel
-            Log::info('Raw Excel data:', [
-                'row' => $row->toArray(),
-                'item_code' => $row[0],
-                'description' => $row[1],
-                'uom' => $row[2],
-                'quantity' => $row[3],
-                'unit_cost' => $row[4],
-                'total_cost' => $row[5]
-            ]);
-
             $item_code = trim($row[0]);
             $item_description = trim($row[1]);
+            $uom = trim($row[2]);
             $quantity = floatval($row[3]);
             $unit_cost = floatval($row[4]); 
+            $total_cost = floatval($row[5]); 
             
-            // Calculate total cost since Excel formula comes as string
-            $total_cost = $quantity * $unit_cost;
-
             // Validate all required fields
             if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
                 continue;
@@ -78,8 +66,8 @@ class PurchaseOrderItemsImport implements ToCollection
                 $groupedItems[$item_key] = [
                     'item_code' => $item_code,
                     'item_description' => $item_description,
-                    'original_quantity' => $quantity,
-                    'uom' => $row[2],
+                    'original_quantity' => $existing['original_quantity'],
+                    'uom' => $uom,
                     'quantity' => $total_quantity,
                     'unit_cost' => $new_unit_cost,
                     'total_cost' => $total_amount,
@@ -91,7 +79,7 @@ class PurchaseOrderItemsImport implements ToCollection
                     'item_code' => $item_code,
                     'item_description' => $item_description,
                     'original_quantity' => $quantity,
-                    'uom' => $row[2],
+                    'uom' => $uom,
                     'quantity' => $quantity,
                     'unit_cost' => $unit_cost,
                     'total_cost' => $total_cost,
@@ -120,8 +108,10 @@ class PurchaseOrderItemsImport implements ToCollection
 
                 // Check if item already exists in this purchase order
                 $existingPoItem = PoItem::where('purchase_order_id', $this->purchaseOrderId)
-                ->where('item_description', $item['item_description'])
-                ->orWhere('item_code', $item['item_code'])
+                    ->where(function($query) use ($item) {
+                        $query->where('item_code', $item['item_code'])
+                              ->orWhere('item_description', $item['item_description']);
+                    })
                     ->first();
 
                 if ($existingPoItem) {

@@ -441,12 +441,6 @@ const echo = ref(null);
                         </div>
 
                         <SecondaryButton @click="resetFilters">Reset</SecondaryButton>
-                        <button @click="addInventory" 
-                            class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                        </button>
                         <select v-model="perPage"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 @change="applyFilters">
@@ -676,36 +670,36 @@ const echo = ref(null);
                                 </tbody>
                             </table>
                             <!-- Pagination - Only show if we have data -->
-                            <div v-if="currentInventories.data && currentInventories.data.length > 0" class="mt-4">
+                            <div v-if="currentInventories.data && currentInventories.data.length > 0" class="mt-4 mb-[50px]">
                                 <Pagination :links="currentInventories.meta.links" />
                             </div>
                         </div>
                     </div>
-                    <div class="sticky top-0 z-10 bg-white shadow-sm p-4">
+                    <div class="sticky top-0 z-10 bg-white shadow-sm p-2">
                         <div class="space-y-4">
                             <div class="flex items-center p-3 rounded-lg bg-green-50">
-                                <img src="/assets/images/in_stock.png" class="w-[70px] h-[70px]" alt="In Stock" />
+                                <img src="/assets/images/in_stock.png" class="w-[60px] h-[60px]" alt="In Stock" />
                                 <div class="ml-4 flex flex-col">
                                     <span class="text-xl font-bold text-green-600">{{ inStockCount }}</span>
                                     <span class="ml-2 text-xs text-green-600">In Stock</span>
                                 </div>
                             </div>
                             <div class="flex items-center p-3 rounded-lg bg-orange-50">
-                                <img src="/assets/images/low_stock.png" class="w-[70px] h-[70px]" alt="Low Stock" />
+                                <img src="/assets/images/low_stock.png" class="w-[60px] h-[60px]" alt="Low Stock" />
                                 <div class="ml-4 flex flex-col">
                                     <span class="text-xl font-bold text-orange-600">{{ lowStockCount }}</span>
                                     <span class="ml-2 text-xs text-orange-600">Low Stock</span>
                                 </div>
                             </div>
                             <div class="flex items-center p-3 rounded-lg bg-red-50">
-                                <img src="/assets/images/out_stock.png" class="w-[70px] h-[70px]" alt="Out of Stock" />
+                                <img src="/assets/images/out_stock.png" class="w-[60px] h-[60px]" alt="Out of Stock" />
                                 <div class="ml-4 flex flex-col">
                                     <span class="text-xl font-bold text-red-600">{{ outOfStockCount }}</span>
                                     <span class="ml-2 text-xs text-red-600">Out of Stock</span>
                                 </div>
                             </div>
                             <div class="flex items-center p-3 rounded-lg bg-gray-50">
-                                <img src="/assets/images/expired_stock.png" class="w-[70px] h-[70px]" alt="Expired" />
+                                <img src="/assets/images/expired_stock.png" class="w-[60px] h-[60px]" alt="Expired" />
                                 <div class="ml-4 flex flex-col">
                                     <span class="text-xl font-bold text-gray-600">{{ expiredCount }}</span>
                                     <span class="ml-2 text-xs text-gray-600">Expired</span>
@@ -738,67 +732,15 @@ const echo = ref(null);
                     <h2 class="text-lg font-medium text-gray-900">{{ showEditModal ? 'Edit' : 'Add' }} Inventory Item
                     </h2>
                     <div class="mt-6 space-y-4">
-                        <div>
-                            <InputLabel for="warehouse_id" value="Warehouse" />
-                            <select id="warehouse_id" v-model="form.warehouse_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Select Warehouse</option>
-                                <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-                                    {{ warehouse.name }} ({{ warehouse.code }})
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <InputLabel for="product_id" value="Product" />
-                            <Multiselect id="product_id" v-model="form.product" :options="products" option-label="name"
-                                track-by="id" label="name" />
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <InputLabel for="quantity" value="Quantity" />
-                                <TextInput id="quantity" v-model="form.quantity" type="number" class="mt-1 block w-full"
-                                    min="0" />
-                            </div>
-
-                            <div>
-                                <InputLabel for="reorder_level" value="Reorder Level" />
-                                <TextInput id="reorder_level" v-model="form.reorder_level" type="number"
-                                    class="mt-1 block w-full" min="0" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <InputLabel for="manufacturing_date" value="Manufacturing Date" />
-                                <TextInput id="manufacturing_date" v-model="form.manufacturing_date" type="date"
-                                    class="mt-1 block w-full" />
-                            </div>
-
-                            <div>
-                                <InputLabel for="expiry_date" value="Expiry Date" />
-                                <TextInput id="expiry_date" v-model="form.expiry_date" type="date"
-                                    class="mt-1 block w-full" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <InputLabel for="batch_number" value="Batch Number" />
-                                <TextInput id="batch_number" v-model="form.batch_number" type="text"
-                                    class="mt-1 block w-full" />
-                            </div>
-
-                            <div>
-                                <InputLabel for="location" value="Location" />
-                                <TextInput id="location" v-model="form.location" type="text"
-                                    class="mt-1 block w-full" />
-                            </div>
+                        <div class="w-full">
+                            <InputLabel for="location" value="Location" />
+                            <TextInput id="location" v-model="form.location" type="text" placeholder="Enter location"
+                                class="mt-1 block w-full" />
                         </div>
 
                         <div>
                             <InputLabel for="notes" value="Notes" />
-                            <textarea id="notes" v-model="form.notes"
+                            <textarea id="notes" v-model="form.notes" placeholder="Enter notes"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 rows="3"></textarea>
                         </div>

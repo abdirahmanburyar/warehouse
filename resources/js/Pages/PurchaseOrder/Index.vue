@@ -150,7 +150,10 @@
                                                 class="hover:bg-gray-50">
                                                 <td
                                                     class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                    <Link :href="route('purchase-orders.packing-list', order.id)"
+                                                    class="text-indigo-600 hover:text-indigo-900">
                                                     {{ order.po_number }}
+                                                    </Link>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {{ order.supplier?.name }}
@@ -174,14 +177,7 @@
                                                 <td
                                                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <div class="flex items-center gap-2">
-                                                        <Link :href="route('purchase-orders.packing-list', order.id)"
-                                                            class="text-indigo-600 hover:text-indigo-900">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                                                            </svg>
-                                                        </Link>
+                                                       
                                                         <button @click="editOrder(order)"
                                                             class="text-indigo-600 hover:text-indigo-900">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
@@ -248,7 +244,7 @@
                                     </DialogTitle>
 
                                     <!-- PO Number and Supplier -->
-                                    <div class="grid grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-3 gap-4">
                                         <div>
                                             <label for="po_number" class="block text-sm font-medium text-gray-700">PO
                                                 Number</label>
@@ -268,23 +264,11 @@
                                                 </option>
                                             </select>
                                         </div>
-                                    </div>
-
-                                    <!-- PO Date, Status, and Total Amount in one row -->
-                                    <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="po_date" class="block text-sm font-medium text-gray-700">PO
                                                 Date</label>
                                             <input type="date" id="po_date" v-model="form.po_date" required
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
-                                        </div>
-                                        <div>
-                                            <label for="total_amount"
-                                                class="block text-sm font-medium text-gray-700">Total
-                                                Amount</label>
-                                            <input type="number" id="total_amount" v-model.number="form.total_amount"
-                                                step="0.001"
-                                                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6" />
                                         </div>
                                     </div>
 

@@ -425,14 +425,19 @@ class PurchaseOrderController extends Controller
     public function bulkApprove(Request $request)
     {
         try {
-            $request->validate([
-                'items' => 'required|array',
-                'items.*' => 'exists:purchase_order_items,id',
-                'purchase_order_id' => 'required|exists:purchase_orders,id'
-            ]);
-
-            DB::beginTransaction();
             try {
+                DB::beginTransaction();
+                if (!auth()->user()->hasRole('Supply Chain Manager')) {
+                    return response()->json([
+                        'message' => 'Unauthorized to perform this action'
+                    ], 401);
+                }
+    
+                $request->validate([
+                    'items' => 'required|array',
+                    'items.*' => 'exists:purchase_order_items,id',
+                    'purchase_order_id' => 'required|exists:purchase_orders,id'
+                ]);
                 // Get the purchase order items with their details
                 $items = DB::table('purchase_order_items')
                     ->whereIn('id', $request->items)
