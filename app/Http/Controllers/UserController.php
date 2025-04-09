@@ -83,6 +83,7 @@ class UserController extends Controller
                     'username' => $request->username,
                     'email' => $request->email,
                     'warehouse_id' => $request->warehouse_id,
+                    'password' => $request->password
                 ]
             );
             
