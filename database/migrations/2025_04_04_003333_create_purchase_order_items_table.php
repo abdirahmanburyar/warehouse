@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
             $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
 
+            $table->foreignId('product_id')->constrained('products')->onDelete('restrict');
             $table->string('item_code');
             $table->string('item_description');
             $table->string('uom')->nullable();
@@ -30,7 +31,6 @@ return new class extends Migration
 
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
-            $table->string('product_name')->nullable();
 
             $table->string('status')->default('pending');
             $table->timestamps();
