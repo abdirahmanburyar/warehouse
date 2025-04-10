@@ -14,14 +14,15 @@ return new class extends Migration
         Schema::create('purchase_order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
-            $table->foreignId('packing_list_id')->constrained('packing_lists')->onDelete('cascade');
+            $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
 
-            $table->foreignId('product_id')->constrained('products')->onDelete('restrict');
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('restrict');
+            $table->string('item_code');
+            $table->string('item_description');
+            $table->string('uom')->nullable();
             $table->integer('quantity')->default(0);
+            $table->integer('original_quantity')->default(0);
             $table->string('location')->nullable();
             $table->integer('received_quantity')->default(0);
-
             $table->integer('damage_quantity')->default(0);
 
             $table->double('unit_cost')->default(0);
@@ -29,11 +30,10 @@ return new class extends Migration
 
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
-            $table->string('generic_name')->nullable();
+            $table->string('product_name')->nullable();
 
             $table->string('status')->default('pending');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
