@@ -1123,7 +1123,7 @@ const bulkApprove = () => {
             .catch(error => {
                 Swal.fire({
                     title: 'Error!',
-                    text: error.response?.data?.error || 'Failed to approve items',
+                    text: error.response?.data?.message || 'Failed to approve items',
                     icon: 'error',
                     confirmButtonColor: '#EF4444',
                     customClass: {
