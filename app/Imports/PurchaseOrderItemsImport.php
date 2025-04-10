@@ -23,7 +23,7 @@ class PurchaseOrderItemsImport implements ToCollection
         // Skip header row
         $rows = $rows->slice(1);
 
-        // Group items by item_code to handle duplicates
+        // Group items by item_code and unit_cost to handle duplicates
         $groupedItems = [];
 
         foreach ($rows as $index => $row) {
@@ -44,45 +44,35 @@ class PurchaseOrderItemsImport implements ToCollection
                 continue;
             }
 
-            // Check if item exists by code or description
-            $item_key = null;
-            foreach ($groupedItems as $key => $existing) {
-                if ($existing['item_code'] === $item_code || $existing['item_description'] === $item_description) {
-                    $item_key = $key;
-                    break;
-                }
-            }
+            // Create a unique key combining item code and unit cost
+            $item_key = $item_code . '_' . number_format($unit_cost, 2);
 
-            if ($item_key !== null) {
+            if (isset($groupedItems[$item_key])) {
+                // Same item with same unit cost - just add quantities
                 $existing = $groupedItems[$item_key];
-                
-                // First combine quantities and total costs
                 $total_quantity = $existing['quantity'] + $quantity;
-                $total_amount = $existing['total_cost'] + $total_cost;
-                
-                // Then calculate unit cost by dividing total amount by total quantity
-                $new_unit_cost = round($total_amount / $total_quantity, 2);
+                $total_cost = $unit_cost * $total_quantity;
 
                 $groupedItems[$item_key] = [
                     'item_code' => $item_code,
                     'item_description' => $item_description,
-                    'original_quantity' => $existing['original_quantity'],
+                    'original_quantity' => $existing['original_quantity'] + $quantity,
                     'uom' => $uom,
                     'quantity' => $total_quantity,
-                    'unit_cost' => $new_unit_cost,
-                    'total_cost' => $total_amount,
+                    'unit_cost' => $unit_cost,
+                    'total_cost' => $total_cost,
                     'row_index' => $index
                 ];
             } else {
-                // First occurrence of this item
-                $groupedItems[$item_code] = [
+                // New item or same item with different unit cost
+                $groupedItems[$item_key] = [
                     'item_code' => $item_code,
                     'item_description' => $item_description,
                     'original_quantity' => $quantity,
                     'uom' => $uom,
                     'quantity' => $quantity,
                     'unit_cost' => $unit_cost,
-                    'total_cost' => $total_cost,
+                    'total_cost' => $quantity * $unit_cost,
                     'row_index' => $index
                 ];
             }
@@ -150,23 +140,8 @@ class PurchaseOrderItemsImport implements ToCollection
                             'total_cost' => $item['total_cost']
                         ];
 
-                        Log::info('Creating new PO item with data:', $data);
-                        
                         $newItem = PoItem::create($data);
-
-                        Log::info('Successfully created PO item:', [
-                            'id' => $newItem->id,
-                            'item_code' => $newItem->item_code,
-                            'quantity' => $newItem->quantity,
-                            'unit_cost' => $newItem->unit_cost,
-                            'total_cost' => $newItem->total_cost
-                        ]);
                     } catch (\Exception $e) {
-                        Log::error('Failed to create PO item:', [
-                            'item_code' => $item['item_code'],
-                            'error' => $e->getMessage(),
-                            'data' => $data ?? null
-                        ]);
                         throw $e;
                     }
                 }

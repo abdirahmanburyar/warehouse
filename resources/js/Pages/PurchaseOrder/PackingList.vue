@@ -908,18 +908,26 @@ const isSubmitting = ref(false);
 async function savePackingList(){
     try {
         isSubmitting.value = true;
-        // Filter out incomplete items
+        // Filter out incomplete items but don't show error if some items are incomplete
         const completeItems = form.value.items.filter(item => 
             item.warehouse_id && 
-            item.received_quantity > 0
+            item.received_quantity > 0 &&
+            item.location &&
+            item.expiry_date &&
+            item.batch_number &&
+            item.product_name &&
+            item.quantity > 0 &&
+            item.unit_cost > 0 &&
+            item.total_cost > 0
         );
 
+        // Only proceed if we have at least one complete item
         if (completeItems.length === 0) {
             Swal.fire({
-                title: 'Error!',
-                text: 'No valid items to save',
-                icon: 'error',
-                confirmButtonColor: '#EF4444',
+                title: 'Warning',
+                text: 'No items are ready to be saved. Please complete at least one item.',
+                icon: 'warning',
+                confirmButtonColor: '#F59E0B',
                 customClass: {
                     popup: 'rounded-lg',
                     title: 'text-lg font-semibold text-gray-900',
@@ -930,6 +938,51 @@ async function savePackingList(){
             return;
         }
 
+        // Show info if some items were skipped
+        if (completeItems.length < form.value.items.length) {
+            const skippedCount = form.value.items.length - completeItems.length;
+            Swal.fire({
+                title: 'Information',
+                text: `${skippedCount} incomplete item(s) will be skipped. Proceeding with ${completeItems.length} complete item(s).`,
+                icon: 'info',
+                confirmButtonColor: '#3B82F6',
+                showCancelButton: true,
+                cancelButtonColor: '#6B7280',
+                customClass: {
+                    popup: 'rounded-lg',
+                    title: 'text-lg font-semibold text-gray-900',
+                    htmlContainer: 'text-gray-700'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    proceedWithSave(completeItems);
+                } else {
+                    isSubmitting.value = false;
+                }
+            });
+        } else {
+            // All items are complete, proceed directly
+            await proceedWithSave(completeItems);
+        }
+    } catch (error) {
+        console.error('Failed to save items:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to save items',
+            icon: 'error',
+            confirmButtonColor: '#EF4444',
+            customClass: {
+                popup: 'rounded-lg',
+                title: 'text-lg font-semibold text-gray-900',
+                htmlContainer: 'text-gray-700'
+            }
+        });
+        isSubmitting.value = false;
+    }
+}
+
+async function proceedWithSave(completeItems) {
+    try {
         const formData = {
             purchase_order_id: props.purchase_order.id,
             items: completeItems
@@ -937,7 +990,7 @@ async function savePackingList(){
 
         const response = await axios.post(route('purchase-orders.packing-list.store'), formData);
         Swal.fire({
-            title: 'Approved!',
+            title: 'Success!',
             text: response.data,
             icon: 'success',
             confirmButtonColor: '#10B981',
@@ -953,21 +1006,8 @@ async function savePackingList(){
             reloadPO();
             isSubmitting.value = false;
         }, 500);
-        
     } catch (error) {
-        console.error('Failed to save items:', error);
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data?.message || 'Failed to save items',
-            icon: 'error',
-            confirmButtonColor: '#EF4444',
-            customClass: {
-                popup: 'rounded-lg',
-                title: 'text-lg font-semibold text-gray-900',
-                htmlContainer: 'text-gray-700'
-            }
-        });
-        isSubmitting.value = false;
+        throw error; // Re-throw to be caught by the outer catch block
     }
 }
 
