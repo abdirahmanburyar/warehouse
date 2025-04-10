@@ -19,12 +19,7 @@ class PurchaseOrder extends Model
         'created_by',
         'updated_by',
     ];
-
-    protected $casts = [
-        'po_date' => 'date',
-        'total_amount' => 'decimal:2',
-    ];
-
+    
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);

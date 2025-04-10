@@ -343,6 +343,9 @@
                                                             <th scope="col"
                                                                 class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
                                                                 Product</th>
+                                                                <th scope="col"
+                                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                                                    Original Quantity</th>
                                                             <th scope="col"
                                                                 class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                                                                 Quantity</th>
@@ -360,6 +363,10 @@
                                                             <td
                                                                 class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900">
                                                                 {{ item.item_description }}
+                                                            </td>
+                                                            <td
+                                                                class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                                {{ formatNumber(item.original_quantity) }}
                                                             </td>
                                                             <td
                                                                 class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -545,10 +552,6 @@ const form = ref({
     status: 'pending',
     items: []
 });
-
-const searchResults = ref([]);
-const isLoading = ref(false);
-const productInputs = ref({});
 
 // Reactive state
 const search = ref(props.filters?.search || '');
