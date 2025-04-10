@@ -3,13 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\PurchaseOrder;
 
 class PoItem extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
         'purchase_order_id',
         'item_code',
