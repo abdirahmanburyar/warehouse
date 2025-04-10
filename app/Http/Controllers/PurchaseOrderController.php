@@ -166,6 +166,7 @@ class PurchaseOrderController extends Controller
             'purchase_order' => $purchaseOrder,
             'packingLists' => $flattenedItems->values()->all(),
             'warehouses' => Warehouse::get(),
+            'purchase_orders' => PurchaseOrder::get()
         ]);
     }
 

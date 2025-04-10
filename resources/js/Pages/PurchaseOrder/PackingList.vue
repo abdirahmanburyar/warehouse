@@ -2,588 +2,587 @@
 
     <Head :title="props.purchase_order.po_number" />
     <AuthenticatedLayout :auth="$page.props.auth" :errors="$page.props.errors">
-        <div class="">
-            <!-- Header -->
-            <div class="mb-6">
-                <h2 class="text-2xl font-semibold text-gray-900">Packing List</h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    Purchase Order #{{ props.purchase_order.po_number }}
-                </p>
+        <div class="flex h-full">
+            <div class="w-[300px] border-r border-gray-200 bg-white overflow-y-auto top-[50px]">
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Purchase Orders</h3>
+                    <div class="space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                        <div v-for="purchaseOrder in props.purchase_orders" :key="purchaseOrder.id"
+                            @click="selectPurchaseOrder(purchaseOrder)"
+                            class="p-3 rounded-md hover:bg-gray-50 cursor-pointer border border-gray-100"
+                            :class="{ 'bg-indigo-50 border-indigo-200': selectedPurchaseOrder?.id === purchaseOrder.id }">
+                            <div class="flex justify-between">
+                                {{ purchaseOrder.po_number }}
+                                <span
+                                    :class="['px-2 py-1 text-xs rounded-full', purchaseOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">{{
+                                    purchaseOrder.status }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <div class="flex-1 min-w-0 overflow-hidden p-3">
+                <!-- Header -->
+                <div class="mb-6">
+                    <p class="mt-1 text-sm text-gray-600">
+                        Purchase Order #{{ props.purchase_order.po_number }}
+                    </p>
+                </div>
+                <!-- Packing List Dropdown -->
+                <h2 class="text-lg font-semibold mb-2">Select Packing List</h2>
+                <div class="relative">
+                    <div>
+                        <button type="button" @click="isOpen = !isOpen"
+                            class="inline-flex items-center justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                            <i class="fas fa-file-alt -ml-0.5 h-5 w-5" aria-hidden="true"></i>
+                            {{ selectedPackingList ? 'Packing List #' +
+                                selectedPackingList.packing_list_number :
+                                'Select Packing List' }}
+                            <i class="fas fa-chevron-down -mr-1 h-5 w-5" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div v-if="isOpen"
+                        class="absolute left-0 z-[100] mt-2 w-80 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <!-- Search Box -->
+                        <div class="sticky top-0 bg-white p-2 border-b">
+                            <input type="text" v-model="searchQuery" placeholder="Search packing lists..."
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" />
+                        </div>
 
-            <!-- Remove debug output -->
+                        <!-- Create New Button -->
+                        <div class="py-1 sticky top-[50px] bg-white z-10 border-b">
+                            <button @click="createPackingList(); isOpen = false"
+                                class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <i class="fas fa-plus mr-3"></i>
+                                Generate New Packing List
+                            </button>
+                        </div>
 
-            <!-- Tabs Navigation -->
-            <div class="border-b border-gray-200 mb-4">
-                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                        v-for="tab in tabs"
-                        :key="tab.name"
-                        @click="currentTab = tab.name"
-                        :class="[
+                        <!-- Packing List Items -->
+                        <div v-if="props.purchase_order.packing_lists.length > 0" class="py-1 max-h-60 overflow-y-auto">
+                            <button v-for="packingList in props.purchase_order.packing_lists" :key="packingList.id"
+                                @click="selectPackingList(packingList); isOpen = false"
+                                class="flex w-full flex-col px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <div class="flex items-center w-full">
+                                    <i class="fas fa-file-alt mr-3 text-gray-400"></i>
+                                    <div class="flex-1">
+                                        <div class="font-medium">Packing List #{{
+                                            packingList.packing_list_number }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <div class="flex items-center space-x-4">
+                                                <span><i class="fas fa-calendar-alt mr-1"></i> {{
+                                                    formatDate(packingList.packing_date) }}</span>
+                                                <span v-if="packingList.warehouse_name"><i
+                                                        class="fas fa-warehouse mr-1"></i> {{
+                                                            packingList.warehouse_name }}</span>
+                                                <span v-if="packingList.location"><i
+                                                        class="fas fa-map-marker-alt mr-1"></i> {{
+                                                            packingList.location }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span
+                                        :class="['ml-2 shrink-0 px-2 py-0.5 text-xs rounded-full',
+                                            packingList.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">
+                                        {{ packingList.status }}
+                                    </span>
+                                </div>
+                            </button>
+                        </div>
+                        <div v-else class="px-4 py-2 text-sm text-gray-500">
+                            No packing lists found
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="border-b border-gray-200 mb-4">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button v-for="tab in tabs" :key="tab.name" @click="currentTab = tab.name" :class="[
                             currentTab === tab.name
                                 ? 'border-indigo-500 text-indigo-600'
                                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                             'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                        ]"
-                    >
-                        {{ tab.label }}
-                    </button>
-                </nav>
-            </div>
+                        ]">
+                            {{ tab.label }}
+                        </button>
+                    </nav>
+                </div>
 
-            <!-- Tab Content -->
-            <div v-if="currentTab === 'items'">
-                <!-- Items Tab -->
-                <div class="space-y-4">
-                    <!-- Action Buttons -->
-                    <div class="flex justify-between mb-4">
-                        <div class="flex items-center space-x-4">
-                            <!-- Packing List Dropdown -->
-                            <div class="relative">
-                                <div>
-                                    <button type="button" @click="isOpen = !isOpen"
-                                        class="inline-flex items-center justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                                        <i class="fas fa-file-alt -ml-0.5 h-5 w-5" aria-hidden="true"></i>
-                                        {{ selectedPackingList ? 'Packing List #' + selectedPackingList.packing_list_number :
-                                        'Select Packing List' }}
-                                        <i class="fas fa-chevron-down -mr-1 h-5 w-5" aria-hidden="true"></i>
+                <!-- Tab Content -->
+                <div v-if="currentTab === 'items'">
+                    <!-- Items Tab -->
+                    <div class="space-y-4">
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end mb-4">
+                            <div class="flex items-center space-x-4">
+                                <!-- Other Action Buttons -->
+                                <button type="button" @click="showImportModal = true"
+                                    class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5a2.25 2.25 0 002.25 2.25H15" />
+                                    </svg>
+                                    Import PO Items
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="mt-4">
+                        <!-- Table wrapper with fixed header -->
+                        <div>
+                            <form @submit.prevent="savePackingList">
+                                <div
+                                    class="relative shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg max-h-[calc(100vh-200px)] overflow-auto">
+                                    <div v-if="!selectedPackingList"
+                                        class="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center z-20 pointer-events-none">
+                                        <div class="bg-white px-4 py-2 rounded-md shadow-lg text-gray-700 font-medium">
+                                            Please select a packing list first
+                                        </div>
+                                    </div>
+                                    <table class="min-w-full divide-y divide-gray-300 text-xs">
+                                        <thead class="bg-gray-50 sticky top-0 z-10">
+                                            <tr>
+                                                <th
+                                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
+                                                    Item</th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Quantity
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Received
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Damaged
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Warehouse
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Location
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Batch #
+                                                </th>
+                                                <th class="px-2 text-left text-xs font-semibold text-gray-900">Expiry
+                                                    Date</th>
+                                                <th class="px-2 text-right text-xs font-semibold text-gray-900">Unit
+                                                    Cost</th>
+                                                <th class="px-2 pr-6 text-right text-xs font-semibold text-gray-900">
+                                                    Total Cost</th>
+                                                <th class="px-2 pr-6 text-right text-xs font-semibold text-gray-900">
+                                                    Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 bg-white">
+                                            <tr v-if="!form.items?.length" class="text-center">
+                                                <td colspan="10"
+                                                    class="py-4 pl-4 pr-3 text-sm font-medium text-gray-500">
+                                                    No items available
+                                                </td>
+                                            </tr>
+                                            <tr v-for="item in form.items" :key="item.id"
+                                                class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                                                <td
+                                                    class="whitespace-nowrap py-4 pl-4 pr-3 text-xs font-medium text-gray-900">
+                                                    {{ item.product_name }}
+                                                    <p v-if="item.generic_name" class="text-xs text-gray-500 mt-0.5">{{
+                                                        item.generic_name }}</p>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
+                                                    {{ Number(item.quantity).toLocaleString() }}
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                                    <div class="flex items-center space-x-2">
+                                                        <input type="number" v-model="item.received_quantity"
+                                                            :max="item.quantity" min="0"
+                                                            :disabled="!selectedPackingList"
+                                                            :class="['block w-32 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                                                                !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
+                                                            placeholder="received qty"
+                                                            @input="validateReceivedQuantity(item)" />
+                                                    </div>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                                    <div class="flex items-center space-x-2">
+                                                        <input type="number" v-model="item.damage_quantity"
+                                                            :max="item.received_quantity" min="0"
+                                                            :disabled="!selectedPackingList"
+                                                            :class="['block w-32 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                                                                !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']" placeholder="damaged qty"
+                                                            @input="validateDamageQuantity(item)" />
+                                                    </div>
+                                                </td>
+                                                <td
+                                                    class="whitespace-nowrap px-3 py-4 text-xs text-gray-500 min-w-[300px]">
+                                                    <select v-model="item.warehouse_id" :disabled="!selectedPackingList"
+                                                        :class="['w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-ellipsis',
+                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']">
+                                                        <option value="" selected>Select Warehouse</option>
+                                                        <option v-for="warehouse in props.warehouses"
+                                                            :key="warehouse.id" :value="warehouse.id" class="truncate">
+                                                            {{ warehouse.name }}
+                                                        </option>
+                                                    </select>
+                                                </td>
+                                                <td
+                                                    class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 min-w-[300px]">
+                                                    <input type="text" v-model="item.location"
+                                                        :disabled="!selectedPackingList"
+                                                        :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']" placeholder="location" />
+                                                </td>
+                                                <td
+                                                    class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 min-w-[200px]">
+                                                    <input type="text" v-model="item.batch_number"
+                                                        :disabled="!selectedPackingList"
+                                                        :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']" placeholder="batch number" />
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                    <input type="date" v-model="item.expiry_date"
+                                                        :disabled="!selectedPackingList"
+                                                        :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']" placeholder="expiry date" />
+                                                </td>
+                                                <td class="px-3 py-4 text-xs text-gray-500 text-right">
+                                                    {{ Number(item.unit_cost).toLocaleString('en-US', {
+                                                        style:
+                                                            'currency', currency: 'USD'
+                                                    }) }}
+                                                </td>
+                                                <td class="px-3 pr-6 py-4 text-xs font-medium text-gray-900 text-right">
+                                                    {{ Number(calculateItemTotal(item)).toLocaleString('en-US', {
+                                                        style:
+                                                            'currency', currency: 'USD'
+                                                    }) }}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="flex justify-end p-3 mb-[50px]">
+                                    <button
+                                        v-if="selectedPackingList && props.packingLists.find(pl => pl.id === selectedPackingList)?.items?.every(item => item.warehouse_id && item.location)"
+                                        @click="exportToExcel" type="button"
+                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mr-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2.25 0 01-2-2V5a2 2.25 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2.25 0 01-2 2z" />
+                                        </svg>
+                                        Export to Excel
+                                    </button>
+                                    <button type="submit" :disabled="isSubmitting"
+                                        class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M15.75 17.25v3.75a.75.75 0 01-1.5 0v-3.75m-7.5-7.5h-1.5a.75.75 0 00-1.5 0v7.5a.75.75 0 001.5 0v-7.5m7.5 0v3.75a.75.75 0 001.5 0v-3.75m-7.5 0h1.5a.75.75 0 001.5 0h-1.5z" />
+                                        </svg>
+                                        {{ isSubmitting ? 'Processing...' : 'Submit' }}
                                     </button>
                                 </div>
-                                <div v-if="isOpen"
-                                    class="absolute left-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                    <!-- Search Box -->
-                                    <div class="sticky top-0 bg-white p-2 border-b">
-                                        <input type="text" v-model="searchQuery" placeholder="Search packing lists..."
-                                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" />
-                                    </div>
-
-                                    <!-- Create New Button -->
-                                    <div class="py-1 sticky top-[50px] bg-white z-10 border-b">
-                                        <button @click="createPackingList(); isOpen = false"
-                                            class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-                                            <i class="fas fa-plus mr-3"></i>
-                                            Generate New Packing List
-                                        </button>
-                                    </div>
-
-                                    <!-- Packing List Items -->
-                                    <div v-if="props.purchase_order.packing_lists.length > 0"
-                                        class="py-1 max-h-60 overflow-y-auto">
-                                        <button v-for="packingList in props.purchase_order.packing_lists" :key="packingList.id"
-                                            @click="selectPackingList(packingList); isOpen = false"
-                                            class="flex w-full flex-col px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-                                            <div class="flex items-center w-full">
-                                                <i class="fas fa-file-alt mr-3 text-gray-400"></i>
-                                                <div class="flex-1">
-                                                    <div class="font-medium">Packing List #{{ packingList.packing_list_number }}
-                                                    </div>
-                                                    <div class="text-xs text-gray-500 mt-1">
-                                                        <div class="flex items-center space-x-4">
-                                                            <span><i class="fas fa-calendar-alt mr-1"></i> {{
-                                                                formatDate(packingList.packing_date) }}</span>
-                                                            <span v-if="packingList.warehouse_name"><i
-                                                                    class="fas fa-warehouse mr-1"></i> {{
-                                                                packingList.warehouse_name }}</span>
-                                                            <span v-if="packingList.location"><i
-                                                                    class="fas fa-map-marker-alt mr-1"></i> {{
-                                                                packingList.location }}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <span
-                                                    :class="['ml-2 shrink-0 px-2 py-0.5 text-xs rounded-full',
-                                                        packingList.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">
-                                                    {{ packingList.status }}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <div v-else class="px-4 py-2 text-sm text-gray-500">
-                                        No packing lists found
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Other Action Buttons -->
-                            <button type="button" @click="showImportModal = true"
-                                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                    stroke="currentColor" class="w-5 h-5 mr-2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5a2.25 2.25 0 002.25 2.25H15" />
-                                </svg>
-                                Import PO Items
-                            </button>
+                            </form>
                         </div>
                     </div>
-                </div>
 
-                <!-- Table Container -->
-                <div class="mt-4">
-                    <!-- Table wrapper with fixed header -->
-                    <div>
-                        <form @submit.prevent="savePackingList"  >
-                            <div  class="relative shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg max-h-[calc(100vh-200px)] overflow-auto">
-                                <div v-if="!selectedPackingList" class="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center z-20 pointer-events-none">
-                                    <div class="bg-white px-4 py-2 rounded-md shadow-lg text-gray-700 font-medium">
-                                        Please select a packing list first
-                                    </div>
-                                </div>
-                                <table class="min-w-full divide-y divide-gray-300 text-xs">
-                                    <thead class="bg-gray-50 sticky top-0 z-10">
-                                        <tr>
-                                            <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Item</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Quantity</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Received</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Damaged</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Warehouse</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Location</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Batch #</th>
-                                            <th class="px-2 text-left text-xs font-semibold text-gray-900">Expiry Date</th>
-                                            <th class="px-2 text-right text-xs font-semibold text-gray-900">Unit Cost</th>
-                                            <th class="px-2 pr-6 text-right text-xs font-semibold text-gray-900">Total Cost</th>
-                                            <th class="px-2 pr-6 text-right text-xs font-semibold text-gray-900">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 bg-white">
-                                        <tr v-if="!form.items?.length" class="text-center">
-                                            <td colspan="10" class="py-4 pl-4 pr-3 text-sm font-medium text-gray-500">
-                                                No items available
-                                            </td>
-                                        </tr>
-                                        <tr v-for="item in form.items" 
-                                            :key="item.id"
-                                            class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
-                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-xs font-medium text-gray-900">
-                                                {{ item.product_name }}
-                                                <p v-if="item.generic_name" class="text-xs text-gray-500 mt-0.5">{{ item.generic_name }}</p>
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
-                                                {{ Number(item.quantity).toLocaleString() }}
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                                <div class="flex items-center space-x-2">
-                                                    <input 
-                                                        type="number"
-                                                        v-model="item.received_quantity"
-                                                        :max="item.quantity"
-                                                        min="0"
-                                                        :disabled="!selectedPackingList"
-                                                        :class="['block w-32 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6', 
-                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
-                                                        placeholder="received qty"
-                                                        @input="validateReceivedQuantity(item)"
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                                <div class="flex items-center space-x-2">
-                                                    <input 
-                                                        type="number"
-                                                        v-model="item.damage_quantity"
-                                                        :max="item.received_quantity"
-                                                        min="0"
-                                                        :disabled="!selectedPackingList"
-                                                        :class="['block w-32 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
-                                                            !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
-                                                        placeholder="damaged qty"
-                                                        @input="validateDamageQuantity(item)"
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-xs text-gray-500 min-w-[300px]">
-                                                <select 
-                                                    v-model="item.warehouse_id"
-                                                    :disabled="!selectedPackingList"
-                                                    :class="['w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-ellipsis',
-                                                        !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"                                                   
-                                                >
-                                                    <option value="" selected>Select Warehouse</option>
-                                                    <option 
-                                                        v-for="warehouse in props.warehouses" 
-                                                        :key="warehouse.id" 
-                                                        :value="warehouse.id"
-                                                        class="truncate"
-                                                    >
-                                                        {{ warehouse.name }}
-                                                    </option>
-                                                </select>
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 min-w-[300px]">
-                                                <input 
-                                                    type="text"
-                                                    v-model="item.location"
-                                                    :disabled="!selectedPackingList"
-                                                    :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
-                                                        !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
-                                                    placeholder="location"
-                                                />
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 min-w-[200px]">
-                                                <input 
-                                                    type="text"
-                                                    v-model="item.batch_number"
-                                                    :disabled="!selectedPackingList"
-                                                    :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
-                                                        !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
-                                                    placeholder="batch number"
-                                                />
-                                            </td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                <input 
-                                                    type="date"
-                                                    v-model="item.expiry_date"
-                                                    :disabled="!selectedPackingList"
-                                                    :class="['block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
-                                                        !selectedPackingList ? 'bg-gray-100 cursor-not-allowed' : '']"
-                                                    placeholder="expiry date"
-                                                />
-                                            </td>
-                                            <td class="px-3 py-4 text-xs text-gray-500 text-right">
-                                                {{ Number(item.unit_cost).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) }}
-                                            </td>
-                                            <td class="px-3 pr-6 py-4 text-xs font-medium text-gray-900 text-right">
-                                                {{ Number(calculateItemTotal(item)).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="flex justify-end p-3 mb-[50px]">
-                                <button
-                                    v-if="selectedPackingList && props.packingLists.find(pl => pl.id === selectedPackingList)?.items?.every(item => item.warehouse_id && item.location)"
-                                    @click="exportToExcel"
-                                    type="button"
-                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mr-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2.25 0 01-2-2V5a2 2.25 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2.25 0 01-2 2z" />
-                                    </svg>
-                                    Export to Excel
-                                </button>
-                                <button type="submit" :disabled="isSubmitting" class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                        stroke="currentColor" class="w-5 h-5 mr-2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M15.75 17.25v3.75a.75.75 0 01-1.5 0v-3.75m-7.5-7.5h-1.5a.75.75 0 00-1.5 0v7.5a.75.75 0 001.5 0v-7.5m7.5 0v3.75a.75.75 0 001.5 0v-3.75m-7.5 0h1.5a.75.75 0 001.5 0h-1.5z" />
-                                    </svg>
-                                    {{ isSubmitting ? 'Processing...' : 'Submit' }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                    <!-- Import Modal -->
+                    <Modal :show="showImportModal" @close="showImportModal = false">
+                        <div class="p-6">
+                            <h2 class="text-lg font-medium text-gray-900">
+                                Import Items from Excel
+                            </h2>
 
-                <!-- Import Modal -->
-                <Modal :show="showImportModal" @close="showImportModal = false">
-                    <div class="p-6">
-                        <h2 class="text-lg font-medium text-gray-900">
-                            Import Items from Excel
-                        </h2>
-
-                        <div class="mt-4">
-                            <div class="flex items-center justify-center w-full">
-                                <label
-                                    class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                            stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5a2.25 2.25 0 002.25 2.25H15" />
-                                        </svg>
-                                        <p class="mb-2 text-sm text-gray-500">
-                                            <span class="font-semibold">Click to upload</span> or drag and drop
-                                        </p>
-                                        <p class="text-xs text-gray-500">XLSX files only</p>
-                                    </div>
-                                    <input type="file" class="hidden" accept=".xlsx" @change="handleFileUpload"
-                                        ref="fileInput" />
-                                </label>
-                            </div>
-
-                            <!-- Processing State -->
-                            <div v-if="importing" class="mt-4">
-                                <div class="flex items-center justify-center">
-                                    <svg class="animate-spin h-5 w-5 text-indigo-500 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    <span>Importing items...</span>
-                                </div>
-                            </div>
-
-                            <!-- Download Template Button -->
-                            <div class="mt-4 text-center">
-                                <button type="button" class="text-sm text-indigo-600 hover:text-indigo-900"
-                                    @click="downloadTemplate">
-                                    Download Template
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end">
-                            <button type="button"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                @click="showImportModal = false">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </Modal>
-
-                <!-- Edit Modal -->
-                <Modal :show="showEditModal" @close="closeEditModal">
-                    <div class="p-6">
-                        <h2 class="text-lg font-medium text-gray-900">Edit Item</h2>
-                        <form @submit.prevent="updateItem" class="mt-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <InputLabel for="received_quantity" value="Received Quantity" />
-                                    <TextInput
-                                        id="received_quantity"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.received_quantity"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="damage_quantity" value="Damage Quantity" />
-                                    <TextInput
-                                        id="damage_quantity"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.damage_quantity"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="batch_number" value="Batch Number" />
-                                    <TextInput
-                                        id="batch_number"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.batch_number"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="expiry_date" value="Expiry Date" />
-                                    <TextInput
-                                        id="expiry_date"
-                                        type="date"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.expiry_date"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="location" value="Location" />
-                                    <TextInput
-                                        id="location"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.location"
-                                    />
-                                </div>
-                            </div>
-                            <div class="mt-6 flex justify-end space-x-3">
-                                <SecondaryButton @click="closeEditModal">Cancel</SecondaryButton>
-                                <PrimaryButton :disabled="editForm.processing">Update</PrimaryButton>
-                            </div>
-                        </form>
-                    </div>
-                </Modal>
-            </div>
-
-            <div v-if="currentTab === 'packing_lists'">
-                <!-- Bulk Actions Bar -->
-                <div class="mb-4 flex justify-between items-center">
-                    <div class="flex items-center space-x-4">
-                        <span v-if="selectedItems.length > 0" class="text-sm text-gray-600">
-                            {{ selectedItems.length }} items selected
-                        </span>
-                        <button 
-                            v-if="selectedItems.length > 0"
-                            @click="bulkApprove"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700"
-                        >
-                            Approve Selected
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Packing Lists Table -->
-                <div class="relative shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                    <div class="max-h-[calc(100vh-250px)] overflow-auto mb-[50px]">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0 z-10">
-                                <tr>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                        <input 
-                                            type="checkbox" 
-                                            v-model="selectAll"
-                                            @change="toggleSelectAll"
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                        >
-                                    </th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Packing List NO#</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item Code</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Received QTY</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Damaged</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Received By</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Warehouse</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Batch Number</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
-                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="item in props.packingLists" :key="item.id" class="hover:bg-gray-50">
-                                    <td class="px-4 py-2 whitespace-nowrap">
-                                        <input 
-                                            type="checkbox" 
-                                            v-model="selectedItems" 
-                                            :value="item.id"
-                                            :disabled="item.status === 'approved'"
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                        >
-                                    </td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.packing_list_number }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ formatDate(item.packing_list_date) }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.product?.barcode }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.product?.name }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.quantity }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ item.received_quantity }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.damage_quantity }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.created_by }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.warehouse?.name }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.location }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.batch_number }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ formatDate(item.expiry_date) }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ formatCurrency(item.unit_cost) }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ formatCurrency(item.total_cost) }}</td>
-                                    <td class="px-3 py-4 text-sm">
-                                        <div class="flex items-center space-x-2">
-                                            <button 
-                                                @click="openEditModal(item)" 
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                                    stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                </svg>
-                                                Edit
-                                            </button>
-                                            <button 
-                                                v-if="!item.status || item.status === 'pending'"
-                                                @click="approveItem(item.id)" 
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                            >
-                                                Approve
-                                            </button>
+                            <div class="mt-4">
+                                <div class="flex items-center justify-center w-full">
+                                    <label
+                                        class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5a2.25 2.25 0 002.25 2.25H15" />
+                                            </svg>
+                                            <p class="mb-2 text-sm text-gray-500">
+                                                <span class="font-semibold">Click to upload</span> or drag and drop
+                                            </p>
+                                            <p class="text-xs text-gray-500">XLSX files only</p>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="7" class="px-4 py-2 text-right font-bold">
-                                        {{ props.packingLists.reduce((total, item) => total + parseFloat(item.received_quantity), 0) }}
-                                    </td>
-                                    <td colspan="6" class="px-4 py-2 text-right font-bold">
-                                        Total:
-                                    </td>
-                                    <td class="px-4 py-2 text-right font-bold">
-                                        {{ formatCurrency(props.packingLists.reduce((total, item) => total + parseFloat(item.total_cost), 0)) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                        <input type="file" class="hidden" accept=".xlsx" @change="handleFileUpload"
+                                            ref="fileInput" />
+                                    </label>
+                                </div>
+
+                                <!-- Processing State -->
+                                <div v-if="importing" class="mt-4">
+                                    <div class="flex items-center justify-center">
+                                        <svg class="animate-spin h-5 w-5 text-indigo-500 mr-2"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                        </svg>
+                                        <span>Importing items...</span>
+                                    </div>
+                                </div>
+
+                                <!-- Download Template Button -->
+                                <div class="mt-4 text-center">
+                                    <button type="button" class="text-sm text-indigo-600 hover:text-indigo-900"
+                                        @click="downloadTemplate">
+                                        Download Template
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end">
+                                <button type="button"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    @click="showImportModal = false">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+
+                    <!-- Edit Modal -->
+                    <Modal :show="showEditModal" @close="closeEditModal">
+                        <div class="p-6">
+                            <h2 class="text-lg font-medium text-gray-900">Edit Item</h2>
+                            <form @submit.prevent="updateItem" class="mt-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <InputLabel for="received_quantity" value="Received Quantity" />
+                                        <TextInput id="received_quantity" type="number" class="mt-1 block w-full"
+                                            v-model="editForm.received_quantity" required />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="damage_quantity" value="Damage Quantity" />
+                                        <TextInput id="damage_quantity" type="number" class="mt-1 block w-full"
+                                            v-model="editForm.damage_quantity" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="batch_number" value="Batch Number" />
+                                        <TextInput id="batch_number" type="text" class="mt-1 block w-full"
+                                            v-model="editForm.batch_number" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="expiry_date" value="Expiry Date" />
+                                        <TextInput id="expiry_date" type="date" class="mt-1 block w-full"
+                                            v-model="editForm.expiry_date" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="location" value="Location" />
+                                        <TextInput id="location" type="text" class="mt-1 block w-full"
+                                            v-model="editForm.location" />
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-end space-x-3">
+                                    <SecondaryButton @click="closeEditModal">Cancel</SecondaryButton>
+                                    <PrimaryButton :disabled="editForm.processing">Update</PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
+                    </Modal>
                 </div>
-                <!-- Edit Modal -->
-                <Modal :show="showEditModal" @close="closeEditModal">
-                    <div class="p-6">
-                        <h2 class="text-lg font-medium text-gray-900">Edit Packing List Item</h2>
-                        <form @submit.prevent="updateItem" class="mt-6">
-                            <div class="grid grid-cols-1 gap-4">
-                                <div>
-                                    <InputLabel for="received_quantity" value="Received Quantity" />
-                                    <TextInput
-                                        id="received_quantity"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.received_quantity"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="damage_quantity" value="Damage Quantity" />
-                                    <TextInput
-                                        id="damage_quantity"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.damage_quantity"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="batch_number" value="Batch Number" />
-                                    <TextInput
-                                        id="batch_number"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.batch_number"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="expiry_date" value="Expiry Date" />
-                                    <TextInput
-                                        id="expiry_date"
-                                        type="date"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.expiry_date"
-                                    />
-                                </div>
-                                <div>
-                                    <InputLabel for="location" value="Location" />
-                                    <TextInput
-                                        id="location"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="editForm.location"
-                                    />
-                                </div>
-                            </div>
-                            <div class="mt-6 flex justify-end space-x-3">
-                                <SecondaryButton @click="closeEditModal">Cancel</SecondaryButton>
-                                <PrimaryButton :disabled="editForm.processing">Update</PrimaryButton>
-                            </div>
-                        </form>
+
+                <div v-if="currentTab === 'packing_lists'">
+                    <!-- Bulk Actions Bar -->
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <span v-if="selectedItems.length > 0" class="text-sm text-gray-600">
+                                {{ selectedItems.length }} items selected
+                            </span>
+                            <button v-if="selectedItems.length > 0" @click="bulkApprove"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                Approve Selected
+                            </button>
+                        </div>
                     </div>
-                </Modal>
+
+                    <!-- Packing Lists Table -->
+                    <div class="relative shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                        <div class="max-h-[calc(100vh-250px)] overflow-auto mb-[50px]">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <input type="checkbox" v-model="selectAll" @change="toggleSelectAll"
+                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                        </th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Packing List NO#</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date
+                                        </th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item
+                                            Code</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name
+                                        </th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Quantity</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Received QTY</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Damaged</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Received By</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Warehouse</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Location</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Batch Number</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Expiry Date</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit
+                                            Cost</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Total Cost</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="item in props.packingLists" :key="item.id" class="hover:bg-gray-50">
+                                        <td class="px-4 py-2 whitespace-nowrap">
+                                            <input type="checkbox" v-model="selectedItems" :value="item.id"
+                                                :disabled="item.status === 'approved'"
+                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                        </td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.packing_list_number }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{
+                                            formatDate(item.packing_list_date) }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.product?.barcode }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.product?.name }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.quantity
+                                        }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{
+                                            item.received_quantity }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.damage_quantity }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.created_by
+                                        }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.warehouse?.name }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.location
+                                        }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            item.batch_number }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            formatDate(item.expiry_date) }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
+                                            formatCurrency(item.unit_cost) }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{
+                                            formatCurrency(item.total_cost) }}</td>
+                                        <td class="px-3 py-4 text-sm">
+                                            <div class="flex items-center space-x-2">
+                                                <button @click="openEditModal(item)"
+                                                    class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
+                                                        fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                                        stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                    Edit
+                                                </button>
+                                                <button v-if="!item.status || item.status === 'pending'"
+                                                    @click="approveItem(item.id)"
+                                                    class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                    Approve
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-2 text-right font-bold">
+                                            {{props.packingLists.reduce((total, item) => total +
+                                                parseFloat(item.received_quantity), 0)}}
+                                        </td>
+                                        <td colspan="6" class="px-4 py-2 text-right font-bold">
+                                            Total:
+                                        </td>
+                                        <td class="px-4 py-2 text-right font-bold">
+                                            {{formatCurrency(props.packingLists.reduce((total, item) => total +
+                                                parseFloat(item.total_cost), 0))}}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Edit Modal -->
+                    <Modal :show="showEditModal" @close="closeEditModal">
+                        <div class="p-6">
+                            <h2 class="text-lg font-medium text-gray-900">Edit Packing List Item</h2>
+                            <form @submit.prevent="updateItem" class="mt-6">
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <InputLabel for="received_quantity" value="Received Quantity" />
+                                        <TextInput id="received_quantity" type="number" class="mt-1 block w-full"
+                                            v-model="editForm.received_quantity" required />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="damage_quantity" value="Damage Quantity" />
+                                        <TextInput id="damage_quantity" type="number" class="mt-1 block w-full"
+                                            v-model="editForm.damage_quantity" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="batch_number" value="Batch Number" />
+                                        <TextInput id="batch_number" type="text" class="mt-1 block w-full"
+                                            v-model="editForm.batch_number" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="expiry_date" value="Expiry Date" />
+                                        <TextInput id="expiry_date" type="date" class="mt-1 block w-full"
+                                            v-model="editForm.expiry_date" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="location" value="Location" />
+                                        <TextInput id="location" type="text" class="mt-1 block w-full"
+                                            v-model="editForm.location" />
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-end space-x-3">
+                                    <SecondaryButton @click="closeEditModal">Cancel</SecondaryButton>
+                                    <PrimaryButton :disabled="editForm.processing">Update</PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
+                    </Modal>
+                </div>
             </div>
-
         </div>
-
     </AuthenticatedLayout>
 </template>
-       
+
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -606,8 +605,27 @@ const props = defineProps({
     warehouses: {
         type: Array,
         required: true
+    },
+    purchase_orders: {
+        type: Array,
+        default: () => []
     }
 });
+
+const selectedPurchaseOrder = ref(props.purchase_order);
+
+function selectPurchaseOrder(purchaseOrder) {
+    selectedPurchaseOrder.value = purchaseOrder;
+    router.get(route('purchase-orders.packing-list', purchaseOrder.id), {}, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['purchase_order', 'packingLists', 'warehouses'],
+        onSuccess: () => {
+            currentTab.value = 'items';
+            selectedPackingList.value = null;
+        }
+    });
+}
 
 // Tab Management
 const tabs = [
@@ -628,7 +646,7 @@ const importing = ref(false);
 const fileInput = ref(null);
 const isOpen = ref(false);
 
-function reloadPO(){
+function reloadPO() {
     console.log('Reloading PO');
     const query = {}
     router.get(route('purchase-orders.packing-list', props.purchase_order.id), query, {
@@ -663,8 +681,8 @@ const createPackingList = async () => {
         const newPackingList = response.data.packing_list;
 
         // Add the new packing list to the list if it exists
-        if (props.packingLists) {
-            props.packingLists.unshift(newPackingList);
+        if (props.purchase_order.packing_lists) {
+            props.purchase_order.packing_lists.push(newPackingList);
         }
 
         // Close the dropdown
@@ -672,6 +690,7 @@ const createPackingList = async () => {
 
         // Select the newly created packing list
         await selectPackingList(newPackingList);
+
 
         Swal.fire({
             title: 'Success!',
@@ -759,7 +778,7 @@ const handleFileUpload = async (event) => {
                 htmlContainer: 'text-gray-700'
             }
         });
-        
+
         // Refresh the items list if a packing list is selected
         if (selectedPackingList.value) {
             await selectPackingList(selectedPackingList.value);
@@ -871,9 +890,9 @@ const calculateItemTotal = (item) => {
 };
 
 const formatCurrency = (value) => {
-    return Number(value).toLocaleString('en-US', { 
-        style: 'currency', 
-        currency: 'USD' 
+    return Number(value).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD'
     });
 };
 
@@ -895,7 +914,7 @@ const validateDamageQuantity = (item) => {
         Number(item.received_quantity),
         Number(item.quantity) - Number(item.received_quantity)
     );
-    
+
     if (isNaN(value) || value < 0) {
         item.damage_quantity = 0;
     } else if (value > maxDamage) {
@@ -905,12 +924,12 @@ const validateDamageQuantity = (item) => {
 
 const isSubmitting = ref(false);
 
-async function savePackingList(){
+async function savePackingList() {
     try {
         isSubmitting.value = true;
         // Filter out incomplete items but don't show error if some items are incomplete
-        const completeItems = form.value.items.filter(item => 
-            item.warehouse_id && 
+        const completeItems = form.value.items.filter(item =>
+            item.warehouse_id &&
             item.received_quantity > 0 &&
             item.location &&
             item.expiry_date &&
@@ -1000,7 +1019,7 @@ async function proceedWithSave(completeItems) {
                 htmlContainer: 'text-gray-700'
             }
         });
-        
+
         // Wait a bit before reloading to ensure the server has processed everything
         setTimeout(() => {
             reloadPO();
@@ -1062,8 +1081,8 @@ const toggleSelectAll = () => {
 // Watch for changes in selected items
 watch(selectedItems, () => {
     const selectableItems = props.packingLists.filter(item => item.status !== 'approved');
-    selectAll.value = selectableItems.length > 0 && 
-                     selectedItems.value.length === selectableItems.length;
+    selectAll.value = selectableItems.length > 0 &&
+        selectedItems.value.length === selectableItems.length;
 });
 
 // Bulk approve selected items
@@ -1104,35 +1123,35 @@ const bulkApprove = () => {
                 items: selectedItems.value,
                 purchase_order_id: props.purchase_order.id
             })
-            .then(response => {
-                Swal.fire({
-                    title: 'Approved!',
-                    text: response.data.message,
-                    icon: 'success',
-                    confirmButtonColor: '#10B981',
-                    customClass: {
-                        popup: 'rounded-lg',
-                        title: 'text-lg font-semibold text-gray-900',
-                        htmlContainer: 'text-gray-700'
-                    }
+                .then(response => {
+                    Swal.fire({
+                        title: 'Approved!',
+                        text: response.data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#10B981',
+                        customClass: {
+                            popup: 'rounded-lg',
+                            title: 'text-lg font-semibold text-gray-900',
+                            htmlContainer: 'text-gray-700'
+                        }
+                    });
+                    selectedItems.value = [];
+                    selectAll.value = false;
+                    reloadPO();
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.response?.data?.message || 'Failed to approve items',
+                        icon: 'error',
+                        confirmButtonColor: '#EF4444',
+                        customClass: {
+                            popup: 'rounded-lg',
+                            title: 'text-lg font-semibold text-gray-900',
+                            htmlContainer: 'text-gray-700'
+                        }
+                    });
                 });
-                selectedItems.value = [];
-                selectAll.value = false;
-                reloadPO();
-            })
-            .catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.response?.data?.message || 'Failed to approve items',
-                    icon: 'error',
-                    confirmButtonColor: '#EF4444',
-                    customClass: {
-                        popup: 'rounded-lg',
-                        title: 'text-lg font-semibold text-gray-900',
-                        htmlContainer: 'text-gray-700'
-                    }
-                });
-            });
         }
     });
 };
@@ -1160,33 +1179,33 @@ const approveItem = (itemId) => {
                 items: [itemId],
                 purchase_order_id: props.purchase_order.id
             })
-            .then(response => {
-                Swal.fire({
-                    title: 'Approved!',
-                    text: response.data.message,
-                    icon: 'success',
-                    confirmButtonColor: '#10B981',
-                    customClass: {
-                        popup: 'rounded-lg',
-                        title: 'text-lg font-semibold text-gray-900',
-                        htmlContainer: 'text-gray-700'
-                    }
+                .then(response => {
+                    Swal.fire({
+                        title: 'Approved!',
+                        text: response.data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#10B981',
+                        customClass: {
+                            popup: 'rounded-lg',
+                            title: 'text-lg font-semibold text-gray-900',
+                            htmlContainer: 'text-gray-700'
+                        }
+                    });
+                    reloadPO();
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.response?.data?.error || 'Failed to approve item',
+                        icon: 'error',
+                        confirmButtonColor: '#EF4444',
+                        customClass: {
+                            popup: 'rounded-lg',
+                            title: 'text-lg font-semibold text-gray-900',
+                            htmlContainer: 'text-gray-700'
+                        }
+                    });
                 });
-                reloadPO();
-            })
-            .catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.response?.data?.error || 'Failed to approve item',
-                    icon: 'error',
-                    confirmButtonColor: '#EF4444',
-                    customClass: {
-                        popup: 'rounded-lg',
-                        title: 'text-lg font-semibold text-gray-900',
-                        htmlContainer: 'text-gray-700'
-                    }
-                });
-            });
         }
     });
 };
