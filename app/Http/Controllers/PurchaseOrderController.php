@@ -421,12 +421,16 @@ class PurchaseOrderController extends Controller
     {
         try {
             $user = Auth::user();
-            $approvals = Approval::where('model', 'PurchaseOrderItem')->whereHas('roles', function ($query) use ($user) {
-                $query->whereIn('id', $user->roles->pluck('id')->toArray());
-            })->whereIn('action', ['confirm', 'verify', 'approve'])->get();
+            $roleIds = $user->roles->pluck('id')->toArray();
+            $approvals = Approval::where('model', 'PurchaseOrderItem')
+                ->whereIn('role_id', $roleIds)
+                ->whereIn('action', ['confirm', 'verify', 'approve'])
+                ->get();
+            
             $canConfirm = $approvals->where('action', 'confirm')->count() > 0;
             $canVerify = $approvals->where('action', 'verify')->count() > 0;
             $canApprove = $approvals->where('action', 'approve')->count() > 0;
+            
             if (!$canConfirm || !$canVerify || !$canApprove) {
                 return response()->json('Unauthorized to perform this action', 401);
             }
