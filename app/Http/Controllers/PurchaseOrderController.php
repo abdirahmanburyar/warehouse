@@ -421,10 +421,13 @@ class PurchaseOrderController extends Controller
     {
         try {
             $user = Auth::user();
-            $roleIds = $user->roles->pluck('id')->toArray();
-            $approver = Approval::where('model', 'PurchaseOrderItem')->whereIn('role_id', $roleIds)->first();
-            logger()->info($roleIds);
-            if(!$approver || $approver->action !== 'confirm') {
+            $approvals = Approval::where('model', 'PurchaseOrderItem')->whereHas('roles', function ($query) use ($user) {
+                $query->whereIn('id', $user->roles->pluck('id')->toArray());
+            })->whereIn('action', ['confirm', 'verify', 'approve'])->get();
+            $canConfirm = $approvals->where('action', 'confirm')->count() > 0;
+            $canVerify = $approvals->where('action', 'verify')->count() > 0;
+            $canApprove = $approvals->where('action', 'approve')->count() > 0;
+            if (!$canConfirm || !$canVerify || !$canApprove) {
                 return response()->json('Unauthorized to perform this action', 401);
             }
             // Generate a unique packing list number
