@@ -10,7 +10,7 @@ use App\Events\InventoryUpdated;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use Illuminate\Http\Request;
-use App\Http\Resources\SupplyResource;
+use App\Http\Resources\SupplierResource;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -22,69 +22,22 @@ class SupplyController extends Controller
      */
     public function index(Request $request)
     {
-        $activeTab = $request->get('tab', 'supplies');
-        
-        // Get supplies data with relationships
-        $supplies = Supply::query()
-            ->with(['supplier', 'items.product', 'warehouse'])
-            ->when($request->filled('search') && $activeTab === 'supplies', function ($query) use ($request) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('items.product', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('supplier', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhere('invoice_number', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->filled('date_from'), function ($query) use ($request) {
-                $query->whereDate('supply_date', '>=', $request->date_from);
-            })
-            ->when($request->filled('date_to'), function ($query) use ($request) {
-                $query->whereDate('supply_date', '<=', $request->date_to);
-            })
-            ->latest()
-            ->paginate($request->input('per_page', 5))
-            ->withQueryString();
-            
         // Get suppliers data
-        $suppliers = Supplier::query()
-            ->withCount('supplies')
-            ->orderBy('name')
-            ->when($request->filled('search') && $activeTab === 'suppliers', function ($query) use ($request) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('contact_person', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->paginate(10)
+        $suppliers = Supplier::query();
+        if($request->filled('search')){
+            $suppliers->where(function ($query) use ($request) {
+                $query->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('contact_person', 'like', "%{$request->search}%")
+                    ->orWhere('email', 'like', "%{$request->search}%")
+                    ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+        }
+        $suppliers = $suppliers->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         
-        // Get warehouses for filter
-        $warehouses = Warehouse::where('id', auth()->user()->warehouse_id)->get();
-        
-        // Get all products for supply form
-        $products = Product::all();
-
         return Inertia::render('Supplies/Index', [
-            'supplies' => SupplyResource::collection($supplies),
-            'suppliers' => $suppliers,
-            'warehouses' => $warehouses,
-            'products' => $products,
-            'supplyFilters' => [
-                'search' => $request->search,
-                'date_from' => $request->date_from,
-                'date_to' => $request->date_to,
-            ],
-            'supplierFilters' => [
-                'search' => $request->search,
-            ],
-            'activeTab' => $activeTab,
+            'suppliers' => SupplierResource::collection($suppliers),
+            'filters' => $request->only('search', 'page','per_page')
         ]);
     }
 

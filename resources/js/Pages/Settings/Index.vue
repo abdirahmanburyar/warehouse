@@ -21,7 +21,7 @@
                         </button>
                         <button @click="currentTab = 'approval'"
                             :class="[currentTab === 'approval' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
-                            Approval
+                            Approval Steps
                         </button>
                     </nav>
                 </div>
@@ -46,11 +46,36 @@
 
                 <!-- Approval Tab Content -->
                 <div v-show="currentTab === 'approval'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'approval', 'opacity-0': currentTab !== 'approval'}">
-                    <ApprovalIndex :filters="props.filters" :approvals="props.approvals" :roles="props.roles" />
+                    <div class="p-4 bg-gray-50 rounded-lg mb-4">
+                        <h3 class="text-lg font-medium mb-2">Approval Steps Configuration</h3>
+                        <p class="text-gray-600">Configure approval workflows for different processes in the system. Each process can have multiple approval steps with specific roles and actions.</p>
+                        <div class="mt-4 flex gap-4">
+                            <button 
+                                v-for="type in approvalTypes" 
+                                :key="type.id"
+                                @click="selectApprovalType(type)"
+                                :class="[
+                                    selectedApprovalType?.id === type.id 
+                                        ? 'bg-indigo-100 text-indigo-700 border-indigo-300' 
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                                    'px-4 py-2 rounded-md border text-sm font-medium'
+                                ]"
+                            >
+                                {{ type.name }}
+                            </button>
+                        </div>
+                    </div>
+                    <ApprovalIndex 
+                        :filters="props.filters" 
+                        :approvals="props.approvals" 
+                        :roles="props.roles"
+                        :approvable-type="selectedApprovalType?.model"
+                        :approvable-id="null"
+                    />
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>a
+    </AuthenticatedLayout>
 </template>
 
 <script setup>
@@ -75,4 +100,16 @@ const props = defineProps({
 });
 
 const currentTab = ref(props.activeTab);
+
+const approvalTypes = [
+    { id: 'purchase_order_item', name: 'Purchase Order Items', model: 'App\\Models\\PurchaseOrderItem' },
+    { id: 'order', name: 'Orders', model: 'App\\Models\\Order' },
+    { id: 'transfer', name: 'Transfers', model: 'App\\Models\\Transfer' }
+];
+
+const selectedApprovalType = ref(approvalTypes[0]);
+
+const selectApprovalType = (type) => {
+    selectedApprovalType.value = type;
+};
 </script>

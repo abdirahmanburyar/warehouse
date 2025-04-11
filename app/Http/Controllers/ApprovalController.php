@@ -42,36 +42,11 @@ class ApprovalController extends Controller
             $validated = $request->validate([
                 'id' => 'nullable|exists:approvals,id',
                 'role_id' => 'required|exists:roles,id',
-                'activity_type' => 'required|in:transfer,order,all',
-                'approval_level' => 'required|integer|min:1',
-                'is_active' => 'boolean',
-                'description' => 'nullable|string',
+                'model' => 'required',
+                'action' => 'required|in:confirm,verify,approve',
+                'sequence' => 'required|integer|min:1',
+                'notes' => 'nullable|string',
             ]);
-            
-            // Check if another role already has this approval level for this activity type
-            $existingApproval = Approval::where('activity_type', $validated['activity_type'])
-                ->where('approval_level', $validated['approval_level'])
-                ->where('role_id', '!=', $validated['role_id'])
-                ->when($request->id, function($query) use ($request) {
-                    return $query->where('id', '!=', $request->id);
-                })
-                ->first();
-                
-            if ($existingApproval) {
-                return response()->json("Level $request->approval_level for activity type $request->activity_type already assigned to another role, please choose a different level.", 500);
-            }
-            
-            // Check if this role already has an approval for this activity type
-            $duplicateRoleApproval = Approval::where('activity_type', $validated['activity_type'])
-                ->where('role_id', $validated['role_id'])
-                ->when($request->id, function($query) use ($request) {
-                    return $query->where('id', '!=', $request->id);
-                })
-                ->first();
-                
-            if ($duplicateRoleApproval) {
-                return response()->json("This role already has an approval rule for $request->activity_type activity type. Each role can only have one approval rule per activity type.", 500);
-            }
             
             Approval::updateOrCreate(['id' => $validated['id']], $validated);
 
@@ -81,18 +56,6 @@ class ApprovalController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified approval.
-     */
-    public function edit(Approval $approval)
-    {
-        $roles = Role::all();
-        
-        return Inertia::render('Approval/Edit', [
-            'approval' => new ApprovalResource($approval),
-            'roles' => $roles,
-        ]);
-    }
 
     /**
      * Remove the specified approval from storage.

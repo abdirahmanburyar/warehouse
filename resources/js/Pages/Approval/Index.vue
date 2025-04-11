@@ -1,358 +1,220 @@
 <template>
-    <!-- <AuthenticatedLayout title="Approvals"> -->
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Approvals
-        </h2>
-
-        <div>
-            <div class="bg-white overflow-hidden sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex justify-between items-center mb-6">
-                        <input type="text" v-model="search" placeholder="Search" class="w-1/2 rounded border-2 border-gray-300" />
-                        <div class="flex justify-between mb-6">
-                            <button v-if="hasPermission('approval.create')" 
-                                    @click="openCreateModal()"
-                                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700">
-                                Add New Approval
-                            </button>
-                        </div>
-                    </div>
-
-                    <div v-if="page.props.flash && page.props.flash.success" class="mb-4 p-4 bg-green-100 text-green-700 rounded-md">
-                        {{ page.props.flash.success }}
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Role
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Activity Type
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Approval Level
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Description
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-if="props.approvals.data.length > 0" v-for="approval in props.approvals.data" :key="approval.id">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ approval.role ? approval.role.name : 'N/A' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                                                :class="{
-                                                'bg-blue-100 text-blue-800': approval.activity_type === 'transfer',
-                                                'bg-green-100 text-green-800': approval.activity_type === 'order',
-                                                'bg-purple-100 text-purple-800': approval.activity_type === 'all'
-                                                }">
-                                            {{ approval.activity_type ? (approval.activity_type.charAt(0).toUpperCase() + approval.activity_type.slice(1)) : 'N/A' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ approval.approval_level }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                                                :class="{
-                                                'bg-green-100 text-green-800': approval.is_active,
-                                                'bg-red-100 text-red-800': !approval.is_active
-                                                }">
-                                            {{ approval.is_active ? 'Active' : 'Inactive' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ approval.description || 'N/A' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button v-if="hasPermission('approval.edit')" 
-                                                @click="openEditModal(approval)"
-                                                class="text-indigo-600 hover:text-indigo-900 mr-4">
-                                            Edit
-                                        </button>
-                                        <button v-if="hasPermission('approval.delete')" 
-                                                @click="confirmDelete(approval)"
-                                                class="text-red-600 hover:text-red-900">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr v-if="props.approvals.data.length === 0">
-                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No approvals found. Click "Add New Approval" to create one.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Create/Edit Approval Modal -->
-        <Modal :show="approvalModal" @close="closeApprovalModal">
+    <div class="space-y-6">
+        <!-- Form Modal -->
+        <Modal :show="showForm" @close="closeForm">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">
-                    {{ editMode ? 'Edit Approval' : 'Create New Approval' }}
+                    {{ form.id ? 'Edit Approval Step' : 'Add Approval Step' }}
                 </h2>
-                
-                <form @submit.prevent="submitApproval">
-                    <div class="mb-4">
+
+                <form @submit.prevent="submit" class="space-y-4">
+                    <!-- Role Selection -->
+                    <div>
                         <InputLabel for="role_id" value="Role" />
-                        <SelectInput
-                            id="role_id"
-                            v-model="form.role_id"
-                            :options="roles"
-                            class="mt-1 block w-full"
-                            placeholder="Select a role"
-                            required
-                        />
-                        <InputError :message="form.errors.role_id" class="mt-2" />
+                        <select v-model="form.role_id" class="mt-1 block w-full">
+                            <option value="">Select a role</option>
+                            <option v-for="role in roles" :key="role.id" :value="role.id">
+                                {{ role.name }}
+                            </option>
+                        </select>
                     </div>
 
-                    <div class="mb-4">
-                        <InputLabel for="activity_type" value="Activity Type" />
-                        <SelectInput
-                            id="activity_type"
-                            v-model="form.activity_type"
-                            :options="activityTypeOptions"
-                            class="mt-1 block w-full"
-                            placeholder="Select activity type"
-                            required
-                        />
-                        <InputError :message="form.errors.activity_type" class="mt-2" />
+                    <!-- Model Type -->
+                    <div>
+                        <InputLabel for="model" value="Model Type" />
+                        <select v-model="form.model" class="mt-1 block w-full">
+                            <option value="">Select a model</option>
+                            <option value="PurchaseOrderItem">Purchase Order Item</option>
+                            <option value="Order">Order</option>
+                        </select>
                     </div>
 
-                    <div class="mb-4">
-                        <InputLabel for="approval_level" value="Approval Level" />
+                    <!-- Action Type -->
+                    <div>
+                        <InputLabel for="action" value="Action" />
+                        <select v-model="form.action" class="mt-1 block w-full">
+                            <option value="">Select an action</option>
+                            <option value="confirm">Confirm</option>
+                            <option value="verify">Verify</option>
+                            <option value="approve">Approve</option>
+                        </select>
+                    </div>
+
+                    <!-- Sequence -->
+                    <div>
+                        <InputLabel for="sequence" value="Sequence" />
                         <TextInput
-                            id="approval_level"
-                            type="text"
+                            id="sequence"
+                            type="number"
+                            min="1"
+                            v-model="form.sequence"
                             class="mt-1 block w-full"
-                            v-model="form.approval_level"
-                            required
                         />
-                        <InputError :message="form.errors.approval_level" class="mt-2" />
-                        <div class="text-sm text-gray-500 mt-1">
-                            Higher level means higher priority in the approval chain
-                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <div class="flex items-center">
-                            <Checkbox id="is_active" :checked="form.is_active" @update:checked="form.is_active = $event" />
-                            <InputLabel for="is_active" value="Active" class="ml-2" />
-                        </div>
-                        <InputError :message="form.errors.is_active" class="mt-2" />
-                    </div>
-
-                    <div class="mb-4">
-                        <InputLabel for="description" value="Description (Optional)" />
+                    <!-- Notes -->
+                    <div>
+                        <InputLabel for="notes" value="Notes" />
                         <TextArea
-                            id="description"
+                            id="notes"
+                            v-model="form.notes"
                             class="mt-1 block w-full"
-                            v-model="form.description"
                             rows="3"
                         />
-                        <InputError :message="form.errors.description" class="mt-2" />
                     </div>
 
-                    <div class="flex items-center justify-end mt-4">
-                        <SecondaryButton @click="closeApprovalModal" class="mr-3" :disabled="form.processing">
-                            Cancel
-                        </SecondaryButton>
-                        <PrimaryButton
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
-                        >
-                            {{ editMode ? form.processing ? 'Updating...' : 'Update Approval' : form.processing ? 'Creating...' : 'Create Approval' }}
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-end gap-4 mt-6">
+                        <SecondaryButton @click="closeForm" :disabled="isSubmitting">Cancel</SecondaryButton>
+                        <PrimaryButton :disabled="isSubmitting">
+                            {{ form.id ? isSubmitting ? 'Updating...' : 'Update' : isSubmitting ? 'Creating...' : 'Create' }}
                         </PrimaryButton>
                     </div>
                 </form>
             </div>
         </Modal>
 
-        <!-- Delete Confirmation Modal -->
-        <Modal :show="deleteModal" @close="closeModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Delete Approval
-                </h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    Are you sure you want to delete this approval? This action cannot be undone.
-                </p>
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="closeModal" class="mr-3" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                        Cancel
-                    </SecondaryButton>
-                    <DangerButton @click="deleteApproval" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                        {{ form.processing ? 'Deleting...' : 'Delete Approval' }}
-                    </DangerButton>
-                </div>
-            </div>
-        </Modal>
-    <!-- </AuthenticatedLayout> -->
+        <!-- Main Content -->
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-medium text-gray-900">Approval Steps</h2>
+            <PrimaryButton @click="openForm">Add New Step</PrimaryButton>
+        </div>
+
+        <!-- Approval Steps Table -->
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sequence</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr v-for="approval in approvals.data" :key="approval.id">
+                        <td class="px-6 py-4 whitespace-nowrap">{{ getRoleName(approval.role_id) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ getModelName(approval.model) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span :class="getActionClass(approval.action)" class="px-2 py-1 text-xs rounded-full">
+                                {{ approval.action }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ approval.sequence }}</td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-gray-500">{{ approval.notes || '-' }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button @click="editApproval(approval)" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                            <button @click="deleteApproval(approval.id)" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useForm, usePage, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { ref } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import DangerButton from '@/Components/DangerButton.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import TextArea from '@/Components/TextArea.vue';
-import SelectInput from '@/Components/SelectInput.vue';
-import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
-const props = defineProps({
-    approvals: Object,
-    roles: {
-        type: Array,
-        required: true
-    },
-    filters: Object
-});
-
-const page = usePage();
-
-const deleteModal = ref(false);
-const approvalModal = ref(false);
-const editMode = ref(false);
-const selectedApproval = ref(null);
-const roles = ref(props.roles || []);
-
-// Initialize toast
 const toast = useToast();
 
-// Form for approval creation/editing
-const form = useForm({
-    id: '',
-    role_id: '',
-    activity_type: '',
-    approval_level: '1',
-    is_active: true,
-    description: '',
+const props = defineProps({
+    approvals: Object,
+    roles: Array,
 });
-const search = ref(props.filters.search || '');
-watch([
-    () => search.value
-], () => reloadApproval());
 
+const showForm = ref(false);
+const form = ref({
+    id: null,
+    role_id: '',
+    model: '',
+    action: '',
+    sequence: 1,
+    notes: '',
+});
 
-const activityTypeOptions = [
-    { id: 'transfer', name: 'Transfer' },
-    { id: 'order', name: 'Order' },
-    { id: 'all', name: 'All Activities' }
-];
-
-const resetForm = () => {
-    form.id = '';
-    form.role_id = '';
-    form.activity_type = '';
-    form.approval_level = '1';
-    form.is_active = true;
-    form.description = '';
-    form.clearErrors();
+const openForm = () => {
+    form.value.id = null;
+    form.value.role_id = '';
+    form.value.model = '';
+    form.value.action = '';
+    form.value.sequence = 1;
+    form.value.notes = '';
+    showForm.value = true;
 };
 
-const openCreateModal = () => {
-    editMode.value = false;
-    resetForm();
-    approvalModal.value = true;
+const closeForm = () => {
+    form.value.id = null;
+    showForm.value = false;
 };
 
-const openEditModal = (approval) => {
-    editMode.value = true;
-    resetForm();
-    form.id = approval.id;
-    form.role_id = approval.role_id;
-    form.activity_type = approval.activity_type;
-    form.approval_level = String(approval.approval_level);
-    form.is_active = approval.is_active === undefined ? true : approval.is_active;
-    form.description = approval.description || '';
-    approvalModal.value = true;
-};
+const isSubmitting = ref(false);
 
-const closeApprovalModal = () => {
-    approvalModal.value = false;
-    setTimeout(() => {
-        form.reset();
-        form.clearErrors();
-    }, 300);
-};
-
-function reloadApproval(){
-    const query = {}
-    if(search.value) query.search = search.value
-    router.get(route('settings.index'), { tab: 'approvals', ...query }, { preserveState: true, preserveScroll: true , only: ['approvals', 'roles']})
-}
-
-const submitApproval = async () => {
-    form.processing = true;
-    
-    await axios.post(route('approvals.store'), form)
-        .then(response => {
-            approvalModal.value = false;
-            resetForm();
+const submit = async () => {
+    console.log(form.value);
+    isSubmitting.value = true;
+    await axios.post(route('approvals.store'), form.value)
+        .then((response) => {
+            isSubmitting.value = false;
             toast.success(response.data);
-            form.processing = false;
-            
-            // Refresh the page to show updated data
-            reloadApproval();
+            closeForm();
         })
         .catch(error => {
-            form.processing = false;
-           toast.error(error.response.data || 'An unexpected error occurred. Please try again later.');
+            isSubmitting.value = false;
+            toast.error(error.response.data)
         });
 };
 
-const confirmDelete = (approval) => {
-    selectedApproval.value = approval;
-    deleteModal.value = true;
+const editApproval = (approval) => {
+    form.value.id = approval.id;
+    form.value.role_id = approval.role_id;
+    form.value.model = approval.model;
+    form.value.action = approval.action;
+    form.value.sequence = approval.sequence;
+    form.value.notes = approval.notes;
+    showForm.value = true;
 };
 
-const closeModal = () => {
-    deleteModal.value = false;
-    selectedApproval.value = null;
+const deleteApproval = (id) => {
+    if (confirm('Are you sure you want to delete this approval step?')) {
+        form.delete(route('approvals.destroy', id));
+    }
 };
 
-const deleteApproval = () => {
-    form.processing = true;
-    
-    axios.delete(route('approvals.destroy', selectedApproval.value.id))
-        .then(response => {
-            form.processing = false;
-            closeModal();
-            toast.success(response.data);
-            // Refresh the page to show updated data
-            reloadApproval();
-        })
-        .catch(error => {
-            form.processing = false;
-            toast.error(error.response.data || 'An unexpected error occurred. Please try again later.');
-            console.error('Delete error:', error);
-        });
+const getRoleName = (roleId) => {
+    const role = props.roles.find(r => r.id === roleId);
+    return role ? role.name : 'Unknown';
 };
 
-const hasPermission = (permission) => {
-    return page.props.auth?.permissions && page.props.auth.permissions.includes(permission);
+const getModelName = (model) => {
+    const modelMap = {
+        'App\\Models\\PurchaseOrderItem': 'Purchase Order Item',
+        'App\\Models\\Order': 'Order',
+        'App\\Models\\Transfer': 'Transfer'
+    };
+    return modelMap[model] || model;
+};
+
+const getActionClass = (action) => {
+    const classes = {
+        confirm: 'bg-blue-100 text-blue-800',
+        verify: 'bg-yellow-100 text-yellow-800',
+        approve: 'bg-green-100 text-green-800'
+    };
+    return classes[action] || 'bg-gray-100 text-gray-800';
 };
 </script>

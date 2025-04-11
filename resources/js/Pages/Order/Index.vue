@@ -1206,9 +1206,6 @@ const downloadPDF = async () => {
     }
 };
 
-const printOrder = () => {
-    window.print();
-};
 </script>
 <style scoped>
 @keyframes slideInRight {

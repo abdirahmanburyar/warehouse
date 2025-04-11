@@ -69,22 +69,23 @@ class UserController extends Controller
                     Rule::unique('users', 'email')->ignore($request->id, 'id')
                 ],
                 'warehouse_id' => 'nullable|exists:warehouses,id',
-                'password' => 'nullable|string|min:8',
+                'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
             ]);
 
+            $userData = [
+                'name' => $request->name,
+                'username' => $request->username,
+                'email' => $request->email,
+                'warehouse_id' => $request->warehouse_id,
+            ];
+
             if ($request->filled('password')) {
-                $request->merge(['password' => Hash::make($request->password)]);
+                $userData['password'] = Hash::make($request->password);
             }
             
             $user = User::updateOrCreate(
                 ['id' => $request->id],
-                [
-                    'name' => $request->name,
-                    'username' => $request->username,
-                    'email' => $request->email,
-                    'warehouse_id' => $request->warehouse_id,
-                    'password' => $request->password
-                ]
+                $userData
             );
             
             return response()->json($request->id ? 'User updated successfully' : 'User created successfully',200);

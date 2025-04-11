@@ -19,7 +19,7 @@ class PurchaseOrder extends Model
         'created_by',
         'updated_by',
     ];
-    
+
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
@@ -47,5 +47,17 @@ class PurchaseOrder extends Model
     public function packingLists()
     {
         return $this->hasMany(PackingList::class, 'purchase_order_id');
+    }
+
+    public function receivedGoodsNotes()
+    {
+        return $this->hasManyThrough(
+            ReceivedGoodsNote::class, 
+            PackingList::class,
+            'purchase_order_id', // Foreign key on packing_lists table
+            'packing_list_id',   // Foreign key on received_goods_notes table
+            'id',                // Local key on purchase_orders table
+            'id'                 // Local key on packing_lists table
+        );
     }
 }

@@ -18,6 +18,12 @@ return new class extends Migration
             $table->date('packing_date');
             $table->string('status')->default('pending'); // pending, completed
             $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('verified_by')->nullable()->constrained('users');
+            $table->timestamp('verified_at')->nullable();
+            $table->foreignId('confirmed_by')->nullable()->constrained('users');
+            $table->timestamp('confirmed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

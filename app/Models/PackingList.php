@@ -18,6 +18,11 @@ class PackingList extends Model
         'status'
     ];
 
+    public function receivedGoodsNotes()
+    {
+        return $this->hasOne(ReceivedGoodsNote::class, 'packing_list_id');
+    }
+
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);

@@ -1,27 +1,31 @@
 <template>
-
     <Head :title="props.purchase_order.po_number" />
     <AuthenticatedLayout :auth="$page.props.auth" :errors="$page.props.errors">
-        <div class="flex h-full">
-            <div class="w-[300px] border-r border-gray-200 bg-white overflow-y-auto top-[50px]">
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Purchase Orders</h3>
-                    <div class="space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
-                        <div v-for="purchaseOrder in props.purchase_orders" :key="purchaseOrder.id"
-                            @click="selectPurchaseOrder(purchaseOrder)"
+        <div class="flex h-full relative">
+            <div class="fixed w-[300px] border-r border-gray-200 bg-white top-[200px] bottom-[50px] overflow-y-auto mr-[100px]">
+                <div class="h-full">
+                    <div class="sticky top-0 bg-white p-4 z-10">
+                        <h3 class="text-lg font-semibold text-gray-900">Purchase Orders</h3>
+                    </div>
+                    <div class="px-4 pb-4 space-y-2">
+                        <div v-for="p in props.purchase_orders" :key="p.id"
+                            @click="selectPurchaseOrder(p)"
                             class="p-3 rounded-md hover:bg-gray-50 cursor-pointer border border-gray-100"
-                            :class="{ 'bg-indigo-50 border-indigo-200': selectedPurchaseOrder?.id === purchaseOrder.id }">
+                            :class="{ 'bg-indigo-50 border-indigo-200': selectedPurchaseOrder?.id == p.id }">
                             <div class="flex justify-between">
-                                {{ purchaseOrder.po_number }}
+                                {{ p.po_number }}
                                 <span
-                                    :class="['px-2 py-1 text-xs rounded-full', purchaseOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">{{
-                                    purchaseOrder.status }}</span>
+                                    :class="['px-2 py-1 text-xs rounded-full', p.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">{{
+                                    p.status }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ p.po_date }}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="flex-1 min-w-0 overflow-hidden p-3">
+            <div class="flex-1 min-w-0 overflow-hidden p-3 ml-[300px]">
                 <!-- Header -->
                 <div class="mb-6">
                     <p class="mt-1 text-sm text-gray-600">
@@ -144,11 +148,10 @@
                                             Please select a packing list first
                                         </div>
                                     </div>
-                                    <table class="min-w-full divide-y divide-gray-300 text-xs">
+                                    <table class="min-w-full divide-y divide-gray-300 text-xs relative">
                                         <thead class="bg-gray-50 sticky top-0 z-10">
                                             <tr>
-                                                <th
-                                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
+                                                <th class="sticky left-0 z-20 bg-gray-50 py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 border-r">
                                                     Item</th>
                                                 <th class="px-2 text-left text-xs font-semibold text-gray-900">Quantity
                                                 </th>
@@ -181,8 +184,7 @@
                                             </tr>
                                             <tr v-for="item in form.items" :key="item.id"
                                                 class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
-                                                <td
-                                                    class="whitespace-nowrap py-4 pl-4 pr-3 text-xs font-medium text-gray-900">
+                                                <td class="sticky left-0 z-10 bg-white border-r whitespace-nowrap py-4 pl-4 pr-3 text-xs font-medium text-gray-900">
                                                     {{ item.product_name }}
                                                     <p v-if="item.generic_name" class="text-xs text-gray-500 mt-0.5">{{
                                                         item.generic_name }}</p>
@@ -255,6 +257,17 @@
                                                             'currency', currency: 'USD'
                                                     }) }}
                                                 </td>
+                                                <td class="px-2 pr-6 text-right text-xs font-semibold text-gray-900">
+                                                    <button v-if="getItemAction(item)"
+                                                        @click="handleAction(item, getItemAction(item).action)"
+                                                        class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white"
+                                                        :class="{
+                                                            'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': getItemAction(item).color === 'blue',
+                                                            'bg-green-600 hover:bg-green-700 focus:ring-green-500': getItemAction(item).color === 'green'
+                                                        }">
+                                                        {{ getItemAction(item).action === 'verify' ? 'Verify' : 'Approve' }}
+                                                    </button>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -284,137 +297,41 @@
                             </form>
                         </div>
                     </div>
-
-                    <!-- Import Modal -->
-                    <Modal :show="showImportModal" @close="showImportModal = false">
-                        <div class="p-6">
-                            <h2 class="text-lg font-medium text-gray-900">
-                                Import Items from Excel
-                            </h2>
-
-                            <div class="mt-4">
-                                <div class="flex items-center justify-center w-full">
-                                    <label
-                                        class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="1.5" stroke="currentColor"
-                                                xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5a2.25 2.25 0 002.25 2.25H15" />
-                                            </svg>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Click to upload</span> or drag and drop
-                                            </p>
-                                            <p class="text-xs text-gray-500">XLSX files only</p>
-                                        </div>
-                                        <input type="file" class="hidden" accept=".xlsx" @change="handleFileUpload"
-                                            ref="fileInput" />
-                                    </label>
-                                </div>
-
-                                <!-- Processing State -->
-                                <div v-if="importing" class="mt-4">
-                                    <div class="flex items-center justify-center">
-                                        <svg class="animate-spin h-5 w-5 text-indigo-500 mr-2"
-                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                        </svg>
-                                        <span>Importing items...</span>
-                                    </div>
-                                </div>
-
-                                <!-- Download Template Button -->
-                                <div class="mt-4 text-center">
-                                    <button type="button" class="text-sm text-indigo-600 hover:text-indigo-900"
-                                        @click="downloadTemplate">
-                                        Download Template
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="mt-6 flex justify-end">
-                                <button type="button"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                    @click="showImportModal = false">
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </Modal>
-
-                    <!-- Edit Modal -->
-                    <Modal :show="showEditModal" @close="closeEditModal">
-                        <div class="p-6">
-                            <h2 class="text-lg font-medium text-gray-900">Edit Item</h2>
-                            <form @submit.prevent="updateItem" class="mt-6">
-                                <div class="space-y-4">
-                                    <div>
-                                        <InputLabel for="received_quantity" value="Received Quantity" />
-                                        <TextInput id="received_quantity" type="number" class="mt-1 block w-full"
-                                            v-model="editForm.received_quantity" required />
-                                    </div>
-                                    <div>
-                                        <InputLabel for="damage_quantity" value="Damage Quantity" />
-                                        <TextInput id="damage_quantity" type="number" class="mt-1 block w-full"
-                                            v-model="editForm.damage_quantity" />
-                                    </div>
-                                    <div>
-                                        <InputLabel for="batch_number" value="Batch Number" />
-                                        <TextInput id="batch_number" type="text" class="mt-1 block w-full"
-                                            v-model="editForm.batch_number" />
-                                    </div>
-                                    <div>
-                                        <InputLabel for="expiry_date" value="Expiry Date" />
-                                        <TextInput id="expiry_date" type="date" class="mt-1 block w-full"
-                                            v-model="editForm.expiry_date" />
-                                    </div>
-                                    <div>
-                                        <InputLabel for="location" value="Location" />
-                                        <TextInput id="location" type="text" class="mt-1 block w-full"
-                                            v-model="editForm.location" />
-                                    </div>
-                                </div>
-                                <div class="mt-6 flex justify-end space-x-3">
-                                    <SecondaryButton @click="closeEditModal">Cancel</SecondaryButton>
-                                    <PrimaryButton :disabled="editForm.processing">Update</PrimaryButton>
-                                </div>
-                            </form>
-                        </div>
-                    </Modal>
                 </div>
 
                 <div v-if="currentTab === 'packing_lists'">
                     <!-- Bulk Actions Bar -->
-                    <div class="mb-4 flex justify-between items-center">
-                        <div class="flex items-center space-x-4">
-                            <span v-if="selectedItems.length > 0" class="text-sm text-gray-600">
-                                {{ selectedItems.length }} items selected
-                            </span>
-                            <button v-if="selectedItems.length > 0" @click="bulkApprove"
-                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
-                                Approve Selected
-                            </button>
+                    <div class="mb-4 flex justify-end items-center space-x-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" v-model="selectAll" @change="toggleSelectAll"
+                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                            <label class="ml-2 text-sm text-gray-600">Select All</label>
                         </div>
+                        <button
+                            @click="bulkVerify"
+                            :disabled="verifiableItemsCount === 0"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                            Bulk Verify ({{ verifiableItemsCount }})
+                        </button>
+                        <button
+                            @click="bulkApprove"
+                            :disabled="approvableItemsCount === 0"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                            Bulk Approve ({{ approvableItemsCount }})
+                        </button>
                     </div>
-
                     <!-- Packing Lists Table -->
                     <div class="relative shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                         <div class="max-h-[calc(100vh-250px)] overflow-auto mb-[50px]">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50 sticky top-0 z-10">
                                     <tr>
-                                        <th scope="col"
-                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             <input type="checkbox" v-model="selectAll" @change="toggleSelectAll"
-                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
                                         </th>
                                         <th scope="col"
-                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Packing List NO#</th>
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Packing List NO#</th>
                                         <th scope="col"
                                             class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date
                                         </th>
@@ -455,16 +372,14 @@
                                             class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Total Cost</th>
                                         <th scope="col"
-                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Actions</th>
+                                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="item in props.packingLists" :key="item.id" class="hover:bg-gray-50">
-                                        <td class="px-4 py-2 whitespace-nowrap">
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <input type="checkbox" v-model="selectedItems" :value="item.id"
-                                                :disabled="item.status === 'approved'"
-                                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
                                             item.packing_list_number }}</td>
@@ -472,10 +387,8 @@
                                             formatDate(item.packing_list_date) }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
                                             item.product?.barcode }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
-                                            item.product?.name }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.quantity
-                                        }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.product?.name }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{ item.quantity }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{
                                             item.received_quantity }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{{
@@ -502,13 +415,26 @@
                                                         fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                                         stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.25 2.25 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                     </svg>
                                                     Edit
                                                 </button>
-                                                <button v-if="!item.status || item.status === 'pending'"
-                                                    @click="approveItem(item.id)"
+                                                <button v-if="canVerify(item, $page.props.auth.roles)"
+                                                    @click="updateItemStatus(item.id, 'verify')"
+                                                    class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M4.5 12.75l6 6 9-13.5" />
+                                                    </svg>
+                                                    Verify
+                                                </button>
+                                                <button v-if="canApprove(item, $page.props.auth.roles)"
+                                                    @click="updateItemStatus(item.id, 'approve')"
                                                     class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M4.5 12.75l6 6 9-13.5" />
+                                                    </svg>
                                                     Approve
                                                 </button>
                                             </div>
@@ -533,8 +459,21 @@
                             </table>
                         </div>
                     </div>
+                    <!-- Bulk Actions Bar -->
+                    <div class="mb-4 flex justify-end items-center space-x-4">
+                        <button v-if="canUserVerify && verifiableItemsCount > 0"
+                            @click="bulkVerify"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                            Bulk Verify ({{ verifiableItemsCount }})
+                        </button>
+                        <button v-if="canUserApprove && approvableItemsCount > 0"
+                            @click="bulkApprove"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                            Bulk Approve ({{ approvableItemsCount }})
+                        </button>
+                    </div>
                     <!-- Edit Modal -->
-                    <Modal :show="showEditModal" @close="closeEditModal">
+                    <Modal :show="showEditModal" @close="closeEditModal" :maxWidth="'7xl'" class="print:hidden">
                         <div class="p-6">
                             <h2 class="text-lg font-medium text-gray-900">Edit Packing List Item</h2>
                             <form @submit.prevent="updateItem" class="mt-6">
@@ -573,11 +512,155 @@
                         </div>
                     </Modal>
                 </div>
+
+                <div v-if="currentTab === 'received_goods_notes'">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead>
+                                <tr>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RGN Number</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Packing List</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Warehouse</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Receiver</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Received At</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr v-for="rgn in props.purchase_order.received_goods_notes" :key="rgn.id">
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rgn.rgn_number }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rgn.packing_list?.packing_list_number }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rgn.warehouse?.name }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rgn.receiver?.name }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <span :class="{
+                                            'inline-flex rounded-full px-2 text-xs font-semibold leading-5': true,
+                                            'bg-yellow-100 text-yellow-800': rgn.status === 'pending',
+                                            'bg-green-100 text-green-800': rgn.status === 'received'
+                                        }">
+                                            {{ rgn.status }}
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rgn.received_at || '-' }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">  
+                                        <button @click="showRGN(rgn)" class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <Modal :show="showRGNModal" @close="closeRGNModal" :maxWidth="'7xl'" class="print:hidden">
+                        <div class="bg-white">
+                            <!-- Print/Download Actions -->
+                            <div class="absolute top-4 right-4 flex items-center gap-3 print:hidden">
+                                <button @click="downloadPDF"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    <i class="fas fa-download mr-2"></i> Download PDF
+                                </button>
+                                <button @click="closeRGNModal" class="text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
+
+                            <!-- Printable Content -->
+                            <div id="print-content" style="width: 350mm; min-height: 350mm; margin: 0 auto; padding: 20mm;">
+
+                                <div v-if="currentRGN" class="space-y-4">
+                                    <div class="flex justify-between border-b border-gray-300">
+                                        <div>
+                                            <img src="/assets/images/psi.jpg" class="w-16" alt="Logo" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm">GRN Number: {{ currentRGN.rgn_number }}</p>
+                                            <p class="text-sm">Date: {{ formatDate(currentRGN.created_at) }}</p>
+                                        </div>
+                                    </div>
+                                    <!-- Header Information -->
+                                    <div class="flex justify-between">
+                                        <div>
+                                            <h3 class="font-semibold text-lg mb-2">Purchase Order Information</h3>
+                                            <p class="text-sm">PO Number: {{ props.purchase_order.po_number }}</p>
+                                            <p class="text-sm">Order Date: {{ formatDate(props.purchase_order.po_date) }}</p>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-lg mb-2">Supplier Information</h3>
+                                            <p class="text-sm">Name: {{ props.purchase_order.supplier?.name }}</p>
+                                            <p class="text-sm">Contact: {{ props.purchase_order.supplier?.contact_person }}</p>
+                                            <p class="text-sm">Phone: {{ props.purchase_order.supplier?.phone }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <p class="text-base font-semibold">Date: {{ moment().format('LL') }}</p>
+                                    </div>
+
+                                    <!-- Items Table -->
+                                    <div>
+                                        <h3 class="font-semibold text-lg mb-3">Items Received</h3>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-300">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Item</th>
+                                                        <th class="px-3 py-2 text-right text-sm font-semibold bg-gray-50">Quantity</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Warehouse</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Location</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Expiry Date</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Batch #</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Unit Cost</th>
+                                                        <th class="px-3 py-2 text-left text-sm font-semibold bg-gray-50">Total Cost</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-200">
+                                                    <tr v-for="item in currentRGN.packing_list?.purchase_order_items" :key="item.id">
+                                                        <td class="px-3 py-2 text-sm">{{ item.product?.name }}</td>
+                                                        <td class="px-3 py-2 text-sm text-right">{{ item.quantity }}</td>
+                                                        <td class="px-3 py-2 text-sm">{{ item.warehouse?.name }}</td>
+                                                        <td class="px-3 py-2 text-sm">{{ item.location }}</td>
+                                                        <td class="px-3 py-2 text-sm">{{ item.expiry_date ? moment(item.expiry_date).format('LL') : '' }}</td>
+                                                        <td class="px-3 py-2 text-sm">{{ item.batch_number }}</td>
+                                                        <td class="px-3 py-2 text-sm text-right">{{ formatMoney(item.unit_cost) }}</td>
+                                                        <td class="px-3 py-2 text-sm text-right">{{ formatMoney(item.total_cost) }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Signatures -->
+                                    <div class="mt-[100px] flex justify-between">
+                                        <div class="text-start">
+                                            <div class="border-gray-300 pt-2">
+                                                <p class="font-semibold">Received By</p>
+                                                <p class="text-sm">{{ currentRGN.receiver?.name }}</p>
+                                                <p class="text-sm text-gray-500">{{ formatDate(currentRGN.received_at) }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-start">
+                                            <div class="border-gray-300 pt-2">
+                                                <p class="font-semibold">Verified By</p>
+                                                <p class="text-sm">{{ props.purchase_order.approvals?.find(a => a.action === 'verify')?.role?.name || 'N/A'}}</p>
+                                                <p class="text-sm text-gray-500">Date: {{ moment().format('LL') }}</p>                                                
+                                            </div>
+                                        </div>
+                                        <div class="text-start">
+                                            <div class="border-gray-300 pt-2">
+                                                <p class="font-semibold">Approved By</p>
+                                                <p class="text-sm">{{ props.purchase_order.approvals?.find(a => a.action === 'approve')?.role?.name || 'N/A'}}</p>
+                                                <p class="text-sm text-gray-500">Date: {{ moment().format('LL') }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Modal>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
-
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
@@ -592,6 +675,12 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
+import { useToast } from 'vue-toastification';
+import jsPDF from 'jspdf';
+import moment from 'moment';
+import { usePage } from '@inertiajs/vue3';
+
+const toast = useToast();
 
 const props = defineProps({
     purchase_order: {
@@ -612,25 +701,29 @@ const props = defineProps({
     }
 });
 
+const formatMoney = (value) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(value);
+};
+
 const selectedPurchaseOrder = ref(props.purchase_order);
 
-function selectPurchaseOrder(purchaseOrder) {
-    selectedPurchaseOrder.value = purchaseOrder;
+function selectPurchaseOrder(purchaseOrder) {        
     router.get(route('purchase-orders.packing-list', purchaseOrder.id), {}, {
-        preserveState: true,
+        preserveState: false, // Don't preserve state to ensure fresh data
         preserveScroll: true,
-        only: ['purchase_order', 'packingLists', 'warehouses'],
-        onSuccess: () => {
-            currentTab.value = 'items';
-            selectedPackingList.value = null;
-        }
+        only: ['purchase_order', 'packingLists', 'warehouses']
     });
+
 }
 
 // Tab Management
 const tabs = [
-    { name: 'items', label: 'Items' },
-    { name: 'packing_lists', label: 'Packing Lists' }
+    { name: 'items', label: 'PO Items' },
+    { name: 'packing_lists', label: 'Packing Lists' },
+    { name: 'received_goods_notes', label: 'Received Goods Notes' }
 ];
 const currentTab = ref('items');
 
@@ -647,7 +740,6 @@ const fileInput = ref(null);
 const isOpen = ref(false);
 
 function reloadPO() {
-    console.log('Reloading PO');
     const query = {}
     router.get(route('purchase-orders.packing-list', props.purchase_order.id), query, {
         preserveState: false,
@@ -707,7 +799,7 @@ const createPackingList = async () => {
         console.error('Failed to create packing list:', error);
         Swal.fire({
             title: 'Error!',
-            text: error.response?.data?.message || 'Failed to create packing list',
+            text: error.response?.data || 'Failed to create packing list',
             icon: 'error',
             confirmButtonColor: '#EF4444',
             customClass: {
@@ -767,18 +859,7 @@ const handleFileUpload = async (event) => {
             }
         );
 
-        Swal.fire({
-            title: 'Success!',
-            text: 'Items imported successfully',
-            icon: 'success',
-            confirmButtonColor: '#10B981',
-            customClass: {
-                popup: 'rounded-lg',
-                title: 'text-lg font-semibold text-gray-900',
-                htmlContainer: 'text-gray-700'
-            }
-        });
-
+        toast.success('PO Items imported successfully');
         // Refresh the items list if a packing list is selected
         if (selectedPackingList.value) {
             await selectPackingList(selectedPackingList.value);
@@ -788,9 +869,10 @@ const handleFileUpload = async (event) => {
         console.error('Import failed:', error);
         Swal.fire({
             title: 'Error!',
-            text: error.response?.data?.message || 'Failed to import items',
+            text: error.response?.data || 'Failed to import items',
             icon: 'error',
             confirmButtonColor: '#EF4444',
+            zIndex: 9999,
             customClass: {
                 popup: 'rounded-lg',
                 title: 'text-lg font-semibold text-gray-900',
@@ -808,9 +890,9 @@ const handleFileUpload = async (event) => {
 const downloadTemplate = () => {
     // Create a sample Excel template with the correct format
     const worksheet = XLSX.utils.aoa_to_sheet([
-        ['Item Code', 'Item Description', 'UoM', 'Quantity', 'Unit Cost'], // Header row
-        ['ITEM001', 'Sample Product', 'PCS', '100', '10.50'], // Sample data row
-        ['ITEM002', 'Another Product', 'BOX', '50', '25.00'] // Another sample row
+        ['Item Code', 'Item Description', 'UoM', 'Quantity', 'Unit Cost', 'Total Cost'], // Header row
+        ['ITEM001', 'Sample Product', 'PCS', '100', '10.50', '1050'], // Sample data row
+        ['ITEM002', 'Another Product', 'BOX', '50', '25.00', '1250'] // Another sample row
     ]);
 
     // Set column widths
@@ -819,7 +901,8 @@ const downloadTemplate = () => {
         { wch: 40 }, // Item Description
         { wch: 10 }, // UoM
         { wch: 12 }, // Quantity
-        { wch: 12 }  // Unit Cost
+        { wch: 12 }, // Unit Cost
+        { wch: 12 }  // Total Cost
     ];
     worksheet['!cols'] = wscols;
 
@@ -828,18 +911,6 @@ const downloadTemplate = () => {
 
     // Generate and download the file
     XLSX.writeFile(workbook, `purchase_order_items_template.xlsx`);
-
-    Swal.fire({
-        title: 'Success!',
-        text: 'Template downloaded successfully',
-        icon: 'success',
-        confirmButtonColor: '#10B981',
-        customClass: {
-            popup: 'rounded-lg',
-            title: 'text-lg font-semibold text-gray-900',
-            htmlContainer: 'text-gray-700'
-        }
-    });
 };
 
 const selectPackingList = async (packingList) => {
@@ -922,6 +993,115 @@ const validateDamageQuantity = (item) => {
     }
 };
 
+const userRoles = computed(() => usePage().props.auth?.user?.roles || []);
+
+const getItemAction = (item) => {
+    const verifyApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'verify' && 
+        a.model === 'PurchaseOrderItem' && 
+        userRoles.value.includes(a.role_id)
+    );
+    const approveApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'approve' && 
+        a.model === 'PurchaseOrderItem' && 
+        userRoles.value.includes(a.role_id)
+    );
+
+    if (verifyApproval && (!item.status || item.status === 'pending')) {
+        return { action: 'verify', color: 'blue' };
+    }
+
+    if (approveApproval && item.status === 'verified') {
+        return { action: 'approve', color: 'green' };
+    }
+
+    return null;
+};
+
+const updateItemStatus = async (itemIds, action) => {
+    try {
+        const isArray = Array.isArray(itemIds);
+        const items = isArray ? itemIds : [itemIds];
+        const status = action === 'verify' ? 'verified' : 'approved';
+        const actionText = isArray ? `Bulk ${action}` : action;
+        
+        const result = await Swal.fire({
+            title: `${actionText} ${items.length > 1 ? 'Items' : 'Item'}`,
+            text: `Are you sure you want to ${action} ${items.length} ${items.length > 1 ? 'items' : 'item'}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: action === 'verify' ? '#3085d6' : '#10B981',
+            cancelButtonColor: '#d33',
+            confirmButtonText: `Yes, ${action} ${items.length > 1 ? 'them' : 'it'}!`
+        });
+
+        if (result.isConfirmed) {
+            await axios.post(route('purchase-orders.packing-list.bulk-approve', props.purchase_order.id), {
+                items: items,
+                purchase_order_id: props.purchase_order.id,
+                status: status
+            });
+
+            Swal.fire({
+                title: 'Success!',
+                text: `${items.length} ${items.length > 1 ? 'items have' : 'item has'} been ${status}`,
+                icon: 'success',
+                confirmButtonColor: action === 'verify' ? '#3085d6' : '#10B981'
+            });
+
+            // Clear selections after bulk actions
+            if (isArray) {
+                selectedItems.value = [];
+                selectAll.value = false;
+            }
+            reloadPO();
+        }
+    } catch (error) {
+        console.error(`Error ${action} items:`, error);
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || `Failed to ${action} items`,
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+};
+
+const handleAction = (item, action) => {
+    if (action === 'verify') {
+        updateItemStatus(item.id, 'verify');
+    } else if (action === 'approve') {
+        Swal.fire({
+            title: 'Approve Item',
+            text: 'Are you sure you want to approve this item?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, approve it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                updateItemStatus(item.id, 'approve');
+            }
+        });
+    }
+};
+
+const showRGNModal = ref(false);
+const currentRGN = ref(null);
+
+const showRGN = (rgn) => {
+    console.log('Modal should show:', showRGNModal.value);
+    console.log('RGN data:', rgn);
+    currentRGN.value = rgn;
+    showRGNModal.value = true;
+};
+
+const closeRGNModal = () => {
+    showRGNModal.value = false;
+    currentRGN.value = null;
+};
+
 const isSubmitting = ref(false);
 
 async function savePackingList() {
@@ -979,15 +1159,18 @@ async function savePackingList() {
                     isSubmitting.value = false;
                 }
             });
+            isSubmitting.value = false;
         } else {
             // All items are complete, proceed directly
             await proceedWithSave(completeItems);
+            isSubmitting.value = false;
         }
     } catch (error) {
+        isSubmitting.value = false;
         console.error('Failed to save items:', error);
         Swal.fire({
             title: 'Error!',
-            text: error.response?.data?.message || 'Failed to save items',
+            text: error.response?.data || 'Failed to save items',
             icon: 'error',
             confirmButtonColor: '#EF4444',
             customClass: {
@@ -996,7 +1179,6 @@ async function savePackingList() {
                 htmlContainer: 'text-gray-700'
             }
         });
-        isSubmitting.value = false;
     }
 }
 
@@ -1071,152 +1253,56 @@ const selectAll = ref(false);
 const toggleSelectAll = () => {
     if (selectAll.value) {
         selectedItems.value = props.packingLists
-            .filter(item => item.status !== 'approved')
+            .filter(item => {
+                if (canUserVerify && !canUserApprove) {
+                    return item.status === 'pending';
+                } else if (canUserApprove && !canUserVerify) {
+                    return item.status === 'verified';
+                }
+                return true;
+            })
             .map(item => item.id);
     } else {
         selectedItems.value = [];
     }
 };
 
-// Watch for changes in selected items
-watch(selectedItems, () => {
-    const selectableItems = props.packingLists.filter(item => item.status !== 'approved');
-    selectAll.value = selectableItems.length > 0 &&
-        selectedItems.value.length === selectableItems.length;
+// Computed properties for bulk actions
+const verifiableItemsCount = computed(() => {
+    return selectedItems.value.filter(id => {
+        const item = props.packingLists.find(i => i.id === id);
+        return item && item.status === 'pending';
+    }).length;
 });
 
-// Bulk approve selected items
-const bulkApprove = () => {
-    if (selectedItems.value.length === 0) {
-        Swal.fire({
-            title: 'No Items Selected',
-            text: 'Please select items to approve',
-            icon: 'warning',
-            confirmButtonColor: '#F59E0B',
-            customClass: {
-                popup: 'rounded-lg',
-                title: 'text-lg font-semibold text-gray-900',
-                htmlContainer: 'text-gray-700'
-            }
-        });
-        return;
-    }
+const approvableItemsCount = computed(() => {
+    return selectedItems.value.filter(id => {
+        const item = props.packingLists.find(i => i.id === id);
+        return item && item.status === 'verified';
+    }).length;
+});
 
-    Swal.fire({
-        title: 'Bulk Approve Items',
-        text: `Are you sure you want to approve ${selectedItems.value.length} items?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, Approve All',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        reverseButtons: true,
-        customClass: {
-            popup: 'rounded-lg',
-            title: 'text-lg font-semibold text-gray-900',
-            htmlContainer: 'text-gray-700'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            axios.post(route('purchase-orders.packing-list.bulk-approve', { purchaseOrder: props.purchase_order.id }), {
-                items: selectedItems.value,
-                purchase_order_id: props.purchase_order.id
-            })
-                .then(response => {
-                    Swal.fire({
-                        title: 'Approved!',
-                        text: response.data.message,
-                        icon: 'success',
-                        confirmButtonColor: '#10B981',
-                        customClass: {
-                            popup: 'rounded-lg',
-                            title: 'text-lg font-semibold text-gray-900',
-                            htmlContainer: 'text-gray-700'
-                        }
-                    });
-                    selectedItems.value = [];
-                    selectAll.value = false;
-                    reloadPO();
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.response?.data?.message || 'Failed to approve items',
-                        icon: 'error',
-                        confirmButtonColor: '#EF4444',
-                        customClass: {
-                            popup: 'rounded-lg',
-                            title: 'text-lg font-semibold text-gray-900',
-                            htmlContainer: 'text-gray-700'
-                        }
-                    });
-                });
-        }
-    });
+// Watch for changes in selected items
+watch(selectedItems, (newVal) => {
+    selectAll.value = newVal.length === props.packingLists.length && props.packingLists.length > 0;
+});
+
+const canVerify = (item, roles) => {
+    const verifyApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'verify' && 
+        a.model === 'PurchaseOrderItem' &&
+        roles.includes(a.role_id)
+    );
+    return !!verifyApproval && item.status === 'pending';
 };
 
-// Individual item approval
-const approveItem = (itemId) => {
-    Swal.fire({
-        title: 'Approve Item',
-        text: 'Are you sure you want to approve this item?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, Approve',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        reverseButtons: true,
-        customClass: {
-            popup: 'rounded-lg',
-            title: 'text-lg font-semibold text-gray-900',
-            htmlContainer: 'text-gray-700'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            axios.post(route('purchase-orders.packing-list.bulk-approve', { purchaseOrder: props.purchase_order.id }), {
-                items: [itemId],
-                purchase_order_id: props.purchase_order.id
-            })
-                .then(response => {
-                    Swal.fire({
-                        title: 'Approved!',
-                        text: response.data.message,
-                        icon: 'success',
-                        confirmButtonColor: '#10B981',
-                        customClass: {
-                            popup: 'rounded-lg',
-                            title: 'text-lg font-semibold text-gray-900',
-                            htmlContainer: 'text-gray-700'
-                        }
-                    });
-                    reloadPO();
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.response?.data?.error || 'Failed to approve item',
-                        icon: 'error',
-                        confirmButtonColor: '#EF4444',
-                        customClass: {
-                            popup: 'rounded-lg',
-                            title: 'text-lg font-semibold text-gray-900',
-                            htmlContainer: 'text-gray-700'
-                        }
-                    });
-                });
-        }
-    });
-};
-
-const getStatusClass = (status) => {
-    const classes = {
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'completed': 'bg-green-100 text-green-800',
-        'cancelled': 'bg-red-100 text-red-800'
-    };
-    return `px-2 py-1 text-xs font-medium rounded-full ${classes[status.toLowerCase()] || 'bg-gray-100 text-gray-800'}`;
+const canApprove = (item, roles) => {
+    const approveApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'approve' && 
+        a.model === 'PurchaseOrderItem' &&
+        roles.includes(a.role_id)
+    );
+    return !!approveApproval && item.status === 'verified';
 };
 
 const showEditModal = ref(false);
@@ -1232,11 +1318,11 @@ const editForm = ref({
 const openEditModal = (item) => {
     editForm.value = {
         id: item.id,
-        received_quantity: item.received_quantity,
-        damage_quantity: item.damage_quantity,
-        batch_number: item.batch_number,
-        expiry_date: item.expiry_date,
-        location: item.location
+        received_quantity: item.received_quantity || '',
+        damage_quantity: item.damage_quantity || '',
+        batch_number: item.batch_number || '',
+        expiry_date: item.expiry_date || '',
+        location: item.location || ''
     };
     showEditModal.value = true;
 };
@@ -1284,67 +1370,160 @@ const updateItem = async () => {
         });
     }
 }
+
+const downloadPDF = async () => {
+    const doc = new jsPDF('l', 'mm', [350, 350]);
+    const element = document.getElementById('print-content'); // Changed from 'printable-content' to 'print-content'
+
+    if (!element) {
+        console.error('Print element not found');
+        return;
+    }
+
+    // Create a clone of the element to ensure proper rendering
+    const printContent = element.cloneNode(true);
+
+    // Temporarily append to document to ensure proper rendering
+    printContent.style.display = 'block';
+    document.body.appendChild(printContent);
+
+    try {
+        await doc.html(printContent, {
+            callback: (doc) => {
+                // Remove blank pages if they exist
+                if (doc.internal.pages.length > 1 &&
+                    doc.internal.pages[doc.internal.pages.length - 1].length < 100) {
+                    doc.deletePage(doc.internal.pages.length);
+                }
+                doc.save(`rgn-${currentRGN.value.rgn_number}.pdf`);
+            },
+            x: 10,
+            y: 10,
+            width: 330, // Leave some margin
+            windowWidth: 1320,
+            autoPaging: 'text'
+        });
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+    } finally {
+        // Clean up the temporary element
+        document.body.removeChild(printContent);
+    }
+};
+
+const canUserVerify = computed(() => {
+    const verifyApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'verify' && 
+        a.model === 'PurchaseOrderItem' && 
+        userRoles.value.includes(a.role_id)
+    );
+    console.log('Verify Approval:', verifyApproval);
+    console.log('User Roles:', userRoles.value);
+    console.log('Props Approvals:', props.purchase_order.approvals);
+    return !!verifyApproval;
+});
+
+const canUserApprove = computed(() => {
+    const approveApproval = props.purchase_order.approvals?.find(a => 
+        a.action === 'approve' && 
+        a.model === 'PurchaseOrderItem' && 
+        userRoles.value.includes(a.role_id)
+    );
+    console.log('Approve Approval:', approveApproval);
+    console.log('User Roles:', userRoles.value);
+    console.log('Props Approvals:', props.purchase_order.approvals);
+    return !!approveApproval;
+});
+
+const bulkVerify = () => {
+    const verifiableItems = selectedItems.value.filter(id => {
+        const item = props.packingLists.find(i => i.id === id);
+        return item && item.status === 'pending';
+    });
+    
+    if (!verifiableItems.length) {
+        Swal.fire({
+            title: 'No Items to Verify',
+            text: 'Please select items that need verification',
+            icon: 'warning'
+        });
+        return;
+    }
+    updateItemStatus(verifiableItems, 'verify');
+};
+
+const bulkApprove = () => {
+    const approvableItems = selectedItems.value.filter(id => {
+        const item = props.packingLists.find(i => i.id === id);
+        return item && item.status === 'verified';
+    });
+    
+    if (!approvableItems.length) {
+        Swal.fire({
+            title: 'No Items to Approve',
+            text: 'Please select verified items to approve',
+            icon: 'warning'
+        });
+        return;
+    }
+    updateItemStatus(approvableItems, 'approve');
+};
 </script>
 
 <style scoped>
-.cursor-pointer {
-    cursor: pointer;
+/* A4 dimensions */
+.a4-page {
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 2cm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 0.5cm rgba(0,0,0,0.1);
 }
 
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+/* Modal max width override */
+:deep(.modal-content) {
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 auto;
 }
 
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
+/* Print styles */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
+    
+    body * {
+        visibility: hidden;
+    }
+    
+    .modal-content-wrapper {
+        padding: 0;
+        margin: 0;
+        max-height: none;
+        width: 21cm;
+    }
+    
+    #print-content,
+    #print-content * {
+        visibility: visible;
+    }
+    
+    #print-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 2cm;
+        width: 21cm;
+        min-height: 29.7cm;
+        background: white;
+    }
 
-.overflow-x-auto {
-    overflow: auto;
-}
-
-/* Custom scrollbar styling */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-/* For Firefox */
-* {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-/* Ensure the table header stays fixed */
-thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: #f9fafb;
-}
-
-/* Table container */
-.table-container {
-    position: relative;
-    overflow: auto;
-    max-height: calc(100vh - 200px);
-    border-radius: 0.5rem;
+    .no-print {
+        display: none !important;
+    }
 }
 </style>

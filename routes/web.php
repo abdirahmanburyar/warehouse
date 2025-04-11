@@ -153,23 +153,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
         });
-
-    // Approval Routes
-    Route::controller(ApprovalController::class)
-        ->prefix('approvals')
-        // ->middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class])
-        ->group(function () {
-            Route::get('/', 'index')
-                ->name('approvals.index');
-            Route::get('/create', 'create')
-                ->name('approvals.create');
-            Route::get('/{approval}/edit', 'edit')
-            ->name('approvals.edit');
-        Route::post('/', 'store')
-            ->name('approvals.store');
-        Route::delete('/{approval}', 'destroy')
-            ->name('approvals.destroy');
-    });
         
     // Supplier Routes
     Route::controller(SupplierController::class)
@@ -200,12 +183,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/{purchaseOrder}/packing-list/create', 'createPackingList')->name('packing-list.create');
         Route::get('/packing-list/{id}/items', 'getPackingListItems')->name('packing-list.items');
         Route::post('/{purchaseOrder}/packing-list/update-item', 'updateItem')->name('packing-list.update-item');
-        Route::post('/{purchaseOrder}/packing-list/bulk-approve', [PurchaseOrderController::class, 'bulkApprove'])->name('packing-list.bulk-approve');
+        Route::post('/{purchaseOrder}/packing-list/bulk-approve', 'bulkApprove')->name('packing-list.bulk-approve');
         Route::get('/{purchaseOrder}/packing-list/export', 'exportPackingList')->name('packing-list.export');
-        
+
         // Import Route
         Route::post('/import-items', 'importItems')->name('import-items');
-        Route::post('/{purchaseOrder}/packing-list/bulk-approve', [PurchaseOrderController::class, 'bulkApprove'])->name('packing-list.bulk-approve');
     });
 
     // Settings Routes
@@ -229,6 +211,14 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/bulk', 'bulk')->name('orders.bulk');
             Route::post('/search', 'searchProduct')->name('order.product.search');
             Route::post('/status', 'changeStatus')->name('orders.change-status');   
+        });
+
+    Route::controller(ApprovalController::class)
+        ->prefix('approvals')
+        ->group(function () {
+            Route::get('/', 'index')->name('approvals.index');
+            Route::post('/', 'store')->name('approvals.store');
+            Route::delete('/{approval}/destroy', 'destroy')->name('approvals.destroy');
         });
 
     

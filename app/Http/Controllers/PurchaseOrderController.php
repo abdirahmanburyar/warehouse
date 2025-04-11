@@ -10,11 +10,13 @@ use App\Models\Supplier;
 use App\Models\BackOrder;
 use App\Models\PackingList;
 use App\Models\Warehouse;
+use App\Models\Approval;
 use App\Imports\PurchaseOrderItemsImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\ReceivedGoodsNote;
 use App\Http\Resources\PurchaseOrderResource;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Maatwebsite\Excel\Facades\Excel;
@@ -114,41 +116,47 @@ class PurchaseOrderController extends Controller
 
     public function packingList($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['supplier', 'items.product', 'creator', 'updater', 'packingLists.purchaseOrderItems.warehouse', 'packingLists.purchaseOrderItems.product', 'packingLists.creator',  'po_items' => function($q) {
-            $q->where('quantity', '>', 0)
-              ->addSelect([
-                'po_items.*',
-                'products.id as product_id',
-                'products.name as product_name'
-              ])
-              ->leftJoin('products', function($join) {
-                  $join->on(function($query) {
-                      $query->whereColumn('products.name', 'po_items.item_description')
-                            ->orWhereColumn('products.barcode', 'po_items.item_code');
+        $purchaseOrder = PurchaseOrder::with([
+            'supplier',
+            'packingLists.purchaseOrderItems.product',
+            'receivedGoodsNotes.receiver',
+            'receivedGoodsNotes.warehouse',
+            'receivedGoodsNotes.packingList.purchaseOrderItems.product',
+            'receivedGoodsNotes.packingList.purchaseOrderItems.warehouse',
+            'po_items' => function($q) {
+                $q->where('quantity', '>', 0)
+                  ->addSelect([
+                    'po_items.*',
+                    'products.id as product_id',
+                    'products.name as product_name'
+                  ])
+                  ->leftJoin('products', function($join) {
+                      $join->on(function($query) {
+                          $query->whereColumn('products.name', 'po_items.item_description')
+                                ->orWhereColumn('products.barcode', 'po_items.item_code');
+                      });
                   });
-              });
-        }])->findOrFail($id);
-        
-        $purchaseOrder['po_items'] = $purchaseOrder->po_items->transform(function($item) use ($purchaseOrder) {
-            return [
-                'purchase_order_id' => $purchaseOrder->id,
+            }
+        ])
+        ->findOrFail($id);
+
+        // Transform PO items while preserving original data
+        $purchaseOrder['po_items'] = $purchaseOrder->po_items->map(function($item) use ($purchaseOrder) {
+            $originalData = $item->toArray();
+            return array_merge($originalData, [
                 'packing_list_id' => null,
                 'damage_quantity' => 0,
-                'product_id' => $item->product_id,
                 'warehouse_id' => null,
                 'location' => '',
                 'expiry_date' => null,
                 'batch_number' => null,
                 'generic_name' => null,
-                'product_name' => $item->product_name,
-                'quantity' => $item->quantity,
-                'received_quantity' => 0,
-                'unit_cost' => $item->unit_cost,
-                'total_cost' => $item->total_cost
-            ];
-        })->values()->toArray();
+                'product_name' => $item->product_name ?? $item->item_description,
+                'received_quantity' => 0
+            ]);
+        })->values();
 
-        // Flatten all purchase order items from packing lists into one array
+        // Get packing list items
         $flattenedItems = collect();
         foreach ($purchaseOrder->packingLists as $packingList) {
             $items = collect($packingList->purchaseOrderItems)->map(function($item) use ($packingList) {
@@ -162,11 +170,28 @@ class PurchaseOrderController extends Controller
             $flattenedItems = $flattenedItems->concat($items);
         }
 
+        // Get all purchase order item IDs from the received goods notes
+        $poItemIds = collect($purchaseOrder->receivedGoodsNotes)
+            ->pluck('packing_list.purchase_order_items')
+            ->flatten()
+            ->pluck('id')
+            ->unique()
+            ->values()
+            ->all();
+
+        // Load approvals separately
+        $purchaseOrder['approvals'] = Approval::where('model', 'PurchaseOrderItem')
+            ->whereIn('action', ['verify', 'approve'])
+            ->with('role')
+            ->get()
+            ->values()
+            ->toArray();
+
         return Inertia::render('PurchaseOrder/PackingList', [
             'purchase_order' => $purchaseOrder,
             'packingLists' => $flattenedItems->values()->all(),
             'warehouses' => Warehouse::get(),
-            'purchase_orders' => PurchaseOrder::get()
+            'purchase_orders' => PurchaseOrder::with(['po_items', 'items', 'packingLists'])->get()
         ]);
     }
 
@@ -227,13 +252,11 @@ class PurchaseOrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            logger()->info($request->items);
             
             $validated = $request->validate([
                 'items' => 'required|array',
                 'items.*.packing_list_id' => 'nullable|exists:packing_lists,id',
                 'items.*.purchase_order_id' => 'required|exists:purchase_orders,id',
-                'items.*.id' => 'nullable|exists:purchase_order_items,id',
                 'items.*.quantity' => 'nullable|numeric|min:0',
                 'items.*.received_quantity' => 'nullable|numeric|min:0',
                 'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
@@ -249,9 +272,7 @@ class PurchaseOrderController extends Controller
             
             foreach ($request->items as $item) {
                 // Find or create PurchaseOrderItem
-                $purchaseOrderItem = PurchaseOrderItem::updateOrCreate(
-                    ['id' => $item['id']],
-                    [
+                $purchaseOrderItem = PurchaseOrderItem::create([
                         'packing_list_id' => $item['packing_list_id'],
                         'purchase_order_id' => $item['purchase_order_id'],
                         'product_id' => $item['product_id'],
@@ -266,8 +287,7 @@ class PurchaseOrderController extends Controller
                         'unit_cost' => $item['unit_cost'],
                         'total_cost' => $item['total_cost'],
                         'damage_quantity' => $item['damage_quantity'],
-                    ]
-                );
+                    ]);
 
                 // Find and update corresponding PoItem
                 $poItem = PoItem::where('item_description', $item['product_name'])
@@ -390,16 +410,23 @@ class PurchaseOrderController extends Controller
             Excel::import(new PurchaseOrderItemsImport($purchaseOrderId), $file);
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Items imported successfully'], 200);
+            return response()->json('Items imported successfully', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json($e->getMessage(), 500);
         }
     }
 
     public function createPackingList(Request $request, $id)
     {
         try {
+            $user = Auth::user();
+            $roleIds = $user->roles->pluck('id')->toArray();
+            $approver = Approval::where('model', 'PurchaseOrderItem')->whereIn('role_id', $roleIds)->first();
+            logger()->info($roleIds);
+            if(!$approver || $approver->action !== 'confirm') {
+                return response()->json('Unauthorized to perform this action', 401);
+            }
             // Generate a unique packing list number
             $packingListNumber = 'PL-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
@@ -410,54 +437,79 @@ class PurchaseOrderController extends Controller
                 'packing_list_number' => $packingListNumber,
                 'packing_date' => Carbon::now()->toDateString(),
             ]);
+
+            // Create a Received Goods Note
+            $rgnNumber = 'GRN-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+            logger()->info($user);
+            if($user->warehouse_id == null) {
+                return response()->json('You need to assign a warehouse to yourself before creating a packing list.', 401);
+            }
+            ReceivedGoodsNote::create([
+                'packing_list_id' => $packingList->id,
+                'rgn_number' => $rgnNumber,
+                'receiver_id' => $user->id,
+                'warehouse_id' => $user->warehouse_id,
+                'received_at' => Carbon::now(),
+                'status' => 'pending'
+            ]);
             
             return response()->json([
                 'message' => 'Packing list created successfully',
                 'packing_list' => $packingList
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to create packing list',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json($e->getMessage(), 500);
         }
     }
 
-    public function bulkApprove(Request $request)
+    public function bulkApprove(Request $request, $purchaseOrder)
     {
         try {
-            try {
-                DB::beginTransaction();
-                if (!auth()->user()->hasRole('Supply Chain Manager')) {
-                    return response()->json([
-                        'message' => 'Unauthorized to perform this action'
-                    ], 401);
-                }
-    
-                $request->validate([
-                    'items' => 'required|array',
-                    'items.*' => 'exists:purchase_order_items,id',
-                    'purchase_order_id' => 'required|exists:purchase_orders,id'
-                ]);
-                // Get the purchase order items with their details
-                $items = DB::table('purchase_order_items')
-                    ->whereIn('id', $request->items)
-                    ->get();
+            $request->validate([
+                'items' => 'required|array',
+                'items.*' => 'exists:purchase_order_items,id',
+                'status' => 'required|in:verified,approved'
+            ]);
 
+            $items = DB::table('purchase_order_items')
+                ->whereIn('id', $request->items)
+                ->where('purchase_order_id', $purchaseOrder)
+                ->get();
+
+            if ($request->status === 'approved') {
+                // Check if all items are verified first
                 foreach ($items as $item) {
-                    // Update purchase order item status
-                    DB::table('purchase_order_items')
-                        ->where('id', $item->id)
-                        ->update(['status' => 'approved']);
+                    if ($item->status !== 'verified') {
+                        return response()->json(['error' => 'All items must be verified first'], 422);
+                    }
+                }
+            }
 
-                    // Check if inventory record exists
+            foreach ($items as $item) {
+                $updateData = [
+                    'status' => $request->status
+                ];
+
+                if ($request->status === 'verified') {
+                    $updateData['verified_at'] = now();
+                    $updateData['verified_by'] = auth()->id();
+                } else {
+                    $updateData['approved_at'] = now();
+                    $updateData['approved_by'] = auth()->id();
+                }
+
+                DB::table('purchase_order_items')
+                    ->where('id', $item->id)
+                    ->update($updateData);
+
+                // If approving, update inventory
+                if ($request->status === 'approved') {
                     $inventory = DB::table('inventories')
                         ->where('product_id', $item->product_id)
                         ->where('warehouse_id', $item->warehouse_id)
                         ->first();
 
                     if ($inventory) {
-                        // Update existing inventory
                         DB::table('inventories')
                             ->where('id', $inventory->id)
                             ->update([
@@ -468,7 +520,6 @@ class PurchaseOrderController extends Controller
                                 'updated_at' => now()
                             ]);
                     } else {
-                        // Create new inventory record
                         DB::table('inventories')->insert([
                             'product_id' => $item->product_id,
                             'warehouse_id' => $item->warehouse_id,
@@ -483,13 +534,9 @@ class PurchaseOrderController extends Controller
                         ]);
                     }
                 }
-
-                DB::commit();
-                return response()->json(['message' => 'Items approved and inventory updated']);
-            } catch (\Exception $e) {
-                DB::rollback();
-                throw $e;
             }
+
+            return response()->json(['message' => 'Items ' . $request->status . ' successfully']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -519,6 +566,90 @@ class PurchaseOrderController extends Controller
                 ]);
 
             return response()->json(['message' => 'Item updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function verifyItem(Request $request, $purchaseOrder)
+    {
+        try {
+            $request->validate([
+                'id' => 'required|exists:purchase_order_items,id'
+            ]);
+
+            DB::table('purchase_order_items')
+                ->where('id', $request->id)
+                ->where('purchase_order_id', $purchaseOrder)
+                ->update([
+                    'status' => 'verified',
+                    'verified_at' => now(),
+                    'verified_by' => auth()->id()
+                ]);
+
+            return response()->json(['message' => 'Item verified successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function approveItem(Request $request, $purchaseOrder)
+    {
+        try {
+            $request->validate([
+                'id' => 'required|exists:purchase_order_items,id'
+            ]);
+
+            $item = DB::table('purchase_order_items')
+                ->where('id', $request->id)
+                ->where('purchase_order_id', $purchaseOrder)
+                ->where('status', 'verified')
+                ->first();
+
+            if (!$item) {
+                return response()->json(['error' => 'Item must be verified first'], 422);
+            }
+
+            DB::table('purchase_order_items')
+                ->where('id', $request->id)
+                ->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                    'approved_by' => auth()->id()
+                ]);
+
+            // Update inventory
+            $inventory = DB::table('inventories')
+                ->where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->first();
+
+            if ($inventory) {
+                DB::table('inventories')
+                    ->where('id', $inventory->id)
+                    ->update([
+                        'quantity' => DB::raw('quantity + ' . $item->received_quantity),
+                        'batch_number' => $item->batch_number,
+                        'expiry_date' => $item->expiry_date,
+                        'unit_cost' => $item->unit_cost,
+                        'updated_at' => now()
+                    ]);
+            } else {
+                DB::table('inventories')->insert([
+                    'product_id' => $item->product_id,
+                    'warehouse_id' => $item->warehouse_id,
+                    'quantity' => $item->received_quantity,
+                    'batch_number' => $item->batch_number,
+                    'expiry_date' => $item->expiry_date,
+                    'unit_cost' => $item->unit_cost,
+                    'location' => $item->location,
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            return response()->json(['message' => 'Item approved and inventory updated successfully']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
