@@ -659,6 +659,29 @@
                 </div>
             </div>
         </div>
+        <Modal :show="showImportModal" @close="showImportModal = false" max-width="xl" >
+                        <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Import Items</h2>
+                <p class="mt-1 text-sm text-gray-600">Please upload an Excel file (.xlsx) with the following columns: Item Code, Item Description, UoM, Quantity, Unit Cost, Total Cost</p>
+
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center w-full">
+                        <label for="file" class="flex items-center space-x-2 border border-gray-300 rounded-md p-2">
+                            <i class="fas fa-file-excel text-lg text-gray-500"></i>
+                            <span class="text-sm text-gray-700">Select Excel file</span>
+                            <input type="file" class="hidden" id="file" name="file" accept=".xlsx" @change="handleFileUpload" />
+                        </label>
+                    </div>
+                    <div class="flex items-center flex-col">
+                        <span>{{  importing ? 'Importing...' : ''}}</span>
+                        <button type="button" @click="downloadTemplate" class="ml-2 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" :disabled="importing">
+                            Download Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+
     </AuthenticatedLayout>
 </template>
 
