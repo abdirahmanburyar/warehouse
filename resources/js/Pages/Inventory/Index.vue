@@ -457,7 +457,7 @@ const echo = ref(null);
 
                 <div class="flex justify-between">
                     <!-- Inventory Table -->
-                    <div class="overflow-auto">
+                    <div class="overflow-auto w-full">
                         <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
                             <thead class="border-b border-gray-200">
                                 <tr>
