@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'brokers' => env('KAFKA_BROKERS', 'localhost:9092'),
+    'brokers' => env('KAFKA_BROKERS', 'warehouse.psivista.com:9092'),
     'consumer_group_id' => env('KAFKA_GROUP_ID', 'warehouse_group'),
     'consumer_timeout_ms' => env('KAFKA_CONSUMER_TIMEOUT_MS', 2000),
 

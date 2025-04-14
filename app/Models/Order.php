@@ -17,7 +17,6 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'warehouse_id',
         'facility_id',
         'user_id',
         'order_number',
@@ -63,8 +62,4 @@ class Order extends Model
         return $this->hasMany(Approval::class);
     }
 
-    public function warehouse()
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
 }

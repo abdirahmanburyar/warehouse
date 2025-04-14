@@ -213,6 +213,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/bulk', 'bulk')->name('orders.bulk');
             Route::post('/search', 'searchProduct')->name('order.product.search');
             Route::post('/status', 'changeStatus')->name('orders.change-status');   
+            Route::get('/outstanding/{product}', 'getOutstanding')->name('orders.outstanding');
+            Route::get('/items/{order}', 'getItems')->name('orders.items');
         });
 
     Route::controller(ApprovalController::class)

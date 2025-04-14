@@ -13,7 +13,7 @@ class KafkaServiceProvider extends ServiceProvider
         // Register producer service
         $this->app->singleton('kafka.producer', function ($app) {
             $config = new ProducerConfig();
-            $config->setBrokers(['localhost:9092']);
+            $config->setBrokers(['warehouse.psivista.com:9092']);
             $config->setUpdateBrokers(false);
             $config->setAcks(-1);
             $config->setConnectTimeout(3);
@@ -51,15 +51,10 @@ class KafkaServiceProvider extends ServiceProvider
                             'topic' => 'facilities.orders.placed',
                             'data' => $message
                         ]);
-                        
+
                         $this->producer->send('facilities.orders.placed', json_encode($message));
-                        
-                        \Log::info('Successfully published to Kafka');
                     } catch (\Exception $e) {
-                        \Log::error('Kafka Send Error', [
-                            'error' => $e->getMessage(),
-                            'data' => $data
-                        ]);
+                        \Log::error('Error publishing to Kafka: ' . $e->getMessage());
                     }
                 }
             };

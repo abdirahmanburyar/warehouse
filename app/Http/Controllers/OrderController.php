@@ -8,6 +8,7 @@ use App\Models\Facility;
 use App\Models\Product;
 use App\Models\Warehouse;
 use App\Events\OrderEvent;
+use App\Models\OrderItem;
 use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['facility', 'user', 'items.product', 'warehouse'])
+        $query = Order::with(['facility', 'user'])
             ->when($request->from && $request->to, function ($query) use ($request) {
                 $query->whereBetween('order_date', [$request->from, $request->to]);
             })
@@ -39,7 +40,7 @@ class OrderController extends Controller
 
         // Get order statistics
         $stats = Order::select('status', DB::raw('count(*) as count'))
-            ->where('warehouse_id', auth()->user()->warehouse_id)
+            // ->where('warehouse_id', auth()->user()->warehouse_id)
             ->groupBy('status')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -262,6 +263,46 @@ class OrderController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    public function getItems(Order $order)
+    {
+        try {
+            $order->load('items.product');
+            return response()->json($order->items);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function getOutstanding(Request $request, $id)
+    {
+        try {
+            $outstanding = OrderItem::where('product_id', $id)
+                ->whereHas('order', function ($query) {
+                    $query->where('status', 'in processing');
+                })
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->join('facilities', 'facilities.id', '=', 'orders.facility_id')
+                ->select(
+                    'facilities.name as facility_name',
+                    'orders.order_type',
+                    DB::raw('SUM(order_items.quantity) as total_quantity')
+                )
+                ->groupBy('facilities.name', 'orders.order_type')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'facility' => $item->facility_name,
+                        'order_type' => $item->order_type,
+                        'quantity' => $item->total_quantity
+                    ];
+                });
+
+            return response()->json($outstanding);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
 

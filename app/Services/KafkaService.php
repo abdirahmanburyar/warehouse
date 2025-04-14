@@ -13,8 +13,8 @@ class KafkaService
     public function __construct()
     {
         $config = new ProducerConfig();
-        $config->setBroker('localhost:9092'); // Set explicit broker
-        $config->setBrokers(['localhost:9092']); // Set as array of brokers
+        $config->setBroker('warehouse.psivista.com:9092'); // Set explicit broker
+        $config->setBrokers(['warehouse.psivista.com:9092']); // Set as array of brokers
         $config->setUpdateBrokers(true);
         $config->setAcks(-1);
         $this->producer = new Producer($config);

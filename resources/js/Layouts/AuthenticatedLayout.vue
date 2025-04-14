@@ -211,9 +211,6 @@
                 </div>
             </main>
         </div>
-
-        <!-- Toast Container -->
-        <ToastContainer />
     </div>
 </template>
 
