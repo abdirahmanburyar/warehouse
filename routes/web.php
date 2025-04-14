@@ -187,6 +187,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/{purchaseOrder}/packing-list/update-item', 'updateItem')->name('packing-list.update-item');
         Route::post('/{purchaseOrder}/packing-list/bulk-approve', 'bulkApprove')->name('packing-list.bulk-approve');
         Route::get('/{purchaseOrder}/packing-list/export', 'exportPackingList')->name('packing-list.export');
+        Route::post('/delete-items', 'deleteItems')->name('deleteItems');
 
         // Import Route
         Route::post('/import-items', 'importItems')->name('import-items');

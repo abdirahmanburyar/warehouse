@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\PoItem;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use App\Models\BackOrder;
 use App\Models\PackingList;
 use App\Models\Warehouse;
+use App\Models\PurchaseOrderItem;
 use App\Models\Approval;
 use App\Imports\PurchaseOrderItemsImport;
 use Illuminate\Http\Request;
@@ -668,6 +668,55 @@ class PurchaseOrderController extends Controller
             return response()->json(['message' => 'Item approved and inventory updated successfully']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteItems(Request $request)
+    {
+        try {
+            $request->validate([
+                'items' => 'required|array',
+                'purchase_order_id' => 'required|exists:purchase_orders,id'
+            ]);
+
+            $canDelete = [];
+            $cannotDelete = [];
+            
+            // Check each item if it can be deleted
+            foreach ($request->items as $itemId) {
+                $item = PoItem::where('id', $itemId)
+                    ->where('purchase_order_id', $request->purchase_order_id)
+                    ->first();
+                    
+                if ($item) {
+                    // Check if quantity equals original_quantity
+                    if ($item->quantity == $item->original_quantity) {
+                        $canDelete[] = $itemId;
+                    } else {
+                        $cannotDelete[] = $itemId;
+                    }
+                }
+            }
+            
+            // Delete items that can be deleted
+            if (count($canDelete) > 0) {
+                PoItem::whereIn('id', $canDelete)
+                    ->where('purchase_order_id', $request->purchase_order_id)
+                    ->delete();
+            }
+            
+            // Return appropriate response
+            if (count($cannotDelete) > 0) {
+                if (count($canDelete) > 0) {
+                    return response()->json("Deleted " . count($canDelete) . " items. Could not delete " . count($cannotDelete) . " items because quantities have been modified.", 207);
+                } else {
+                    return response()->json("Cannot delete items because quantities have been modified.", 403);
+                }
+            }
+            
+            return response()->json("Successfully deleted " . count($canDelete) . " items", 200);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 500);
         }
     }
 }

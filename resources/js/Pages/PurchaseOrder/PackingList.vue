@@ -122,7 +122,17 @@
                         <div class="flex justify-end mb-4">
                             <div class="flex items-center space-x-4">
                                 <!-- Other Action Buttons -->
-                                <button type="button" @click="showImportModal = true"
+                                <button v-if="selectedItems && selectedItems.length > 0"
+                                    @click="deleteSelectedItems"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2.25 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Delete Selected ({{ selectedItems.length }})
+                                </button>
+                                <button type="button" @click="showImportModal = true" v-if="props.purchase_order.po_items.length === 0"
                                     class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                         stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
@@ -152,7 +162,13 @@
                                         <thead class="bg-gray-50 sticky top-0 z-10">
                                             <tr>
                                                 <th class="sticky left-0 z-20 bg-gray-50 py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 border-r">
-                                                    Item</th>
+                                                    <div class="flex items-center">
+                                                        <input type="checkbox" v-model="selectAllItems" @change="toggleSelectAllItems" 
+                                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" 
+                                                            :disabled="!form.items || form.items.length === 0" />
+                                                        <span class="ml-2">Item</span>
+                                                    </div>
+                                                </th>
                                                 <th class="px-2 text-left text-xs font-semibold text-gray-900">Quantity
                                                 </th>
                                                 <th class="px-2 text-left text-xs font-semibold text-gray-900">Received
@@ -185,9 +201,16 @@
                                             <tr v-for="item in form.items" :key="item.id"
                                                 class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
                                                 <td class="sticky left-0 z-10 bg-white border-r whitespace-nowrap py-4 pl-4 pr-3 text-xs font-medium text-gray-900">
-                                                    {{ item.product_name }}
-                                                    <p v-if="item.generic_name" class="text-xs text-gray-500 mt-0.5">{{
-                                                        item.generic_name }}</p>
+                                                    
+                                                    <div class="flex items-center">
+                                                        <input type="checkbox" 
+                                                            :value="item.id" 
+                                                            v-model="selectedItems" 
+                                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-2" />
+                                                        {{ item.product_name }}
+                                                        <p v-if="item.generic_name" class="text-xs text-gray-500 mt-0.5">{{
+                                                            item.generic_name }}</p>
+                                                    </div>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {{ Number(item.quantity).toLocaleString() }}
@@ -422,7 +445,8 @@
                                                 <button v-if="canVerify(item, $page.props.auth.roles)"
                                                     @click="updateItemStatus(item.id, 'verify')"
                                                     class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                                        stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             d="M4.5 12.75l6 6 9-13.5" />
                                                     </svg>
@@ -431,7 +455,8 @@
                                                 <button v-if="canApprove(item, $page.props.auth.roles)"
                                                     @click="updateItemStatus(item.id, 'approve')"
                                                     class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                                        stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             d="M4.5 12.75l6 6 9-13.5" />
                                                     </svg>
@@ -447,7 +472,7 @@
                                             {{props.packingLists.reduce((total, item) => total +
                                                 parseFloat(item.received_quantity), 0)}}
                                         </td>
-                                        <td colspan="6" class="px-4 py-2 text-right font-bold">
+                                        <td colspan="7" class="px-4 py-2 text-right font-bold">
                                             Total:
                                         </td>
                                         <td class="px-4 py-2 text-right font-bold">
@@ -668,7 +693,7 @@
                     <div class="flex items-center w-full">
                         <label for="file" class="flex items-center space-x-2 border border-gray-300 rounded-md p-2">
                             <i class="fas fa-file-excel text-lg text-gray-500"></i>
-                            <span class="text-sm text-gray-700">Select Excel file</span>
+                            <span class="text-sm text-gray-700 w-full">Select Excel file</span>
                             <input type="file" class="hidden" id="file" name="file" accept=".xlsx" @change="handleFileUpload" />
                         </label>
                     </div>
@@ -686,7 +711,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -967,7 +992,7 @@ const selectPackingList = async (packingList) => {
         console.error('Failed to fetch packing list items:', error);
         Swal.fire({
             title: 'Error!',
-            text: 'Failed to load packing list items',
+            text: error.response?.data || 'Failed to load packing list items',
             icon: 'error',
             confirmButtonColor: '#EF4444',
             customClass: {
@@ -1491,6 +1516,78 @@ const bulkApprove = () => {
     }
     updateItemStatus(approvableItems, 'approve');
 };
+
+const selectAllItems = ref(false);
+
+const toggleSelectAllItems = () => {
+    selectAllItems.value = !selectAllItems.value;
+    if (selectAllItems.value) {
+        // Make sure we're selecting from the correct data source
+        // Check if we have form items, otherwise fall back to po_items
+        if (form.value.items && form.value.items.length > 0) {
+            selectedItems.value = form.value.items.map(item => item.id);
+        } else if (props.purchase_order.po_items) {
+            selectedItems.value = props.purchase_order.po_items.map(item => item.id);
+        }
+    } else {
+        selectedItems.value = [];
+    }
+};
+
+const deleteSelectedItems = async () => {
+        if (!selectedItems.value.length) {
+            Swal.fire({
+                title: 'No Items Selected',
+                text: 'Please select items to delete',
+                icon: 'warning'
+            });
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Delete Selected Items',
+            text: `Are you sure you want to delete ${selectedItems.value.length} item(s)?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Yes, delete them!'
+        });
+
+        if (result.isConfirmed) {
+            await axios.post(route('purchase-orders.deleteItems'), {
+                items: selectedItems.value,
+                purchase_order_id: props.purchase_order.id
+            })
+            .then((response) => {
+                console.log('Response:', response.data);
+                selectedItems.value = [];
+                selectAllItems.value = false;
+                reloadPO();
+                Swal.fire({
+                    title: 'Deleted!',
+                    text: response.data,
+                    icon: 'success',
+                    confirmButtonColor: '#10B981',
+                    customClass: {
+                        popup: 'rounded-lg',
+                        title: 'text-lg font-semibold text-gray-900',
+                        htmlContainer: 'text-gray-700'
+                    }
+                });
+            })
+            .catch((error) => {
+                console.error('Error deleting items:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.response?.data || 'Failed to delete items',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444'
+                });
+            });
+        }
+    }
+
 </script>
 
 <style scoped>
