@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Events\OrderEvent;
+use App\Models\Order;
 use Illuminate\Console\Command;
 use longlang\phpkafka\Consumer\Consumer;
 use longlang\phpkafka\Consumer\ConsumerConfig;
@@ -16,43 +17,38 @@ class KafkaConsume extends Command
 
     public function handle()
     {
-        $this->info('Starting Kafka consumer...');
-
         try {
             $config = new ConsumerConfig();
-            $config->setBroker('localhost:9092');
-            $config->setBrokers(['localhost:9092']);
-            $config->setTopic('facilities.orders.placed');
-            $config->setGroupId('warehouse_group');
-            $config->setClientId('warehouse_client_' . Str::random(8));
-            $config->setGroupInstanceId('warehouse_instance_' . Str::random(8));
+            $config->setBroker('warehouse.psivista.com:9092');
+            $config->setBrokers(['warehouse.psivista.com:9092']);
+            $config->setTopic('facilities.orders.updated');
+            $config->setGroupId('facilities_group');
+            $config->setClientId('facilities_client_' . Str::random(8));
+            $config->setGroupInstanceId('facilities_instance_' . Str::random(8));
             $config->setAutoCommit(false);
-            $config->setInterval(100);
             
             $consumer = new Consumer($config);
-            $this->info('Consumer configured and ready');
+            Log::info('Kafka consumer started', [
+                'topic' => 'facilities.orders.updated',
+                'group' => 'facilities_group'
+            ]);
 
             while (true) {
                 try {
                     $message = $consumer->consume();
                     if ($message) {
-                        $data = json_decode($message->getValue(), true);
-                        $this->info('Message received: ' . json_encode($data));
-                        
+                        $rawValue = $message->getValue();
+                        $data = json_decode($rawValue, true);
                         event(new OrderEvent('Refreshed'));
-                        $consumer->ack($message);
                         
-                        $this->info('Message processed successfully');
+                        $consumer->ack($message);
                     }
-                    usleep(100000); // 100ms sleep instead of 1s
+                    usleep(100000); // 100ms sleep
                 } catch (\Exception $e) {
-                    $this->error('Error consuming message: ' . $e->getMessage());
-                    Log::error('Error consuming Kafka message: ' . $e->getMessage());
                     sleep(1);
                 }
             }
         } catch (\Exception $e) {
-            $this->error('Failed to start consumer: ' . $e->getMessage());
             Log::error('Failed to start Kafka consumer: ' . $e->getMessage());
         }
     }
