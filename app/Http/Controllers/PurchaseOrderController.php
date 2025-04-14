@@ -542,6 +542,16 @@ class PurchaseOrderController extends Controller
                 }
             }
 
+            // Check if all items for this purchase order have been approved and have quantity = 0
+            if ($request->status === 'approved') {
+                // Get the purchase order with its items
+                PurchaseOrder::with('po_items')->find($purchaseOrder)
+                    ->where('po_items', function ($query) {
+                        $query->where('quantity', 0);
+                    })
+                    ->update(['status' => 'completed']);
+            }
+
             return response()->json(['message' => 'Items ' . $request->status . ' successfully']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
