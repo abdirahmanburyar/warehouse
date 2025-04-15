@@ -76,6 +76,11 @@
                                             <span>Warehouse</span>
                                         </div>
                                     </th>
+                                    <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition">
+                                        <div class="flex items-center">
+                                            <span>Facility</span>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -89,6 +94,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         <span v-if="user.warehouse" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             {{ user.warehouse.name }}
+                                        </span>
+                                        <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            Global
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <span v-if="user.facility" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {{ user.facility.name }}
                                         </span>
                                         <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             Global
@@ -262,6 +275,22 @@
                             <span class="text-sm text-gray-500 mt-1 block">Assign user to a specific warehouse or leave empty for global access</span>
                         </div>
 
+                        <div>
+                            <InputLabel for="facility_id" value="Facility" />
+                            <select
+                                id="facility_id"
+                                v-model="form.facility_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                                :disabled="isSubmitted || processing"
+                            >
+                                <option value="">No Facility (Global User)</option>
+                                <option v-for="facility in props.facilities" :key="facility.id" :value="facility.id">
+                                    {{ facility.name }}
+                                </option>
+                            </select>
+                            <span class="text-sm text-gray-500 mt-1 block">Assign user to a specific facility or leave empty for global access</span>
+                        </div>
+
                         <div class="flex items-center justify-end pt-4 border-t border-gray-200">
                             <button
                                 type="button"
@@ -420,7 +449,8 @@ const props = defineProps({
     users: Object,
     roles: Array,
     warehouses: Array,
-    filters: Object
+    filters: Object,
+    facilities: Array
 });
 
 // Component state
@@ -444,7 +474,8 @@ const form = ref({
     username: '',
     email: '',
     password: '',
-    warehouse_id: ''
+    warehouse_id: '',
+    facility_id: ''
 });
 
 const rolesForm = ref({

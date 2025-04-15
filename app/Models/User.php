@@ -23,6 +23,7 @@ class User extends Authenticatable
         'username',
         'email',
         'warehouse_id',
+        'facility_id',
         'password',
     ];
 
@@ -55,5 +56,10 @@ class User extends Authenticatable
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function facility()
+    {
+        return $this->belongsTo(Facility::class);
     }
 }

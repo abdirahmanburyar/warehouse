@@ -8,6 +8,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
+use App\Models\Facility;
 use Inertia\Inertia;
 use App\Models\Approval;
 use App\Http\Resources\ApprovalResource;
@@ -19,7 +20,7 @@ class SettingsController extends Controller
         $tab = $request->query('tab', 'General');
         
         // Get users with filtering if tab is 'users'
-        $users = User::with('roles', 'warehouse');
+        $users = User::with('roles', 'warehouse','facility');
         
         if ($tab === 'users') {
             // Apply search filter if provided
@@ -95,7 +96,8 @@ class SettingsController extends Controller
             'permissions' => Permission::all(),
             'warehouses' => Warehouse::where('is_active', true)->get(),
             'activeTab' => $tab,
-            'filters' => $request->only('search', 'sort_field', 'sort_direction', 'tab')
+            'filters' => $request->only('search', 'sort_field', 'sort_direction', 'tab'),
+            'facilities' => Facility::get(),
         ]);
     }
 }

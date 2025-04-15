@@ -225,11 +225,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/', 'store')->name('approvals.store');
             Route::delete('/{approval}/destroy', 'destroy')->name('approvals.destroy');
         });
-
+    
     Route::controller(FacilityController::class)
         ->prefix('/facilities')
         ->group(function () {
             Route::get('/', 'index')->name('facilities.index');
+            Route::post('/store', 'store')->name('facilities.store');
+            Route::delete('/{facility}', 'destroy')->name('facilities.destroy');
         });
     
     // Remove duplicate resource routes since we already have individual routes defined above

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::query()->with(['roles', 'warehouse']);
+        $query = User::query()->with(['roles', 'warehouse', 'facility']);
         
         // Search functionality
         if ($request->has('search')) {
@@ -42,12 +43,15 @@ class UserController extends Controller
         
         // Get all warehouses for the warehouse selection
         $warehouses = Warehouse::where('is_active', true)->get();
-        
+
+        $facilities = Facility::get();
+        logger()->info($facilities);
         return Inertia::render('User/Index', [
             'users' => UserResource::collection($users),
             'roles' => $roles,
             'warehouses' => $warehouses,
             'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
+            'facilities' => $facilities
         ]);
     }
 
@@ -70,6 +74,7 @@ class UserController extends Controller
                 ],
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
+                'facility_id' => 'nullable|exists:facilities,id',
             ]);
 
             $userData = [
@@ -77,13 +82,14 @@ class UserController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'warehouse_id' => $request->warehouse_id,
+                'facility_id' => $request->facility_id,
             ];
 
             if ($request->filled('password')) {
                 $userData['password'] = Hash::make($request->password);
             }
             
-            $user = User::updateOrCreate(
+            User::updateOrCreate(
                 ['id' => $request->id],
                 $userData
             );

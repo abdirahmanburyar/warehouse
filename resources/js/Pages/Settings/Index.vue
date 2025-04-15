@@ -36,7 +36,7 @@
 
                 <!-- Users Tab Content -->
                 <div v-show="currentTab === 'users'" class="transition-opacity duration-150" :class="{'opacity-100': currentTab === 'users', 'opacity-0': currentTab !== 'users'}">
-                    <UserIndex :users="props.users" :roles="props.roles" :warehouses="props.warehouses" :filters="props.filters" />
+                    <UserIndex :users="props.users" :roles="props.roles" :warehouses="props.warehouses" :facilities="props.facilities" :filters="props.filters" />
                 </div>
 
                 <!-- Roles Tab Content -->
@@ -89,6 +89,7 @@ import ApprovalIndex from '@/Pages/Approval/Index.vue';
 const props = defineProps({
     approvals: Object,
     users: Object,
+    facilities: Array,
     roles: Array,
     permissions: Array,
     warehouses: Array,
