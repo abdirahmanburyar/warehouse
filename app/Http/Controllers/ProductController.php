@@ -9,6 +9,9 @@ use App\Models\Dosage;
 use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\EligibleItem;
+use App\Models\Facility;
+use App\Http\Resources\EligibleItemResource;
 use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
@@ -142,6 +145,22 @@ class ProductController extends Controller
 
         $subcategories->setPath(url()->current());
 
+
+        // Handle eligible items functionality
+        $eligibleItems = EligibleItem::query();
+
+        if($request->has('facility') && $request->facility) {
+            $eligibleItems->where('facility_id', $request->facility);
+        }
+
+        $eligibleItems = $eligibleItems->with('product')
+            ->paginate($request->input('eligible_per_page', 6), ['*'], 'eligible_page', $request->input('eligible_page', 1))
+            ->withQueryString();
+
+        $eligibleItems->setPath(url()->current());
+
+        logger()->info($eligibleItems);
+
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
             'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page']),
@@ -151,6 +170,8 @@ class ProductController extends Controller
             'dosageFilters' => $request->only(['dosageSearch', 'dosage_sort_field', 'dosage_sort_direction', 'dosage_per_page', 'dosage_page']),
             'subcategories' => SubCategoryResource::collection($subcategories),
             'subcategoryFilters' => $request->only(['subcategorySearch', 'subcategory_sort_field', 'subcategory_sort_direction', 'subcategory_per_page', 'subcategory_page']),
+            'eligibleItems' => EligibleItemResource::collection($eligibleItems),
+            'facilities' => Facility::get(),
         ]);
     }
 

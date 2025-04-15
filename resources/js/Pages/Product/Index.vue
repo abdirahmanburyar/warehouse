@@ -22,6 +22,10 @@
                     :class="[activeTab === 'dosages' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
                     Dosages
                 </button>
+                <button @click="activeTab = 'eligible'"
+                    :class="[activeTab === 'eligible' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                    Eligible Drugs
+                </button>
             </nav>
         </div>
 
@@ -739,6 +743,53 @@
             </div>
         </div>
 
+        <!-- Eligible Drugs tab -->
+        <div v-if="activeTab === 'eligible'" class="transition-opacity duration-150" :class="{'opacity-100': activeTab === 'eligible', 'opacity-0': activeTab !== 'eligible'}">
+            <div class="bg-white overflow-hidden sm:rounded-lg">
+                <div class="p-6 bg-white border-b border-gray-200">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <label for="facility" class="block text-sm font-medium text-gray-700">Facility</label>
+                            <select id="facility" v-model="filters.facility_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option value="">All</option>
+                                <option v-for="facility in props.facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                            <input type="search" name="search" id="search" v-model="filters.search" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search facilities">
+                        </div>
+                        <div>
+                            <button @click="openEligibleCreateModal()"
+                                class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150 ease-in-out">
+                                Add Eligible Item
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                    Name
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="eligibleItem in props.eligibleItems.data" :key="eligibleItem.id">
+                                <td class="px-6 py-4 whitespace-no-wrap">
+                                    {{ eligibleItem.product?.name }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
         <!-- Product Modal -->
         <Modal :show="showModal" @close="closeModal" max-width="7xl">
             <div class="p-6">
@@ -1251,6 +1302,33 @@
             </div>
         </Modal>
 
+
+        <!-- Subcategory Delete Confirmation Modal -->
+        <Modal :show="eligibleShow" @close="closeSubcategoryDeleteModal">
+            <div class="p-6">
+                <form>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label for="product" class="block text-sm font-medium text-gray-700">Product</label>
+                            <select id="product" v-model="eligibleItemForm.product_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option v-for="product in props.products.data" :key="product.id" :value="product.id">
+                                    {{ product.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="facility" class="block text-sm font-medium text-gray-700">Facility</label>
+                            <select id="facility" v-model="eligibleItemForm.facility_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option v-for="facility in facilities" :key="facility.id" :value="facility.id">
+                                    {{ facility.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
     </AuthenticatedLayout>
 </template>
 
@@ -1283,7 +1361,12 @@ const props = defineProps({
     subcategoryFilters: {
         type: Object,
         required: true
-    }
+    },
+    eligibleItems: {
+        type: Object,
+        required: true
+    },
+    facilities: Array
 });
 
 // Reactive state
@@ -2172,6 +2255,19 @@ watch(() => form.value.category_id, (newVal) => {
         form.value.sub_category_id = '';
     }
 });
+
+const eligibleShow = ref(false);
+
+// Eligible Item form
+const eligibleItemForm = ref({
+    id: null,
+    product_id: '',
+    facility_id: '',
+});
+
+function openEligibleCreateModal(){
+    eligibleShow.value = true;
+}
 </script>
 
 <style scoped>
