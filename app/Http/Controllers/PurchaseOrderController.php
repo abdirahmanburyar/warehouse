@@ -187,7 +187,7 @@ class PurchaseOrderController extends Controller
             ->values()
             ->toArray();
 
-        return Inertia::render('PurchaseOrder/PackingList', [
+        return inertia('PurchaseOrder/Packing', [
             'purchase_order' => $purchaseOrder,
             'packingLists' => $flattenedItems->values()->all(),
             'warehouses' => Warehouse::get(),
