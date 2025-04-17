@@ -153,17 +153,25 @@ class ProductController extends Controller
             $eligibleItems->where('facility_id', $request->facility);
         }
 
-        $eligibleItems = $eligibleItems->with('product')
+        if($request->filled('eligibleSearch')){
+            $search = $request->eligibleSearch;
+            $eligibleItems->whereHas('product', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%");
+            });
+        }
+
+        $eligibleItems = $eligibleItems->with('product', 'facility')
             ->paginate($request->input('eligible_per_page', 6), ['*'], 'eligible_page', $request->input('eligible_page', 1))
             ->withQueryString();
 
         $eligibleItems->setPath(url()->current());
 
-        logger()->info($eligibleItems);
 
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
-            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page']),
+            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page', 'eligibleSearch', 'eligible_per_page', 'eligible_page', 'facility']),
             'categoryFilters' => $request->only(['categorySearch', 'category_sort_field', 'category_sort_direction', 'category_per_page', 'category_page']),
             'categories' => CategoryResource::collection($categories),
             'dosages' => DosageResource::collection($dosages),
@@ -172,6 +180,7 @@ class ProductController extends Controller
             'subcategoryFilters' => $request->only(['subcategorySearch', 'subcategory_sort_field', 'subcategory_sort_direction', 'subcategory_per_page', 'subcategory_page']),
             'eligibleItems' => EligibleItemResource::collection($eligibleItems),
             'facilities' => Facility::get(),
+            'eligibleProducts' => Product::get()
         ]);
     }
 
@@ -345,6 +354,45 @@ class ProductController extends Controller
             }
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    // eligible items store
+    public function addEligibleItemStore(Request $request){
+        try {
+            $validated = $request->validate([
+                'id' => 'nullable|exists:eligible_items,id',
+                'product_id' => 'required|exists:products,id',
+                'facility_id' => 'required|exists:facilities,id',
+            ]);
+
+            $validator = Validator::make($request->all(), [
+                'product_id' => Rule::unique('eligible_items', 'product_id')->where(function ($query) use ($request) {
+                    return $query->where('facility_id', $request->facility_id)->whereNotIn('id', [$request->id]);
+                }),
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json("Already exists", 500);
+            }
+
+
+            $eligibleItem = EligibleItem::updateOrCreate(['id' => $validated['id']], $validated);
+
+            return response()->json($request->id ? 'updated' : 'created', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    // eligible items destroy
+    public function destroyEligibleItem(EligibleItem $eligibleItem)
+    {
+        try {
+            $eligibleItem->delete();
+            return response()->json('Eligible item deleted successfully', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
 }

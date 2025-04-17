@@ -25,7 +25,6 @@ const splashInstance = splashApp.mount('#splash-container');
 // Create and mount the main application after splash completes
 setTimeout(() => {
     createInertiaApp({
-        title: (title) => `${title} - ${appName}`,
         resolve: (name) =>
             resolvePageComponent(
                 `./Pages/${name}.vue`,

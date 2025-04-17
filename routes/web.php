@@ -131,6 +131,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{product}', 'destroy')->middleware(PermissionMiddleware::class.':product.delete')->name('products.destroy');
             Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':product.delete')->name('products.bulk');
             Route::post('/search', 'search')->name('products.search');
+            Route::post('/eligible/store', 'addEligibleItemStore')->name('eligible-items.store');
+            Route::get('/eligible/{id}', 'destroyEligibleItem')->name('eligible-items.destroy');
         });
         
     // Inventory Routes
