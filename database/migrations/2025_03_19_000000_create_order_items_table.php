@@ -18,8 +18,6 @@ return new class extends Migration
             $table->foreignIdFor(Order::class)->cascadeOnDelete();
             $table->foreignIdFor(Product::class)->nullable()->cascadeOnDelete();
             $table->integer('quantity');
-            // $table->double('unit_cost');
-            // $table->double('total_cost');
             $table->foreignId('reviewed_by')->nullable();
             $table->date('reviewed_at')->nullable();
             $table->foreignId('approved_by')->nullable();

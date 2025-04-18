@@ -233,36 +233,73 @@ class OrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            $order = Order::findOrFail($request->id);
-            $allowedStatuses = [
-                'pending' => ['approved', 'rejected'],
-                'approved' => ['in processing'],
-                'in processing' => ['dispatched'],
-                'dispatched' => ['delivered']
-            ];
-
-            // Check if the current status can transition to the requested status
-            if (!isset($allowedStatuses[$order->status]) || !in_array($request->status, $allowedStatuses[$order->status])) {
-                return response()->json("Order cannot be changed from {$order->status} to {$request->status}", 500);
-            }        
-
-            $order->update([
-                'status' => $request->status,
+            logger()->info('Order status change request', $request->all());
+            
+            // Validate request
+            $validated = $request->validate([
+                'id' => 'required|exists:order_items,id',
+                'status' => 'required|string',
             ]);
-
+            
+            $userId = auth()->id();
+            $now = now();
+            $item = OrderItem::find($request->id);
+            
+            // Prepare updates for order
+            $orderUpdates = [
+                'status' => $request->status
+            ];
+            
+            // Add timestamp based on the status
+            switch ($request->status) {
+                case 'approved':
+                    $orderUpdates['approved_at'] = $now;
+                    $orderUpdates['approved_by'] = $userId;
+                    $updateResult = $item->update($orderUpdates);
+                    break;
+                case 'in process':
+                    $orderUpdates['status'] = 'in process';
+                    $orderUpdates['in_process'] = true;
+                    $updateResult = $item->update($orderUpdates);
+                    break;
+                case 'dispatched':
+                    $orderUpdates['dispatched_by'] = $userId;
+                    $orderUpdates['dispatched_at'] = $now;
+                    $updateResult = $item->update($orderUpdates);
+                    break;
+                case 'delivered':
+                    // No timestamp field for delivered in the orders table
+                    $orderUpdates['delivered'] = true;
+                    $updateResult = $item->update($orderUpdates);
+                    
+                    // Check if all items in this order are now delivered
+                    $order = $item->order;
+                    
+                    // Use collection methods instead of foreach
+                    $allItemsDelivered = $order->items
+                        ->where('id', '!=', $item->id) // Exclude current item
+                        ->every(function($orderItem) {
+                            return $orderItem->status === 'delivered';
+                        });
+                    
+                    // If all items are delivered, update the order status
+                    if ($allItemsDelivered) {
+                        $order->update(['status' => 'completed']);
+                        logger()->info("Order {$order->id} marked as completed - all items delivered");
+                    }
+                    break;
+            }            
             // Trigger Kafka event for order status change
-            try {
-                Kafka::publishOrderPlaced("Refreshed");
-            } catch (\Throwable $e) {
-                return response()->json($e->getMessage(), 500);
-            }
-
+            Kafka::publishOrderPlaced("Refreshed");
+            
+            // Broadcast event
             event(new OrderEvent('Refreshed'));
 
             DB::commit();
             return response()->json('Order status updated successfully.', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
+            logger()->error( $e->getMessage());
             return response()->json($e->getMessage(), 500);
         }
     }
