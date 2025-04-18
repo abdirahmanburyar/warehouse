@@ -56,94 +56,94 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // User Management Routes
-    Route::middleware(PermissionMiddleware::class.':user.view')
+    Route::middleware(PermissionMiddleware::class . ':user.view')
         ->prefix('users')
         ->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('users.index');
             // Create and Edit routes for navigation purposes
-            Route::get('/create', function() {
+            Route::get('/create', function () {
                 return Inertia::render('User/Create');
-            })->middleware(PermissionMiddleware::class.':user.create')->name('users.create');
-            Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('users.store');
-            
+            })->middleware(PermissionMiddleware::class . ':user.create')->name('users.create');
+            Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('users.store');
+
             // User roles management
             Route::get('/{user}/roles', [UserController::class, 'showRoles'])
-                ->middleware(PermissionMiddleware::class.':user.edit')
+                ->middleware(PermissionMiddleware::class . ':user.edit')
                 ->name('users.roles');
-            Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('users.destroy');
+            Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':user.delete')->name('users.destroy');
         });
-        
+
     // Role Management Routes
-    Route::middleware(PermissionMiddleware::class.':user.view')->group(function () {
+    Route::middleware(PermissionMiddleware::class . ':user.view')->group(function () {
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
         Route::get('/roles-permissions', [RoleController::class, 'getAllRolesAndPermissions'])->name('roles.get-all');
     });
-    Route::post('/roles', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class.':user.create')->name('roles.store');
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware(PermissionMiddleware::class.':user.edit')->name('roles.update');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware(PermissionMiddleware::class.':user.delete')->name('roles.destroy');
-    Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])->middleware(PermissionMiddleware::class.':user.edit')->name('users.roles.assign');
-        
+    Route::post('/roles', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('roles.store');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware(PermissionMiddleware::class . ':user.edit')->name('roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':user.delete')->name('roles.destroy');
+    Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])->middleware(PermissionMiddleware::class . ':user.edit')->name('users.roles.assign');
+
     // Category Management Routes
-    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class.':category.view'])->group(function () {
+    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])->group(function () {
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-        Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('categories.store');
-        Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware(PermissionMiddleware::class.':category.edit')->name('categories.update');
-        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('categories.destroy');
+        Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class . ':category.create')->name('categories.store');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':category.edit')->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':category.delete')->name('categories.destroy');
     });
 
     // SubCategory Management Routes
-    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class.':category.view'])->group(function () {
+    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])->group(function () {
         Route::get('/subcategories', [SubCategoryController::class, 'index'])->name('subcategories.index');
-        Route::post('/subcategories', [SubCategoryController::class, 'store'])->middleware(PermissionMiddleware::class.':category.create')->name('subcategories.store');
-        Route::put('/subcategories/{subcategory}', [SubCategoryController::class, 'update'])->middleware(PermissionMiddleware::class.':category.edit')->name('subcategories.update');
-        Route::delete('/subcategories/{subcategory}', [SubCategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class.':category.delete')->name('subcategories.destroy');
+        Route::post('/subcategories', [SubCategoryController::class, 'store'])->middleware(PermissionMiddleware::class . ':category.create')->name('subcategories.store');
+        Route::put('/subcategories/{subcategory}', [SubCategoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':category.edit')->name('subcategories.update');
+        Route::delete('/subcategories/{subcategory}', [SubCategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':category.delete')->name('subcategories.destroy');
     });
-        
+
     // Warehouse Management Routes
     Route::controller(WarehouseController::class)
         ->prefix('/warehouses')
         ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':warehouse.view')->name('warehouses.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':warehouse.create')->name('warehouses.store');
-            Route::put('/{warehouse}', 'update')->middleware(PermissionMiddleware::class.':warehouse.edit')->name('warehouses.update');
-            Route::delete('/{warehouse}', 'destroy')->middleware(PermissionMiddleware::class.':warehouse.delete')->name('warehouses.destroy');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':warehouse.view')->name('warehouses.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':warehouse.create')->name('warehouses.store');
+            Route::put('/{warehouse}', 'update')->middleware(PermissionMiddleware::class . ':warehouse.edit')->name('warehouses.update');
+            Route::delete('/{warehouse}', 'destroy')->middleware(PermissionMiddleware::class . ':warehouse.delete')->name('warehouses.destroy');
         });
 
     // Dosage Management Routes
     Route::controller(DosageController::class)
         ->prefix('/dosages')
         ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':dosage.view')->name('dosages.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':dosage.create')->name('dosages.store');
-            Route::delete('/{dosage}', 'destroy')->middleware(PermissionMiddleware::class.':dosage.delete')->name('dosages.destroy');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':dosage.view')->name('dosages.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':dosage.create')->name('dosages.store');
+            Route::delete('/{dosage}', 'destroy')->middleware(PermissionMiddleware::class . ':dosage.delete')->name('dosages.destroy');
             Route::get('/by-category/{category}', 'getByCategory')->name('dosages.by-category');
         });
-        
+
     // Product Management Routes
     Route::controller(ProductController::class)
         ->prefix('/products')
         ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':product.view')->name('products.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':product.create')->name('products.store');
-            Route::put('/{product}', 'update')->middleware(PermissionMiddleware::class.':product.edit')->name('products.update');
-            Route::delete('/{product}', 'destroy')->middleware(PermissionMiddleware::class.':product.delete')->name('products.destroy');
-            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':product.delete')->name('products.bulk');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':product.view')->name('products.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':product.create')->name('products.store');
+            Route::put('/{product}', 'update')->middleware(PermissionMiddleware::class . ':product.edit')->name('products.update');
+            Route::delete('/{product}', 'destroy')->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
+            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class . ':product.delete')->name('products.bulk');
             Route::post('/search', 'search')->name('products.search');
             Route::post('/eligible/store', 'addEligibleItemStore')->name('eligible-items.store');
             Route::get('/eligible/{id}', 'destroyEligibleItem')->name('eligible-items.destroy');
         });
-        
+
     // Inventory Routes
     Route::controller(InventoryController::class)
         ->prefix('/inventories')
         ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class.':inventory.view')->name('inventories.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class.':inventory.create')->name('inventories.store');
-            Route::put('/{inventory}', 'update')->middleware(PermissionMiddleware::class.':inventory.edit')->name('inventories.update');
-            Route::delete('/{inventory}', 'destroy')->middleware(PermissionMiddleware::class.':inventory.delete')->name('inventories.destroy');
-            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class.':inventory.delete')->name('inventories.bulk');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':inventory.view')->name('inventories.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.store');
+            Route::put('/{inventory}', 'update')->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update');
+            Route::delete('/{inventory}', 'destroy')->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.destroy');
+            Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.bulk');
         });
 
     // Supply Routes
@@ -157,46 +157,45 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
         });
-        
+
     // Supplier Routes
     Route::controller(SupplierController::class)
         ->prefix('/suppliers')->group(function () {
             // Redirect to supplies index with suppliers tab active
-            Route::get('/', function() {
+            Route::get('/', function () {
                 return redirect()->route('supplies.index', ['tab' => 'suppliers']);
             })->name('suppliers.index');
             Route::post('/store', 'store')->name('suppliers.store');
             Route::delete('/{supplier}/destroy', 'destroy')->name('suppliers.destroy');
-
         });
-        
+
     // Purchase Orders
     Route::controller(PurchaseOrderController::class)
-    ->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{purchaseOrder}', 'show')->name('show');
-        Route::get('/{purchaseOrder}/edit', 'edit')->name('edit');
-        Route::put('/{purchaseOrder}', 'update')->name('update');
-        Route::delete('/{purchaseOrder}', 'destroy')->name('destroy');
-        
-        // Packing List Routes
-        Route::get('/{purchaseOrder}/packing-list', 'packingList')->name('packing-list');
-        Route::post('/packing-list/store', 'packingListStore')->name('packing-list.store');
-        Route::post('/{purchaseOrder}/packing-list/create', 'createPackingList')->name('packing-list.create');
-        Route::get('/packing-list/{id}/items', 'getPackingListItems')->name('packing-list.items');
-        Route::post('/{purchaseOrder}/packing-list/update-item', 'updateItem')->name('packing-list.update-item');
-        Route::post('/{purchaseOrder}/packing-list/bulk-approve', 'bulkApprove')->name('packing-list.bulk-approve');
-        Route::get('/{purchaseOrder}/packing-list/export', 'exportPackingList')->name('packing-list.export');
-        Route::post('/delete-items', 'deleteItems')->name('deleteItems');
+        ->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{purchaseOrder}', 'show')->name('show');
+            Route::get('/{purchaseOrder}/edit', 'edit')->name('edit');
+            Route::put('/{purchaseOrder}', 'update')->name('update');
+            Route::delete('/{purchaseOrder}', 'destroy')->name('destroy');
 
-        // Import Route
-        Route::post('/import-items', 'importItems')->name('import-items');
-    });
+            // Packing List Routes
+            Route::get('/{purchaseOrder}/packing-list', 'packingList')->name('packing-list');
+            Route::post('/packing-list/store', 'packingListStore')->name('packing-list.store');
+            Route::post('/{purchaseOrder}/packing-list/create', 'createPackingList')->name('packing-list.create');
+            Route::get('/packing-list/{id}/items', 'getPackingListItems')->name('packing-list.items');
+            Route::post('/{purchaseOrder}/packing-list/update-item', 'updateItem')->name('packing-list.update-item');
+            Route::post('/{purchaseOrder}/packing-list/bulk-approve', 'bulkApprove')->name('packing-list.bulk-approve');
+            Route::get('/{purchaseOrder}/packing-list/export', 'exportPackingList')->name('packing-list.export');
+            Route::post('/delete-items', 'deleteItems')->name('deleteItems');
+
+            // Import Route
+            Route::post('/import-items', 'importItems')->name('import-items');
+        });
 
     // Settings Routes
-    Route::middleware(PermissionMiddleware::class.':settings.view')->group(function () {
+    Route::middleware(PermissionMiddleware::class . ':settings.view')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     });
     // Expired Routes
@@ -215,7 +214,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{order}', 'destroy')->name('orders.destroy');
             Route::post('/bulk', 'bulk')->name('orders.bulk');
             Route::post('/search', 'searchProduct')->name('order.product.search');
-            Route::post('/status', 'changeStatus')->name('orders.change-status');   
+            Route::post('/status', 'changeStatus')->name('orders.change-status');
+            Route::post('/update-item', 'updateItem')->name('orders.update-item');
             Route::get('/outstanding/{product}', 'getOutstanding')->name('orders.outstanding');
             Route::get('/items/{order}', 'getItems')->name('orders.items');
         });
@@ -227,7 +227,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/', 'store')->name('approvals.store');
             Route::delete('/{approval}/destroy', 'destroy')->name('approvals.destroy');
         });
-    
+
     Route::controller(FacilityController::class)
         ->prefix('/facilities')
         ->group(function () {
@@ -235,7 +235,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/store', 'store')->name('facilities.store');
             Route::delete('/{facility}', 'destroy')->name('facilities.destroy');
         });
-    
+
     // Remove duplicate resource routes since we already have individual routes defined above
     // Route::middleware('role:admin')->group(function () {
     //     Route::resource('users', UserController::class);
@@ -247,7 +247,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->group(function () {
             Route::get('/', 'index')->name('transfers.index');
         });
-
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

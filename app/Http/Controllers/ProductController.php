@@ -29,89 +29,89 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query();
-        
+
         // Search functionality
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('barcode', 'like', "%{$search}%");
             });
         }
-        
+
         // Filter by category
         if ($request->has('category_id') && $request->category_id) {
             $query->where('category_id', $request->category_id);
         }
-        
+
         // Filter by dosage
         if ($request->has('dosage_id') && $request->dosage_id) {
             $query->where('dosage_id', $request->dosage_id);
         }
-        
+
         // Filter by active status
         if ($request->has('is_active')) {
             $query->where('is_active', $request->is_active === 'true' ? true : false);
         }
-        
+
         // Sorting
         $sortField = $request->input('sort_field', 'created_at');
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
-        
-        $products = $query->with(['dosage.category','subCategory'])
+
+        $products = $query->with(['dosage.category', 'subCategory'])
             ->paginate($request->input('per_page', 5), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $products->setPath(url()->current());
-        
+
         // Handle category listing functionality
         $categoryQuery = Category::query();
-        
+
         // Handle category search
         if ($request->has('categorySearch')) {
             $searchTerm = $request->categorySearch;
-            $categoryQuery->where(function($q) use ($searchTerm) {
+            $categoryQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('description', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('dosages', function($q) use ($searchTerm) {
-                      $q->where('name', 'like', "%{$searchTerm}%");
-                  });
+                    ->orWhere('description', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('dosages', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%");
+                    });
             });
         }
-        
+
         // Handle category sorting
         $categorySortField = $request->input('category_sort_field', 'id');
         $categorySortDirection = $request->input('category_sort_direction', 'desc');
-        
+
         $categoryQuery->orderBy($categorySortField, $categorySortDirection);
-        
+
         // Get paginated category results
         $categories = $categoryQuery
             ->paginate($request->input('category_per_page', 3), ['*'], 'category_page', $request->input('category_page', 1))
             ->withQueryString();
 
         $categories->setPath(url()->current());
-        
+
         // Handle dosage listing functionality
         $dosageQuery = Dosage::query();
-        
+
         // Handle dosage search
         if ($request->has('dosageSearch')) {
             $searchTerm = $request->dosageSearch;
-            $dosageQuery->where(function($q) use ($searchTerm) {
+            $dosageQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('description', 'like', "%{$searchTerm}%");
+                    ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
-        
+
         // Handle dosage sorting
         $dosageSortField = $request->input('dosage_sort_field', 'id');
         $dosageSortDirection = $request->input('dosage_sort_direction', 'desc');
-        
+
         $dosageQuery->orderBy($dosageSortField, $dosageSortDirection);
-        
+
         // Get paginated dosage results
         $dosages = $dosageQuery->with('category')
             ->paginate($request->input('dosage_per_page', 6), ['*'], 'dosage_page', $request->input('dosage_page', 1))
@@ -121,22 +121,22 @@ class ProductController extends Controller
 
         // Handle subcategory listing functionality
         $subcategoryQuery = SubCategory::query();
-        
+
         // Handle subcategory search
         if ($request->has('subcategorySearch')) {
             $searchTerm = $request->subcategorySearch;
-            $subcategoryQuery->where(function($q) use ($searchTerm) {
+            $subcategoryQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('description', 'like', "%{$searchTerm}%");
+                    ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
-        
+
         // Handle subcategory sorting
         $subcategorySortField = $request->input('subcategory_sort_field', 'id');
         $subcategorySortDirection = $request->input('subcategory_sort_direction', 'desc');
-        
+
         $subcategoryQuery->orderBy($subcategorySortField, $subcategorySortDirection);
-        
+
         // Get paginated subcategory results with counts
         $subcategories = $subcategoryQuery
             ->withCount(['products'])
@@ -149,16 +149,16 @@ class ProductController extends Controller
         // Handle eligible items functionality
         $eligibleItems = EligibleItem::query();
 
-        if($request->has('facility') && $request->facility) {
+        if ($request->has('facility') && $request->facility) {
             $eligibleItems->where('facility_id', $request->facility);
         }
 
-        if($request->filled('eligibleSearch')){
+        if ($request->filled('eligibleSearch')) {
             $search = $request->eligibleSearch;
-            $eligibleItems->whereHas('product', function($q) use ($search) {
+            $eligibleItems->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('barcode', 'like', "%{$search}%");
             });
         }
 
@@ -203,20 +203,20 @@ class ProductController extends Controller
                 'is_active' => 'boolean',
             ]);
 
-        $product = Product::updateOrCreate([ 'id' => $validated['id']], $validated);
+            $product = Product::updateOrCreate(['id' => $validated['id']], $validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product created successfully.',
-            'product' => new ProductResource($product)
-        ], 200);
-    } catch (Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred while saving the product',
-            'error' => $e->getMessage()
-        ], 500);
-    }
+            return response()->json([
+                'success' => true,
+                'message' => 'Product created successfully.',
+                'product' => new ProductResource($product)
+            ], 200);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while saving the product',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -231,7 +231,7 @@ class ProductController extends Controller
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
             ]);
-            
+
             $category = Category::updateOrCreate(
                 ['id' => $validated['id']],
                 [
@@ -240,9 +240,9 @@ class ProductController extends Controller
                     'is_active' => $validated['is_active'] ?? true,
                 ]
             );
-            
+
             $action = $request->id ? 'updated' : 'created';
-            
+
             return response()->json([
                 'success' => true,
                 'message' => "Category {$action} successfully",
@@ -264,7 +264,7 @@ class ProductController extends Controller
     {
         try {
             $category->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Category deleted successfully'
@@ -300,7 +300,7 @@ class ProductController extends Controller
                 ->orWhere('barcode', $search)
                 ->select('name as product_name', 'id as product_id')
                 ->first();
-                    
+
             return response()->json($product, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
@@ -330,7 +330,7 @@ class ProductController extends Controller
                     $products = Product::with(['inventories', 'supplyItems', 'dosage'])
                         ->whereIn('id', $request->ids)
                         ->get();
-                    
+
                     foreach ($products as $product) {
                         // Check if product has any related inventories
                         if ($product->inventories->count() > 0) {
@@ -358,7 +358,8 @@ class ProductController extends Controller
     }
 
     // eligible items store
-    public function addEligibleItemStore(Request $request){
+    public function addEligibleItemStore(Request $request)
+    {
         try {
             $validated = $request->validate([
                 'id' => 'nullable|exists:eligible_items,id',
@@ -386,10 +387,10 @@ class ProductController extends Controller
     }
 
     // eligible items destroy
-    public function destroyEligibleItem(EligibleItem $eligibleItem)
+    public function destroyEligibleItem($id)
     {
         try {
-            $eligibleItem->delete();
+            EligibleItem::find($id)->delete();
             return response()->json('Eligible item deleted successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);

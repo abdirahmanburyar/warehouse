@@ -4,107 +4,201 @@
     <Head title="Product List" />
     <AuthenticatedLayout>
         <!-- Tabs -->
-        <div class="border-b border-gray-200 mb-4">
-            <nav class="-mb-px flex space-x-8">
-                <button @click="activeTab = 'products'"
-                    :class="[activeTab === 'products' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+        <div class="mb-4 border-b border-gray-200">
+            <nav class="flex -mb-px space-x-8">
+                <button
+                    @click="activeTab = 'products'"
+                    :class="[
+                        activeTab === 'products'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    ]"
+                >
                     Products
                 </button>
-                <button @click="activeTab = 'categories'"
-                    :class="[activeTab === 'categories' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                <button
+                    @click="activeTab = 'categories'"
+                    :class="[
+                        activeTab === 'categories'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    ]"
+                >
                     Categories
                 </button>
-                <button @click="activeTab = 'subcategories'"
-                    :class="[activeTab === 'subcategories' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                <button
+                    @click="activeTab = 'subcategories'"
+                    :class="[
+                        activeTab === 'subcategories'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    ]"
+                >
                     Subcategories
                 </button>
-                <button @click="activeTab = 'dosages'"
-                    :class="[activeTab === 'dosages' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                <button
+                    @click="activeTab = 'dosages'"
+                    :class="[
+                        activeTab === 'dosages'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    ]"
+                >
                     Dosages
                 </button>
-                <button @click="activeTab = 'eligible'"
-                    :class="[activeTab === 'eligible' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
+                <button
+                    @click="activeTab = 'eligible'"
+                    :class="[
+                        activeTab === 'eligible'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    ]"
+                >
                     Eligible Drugs
                 </button>
             </nav>
         </div>
 
         <!-- Tab Content -->
-        <div v-show="activeTab === 'products'" class="transition-opacity duration-150"
-            :class="{ 'opacity-100': activeTab === 'products', 'opacity-0': activeTab !== 'products' }">
-            <div class="bg-white overflow-hidden sm:rounded-lg">
+        <div
+            v-show="activeTab === 'products'"
+            class="transition-opacity duration-150"
+            :class="{
+                'opacity-100': activeTab === 'products',
+                'opacity-0': activeTab !== 'products',
+            }"
+        >
+            <div class="overflow-hidden bg-white sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <!-- Search and Filters -->
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div
+                        class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between"
+                    >
                         <!-- Left side filters in a row -->
-                        <div class="flex flex-col md:flex-row gap-3 md:items-center flex-grow">
+                        <div
+                            class="flex flex-col flex-grow gap-3 md:flex-row md:items-center"
+                        >
                             <!-- Search Bar -->
-                            <div class="w-full md:w-auto flex-grow relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd"
+                            <div class="relative flex-grow w-full md:w-auto">
+                                <div
+                                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
                                             d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                            clip-rule="evenodd" />
+                                            clip-rule="evenodd"
+                                        />
                                     </svg>
                                 </div>
-                                <input v-model="search" type="text" placeholder="Search by name, SKU, barcode..."
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
-                                <div v-if="processing"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                                <input
+                                    v-model="search"
+                                    type="text"
+                                    placeholder="Search by name, SKU, barcode..."
+                                    class="w-full py-2 pl-10 pr-4 transition duration-150 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <div
+                                    v-if="processing"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400 animate-spin"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
                                     </svg>
                                 </div>
                             </div>
 
                             <!-- Category Filter -->
-                            <select v-model="category_id"
-                                class="w-full md:w-40 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                                @change="onCategoryFilterChange">
+                            <select
+                                v-model="category_id"
+                                class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-40 focus:ring-blue-500 focus:border-blue-500"
+                                @change="onCategoryFilterChange"
+                            >
                                 <option value="">All Categories</option>
-                                <option v-for="category in props.categories.data" :key="category.id"
-                                    :value="category.id">
+                                <option
+                                    v-for="category in props.categories.data"
+                                    :key="category.id"
+                                    :value="category.id"
+                                >
                                     {{ category.name }}
                                 </option>
                             </select>
 
                             <!-- Subcategory Filter -->
-                            <select v-model="sub_category_id"
-                                class="w-full md:w-40 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <select
+                                v-model="sub_category_id"
+                                class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-40 focus:ring-blue-500 focus:border-blue-500"
+                            >
                                 <option value="">All Subcategories</option>
-                                <option v-for="subcategory in props.subcategories.data" :key="subcategory.id"
-                                    :value="subcategory.id">
+                                <option
+                                    v-for="subcategory in props.subcategories
+                                        .data"
+                                    :key="subcategory.id"
+                                    :value="subcategory.id"
+                                >
                                     {{ subcategory.name }}
                                 </option>
                             </select>
 
                             <!-- Dosage Filter -->
-                            <select v-model="dosage_id"
-                                class="w-full md:w-40 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                                :disabled="!category_id">
+                            <select
+                                v-model="dosage_id"
+                                class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-40 focus:ring-blue-500 focus:border-blue-500"
+                                :disabled="!category_id"
+                            >
                                 <option value="">All Dosages</option>
-                                <option v-for="dosage in filteredDosages" :key="dosage.id" :value="dosage.id">
+                                <option
+                                    v-for="dosage in filteredDosages"
+                                    :key="dosage.id"
+                                    :value="dosage.id"
+                                >
                                     {{ dosage.name }}
                                 </option>
                             </select>
 
                             <!-- Status Filter -->
-                            <select v-model="is_active"
-                                class="w-full md:w-32 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <select
+                                v-model="is_active"
+                                class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-32 focus:ring-blue-500 focus:border-blue-500"
+                            >
                                 <option value="">All Status</option>
                                 <option :value="true">Active</option>
                                 <option :value="false">Inactive</option>
                             </select>
 
                             <!-- Per Page Selector -->
-                            <select v-model="per_page"
-                                class="w-full md:w-32 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <select
+                                v-model="per_page"
+                                class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-32 focus:ring-blue-500 focus:border-blue-500"
+                            >
                                 <option value="6">6 / page</option>
                                 <option value="25">25 / page</option>
                                 <option value="50">50 / page</option>
@@ -112,13 +206,24 @@
                             </select>
 
                             <!-- Reset Filters Button -->
-                            <button @click="resetFilters"
-                                class="w-full md:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                            <button
+                                @click="resetFilters"
+                                class="w-full px-4 py-2 text-gray-700 transition bg-gray-200 rounded-lg md:w-auto hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+                            >
                                 <span class="flex items-center justify-center">
-                                    <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 014 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    <svg
+                                        class="w-4 h-4 mr-1"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 014 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                        />
                                     </svg>
                                     Reset
                                 </span>
@@ -126,12 +231,23 @@
                         </div>
 
                         <!-- Add New Product Button on the right -->
-                        <button @click="openModal()"
-                            class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <button
+                            @click="openModal()"
+                            class="p-3 text-white transition-colors duration-200 bg-gray-900 rounded-full shadow-sm hover:bg-gray-800"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-6 h-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                />
                             </svg>
                         </button>
                     </div>
@@ -142,102 +258,198 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer">
-                                        <div class="flex items-center justify-center">
-                                            <input type="checkbox"
-                                                :checked="selectedItems.length === props.products.data.length && props.products.data.length > 0"
+                                        class="px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-900 uppercase cursor-pointer"
+                                    >
+                                        <div
+                                            class="flex items-center justify-center"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                :checked="
+                                                    selectedItems.length ===
+                                                        props.products.data
+                                                            .length &&
+                                                    props.products.data.length >
+                                                        0
+                                                "
                                                 @change="toggleSelectAll"
-                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                                                class="text-indigo-600 border-gray-300 rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                            />
                                         </div>
                                     </th>
-                                    <th @click="sort('name')" scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    <th
+                                        @click="sort('name')"
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                                    >
                                         Name
                                     </th>
-                                    <th @click="sort('sku')" scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    <th
+                                        @click="sort('sku')"
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                                    >
                                         SKU
                                     </th>
-                                    <th @click="sort('barcode')" scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    <th
+                                        @click="sort('barcode')"
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                                    >
                                         Barcode
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Category
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Subcategory
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Dosage
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase"
+                                    >
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="product in props.products.data" :key="product.id"
-                                    class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-3 py-2 whitespace-nowrap border-r">
-                                        <div class="flex items-center justify-center">
-                                            <input type="checkbox" v-model="selectedItems" :value="product.id"
-                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                                <tr
+                                    v-for="product in props.products.data"
+                                    :key="product.id"
+                                    class="transition-colors hover:bg-gray-50"
+                                >
+                                    <td
+                                        class="px-3 py-2 border-r whitespace-nowrap"
+                                    >
+                                        <div
+                                            class="flex items-center justify-center"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                v-model="selectedItems"
+                                                :value="product.id"
+                                                class="text-indigo-600 border-gray-300 rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                            />
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ product.name }}
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
+                                        {{ product.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ product.sku }}
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
+                                        {{ product.sku }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ product.barcode }}
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
+                                        {{ product.barcode }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
                                         {{ product.dosage?.category?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
                                         {{ product.sub_category?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
                                         {{ product.dosage?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                                        <div class="flex items-center justify-center space-x-3">
-                                            <button @click="openModal(product)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                                title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                    <td
+                                        class="px-6 py-4 text-sm font-medium text-center whitespace-nowrap"
+                                    >
+                                        <div
+                                            class="flex items-center justify-center space-x-3"
+                                        >
+                                            <button
+                                                @click="openModal(product)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-blue-600 transition-colors duration-150 rounded-full bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                title="Edit"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z" />
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Edit</span>
+                                                <span class="sr-only"
+                                                    >Edit</span
+                                                >
                                             </button>
-                                            <button @click="confirmDelete(product)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-                                                title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                            <button
+                                                @click="confirmDelete(product)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 transition-colors duration-150 rounded-full bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                title="Delete"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Delete</span>
+                                                <span class="sr-only"
+                                                    >Delete</span
+                                                >
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr v-if="props.products.data.length === 0">
-                                    <td colspan="9" class="px-6 py-10 text-center text-gray-500 bg-gray-50">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    <td
+                                        colspan="9"
+                                        class="px-6 py-10 text-center text-gray-500 bg-gray-50"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center justify-center"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="w-10 h-10 mb-2 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                />
                                             </svg>
                                             <p>No products found</p>
                                         </div>
@@ -248,43 +460,70 @@
                     </div>
 
                     <!-- Bulk Delete Modal -->
-                    <Modal :show="showBulkDeleteModal" @close="showBulkDeleteModal = false">
+                    <Modal
+                        :show="showBulkDeleteModal"
+                        @close="showBulkDeleteModal = false"
+                    >
                         <div class="p-6">
                             <h2 class="text-lg font-medium text-gray-900">
                                 Delete Selected Products
                             </h2>
 
                             <p class="mt-1 text-sm text-gray-600">
-                                Are you sure you want to delete the selected products? This action cannot be undone.
+                                Are you sure you want to delete the selected
+                                products? This action cannot be undone.
                             </p>
 
-                            <div class="mt-6 flex justify-end space-x-3">
-                                <SecondaryButton @click="showBulkDeleteModal = false">Cancel</SecondaryButton>
-                                <DangerButton :disabled="isBulkDeleting" @click="bulkDelete">Delete</DangerButton>
+                            <div class="flex justify-end mt-6 space-x-3">
+                                <SecondaryButton
+                                    @click="showBulkDeleteModal = false"
+                                    >Cancel</SecondaryButton
+                                >
+                                <DangerButton
+                                    :disabled="isBulkDeleting"
+                                    @click="bulkDelete"
+                                    >Delete</DangerButton
+                                >
                             </div>
                         </div>
                     </Modal>
 
                     <!-- Bulk Actions -->
-                    <div v-if="selectedItems.length > 0"
-                        class="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-2 space-x-2">
-                        <span class="text-sm text-gray-600">{{ selectedItems.length }} products selected</span>
-                        <button @click="confirmBulkDelete"
-                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <div
+                        v-if="selectedItems.length > 0"
+                        class="fixed z-50 flex items-center px-4 py-2 space-x-2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-lg shadow-lg bottom-20 left-1/2"
+                    >
+                        <span class="text-sm text-gray-600"
+                            >{{ selectedItems.length }} products selected</span
+                        >
+                        <button
+                            @click="confirmBulkDelete"
+                            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white transition-colors duration-200 bg-red-600 rounded-md shadow-sm hover:bg-red-700"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 mr-1.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
                             </svg>
                             Delete
                         </button>
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-2 flex justify-between items-center">
-                        <span class="text-sm text-gray-600 mr-3">
-                            Showing {{ props.products.meta.from }} to {{ props.products.meta.to }} of {{
-                            props.products.meta.total }}
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="mr-3 text-sm text-gray-600">
+                            Showing {{ props.products.meta.from }} to
+                            {{ props.products.meta.to }} of
+                            {{ props.products.meta.total }}
                         </span>
                         <Pagination :links="props.products.meta.links" />
                     </div>
@@ -293,34 +532,66 @@
         </div>
 
         <!-- Categories Tab Content -->
-        <div v-show="activeTab === 'categories'" class="transition-opacity duration-150"
-            :class="{ 'opacity-100': activeTab === 'categories', 'opacity-0': activeTab !== 'categories' }">
-            <div class="p-4 bg-white overflow-hidden sm:rounded-lg">
+        <div
+            v-show="activeTab === 'categories'"
+            class="transition-opacity duration-150"
+            :class="{
+                'opacity-100': activeTab === 'categories',
+                'opacity-0': activeTab !== 'categories',
+            }"
+        >
+            <div class="p-4 overflow-hidden bg-white sm:rounded-lg">
                 <div class="bg-white border-b border-gray-200">
                     <!-- Search and Add Button -->
                     <div
-                        class="flex flex-col md:flex-row md:items-center md:justify-between mb-1 space-y-4 md:space-y-0">
+                        class="flex flex-col mb-1 space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0"
+                    >
                         <div class="w-full md:w-1/3">
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
+                                <div
+                                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
                                             d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                            clip-rule="evenodd"></path>
+                                            clip-rule="evenodd"
+                                        ></path>
                                     </svg>
                                 </div>
-                                <input v-model="categorySearch" type="text"
+                                <input
+                                    v-model="categorySearch"
+                                    type="text"
                                     placeholder="Search by name or description..."
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
-                                <div v-if="categoryProcessing"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                                    class="w-full py-2 pl-10 pr-4 transition duration-150 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <div
+                                    v-if="categoryProcessing"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400 animate-spin"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
                                     </svg>
                                 </div>
                             </div>
@@ -329,8 +600,10 @@
                         <div class="flex items-center space-x-4">
                             <!-- per page -->
                             <div class="w-full md:w-auto">
-                                <select v-model="category_per_page"
-                                    class="w-full md:w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                                <select
+                                    v-model="category_per_page"
+                                    class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-48 focus:ring-blue-500 focus:border-blue-500"
+                                >
                                     <option value="6">6 per page</option>
                                     <option value="25">25 per page</option>
                                     <option value="50">50 per page</option>
@@ -338,110 +611,214 @@
                                 </select>
                             </div>
 
-                            <button @click="openCategoryModal()"
-                                class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            <button
+                                @click="openCategoryModal()"
+                                class="p-3 text-white transition-colors duration-200 bg-gray-900 rounded-full shadow-sm hover:bg-gray-800"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
                                 </svg>
                             </button>
                         </div>
                     </div>
 
                     <!-- Categories Table -->
-                    <div class="overflow-x-auto bg-white rounded-lg overflow-y-auto relative">
+                    <div
+                        class="relative overflow-x-auto overflow-y-auto bg-white rounded-lg"
+                    >
                         <table
-                            class="border-collapse table-auto w-full whitespace-no-wrap bg-white table-striped relative">
+                            class="relative w-full whitespace-no-wrap bg-white border-collapse table-auto table-striped"
+                        >
                             <thead>
                                 <tr class="text-left">
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortCategory('id')">
-                                        <div class="flex items-center">
-                                            SN
-                                        </div>
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortCategory('id')"
+                                    >
+                                        <div class="flex items-center">SN</div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortCategory('name')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortCategory('name')"
+                                    >
                                         <div class="flex items-center">
                                             Name
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200"
+                                    >
                                         Description
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortCategory('is_active')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortCategory('is_active')"
+                                    >
                                         <div class="flex items-center">
                                             Status
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortCategory('created_at')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortCategory('created_at')"
+                                    >
                                         <div class="flex items-center">
                                             Created At
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200"
+                                    >
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(category, i) in props.categories.data" :key="category.id"
-                                    class="hover:bg-gray-100 transition-colors duration-150">
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ i + 1 }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ category.name }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <div class="max-w-xs truncate">{{ category.description || 'No description' }}
+                                <tr
+                                    v-for="(category, i) in props.categories
+                                        .data"
+                                    :key="category.id"
+                                    class="transition-colors duration-150 hover:bg-gray-100"
+                                >
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ i + 1 }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ category.name }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <div class="max-w-xs truncate">
+                                            {{
+                                                category.description ||
+                                                "No description"
+                                            }}
                                         </div>
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <span :class="[
-                                            'px-2 py-1 rounded-full text-xs font-medium',
-                                            category.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        ]">
-                                            {{ category.is_active ? 'Active' : 'Inactive' }}
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <span
+                                            :class="[
+                                                'px-2 py-1 rounded-full text-xs font-medium',
+                                                category.is_active
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800',
+                                            ]"
+                                        >
+                                            {{
+                                                category.is_active
+                                                    ? "Active"
+                                                    : "Inactive"
+                                            }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ formatDate(category.created_at) }}
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ formatDate(category.created_at) }}
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <div class="flex items-center space-x-2">
-                                            <button @click="openCategoryModal(category)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                                title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <div
+                                            class="flex items-center space-x-2"
+                                        >
+                                            <button
+                                                @click="
+                                                    openCategoryModal(category)
+                                                "
+                                                class="inline-flex items-center justify-center w-8 h-8 text-blue-600 transition-colors duration-150 rounded-full bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                title="Edit"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z" />
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Edit</span>
+                                                <span class="sr-only"
+                                                    >Edit</span
+                                                >
                                             </button>
-                                            <button @click="confirmDeleteCategory(category)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-                                                title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                            <button
+                                                @click="
+                                                    confirmDeleteCategory(
+                                                        category
+                                                    )
+                                                "
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 transition-colors duration-150 rounded-full bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                title="Delete"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Delete</span>
+                                                <span class="sr-only"
+                                                    >Delete</span
+                                                >
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr v-if="props.categories.data.length === 0">
-                                    <td colspan="6" class="py-6 text-center text-gray-500">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <td
+                                        colspan="6"
+                                        class="py-6 text-center text-gray-500"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center justify-center"
+                                        >
+                                            <svg
+                                                class="w-12 h-12 mb-3 text-gray-400"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
-                                            <span class="text-lg font-medium">No categories found</span>
+                                            <span class="text-lg font-medium"
+                                                >No categories found</span
+                                            >
                                         </div>
                                     </td>
                                 </tr>
@@ -451,41 +828,76 @@
 
                     <!-- Pagination -->
                     <div class="mt-4">
-                        <Pagination :links="props.categories.meta.links" class="flex justify-end" />
+                        <Pagination
+                            :links="props.categories.meta.links"
+                            class="flex justify-end"
+                        />
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- SubCategories Tab Content -->
-        <div v-show="activeTab === 'subcategories'" class="transition-opacity duration-150"
-            :class="{ 'opacity-100': activeTab === 'subcategories', 'opacity-0': activeTab !== 'subcategories' }">
-            <div class="p-4 bg-white overflow-hidden sm:rounded-lg">
+        <div
+            v-show="activeTab === 'subcategories'"
+            class="transition-opacity duration-150"
+            :class="{
+                'opacity-100': activeTab === 'subcategories',
+                'opacity-0': activeTab !== 'subcategories',
+            }"
+        >
+            <div class="p-4 overflow-hidden bg-white sm:rounded-lg">
                 <div class="bg-white border-b border-gray-200">
                     <!-- Search and Add Button -->
                     <div
-                        class="flex flex-col md:flex-row md:items-center md:justify-between mb-1 space-y-4 md:space-y-0">
+                        class="flex flex-col mb-1 space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0"
+                    >
                         <div class="w-full md:w-1/3">
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
+                                <div
+                                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
                                             d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                            clip-rule="evenodd"></path>
+                                            clip-rule="evenodd"
+                                        ></path>
                                     </svg>
                                 </div>
-                                <input v-model="subcategorySearch" type="text"
+                                <input
+                                    v-model="subcategorySearch"
+                                    type="text"
                                     placeholder="Search by name or description..."
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
-                                <div v-if="subcategoryProcessing"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                                    class="w-full py-2 pl-10 pr-4 transition duration-150 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <div
+                                    v-if="subcategoryProcessing"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-gray-400 animate-spin"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
                                     </svg>
                                 </div>
                             </div>
@@ -494,8 +906,10 @@
                         <div class="flex items-center space-x-4">
                             <!-- per page -->
                             <div class="w-full md:w-auto">
-                                <select v-model="subcategory_per_page"
-                                    class="w-full md:w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                                <select
+                                    v-model="subcategory_per_page"
+                                    class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-48 focus:ring-blue-500 focus:border-blue-500"
+                                >
                                     <option value="6">6 per page</option>
                                     <option value="25">25 per page</option>
                                     <option value="50">50 per page</option>
@@ -503,111 +917,218 @@
                                 </select>
                             </div>
 
-                            <button @click="openSubcategoryModal()"
-                                class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            <button
+                                @click="openSubcategoryModal()"
+                                class="p-3 text-white transition-colors duration-200 bg-gray-900 rounded-full shadow-sm hover:bg-gray-800"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
                                 </svg>
                             </button>
                         </div>
                     </div>
 
                     <!-- SubCategories Table -->
-                    <div class="overflow-x-auto bg-white rounded-lg overflow-y-auto relative">
+                    <div
+                        class="relative overflow-x-auto overflow-y-auto bg-white rounded-lg"
+                    >
                         <table
-                            class="border-collapse table-auto w-full whitespace-no-wrap bg-white table-striped relative">
+                            class="relative w-full whitespace-no-wrap bg-white border-collapse table-auto table-striped"
+                        >
                             <thead>
                                 <tr class="text-left">
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortSubcategory('id')">
-                                        <div class="flex items-center">
-                                            SN
-                                        </div>
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('id')"
+                                    >
+                                        <div class="flex items-center">SN</div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortSubcategory('name')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('name')"
+                                    >
                                         <div class="flex items-center">
                                             Name
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200"
+                                    >
                                         Description
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortSubcategory('is_active')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('is_active')"
+                                    >
                                         <div class="flex items-center">
                                             Status
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200 cursor-pointer"
-                                        @click="sortSubcategory('created_at')">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200 cursor-pointer"
+                                        @click="sortSubcategory('created_at')"
+                                    >
                                         <div class="flex items-center">
                                             Created At
                                         </div>
                                     </th>
-                                    <th class="py-3 px-4 uppercase font-semibold text-sm border-b-2 border-gray-200">
+                                    <th
+                                        class="px-4 py-3 text-sm font-semibold uppercase border-b-2 border-gray-200"
+                                    >
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(subcategory, i) in props.subcategories.data" :key="subcategory.id"
-                                    class="hover:bg-gray-100 transition-colors duration-150">
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ i + 1 }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ subcategory.name }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <div class="max-w-xs truncate">{{ subcategory.description || 'No description' }}
+                                <tr
+                                    v-for="(subcategory, i) in props
+                                        .subcategories.data"
+                                    :key="subcategory.id"
+                                    class="transition-colors duration-150 hover:bg-gray-100"
+                                >
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ i + 1 }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ subcategory.name }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <div class="max-w-xs truncate">
+                                            {{
+                                                subcategory.description ||
+                                                "No description"
+                                            }}
                                         </div>
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <span :class="[
-                                            'px-2 py-1 rounded-full text-xs font-medium',
-                                            subcategory.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        ]">
-                                            {{ subcategory.is_active ? 'Active' : 'Inactive' }}
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <span
+                                            :class="[
+                                                'px-2 py-1 rounded-full text-xs font-medium',
+                                                subcategory.is_active
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800',
+                                            ]"
+                                        >
+                                            {{
+                                                subcategory.is_active
+                                                    ? "Active"
+                                                    : "Inactive"
+                                            }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ formatDate(subcategory.created_at)
-                                        }}
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        {{ formatDate(subcategory.created_at) }}
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <div class="flex items-center space-x-2">
-                                            <button @click="openSubcategoryModal(subcategory)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                                title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                    <td
+                                        class="px-4 py-3 border-b border-gray-200"
+                                    >
+                                        <div
+                                            class="flex items-center space-x-2"
+                                        >
+                                            <button
+                                                @click="
+                                                    openSubcategoryModal(
+                                                        subcategory
+                                                    )
+                                                "
+                                                class="inline-flex items-center justify-center w-8 h-8 text-blue-600 transition-colors duration-150 rounded-full bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                title="Edit"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z" />
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Edit</span>
+                                                <span class="sr-only"
+                                                    >Edit</span
+                                                >
                                             </button>
-                                            <button @click="confirmDeleteSubcategory(subcategory)"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-                                                title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                            <button
+                                                @click="
+                                                    confirmDeleteSubcategory(
+                                                        subcategory
+                                                    )
+                                                "
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 transition-colors duration-150 rounded-full bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                title="Delete"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
                                                 </svg>
-                                                <span class="sr-only">Delete</span>
+                                                <span class="sr-only"
+                                                    >Delete</span
+                                                >
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="props.subcategories.data.length === 0">
-                                    <td colspan="6" class="py-6 text-center text-gray-500">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <tr
+                                    v-if="props.subcategories.data.length === 0"
+                                >
+                                    <td
+                                        colspan="6"
+                                        class="py-6 text-center text-gray-500"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center justify-center"
+                                        >
+                                            <svg
+                                                class="w-12 h-12 mb-3 text-gray-400"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
-                                            <span class="text-lg font-medium">No subcategories found</span>
+                                            <span class="text-lg font-medium"
+                                                >No subcategories found</span
+                                            >
                                         </div>
                                     </td>
                                 </tr>
@@ -617,39 +1138,66 @@
 
                     <!-- Pagination -->
                     <div class="mt-4">
-                        <Pagination :links="props.subcategories.meta.links" class="flex justify-end" />
+                        <Pagination
+                            :links="props.subcategories.meta.links"
+                            class="flex justify-end"
+                        />
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Dosages Tab Content -->
-        <div v-show="activeTab === 'dosages'" class="transition-opacity duration-150 bg-white"
-            :class="{ 'opacity-100': activeTab === 'dosages', 'opacity-0': activeTab !== 'dosages' }">
-            <div class="mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div
+            v-show="activeTab === 'dosages'"
+            class="transition-opacity duration-150 bg-white"
+            :class="{
+                'opacity-100': activeTab === 'dosages',
+                'opacity-0': activeTab !== 'dosages',
+            }"
+        >
+            <div class="px-4 py-6 mx-auto sm:px-6 lg:px-8">
                 <!-- Search and Add Button -->
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                <div
+                    class="flex flex-col mb-6 md:flex-row md:items-center md:justify-between"
+                >
                     <!-- Left side with search -->
-                    <div class="w-full md:w-1/3 relative">
+                    <div class="relative w-full md:w-1/3">
                         <div class="relative">
-                            <input type="text" v-model="dosageSearch"
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                                placeholder="Search dosages...">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            <input
+                                type="text"
+                                v-model="dosageSearch"
+                                class="w-full py-2 pl-10 pr-4 transition duration-150 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Search dosages..."
+                            />
+                            <div
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                            >
+                                <svg
+                                    class="w-5 h-5 text-gray-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center mt-4 md:mt-0 space-x-4">
+                    <div class="flex items-center mt-4 space-x-4 md:mt-0">
                         <!-- Per page dropdown -->
                         <div class="w-full md:w-auto">
-                            <select v-model="dosage_per_page"
-                                class="w-full md:w-48 pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <select
+                                v-model="dosage_per_page"
+                                class="w-full py-2 pl-3 pr-10 text-sm transition duration-150 border border-gray-300 rounded-lg md:w-48 focus:ring-blue-500 focus:border-blue-500"
+                            >
                                 <option value="6">6 per page</option>
                                 <option value="25">25 per page</option>
                                 <option value="50">50 per page</option>
@@ -657,92 +1205,158 @@
                             </select>
                         </div>
 
-                        <button @click="openDosageModal()"
-                            class="rounded-full p-3 bg-gray-900 hover:bg-gray-800 text-white shadow-sm transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <button
+                            @click="openDosageModal()"
+                            class="p-3 text-white transition-colors duration-200 bg-gray-900 rounded-full shadow-sm hover:bg-gray-800"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-6 h-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                />
                             </svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Dosages Table -->
-                <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="overflow-hidden bg-white rounded-lg shadow">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         #
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Name
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Description
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Category
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                                    >
                                         Status
                                     </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase"
+                                    >
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="(dosage, i) in props.dosages.data" :key="dosage.id"
-                                    class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <tr
+                                    v-for="(dosage, i) in props.dosages.data"
+                                    :key="dosage.id"
+                                    class="transition-colors hover:bg-gray-50"
+                                >
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap"
+                                    >
                                         {{ i + 1 }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ dosage.name }}</div>
+                                        <div
+                                            class="text-sm font-medium text-gray-900"
+                                        >
+                                            {{ dosage.name }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900">{{ dosage.description || '-' }}</div>
+                                        <div class="text-sm text-gray-900">
+                                            {{ dosage.description || "-" }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ dosage.category?.name || '-' }}</div>
+                                        <div class="text-sm text-gray-900">
+                                            {{ dosage.category?.name || "-" }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="[
-                                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                                            dosage.is_active
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'
-                                        ]">
-                                            {{ dosage.is_active ? 'Active' : 'Inactive' }}
+                                        <span
+                                            :class="[
+                                                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                                                dosage.is_active
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800',
+                                            ]"
+                                        >
+                                            {{
+                                                dosage.is_active
+                                                    ? "Active"
+                                                    : "Inactive"
+                                            }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button @click="openDosageModal(dosage)"
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                            title="Edit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z" />
+                                    <td
+                                        class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap"
+                                    >
+                                        <button
+                                            @click="openDosageModal(dosage)"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-blue-600 transition-colors duration-150 rounded-full bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            title="Edit"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="w-4 h-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1-8l2-2 2.727 2.727L9 12l2.727 2.727 2-2M2 16.5a2.5 2.5 0 005 0 2.5 2.5 0 00-5 0z"
+                                                />
                                             </svg>
                                             <span class="sr-only">Edit</span>
                                         </button>
-                                        <button @click="confirmDeleteDosage(dosage)"
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-                                            title="Delete">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <button
+                                            @click="confirmDeleteDosage(dosage)"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-red-600 transition-colors duration-150 rounded-full bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                            title="Delete"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="w-4 h-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
                                             </svg>
                                             <span class="sr-only">Delete</span>
                                         </button>
@@ -750,14 +1364,29 @@
                                 </tr>
                                 <!-- Empty state -->
                                 <tr v-if="props.dosages.data.length === 0">
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <td
+                                        colspan="7"
+                                        class="px-6 py-10 text-center text-gray-500"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center justify-center"
+                                        >
+                                            <svg
+                                                class="w-12 h-12 mb-3 text-gray-400"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
-                                            <span class="text-lg font-medium">No dosages found</span>
+                                            <span class="text-lg font-medium"
+                                                >No dosages found</span
+                                            >
                                         </div>
                                     </td>
                                 </tr>
@@ -768,37 +1397,73 @@
 
                 <!-- Pagination -->
                 <div class="mt-5">
-                    <Pagination :links="props.dosages.meta.links" class="flex justify-end" />
+                    <Pagination
+                        :links="props.dosages.meta.links"
+                        class="flex justify-end"
+                    />
                 </div>
             </div>
         </div>
 
         <!-- Eligible Drugs tab -->
-        <div v-if="activeTab === 'eligible'" class="transition-opacity duration-150"
-            :class="{ 'opacity-100': activeTab === 'eligible', 'opacity-0': activeTab !== 'eligible' }">
-            <div class="bg-white overflow-hidden sm:rounded-lg">
+        <div
+            v-if="activeTab === 'eligible'"
+            class="transition-opacity duration-150"
+            :class="{
+                'opacity-100': activeTab === 'eligible',
+                'opacity-0': activeTab !== 'eligible',
+            }"
+        >
+            <div class="overflow-hidden bg-white sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <div class="grid grid-cols-3 gap-4">
                         <div class="space-y-2">
-                            <label for="facility" class="block text-sm font-medium text-gray-700">Facility</label>
-                            <select id="facility" v-model="facility"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <label
+                                for="facility"
+                                class="block text-sm font-medium text-gray-700"
+                                >Facility</label
+                            >
+                            <select
+                                id="facility"
+                                v-model="facility"
+                                class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            >
                                 <option value="">All</option>
-                                <option v-for="facility in props.facilities" :key="facility.id" :value="facility.id">{{
-                                    facility.name }}</option>
+                                <option
+                                    v-for="facility in props.facilities"
+                                    :key="facility.id"
+                                    :value="facility.id"
+                                >
+                                    {{ facility.name }}
+                                </option>
                             </select>
                         </div>
                         <div class="space-y-2">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
-                            <input type="search" name="search" id="search" v-model="eligibleSearch"
-                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                placeholder="Search facilities">
+                            <label
+                                for="search"
+                                class="block text-sm font-medium text-gray-700"
+                                >Search</label
+                            >
+                            <input
+                                type="search"
+                                name="search"
+                                id="search"
+                                v-model="eligibleSearch"
+                                class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="Search facilities"
+                            />
                         </div>
                         <div class="space-y-2">
-                            <label for="eligible_per_page" class="block text-sm font-medium text-gray-700">Items per
-                                page</label>
-                            <select id="eligible_per_page" v-model="eligible_per_page"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <label
+                                for="eligible_per_page"
+                                class="block text-sm font-medium text-gray-700"
+                                >Items per page</label
+                            >
+                            <select
+                                id="eligible_per_page"
+                                v-model="eligible_per_page"
+                                class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            >
                                 <option value="6">6</option>
                                 <option value="10">10</option>
                                 <option value="15">15</option>
@@ -806,11 +1471,12 @@
                                 <option value="100">100</option>
                             </select>
                         </div>
-
                     </div>
                     <div class="flex justify-end mt-3">
-                        <button @click="openEligibleCreateModal()"
-                            class="inline-flex items-center justify-end px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150 ease-in-out">
+                        <button
+                            @click="openEligibleCreateModal()"
+                            class="inline-flex items-center justify-end px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition-colors duration-150 ease-in-out bg-green-600 border border-transparent rounded-md hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
                             Add Eligible Item
                         </button>
                     </div>
@@ -819,22 +1485,31 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    scope="col"
+                                    class="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase"
+                                >
                                     Name
                                 </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                                    Facility
+                                <th
+                                    scope="col"
+                                    class="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase"
+                                >
+                                    Health Facility
                                 </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    scope="col"
+                                    class="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase"
+                                >
                                     Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="eligibleItem in props.eligibleItems.data" :key="eligibleItem.id">
+                            <tr
+                                v-for="eligibleItem in props.eligibleItems.data"
+                                :key="eligibleItem.id"
+                            >
                                 <td class="px-6 py-4 whitespace-no-wrap">
                                     {{ eligibleItem.product?.name }}
                                 </td>
@@ -842,12 +1517,18 @@
                                     {{ eligibleItem.facility?.name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-no-wrap">
-                                    <button @click="editEligibleItem(eligibleItem)"
-                                        class="text-blue-600 hover:text-blue-900">
+                                    <button
+                                        @click="editEligibleItem(eligibleItem)"
+                                        class="text-blue-600 hover:text-blue-900"
+                                    >
                                         Edit
                                     </button>
-                                    <button @click="deleteEligibleItem(eligibleItem.id)"
-                                        class="text-red-600 hover:text-red-900">
+                                    <button
+                                        @click="
+                                            deleteEligibleItem(eligibleItem.id)
+                                        "
+                                        class="text-red-600 hover:text-red-900"
+                                    >
                                         Delete
                                     </button>
                                 </td>
@@ -855,10 +1536,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div>
+                <div class="mb-6">
                     <Pagination :links="props.eligibleItems.meta.links" />
                 </div>
-
             </div>
         </div>
 
@@ -872,57 +1552,99 @@
                 </div>
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-gray-900">
-                        {{ form.id ? 'Edit Product' : 'Create New Product' }}
+                        {{ form.id ? "Edit Product" : "Create New Product" }}
                     </h2>
-                    <button @click="closeModal"
+                    <button
+                        @click="closeModal"
                         class="text-gray-400 hover:text-gray-500 focus:outline-none focus:underline"
-                        :disabled="isSubmitted || processing">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                        :disabled="isSubmitted || processing"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
                 <div class="mt-4">
                     <form @submit.prevent="submitForm" class="space-y-6">
                         <!-- Basic Information Section -->
-                        <div class="bg-gray-50 p-4 rounded-md mb-4">
-                            <h3 class="text-md font-medium text-gray-700 mb-3">Basic Information</h3>
+                        <div class="p-4 mb-4 rounded-md bg-gray-50">
+                            <h3 class="mb-3 font-medium text-gray-700 text-md">
+                                Basic Information
+                            </h3>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div
+                                class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2"
+                            >
                                 <!-- Name -->
                                 <div>
                                     <label for="name">Product Name</label>
-                                    <input id="name" type="text" class="mt-1 block w-full" v-model="form.name" required
-                                        autocomplete="name" placeholder="Enter product name" />
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        class="block w-full mt-1"
+                                        v-model="form.name"
+                                        required
+                                        autocomplete="name"
+                                        placeholder="Enter product name"
+                                    />
                                 </div>
 
                                 <!-- SKU -->
                                 <div>
                                     <label for="sku">SKU</label>
-                                    <input id="sku" type="text" class="mt-1 block w-full" v-model="form.sku" required
-                                        placeholder="Enter SKU code" />
+                                    <input
+                                        id="sku"
+                                        type="text"
+                                        class="block w-full mt-1"
+                                        v-model="form.sku"
+                                        required
+                                        placeholder="Enter SKU code"
+                                    />
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <!-- Barcode -->
                                 <div>
                                     <label for="barcode">Barcode</label>
-                                    <input id="barcode" type="text" class="mt-1 block w-full" v-model="form.barcode"
-                                        placeholder="Enter barcode (optional)" />
+                                    <input
+                                        id="barcode"
+                                        type="text"
+                                        class="block w-full mt-1"
+                                        v-model="form.barcode"
+                                        placeholder="Enter barcode (optional)"
+                                    />
                                 </div>
 
                                 <!-- Category -->
                                 <div>
                                     <label for="category_id">Category</label>
-                                    <select v-model="form.category_id" id="category_id"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
-                                        @change="onCategoryChange">
-                                        <option value="">Select a category</option>
-                                        <option v-for="category in props.categories.data" :key="category.id"
-                                            :value="category.id">
+                                    <select
+                                        v-model="form.category_id"
+                                        id="category_id"
+                                        class="block w-full mt-1 border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                                        @change="onCategoryChange"
+                                    >
+                                        <option value="">
+                                            Select a category
+                                        </option>
+                                        <option
+                                            v-for="category in props.categories
+                                                .data"
+                                            :key="category.id"
+                                            :value="category.id"
+                                        >
                                             {{ category.name }}
                                         </option>
                                     </select>
@@ -930,12 +1652,23 @@
 
                                 <!-- Subcategory -->
                                 <div>
-                                    <label for="sub_category_id">Subcategory</label>
-                                    <select v-model="form.sub_category_id" id="sub_category_id"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md">
-                                        <option value="">Select a subcategory</option>
-                                        <option v-for="subcategory in props.subcategories.data" :key="subcategory.id"
-                                            :value="subcategory.id">
+                                    <label for="sub_category_id"
+                                        >Subcategory</label
+                                    >
+                                    <select
+                                        v-model="form.sub_category_id"
+                                        id="sub_category_id"
+                                        class="block w-full mt-1 border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                                    >
+                                        <option value="">
+                                            Select a subcategory
+                                        </option>
+                                        <option
+                                            v-for="subcategory in props
+                                                .subcategories.data"
+                                            :key="subcategory.id"
+                                            :value="subcategory.id"
+                                        >
                                             {{ subcategory.name }}
                                         </option>
                                     </select>
@@ -944,12 +1677,20 @@
                                 <!-- Dosage -->
                                 <div>
                                     <label for="dosage_id">Dosage</label>
-                                    <select v-model="form.dosage_id" id="dosage_id"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
-                                        :disabled="!form.category_id">
-                                        <option value="">Select a dosage</option>
-                                        <option v-for="dosage in filteredFormDosages" :key="dosage.id"
-                                            :value="dosage.id">
+                                    <select
+                                        v-model="form.dosage_id"
+                                        id="dosage_id"
+                                        class="block w-full mt-1 border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                                        :disabled="!form.category_id"
+                                    >
+                                        <option value="">
+                                            Select a dosage
+                                        </option>
+                                        <option
+                                            v-for="dosage in filteredFormDosages"
+                                            :key="dosage.id"
+                                            :value="dosage.id"
+                                        >
                                             {{ dosage.name }}
                                         </option>
                                     </select>
@@ -957,44 +1698,77 @@
 
                                 <!-- Reorder Level -->
                                 <div>
-                                    <label for="reorder_level">Reorder Level</label>
-                                    <input id="reorder_level" type="number" class="mt-1 block w-full"
-                                        v-model="form.reorder_level" placeholder="Enter reorder level" />
+                                    <label for="reorder_level"
+                                        >Reorder Level</label
+                                    >
+                                    <input
+                                        id="reorder_level"
+                                        type="number"
+                                        class="block w-full mt-1"
+                                        v-model="form.reorder_level"
+                                        placeholder="Enter reorder level"
+                                    />
                                 </div>
 
                                 <!-- Description -->
                                 <div class="md:col-span-2">
                                     <label for="description">Description</label>
-                                    <textarea id="description"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition"
-                                        v-model="form.description" rows="3"
-                                        placeholder="Enter product description"></textarea>
+                                    <textarea
+                                        id="description"
+                                        class="block w-full mt-1 transition border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        v-model="form.description"
+                                        rows="3"
+                                        placeholder="Enter product description"
+                                    ></textarea>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Form Actions -->
-                        <div class="flex items-center justify-end pt-4 border-t border-gray-200">
-                            <button type="button"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition mr-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50"
-                                @click="closeModal" :disabled="isSubmitted || processing">
+                        <div
+                            class="flex items-center justify-end pt-4 border-t border-gray-200"
+                        >
+                            <button
+                                type="button"
+                                class="px-4 py-2 mr-2 text-gray-800 transition bg-gray-200 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50"
+                                @click="closeModal"
+                                :disabled="isSubmitted || processing"
+                            >
                                 Cancel
                             </button>
-                            <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
-                                :disabled="isSubmitted || processing">
+                            <button
+                                type="submit"
+                                class="px-4 py-2 text-white transition bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+                                :disabled="isSubmitted || processing"
+                            >
                                 <span v-if="processing || isSubmitted">
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
-                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                                    <svg
+                                        class="inline-block w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
                                     </svg>
                                     Processing...
                                 </span>
-                                <span v-else>{{ form.id ? 'Update Product' : 'Create Product' }}</span>
+                                <span v-else>{{
+                                    form.id
+                                        ? "Update Product"
+                                        : "Create Product"
+                                }}</span>
                             </button>
                         </div>
                     </form>
@@ -1010,23 +1784,45 @@
                 </h2>
 
                 <p class="mt-3 text-sm text-gray-600">
-                    Are you sure you want to delete this product? This action cannot be undone.
+                    Are you sure you want to delete this product? This action
+                    cannot be undone.
                 </p>
 
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                        @click="closeDeleteModal" :disabled="processing">
+                <div class="flex justify-end mt-6">
+                    <button
+                        type="button"
+                        class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                        @click="closeDeleteModal"
+                        :disabled="processing"
+                    >
                         Cancel
                     </button>
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                        @click="deleteProduct" :disabled="processing">
-                        <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <button
+                        type="button"
+                        class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        @click="deleteProduct"
+                        :disabled="processing"
+                    >
+                        <svg
+                            v-if="processing"
+                            class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                         </svg>
                         Delete
                     </button>
@@ -1035,37 +1831,67 @@
         </Modal>
 
         <!-- Dosage Modal -->
-        <Modal :show="showDosageModal" @close="closeDosageModal" max-width="2xl">
+        <Modal
+            :show="showDosageModal"
+            @close="closeDosageModal"
+            max-width="2xl"
+        >
             <div class="p-6">
                 <div class="flex items-center justify-between mb-5">
                     <h2 class="text-xl font-semibold text-gray-900">
-                        {{ dosageForm.id ? 'Edit Dosage' : 'Add New Dosage' }}
+                        {{ dosageForm.id ? "Edit Dosage" : "Add New Dosage" }}
                     </h2>
-                    <button @click="closeDosageModal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <button
+                        @click="closeDosageModal"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
 
                 <!-- Error Display -->
-                <div v-if="dosageErrors" class="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
+                <div
+                    v-if="dosageErrors"
+                    class="p-4 mb-4 border-l-4 border-red-400 bg-red-50"
+                >
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
+                            <svg
+                                class="w-5 h-5 text-red-400"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
                                     d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clip-rule="evenodd" />
+                                    clip-rule="evenodd"
+                                />
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+                            <h3 class="text-sm font-medium text-red-800">
+                                Please correct the following errors:
+                            </h3>
                             <div class="mt-2 text-sm text-red-700">
                                 <ul class="list-disc list-inside">
-                                    <li v-for="(error, field) in dosageErrors" :key="field">
+                                    <li
+                                        v-for="(error, field) in dosageErrors"
+                                        :key="field"
+                                    >
                                         {{ error[0] }}
                                     </li>
                                 </ul>
@@ -1077,24 +1903,44 @@
                 <form @submit.prevent="submitDosageForm" class="space-y-6">
                     <!-- Name -->
                     <div>
-                        <label for="dosage-name" class="block text-sm font-medium text-gray-700">
+                        <label
+                            for="dosage-name"
+                            class="block text-sm font-medium text-gray-700"
+                        >
                             Name <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="dosage-name" v-model="dosageForm.name"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            :class="{ 'border-red-300': dosageErrors?.name }" placeholder="Enter dosage name">
+                        <input
+                            type="text"
+                            id="dosage-name"
+                            v-model="dosageForm.name"
+                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            :class="{ 'border-red-300': dosageErrors?.name }"
+                            placeholder="Enter dosage name"
+                        />
                     </div>
 
                     <!-- Category -->
                     <div>
-                        <label for="dosage-category" class="block text-sm font-medium text-gray-700">
+                        <label
+                            for="dosage-category"
+                            class="block text-sm font-medium text-gray-700"
+                        >
                             Category <span class="text-red-500">*</span>
                         </label>
-                        <select id="dosage-category" v-model="dosageForm.category_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            :class="{ 'border-red-300': dosageErrors?.category_id }">
+                        <select
+                            id="dosage-category"
+                            v-model="dosageForm.category_id"
+                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            :class="{
+                                'border-red-300': dosageErrors?.category_id,
+                            }"
+                        >
                             <option value="">Select a category</option>
-                            <option v-for="category in props.categories.data" :key="category.id" :value="category.id">
+                            <option
+                                v-for="category in props.categories.data"
+                                :key="category.id"
+                                :value="category.id"
+                            >
                                 {{ category.name }}
                             </option>
                         </select>
@@ -1102,43 +1948,82 @@
 
                     <!-- Description -->
                     <div>
-                        <label for="dosage-description" class="block text-sm font-medium text-gray-700">
+                        <label
+                            for="dosage-description"
+                            class="block text-sm font-medium text-gray-700"
+                        >
                             Description
                         </label>
-                        <textarea id="dosage-description" v-model="dosageForm.description" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            :class="{ 'border-red-300': dosageErrors?.description }"
-                            placeholder="Enter description"></textarea>
+                        <textarea
+                            id="dosage-description"
+                            v-model="dosageForm.description"
+                            rows="3"
+                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            :class="{
+                                'border-red-300': dosageErrors?.description,
+                            }"
+                            placeholder="Enter description"
+                        ></textarea>
                     </div>
 
                     <!-- Status -->
                     <div>
                         <div class="flex items-center">
-                            <input type="checkbox" id="dosage-status" v-model="dosageForm.is_active"
-                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <label for="dosage-status" class="ml-2 block text-sm text-gray-700">Active</label>
+                            <input
+                                type="checkbox"
+                                id="dosage-status"
+                                v-model="dosageForm.is_active"
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <label
+                                for="dosage-status"
+                                class="block ml-2 text-sm text-gray-700"
+                                >Active</label
+                            >
                         </div>
                     </div>
 
                     <!-- Form Actions -->
-                    <div class="flex justify-end space-x-3 pt-5">
-                        <button type="button"
-                            class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                            @click="closeDosageModal" :disabled="dosageProcessing">
+                    <div class="flex justify-end pt-5 space-x-3">
+                        <button
+                            type="button"
+                            class="px-4 py-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                            @click="closeDosageModal"
+                            :disabled="dosageProcessing"
+                        >
                             Cancel
                         </button>
-                        <button type="submit"
-                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            :disabled="dosageProcessing">
-                            <svg v-if="dosageProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
+                        <button
+                            type="submit"
+                            class="px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            :disabled="dosageProcessing"
+                        >
+                            <svg
+                                v-if="dosageProcessing"
+                                class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
                             </svg>
-                            {{ dosageForm.id ? 'Update Dosage' : 'Create Dosage' }}
+                            {{
+                                dosageForm.id
+                                    ? "Update Dosage"
+                                    : "Create Dosage"
+                            }}
                         </button>
                     </div>
                 </form>
@@ -1146,40 +2031,77 @@
         </Modal>
 
         <!-- Dosage Delete Modal -->
-        <Modal :show="showDosageDeleteModal" @close="closeDosageDeleteModal" max-width="md">
+        <Modal
+            :show="showDosageDeleteModal"
+            @close="closeDosageDeleteModal"
+            max-width="md"
+        >
             <div class="p-6">
                 <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-xl font-semibold text-gray-900">Delete Dosage</h2>
-                    <button @click="closeDosageDeleteModal"
-                        class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        Delete Dosage
+                    </h2>
+                    <button
+                        @click="closeDosageDeleteModal"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
 
                 <p class="mt-3 text-sm text-gray-600">
-                    Are you sure you want to delete this dosage? This action cannot be undone.
+                    Are you sure you want to delete this dosage? This action
+                    cannot be undone.
                 </p>
 
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button type="button"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                        @click="closeDosageDeleteModal" :disabled="dosageProcessing">
+                <div class="flex justify-end mt-6 space-x-3">
+                    <button
+                        type="button"
+                        class="px-4 py-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                        @click="closeDosageDeleteModal"
+                        :disabled="dosageProcessing"
+                    >
                         Cancel
                     </button>
-                    <button type="button"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition"
-                        @click="deleteDosage" :disabled="dosageProcessing">
-                        <svg v-if="dosageProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
+                    <button
+                        type="button"
+                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        @click="deleteDosage"
+                        :disabled="dosageProcessing"
+                    >
+                        <svg
+                            v-if="dosageProcessing"
+                            class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                         </svg>
                         Delete Dosage
                     </button>
@@ -1192,65 +2114,146 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-5">
                     <h2 class="text-xl font-semibold text-gray-900">
-                        {{ categoryForm.id ? 'Edit Category' : 'Add New Category' }}
+                        {{
+                            categoryForm.id
+                                ? "Edit Category"
+                                : "Add New Category"
+                        }}
                     </h2>
-                    <button @click="closeCategoryModal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <button
+                        @click="closeCategoryModal"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                         <span class="sr-only">Close</span>
                     </button>
                 </div>
 
                 <div v-if="categoryErrors" class="mt-3">
-                    <div v-for="(messages, field) in categoryErrors" :key="field" class="text-sm text-red-600">
-                        <div v-for="(message, i) in messages" :key="i">{{ message }}</div>
+                    <div
+                        v-for="(messages, field) in categoryErrors"
+                        :key="field"
+                        class="text-sm text-red-600"
+                    >
+                        <div v-for="(message, i) in messages" :key="i">
+                            {{ message }}
+                        </div>
                     </div>
                 </div>
 
-                <form @submit.prevent="submitCategoryForm" class="space-y-6 mt-4">
+                <form
+                    @submit.prevent="submitCategoryForm"
+                    class="mt-4 space-y-6"
+                >
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                        <input id="name" type="text"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
-                            v-model="categoryForm.name" required :disabled="categoryIsSubmitted || categoryProcessing"
-                            placeholder="Enter category name" />
+                        <label
+                            for="name"
+                            class="block text-sm font-medium text-gray-700"
+                            >Name</label
+                        >
+                        <input
+                            id="name"
+                            type="text"
+                            class="block w-full mt-1 transition border-gray-300 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            v-model="categoryForm.name"
+                            required
+                            :disabled="
+                                categoryIsSubmitted || categoryProcessing
+                            "
+                            placeholder="Enter category name"
+                        />
                     </div>
 
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea id="description"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
-                            v-model="categoryForm.description" :disabled="categoryIsSubmitted || categoryProcessing"
-                            rows="3" placeholder="Enter category description"></textarea>
+                        <label
+                            for="description"
+                            class="block text-sm font-medium text-gray-700"
+                            >Description</label
+                        >
+                        <textarea
+                            id="description"
+                            class="block w-full mt-1 transition border-gray-300 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            v-model="categoryForm.description"
+                            :disabled="
+                                categoryIsSubmitted || categoryProcessing
+                            "
+                            rows="3"
+                            placeholder="Enter category description"
+                        ></textarea>
                     </div>
 
                     <div class="flex items-center">
-                        <input id="is_active" type="checkbox"
-                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                            v-model="categoryForm.is_active" :disabled="categoryIsSubmitted || categoryProcessing" />
+                        <input
+                            id="is_active"
+                            type="checkbox"
+                            class="text-blue-600 border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            v-model="categoryForm.is_active"
+                            :disabled="
+                                categoryIsSubmitted || categoryProcessing
+                            "
+                        />
                         <label for="is_active" class="ml-2">Active</label>
                     </div>
 
-                    <div class="flex items-center justify-end pt-4 border-t border-gray-200">
-                        <button type="button"
-                            class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                            @click="closeCategoryModal" :disabled="categoryIsSubmitted || categoryProcessing">
+                    <div
+                        class="flex items-center justify-end pt-4 border-t border-gray-200"
+                    >
+                        <button
+                            type="button"
+                            class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                            @click="closeCategoryModal"
+                            :disabled="
+                                categoryIsSubmitted || categoryProcessing
+                            "
+                        >
                             Cancel
                         </button>
-                        <button type="submit"
-                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                            :disabled="categoryIsSubmitted || categoryProcessing">
-                            <svg v-if="categoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4" />
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <button
+                            type="submit"
+                            class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            :disabled="
+                                categoryIsSubmitted || categoryProcessing
+                            "
+                        >
+                            <svg
+                                v-if="categoryProcessing"
+                                class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                />
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
                             </svg>
-                            {{ categoryForm.id ? 'Update Category' : 'Create Category' }}
+                            {{
+                                categoryForm.id
+                                    ? "Update Category"
+                                    : "Create Category"
+                            }}
                         </button>
                     </div>
                 </form>
@@ -1258,30 +2261,55 @@
         </Modal>
 
         <!-- Category Delete Confirmation Modal -->
-        <Modal :show="showCategoryDeleteModal" @close="closeCategoryDeleteModal">
+        <Modal
+            :show="showCategoryDeleteModal"
+            @close="closeCategoryDeleteModal"
+        >
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900">
                     Delete Category
                 </h2>
 
                 <p class="mt-3 text-sm text-gray-600">
-                    Are you sure you want to delete this category? This action cannot be undone.
+                    Are you sure you want to delete this category? This action
+                    cannot be undone.
                 </p>
 
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                        @click="closeCategoryDeleteModal" :disabled="categoryProcessing">
+                <div class="flex justify-end mt-6">
+                    <button
+                        type="button"
+                        class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                        @click="closeCategoryDeleteModal"
+                        :disabled="categoryProcessing"
+                    >
                         Cancel
                     </button>
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                        @click="deleteCategory" :disabled="categoryProcessing">
-                        <svg v-if="categoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <button
+                        type="button"
+                        class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        @click="deleteCategory"
+                        :disabled="categoryProcessing"
+                    >
+                        <svg
+                            v-if="categoryProcessing"
+                            class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                         </svg>
                         Delete
                     </button>
@@ -1294,67 +2322,145 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-5">
                     <h2 class="text-xl font-semibold text-gray-900">
-                        {{ subcategoryForm.id ? 'Edit Subcategory' : 'Add New Subcategory' }}
+                        {{
+                            subcategoryForm.id
+                                ? "Edit Subcategory"
+                                : "Add New Subcategory"
+                        }}
                     </h2>
-                    <button @click="closeSubcategoryModal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <button
+                        @click="closeSubcategoryModal"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
 
                 <div v-if="subcategoryErrors" class="mt-3">
-                    <div v-for="(messages, field) in subcategoryErrors" :key="field" class="text-sm text-red-600">
-                        <div v-for="(message, i) in messages" :key="i">{{ message }}</div>
+                    <div
+                        v-for="(messages, field) in subcategoryErrors"
+                        :key="field"
+                        class="text-sm text-red-600"
+                    >
+                        <div v-for="(message, i) in messages" :key="i">
+                            {{ message }}
+                        </div>
                     </div>
                 </div>
 
-                <form @submit.prevent="submitSubcategoryForm" class="space-y-6 mt-4">
+                <form
+                    @submit.prevent="submitSubcategoryForm"
+                    class="mt-4 space-y-6"
+                >
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                        <input id="name" type="text"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
-                            v-model="subcategoryForm.name" required
-                            :disabled="subcategoryIsSubmitted || subcategoryProcessing"
-                            placeholder="Enter subcategory name" />
+                        <label
+                            for="name"
+                            class="block text-sm font-medium text-gray-700"
+                            >Name</label
+                        >
+                        <input
+                            id="name"
+                            type="text"
+                            class="block w-full mt-1 transition border-gray-300 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            v-model="subcategoryForm.name"
+                            required
+                            :disabled="
+                                subcategoryIsSubmitted || subcategoryProcessing
+                            "
+                            placeholder="Enter subcategory name"
+                        />
                     </div>
 
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea id="description"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition"
+                        <label
+                            for="description"
+                            class="block text-sm font-medium text-gray-700"
+                            >Description</label
+                        >
+                        <textarea
+                            id="description"
+                            class="block w-full mt-1 transition border-gray-300 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                             v-model="subcategoryForm.description"
-                            :disabled="subcategoryIsSubmitted || subcategoryProcessing" rows="3"
-                            placeholder="Enter subcategory description"></textarea>
+                            :disabled="
+                                subcategoryIsSubmitted || subcategoryProcessing
+                            "
+                            rows="3"
+                            placeholder="Enter subcategory description"
+                        ></textarea>
                     </div>
 
                     <div class="flex items-center">
-                        <input id="is_active" type="checkbox"
-                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        <input
+                            id="is_active"
+                            type="checkbox"
+                            class="text-blue-600 border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                             v-model="subcategoryForm.is_active"
-                            :disabled="subcategoryIsSubmitted || subcategoryProcessing" />
+                            :disabled="
+                                subcategoryIsSubmitted || subcategoryProcessing
+                            "
+                        />
                         <label for="is_active" class="ml-2">Active</label>
                     </div>
 
-                    <div class="flex items-center justify-end pt-4 border-t border-gray-200">
-                        <button type="button"
-                            class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                            @click="closeSubcategoryModal" :disabled="subcategoryIsSubmitted || subcategoryProcessing">
+                    <div
+                        class="flex items-center justify-end pt-4 border-t border-gray-200"
+                    >
+                        <button
+                            type="button"
+                            class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                            @click="closeSubcategoryModal"
+                            :disabled="
+                                subcategoryIsSubmitted || subcategoryProcessing
+                            "
+                        >
                             Cancel
                         </button>
-                        <button type="submit"
-                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                            :disabled="subcategoryIsSubmitted || subcategoryProcessing">
-                            <svg v-if="subcategoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4" />
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <button
+                            type="submit"
+                            class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            :disabled="
+                                subcategoryIsSubmitted || subcategoryProcessing
+                            "
+                        >
+                            <svg
+                                v-if="subcategoryProcessing"
+                                class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                />
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
                             </svg>
-                            {{ subcategoryForm.id ? 'Update Subcategory' : 'Create Subcategory' }}
+                            {{
+                                subcategoryForm.id
+                                    ? "Update Subcategory"
+                                    : "Create Subcategory"
+                            }}
                         </button>
                     </div>
                 </form>
@@ -1362,30 +2468,55 @@
         </Modal>
 
         <!-- Subcategory Delete Confirmation Modal -->
-        <Modal :show="showSubcategoryDeleteModal" @close="closeSubcategoryDeleteModal">
+        <Modal
+            :show="showSubcategoryDeleteModal"
+            @close="closeSubcategoryDeleteModal"
+        >
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900">
                     Delete Subcategory
                 </h2>
 
                 <p class="mt-3 text-sm text-gray-600">
-                    Are you sure you want to delete this subcategory? This action cannot be undone.
+                    Are you sure you want to delete this subcategory? This
+                    action cannot be undone.
                 </p>
 
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                        @click="closeSubcategoryDeleteModal" :disabled="subcategoryProcessing">
+                <div class="flex justify-end mt-6">
+                    <button
+                        type="button"
+                        class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                        @click="closeSubcategoryDeleteModal"
+                        :disabled="subcategoryProcessing"
+                    >
                         Cancel
                     </button>
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                        @click="deleteSubcategory" :disabled="subcategoryProcessing">
-                        <svg v-if="subcategoryProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <button
+                        type="button"
+                        class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        @click="deleteSubcategory"
+                        :disabled="subcategoryProcessing"
+                    >
+                        <svg
+                            v-if="subcategoryProcessing"
+                            class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            />
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                         </svg>
                         Delete
                     </button>
@@ -1393,9 +2524,12 @@
             </div>
         </Modal>
 
-
         <!-- Eligible Item Modal -->
-        <Modal :show="eligibleShow" @close="closeSubcategoryDeleteModal" width="3xl">
+        <Modal
+            :show="eligibleShow"
+            @close="closeSubcategoryDeleteModal"
+            width="3xl"
+        >
             <div class="px-6 py-4">
                 <h2 class="text-lg font-medium text-gray-900">
                     Add Eligible Item
@@ -1407,54 +2541,80 @@
 
                 <form class="mt-6 space-y-4" @submit.prevent="addEligibleItem">
                     <div class="space-y-2">
-                        <label for="product" class="block text-sm font-medium text-gray-700">Product</label>
-                        <select id="product" required v-model="eligibleItemForm.product_id"
-                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-
-                            <option v-for="product in props.eligibleProducts" :key="product.id" :value="product.id">
+                        <label
+                            for="product"
+                            class="block text-sm font-medium text-gray-700"
+                            >Product</label
+                        >
+                        <select
+                            id="product"
+                            required
+                            v-model="eligibleItemForm.product_id"
+                            class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option
+                                v-for="product in props.eligibleProducts"
+                                :key="product.id"
+                                :value="product.id"
+                            >
                                 {{ product.name }}
                             </option>
                         </select>
                     </div>
                     <div class="space-y-2">
-                        <label for="facility" class="block text-sm font-medium text-gray-700">Facility</label>
-                        <select id="facility" required v-model="eligibleItemForm.facility_id"
-                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                            <option v-for="facility in facilities" :key="facility.id" :value="facility.id">
+                        <label
+                            for="facility"
+                            class="block text-sm font-medium text-gray-700"
+                            >Facility</label
+                        >
+                        <select
+                            id="facility"
+                            required
+                            v-model="eligibleItemForm.facility_id"
+                            class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option
+                                v-for="facility in facilities"
+                                :key="facility.id"
+                                :value="facility.id"
+                            >
                                 {{ facility.name }}
                             </option>
                         </select>
                     </div>
-                    <div class="mt-6 flex justify-end">
-                        <button type="button"
-                            class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 mr-2"
-                            @click="eligibleShow = false" :disabled="eligibleSubmit">
+                    <div class="flex justify-end mt-6">
+                        <button
+                            type="button"
+                            class="px-4 py-2 mr-2 text-xs font-semibold tracking-widest text-gray-700 uppercase transition duration-150 ease-in-out bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
+                            @click="eligibleShow = false"
+                            :disabled="eligibleSubmit"
+                        >
                             Cancel
                         </button>
                         <button
-                            class="px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 flex items-center"
-                            :disabled="eligibleSubmit">
-                            {{ eligibleSubmit ? 'Adding...' : 'Add' }}
+                            class="flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                            :disabled="eligibleSubmit"
+                        >
+                            {{ eligibleSubmit ? "Adding..." : "Add" }}
                         </button>
                     </div>
                 </form>
             </div>
         </Modal>
-
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import Pagination from '@/Components/Pagination.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import DangerButton from '@/Components/DangerButton.vue';
-import Modal from '@/Components/Modal.vue';
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import { useToast } from 'vue-toastification';
+import { ref, watch, computed, onMounted } from "vue";
+import { Head, Link, router } from "@inertiajs/vue3";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Pagination from "@/Components/Pagination.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import DangerButton from "@/Components/DangerButton.vue";
+import Modal from "@/Components/Modal.vue";
+import axios from "axios";
+import Swal from "sweetalert2";
+import { useToast } from "vue-toastification";
 
 const toast = useToast();
 
@@ -1469,36 +2629,32 @@ const props = defineProps({
     dosageFilters: Object,
     subcategories: {
         type: Object,
-        required: true
+        required: true,
     },
     subcategoryFilters: {
         type: Object,
-        required: true
+        required: true,
     },
     eligibleItems: {
         type: Object,
-        required: true
+        required: true,
     },
-    facilities: Array
+    facilities: Array,
 });
 
-
-console.log(props.filters);
-
-
 // Reactive state
-const search = ref(props.filters?.search || '');
-const eligibleSearch = ref(props.filters?.eligibleSearch || '');
+const search = ref(props.filters?.search || "");
+const eligibleSearch = ref(props.filters?.eligibleSearch || "");
 const eligible_per_page = ref(props.filters?.eligible_per_page || 6);
 const eligible_page = ref(props.filters?.eligible_page || 1);
-const facility = ref(props.filters?.facility || '');
-const category_id = ref(props.filters?.category_id || '');
-const sub_category_id = ref(props.filters?.sub_category_id || '');
-const dosage_id = ref(props.filters?.dosage_id || '');
-const is_active = ref(props.filters?.is_active || '');
+const facility = ref(props.filters?.facility || "");
+const category_id = ref(props.filters?.category_id || "");
+const sub_category_id = ref(props.filters?.sub_category_id || "");
+const dosage_id = ref(props.filters?.dosage_id || "");
+const is_active = ref(props.filters?.is_active || "");
 const per_page = ref(props.filters?.per_page || 6);
 const processing = ref(false);
-const activeTab = ref('products');
+const activeTab = ref("products");
 
 // Product form state
 const showModal = ref(false);
@@ -1508,7 +2664,7 @@ const isSubmitted = ref(false);
 const errors = ref(null);
 
 // Category state
-const categorySearch = ref(props.categoryFilters?.search || '');
+const categorySearch = ref(props.categoryFilters?.search || "");
 const categoryProcessing = ref(false);
 const showCategoryModal = ref(false);
 const showCategoryDeleteModal = ref(false);
@@ -1518,17 +2674,19 @@ const categoryErrors = ref(null);
 const category_per_page = ref(props.categoryFilters?.category_per_page || 6);
 
 // SubCategory state
-const subcategorySearch = ref(props.subcategoryFilters?.search || '');
+const subcategorySearch = ref(props.subcategoryFilters?.search || "");
 const subcategoryProcessing = ref(false);
 const showSubcategoryModal = ref(false);
 const showSubcategoryDeleteModal = ref(false);
 const subcategoryIsSubmitted = ref(false);
 const subcategoryToDelete = ref(null);
 const subcategoryErrors = ref(null);
-const subcategory_per_page = ref(props.subcategoryFilters?.subcategory_per_page || 6);
+const subcategory_per_page = ref(
+    props.subcategoryFilters?.subcategory_per_page || 6
+);
 
 // Dosage state
-const dosageSearch = ref(props.dosageFilters?.search || '');
+const dosageSearch = ref(props.dosageFilters?.search || "");
 const dosageProcessing = ref(false);
 const showDosageModal = ref(false);
 const showDosageDeleteModal = ref(false);
@@ -1540,39 +2698,39 @@ const dosage_per_page = ref(props.dosageFilters?.dosage_per_page || 6);
 // Category form
 const categoryForm = ref({
     id: null,
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     is_active: true,
 });
 
 // Dosage form
 const dosageForm = ref({
     id: null,
-    name: '',
-    description: '',
-    category_id: '',
+    name: "",
+    description: "",
+    category_id: "",
     is_active: true,
 });
 
 // Subcategory form
 const subcategoryForm = ref({
     id: null,
-    name: '',
-    description: '',
-    category_id: '',
+    name: "",
+    description: "",
+    category_id: "",
     is_active: true,
 });
 
 // Form for creating/editing products
 const form = ref({
     id: null,
-    name: '',
-    sku: '',
-    barcode: '',
-    description: '',
-    category_id: '',
-    sub_category_id: '',
-    dosage_id: '',
+    name: "",
+    sku: "",
+    barcode: "",
+    description: "",
+    category_id: "",
+    sub_category_id: "",
+    dosage_id: "",
     reorder_level: 0,
     is_active: true,
 });
@@ -1580,12 +2738,16 @@ const form = ref({
 // Computed properties
 const filteredDosages = computed(() => {
     if (!category_id.value) return [];
-    return props.dosages.data.filter(dosage => dosage.category_id === category_id.value);
+    return props.dosages.data.filter(
+        (dosage) => dosage.category_id === category_id.value
+    );
 });
 
 const filteredFormDosages = computed(() => {
     if (!form.value.category_id) return [];
-    return props.dosages.data.filter(dosage => dosage.category_id === form.value.category_id);
+    return props.dosages.data.filter(
+        (dosage) => dosage.category_id === form.value.category_id
+    );
 });
 
 // Bulk delete functionality
@@ -1597,10 +2759,9 @@ const toggleSelectAll = () => {
     if (selectedItems.value.length === props.products.data.length) {
         selectedItems.value = [];
     } else {
-        selectedItems.value = props.products.data.map(product => product.id);
+        selectedItems.value = props.products.data.map((product) => product.id);
     }
 };
-
 
 // Eligible Item state
 function editEligibleItem(eligibleItem) {
@@ -1615,7 +2776,8 @@ const eligibleSubmit = ref(false);
 
 async function addEligibleItem() {
     eligibleSubmit.value = true;
-    await axios.post(route('eligible-items.store'), eligibleItemForm.value)
+    await axios
+        .post(route("eligible-items.store"), eligibleItemForm.value)
         .then((response) => {
             eligibleSubmit.value = false;
             toast.success(response.data);
@@ -1623,8 +2785,8 @@ async function addEligibleItem() {
             reloadProducts();
             eligibleItemForm.value = {
                 id: null,
-                product_id: '',
-                facility_id: '',
+                product_id: "",
+                facility_id: "",
             };
         })
         .catch((error) => {
@@ -1634,17 +2796,19 @@ async function addEligibleItem() {
 }
 
 function deleteEligibleItem(id) {
+    console.log(id);
     Swal.fire({
-        title: 'Delete Eligible Item',
-        text: 'Are you sure you want to delete this eligible item?',
-        icon: 'warning',
+        title: "Delete Eligible Item",
+        text: "Are you sure you want to delete this eligible item?",
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#EF4444',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Delete'
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Delete",
     }).then(async (result) => {
         if (result.isConfirmed) {
-            await axios.get(route('eligible-items.destroy', id))
+            await axios
+                .get(route("eligible-items.destroy", id))
                 .then((response) => {
                     toast.success(response.data);
                     reloadProducts();
@@ -1660,21 +2824,21 @@ function deleteEligibleItem(id) {
 const confirmBulkDelete = () => {
     if (selectedItems.value.length === 0) {
         Swal.fire({
-            icon: 'warning',
-            title: 'No Products Selected',
-            text: 'Please select at least one product to delete.',
-            confirmButtonText: 'OK'
+            icon: "warning",
+            title: "No Products Selected",
+            text: "Please select at least one product to delete.",
+            confirmButtonText: "OK",
         });
         return;
     }
     Swal.fire({
-        title: 'Delete Products',
+        title: "Delete Products",
         text: `Are you sure you want to delete ${selectedItems.value.length} products?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#EF4444',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Delete'
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Delete",
     }).then(async (result) => {
         if (result.isConfirmed) {
             bulkDelete();
@@ -1688,29 +2852,33 @@ const bulkDelete = async () => {
         isBulkDeleting.value = true;
 
         // Perform the actual delete operation
-        const response = await axios.post(route('products.bulk'), {
+        const response = await axios.post(route("products.bulk"), {
             ids: selectedItems.value,
-            action: 'delete'
+            action: "delete",
         });
 
         // Show success message
         Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: response.data.message || 'Selected products have been deleted successfully',
+            icon: "success",
+            title: "Success!",
+            text:
+                response.data.message ||
+                "Selected products have been deleted successfully",
             timer: 1500,
-            showConfirmButton: false
+            showConfirmButton: false,
         });
 
         selectedItems.value = [];
         router.reload();
     } catch (error) {
-        console.error('Delete error:', error);
+        console.error("Delete error:", error);
         Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            html: error.response?.data?.message || 'An error occurred while deleting products',
-            confirmButtonText: 'OK'
+            icon: "error",
+            title: "Error!",
+            html:
+                error.response?.data?.message ||
+                "An error occurred while deleting products",
+            confirmButtonText: "OK",
         });
     } finally {
         isBulkDeleting.value = false;
@@ -1718,50 +2886,49 @@ const bulkDelete = async () => {
 };
 
 // Watch for changes in search input
-watch([
-    () => search.value,
-    () => category_id.value,
-    () => sub_category_id.value,
-    () => dosage_id.value,
-    () => is_active.value,
-    () => per_page.value,
-], () => {
-    reloadProducts();
-});
+watch(
+    [
+        () => search.value,
+        () => category_id.value,
+        () => sub_category_id.value,
+        () => dosage_id.value,
+        () => is_active.value,
+        () => per_page.value,
+    ],
+    () => {
+        reloadProducts();
+    }
+);
 
 // Watch for changes in category search input
-watch([
-    () => categorySearch.value,
-    () => category_per_page.value
-], () => {
+watch([() => categorySearch.value, () => category_per_page.value], () => {
     reloadProducts();
 });
 
 // Watch for changes in subcategory search input
-watch([
-    () => subcategorySearch.value,
-    () => subcategory_per_page.value
-], () => {
+watch([() => subcategorySearch.value, () => subcategory_per_page.value], () => {
     reloadProducts();
 });
 
 // Watch for changes in dosage search input
-watch([
-    () => dosageSearch.value,
-    () => dosage_per_page.value,
-    () => facility.value,
-    () => eligibleSearch.value,
-    () => eligible_per_page.value,
-    () => eligible_page.value,
-    () => category_per_page.value,
-    () => subcategory_per_page.value,
-    () => dosage_per_page.value
-], () => {
-    reloadProducts();
-});
+watch(
+    [
+        () => dosageSearch.value,
+        () => dosage_per_page.value,
+        () => facility.value,
+        () => eligibleSearch.value,
+        () => eligible_per_page.value,
+        () => eligible_page.value,
+        () => category_per_page.value,
+        () => subcategory_per_page.value,
+        () => dosage_per_page.value,
+    ],
+    () => {
+        reloadProducts();
+    }
+);
 
 function reloadProducts() {
-
     const params = {};
     if (is_active.value) {
         params.is_active = is_active.value;
@@ -1820,11 +2987,17 @@ function reloadProducts() {
     if (facility.value) {
         params.facility = facility.value;
     }
-    console.log(params);
-    router.get(route('products.index'), params, {
+    router.get(route("products.index"), params, {
         preserveState: true,
         preserveScroll: true,
-        only: ['products', 'eligibleItems', 'facilities', 'categories', 'dosages', 'subcategories']
+        only: [
+            "products",
+            "eligibleItems",
+            "facilities",
+            "categories",
+            "dosages",
+            "subcategories",
+        ],
     });
 }
 
@@ -1833,63 +3006,65 @@ onMounted(() => {
     onCategoryFilterChange();
 });
 
-
 // Sort categories
 const sortCategory = (field) => {
     if (props.categoryFilters.sort_field === field) {
-        params.value.categoryDirection = props.categoryFilters.sort_direction === 'asc' ? 'desc' : 'asc';
+        params.value.categoryDirection =
+            props.categoryFilters.sort_direction === "asc" ? "desc" : "asc";
     } else {
         params.value.categoryField = field;
-        params.value.categoryDirection = 'asc';
+        params.value.categoryDirection = "asc";
     }
 
-    router.get(route('products.index'), params.value, {
+    router.get(route("products.index"), params.value, {
         preserveState: true,
         preserveScroll: true,
-        only: ['categories']
+        only: ["categories"],
     });
 };
 
 // Sort subcategories
 const sortSubcategory = (field) => {
     if (props.subcategoryFilters.sort_field === field) {
-        params.value.subcategoryDirection = props.subcategoryFilters.sort_direction === 'asc' ? 'desc' : 'asc';
+        params.value.subcategoryDirection =
+            props.subcategoryFilters.sort_direction === "asc" ? "desc" : "asc";
     } else {
         params.value.subcategoryField = field;
-        params.value.subcategoryDirection = 'asc';
+        params.value.subcategoryDirection = "asc";
     }
 
-    router.get(route('products.index'), params.value, {
+    router.get(route("products.index"), params.value, {
         preserveState: true,
         preserveScroll: true,
-        only: ['subcategories']
+        only: ["subcategories"],
     });
 };
 
 // Sort dosages
 const sortDosage = (field) => {
     if (props.dosageFilters.sort_field === field) {
-        params.value.dosageDirection = props.dosageFilters.sort_direction === 'asc' ? 'desc' : 'asc';
+        params.value.dosageDirection =
+            props.dosageFilters.sort_direction === "asc" ? "desc" : "asc";
     } else {
         params.value.dosageField = field;
-        params.value.dosageDirection = 'asc';
+        params.value.dosageDirection = "asc";
     }
 
-    router.get(route('products.index'), params.value, {
+    router.get(route("products.index"), params.value, {
         preserveState: true,
         preserveScroll: true,
-        only: ['dosages']
+        only: ["dosages"],
     });
 };
 
 // Filter dosages based on selected category
 const onCategoryChange = () => {
-    form.value.dosage_id = ''; // Reset dosage selection when category changes
+    form.value.dosage_id = ""; // Reset dosage selection when category changes
 };
 
 // Handle category filter change in product listing
 const onCategoryFilterChange = () => {
-    dosage_id.value = ''; // Reset dosage selection when category filter changes
+    dosage_id.value = ""; // Reset dosage selection when category filter changes
     reloadProducts();
 };
 
@@ -1905,12 +3080,13 @@ const openModal = (product = null) => {
         form.value.id = product.id;
         form.value.name = product.name;
         form.value.sku = product.sku;
-        form.value.barcode = product.barcode || '';
-        form.value.description = product.description || '';
-        form.value.category_id = product.category_id || '';
+        form.value.barcode = product.barcode || "";
+        form.value.description = product.description || "";
+        form.value.category_id = product.category_id || "";
         onCategoryChange();
-        form.value.dosage_id = product.dosage_id || '';
-        form.value.is_active = product.is_active !== undefined ? product.is_active : true;
+        form.value.dosage_id = product.dosage_id || "";
+        form.value.is_active =
+            product.is_active !== undefined ? product.is_active : true;
     } else {
         // Create mode
         resetForm();
@@ -1925,50 +3101,53 @@ const closeModal = () => {
 
     showModal.value = false;
     setTimeout(() => {
-        resetForm()
+        resetForm();
     }, 300);
 };
 
 function resetForm() {
     form.value = {
         id: null,
-        name: '',
-        sku: '',
-        barcode: '',
-        description: '',
-        category_id: '',
-        sub_category_id: '',
-        dosage_id: '',
+        name: "",
+        sku: "",
+        barcode: "",
+        description: "",
+        category_id: "",
+        sub_category_id: "",
+        dosage_id: "",
         reorder_level: 0,
-        is_active: true
+        is_active: true,
     };
-
 }
 
-const error = ref('');
+const error = ref("");
 // Submit form
 const submitForm = async () => {
-    error.value = '';
+    error.value = "";
     if (isSubmitted.value || processing.value) return;
 
     // Client-side validation for dates
-    if (form.manufacturing_date && form.expiry_date && form.manufacturing_date > form.expiry_date) {
-        toast.error('Expiry date must be after manufacturing date');
+    if (
+        form.manufacturing_date &&
+        form.expiry_date &&
+        form.manufacturing_date > form.expiry_date
+    ) {
+        toast.error("Expiry date must be after manufacturing date");
         return;
     }
 
     isSubmitted.value = true;
     processing.value = true;
 
-
-    await axios.post(route('products.store'), form.value)
-        .then(response => {
+    await axios
+        .post(route("products.store"), form.value)
+        .then((response) => {
             toast.success(response.data.message);
             closeModal();
             reloadProducts();
             showModal.value = false;
         })
-        .catch(err => {
+        .catch((err) => {
             toast.error(err.response.data.message);
             error.value = err.response.data?.message;
 
@@ -1983,13 +3162,13 @@ const submitForm = async () => {
 // Confirm delete
 const confirmDelete = (product) => {
     Swal.fire({
-        title: 'Delete Product',
+        title: "Delete Product",
         text: `Are you sure you want to delete ${product.name}?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#EF4444',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Delete'
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Delete",
     }).then(async (result) => {
         if (result.isConfirmed) {
             let timerInterval;
@@ -2011,24 +3190,26 @@ const confirmDelete = (product) => {
                     },
                     willClose: () => {
                         clearInterval(timerInterval);
-                    }
+                    },
                 });
 
-                await router.delete(route('products.destroy', product.id));
+                await router.delete(route("products.destroy", product.id));
 
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Deleted!',
-                    text: 'Product has been deleted successfully',
+                    icon: "success",
+                    title: "Deleted!",
+                    text: "Product has been deleted successfully",
                     timer: 1500,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 });
             } catch (error) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: error.response.data || 'An error occurred while deleting the product',
-                    confirmButtonText: 'OK'
+                    icon: "error",
+                    title: "Error!",
+                    text:
+                        error.response.data ||
+                        "An error occurred while deleting the product",
+                    confirmButtonText: "OK",
                 });
             }
         }
@@ -2037,25 +3218,25 @@ const confirmDelete = (product) => {
 
 // Format date
 const formatDate = (dateString) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
 
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
     }).format(date);
 };
 
 // Reset all filters
 const resetFilters = () => {
-    search.value = '';
-    category_id.value = '';
-    sub_category_id.value = '';
-    dosage_id.value = '';
-    is_active.value = '';
+    search.value = "";
+    category_id.value = "";
+    sub_category_id.value = "";
+    dosage_id.value = "";
+    is_active.value = "";
     per_page.value = 5;
     reloadProducts();
 };
@@ -2068,7 +3249,7 @@ const openCategoryModal = (category = null) => {
     if (category) {
         categoryForm.value.id = category.id;
         categoryForm.value.name = category.name;
-        categoryForm.value.description = category.description || '';
+        categoryForm.value.description = category.description || "";
         categoryForm.value.is_active = category.is_active;
     } else {
         categoryFormReset();
@@ -2079,8 +3260,8 @@ const openCategoryModal = (category = null) => {
 
 function categoryFormReset() {
     categoryForm.value.id = null;
-    categoryForm.value.name = '';
-    categoryForm.value.description = '';
+    categoryForm.value.name = "";
+    categoryForm.value.description = "";
     categoryForm.value.is_active = true;
 }
 
@@ -2095,22 +3276,29 @@ const submitCategoryForm = () => {
     categoryProcessing.value = true;
     categoryErrors.value = null;
 
-    axios.post(route('categories.store'), categoryForm.value)
-        .then(response => {
+    axios
+        .post(route("categories.store"), categoryForm.value)
+        .then((response) => {
             if (response.data.success) {
-                toast.success(response.data.message || 'Category saved successfully');
+                toast.success(
+                    response.data.message || "Category saved successfully"
+                );
                 closeCategoryModal();
                 reloadProducts();
             } else {
-                toast.error(response.data.message || 'An error occurred');
+                toast.error(response.data.message || "An error occurred");
             }
         })
-        .catch(error => {
-            if (error.response && error.response.data && error.response.data.errors) {
+        .catch((error) => {
+            if (
+                error.response &&
+                error.response.data &&
+                error.response.data.errors
+            ) {
                 categoryErrors.value = error.response.data.errors;
-                toast.error('Please correct the errors in the form');
+                toast.error("Please correct the errors in the form");
             } else {
-                toast.error('An error occurred while saving the category');
+                toast.error("An error occurred while saving the category");
             }
         })
         .finally(() => {
@@ -2137,26 +3325,27 @@ const deleteCategory = () => {
 
     categoryProcessing.value = true;
 
-    axios.delete(route('categories.destroy', categoryToDelete.value.id))
-        .then(response => {
+    axios
+        .delete(route("categories.destroy", categoryToDelete.value.id))
+        .then((response) => {
             if (response.data.success) {
-                toast.success(response.data || 'Category deleted successfully');
+                toast.success(response.data || "Category deleted successfully");
                 closeCategoryDeleteModal();
                 reloadProducts();
 
                 // If we're deleting a category, refresh the products list to update the category filter
-                if (activeTab.value === 'products') {
+                if (activeTab.value === "products") {
                     reloadProducts();
                 }
             } else {
-                toast.error(response.data || 'An error occurred');
+                toast.error(response.data || "An error occurred");
             }
         })
-        .catch(error => {
+        .catch((error) => {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response.data || 'An error occurred',
+                icon: "error",
+                title: "Error",
+                text: error.response.data || "An error occurred",
             });
             console.error(error);
         })
@@ -2173,8 +3362,8 @@ const openDosageModal = (dosage = null) => {
     if (dosage) {
         dosageForm.value.id = dosage.id;
         dosageForm.value.name = dosage.name;
-        dosageForm.value.description = dosage.description || '';
-        dosageForm.value.category_id = dosage.category_id || '';
+        dosageForm.value.description = dosage.description || "";
+        dosageForm.value.category_id = dosage.category_id || "";
         dosageForm.value.is_active = dosage.is_active;
     } else {
         dosageFormReset();
@@ -2185,9 +3374,9 @@ const openDosageModal = (dosage = null) => {
 
 function dosageFormReset() {
     dosageForm.value.id = null;
-    dosageForm.value.name = '';
-    dosageForm.value.description = '';
-    dosageForm.value.category_id = '';
+    dosageForm.value.name = "";
+    dosageForm.value.description = "";
+    dosageForm.value.category_id = "";
     dosageForm.value.is_active = true;
 }
 
@@ -2202,23 +3391,30 @@ const submitDosageForm = async () => {
     dosageProcessing.value = true;
     dosageErrors.value = null;
 
-    await axios.post(route('dosages.store'), dosageForm.value)
-        .then(response => {
+    await axios
+        .post(route("dosages.store"), dosageForm.value)
+        .then((response) => {
             if (response.data.success) {
-                toast.success(response.data.message || 'Dosage saved successfully');
+                toast.success(
+                    response.data.message || "Dosage saved successfully"
+                );
                 closeDosageModal();
                 reloadProducts();
             } else {
-                toast.error(response.data.message || 'An error occurred');
+                toast.error(response.data.message || "An error occurred");
             }
         })
-        .catch(error => {
+        .catch((error) => {
             console.error(error);
-            if (error.response && error.response.data && error.response.data.errors) {
+            if (
+                error.response &&
+                error.response.data &&
+                error.response.data.errors
+            ) {
                 dosageErrors.value = error.response.data.errors;
-                toast.error('Please correct the errors in the form');
+                toast.error("Please correct the errors in the form");
             } else {
-                toast.error('An error occurred while saving the dosage');
+                toast.error("An error occurred while saving the dosage");
             }
         })
         .finally(() => {
@@ -2245,18 +3441,23 @@ const deleteDosage = () => {
 
     dosageProcessing.value = true;
 
-    axios.delete(route('dosages.destroy', dosageToDelete.value.id))
-        .then(response => {
+    axios
+        .delete(route("dosages.destroy", dosageToDelete.value.id))
+        .then((response) => {
             if (response.data.success) {
-                Swal.fire('Deleted!', response.data, 'success');
+                Swal.fire("Deleted!", response.data, "success");
                 closeDosageDeleteModal();
                 reloadProducts();
             } else {
-                Swal.fire('Error!', response.data || 'An error occurred', 'error');
+                Swal.fire(
+                    "Error!",
+                    response.data || "An error occurred",
+                    "error"
+                );
             }
         })
-        .catch(error => {
-            Swal.fire('Error!', error.response.data, 'error');
+        .catch((error) => {
+            Swal.fire("Error!", error.response.data, "error");
             console.error(error);
         })
         .finally(() => {
@@ -2272,8 +3473,8 @@ const openSubcategoryModal = (subcategory = null) => {
     if (subcategory) {
         subcategoryForm.value.id = subcategory.id;
         subcategoryForm.value.name = subcategory.name;
-        subcategoryForm.value.description = subcategory.description || '';
-        subcategoryForm.value.category_id = subcategory.category_id || '';
+        subcategoryForm.value.description = subcategory.description || "";
+        subcategoryForm.value.category_id = subcategory.category_id || "";
         subcategoryForm.value.is_active = subcategory.is_active;
     } else {
         subcategoryFormReset();
@@ -2284,9 +3485,9 @@ const openSubcategoryModal = (subcategory = null) => {
 
 function subcategoryFormReset() {
     subcategoryForm.value.id = null;
-    subcategoryForm.value.name = '';
-    subcategoryForm.value.description = '';
-    subcategoryForm.value.category_id = '';
+    subcategoryForm.value.name = "";
+    subcategoryForm.value.description = "";
+    subcategoryForm.value.category_id = "";
     subcategoryForm.value.is_active = true;
 }
 
@@ -2301,23 +3502,30 @@ const submitSubcategoryForm = async () => {
     subcategoryProcessing.value = true;
     subcategoryErrors.value = null;
 
-    await axios.post(route('subcategories.store'), subcategoryForm.value)
-        .then(response => {
+    await axios
+        .post(route("subcategories.store"), subcategoryForm.value)
+        .then((response) => {
             if (response.data.success) {
-                toast.success(response.data.message || 'Subcategory saved successfully');
+                toast.success(
+                    response.data.message || "Subcategory saved successfully"
+                );
                 closeSubcategoryModal();
                 reloadProducts();
             } else {
-                toast.error(response.data.message || 'An error occurred');
+                toast.error(response.data.message || "An error occurred");
             }
         })
-        .catch(error => {
+        .catch((error) => {
             console.error(error);
-            if (error.response && error.response.data && error.response.data.errors) {
+            if (
+                error.response &&
+                error.response.data &&
+                error.response.data.errors
+            ) {
                 subcategoryErrors.value = error.response.data.errors;
-                toast.error('Please correct the errors in the form');
+                toast.error("Please correct the errors in the form");
             } else {
-                toast.error('An error occurred while saving the subcategory');
+                toast.error("An error occurred while saving the subcategory");
             }
         })
         .finally(() => {
@@ -2344,21 +3552,24 @@ const deleteSubcategory = () => {
 
     subcategoryProcessing.value = true;
 
-    axios.delete(route('subcategories.destroy', subcategoryToDelete.value.id))
-        .then(response => {
+    axios
+        .delete(route("subcategories.destroy", subcategoryToDelete.value.id))
+        .then((response) => {
             if (response.data.success) {
-                toast.success(response.data || 'Subcategory deleted successfully');
+                toast.success(
+                    response.data || "Subcategory deleted successfully"
+                );
                 closeSubcategoryDeleteModal();
                 reloadProducts();
             } else {
-                toast.error(response.data || 'An error occurred');
+                toast.error(response.data || "An error occurred");
             }
         })
-        .catch(error => {
+        .catch((error) => {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response.data || 'An error occurred',
+                icon: "error",
+                title: "Error",
+                text: error.response.data || "An error occurred",
             });
             console.error(error);
         })
@@ -2373,23 +3584,26 @@ const closeDeleteModal = () => {
 
 watch(category_id, (newVal) => {
     if (!newVal) {
-        sub_category_id.value = '';
+        sub_category_id.value = "";
     }
 });
 
-watch(() => form.value.category_id, (newVal) => {
-    if (!newVal) {
-        form.value.sub_category_id = '';
+watch(
+    () => form.value.category_id,
+    (newVal) => {
+        if (!newVal) {
+            form.value.sub_category_id = "";
+        }
     }
-});
+);
 
 const eligibleShow = ref(false);
 
 // Eligible Item form
 const eligibleItemForm = ref({
     id: null,
-    product_id: '',
-    facility_id: '',
+    product_id: "",
+    facility_id: "",
 });
 
 function openEligibleCreateModal() {

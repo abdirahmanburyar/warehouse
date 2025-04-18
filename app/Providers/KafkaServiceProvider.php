@@ -34,27 +34,21 @@ class KafkaServiceProvider extends ServiceProvider
                         $this->producer = $app->make('kafka.producer');
                     } catch (\Exception $e) {
                         \Log::error('Kafka Producer Error: ' . $e->getMessage());
+                        throw $e;
                     }
                 }
 
-                public function publishOrderPlaced($data)
+                public function publishOrderPlaced($message)
                 {
                     try {
                         if (!$this->producer) {
                             \Log::error('Kafka producer not initialized');
-                            return;
+                            throw new \Exception('Kafka producer not initialized');
                         }
-
-                        $message = is_array($data) ? $data : ['message' => $data];
-                        
-                        \Log::info('Publishing to Kafka', [
-                            'topic' => 'facilities.orders.placed',
-                            'data' => $message
-                        ]);
 
                         $this->producer->send('facilities.orders.placed', json_encode($message));
                     } catch (\Exception $e) {
-                        \Log::error('Error publishing to Kafka: ' . $e->getMessage());
+                        throw $e;
                     }
                 }
             };

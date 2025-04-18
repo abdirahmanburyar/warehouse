@@ -11,6 +11,7 @@ use App\Events\OrderEvent;
 use App\Models\OrderItem;
 use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,7 +41,6 @@ class OrderController extends Controller
 
         // Get order statistics
         $stats = Order::select('status', DB::raw('count(*) as count'))
-            // ->where('warehouse_id', auth()->user()->warehouse_id)
             ->groupBy('status')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -51,9 +51,10 @@ class OrderController extends Controller
         // Ensure all statuses have a value
         $defaultStats = [
             'pending' => 0,
+            'review' => 0,
             'approved' => 0,
             'rejected' => 0,
-            'in processing' => 0,
+            'in process' => 0,
             'dispatched' => 0,
             'delivered' => 0
         ];
@@ -270,7 +271,13 @@ class OrderController extends Controller
     {
         try {
             $order->load('items.product');
-            return response()->json($order->items);
+            $items = $order->items->map(function ($item) {
+                // Sum all inventory quantities for this product
+                $inventoryQty = \App\Models\Inventory::where('product_id', $item->product_id)->sum('quantity');
+                $item->inventory_quantity = $inventoryQty;
+                return $item;
+            });
+            return response()->json($items);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -281,7 +288,7 @@ class OrderController extends Controller
         try {
             $outstanding = OrderItem::where('product_id', $id)
                 ->whereHas('order', function ($query) {
-                    $query->where('status', 'in processing');
+                    $query->where('status', 'in process');
                 })
                 ->join('orders', 'orders.id', '=', 'order_items.order_id')
                 ->join('facilities', 'facilities.id', '=', 'orders.facility_id')
@@ -303,6 +310,40 @@ class OrderController extends Controller
             return response()->json($outstanding);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function updateItem(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $validated = $request->validate([
+                'id' => 'required|exists:order_items,id',
+                'quantity' => 'required|integer|min:1',
+            ]);
+
+            logger()->info('Order item updated', $validated);
+            
+            $orderItem = OrderItem::findOrFail($validated['id']);
+
+            // Check if the new quantity will not exceed the current inventory quantity
+            $currentInventoryQuantity = \App\Models\Inventory::where('product_id', $orderItem->product_id)->sum('quantity');
+            if ($validated['quantity'] > $currentInventoryQuantity) {
+                return response()->json('The new quantity exceeds the current inventory quantity.', 500);
+            }
+            
+            $orderItem->update([
+                'quantity' => $validated['quantity'],
+            ]);
+            Kafka::publishOrderPlaced("Refreshed");
+            event(new OrderEvent('Refreshed'));
+            
+            DB::commit();
+            return response()->json('Order item updated successfully.', 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 500);
         }
     }
 
