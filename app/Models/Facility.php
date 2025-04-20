@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class Facility extends Model
 {
@@ -13,6 +12,7 @@ class Facility extends Model
         'name',
         'email',
         'user_id',
+        'district_id',
         'phone',
         'address',
         'city',
@@ -33,5 +33,10 @@ class Facility extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function district(): BelongsTo
+    {
+        return $this->belongsTo(District::class);
     }
 }

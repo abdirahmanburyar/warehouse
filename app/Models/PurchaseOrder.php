@@ -26,7 +26,7 @@ class PurchaseOrder extends Model
     }
 
     public function po_items(){
-        return $this->hasMany(PoItem::class, 'purchase_order_id');
+        return $this->hasMany(PoItem::class, 'purchase_order_id', 'id');
     }
 
     public function items()

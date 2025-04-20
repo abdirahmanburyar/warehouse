@@ -46,7 +46,7 @@ class KafkaServiceProvider extends ServiceProvider
                             throw new \Exception('Kafka producer not initialized');
                         }
 
-                        $this->producer->send('facilities.orders.placed', json_encode($message));
+                        $this->producer->send('facilities.orders.updated', json_encode($message));
                     } catch (\Exception $e) {
                         throw $e;
                     }

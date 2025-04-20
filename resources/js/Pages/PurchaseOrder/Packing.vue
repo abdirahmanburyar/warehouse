@@ -1,6 +1,6 @@
 <template>
     <Head :title="props.purchase_order.po_number" />
-    <AuthenticatedLayout :auth="$page.props.auth" :errors="$page.props.errors">
+    <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders" img="/assets/images/inventory.png">
         <div class="flex h-full relative">
             <div class="fixed w-[300px] border-r border-gray-200 bg-white top-[200px] bottom-[50px] overflow-y-auto mr-[100px]">
                 <div class="h-full">
@@ -1108,7 +1108,7 @@ const updateItemStatus = async (itemIds, action) => {
         console.error(`Error ${action} items:`, error);
         Swal.fire({
             title: 'Error!',
-            text: error.response?.data?.message || `Failed to ${action} items`,
+            text: error.response?.data || `Failed to ${action} items`,
             icon: 'error',
             confirmButtonColor: '#EF4444'
         });

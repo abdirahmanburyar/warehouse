@@ -18,9 +18,8 @@ return new class extends Migration
             $table->foreignIdFor(Facility::class)->cascadeOnDelete();
             $table->foreignIdFor(User::class)->cascadeOnDelete();
             $table->string('order_number')->unique();
+            $table->string('order_type');
             $table->enum('status', ['pending', 'completed'])->default('pending');
-            $table->integer('number_items');
-            $table->double('total_amount');
             $table->dateTime('order_date');
             $table->dateTime('expected_date')->nullable();
             $table->timestamps();

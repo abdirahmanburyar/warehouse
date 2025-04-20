@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers;
 
+// App Models
 use App\Models\Order;
-use App\Facades\Kafka;
+use App\Models\OrderItem;
 use App\Models\Facility;
 use App\Models\Product;
 use App\Models\Warehouse;
+
+// App Events and Resources
 use App\Events\OrderEvent;
-use App\Models\OrderItem;
 use App\Http\Resources\OrderResource;
+
+// Laravel Core
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+
+// App Facades
+use App\Facades\Kafka;
 
 class OrderController extends Controller
 {
@@ -34,10 +42,10 @@ class OrderController extends Controller
             })
             ->latest();
 
-        $orders = $query->paginate($request->input('perPage', 7), ['*'], 'page', $request->input('page', 1))
-            ->withQueryString();
+        // $orders = $query->paginate($request->input('perPage', ), ['*'], 'page', $request->input('page', 1))
+        //     ->withQueryString();
 
-        $orders->setPath(url()->current());
+        // $orders->setPath(url()->current());
 
         // Get order statistics
         $stats = Order::select('status', DB::raw('count(*) as count'))
@@ -63,7 +71,7 @@ class OrderController extends Controller
 
         return Inertia::render('Order/Index', [
             'stats' => $stats,
-            'orders' => OrderResource::collection($orders),
+            'orders' => OrderResource::collection($query->get()),
             'facilities' => Facility::select('id', 'name')->get(),
             'filters' => $request->only('search', 'status', 'page', 'from', 'to'),
             'warehouses' => Warehouse::select('id', 'name')->get(),
@@ -233,90 +241,95 @@ class OrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            logger()->info('Order status change request', $request->all());
-            
             // Validate request
             $validated = $request->validate([
-                'id' => 'required|exists:order_items,id',
-                'status' => 'required|string',
+                'order_id' => 'required|exists:orders,id',
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
             ]);
             
+            $order = Order::findOrFail($request->order_id);
+            
+            // Define allowed transitions
+            $allowedTransitions = [
+                'pending' => ['approved'],
+                'approved' => ['in process'],
+                'in process' => ['dispatched'],
+                'dispatched' => ['delivered']
+            ];
+
+            // Check if the transition is allowed
+            if (!isset($allowedTransitions[$order->status]) || 
+                !in_array($request->status, $allowedTransitions[$order->status])) {
+                return response()->json("Status transition not allowed", 422);
+            }
+
             $userId = auth()->id();
             $now = now();
-            $item = OrderItem::find($request->id);
             
             // Prepare updates for order
-            $orderUpdates = [
-                'status' => $request->status
-            ];
+            $updates = ['status' => $request->status];
             
             // Add timestamp based on the status
             switch ($request->status) {
                 case 'approved':
-                    $orderUpdates['approved_at'] = $now;
-                    $orderUpdates['approved_by'] = $userId;
-                    $updateResult = $item->update($orderUpdates);
+                    $updates['approved_at'] = $now;
+                    $updates['approved_by'] = $userId;
                     break;
                 case 'in process':
-                    $orderUpdates['status'] = 'in process';
-                    $orderUpdates['in_process'] = true;
-                    $updateResult = $item->update($orderUpdates);
+                    $updates['in_process'] = true;
                     break;
                 case 'dispatched':
-                    $orderUpdates['dispatched_by'] = $userId;
-                    $orderUpdates['dispatched_at'] = $now;
-                    $updateResult = $item->update($orderUpdates);
+                    $updates['dispatched_by'] = $userId;
+                    $updates['dispatched_at'] = $now;
                     break;
                 case 'delivered':
-                    // No timestamp field for delivered in the orders table
-                    $orderUpdates['delivered'] = true;
-                    $updateResult = $item->update($orderUpdates);
-                    
-                    // Check if all items in this order are now delivered
-                    $order = $item->order;
-                    
-                    // Use collection methods instead of foreach
-                    $allItemsDelivered = $order->items
-                        ->where('id', '!=', $item->id) // Exclude current item
-                        ->every(function($orderItem) {
-                            return $orderItem->status === 'delivered';
-                        });
-                    
-                    // If all items are delivered, update the order status
-                    if ($allItemsDelivered) {
-                        $order->update(['status' => 'completed']);
-                        logger()->info("Order {$order->id} marked as completed - all items delivered");
-                    }
+                    $updates['delivered'] = true;
                     break;
             }            
+
+            // Update the order
+            // $order->update($updates);
+
             // Trigger Kafka event for order status change
             Kafka::publishOrderPlaced("Refreshed");
-            
             // Broadcast event
             event(new OrderEvent('Refreshed'));
 
             DB::commit();
             return response()->json('Order status updated successfully.', 200);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            logger()->error( $e->getMessage());
-            return response()->json($e->getMessage(), 500);
+            Log::error('Order status change failed', [
+                'error' => $e->getMessage(),
+                'order_id' => $request->order_id ?? null
+            ]);
+            return response()->json('Failed to update order status: ' . $e->getMessage(), 500);
         }
     }
 
-    public function getItems(Order $order)
+    /**
+     * Get items for an order with their inventory quantities
+     */
+    public function items(Order $order)
     {
         try {
-            $order->load('items.product');
-            $items = $order->items->map(function ($item) {
-                // Sum all inventory quantities for this product
-                $inventoryQty = \App\Models\Inventory::where('product_id', $item->product_id)->sum('quantity');
-                $item->inventory_quantity = $inventoryQty;
-                return $item;
-            });
+            $items = $order->items()
+                ->with('product')
+                ->get()
+                ->map(function ($item) {
+                    // Sum all inventory quantities for this product
+                    $inventoryQty = \App\Models\Inventory::where('product_id', $item->product_id)->sum('quantity');
+                    $item->inventory_quantity = $inventoryQty;
+                    return $item;
+                });
+
             return response()->json($items);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+        } catch (\Exception $e) {
+            Log::error('Failed to get order items', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json('Failed to load order items', 500);
         }
     }
 
@@ -360,7 +373,6 @@ class OrderController extends Controller
                 'quantity' => 'required|integer|min:1',
             ]);
 
-            logger()->info('Order item updated', $validated);
             
             $orderItem = OrderItem::findOrFail($validated['id']);
 
@@ -381,6 +393,220 @@ class OrderController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Bulk change status of orders
+     */
+    public function bulkChangeStatus(Request $request)
+    {
+        $request->validate([
+            'order_ids' => 'required|array',
+            'order_ids.*' => 'required|exists:orders,id',
+            'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+        ]);
+
+        $allowedTransitions = [
+            'pending' => ['approved'],
+            'approved' => ['in process'],
+            'in process' => ['dispatched'],
+            'dispatched' => ['delivered']
+        ];
+
+        DB::beginTransaction();
+        try {
+            $orders = Order::whereIn('id', $request->order_ids)->get();
+            $updatedCount = 0;
+
+            foreach ($orders as $order) {
+                if (isset($allowedTransitions[$order->status]) && 
+                    in_array($request->status, $allowedTransitions[$order->status])) {
+                    
+                    $oldStatus = $order->status;
+                    $order->status = $request->status;
+                    $order->save();
+
+                    // Publish to Kafka
+                    try {
+                        Kafka::publishOrderPlaced('Refreshed');
+                    } catch (\Exception $e) {
+                        Log::error('Failed to publish order status change to Kafka', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+
+                    $updatedCount++;
+                }
+            }
+
+            DB::commit();
+
+            if ($updatedCount === 0) {
+                return response()->json("No orders were eligible for status change", 422);
+            }
+
+            event(new OrderEvent('Order status updated'));
+            return response()->json("Successfully updated {$updatedCount} orders to {$request->status}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk order status change failed', [
+                'error' => $e->getMessage(),
+                'order_ids' => $request->order_ids
+            ]);
+            return response()->json('Failed to update order statuses: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Bulk change status of order items
+     */
+    public function bulkChangeItemStatus(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'item_ids' => 'required|array',
+                'item_ids.*' => 'required|exists:order_items,id',
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+            ]);
+
+            $items = OrderItem::with('order')->whereIn('id', $request->item_ids)->get();
+            $updatedCount = 0;
+            $updatedOrders = [];
+
+            $allowedTransitions = [
+                'pending' => ['approved'],
+                'approved' => ['in process'],
+                'in process' => ['dispatched'],
+                'dispatched' => ['delivered']
+            ];
+
+            foreach ($items as $item) {
+                // Check if transition is allowed
+                if (!isset($allowedTransitions[$item->status]) || 
+                    !in_array($request->status, $allowedTransitions[$item->status])) {
+                    continue;
+                }
+                
+                $oldStatus = $item->status;
+                $item->status = $request->status;
+                $item->save();
+
+                // Track unique orders that were affected
+                if (!in_array($item->order_id, $updatedOrders)) {
+                    $updatedOrders[] = $item->order_id;
+
+                    // Check if all items in this order have the same status
+                    $allItemsSameStatus = $item->order->items()
+                        ->where('status', '!=', $request->status)
+                        ->doesntExist();
+
+                    if ($allItemsSameStatus) {
+                        $item->order->status = "completed";
+                        $item->order->save();
+                    }
+
+                    // Publish to Kafka
+                    try {
+                        Kafka::publishOrderPlaced('Refreshed');
+                    } catch (\Exception $e) {
+                        Log::error('Failed to publish order item status change to Kafka', [
+                            'order_id' => $item->order_id,
+                            'item_id' => $item->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                $updatedCount++;
+            }
+
+            DB::commit();
+
+            if ($updatedCount === 0) {
+                return response()->json("No items were eligible for status change. Please check if the status transitions are allowed.", 500);
+            }
+
+            event(new OrderEvent('Order items status updated'));
+            return response()->json("Successfully updated {$updatedCount} items to {$request->status}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk order item status change failed', [
+                'error' => $e->getMessage(),
+                'item_ids' => $request->item_ids
+            ]);
+            return response()->json('Failed to update item statuses: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function changeItemStatus(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'item_id' => 'required|exists:order_items,id',
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+            ]);
+
+            $item = OrderItem::with('order')->findOrFail($request->item_id);
+            
+            // Define allowed transitions
+            $allowedTransitions = [
+                'pending' => ['approved'],
+                'approved' => ['in process'],
+                'in process' => ['dispatched'],
+                'dispatched' => ['delivered']
+            ];
+
+            // Check if the transition is allowed
+            if (!isset($allowedTransitions[$item->status]) || 
+                !in_array($request->status, $allowedTransitions[$item->status])) {
+                return response()->json("Status transition not allowed", 500);
+            }
+
+            // Update item status
+            $item->status = $request->status;
+            $item->save();
+
+            // Check if all items in this order have the same status
+            $allItemsSameStatus = $item->order->items()
+                ->where('status', '!=', $request->status)
+                ->doesntExist();
+
+            if ($allItemsSameStatus) {
+                $item->order->status = $request->status;
+                $item->order->save();
+            }
+
+            // Publish to Kafka
+            try {
+                Kafka::publishOrderPlaced('Refreshed');
+            } catch (\Exception $e) {
+                Log::error('Failed to publish order item status change to Kafka', [
+                    'order_id' => $item->order_id,
+                    'item_id' => $item->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
+            // Broadcast event
+            event(new OrderEvent('Refreshed'));
+
+            DB::commit();
+            return response()->json('Order item status updated successfully.', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Order item status change failed', [
+                'error' => $e->getMessage(),
+                'item_id' => $request->item_id ?? null
+            ]);
+            return response()->json('Failed to update order item status: ' . $e->getMessage(), 500);
         }
     }
 

@@ -486,7 +486,7 @@ class PurchaseOrderController extends Controller
                 // Check if all items are verified first
                 foreach ($items as $item) {
                     if ($item->status !== 'verified') {
-                        return response()->json(['error' => 'All items must be verified first'], 422);
+                        return response()->json('All items must be verified first', 500);
                     }
                 }
             }
@@ -623,7 +623,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if (!$item) {
-                return response()->json(['error' => 'Item must be verified first'], 422);
+                return response()->json('Item must be verified first', 500);
             }
 
             DB::table('purchase_order_items')

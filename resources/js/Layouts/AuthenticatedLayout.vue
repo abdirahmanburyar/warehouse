@@ -29,6 +29,19 @@
                 </div>
                 </Link>
 
+                <!-- add warehouse menu -->
+                <Link :href="route('warehouses.index')" class="menu-item"
+                    :class="{ active: route().current('warehouses.*') }" @click="setCurrentPage('warehouses')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('warehouses.*')" src="/assets/images/warehouse-b.png" class="warehouse-icon"
+                            style="height: 24px" />
+                        <img v-else src="/assets/images/warehouse-w.png" class="warehouse-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Warehouses</span>
+                </div>
+                </Link>
+
                 <Link :href="route('orders.index')" class="menu-item"
                     :class="{ active: route().current('orders.*') }" @click="setCurrentPage('orders')">
                 <div class="menu-content">
@@ -174,6 +187,7 @@
                                 <div class="user-details">
                                     <span class="user-role">Pharmaceutical Manager</span>
                                     <span class="user-name">{{ $page.props.auth.user?.name }}</span>
+                                    <span class="user-name">{{ $page.props.warehouse?.name }}</span>
                                 </div>
                             </div>
                             <button class="logout-button" @click="logout">

@@ -23,7 +23,7 @@ class KafkaService
     public function publishOrderPlaced($message)
     {
         try {
-            $topic = config('kafka.topics.order_placed', 'facilities.orders.placed');
+            $topic = config('kafka.topics.order_placed', 'facilities.orders.updated');
             
             if (is_array($message)) {
                 $message = json_encode($message);

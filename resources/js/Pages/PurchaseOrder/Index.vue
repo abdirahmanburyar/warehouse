@@ -2,7 +2,7 @@
 
     <Head title="Purchase Orders" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders" img="/assets/images/inventory.png">
         <div class="bg-white overflow-hidden sm:rounded-lg">
             <div class="p-6 bg-white border-b border-gray-200">
                 <!-- Search and Filters -->

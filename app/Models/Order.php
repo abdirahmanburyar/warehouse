@@ -21,7 +21,6 @@ class Order extends Model
         'user_id',
         'order_number',
         'status',
-        'number_items',
         'notes',
         'order_date',
         'expected_date',

@@ -203,6 +203,7 @@
                                 <option value="25">25 / page</option>
                                 <option value="50">50 / page</option>
                                 <option value="100">100 / page</option>
+                                <option value="200">200 / page</option>
                             </select>
 
                             <!-- Reset Filters Button -->
@@ -298,6 +299,12 @@
                                     >
                                         Barcode
                                     </th>
+                                    <th>
+                                        Type
+                                    </th>
+                                    <th>
+                                        Pack Size
+                                    </th>
                                     <th
                                         scope="col"
                                         class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
@@ -358,6 +365,16 @@
                                         class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
                                     >
                                         {{ product.barcode }}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
+                                        {{ product.type }}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
+                                    >
+                                        {{ product.pack_size }}
                                     </td>
                                     <td
                                         class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap"
@@ -1424,18 +1441,15 @@
                                 >Facility</label
                             >
                             <select
-                                id="facility"
-                                v-model="facility"
+                                id="facility_type"
+                                v-model="facility_type"
                                 class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             >
-                                <option value="">All</option>
-                                <option
-                                    v-for="facility in props.facilities"
-                                    :key="facility.id"
-                                    :value="facility.id"
-                                >
-                                    {{ facility.name }}
-                                </option>
+                                <option value="">Select Type</option>
+                                <option value="District Hospital">District Hospital</option>
+                                <option value="Regional Hospital">Regional Hospital</option>
+                                <option value="Health Centre">Health Centre</option>
+                                <option value="Primary Health Unit">Primary Health Unit</option>
                             </select>
                         </div>
                         <div class="space-y-2">
@@ -1469,6 +1483,7 @@
                                 <option value="15">15</option>
                                 <option value="20">20</option>
                                 <option value="100">100</option>
+                                <option value="500">500</option>
                             </select>
                         </div>
                     </div>
@@ -1495,7 +1510,13 @@
                                     scope="col"
                                     class="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase"
                                 >
-                                    Health Facility
+                                    Pack Size
+                                </th>
+                                <th
+                                    scope="col"
+                                    class="px-6 py-3 text-xs font-medium leading-4 tracking-wider text-left text-gray-500 uppercase"
+                                >
+                                    Facility
                                 </th>
                                 <th
                                     scope="col"
@@ -1510,11 +1531,14 @@
                                 v-for="eligibleItem in props.eligibleItems.data"
                                 :key="eligibleItem.id"
                             >
-                                <td class="px-6 py-4 whitespace-no-wrap">
+                            <td class="px-6 py-4 whitespace-no-wrap">
                                     {{ eligibleItem.product?.name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-no-wrap">
-                                    {{ eligibleItem.facility?.name }}
+                                    {{ eligibleItem.product?.pack_size }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-no-wrap">
+                                    {{ eligibleItem.facility_type }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-no-wrap">
                                     <button
@@ -1536,8 +1560,14 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mb-6">
-                    <Pagination :links="props.eligibleItems.meta.links" />
+                <div class="mb-6 p-6">
+                    <div class="flex justify-between items-center">
+                        <!-- add show -->
+                         <div class="text-xs text-muted">
+                                Showing {{ props.eligibleItems.meta.from }} to {{ props.eligibleItems.meta.to }} of {{ props.eligibleItems.meta.total }}
+                         </div>
+                        <Pagination :links="props.eligibleItems.meta.links" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -2528,7 +2558,7 @@
         <Modal
             :show="eligibleShow"
             @close="closeSubcategoryDeleteModal"
-            width="3xl"
+            max-width="5xl"
         >
             <div class="px-6 py-4">
                 <h2 class="text-lg font-medium text-gray-900">
@@ -2568,18 +2598,15 @@
                             >Facility</label
                         >
                         <select
-                            id="facility"
+                            id="facility_type"
                             required
-                            v-model="eligibleItemForm.facility_id"
+                            v-model="eligibleItemForm.facility_type"
                             class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                            <option
-                                v-for="facility in facilities"
-                                :key="facility.id"
-                                :value="facility.id"
-                            >
-                                {{ facility.name }}
-                            </option>
+                        ><option value="">Select Type</option>
+                            <option value="District Hospital">District Hospital</option>
+                            <option value="Regional Hospital">Regional Hospital</option>
+                            <option value="Health Centre">Health Centre</option>
+                            <option value="Primary Health Unit">Primary Health Unit</option>
                         </select>
                     </div>
                     <div class="flex justify-end mt-6">
@@ -2647,7 +2674,7 @@ const search = ref(props.filters?.search || "");
 const eligibleSearch = ref(props.filters?.eligibleSearch || "");
 const eligible_per_page = ref(props.filters?.eligible_per_page || 6);
 const eligible_page = ref(props.filters?.eligible_page || 1);
-const facility = ref(props.filters?.facility || "");
+const facility_type = ref(props.filters?.facility_type || "");
 const category_id = ref(props.filters?.category_id || "");
 const sub_category_id = ref(props.filters?.sub_category_id || "");
 const dosage_id = ref(props.filters?.dosage_id || "");
@@ -2767,7 +2794,8 @@ const toggleSelectAll = () => {
 function editEligibleItem(eligibleItem) {
     eligibleItemForm.value.id = eligibleItem.id;
     eligibleItemForm.value.product_id = eligibleItem.product_id;
-    eligibleItemForm.value.facility_id = eligibleItem.facility_id;
+    eligibleItemForm.value.facility_type = eligibleItem.facility_type;
+    eligibleItemForm.value.pack_size = eligibleItem.pack_size;
 
     eligibleShow.value = true;
 }
@@ -2786,7 +2814,8 @@ async function addEligibleItem() {
             eligibleItemForm.value = {
                 id: null,
                 product_id: "",
-                facility_id: "",
+                facility_type: "",
+                pack_size: "",
             };
         })
         .catch((error) => {
@@ -2915,7 +2944,7 @@ watch(
     [
         () => dosageSearch.value,
         () => dosage_per_page.value,
-        () => facility.value,
+        () => facility_type.value,
         () => eligibleSearch.value,
         () => eligible_per_page.value,
         () => eligible_page.value,
@@ -2972,6 +3001,10 @@ function reloadProducts() {
         params.dosage_per_page = dosage_per_page.value;
     }
 
+    if (facility_type.value) {
+        params.facility_type = facility_type.value;
+    }
+
     if (eligibleSearch.value) {
         params.eligibleSearch = eligibleSearch.value;
     }
@@ -2984,9 +3017,6 @@ function reloadProducts() {
         params.eligible_page = eligible_page.value;
     }
 
-    if (facility.value) {
-        params.facility = facility.value;
-    }
     router.get(route("products.index"), params, {
         preserveState: true,
         preserveScroll: true,
@@ -3603,7 +3633,8 @@ const eligibleShow = ref(false);
 const eligibleItemForm = ref({
     id: null,
     product_id: "",
-    facility_id: "",
+    facility_type: "",
+    pack_size: "",
 });
 
 function openEligibleCreateModal() {

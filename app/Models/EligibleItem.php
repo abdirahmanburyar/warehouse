@@ -8,16 +8,11 @@ class EligibleItem extends Model
 {
     protected $fillable = [
         'product_id',
-        'facility_id',
+        'facility_type'
     ];
 
     public function product()
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function facility()
-    {
-        return $this->belongsTo(Facility::class);
     }
 }

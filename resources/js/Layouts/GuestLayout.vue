@@ -13,8 +13,8 @@ import { Link } from '@inertiajs/vue3';
             class="mt-6 min-w-[250px] w-full max-w-2xl overflow-hidden shadow-md sm:rounded-lg">
             <slot />
         </div>
-        <div class="flex justify-between gap-2 w-full ">
-            <img src="/assets/images/psi.png" class="h-20 w-20 fill-current text-gray-500" />
+        <div class="flex justify-between gap-2 w-full p-5">
+            <img src="/assets/images/psi.jpg" class="h-20 w-20 fill-current text-gray-500" />
             <img src="/assets/images/moh.png" class="h-20 w-20 fill-cover rounded-full text-gray-500" />
         </div>
     </div>

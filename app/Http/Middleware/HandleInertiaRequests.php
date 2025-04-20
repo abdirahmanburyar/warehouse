@@ -36,6 +36,8 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name') : [],
                 'roles' => $request->user() ? $request->user()->roles->pluck('id') : [],
             ],
+            // show warehouse for the current user
+            'warehouse' => $request->user() ? $request->user()->warehouse : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

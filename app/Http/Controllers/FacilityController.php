@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Facility;
 use App\Models\User;
+use App\Models\District;
 use Illuminate\Http\Request;
 use App\Http\Resources\FacilityResource;
 
@@ -11,14 +12,25 @@ class FacilityController extends Controller
 {
     public function index(Request $request)
     {
-        $facilities = Facility::with('user')->paginate(6, ['*'], 'page', $request->get('page', 1));
+        $facilities = Facility::query();
+
+        if($request->has('search')) {
+            $facilities->where('name', 'like', "%{$request->search}%")
+                ->orWhereHas('district', function($q) use ($request) {
+                    $q->where('district_name', 'like', "%{$request->search}%")
+                        ->orWhere('region_name', 'like', "%{$request->search}%");
+                });
+        }
+        
+        $facilities = $facilities->with(['user','district'])->paginate($request->per_page ?? 10, ['*'], 'page', $request->get('page', 1));
 
         $facilities->setPath(url()->current());
 
         return inertia('Facility/Index', [
             'facilities' => FacilityResource::collection($facilities),
             'users' => User::get(),
-            'filters' => $request->only('page')
+            'filters' => $request->only('page', 'per_page', 'search'),
+            'districts' => District::get(),
         ]);
     }
 
@@ -32,6 +44,7 @@ class FacilityController extends Controller
                 'address' => 'required|string|max:255',
                 'city' => 'required|string|max:100',
                 'state' => 'nullable|string|max:100',
+                'district_id' => 'required',
                 'facility_type' => 'required|string|max:50',
                 'has_cold_storage' => 'boolean',
                 'special_handling_capabilities' => 'nullable|string',

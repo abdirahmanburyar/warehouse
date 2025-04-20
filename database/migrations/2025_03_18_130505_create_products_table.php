@@ -45,6 +45,8 @@ return new class extends Migration
             $table->foreignId('sub_category_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedBigInteger('dosage_id')->nullable();
             $table->double('reorder_level')->default(0);
+            $table->string('type');
+            $table->string('pack_size')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

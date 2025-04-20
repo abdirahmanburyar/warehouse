@@ -20,6 +20,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\DistrictController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -205,22 +206,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::post('/dispose', 'markAsDisposed')->name('expired.dispose');
         });
 
-    Route::controller(OrderController::class)
-        ->prefix('/orders')
-        ->group(function () {
-            Route::get('/', 'index')->name('orders.index');
-            Route::post('/store', 'store')->name('orders.store');
-            Route::get('/{order}', 'show')->name('orders.show');
-            Route::delete('/{order}', 'destroy')->name('orders.destroy');
-            Route::post('/bulk', 'bulk')->name('orders.bulk');
-            Route::post('/search', 'searchProduct')->name('order.product.search');
-            Route::post('/status', 'changeStatus')->name('orders.change-status');
-            Route::post('/update-item', 'updateItem')->name('orders.update-item');
-            Route::get('/outstanding/{product}', 'getOutstanding')->name('orders.outstanding');
-            Route::get('/items/{order}', 'getItems')->name('orders.items');
-            Route::post('/bulk-change-status', 'bulkChangeStatus')->name('orders.bulk-change-status');
-            Route::post('/bulk-change-item-status', 'bulkChangeItemStatus')->name('orders.bulk-change-item-status');
-        });
+    // Order routes
+    Route::prefix('orders')->name('orders.')->middleware(['auth', 'verified'])->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/items/{order}', [OrderController::class, 'items'])->name('items');
+        Route::post('/change-status', [OrderController::class, 'changeStatus'])->name('change-status');
+        Route::post('/bulk-change-status', [OrderController::class, 'bulkChangeStatus'])->name('bulk-change-status');
+        Route::post('/bulk-change-item-status', [OrderController::class, 'bulkChangeItemStatus'])->name('bulk-change-item-status');
+        Route::post('/update-item', [OrderController::class, 'updateItem'])->name('update-item');
+        Route::post('/change-item-status', [OrderController::class, 'changeItemStatus'])->name('change-item-status');
+    });
 
     Route::controller(ApprovalController::class)
         ->prefix('approvals')
@@ -248,6 +243,14 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->prefix('/transfers')
         ->group(function () {
             Route::get('/', 'index')->name('transfers.index');
+        });
+
+    Route::controller(DistrictController::class)
+        ->prefix('/districts')
+        ->group(function () {
+            Route::get('/', 'index')->name('districts.index');
+            Route::post('/store', 'store')->name('districts.store');
+            Route::delete('/{district}', 'destroy')->name('districts.destroy');
         });
 });
 

@@ -36,7 +36,8 @@ class ProductController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('barcode', 'like', "%{$search}%");
+                    ->orWhere('barcode', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
             });
         }
 
@@ -149,8 +150,8 @@ class ProductController extends Controller
         // Handle eligible items functionality
         $eligibleItems = EligibleItem::query();
 
-        if ($request->has('facility') && $request->facility) {
-            $eligibleItems->where('facility_id', $request->facility);
+        if ($request->filled('facility_type')) {
+            $eligibleItems->where('facility_type', $request->facility_type);
         }
 
         if ($request->filled('eligibleSearch')) {
@@ -162,7 +163,7 @@ class ProductController extends Controller
             });
         }
 
-        $eligibleItems = $eligibleItems->with('product', 'facility')
+        $eligibleItems = $eligibleItems->with('product')
             ->paginate($request->input('eligible_per_page', 6), ['*'], 'eligible_page', $request->input('eligible_page', 1))
             ->withQueryString();
 
@@ -171,7 +172,7 @@ class ProductController extends Controller
 
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
-            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page', 'eligibleSearch', 'eligible_per_page', 'eligible_page', 'facility']),
+            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page', 'eligibleSearch', 'eligible_per_page', 'eligible_page', 'facility_type']),
             'categoryFilters' => $request->only(['categorySearch', 'category_sort_field', 'category_sort_direction', 'category_per_page', 'category_page']),
             'categories' => CategoryResource::collection($categories),
             'dosages' => DosageResource::collection($dosages),
@@ -364,12 +365,12 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'id' => 'nullable|exists:eligible_items,id',
                 'product_id' => 'required|exists:products,id',
-                'facility_id' => 'required|exists:facilities,id',
+                'facility_type' => 'required'
             ]);
 
             $validator = Validator::make($request->all(), [
                 'product_id' => Rule::unique('eligible_items', 'product_id')->where(function ($query) use ($request) {
-                    return $query->where('facility_id', $request->facility_id)->whereNotIn('id', [$request->id]);
+                    return $query->where('facility_type', $request->facility_type)->whereNotIn('id', [$request->id]);
                 }),
             ]);
 

@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use App\Models\User;
+use App\Models\District;
 
 return new class extends Migration
 {
@@ -17,6 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->foreignIdFor(User::class)->cascadeOnDelete();
+            $table->foreignIdFor(District::class)->cascadeOnDelete();
             $table->string('phone');
             $table->string('address');
             $table->string('city');
