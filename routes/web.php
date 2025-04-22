@@ -19,6 +19,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
 use Illuminate\Foundation\Application;
@@ -215,6 +216,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::post('/bulk-change-item-status', [OrderController::class, 'bulkChangeItemStatus'])->name('bulk-change-item-status');
         Route::post('/update-item', [OrderController::class, 'updateItem'])->name('update-item');
         Route::post('/change-item-status', [OrderController::class, 'changeItemStatus'])->name('change-item-status');
+        Route::get('/get-outstanding/{id}', [OrderController::class, 'getOutstanding'])->name('outstanding');
     });
 
     Route::controller(ApprovalController::class)
@@ -251,6 +253,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('districts.index');
             Route::post('/store', 'store')->name('districts.store');
             Route::delete('/{district}', 'destroy')->name('districts.destroy');
+        });
+
+    Route::controller(DispatchController::class)
+        ->prefix('/orders-dispatch')
+        ->group(function () {
+            Route::get('/', 'index')->name('dispatch.index');
+            Route::post('/process', 'process')->name('dispatch.process');
         });
 });
 

@@ -84,6 +84,7 @@ class GenerateQuarterlyOrders extends Command
                     'order_number' => 'QO-' . $quarter . '-' . date('Y') . '-' . Str::padLeft($facility->id, 4, '0'),
                     'order_type' => 'quarterly',
                     'status' => 'pending',
+                    'order_type' => 'quarterly',
                     'order_date' => Carbon::now(),
                     'expected_date' => Carbon::now()->addDays(14),
                 ]);

@@ -132,6 +132,17 @@
                 </div>
                 </Link>
 
+                <Link :href="route('dispatch.index')" class="menu-item"
+                    :class="{ active: route().current('dispatch.*') }" @click="setCurrentPage('dispatch')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('dispatch.*')" src="/assets/images/dispatch-b.png" class="dispatch-icon" style="height: 24px" />
+                        <img v-else src="/assets/images/dispatch-w.png" class="dispatch-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Dispatch</span>
+                </div>
+                </Link>
+
                 <Link :href="route('settings.index')" class="menu-item"
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
                 <div class="menu-content">

@@ -5,6 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Warehouse;
 
 return new class extends Migration
 {
@@ -17,7 +18,9 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Order::class)->cascadeOnDelete();
             $table->foreignIdFor(Product::class)->nullable()->cascadeOnDelete();
+            $table->foreignIdFor(Warehouse::class)->nullable()->cascadeOnDelete();
             $table->integer('quantity');
+            $table->integer('quantity_on_order')->default(0);
             $table->foreignId('reviewed_by')->nullable();
             $table->date('reviewed_at')->nullable();
             $table->foreignId('approved_by')->nullable();

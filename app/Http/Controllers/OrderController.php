@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Facility;
 use App\Models\Product;
 use App\Models\Warehouse;
+use App\Models\Inventory;
 
 // App Events and Resources
 use App\Events\OrderEvent;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 // App Facades
 use App\Facades\Kafka;
@@ -143,14 +145,13 @@ class OrderController extends Controller
                     ]);
                 }
             }
-            
+
             Kafka::publishOrderPlaced('Refreshed');
 
             event(new OrderEvent('Refreshed'));
 
             DB::commit();
             return response()->json('Order ' . ($request->id ? 'updated' : 'created') . ' successfully');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
@@ -160,7 +161,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $order->load(['facility', 'user', 'items.product']);
-        
+
         return Inertia::render('Order/Show', [
             'order' => new OrderResource($order)
         ]);
@@ -188,10 +189,10 @@ class OrderController extends Controller
             if (empty($orderIds)) {
                 return response()->json('Please select at least one order', 400);
             }
-            
+
             // Get all selected orders
             $orders = Order::whereIn('id', $orderIds)->get();
-            
+
             // Check if any order has non-pending items and collect their IDs
             $nonPendingOrders = [];
             foreach ($orders as $order) {
@@ -199,17 +200,17 @@ class OrderController extends Controller
                     $nonPendingOrders[] = $order->id;
                 }
             }
-            
+
             if (!empty($nonPendingOrders)) {
                 return response()->json('Cannot delete orders that are not in pending status', 500);
             }
-            
+
             // Delete orders if all are pending
             $orders->each(function ($order) {
                 $order->items()->delete();
                 $order->delete();
             });
-            
+
             return response()->json('Selected orders deleted successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
@@ -230,7 +231,7 @@ class OrderController extends Controller
                         'name' => $product->name,
                     ];
                 });
-                    
+
             return response()->json($products, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
@@ -246,9 +247,9 @@ class OrderController extends Controller
                 'order_id' => 'required|exists:orders,id',
                 'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
             ]);
-            
+
             $order = Order::findOrFail($request->order_id);
-            
+
             // Define allowed transitions
             $allowedTransitions = [
                 'pending' => ['approved'],
@@ -258,17 +259,19 @@ class OrderController extends Controller
             ];
 
             // Check if the transition is allowed
-            if (!isset($allowedTransitions[$order->status]) || 
-                !in_array($request->status, $allowedTransitions[$order->status])) {
+            if (
+                !isset($allowedTransitions[$order->status]) ||
+                !in_array($request->status, $allowedTransitions[$order->status])
+            ) {
                 return response()->json("Status transition not allowed", 422);
             }
 
             $userId = auth()->id();
             $now = now();
-            
+
             // Prepare updates for order
             $updates = ['status' => $request->status];
-            
+
             // Add timestamp based on the status
             switch ($request->status) {
                 case 'approved':
@@ -285,7 +288,7 @@ class OrderController extends Controller
                 case 'delivered':
                     $updates['delivered'] = true;
                     break;
-            }            
+            }
 
             // Update the order
             // $order->update($updates);
@@ -314,7 +317,7 @@ class OrderController extends Controller
     {
         try {
             $items = $order->items()
-                ->with('product')
+                ->with('product','warehouse')
                 ->get()
                 ->map(function ($item) {
                     // Sum all inventory quantities for this product
@@ -336,12 +339,11 @@ class OrderController extends Controller
     public function getOutstanding(Request $request, $id)
     {
         try {
-            $outstanding = OrderItem::where('product_id', $id)
-                ->whereHas('order', function ($query) {
-                    $query->where('status', 'in process');
-                })
+            $outstanding = DB::table('order_items')
                 ->join('orders', 'orders.id', '=', 'order_items.order_id')
                 ->join('facilities', 'facilities.id', '=', 'orders.facility_id')
+                ->where('order_items.product_id', $id)
+                ->where('orders.status', '!=', 'pending')
                 ->select(
                     'facilities.name as facility_name',
                     'orders.order_type',
@@ -357,9 +359,13 @@ class OrderController extends Controller
                     ];
                 });
 
+            // Log the results
+            logger()->info('Outstanding results for product ' . $id . ':', $outstanding->toArray());
+
             return response()->json($outstanding);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            logger()->error('Error in getOutstanding: ' . $th->getMessage());
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 
@@ -367,13 +373,12 @@ class OrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             $validated = $request->validate([
                 'id' => 'required|exists:order_items,id',
                 'quantity' => 'required|integer|min:1',
             ]);
 
-            
             $orderItem = OrderItem::findOrFail($validated['id']);
 
             // Check if the new quantity will not exceed the current inventory quantity
@@ -381,13 +386,13 @@ class OrderController extends Controller
             if ($validated['quantity'] > $currentInventoryQuantity) {
                 return response()->json('The new quantity exceeds the current inventory quantity.', 500);
             }
-            
+
             $orderItem->update([
                 'quantity' => $validated['quantity'],
             ]);
             Kafka::publishOrderPlaced("Refreshed");
             event(new OrderEvent('Refreshed'));
-            
+
             DB::commit();
             return response()->json('Order item updated successfully.', 200);
         } catch (\Throwable $e) {
@@ -420,22 +425,15 @@ class OrderController extends Controller
             $updatedCount = 0;
 
             foreach ($orders as $order) {
-                if (isset($allowedTransitions[$order->status]) && 
-                    in_array($request->status, $allowedTransitions[$order->status])) {
-                    
+                if (
+                    isset($allowedTransitions[$order->status]) &&
+                    in_array($request->status, $allowedTransitions[$order->status])
+                ) {
+
                     $oldStatus = $order->status;
                     $order->status = $request->status;
                     $order->save();
 
-                    // Publish to Kafka
-                    try {
-                        Kafka::publishOrderPlaced('Refreshed');
-                    } catch (\Exception $e) {
-                        Log::error('Failed to publish order status change to Kafka', [
-                            'order_id' => $order->id,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
 
                     $updatedCount++;
                 }
@@ -444,12 +442,12 @@ class OrderController extends Controller
             DB::commit();
 
             if ($updatedCount === 0) {
-                return response()->json("No orders were eligible for status change", 422);
+                return response()->json("No orders were eligible for status change", 500);
             }
 
+            Kafka::publishOrderPlaced('Refreshed');
             event(new OrderEvent('Order status updated'));
             return response()->json("Successfully updated {$updatedCount} orders to {$request->status}");
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Bulk order status change failed', [
@@ -485,41 +483,137 @@ class OrderController extends Controller
                 'dispatched' => ['delivered']
             ];
 
+
             foreach ($items as $item) {
                 // Check if transition is allowed
-                if (!isset($allowedTransitions[$item->status]) || 
-                    !in_array($request->status, $allowedTransitions[$item->status])) {
+                if (
+                    !isset($allowedTransitions[$item->status]) ||
+                    !in_array($request->status, $allowedTransitions[$item->status])
+                ) {
                     continue;
                 }
-                
+
                 $oldStatus = $item->status;
                 $item->status = $request->status;
+                if ($request->status == 'approved') {
+                    $item->approved_at = Carbon::now()->toDateString();
+                    $item->approved_by = auth()->id();
+                }
+                if ($request->status == 'dispatched') {
+                    $item->dispatched_at = Carbon::now()->toDateString();
+                    $item->dispatched_by = auth()->id();
+                }
+                if ($request->status == 'in process') {
+                    $item->in_process = 1;
+                }
+                if ($request->status == 'delivered') {
+                    $item->delivered = 1;
+
+                    $remainingQuantity = $item->quantity;
+                    $usedInventories = [];
+
+                    while ($remainingQuantity > 0) {
+                        $warehouseInventory = Inventory::where('product_id', $item->product_id)
+                            ->where('quantity', '>', 0)
+                            ->where('warehouse_id', $item->warehouse_id)
+                            ->where('expiry_date', '>', now())
+                            ->orderByRaw('CASE 
+                                WHEN expiry_date <= ? THEN 0 
+                                ELSE 1 
+                            END, expiry_date ASC', [now()->addMonths(2)])
+                            ->first();
+
+                        if (!$warehouseInventory) {
+                            return response()->json("Not enough items in the inventory ", 500);
+                        }
+
+                        // Calculate how much we can take from this batch
+                        $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
+                        
+                        // Update facility inventory for this batch
+                        $facilityInventory = $item->order->facility->inventories()
+                            ->where('product_id', $item->product_id)
+                            ->where('facility_id', $item->order->facility_id)
+                            ->where('batch_number', $warehouseInventory->batch_number)
+                            ->first();
+
+                        if ($facilityInventory) {
+                            $facilityInventory->increment('quantity', $quantityToTake);
+                        } else {
+                            $item->order->facility->inventories()->create([
+                                'product_id' => $item->product_id,
+                                'facility_id' => $item->order->facility_id,
+                                'batch_number' => $warehouseInventory->batch_number,
+                                'expiry_date' => $warehouseInventory->expiry_date,
+                                'quantity' => $quantityToTake,
+                                'updated_at' => Carbon::now()->toDateString()
+                            ]);
+                        }
+
+                        // Decrement warehouse inventory
+                        $warehouseInventory->decrement('quantity', $quantityToTake);
+                        
+                        // Track used inventory for logging
+                        $usedInventories[] = [
+                            'batch_number' => $warehouseInventory->batch_number,
+                            'expiry_date' => $warehouseInventory->expiry_date,
+                            'quantity' => $quantityToTake
+                        ];
+
+                        $remainingQuantity -= $quantityToTake;
+                    }
+
+                    // Log the inventory usage
+                    Log::info('Order item fulfilled from multiple batches', [
+                        'order_item_id' => $item->id,
+                        'total_quantity' => $item->quantity,
+                        'used_inventories' => $usedInventories
+                    ]);
+
+                    // Check if all items in this order have the same status
+                    $allItemsSameStatus = $item->order->items()
+                        ->where('status', "delivered")
+                        ->exists();
+
+                    if ($allItemsSameStatus) {
+                        $item->order->status = "completed";
+
+                        $item->order->save();
+                    }
+                }
+                logger()->info($item->product);
                 $item->save();
+
+
+
+                // Publish to Kafka
+                try {
+                    Kafka::publishOrderPlaced('Refreshed');
+                } catch (\Exception $e) {
+                    Log::error('Failed to publish order item status change to Kafka', [
+                        'order_id' => $item->order_id,
+                        'item_id' => $item->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                // Broadcast event
+                event(new OrderEvent('Refreshed'));
 
                 // Track unique orders that were affected
                 if (!in_array($item->order_id, $updatedOrders)) {
                     $updatedOrders[] = $item->order_id;
 
                     // Check if all items in this order have the same status
-                    $allItemsSameStatus = $item->order->items()
-                        ->where('status', '!=', $request->status)
-                        ->doesntExist();
+                    // $allItemsSameStatus = $item->order->items()
+                    //     ->where('status', '!=', $request->status)
+                    //     ->doesntExist();
 
-                    if ($allItemsSameStatus) {
-                        $item->order->status = "completed";
-                        $item->order->save();
-                    }
+                    // if ($allItemsSameStatus) {
+                    //     $item->order->status = "completed";
+                    //     $item->order->save();
+                    // }
 
-                    // Publish to Kafka
-                    try {
-                        Kafka::publishOrderPlaced('Refreshed');
-                    } catch (\Exception $e) {
-                        Log::error('Failed to publish order item status change to Kafka', [
-                            'order_id' => $item->order_id,
-                            'item_id' => $item->id,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
                 }
 
                 $updatedCount++;
@@ -531,9 +625,10 @@ class OrderController extends Controller
                 return response()->json("No items were eligible for status change. Please check if the status transitions are allowed.", 500);
             }
 
+            Kafka::publishOrderPlaced('Refreshed');
+
             event(new OrderEvent('Order items status updated'));
             return response()->json("Successfully updated {$updatedCount} items to {$request->status}");
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Bulk order item status change failed', [
@@ -551,11 +646,12 @@ class OrderController extends Controller
 
             $request->validate([
                 'item_id' => 'required|exists:order_items,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])],
+                'warehouse_id' => 'nullable|exists:warehouses,id'
             ]);
 
-            $item = OrderItem::with('order')->findOrFail($request->item_id);
-            
+            $item = OrderItem::with('order', 'product')->findOrFail($request->item_id);
+
             // Define allowed transitions
             $allowedTransitions = [
                 'pending' => ['approved'],
@@ -565,24 +661,107 @@ class OrderController extends Controller
             ];
 
             // Check if the transition is allowed
-            if (!isset($allowedTransitions[$item->status]) || 
-                !in_array($request->status, $allowedTransitions[$item->status])) {
+            if (
+                !isset($allowedTransitions[$item->status]) ||
+                !in_array($request->status, $allowedTransitions[$item->status])
+            ) {
                 return response()->json("Status transition not allowed", 500);
             }
 
             // Update item status
             $item->status = $request->status;
-            $item->save();
-
-            // Check if all items in this order have the same status
-            $allItemsSameStatus = $item->order->items()
-                ->where('status', '!=', $request->status)
-                ->doesntExist();
-
-            if ($allItemsSameStatus) {
-                $item->order->status = $request->status;
-                $item->order->save();
+            if ($request->status == 'in process') {
+                $item->in_process = 1;
+                $item->save();
             }
+            if ($request->status == 'approved') {
+                $item->approved_at = Carbon::now()->toDateString();
+                $item->approved_by = auth()->id();
+                $item->save();
+            }
+            if ($request->status == 'dispatched') {
+                $item->dispatched_at = Carbon::now()->toDateString();
+                $item->dispatched_by = auth()->id();
+                $item->warehouse_id = $request->warehouse_id;
+                $item->save();
+            }
+            if ($request->status == 'delivered') {
+                $item->delivered = 1;
+
+                $remainingQuantity = $item->quantity;
+                $usedInventories = [];
+
+                while ($remainingQuantity > 0) {
+                    $warehouseInventory = Inventory::where('product_id', $item->product_id)
+                        ->where('quantity', '>', 0)
+                        ->where('warehouse_id', $item->warehouse_id)
+                        ->where('expiry_date', '>', now())
+                        ->orderByRaw('CASE 
+                            WHEN expiry_date <= ? THEN 0 
+                            ELSE 1 
+                        END, expiry_date ASC', [now()->addMonths(2)])
+                        ->first();
+
+                    if (!$warehouseInventory) {
+                        return response()->json("Not enough items in the inventory ", 500);
+                    }
+
+                    // Calculate how much we can take from this batch
+                    $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
+                    
+                    // Update facility inventory for this batch
+                    $facilityInventory = $item->order->facility->inventories()
+                        ->where('product_id', $item->product_id)
+                        ->where('facility_id', $item->order->facility_id)
+                        ->where('batch_number', $warehouseInventory->batch_number)
+                        ->first();
+
+                    if ($facilityInventory) {
+                        $facilityInventory->increment('quantity', $quantityToTake);
+                    } else {
+                        
+                        $item->order->facility->inventories()->create([
+                            'product_id' => $item->product_id,
+                            'facility_id' => $item->order->facility_id,
+                            'batch_number' => $warehouseInventory->batch_number,
+                            'expiry_date' => $warehouseInventory->expiry_date,
+                            'quantity' => $quantityToTake,
+                            'updated_at' => Carbon::now()->toDateString()
+                        ]);
+                    }
+                    // here we gonna update the inventories table
+                    $warehouseInventory->decrement('quantity', $quantityToTake);
+                    // Track used inventory for logging
+                    $usedInventories[] = [
+                        'batch_number' => $warehouseInventory->batch_number,
+                        'expiry_date' => $warehouseInventory->expiry_date,
+                        'quantity' => $quantityToTake
+                    ];
+
+                    $remainingQuantity -= $quantityToTake;
+                }
+
+                // Log the inventory usage
+                Log::info('Order item fulfilled from multiple batches', [
+                    'order_item_id' => $item->id,
+                    'total_quantity' => $item->quantity,
+                    'used_inventories' => $usedInventories
+                ]);
+
+                // Check if all items in this order have the same status
+                $allItemsSameStatus = $item->order->items()
+                    ->where('status', "delivered")
+                    ->exists();
+
+                if ($allItemsSameStatus) {
+                    $item->order->status = "completed";
+
+                    $item->order->save();
+                }
+
+                $item->save();
+
+            }  
 
             // Publish to Kafka
             try {
@@ -594,7 +773,7 @@ class OrderController extends Controller
                     'error' => $e->getMessage()
                 ]);
             }
-            
+
             // Broadcast event
             event(new OrderEvent('Refreshed'));
 
@@ -609,5 +788,4 @@ class OrderController extends Controller
             return response()->json('Failed to update order item status: ' . $e->getMessage(), 500);
         }
     }
-
 }

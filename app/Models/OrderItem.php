@@ -13,6 +13,7 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'quantity',
+        'warehouse_id',
         'reviewed_by',
         'reviewed_at',
         'status',
@@ -32,5 +33,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

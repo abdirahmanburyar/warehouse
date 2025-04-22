@@ -30,6 +30,11 @@ class Facility extends Model
         'is_active' => 'boolean',
     ];
 
+    public function inventories()
+    {
+        return $this->hasMany(FacilityInventory::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

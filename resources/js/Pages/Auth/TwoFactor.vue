@@ -81,10 +81,10 @@ const submit = () => {
     });
 };
 
-const resendCode = () => {
+const resendCode = async () => {
     resending.value = true;
     
-    axios.post(route('two-factor.resend'))
+    await axios.post(route('two-factor.resend'))
         .then(() => {
             ToastService.success('A new verification code has been sent to your email.');
         })

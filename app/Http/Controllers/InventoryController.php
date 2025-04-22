@@ -73,21 +73,33 @@ class InventoryController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $inventories = $query->paginate($request->input('per_page', 6), ['*'], 'page', $request->input('page', 1))
+        $inventories = $query->paginate($request->input('per_page', 8), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         // Get products for dropdown
-        $products = Product::where('is_active', true)->select('id', 'name')->get();
+        $products = Product::select('id', 'name')->get();
 
         // Get warehouses for dropdown
         $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->get();
 
         // Get inventory status counts
-        $inStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', '>', DB::raw('reorder_level'))->where('is_active', true)->count();
-        $lowStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', '>', 0)->where('quantity', '<=', DB::raw('reorder_level'))->where('is_active', true)->count();
-        $outOfStockCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('quantity', 0)->where('is_active', true)->count();
-        $soonExpiringCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('expiry_date', '>', now())->where('expiry_date', '<=', now()->addDays(30))->where('is_active', true)->count();
-        $expiredCount = Inventory::where('warehouse_id', $user->warehouse_id)->where('expiry_date', '<', now())->where('is_active', true)->count();
+        $inStockCount = Inventory::whereRaw('quantity > (products.reorder_level * 5)')
+            ->join('products', 'inventories.product_id', '=', 'products.id')
+            ->count();
+
+        $lowStockCount = Inventory::whereRaw('quantity <= (products.reorder_level * 5)')
+            ->join('products', 'inventories.product_id', '=', 'products.id')
+            ->count();
+
+        $outOfStockCount = Inventory::where('quantity', 0)
+            ->count();
+
+        $soonExpiringCount = Inventory::where('expiry_date', '>', now())
+            ->where('expiry_date', '<=', now()->addDays(30))
+            ->count();
+
+        $expiredCount = Inventory::where('expiry_date', '<', now())
+            ->count();
         
         $inventoryStatusCounts = [
             ['status' => 'in_stock', 'count' => $inStockCount],
