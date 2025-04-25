@@ -210,7 +210,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     // Order routes
     Route::prefix('orders')->name('orders.')->middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{order}/show', [OrderController::class, 'show'])->name('show');
         Route::get('/items/{order}', [OrderController::class, 'items'])->name('items');
+
         Route::post('/change-status', [OrderController::class, 'changeStatus'])->name('change-status');
         Route::post('/bulk-change-status', [OrderController::class, 'bulkChangeStatus'])->name('bulk-change-status');
         Route::post('/bulk-change-item-status', [OrderController::class, 'bulkChangeItemStatus'])->name('bulk-change-item-status');

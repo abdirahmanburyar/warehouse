@@ -49,24 +49,23 @@ class OrderController extends Controller
 
         // $orders->setPath(url()->current());
 
-        // Get order statistics
-        $stats = Order::select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->status => $item->count];
-            })
-            ->toArray();
+        // Get order items statistics
+        $stats = DB::table('order_items')
+        ->select('status', DB::raw('count(*) as count'))
+        ->groupBy('status')
+        ->get()
+        ->mapWithKeys(function ($item) {
+            return [$item->status => $item->count];
+        })
+        ->toArray();
 
         // Ensure all statuses have a value
         $defaultStats = [
-            'pending' => 0,
-            'review' => 0,
-            'approved' => 0,
-            'rejected' => 0,
-            'in process' => 0,
-            'dispatched' => 0,
-            'delivered' => 0
+        'pending' => 0,
+        'approved' => 0,
+        'in_process' => 0,
+        'dispatched' => 0,
+        'delivered' => 0
         ];
 
         $stats = array_merge($defaultStats, $stats);
@@ -158,26 +157,20 @@ class OrderController extends Controller
         }
     }
 
-    public function show(Order $order)
-    {
-        $order->load(['facility', 'user', 'items.product']);
-
-        return Inertia::render('Order/Show', [
-            'order' => new OrderResource($order)
-        ]);
-    }
-
-
     public function destroy(Order $order)
     {
-        if ($order->status !== 'pending') {
-            return back()->with('error', 'Only pending orders can be deleted.');
+        try {
+            if ($order->status !== 'pending') {
+                return back()->with('error', 'Only pending orders can be deleted.');
+            }
+    
+            $order->items()->delete();
+            $order->delete();
+    
+            return back()->with('success', 'Order deleted successfully.');
+        } catch (\Throwable $th) {
+            return back()->with($th->getMessage(), 500);
         }
-
-        $order->items()->delete();
-        $order->delete();
-
-        return back()->with('success', 'Order deleted successfully.');
     }
 
     public function bulk(Request $request)
@@ -688,7 +681,7 @@ class OrderController extends Controller
             if ($request->status == 'delivered') {
                 $item->delivered = 1;
 
-                $remainingQuantity = $item->quantity;
+                $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
                 $usedInventories = [];
 
                 while ($remainingQuantity > 0) {
@@ -786,6 +779,18 @@ class OrderController extends Controller
                 'item_id' => $request->item_id ?? null
             ]);
             return response()->json('Failed to update order item status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function show(Request $request, Order $order){
+        try {
+            DB::beginTransaction();
+            $order->load('items.product', 'facility', 'user');
+            DB::commit();
+            return inertia("Order/Show", ['order' => $order]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return inertia("Order/Show", ['error' => $th->getMessage()]);
         }
     }
 }
