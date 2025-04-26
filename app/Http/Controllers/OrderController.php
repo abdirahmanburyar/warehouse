@@ -61,11 +61,11 @@ class OrderController extends Controller
 
         // Ensure all statuses have a value
         $defaultStats = [
-        'pending' => 0,
-        'approved' => 0,
-        'in_process' => 0,
-        'dispatched' => 0,
-        'delivered' => 0
+            'pending' => 0,
+            'approved' => 0,
+            'in_process' => 0,
+            'dispatched' => 0,
+            'delivered' => 0
         ];
 
         $stats = array_merge($defaultStats, $stats);
@@ -335,29 +335,27 @@ class OrderController extends Controller
             $outstanding = DB::table('order_items')
                 ->join('orders', 'orders.id', '=', 'order_items.order_id')
                 ->join('facilities', 'facilities.id', '=', 'orders.facility_id')
-                ->where('order_items.product_id', $id)
-                ->where('orders.status', '!=', 'pending')
+                ->join('products', 'products.id', '=', 'order_items.product_id')
+                ->where('order_items.id', $id)
+                ->whereNotIn('order_items.status', ['pending', 'delivered'])
                 ->select(
+                    'products.name as product_name',
                     'facilities.name as facility_name',
-                    'orders.order_type',
-                    DB::raw('SUM(order_items.quantity) as total_quantity')
+                    'order_items.quantity',
+                    'order_items.status'
                 )
-                ->groupBy('facilities.name', 'orders.order_type')
                 ->get()
                 ->map(function ($item) {
                     return [
+                        'product' => $item->product_name,
                         'facility' => $item->facility_name,
-                        'order_type' => $item->order_type,
-                        'quantity' => $item->total_quantity
+                        'quantity' => $item->quantity,
+                        'status' => $item->status
                     ];
                 });
 
-            // Log the results
-            logger()->info('Outstanding results for product ' . $id . ':', $outstanding->toArray());
-
-            return response()->json($outstanding);
+            return response()->json($outstanding, 200);
         } catch (\Throwable $th) {
-            logger()->error('Error in getOutstanding: ' . $th->getMessage());
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
@@ -462,7 +460,8 @@ class OrderController extends Controller
             $request->validate([
                 'item_ids' => 'required|array',
                 'item_ids.*' => 'required|exists:order_items,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])],
+                'warehouse_id' => 'nullable|exists:warehouses,id'
             ]);
 
             $items = OrderItem::with('order')->whereIn('id', $request->item_ids)->get();
@@ -491,93 +490,95 @@ class OrderController extends Controller
                 if ($request->status == 'approved') {
                     $item->approved_at = Carbon::now()->toDateString();
                     $item->approved_by = auth()->id();
+                    $item->save();
                 }
                 if ($request->status == 'dispatched') {
                     $item->dispatched_at = Carbon::now()->toDateString();
                     $item->dispatched_by = auth()->id();
+                    $item->warehouse_id = $request->warehouse_id;
+                    $item->save();
                 }
                 if ($request->status == 'in process') {
                     $item->in_process = 1;
+                    $item->save();
                 }
                 if ($request->status == 'delivered') {
                     $item->delivered = 1;
-
-                    $remainingQuantity = $item->quantity;
+                    
+                    $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
                     $usedInventories = [];
 
-                    while ($remainingQuantity > 0) {
-                        $warehouseInventory = Inventory::where('product_id', $item->product_id)
-                            ->where('quantity', '>', 0)
-                            ->where('warehouse_id', $item->warehouse_id)
-                            ->where('expiry_date', '>', now())
-                            ->orderByRaw('CASE 
-                                WHEN expiry_date <= ? THEN 0 
-                                ELSE 1 
-                            END, expiry_date ASC', [now()->addMonths(2)])
-                            ->first();
+                    // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
+                    $warehouseInventories = Inventory::where('product_id', $item->product_id)
+                        ->where('quantity', '>', 0)
+                        ->where('warehouse_id', $item->warehouse_id)
+                        ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
+                        ->get();
+                        
+                    if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
+                        return response()->json("Not enough items in the inventory", 500);
+                    }
 
-                        if (!$warehouseInventory) {
-                            return response()->json("Not enough items in the inventory ", 500);
-                        }
+                    foreach ($warehouseInventories as $warehouseInventory) {
+                        if ($remainingQuantity <= 0) break;
 
                         // Calculate how much we can take from this batch
                         $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
                         
-                        // Update facility inventory for this batch
+                        // Update or create facility inventory for this batch
                         $facilityInventory = $item->order->facility->inventories()
                             ->where('product_id', $item->product_id)
-                            ->where('facility_id', $item->order->facility_id)
                             ->where('batch_number', $warehouseInventory->batch_number)
                             ->first();
 
                         if ($facilityInventory) {
                             $facilityInventory->increment('quantity', $quantityToTake);
+                            // Remove facility inventory if quantity becomes 0
+                            if ($facilityInventory->fresh()->quantity <= 0) {
+                                $facilityInventory->delete();
+                            }
                         } else {
                             $item->order->facility->inventories()->create([
                                 'product_id' => $item->product_id,
-                                'facility_id' => $item->order->facility_id,
                                 'batch_number' => $warehouseInventory->batch_number,
                                 'expiry_date' => $warehouseInventory->expiry_date,
                                 'quantity' => $quantityToTake,
-                                'updated_at' => Carbon::now()->toDateString()
+                                'updated_at' => now()
                             ]);
                         }
 
-                        // Decrement warehouse inventory
+                        // Update warehouse inventory
                         $warehouseInventory->decrement('quantity', $quantityToTake);
                         
+                        // Remove warehouse inventory record if quantity is 0
+                        if ($warehouseInventory->fresh()->quantity <= 0) {
+                            $warehouseInventory->delete();
+                        }
+
                         // Track used inventory for logging
                         $usedInventories[] = [
                             'batch_number' => $warehouseInventory->batch_number,
-                            'expiry_date' => $warehouseInventory->expiry_date,
+                            'expiry_date' => $warehouseInventory->expiry_date->format('Y-m-d'),
                             'quantity' => $quantityToTake
                         ];
 
                         $remainingQuantity -= $quantityToTake;
                     }
 
-                    // Log the inventory usage
-                    Log::info('Order item fulfilled from multiple batches', [
-                        'order_item_id' => $item->id,
-                        'total_quantity' => $item->quantity,
-                        'used_inventories' => $usedInventories
-                    ]);
-
                     // Check if all items in this order have the same status
-                    $allItemsSameStatus = $item->order->items()
-                        ->where('status', "delivered")
-                        ->exists();
+                    $pendingItems = $item->order->items()
+                        ->where('status', '!=', 'delivered')
+                        ->count();
 
-                    if ($allItemsSameStatus) {
-                        $item->order->status = "completed";
-
+                    if ($pendingItems === 0) {
+                        $item->order->status = 'completed';
                         $item->order->save();
                     }
-                }
-                logger()->info($item->product);
-                $item->save();
 
-
+                    $item->delivered = 1;
+                    $item->status = 'delivered';
+                    $item->save();
+                }               
 
                 // Publish to Kafka
                 try {
@@ -684,74 +685,82 @@ class OrderController extends Controller
                 $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
                 $usedInventories = [];
 
-                while ($remainingQuantity > 0) {
-                    $warehouseInventory = Inventory::where('product_id', $item->product_id)
-                        ->where('quantity', '>', 0)
-                        ->where('warehouse_id', $item->warehouse_id)
-                        ->where('expiry_date', '>', now())
-                        ->orderByRaw('CASE 
-                            WHEN expiry_date <= ? THEN 0 
-                            ELSE 1 
-                        END, expiry_date ASC', [now()->addMonths(2)])
-                        ->first();
+                // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
+                $warehouseInventories = Inventory::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    ->where('warehouse_id', $item->warehouse_id)
+                    ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
+                    ->get();
 
-                    if (!$warehouseInventory) {
-                        return response()->json("Not enough items in the inventory ", 500);
-                    }
+                if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
+                    return response()->json("Not enough items in the inventory", 500);
+                }
+
+                foreach ($warehouseInventories as $warehouseInventory) {
+                    if ($remainingQuantity <= 0) break;
 
                     // Calculate how much we can take from this batch
                     $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
                     
-                    // Update facility inventory for this batch
+                    // Update or create facility inventory for this batch
                     $facilityInventory = $item->order->facility->inventories()
                         ->where('product_id', $item->product_id)
-                        ->where('facility_id', $item->order->facility_id)
                         ->where('batch_number', $warehouseInventory->batch_number)
                         ->first();
 
                     if ($facilityInventory) {
                         $facilityInventory->increment('quantity', $quantityToTake);
+                        // Remove facility inventory if quantity becomes 0
+                        if ($facilityInventory->fresh()->quantity <= 0) {
+                            $facilityInventory->delete();
+                        }
                     } else {
                         
                         $item->order->facility->inventories()->create([
                             'product_id' => $item->product_id,
-                            'facility_id' => $item->order->facility_id,
                             'batch_number' => $warehouseInventory->batch_number,
                             'expiry_date' => $warehouseInventory->expiry_date,
                             'quantity' => $quantityToTake,
-                            'updated_at' => Carbon::now()->toDateString()
+                            'updated_at' => now()
                         ]);
                     }
                     // here we gonna update the inventories table
                     $warehouseInventory->decrement('quantity', $quantityToTake);
+                    
+                    // Remove inventory record if quantity is 0
+                    if ($warehouseInventory->fresh()->quantity <= 0) {
+                        $warehouseInventory->delete();
+                    }
+
                     // Track used inventory for logging
                     $usedInventories[] = [
                         'batch_number' => $warehouseInventory->batch_number,
-                        'expiry_date' => $warehouseInventory->expiry_date,
+                        'expiry_date' => $warehouseInventory->expiry_date->format('Y-m-d'),
                         'quantity' => $quantityToTake
                     ];
 
                     $remainingQuantity -= $quantityToTake;
                 }
 
-                // Log the inventory usage
-                Log::info('Order item fulfilled from multiple batches', [
+                // Log the inventory usage with clear FIFO information
+                Log::info('Order item fulfilled using FIFO (oldest expiry first)', [
                     'order_item_id' => $item->id,
                     'total_quantity' => $item->quantity,
                     'used_inventories' => $usedInventories
                 ]);
 
                 // Check if all items in this order have the same status
-                $allItemsSameStatus = $item->order->items()
-                    ->where('status', "delivered")
-                    ->exists();
+                $pendingItems = $item->order->items()
+                    ->where('status', '!=', 'delivered')
+                    ->count();
 
-                if ($allItemsSameStatus) {
-                    $item->order->status = "completed";
-
+                if ($pendingItems === 0) {
+                    $item->order->status = 'completed';
                     $item->order->save();
                 }
 
+                $item->delivered = 1;
+                $item->status = 'delivered';
                 $item->save();
 
             }  
@@ -785,9 +794,10 @@ class OrderController extends Controller
     public function show(Request $request, Order $order){
         try {
             DB::beginTransaction();
-            $order->load('items.product', 'facility', 'user');
+            $order->load('items.product', 'facility', 'user', 'items.warehouse');
+            $warehouses = Warehouse::select('id', 'name')->get();
             DB::commit();
-            return inertia("Order/Show", ['order' => $order]);
+            return inertia("Order/Show", ['order' => $order, 'warehouses' => $warehouses]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return inertia("Order/Show", ['error' => $th->getMessage()]);

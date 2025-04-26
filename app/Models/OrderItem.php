@@ -14,6 +14,7 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'warehouse_id',
+        'quantity_on_order',
         'reviewed_by',
         'reviewed_at',
         'status',

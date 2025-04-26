@@ -133,7 +133,7 @@ class TwoFactorController extends Controller
             });
         } catch (\Exception $e) {
             // Log the error but don't fail the request
-            \Log::error('Failed to send 2FA email: ' . $e->getMessage());
+            logger()->error($e->getMessage());
         }
     }
 }

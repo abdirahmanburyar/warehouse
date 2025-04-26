@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('order_type');
             $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->dateTime('order_date');
-            $table->dateTime('expected_date')->nullable();
+            $table->date('expected_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

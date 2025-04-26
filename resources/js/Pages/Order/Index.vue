@@ -23,29 +23,29 @@
         <!-- Orders Table -->
         <div class="bg-white shadow-sm rounded-lg overflow-hidden mb-[100px] flex justify-between">
             <div class="overflow-x-auto w-full">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-400 border border-gray-400">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border-r border-gray-400">
                                 #SN</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border-r border-gray-400">
                                 Order</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border-r border-gray-400">
                                 Facility</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border-r border-gray-400">
                                 Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border-r border-gray-400">
                                 Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider">
                                 Date</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-400">
                         <tr v-for="(order, index) in filteredOrders" :key="order.id" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <div class="text-sm font-medium text-gray-900">{{ index + 1 }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <div class="text-sm font-medium text-gray-900">
                                     <Link :href="route('orders.show', order.id)"
                                         class="text-blue-600 hover:text-blue-900">
@@ -53,14 +53,14 @@
                                     </Link>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <div class="text-sm text-gray-900">{{ order.facility.name }}</div>
                                 <div class="text-xs text-gray-500">{{ order.facility.facility_type }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <div class="text-sm text-gray-900">{{ order.order_type }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <span :class="[
                                     'px-2 py-1 text-xs rounded-full',
                                     getStatusClass(order.status)
@@ -262,7 +262,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'vue-chartjs';
@@ -286,6 +286,15 @@ const filteredOrders = computed(() => {
         order.order_type.toLowerCase().includes(searchTerm)
     );
 });
+
+function reloadOrders(){
+    const query = {}
+    router.get(route('orders.index'), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['orders', 'stats']
+    })
+}
 
 const getTotalOrders = computed(() => {
     if (!props.stats) return 0;
@@ -322,6 +331,7 @@ onMounted(() => {
     window.Echo.channel("orders").listen(".order-received", (e) => {
         // reload();
         console.log(e);
+        reloadOrders();
     });
 });
 </script>

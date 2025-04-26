@@ -39,21 +39,49 @@ class GenerateQuarterlyOrders extends Command
      * Number of months for quarterly order calculation (static)
      */
     private const MONTHS_IN_QUARTER = 4;
+    // Well known quarters
+    private const QUARTERS = [
+        ["from" => '01-01', "to" => '31-03'],
+        ["from" => '01-04', "to" => '30-06'],
+        ["from" => '01-07', "to" => '31-09'],
+        ["from" => '01-10', "to" => '31-12'],
+    ];
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->defaultAmc = $this->option('amc') ?? 120;
-        
         // Get current quarter or simulated quarter
-        $quarter = $this->option('simulate-quarter');
-        if (!$quarter) {
-            $quarter = ceil(Carbon::now()->month / 3);
+        $simulatedQuarter = $this->option('simulate-quarter');
+        $now = Carbon::now();
+        
+        // Determine current quarter (1-4)
+        $currentQuarter = ceil($now->month / 3);
+        
+        // Use simulated quarter if provided
+        if ($simulatedQuarter) {
+            $currentQuarter = $simulatedQuarter;
         }
+        
+        // Get previous quarter for AMC calculation
+        $prevQuarter = $currentQuarter - 1;
+        $year = $now->year;
+        if ($prevQuarter < 1) {
+            $prevQuarter = 4;
+            $year--;
+        }
+        
+        // Get quarter date ranges
+        $currentQuarterDates = self::QUARTERS[$currentQuarter - 1];
+        $prevQuarterDates = self::QUARTERS[$prevQuarter - 1];
+        
+        // Create date objects for previous quarter
+        $prevQuarterStart = Carbon::createFromFormat('Y-m-d', $year . '-' . $prevQuarterDates['from']);
+        $prevQuarterEnd = Carbon::createFromFormat('Y-m-d', $year . '-' . $prevQuarterDates['to']);
 
-        $this->info("Generating orders for Q{$quarter}...");
+        $this->info("Generating orders for Q{$currentQuarter} ({$currentQuarterDates['from']} - {$currentQuarterDates['to']})");
+        $this->info("Using AMC from Q{$prevQuarter} ({$prevQuarterDates['from']} - {$prevQuarterDates['to']})");
 
         try {
             DB::beginTransaction();
@@ -81,37 +109,54 @@ class GenerateQuarterlyOrders extends Command
                 $order = Order::create([
                     'facility_id' => $facility->id,
                     'user_id' => $facility->user_id,
-                    'order_number' => 'QO-' . $quarter . '-' . date('Y') . '-' . Str::padLeft($facility->id, 4, '0'),
+                    'order_number' => 'QO-' . $currentQuarter . '-' . $now->year . '-' . Str::padLeft($facility->id, 4, '0'),
                     'order_type' => 'quarterly',
                     'status' => 'pending',
-                    'order_type' => 'quarterly',
-                    'order_date' => Carbon::now(),
-                    'expected_date' => Carbon::now()->addDays(14),
+                    'order_date' => $now,
+                    'expected_date' => $now->addDays(14),
                 ]);
 
                 $orderItemCount = 0;
 
                 foreach ($eligibleItems as $eligibleItem) {
+                    // Calculate AMC from previous quarter's POS data
+                    $totalConsumption = DB::table('pos')
+                        ->where('product_id', $eligibleItem->product_id)
+                        ->where('facility_id', $facility->id)
+                        ->whereBetween('pos_date', [$prevQuarterStart, $prevQuarterEnd])
+                        ->sum('total_quantity');
+                    
+                    // Calculate AMC (total consumption divided by 3 months)
+                    $amc = ceil($totalConsumption / 3);
+                    
+                    // If no consumption data found, use default AMC
+                    if ($amc === 0) {
+                        $amc = $this->defaultAmc;
+                        $this->warn("No consumption data found for {$eligibleItem->product->name}, using default AMC: {$amc}");
+                    }
+
                     // Get SOH from facility inventory
                     $soh = DB::table('facility_inventories')
                         ->where('product_id', $eligibleItem->product_id)
                         ->where('facility_id', $facility->id)
                         ->sum('quantity');
 
-                    // Calculate QTO using static 4 months period
-                    // Formula: QTO = (AMC × 4 months) – SOH
-                    $qto = ($this->defaultAmc * self::MONTHS_IN_QUARTER) - $soh;
+                    // Calculate QTO using configurable months period (default 4)
+                    // Formula: QTO = (AMC × months) – SOH
+                    $months = self::MONTHS_IN_QUARTER;
+                    $qto = ($amc * $months) - $soh;
 
                     if ($qto > 0) {
                         OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $eligibleItem->product_id,
                             'quantity' => $qto,
-                            'status' => 'pending'
+                            'status' => 'pending',
+                            'amc' => $amc // Store the calculated AMC for reference
                         ]);
                         $orderItemCount++;
                         $totalOrderItems++;
-                        $this->info("Added order item: {$eligibleItem->product->name} - QTO: {$qto} (SOH: {$soh})");
+                        $this->info("Added order item: {$eligibleItem->product->name} - AMC: {$amc}, QTO: {$qto} (SOH: {$soh})");
                     }
                 }
 
