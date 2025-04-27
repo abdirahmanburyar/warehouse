@@ -1,7 +1,7 @@
 <template>
     <div class="app-container">
         <!-- Sidebar -->
-        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
+        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="overflow-scroll p-0 m-0">
             <div class="white-box" style="border-color: white;">
                 <Link :href="route('dashboard')" class="logo-container">
                 <img src="/assets/images/moh.png" class="moh-logo" style="height: 50px" />
@@ -18,7 +18,7 @@
 
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 2rem;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 1rem;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png" class="dashboard-icon"
@@ -142,6 +142,18 @@
                     <span class="menu-text">Dispatch</span>
                 </div>
                 </Link>
+
+                <Link :href="route('assets.index')" class="menu-item"
+                    :class="{ active: route().current('assets.*') }" @click="setCurrentPage('assets')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('assets.*')" src="/assets/images/assets-b.png" class="assets-icon" style="height: 24px" />
+                        <img v-else src="/assets/images/assets-w.png" class="assets-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Assets</span>
+                </div>
+                </Link>
+
 
                 <Link :href="route('settings.index')" class="menu-item"
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
@@ -374,6 +386,13 @@ const logout = () => {
     flex-grow: 1;
     width: 100%;
     align-items: center;
+    /* overflow-y: scroll; */
+    /* scrollbar-width: none; Firefox */
+    /* -ms-overflow-style: none; Internet Explorer 10+ */
+}
+
+.sidebar-menu::-webkit-scrollbar {
+    display: none; /* WebKit */
 }
 
 .menu-item {

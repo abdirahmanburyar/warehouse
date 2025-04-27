@@ -22,6 +22,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
+use App\Http\Controllers\AssetController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -263,6 +264,24 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('dispatch.index');
             Route::post('/process', 'process')->name('dispatch.process');
         });
+    
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/', function () { return redirect('/dashboard'); });
+        Route::get('/dashboard', function () { return Inertia::render('Dashboard'); })->name('dashboard');
+    });
+
+    Route::prefix('/assets-management')->group(function () {
+        Route::get('/', [AssetController::class, 'index'])->name('assets.index');
+        Route::post('/store', [AssetController::class, 'store'])->name('assets.store');
+        Route::put('/{asset}', [AssetController::class, 'update'])->name('assets.update');
+        Route::delete('/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
+        Route::post('/{asset}/update-status', [AssetController::class, 'updateStatus'])->name('assets.update-status');
+    });
+
+    Route::prefix('/dispatch')->group(function () {
+        Route::get('/', [DispatchController::class, 'index'])->name('dispatch.index');
+        Route::post('/process', [DispatchController::class, 'process'])->name('dispatch.process');
+    });
 });
 
 require __DIR__ . '/auth.php';

@@ -21,7 +21,7 @@
             </div>
         </div>
         <!-- Orders Table -->
-        <div class="bg-white shadow-sm rounded-lg overflow-hidden mb-[100px] flex justify-between">
+        <div class="shadow-sm rounded-lg overflow-hidden mb-[100px] flex justify-between">
             <div class="overflow-x-auto w-full">
                 <table class="min-w-full divide-y divide-gray-400 border border-gray-400">
                     <thead class="bg-gray-50">
