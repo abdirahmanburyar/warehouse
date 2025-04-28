@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Product;
+use App\Models\Facility;
 
 return new class extends Migration
 {
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->string('patient_number');
             $table->text('note')->nullable();
             $table->foreignIdFor(Product::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(Facility::class)->constrained()->nullOnDelete();
             $table->integer('piece');
             $table->timestamps();
             $table->softDeletes();

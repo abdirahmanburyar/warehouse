@@ -482,14 +482,14 @@ class PurchaseOrderController extends Controller
                 ->where('purchase_order_id', $purchaseOrder)
                 ->get();
 
-            if ($request->status === 'approved') {
-                // Check if all items are verified first
-                foreach ($items as $item) {
-                    if ($item->status !== 'verified') {
-                        return response()->json('All items must be verified first', 500);
-                    }
-                }
-            }
+            // if ($request->status === 'approved') {
+            //     // Check if all items are verified first
+            //     foreach ($items as $item) {
+            //         if ($item->status !== 'verified') {
+            //             return response()->json('All items must be verified first', 500);
+            //         }
+            //     }
+            // }
 
             foreach ($items as $item) {
                 $updateData = [
@@ -545,8 +545,8 @@ class PurchaseOrderController extends Controller
             // Check if all items for this purchase order have been approved and have quantity = 0
             if ($request->status === 'approved') {
                 // Get the purchase order with its items
-                PurchaseOrder::with('po_items')->find($purchaseOrder)
-                    ->where('po_items', function ($query) {
+                PurchaseOrder::find($purchaseOrder)
+                    ->whereHas('po_items', function ($query) {
                         $query->where('quantity', 0);
                     })
                     ->update(['status' => 'completed']);

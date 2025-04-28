@@ -592,7 +592,7 @@ const echo = ref(null);
                                             {{ inventory.quantity }}
                                         </div>
                                         <div class="text-sm text-gray-500">
-                                            Reorder Level: {{ inventory.reorder_level }}
+                                            Reorder Level: {{ inventory.product?.reorder_level }}
                                         </div>
                                     </td>
                                     <td

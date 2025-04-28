@@ -487,6 +487,18 @@ class OrderController extends Controller
 
                 $oldStatus = $item->status;
                 $item->status = $request->status;
+                 // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
+                 $warehouseInventories = Inventory::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    // ->where('warehouse_id', $item->warehouse_id)
+                    ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
+                    ->get();
+                    
+                    $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
+
+                if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
+                    return response()->json("Not enough items in the inventory", 500);
+                }
                 if ($request->status == 'approved') {
                     $item->approved_at = Carbon::now()->toDateString();
                     $item->approved_by = auth()->id();
@@ -505,19 +517,7 @@ class OrderController extends Controller
                 if ($request->status == 'delivered') {
                     $item->delivered = 1;
                     
-                    $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
                     $usedInventories = [];
-
-                    // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
-                    $warehouseInventories = Inventory::where('product_id', $item->product_id)
-                        ->where('quantity', '>', 0)
-                        ->where('warehouse_id', $item->warehouse_id)
-                        ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
-                        ->get();
-                        
-                    if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
-                        return response()->json("Not enough items in the inventory", 500);
-                    }
 
                     foreach ($warehouseInventories as $warehouseInventory) {
                         if ($remainingQuantity <= 0) break;
@@ -533,9 +533,41 @@ class OrderController extends Controller
 
                         if ($facilityInventory) {
                             $facilityInventory->increment('quantity', $quantityToTake);
-                            // Remove facility inventory if quantity becomes 0
+                            // Handle facility inventory with quantity 0
                             if ($facilityInventory->fresh()->quantity <= 0) {
-                                $facilityInventory->delete();
+                                // Get all zero quantity records for this product
+                                $zeroQuantityInventories = $item->order->facility
+                                    ->inventories()
+                                    ->where('product_id', $item->product_id)
+                                    ->where('quantity', '=', 0)
+                                    ->orderBy('created_at', 'asc')  // Get oldest first
+                                    ->get();
+
+                                if ($zeroQuantityInventories->count() > 1) {
+                                    // Keep the first (oldest) record and reset its metadata
+                                    $firstRecord = $zeroQuantityInventories->first();
+                                    $firstRecord->update([
+                                        'batch_number' => null,
+                                        'expiry_date' => null,
+                                        'location' => null,
+                                        'warehouse_id' => null
+                                    ]);
+
+                                    // Delete all other zero quantity records
+                                    $item->order->facility->inventories()
+                                        ->where('product_id', $item->product_id)
+                                        ->where('quantity', '=', 0)
+                                        ->where('id', '!=', $firstRecord->id)
+                                        ->delete();
+                                } else {
+                                    // If this is the only zero quantity record, just reset its metadata
+                                    $facilityInventory->update([
+                                        'batch_number' => null,
+                                        'expiry_date' => null,
+                                        'location' => null,
+                                        'warehouse_id' => null
+                                    ]);
+                                }
                             }
                         } else {
                             $item->order->facility->inventories()->create([
@@ -546,11 +578,10 @@ class OrderController extends Controller
                                 'updated_at' => now()
                             ]);
                         }
-
-                        // Update warehouse inventory
+                        // here we gonna update the inventories table
                         $warehouseInventory->decrement('quantity', $quantityToTake);
                         
-                        // Remove warehouse inventory record if quantity is 0
+                        // Remove inventory record if quantity is 0
                         if ($warehouseInventory->fresh()->quantity <= 0) {
                             $warehouseInventory->delete();
                         }
@@ -578,20 +609,41 @@ class OrderController extends Controller
                     $item->delivered = 1;
                     $item->status = 'delivered';
                     $item->save();
-                }               
+                }   
+                
+                $zeroQuantityInventories = Inventory::where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->where('quantity', '=', 0)
+                ->get();
 
-                // Publish to Kafka
-                try {
-                    Kafka::publishOrderPlaced('Refreshed');
-                } catch (\Exception $e) {
-                    Log::error('Failed to publish order item status change to Kafka', [
-                        'order_id' => $item->order_id,
-                        'item_id' => $item->id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
+            if ($zeroQuantityInventories->count() > 1) {
+                // Keep the oldest record and reset its metadata
+                $oldestRecord = $zeroQuantityInventories->sortBy('created_at')->first();
+                $oldestRecord->update([
+                    'batch_number' => null,
+                    'expiry_date' => null,
+                    'location' => null,
+                    'warehouse_id' => null
+                ]);
+
+                // Delete all other zero quantity records except the oldest
+                Inventory::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $item->warehouse_id)
+                    ->where('quantity', '=', 0)
+                    ->where('id', '!=', $oldestRecord->id)
+                    ->delete();
+            } elseif ($zeroQuantityInventories->count() == 1) {
+                // If only one record exists, just reset its metadata
+                $zeroQuantityInventories->first()->update([
+                    'batch_number' => null,
+                    'expiry_date' => null,
+                    'location' => null,
+                    'warehouse_id' => null
+                ]);
+            }
 
                 // Broadcast event
+                Kafka::publishOrderPlaced('Refreshed');
                 event(new OrderEvent('Refreshed'));
 
                 // Track unique orders that were affected
@@ -662,6 +714,23 @@ class OrderController extends Controller
                 return response()->json("Status transition not allowed", 500);
             }
 
+            $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
+            logger()->info($item->product_id);
+                
+
+            // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
+            $warehouseInventories = Inventory::where('product_id', $item->product_id)
+                ->where('quantity', '>', 0)
+                // ->where('warehouse_id', $item->warehouse_id)
+                ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
+                ->get();
+
+            logger()->info($warehouseInventories->sum('quantity'));
+            if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
+                return response()->json("Not enough items in the inventory", 500);
+            }
+
+
             // Update item status
             $item->status = $request->status;
             if ($request->status == 'in process') {
@@ -682,19 +751,7 @@ class OrderController extends Controller
             if ($request->status == 'delivered') {
                 $item->delivered = 1;
 
-                $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
                 $usedInventories = [];
-
-                // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
-                $warehouseInventories = Inventory::where('product_id', $item->product_id)
-                    ->where('quantity', '>', 0)
-                    ->where('warehouse_id', $item->warehouse_id)
-                    ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
-                    ->get();
-
-                if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
-                    return response()->json("Not enough items in the inventory", 500);
-                }
 
                 foreach ($warehouseInventories as $warehouseInventory) {
                     if ($remainingQuantity <= 0) break;
@@ -710,9 +767,41 @@ class OrderController extends Controller
 
                     if ($facilityInventory) {
                         $facilityInventory->increment('quantity', $quantityToTake);
-                        // Remove facility inventory if quantity becomes 0
+                        // Handle facility inventory with quantity 0
                         if ($facilityInventory->fresh()->quantity <= 0) {
-                            $facilityInventory->delete();
+                            // Get all zero quantity records for this product
+                            $zeroQuantityInventories = $item->order->facility
+                                ->inventories()
+                                ->where('product_id', $item->product_id)
+                                ->where('quantity', '=', 0)
+                                ->orderBy('created_at', 'asc')  // Get oldest first
+                                ->get();
+
+                            if ($zeroQuantityInventories->count() > 1) {
+                                // Keep the first (oldest) record and reset its metadata
+                                $firstRecord = $zeroQuantityInventories->first();
+                                $firstRecord->update([
+                                    'batch_number' => null,
+                                    'expiry_date' => null,
+                                    'location' => null,
+                                    'warehouse_id' => null
+                                ]);
+
+                                // Delete all other zero quantity records
+                                $item->order->facility->inventories()
+                                    ->where('product_id', $item->product_id)
+                                    ->where('quantity', '=', 0)
+                                    ->where('id', '!=', $firstRecord->id)
+                                    ->delete();
+                            } else {
+                                // If this is the only zero quantity record, just reset its metadata
+                                $facilityInventory->update([
+                                    'batch_number' => null,
+                                    'expiry_date' => null,
+                                    'location' => null,
+                                    'warehouse_id' => null
+                                ]);
+                            }
                         }
                     } else {
                         
@@ -727,10 +816,6 @@ class OrderController extends Controller
                     // here we gonna update the inventories table
                     $warehouseInventory->decrement('quantity', $quantityToTake);
                     
-                    // Remove inventory record if quantity is 0
-                    if ($warehouseInventory->fresh()->quantity <= 0) {
-                        $warehouseInventory->delete();
-                    }
 
                     // Track used inventory for logging
                     $usedInventories[] = [
@@ -742,12 +827,37 @@ class OrderController extends Controller
                     $remainingQuantity -= $quantityToTake;
                 }
 
-                // Log the inventory usage with clear FIFO information
-                Log::info('Order item fulfilled using FIFO (oldest expiry first)', [
-                    'order_item_id' => $item->id,
-                    'total_quantity' => $item->quantity,
-                    'used_inventories' => $usedInventories
-                ]);
+                // Remove inventory record if quantity is 0
+                $zeroQuantityInventories = Inventory::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $item->warehouse_id)
+                    ->where('quantity', '=', 0)
+                    ->get();
+
+                if ($zeroQuantityInventories->count() > 1) {
+                    // Keep the oldest record and reset its metadata
+                    $oldestRecord = $zeroQuantityInventories->sortBy('created_at')->first();
+                    $oldestRecord->update([
+                        'batch_number' => null,
+                        'expiry_date' => null,
+                        'location' => null,
+                        'warehouse_id' => null
+                    ]);
+
+                    // Delete all other zero quantity records except the oldest
+                    Inventory::where('product_id', $item->product_id)
+                        ->where('warehouse_id', $item->warehouse_id)
+                        ->where('quantity', '=', 0)
+                        ->where('id', '!=', $oldestRecord->id)
+                        ->delete();
+                } elseif ($zeroQuantityInventories->count() == 1) {
+                    // If only one record exists, just reset its metadata
+                    $zeroQuantityInventories->first()->update([
+                        'batch_number' => null,
+                        'expiry_date' => null,
+                        'location' => null,
+                        'warehouse_id' => null
+                    ]);
+                }
 
                 // Check if all items in this order have the same status
                 $pendingItems = $item->order->items()
@@ -765,18 +875,8 @@ class OrderController extends Controller
 
             }  
 
-            // Publish to Kafka
-            try {
-                Kafka::publishOrderPlaced('Refreshed');
-            } catch (\Exception $e) {
-                Log::error('Failed to publish order item status change to Kafka', [
-                    'order_id' => $item->order_id,
-                    'item_id' => $item->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-
             // Broadcast event
+            Kafka::publishOrderPlaced('Refreshed');
             event(new OrderEvent('Refreshed'));
 
             DB::commit();

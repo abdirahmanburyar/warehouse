@@ -41,6 +41,11 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-400">
+                        <tr v-if="filteredOrders.length == 0">
+                            <td colspan="6">
+                                <span class="flex justify-center items-center p-6">No Data Found</span>
+                            </td>
+                        </tr>
                         <tr v-for="(order, index) in filteredOrders" :key="order.id" class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap border-r border-gray-400">
                                 <div class="text-sm font-medium text-gray-900">{{ index + 1 }}</div>

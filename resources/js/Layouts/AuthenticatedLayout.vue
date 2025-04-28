@@ -42,6 +42,18 @@
                 </div>
                 </Link>
 
+                <Link :href="route('districts.index')" class="menu-item"
+                    :class="{ active: route().current('districts.*') }" @click="setCurrentPage('districts')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('districts.*')" src="/assets/images/district-b.png" class="district-icon"
+                            style="height: 24px" />
+                        <img v-else src="/assets/images/district-w.png" class="district-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Districts</span>
+                </div>
+                </Link>
+
                 <Link :href="route('orders.index')" class="menu-item"
                     :class="{ active: route().current('orders.*') }" @click="setCurrentPage('orders')">
                 <div class="menu-content">
@@ -132,7 +144,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('dispatch.index')" class="menu-item"
+                <!-- <Link :href="route('dispatch.index')" class="menu-item"
                     :class="{ active: route().current('dispatch.*') }" @click="setCurrentPage('dispatch')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -141,7 +153,7 @@
                     </div>
                     <span class="menu-text">Dispatch</span>
                 </div>
-                </Link>
+                </Link> -->
 
                 <Link :href="route('assets.index')" class="menu-item"
                     :class="{ active: route().current('assets.*') }" @click="setCurrentPage('assets')">
@@ -153,7 +165,6 @@
                     <span class="menu-text">Assets</span>
                 </div>
                 </Link>
-
 
                 <Link :href="route('settings.index')" class="menu-item"
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
