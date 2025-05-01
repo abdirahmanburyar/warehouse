@@ -75,29 +75,29 @@ class PurchaseOrderController extends Controller
     public function store(Request $request)
     {
         try {
-                $request->validate([
-                    'po_number' => 'required|string|unique:purchase_orders,po_number,' . $request->input('id'),
-                    'supplier_id' => 'required|exists:suppliers,id',
-                    'po_date' => 'required|date',
-                    'notes' => 'nullable|string',
-                ]);
+            $request->validate([
+                'po_number' => 'required|string|unique:purchase_orders,po_number,' . $request->input('id'),
+                'supplier_id' => 'required|exists:suppliers,id',
+                'po_date' => 'required|date',
+                'notes' => 'nullable|string',
+            ]);
 
-                DB::beginTransaction();
+            DB::beginTransaction();
 
-                $purchaseOrder = PurchaseOrder::updateOrCreate(
-                    ['id' => $request->input('id')],
-                    [
-                        'po_number' => $request->input('po_number'),
-                        'supplier_id' => $request->input('supplier_id'),
-                        'po_date' => $request->input('po_date'),    
-                        'notes' => $request->input('notes'),
-                        'created_by' => $request->input('id') ? Auth::id() : Auth::id(),
-                        'updated_by' => $request->input('id') ? Auth::id() : null,
+            $purchaseOrder = PurchaseOrder::updateOrCreate(
+                ['id' => $request->input('id')],
+                [
+                    'po_number' => $request->input('po_number'),
+                    'supplier_id' => $request->input('supplier_id'),
+                    'po_date' => $request->input('po_date'),
+                    'notes' => $request->input('notes'),
+                    'created_by' => $request->input('id') ? Auth::id() : Auth::id(),
+                    'updated_by' => $request->input('id') ? Auth::id() : null,
                 ]
             );
             DB::commit();
 
-            return response()->json( $request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
+            return response()->json($request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
@@ -123,25 +123,25 @@ class PurchaseOrderController extends Controller
             'receivedGoodsNotes.warehouse',
             'receivedGoodsNotes.packingList.purchaseOrderItems.product',
             'receivedGoodsNotes.packingList.purchaseOrderItems.warehouse',
-            'po_items' => function($q) {
+            'po_items' => function ($q) {
                 $q->where('quantity', '>', 0)
-                  ->addSelect([
-                    'po_items.*',
-                    'products.id as product_id',
-                    'products.name as product_name'
-                  ])
-                  ->leftJoin('products', function($join) {
-                      $join->on(function($query) {
-                          $query->whereColumn('products.name', 'po_items.item_description')
+                    ->addSelect([
+                        'po_items.*',
+                        'products.id as product_id',
+                        'products.name as product_name'
+                    ])
+                    ->leftJoin('products', function ($join) {
+                        $join->on(function ($query) {
+                            $query->whereColumn('products.name', 'po_items.item_description')
                                 ->orWhereColumn('products.barcode', 'po_items.item_code');
-                      });
-                  });
+                        });
+                    });
             }
         ])
-        ->findOrFail($id);
+            ->findOrFail($id);
 
         // Transform PO items while preserving original data
-        $purchaseOrder['po_items'] = $purchaseOrder->po_items->map(function($item) use ($purchaseOrder) {
+        $purchaseOrder['po_items'] = $purchaseOrder->po_items->map(function ($item) use ($purchaseOrder) {
             $originalData = $item->toArray();
             return array_merge($originalData, [
                 'packing_list_id' => null,
@@ -159,13 +159,13 @@ class PurchaseOrderController extends Controller
         // Get packing list items
         $flattenedItems = collect();
         foreach ($purchaseOrder->packingLists as $packingList) {
-            $items = collect($packingList->purchaseOrderItems)->map(function($item) use ($packingList) {
+            $items = collect($packingList->purchaseOrderItems)->map(function ($item) use ($packingList) {
                 return array_merge($item->toArray(), [
                     'packing_list_number' => $packingList->packing_list_number,
                     'packing_list_date' => $packingList->created_at,
                     'packing_list_status' => $packingList->status,
                     'created_by' => $packingList->creator->name
-                ]); 
+                ]);
             });
             $flattenedItems = $flattenedItems->concat($items);
         }
@@ -207,7 +207,7 @@ class PurchaseOrderController extends Controller
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.notes' => 'nullable|string'
             ]);
-    
+
             foreach ($request->items as $item) {
                 // Find existing back order
                 $backOrder = BackOrder::where([
@@ -241,7 +241,7 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
-    
+
             return response()->json('Back orders updated successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
@@ -252,7 +252,7 @@ class PurchaseOrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             $validated = $request->validate([
                 'items' => 'required|array',
                 'items.*.packing_list_id' => 'nullable|exists:packing_lists,id',
@@ -269,25 +269,25 @@ class PurchaseOrderController extends Controller
                 'items.*.total_cost' => 'nullable|numeric|min:0',
                 'items.*.damage_quantity' => 'nullable|numeric|min:0',
             ]);
-            
+
             foreach ($request->items as $item) {
                 // Find or create PurchaseOrderItem
                 $purchaseOrderItem = PurchaseOrderItem::create([
-                        'packing_list_id' => $item['packing_list_id'],
-                        'purchase_order_id' => $item['purchase_order_id'],
-                        'product_id' => $item['product_id'],
-                        'warehouse_id' => $item['warehouse_id'],
-                        'location' => $item['location'],
-                        'batch_number' => $item['batch_number'],
-                        'expiry_date' => $item['expiry_date'],
-                        'generic_name' => $item['generic_name'],
-                        'product_name' => $item['product_name'],
-                        'quantity' => $item['quantity'],
-                        'received_quantity' => $item['received_quantity'],
-                        'unit_cost' => $item['unit_cost'],
-                        'total_cost' => $item['total_cost'],
-                        'damage_quantity' => $item['damage_quantity'],
-                    ]);
+                    'packing_list_id' => $item['packing_list_id'],
+                    'purchase_order_id' => $item['purchase_order_id'],
+                    'product_id' => $item['product_id'],
+                    'warehouse_id' => $item['warehouse_id'],
+                    'location' => $item['location'],
+                    'batch_number' => $item['batch_number'],
+                    'expiry_date' => $item['expiry_date'],
+                    'generic_name' => $item['generic_name'],
+                    'product_name' => $item['product_name'],
+                    'quantity' => $item['quantity'],
+                    'received_quantity' => $item['received_quantity'],
+                    'unit_cost' => $item['unit_cost'],
+                    'total_cost' => $item['total_cost'],
+                    'damage_quantity' => $item['damage_quantity'],
+                ]);
 
                 // Find and update corresponding PoItem
                 $poItem = PoItem::where('item_description', $item['product_name'])
@@ -300,7 +300,7 @@ class PurchaseOrderController extends Controller
                     $poItem->save();
                 }
 
-                if($item['damage_quantity'] > 0){
+                if ($item['damage_quantity'] > 0) {
                     BackOrder::updateOrCreate([
                         'purchase_order_id' => $item['purchase_order_id'],
                         'product_id' => $item['product_id'],
@@ -330,7 +330,8 @@ class PurchaseOrderController extends Controller
         return response()->json($backOrders);
     }
 
-    public function generatePackingList(Request $request){
+    public function generatePackingList(Request $request)
+    {
         try {
             $request->validate([
                 'purchase_order_id' => 'required|exists:purchase_orders,id',
@@ -338,7 +339,7 @@ class PurchaseOrderController extends Controller
 
             // Get today's date in YYYYMMDD format
             $today = now()->format('Ymd');
-            
+
             // Find the last packing list number for today
             $lastPackingList = PackingList::where('packing_list_number', 'like', "PL-{$today}-%")
                 ->orderBy('packing_list_number', 'desc')
@@ -353,7 +354,8 @@ class PurchaseOrderController extends Controller
 
             // Generate new packing list number with sequence
             $timestamp = now()->format('His');
-            $packingListNumber = sprintf("PL-%s-%s-%s-%03d", 
+            $packingListNumber = sprintf(
+                "PL-%s-%s-%s-%03d",
                 $today,
                 str_pad($request->purchase_order_id, 3, '0', STR_PAD_LEFT),
                 $timestamp,
@@ -367,7 +369,7 @@ class PurchaseOrderController extends Controller
                 'packing_date' => Carbon::now()->toDateString(),
                 'status' => 'pending'
             ]);
-            
+
             return response()->json([
                 'message' => 'Packing list generated successfully',
                 'packing_list' => $packingList
@@ -426,11 +428,11 @@ class PurchaseOrderController extends Controller
                 ->whereIn('role_id', $roleIds)
                 ->whereIn('action', ['confirm', 'verify', 'approve'])
                 ->get();
-            
+
             $canConfirm = $approvals->where('action', 'confirm')->count() > 0;
             $canVerify = $approvals->where('action', 'verify')->count() > 0;
             $canApprove = $approvals->where('action', 'approve')->count() > 0;
-            
+
             if (!$canConfirm || !$canVerify || !$canApprove) {
                 return response()->json('Unauthorized to perform this action', 401);
             }
@@ -447,7 +449,7 @@ class PurchaseOrderController extends Controller
 
             // Create a Received Goods Note
             $rgnNumber = 'GRN-' . now()->format('Ymd') . '-' . rand(1000, 9999);
-            if($user->warehouse_id == null) {
+            if ($user->warehouse_id == null) {
                 return response()->json('You need to assign a warehouse to yourself before creating a packing list.', 401);
             }
             ReceivedGoodsNote::create([
@@ -458,7 +460,7 @@ class PurchaseOrderController extends Controller
                 'received_at' => Carbon::now(),
                 'status' => 'pending'
             ]);
-            
+
             return response()->json([
                 'message' => 'Packing list created successfully',
                 'packing_list' => $packingList
@@ -681,13 +683,13 @@ class PurchaseOrderController extends Controller
 
             $canDelete = [];
             $cannotDelete = [];
-            
+
             // Check each item if it can be deleted
             foreach ($request->items as $itemId) {
                 $item = PoItem::where('id', $itemId)
                     ->where('purchase_order_id', $request->purchase_order_id)
                     ->first();
-                    
+
                 if ($item) {
                     // Check if quantity equals original_quantity
                     if ($item->quantity == $item->original_quantity) {
@@ -697,14 +699,14 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
-            
+
             // Delete items that can be deleted
             if (count($canDelete) > 0) {
                 PoItem::whereIn('id', $canDelete)
                     ->where('purchase_order_id', $request->purchase_order_id)
                     ->delete();
             }
-            
+
             // Return appropriate response
             if (count($cannotDelete) > 0) {
                 if (count($canDelete) > 0) {
@@ -713,7 +715,7 @@ class PurchaseOrderController extends Controller
                     return response()->json("Cannot delete items because quantities have been modified.", 403);
                 }
             }
-            
+
             return response()->json("Successfully deleted " . count($canDelete) . " items", 200);
         } catch (\Exception $e) {
             return response()->json($e->getMessage(), 500);

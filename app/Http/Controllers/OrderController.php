@@ -44,20 +44,15 @@ class OrderController extends Controller
             })
             ->latest();
 
-        // $orders = $query->paginate($request->input('perPage', ), ['*'], 'page', $request->input('page', 1))
-        //     ->withQueryString();
-
-        // $orders->setPath(url()->current());
-
         // Get order items statistics
         $stats = DB::table('order_items')
-        ->select('status', DB::raw('count(*) as count'))
-        ->groupBy('status')
-        ->get()
-        ->mapWithKeys(function ($item) {
-            return [$item->status => $item->count];
-        })
-        ->toArray();
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->status => $item->count];
+            })
+            ->toArray();
 
         // Ensure all statuses have a value
         $defaultStats = [
@@ -65,6 +60,7 @@ class OrderController extends Controller
             'approved' => 0,
             'in_process' => 0,
             'dispatched' => 0,
+            'delivery_pending' => 0,
             'delivered' => 0
         ];
 
@@ -163,10 +159,10 @@ class OrderController extends Controller
             if ($order->status !== 'pending') {
                 return back()->with('error', 'Only pending orders can be deleted.');
             }
-    
+
             $order->items()->delete();
             $order->delete();
-    
+
             return back()->with('success', 'Order deleted successfully.');
         } catch (\Throwable $th) {
             return back()->with($th->getMessage(), 500);
@@ -238,7 +234,7 @@ class OrderController extends Controller
             // Validate request
             $validated = $request->validate([
                 'order_id' => 'required|exists:orders,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivery_pending', 'delivered'])]
             ]);
 
             $order = Order::findOrFail($request->order_id);
@@ -248,7 +244,8 @@ class OrderController extends Controller
                 'pending' => ['approved'],
                 'approved' => ['in process'],
                 'in process' => ['dispatched'],
-                'dispatched' => ['delivered']
+                'dispatched' => ['delivery_pending', 'delivered'],
+                'delivery_pending' => ['delivered']
             ];
 
             // Check if the transition is allowed
@@ -277,6 +274,9 @@ class OrderController extends Controller
                 case 'dispatched':
                     $updates['dispatched_by'] = $userId;
                     $updates['dispatched_at'] = $now;
+                    break;
+                case 'delivery_pending':
+                    $updates['delivery_pending_at'] = $now;
                     break;
                 case 'delivered':
                     $updates['delivered'] = true;
@@ -310,7 +310,7 @@ class OrderController extends Controller
     {
         try {
             $items = $order->items()
-                ->with('product','warehouse')
+                ->with('product', 'warehouse')
                 ->get()
                 ->map(function ($item) {
                     // Sum all inventory quantities for this product
@@ -400,14 +400,15 @@ class OrderController extends Controller
         $request->validate([
             'order_ids' => 'required|array',
             'order_ids.*' => 'required|exists:orders,id',
-            'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])]
+            'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivery_pending', 'delivered'])]
         ]);
 
         $allowedTransitions = [
             'pending' => ['approved'],
             'approved' => ['in process'],
             'in process' => ['dispatched'],
-            'dispatched' => ['delivered']
+            'dispatched' => ['delivery_pending', 'delivered'],
+            'delivery_pending' => ['delivered']
         ];
 
         DB::beginTransaction();
@@ -460,7 +461,7 @@ class OrderController extends Controller
             $request->validate([
                 'item_ids' => 'required|array',
                 'item_ids.*' => 'required|exists:order_items,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])],
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivery_pending', 'delivered'])],
                 'warehouse_id' => 'nullable|exists:warehouses,id'
             ]);
 
@@ -472,7 +473,8 @@ class OrderController extends Controller
                 'pending' => ['approved'],
                 'approved' => ['in process'],
                 'in process' => ['dispatched'],
-                'dispatched' => ['delivered']
+                'dispatched' => ['delivery_pending', 'delivered'],
+                'delivery_pending' => ['delivered']
             ];
 
 
@@ -487,14 +489,14 @@ class OrderController extends Controller
 
                 $oldStatus = $item->status;
                 $item->status = $request->status;
-                 // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
-                 $warehouseInventories = Inventory::where('product_id', $item->product_id)
+                // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
+                $warehouseInventories = Inventory::where('product_id', $item->product_id)
                     ->where('quantity', '>', 0)
                     // ->where('warehouse_id', $item->warehouse_id)
                     ->orderBy('expiry_date', 'asc')  // Order by expiry date for FIFO (oldest first)
                     ->get();
-                    
-                    $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
+
+                $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
 
                 if ($warehouseInventories->sum('quantity') < $remainingQuantity) {
                     return response()->json("Not enough items in the inventory", 500);
@@ -504,19 +506,25 @@ class OrderController extends Controller
                     $item->approved_by = auth()->id();
                     $item->save();
                 }
+
+                if ($request->status == 'in process') {
+                    $item->in_process = 1;
+                    $item->save();
+                }
+
                 if ($request->status == 'dispatched') {
                     $item->dispatched_at = Carbon::now()->toDateString();
                     $item->dispatched_by = auth()->id();
                     $item->warehouse_id = $request->warehouse_id;
                     $item->save();
                 }
-                if ($request->status == 'in process') {
-                    $item->in_process = 1;
+                if ($request->status == 'delivery_pending') {
+                    $item->delivery_pending_at = Carbon::now()->toDateString();
                     $item->save();
                 }
                 if ($request->status == 'delivered') {
                     $item->delivered = 1;
-                    
+
                     $usedInventories = [];
 
                     foreach ($warehouseInventories as $warehouseInventory) {
@@ -524,7 +532,7 @@ class OrderController extends Controller
 
                         // Calculate how much we can take from this batch
                         $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
-                        
+
                         // Update or create facility inventory for this batch
                         $facilityInventory = $item->order->facility->inventories()
                             ->where('product_id', $item->product_id)
@@ -580,7 +588,7 @@ class OrderController extends Controller
                         }
                         // here we gonna update the inventories table
                         $warehouseInventory->decrement('quantity', $quantityToTake);
-                        
+
                         // Remove inventory record if quantity is 0
                         if ($warehouseInventory->fresh()->quantity <= 0) {
                             $warehouseInventory->delete();
@@ -609,38 +617,38 @@ class OrderController extends Controller
                     $item->delivered = 1;
                     $item->status = 'delivered';
                     $item->save();
-                }   
-                
+                }
+
                 $zeroQuantityInventories = Inventory::where('product_id', $item->product_id)
-                ->where('warehouse_id', $item->warehouse_id)
-                ->where('quantity', '=', 0)
-                ->get();
-
-            if ($zeroQuantityInventories->count() > 1) {
-                // Keep the oldest record and reset its metadata
-                $oldestRecord = $zeroQuantityInventories->sortBy('created_at')->first();
-                $oldestRecord->update([
-                    'batch_number' => null,
-                    'expiry_date' => null,
-                    'location' => null,
-                    'warehouse_id' => null
-                ]);
-
-                // Delete all other zero quantity records except the oldest
-                Inventory::where('product_id', $item->product_id)
                     ->where('warehouse_id', $item->warehouse_id)
                     ->where('quantity', '=', 0)
-                    ->where('id', '!=', $oldestRecord->id)
-                    ->delete();
-            } elseif ($zeroQuantityInventories->count() == 1) {
-                // If only one record exists, just reset its metadata
-                $zeroQuantityInventories->first()->update([
-                    'batch_number' => null,
-                    'expiry_date' => null,
-                    'location' => null,
-                    'warehouse_id' => null
-                ]);
-            }
+                    ->get();
+
+                if ($zeroQuantityInventories->count() > 1) {
+                    // Keep the oldest record and reset its metadata
+                    $oldestRecord = $zeroQuantityInventories->sortBy('created_at')->first();
+                    $oldestRecord->update([
+                        'batch_number' => null,
+                        'expiry_date' => null,
+                        'location' => null,
+                        'warehouse_id' => null
+                    ]);
+
+                    // Delete all other zero quantity records except the oldest
+                    Inventory::where('product_id', $item->product_id)
+                        ->where('warehouse_id', $item->warehouse_id)
+                        ->where('quantity', '=', 0)
+                        ->where('id', '!=', $oldestRecord->id)
+                        ->delete();
+                } elseif ($zeroQuantityInventories->count() == 1) {
+                    // If only one record exists, just reset its metadata
+                    $zeroQuantityInventories->first()->update([
+                        'batch_number' => null,
+                        'expiry_date' => null,
+                        'location' => null,
+                        'warehouse_id' => null
+                    ]);
+                }
 
                 // Broadcast event
                 Kafka::publishOrderPlaced('Refreshed');
@@ -692,7 +700,7 @@ class OrderController extends Controller
 
             $request->validate([
                 'item_id' => 'required|exists:order_items,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivered'])],
+                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivery_pending', 'delivered'])],
                 'warehouse_id' => 'nullable|exists:warehouses,id'
             ]);
 
@@ -703,7 +711,8 @@ class OrderController extends Controller
                 'pending' => ['approved'],
                 'approved' => ['in process'],
                 'in process' => ['dispatched'],
-                'dispatched' => ['delivered']
+                'dispatched' => ['delivery_pending', 'delivered'],
+                'delivery_pending' => ['delivered']
             ];
 
             // Check if the transition is allowed
@@ -716,7 +725,7 @@ class OrderController extends Controller
 
             $remainingQuantity = (float) $item->quantity - (float) $item->quantity_on_order;
             logger()->info($item->product_id);
-                
+
 
             // Get all available inventory for this product from the warehouse, ordered by expiry date (FIFO)
             $warehouseInventories = Inventory::where('product_id', $item->product_id)
@@ -748,6 +757,10 @@ class OrderController extends Controller
                 $item->warehouse_id = $request->warehouse_id;
                 $item->save();
             }
+            if ($request->status == 'delivery_pending') {
+                $item->delivery_pending_at = Carbon::now()->toDateString();
+                $item->save();
+            }
             if ($request->status == 'delivered') {
                 $item->delivered = 1;
 
@@ -758,7 +771,7 @@ class OrderController extends Controller
 
                     // Calculate how much we can take from this batch
                     $quantityToTake = min($remainingQuantity, $warehouseInventory->quantity);
-                    
+
                     // Update or create facility inventory for this batch
                     $facilityInventory = $item->order->facility->inventories()
                         ->where('product_id', $item->product_id)
@@ -804,7 +817,7 @@ class OrderController extends Controller
                             }
                         }
                     } else {
-                        
+
                         $item->order->facility->inventories()->create([
                             'product_id' => $item->product_id,
                             'batch_number' => $warehouseInventory->batch_number,
@@ -815,7 +828,7 @@ class OrderController extends Controller
                     }
                     // here we gonna update the inventories table
                     $warehouseInventory->decrement('quantity', $quantityToTake);
-                    
+
 
                     // Track used inventory for logging
                     $usedInventories[] = [
@@ -872,8 +885,7 @@ class OrderController extends Controller
                 $item->delivered = 1;
                 $item->status = 'delivered';
                 $item->save();
-
-            }  
+            }
 
             // Broadcast event
             Kafka::publishOrderPlaced('Refreshed');
@@ -891,7 +903,8 @@ class OrderController extends Controller
         }
     }
 
-    public function show(Request $request, Order $order){
+    public function show(Request $request, Order $order)
+    {
         try {
             DB::beginTransaction();
             $order->load('items.product', 'facility', 'user', 'items.warehouse');

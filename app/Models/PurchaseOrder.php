@@ -25,7 +25,8 @@ class PurchaseOrder extends Model
         return $this->belongsTo(Supplier::class);
     }
 
-    public function po_items(){
+    public function po_items()
+    {
         return $this->hasMany(PoItem::class, 'purchase_order_id');
     }
 
@@ -52,7 +53,7 @@ class PurchaseOrder extends Model
     public function receivedGoodsNotes()
     {
         return $this->hasManyThrough(
-            ReceivedGoodsNote::class, 
+            ReceivedGoodsNote::class,
             PackingList::class,
             'purchase_order_id', // Foreign key on packing_lists table
             'packing_list_id',   // Foreign key on received_goods_notes table
