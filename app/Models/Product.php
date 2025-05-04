@@ -23,13 +23,12 @@ class Product extends Model
      */
     protected $fillable = [
         'name',
-        'sku',
+        'dose',
         'barcode',
         'description',
         'category_id',
         'dosage_id',
         'reorder_level',
-        'sub_category_id',
         'is_active',
     ];
 

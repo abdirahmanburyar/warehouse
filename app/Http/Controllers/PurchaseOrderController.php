@@ -61,11 +61,15 @@ class PurchaseOrderController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $purchaseOrders = $query->paginate($request->input('per_page', 10))
-            ->withQueryString();
+        $purchaseOrders = $query->paginate(5);
+
+        $purchaseOrders->setPath(route('purchase-orders.index'));
+
+
 
         return Inertia::render('PurchaseOrder/Index', [
-            'purchase_orders' => PurchaseOrderResource::collection($purchaseOrders),
+            'purchase_orders' => $purchaseOrders,
+            // 'purchase_orders' => PurchaseOrderResource::collection($purchaseOrders),
             'suppliers' => Supplier::select('id', 'name')->get(),
             'products' => Product::select('id', 'name')->get(),
             'filters' => $request->only(['search', 'status', 'start_date', 'end_date', 'per_page']),
@@ -125,17 +129,31 @@ class PurchaseOrderController extends Controller
             'receivedGoodsNotes.packingList.purchaseOrderItems.warehouse',
             'po_items' => function ($q) {
                 $q->where('quantity', '>', 0)
-                    ->addSelect([
-                        'po_items.*',
-                        'products.id as product_id',
-                        'products.name as product_name'
-                    ])
+                    ->select('po_items.*')
+                    ->selectRaw('COALESCE(MIN(products.name), po_items.item_description) as product_name')
                     ->leftJoin('products', function ($join) {
                         $join->on(function ($query) {
-                            $query->whereColumn('products.name', 'po_items.item_description')
-                                ->orWhereColumn('products.barcode', 'po_items.item_code');
+                            $query->where(function($q) {
+                                $q->whereColumn('products.name', 'po_items.item_description')
+                                  ->orWhereColumn('products.barcode', 'po_items.item_code');
+                            });
                         });
-                    });
+                    })
+                    ->groupBy([
+                        'po_items.id',
+                        'po_items.purchase_order_id',
+                        'po_items.item_code',
+                        'po_items.item_description',
+                        'po_items.uom',
+                        'po_items.quantity',
+                        'po_items.original_quantity',
+                        // 'po_items.received_quantity',
+                        'po_items.unit_cost',
+                        'po_items.total_cost',
+                        'po_items.created_at',
+                        'po_items.updated_at',
+                        'po_items.deleted_at'
+                    ]);
             }
         ])
             ->findOrFail($id);
@@ -254,9 +272,9 @@ class PurchaseOrderController extends Controller
             DB::beginTransaction();
 
             $validated = $request->validate([
+                'packing_list_id' => 'nullable|exists:packing_lists,id',
+                'purchase_order_id' => 'required|exists:purchase_orders,id',
                 'items' => 'required|array',
-                'items.*.packing_list_id' => 'nullable|exists:packing_lists,id',
-                'items.*.purchase_order_id' => 'required|exists:purchase_orders,id',
                 'items.*.quantity' => 'nullable|numeric|min:0',
                 'items.*.received_quantity' => 'nullable|numeric|min:0',
                 'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
@@ -272,15 +290,17 @@ class PurchaseOrderController extends Controller
 
             foreach ($request->items as $item) {
                 // Find or create PurchaseOrderItem
+                $product = Product::where('name', $item['product_name'])->first();
+                $item['product_id'] = $product->id;
                 $purchaseOrderItem = PurchaseOrderItem::create([
-                    'packing_list_id' => $item['packing_list_id'],
-                    'purchase_order_id' => $item['purchase_order_id'],
+                    'packing_list_id' => $validated['packing_list_id'],
+                    'purchase_order_id' => $validated['purchase_order_id'],
                     'product_id' => $item['product_id'],
                     'warehouse_id' => $item['warehouse_id'],
                     'location' => $item['location'],
                     'batch_number' => $item['batch_number'],
                     'expiry_date' => $item['expiry_date'],
-                    'generic_name' => $item['generic_name'],
+                    'generic_name' => $item['product_name'],
                     'product_name' => $item['product_name'],
                     'quantity' => $item['quantity'],
                     'received_quantity' => $item['received_quantity'],
@@ -291,7 +311,7 @@ class PurchaseOrderController extends Controller
 
                 // Find and update corresponding PoItem
                 $poItem = PoItem::where('item_description', $item['product_name'])
-                    ->where('purchase_order_id', $item['purchase_order_id'])
+                    ->where('purchase_order_id', $validated['purchase_order_id'])
                     ->first();
 
                 if ($poItem) {
@@ -302,7 +322,7 @@ class PurchaseOrderController extends Controller
 
                 if ($item['damage_quantity'] > 0) {
                     BackOrder::updateOrCreate([
-                        'purchase_order_id' => $item['purchase_order_id'],
+                        'purchase_order_id' => $validated['purchase_order_id'],
                         'product_id' => $item['product_id'],
                     ], [
                         'quantity' => $item['damage_quantity'],

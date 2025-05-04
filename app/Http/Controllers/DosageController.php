@@ -15,7 +15,7 @@ class DosageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Dosage::query()->with('category');
+        $query = Dosage::query();
 
         // Search functionality
         if ($request->has('search') && !empty($request->search)) {
@@ -24,11 +24,6 @@ class DosageController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
-        }
-
-        // Filter by category
-        if ($request->has('category_id') && !empty($request->category_id)) {
-            $query->where('category_id', $request->category_id);
         }
 
         // Sorting
@@ -62,7 +57,6 @@ class DosageController extends Controller
                 'max:255',
                 Rule::unique('dosages', 'name')->ignore($request->id)
             ],
-            'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'is_active' => 'boolean'
         ]);
@@ -128,25 +122,9 @@ class DosageController extends Controller
             $dosage->delete();
             
             return response()->json('Dosage deleted successfully', 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Get dosages by category
-     */
-    public function getByCategory($category)
-    {
-        try {
-            $dosages = Dosage::where('category_id', $category)
-                ->where('is_active', true)
-                ->with('category')
-                ->get();
-
-            return response()->json($dosages, 200);
-        } catch (\Exception $e) {
-            return response()->json($e->getMessage(), 500);
-        }
-    }
 }

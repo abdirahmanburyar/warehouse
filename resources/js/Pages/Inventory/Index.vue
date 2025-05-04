@@ -672,6 +672,7 @@ const echo = ref(null);
                         <div v-if="currentInventories.data && currentInventories.data.length > 0" class="mt-4 mb-[50px]">
                             <Pagination :links="currentInventories.meta.links" />
                         </div>
+                        
                     </div>
                     <div class="sticky top-0 z-10 shadow-sm p-2">
                         <div class="space-y-4">

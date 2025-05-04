@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Category;
 use App\Models\Dosage;
-use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\EligibleItem;
@@ -16,7 +15,6 @@ use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
-use App\Http\Resources\SubCategoryResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,29 +29,27 @@ class ProductController extends Controller
         $query = Product::query();
 
         // Search functionality
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('barcode', 'like', "%{$search}%")
-                    ->orWhere('type', 'like', "%{$search}%");
+                    ->orWhere('barcode', 'like', "%{$search}%");
             });
         }
 
         // Filter by category
-        if ($request->has('category_id') && $request->category_id) {
+        if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
         // Filter by dosage
-        if ($request->has('dosage_id') && $request->dosage_id) {
+        if ($request->filled('dosage_id')) {
             $query->where('dosage_id', $request->dosage_id);
         }
 
         // Filter by active status
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->is_active === 'true' ? true : false);
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->is_active === 'true');
         }
 
         // Sorting
@@ -61,46 +57,37 @@ class ProductController extends Controller
         $sortDirection = $request->input('sort_direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $products = $query->with(['dosage.category', 'subCategory'])
-            ->paginate($request->input('per_page', 5), ['*'], 'page', $request->input('page', 1))
+        $products = $query->with(['dosage', 'category'])
+            ->paginate($request->input('per_page', 10))
             ->withQueryString();
-
-        $products->setPath(url()->current());
 
         // Handle category listing functionality
         $categoryQuery = Category::query();
 
         // Handle category search
-        if ($request->has('categorySearch')) {
-            $searchTerm = $request->categorySearch;
+        if ($request->filled('category_search')) {
+            $searchTerm = $request->category_search;
             $categoryQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                    ->orWhere('description', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('dosages', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
-                    });
+                    ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
 
         // Handle category sorting
-        $categorySortField = $request->input('category_sort_field', 'id');
+        $categorySortField = $request->input('category_sort_field', 'created_at');
         $categorySortDirection = $request->input('category_sort_direction', 'desc');
-
         $categoryQuery->orderBy($categorySortField, $categorySortDirection);
 
-        // Get paginated category results
         $categories = $categoryQuery
-            ->paginate($request->input('category_per_page', 3), ['*'], 'category_page', $request->input('category_page', 1))
+            ->paginate($request->input('category_per_page', 10), ['*'], 'categories_page')
             ->withQueryString();
-
-        $categories->setPath(url()->current());
 
         // Handle dosage listing functionality
         $dosageQuery = Dosage::query();
 
         // Handle dosage search
-        if ($request->has('dosageSearch')) {
-            $searchTerm = $request->dosageSearch;
+        if ($request->filled('dosage_search')) {
+            $searchTerm = $request->dosage_search;
             $dosageQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
                     ->orWhere('description', 'like', "%{$searchTerm}%");
@@ -108,80 +95,63 @@ class ProductController extends Controller
         }
 
         // Handle dosage sorting
-        $dosageSortField = $request->input('dosage_sort_field', 'id');
+        $dosageSortField = $request->input('dosage_sort_field', 'created_at');
         $dosageSortDirection = $request->input('dosage_sort_direction', 'desc');
-
         $dosageQuery->orderBy($dosageSortField, $dosageSortDirection);
 
-        // Get paginated dosage results
-        $dosages = $dosageQuery->with('category')
-            ->paginate($request->input('dosage_per_page', 6), ['*'], 'dosage_page', $request->input('dosage_page', 1))
+        $dosages = $dosageQuery
+            ->paginate($request->input('dosage_per_page', 10), ['*'], 'dosages_page')
             ->withQueryString();
 
-        $dosages->setPath(url()->current());
+        // Handle eligible items
+        $eligibleQuery = EligibleItem::query()->with(['product']);
 
-        // Handle subcategory listing functionality
-        $subcategoryQuery = SubCategory::query();
-
-        // Handle subcategory search
-        if ($request->has('subcategorySearch')) {
-            $searchTerm = $request->subcategorySearch;
-            $subcategoryQuery->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%")
-                    ->orWhere('description', 'like', "%{$searchTerm}%");
+        if ($request->filled('eligible_search')) {
+            $searchTerm = $request->eligible_search;
+            $eligibleQuery->whereHas('product', function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%");
             });
         }
-
-        // Handle subcategory sorting
-        $subcategorySortField = $request->input('subcategory_sort_field', 'id');
-        $subcategorySortDirection = $request->input('subcategory_sort_direction', 'desc');
-
-        $subcategoryQuery->orderBy($subcategorySortField, $subcategorySortDirection);
-
-        // Get paginated subcategory results with counts
-        $subcategories = $subcategoryQuery
-            ->withCount(['products'])
-            ->paginate($request->input('subcategory_per_page', 6), ['*'], 'subcategory_page', $request->input('subcategory_page', 1))
-            ->withQueryString();
-
-        $subcategories->setPath(url()->current());
-
-
-        // Handle eligible items functionality
-        $eligibleItems = EligibleItem::query();
 
         if ($request->filled('facility_type')) {
-            $eligibleItems->where('facility_type', $request->facility_type);
+            $eligibleQuery->where('facility_type', $request->facility_type);
         }
 
-        if ($request->filled('eligibleSearch')) {
-            $search = $request->eligibleSearch;
-            $eligibleItems->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('barcode', 'like', "%{$search}%");
-            });
-        }
-
-        $eligibleItems = $eligibleItems->with('product')
-            ->paginate($request->input('eligible_per_page', 6), ['*'], 'eligible_page', $request->input('eligible_page', 1))
+        $eligibleItems = $eligibleQuery
+            ->paginate($request->input('eligible_per_page', 10), ['*'], 'eligible_page')
             ->withQueryString();
-
-        $eligibleItems->setPath(url()->current());
-
 
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
-            'filters' => $request->only(['search', 'dosage_id', 'category_id', 'is_active', 'sort_field', 'sort_direction', 'per_page', 'page', 'eligibleSearch', 'eligible_per_page', 'eligible_page', 'facility_type']),
-            'categoryFilters' => $request->only(['categorySearch', 'category_sort_field', 'category_sort_direction', 'category_per_page', 'category_page']),
             'categories' => CategoryResource::collection($categories),
             'dosages' => DosageResource::collection($dosages),
-            'dosageFilters' => $request->only(['dosageSearch', 'dosage_sort_field', 'dosage_sort_direction', 'dosage_per_page', 'dosage_page']),
-            'subcategories' => SubCategoryResource::collection($subcategories),
-            'subcategoryFilters' => $request->only(['subcategorySearch', 'subcategory_sort_field', 'subcategory_sort_direction', 'subcategory_per_page', 'subcategory_page']),
             'eligibleItems' => EligibleItemResource::collection($eligibleItems),
-            'facilities' => Facility::get(),
-            'eligibleProducts' => Product::get()
+            'filters' => [
+                'search' => $request->search,
+                'category_id' => $request->category_id,
+                'dosage_id' => $request->dosage_id,
+                'is_active' => $request->is_active,
+                'per_page' => (int)$request->input('per_page', 10),
+                'sort_field' => $sortField,
+                'sort_direction' => $sortDirection,
+                
+                // Category filters
+                'category_search' => $request->category_search,
+                'category_per_page' => (int)$request->input('category_per_page', 10),
+                'category_sort_field' => $categorySortField,
+                'category_sort_direction' => $categorySortDirection,
+                
+                // Dosage filters
+                'dosage_search' => $request->dosage_search,
+                'dosage_per_page' => (int)$request->input('dosage_per_page', 10),
+                'dosage_sort_field' => $dosageSortField,
+                'dosage_sort_direction' => $dosageSortDirection,
+                
+                // Eligible filters
+                'eligible_search' => $request->eligible_search,
+                'eligible_per_page' => (int)$request->input('eligible_per_page', 10),
+                'facility_type' => $request->facility_type
+            ]
         ]);
     }
 
@@ -194,29 +164,20 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'id' => 'nullable|exists:products,id',
                 'name' => 'required|string|max:255|unique:products,name,' . $request->id,
-                'sku' => 'required|string|max:100|unique:products,sku,' . $request->id,
                 'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $request->id,
                 'description' => 'nullable|string',
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
+                'dose' => 'required',
                 'reorder_level' => 'nullable|numeric',
-                'sub_category_id' => 'nullable|exists:sub_categories,id',
                 'is_active' => 'boolean',
             ]);
 
             $product = Product::updateOrCreate(['id' => $validated['id']], $validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Product created successfully.',
-                'product' => new ProductResource($product)
-            ], 200);
+            return response()->json($request->id ? 'Product updated successfully.' : 'Product created successfully.', 200);
         } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while saving the product',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json($e->getMessage(), 500);
         }
     }
 

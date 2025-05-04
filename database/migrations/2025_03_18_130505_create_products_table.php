@@ -38,15 +38,13 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('sku')->nullable()->unique();
             $table->string('barcode')->nullable()->unique();
             $table->text('description')->nullable();
             $table->foreignIdFor(Category::class)->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('sub_category_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedBigInteger('dosage_id')->nullable();
             $table->double('reorder_level')->default(0);
-            $table->string('type');
-            $table->string('pack_size')->nullable();
+            $table->string('dose');
+            // $table->string('pack_size')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

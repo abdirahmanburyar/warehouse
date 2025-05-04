@@ -2,34 +2,19 @@
     <Head :title="props.purchase_order.po_number" />
     <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders" img="/assets/images/inventory.png">
         <div class="flex h-full relative">
-            <div class="fixed w-[300px] border-r border-gray-200 bg-white top-[200px] bottom-[50px] overflow-y-auto mr-[100px]">
-                <div class="h-full">
-                    <div class="sticky top-0 bg-white p-4 z-10">
-                        <h3 class="text-lg font-semibold text-gray-900">Purchase Orders</h3>
-                    </div>
-                    <div class="px-4 pb-4 space-y-2">
-                        <div v-for="p in props.purchase_orders" :key="p.id"
-                            @click="selectPurchaseOrder(p)"
-                            class="p-3 rounded-md hover:bg-gray-50 cursor-pointer border border-gray-100"
-                            :class="{ 'bg-indigo-50 border-indigo-200': selectedPurchaseOrder?.id == p.id }">
-                            <div class="flex justify-between">
-                                {{ p.po_number }}
-                                <span
-                                    :class="['px-2 py-1 text-xs rounded-full', p.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">{{
-                                    p.status }}</span>
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                {{ p.po_date }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex-1 min-w-0 overflow-hidden p-3 ml-[300px]">
+            <div class="flex-1 min-w-0 overflow-hidden p-3">
                 <!-- Header -->
-                <div class="mb-6">
+                <div class="flex justify-between">
+                    <div class="mb-6">
+                        <p class="mt-1 text-sm text-gray-600">
+                            Purchase Order #{{ props.purchase_order.po_number }}
+                        </p>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Suplier: {{ props.purchase_order.supplier?.name }}
+                        </p>
+                    </div>
                     <p class="mt-1 text-sm text-gray-600">
-                        Purchase Order #{{ props.purchase_order.po_number }}
+                        PO Date: {{ moment(props.purchase_order.po_date).format('LL') }}
                     </p>
                 </div>
                 <!-- Packing List Dropdown -->
@@ -128,7 +113,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
                                         viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2.25 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            d="M19 7l-.867 12.142A2 2.25 0 0116.138 21H7.862a2 2.25 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
                                     Delete Selected ({{ selectedItems.length }})
                                 </button>
@@ -580,7 +565,7 @@
                             <!-- Print/Download Actions -->
                             <div class="absolute top-4 right-4 flex items-center gap-3 print:hidden">
                                 <button @click="downloadPDF"
-                                    class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     <i class="fas fa-download mr-2"></i> Download PDF
                                 </button>
                                 <button @click="closeRGNModal" class="text-gray-500 hover:text-gray-700">
@@ -775,9 +760,21 @@ const tabs = [
 ];
 const currentTab = ref('items');
 
-// Existing Variables
+// Form and state management
 const form = ref({
-    items: props.purchase_order?.po_items || []
+    items: props.purchase_order?.po_items?.map(item => ({
+        id: item.id || null,
+        product_name: item.product_name || item.item_description,
+        quantity: Number(item.quantity || 0),
+        received_quantity: Number(item.received_quantity || 0),
+        damage_quantity: Number(item.damage_quantity || 0),
+        warehouse_id: item.warehouse_id || '',
+        location: item.location || '',
+        batch_number: item.batch_number || '',
+        expiry_date: item.expiry_date || '',
+        unit_cost: Number(item.unit_cost || 0),
+        total_cost: Number(item.total_cost || 0)
+    })) || []
 });
 
 const selectedPackingList = ref(null);
@@ -938,9 +935,7 @@ const handleFileUpload = async (event) => {
 const downloadTemplate = () => {
     // Create a sample Excel template with the correct format
     const worksheet = XLSX.utils.aoa_to_sheet([
-        ['Item Code', 'Item Description', 'UoM', 'Quantity', 'Unit Cost', 'Total Cost'], // Header row
-        ['ITEM001', 'Sample Product', 'PCS', '100', '10.50', '1050'], // Sample data row
-        ['ITEM002', 'Another Product', 'BOX', '50', '25.00', '1250'] // Another sample row
+        ['Item Code', 'Item Description', 'UoM', "Dose", 'Quantity', "Category", "Dosage Form", 'Unit Cost', 'Total Cost'], // Header row
     ]);
 
     // Set column widths
@@ -948,7 +943,10 @@ const downloadTemplate = () => {
         { wch: 15 }, // Item Code
         { wch: 40 }, // Item Description
         { wch: 10 }, // UoM
+        { wch: 10 }, // Dose
         { wch: 12 }, // Quantity
+        { wch: 12 }, // Category
+        { wch: 12 }, // Dosage Form
         { wch: 12 }, // Unit Cost
         { wch: 12 }  // Total Cost
     ];
@@ -972,19 +970,20 @@ const selectPackingList = async (packingList) => {
         // Use packing list items if available, otherwise use purchase order items
         const items = packingListItems.length > 0 ? packingListItems : (props.purchase_order?.po_items || []);
 
+        // Reset form items before setting new ones
+        form.value.items = [];
+        
+        // Map items to form structure
         form.value.items = items.map(item => ({
             id: item.id || null,
-            purchase_order_id: props.purchase_order.id,
-            packing_list_id: packingList.id,
-            product_id: item.product_id || null,
-            warehouse_id: item.warehouse_id || "",
-            location: item.location || '',
-            expiry_date: item.expiry_date || null,
-            batch_number: item.batch_number || '',
-            generic_name: item.generic_name || '',
-            product_name: item.product_name || '',
+            product_name: item.product_name || item.item_description,
             quantity: Number(item.quantity || 0),
             received_quantity: Number(item.received_quantity || 0),
+            damage_quantity: Number(item.damage_quantity || 0),
+            warehouse_id: item.warehouse_id || '',
+            location: item.location || '',
+            batch_number: item.batch_number || '',
+            expiry_date: item.expiry_date || '',
             unit_cost: Number(item.unit_cost || 0),
             total_cost: Number(item.total_cost || 0)
         }));
@@ -1234,8 +1233,11 @@ async function proceedWithSave(completeItems) {
     try {
         const formData = {
             purchase_order_id: props.purchase_order.id,
+            packing_list_id: selectedPackingList.value?.id,
             items: completeItems
         };
+
+        console.log(formData);
 
         const response = await axios.post(route('purchase-orders.packing-list.store'), formData);
         Swal.fire({

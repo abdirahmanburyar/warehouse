@@ -6,8 +6,8 @@
         description="Manage your purchase orders"
         img="/assets/images/inventory.png"
     >
-        <div class="overflow-hidden bg-white sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
+        <div class="overflow-hidden sm:rounded-lg">
+            <div class="p-6">
                 <!-- Search and Filters -->
                 <div
                     class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between"
@@ -49,10 +49,7 @@
                             class="w-full py-2 pl-3 pr-10 transition duration-150 border border-gray-300 rounded-lg md:w-40 focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="">All Status</option>
-                            <option value="draft">Draft</option>
                             <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
                             <option value="completed">Completed</option>
                         </select>
 
@@ -135,37 +132,37 @@
                                             <tr>
                                                 <th
                                                     scope="col"
-                                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+                                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 border border-black"
                                                 >
                                                     PO Number
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 border border-black"
                                                 >
                                                     Supplier
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 border border-black"
                                                 >
                                                     Date
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 border border-black"
                                                 >
                                                     Total Amount
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                                                    class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 border border-black"
                                                 >
                                                     Status
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    class="relative py-3.5 pl-3 pr-4 sm:pr-6"
+                                                    class="relative py-3.5 pl-3 pr-4 sm:pr-6 border border-black"
                                                 >
                                                     <span class="sr-only"
                                                         >Actions</span
@@ -178,15 +175,13 @@
                                         >
                                             <tr
                                                 v-if="
-                                                    !props.purchase_orders
-                                                        .data ||
-                                                    props.purchase_orders.data
-                                                        .length === 0
+                                                    props.purchase_orders
+                                                        .data.length == 0
                                                 "
                                             >
                                                 <td
                                                     colspan="6"
-                                                    class="px-6 py-24 text-center"
+                                                    class="px-6 py-24 text-center border border-black"
                                                 >
                                                     <div
                                                         class="flex flex-col items-center"
@@ -276,15 +271,13 @@
                                                 </td>
                                             </tr>
                                             <tr
-                                                v-for="order in props
-                                                    .purchase_orders.data"
-                                                :key="order.id"
+                                                v-for="order in props.purchase_orders.data"
                                                 class="hover:bg-gray-50"
                                             >
                                                 <td
-                                                    class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 whitespace-nowrap sm:pl-6"
+                                                    class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 whitespace-nowrap sm:pl-6 border border-black"
                                                 >
-                                                    <Link
+                                                    <a
                                                         :href="
                                                             route(
                                                                 'purchase-orders.packing-list',
@@ -293,16 +286,16 @@
                                                         "
                                                         class="text-indigo-600 hover:text-indigo-900"
                                                     >
-                                                        {{ order.po_number }}
-                                                    </Link>
+                                                    {{ order.po_number }}
+                                                </a>
                                                 </td>
                                                 <td
-                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
+                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap border border-black"
                                                 >
                                                     {{ order.supplier?.name }}
                                                 </td>
                                                 <td
-                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
+                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap border border-black"
                                                 >
                                                     {{
                                                         formatDate(
@@ -311,7 +304,7 @@
                                                     }}
                                                 </td>
                                                 <td
-                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
+                                                    class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap border border-black"
                                                 >
                                                     {{
                                                         formatCurrency(
@@ -320,7 +313,7 @@
                                                     }}
                                                 </td>
                                                 <td
-                                                    class="px-3 py-4 text-sm whitespace-nowrap"
+                                                    class="px-3 py-4 text-sm whitespace-nowrap border border-black"
                                                 >
                                                     <span
                                                         :class="{
@@ -340,7 +333,7 @@
                                                     </span>
                                                 </td>
                                                 <td
-                                                    class="relative py-4 pl-3 pr-4 text-sm font-medium text-right whitespace-nowrap sm:pr-6"
+                                                    class="relative py-4 pl-3 pr-4 text-sm font-medium text-right border border-black sm:pr-6"
                                                 >
                                                     <div
                                                         class="flex items-center gap-2"
@@ -420,7 +413,30 @@
 
                 <!-- Pagination -->
                 <div class="mt-4">
-                    <Pagination :links="props.purchase_orders.meta.links" />
+                    <div class="mb-6 p-6">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-700">
+                                Showing {{ props.purchase_orders.from }} to {{ props.purchase_orders.to }} of {{
+                                    props.purchase_orders.total }} results
+                            </div>
+                            <div class="flex gap-2">
+                                <Link
+                                    v-for="link in props.purchase_orders.links"
+                                    :key="link.label"
+                                    :href="link.url"
+                                    :preserve-state="true"
+                                    :preserve-scroll="true"
+                                    class="px-3 py-2 text-sm border rounded-full transition-all duration-200 ease-in-out"
+                                    :class="{ 
+                                        'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:border-indigo-700': link.active,
+                                        'text-gray-400 border-gray-200 cursor-not-allowed': !link.url,
+                                        'text-dark-700 border-dark-200 hover:bg-dark-50 hover:text-indigo-600': link.url && !link.active
+                                    }"
+                                    v-html="link.label"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -577,249 +593,6 @@
         </TransitionRoot>
 
         <!-- Items Modal -->
-        <TransitionRoot appear :show="showItemsModal" as="template">
-            <Dialog as="div" class="relative z-[60]" @close="closeItemsModal">
-                <TransitionChild
-                    as="template"
-                    enter="ease-out duration-300"
-                    enter-from="opacity-0"
-                    enter-to="opacity-100"
-                    leave="ease-in duration-200"
-                    leave-from="opacity-100"
-                    leave-to="opacity-0"
-                >
-                    <div
-                        class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-                    />
-                </TransitionChild>
-
-                <div class="fixed inset-0 z-[60] w-screen overflow-y-auto">
-                    <div
-                        class="flex items-end justify-center min-h-full p-4 text-center sm:items-center sm:p-0"
-                    >
-                        <TransitionChild
-                            as="template"
-                            enter="ease-out duration-300"
-                            enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            enter-to="opacity-100 translate-y-0 sm:scale-100"
-                            leave="ease-in duration-200"
-                            leave-from="opacity-100 translate-y-0 sm:scale-100"
-                            leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        >
-                            <DialogPanel
-                                class="relative px-4 pt-5 pb-4 overflow-hidden text-left transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:w-full sm:max-w-5xl sm:p-6"
-                            >
-                                <div
-                                    class="absolute top-0 right-0 hidden pt-4 pr-4 sm:block"
-                                >
-                                    <button
-                                        type="button"
-                                        class="text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                                        @click="closeItemsModal"
-                                    >
-                                        <span class="sr-only">Close</span>
-                                        <svg
-                                            class="w-6 h-6"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="1.5"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M6 18L18 6M6 6l12 12"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="sm:flex sm:items-start">
-                                    <div
-                                        class="w-full mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left"
-                                    >
-                                        <DialogTitle
-                                            as="h3"
-                                            class="text-lg font-semibold leading-6 text-gray-900"
-                                        >
-                                            Purchase Order Items
-                                            <span
-                                                v-if="selectedOrder"
-                                                class="ml-2 text-sm text-gray-500"
-                                            >
-                                                (PO #{{
-                                                    selectedOrder.po_number
-                                                }})
-                                            </span>
-                                        </DialogTitle>
-                                        <div class="mt-4">
-                                            <div class="overflow-x-auto">
-                                                {{ selectedOrder }}
-                                                <table
-                                                    class="min-w-full divide-y divide-gray-200"
-                                                    v-if="
-                                                        selectedOrder &&
-                                                        selectedOrder.po_items
-                                                    "
-                                                >
-                                                    <thead class="bg-gray-50">
-                                                        <tr>
-                                                            <th
-                                                                scope="col"
-                                                                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Product
-                                                            </th>
-                                                            <th
-                                                                scope="col"
-                                                                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Original
-                                                                Quantity
-                                                            </th>
-                                                            <th
-                                                                scope="col"
-                                                                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Quantity
-                                                            </th>
-                                                            <th
-                                                                scope="col"
-                                                                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Unit Cost
-                                                            </th>
-                                                            <th
-                                                                scope="col"
-                                                                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Total Cost
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody
-                                                        class="bg-white divide-y divide-gray-200"
-                                                    >
-                                                        <tr
-                                                            v-for="item in selectedOrder.po_items"
-                                                            :key="item.id"
-                                                            class="hover:bg-gray-50"
-                                                        >
-                                                            <td
-                                                                class="py-4 pl-4 pr-3 text-sm text-gray-900 whitespace-nowrap"
-                                                            >
-                                                                {{
-                                                                    item.item_description
-                                                                }}
-                                                            </td>
-                                                            <td
-                                                                class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
-                                                            >
-                                                                {{
-                                                                    formatNumber(
-                                                                        item.original_quantity
-                                                                    )
-                                                                }}
-                                                            </td>
-                                                            <td
-                                                                class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
-                                                            >
-                                                                {{
-                                                                    formatNumber(
-                                                                        item.quantity
-                                                                    )
-                                                                }}
-                                                            </td>
-                                                            <td
-                                                                class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
-                                                            >
-                                                                {{
-                                                                    formatCurrency(
-                                                                        item.unit_cost
-                                                                    )
-                                                                }}
-                                                            </td>
-                                                            <td
-                                                                class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap"
-                                                            >
-                                                                {{
-                                                                    formatCurrency(
-                                                                        item.total_cost
-                                                                    )
-                                                                }}
-                                                            </td>
-                                                        </tr>
-                                                        <tr
-                                                            v-if="
-                                                                !selectedOrder
-                                                                    .po_items
-                                                                    .length
-                                                            "
-                                                        >
-                                                            <td
-                                                                colspan="4"
-                                                                class="px-3 py-4 text-sm text-center text-gray-500"
-                                                            >
-                                                                No items found
-                                                                for this
-                                                                purchase order
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                    <tfoot
-                                                        v-if="
-                                                            selectedOrder
-                                                                .po_items.length
-                                                        "
-                                                        class="bg-gray-50"
-                                                    >
-                                                        <tr>
-                                                            <td
-                                                                colspan="3"
-                                                                class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900"
-                                                            >
-                                                                Total:
-                                                            </td>
-                                                            <td
-                                                                class="whitespace-nowrap px-3 py-3.5 text-sm font-semibold text-gray-900"
-                                                            >
-                                                                {{
-                                                                    formatCurrency(
-                                                                        selectedOrder.po_items.reduce(
-                                                                            (
-                                                                                total,
-                                                                                item
-                                                                            ) =>
-                                                                                total +
-                                                                                item.total_cost,
-                                                                            0
-                                                                        )
-                                                                    )
-                                                                }}
-                                                            </td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div
-                                    class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse"
-                                >
-                                    <button
-                                        type="button"
-                                        class="inline-flex justify-center w-full px-3 py-2 mt-3 text-sm font-semibold text-gray-900 bg-white rounded-md shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                        @click="closeItemsModal"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </DialogPanel>
-                        </TransitionChild>
-                    </div>
-                </div>
-            </Dialog>
-        </TransitionRoot>
     </AuthenticatedLayout>
 </template>
 
@@ -884,18 +657,6 @@ const closeModal = () => {
     ``;
 };
 
-const formatNumber = (num) => {
-    return new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(num);
-};
-
-// Close items modal
-const closeItemsModal = () => {
-    showItemsModal.value = false;
-    selectedOrder.value = null;
-};
 
 // Submit form
 const submitForm = async () => {
@@ -976,18 +737,62 @@ const status = ref(props.filters?.status || "");
 const start_date = ref(props.filters?.start_date || "");
 const end_date = ref(props.filters?.end_date || "");
 const per_page = ref(props.filters?.per_page || 10);
+const page = ref(props.filters?.page);
 
-// Watch for filter changes
+// Watch for per_page changes separately
+watch(
+    () => per_page.value,
+    () => {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('per_page', per_page.value.toString());
+        currentParams.set('page', '1'); // Reset to first page when changing items per page
+        
+        const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+        router.get(newUrl, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['purchase_orders', 'filters']
+        });
+    }
+);
+
+// Watch for filter changes (excluding page and per_page)
 watch(
     [
         () => search.value,
         () => status.value,
         () => start_date.value,
         () => end_date.value,
-        () => per_page.value,
     ],
     () => {
-        reloadOrders();
+        // Reset to first page when filters change
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('page', '1');
+        
+        // Update filter parameters
+        if (search.value) currentParams.set('search', search.value);
+        else currentParams.delete('search');
+        
+        if (status.value) currentParams.set('status', status.value);
+        else currentParams.delete('status');
+        
+        if (start_date.value) currentParams.set('start_date', start_date.value);
+        else currentParams.delete('start_date');
+        
+        if (end_date.value) currentParams.set('end_date', end_date.value);
+        else currentParams.delete('end_date');
+        
+        if (per_page.value) currentParams.set('per_page', per_page.value.toString());
+        else currentParams.delete('per_page');
+        
+        const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+        router.get(newUrl, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['purchase_orders', 'filters']
+        });
     }
 );
 
@@ -998,21 +803,35 @@ const resetFilters = () => {
     start_date.value = "";
     end_date.value = "";
     per_page.value = 10;
-    reloadOrders();
+    
+    // Keep only the page parameter in the URL
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set('page', '1');
+    currentParams.set('per_page', '10');
+    
+    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+    router.get(newUrl, {}, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ['purchase_orders', 'filters']
+    });
 };
 
 // Reload orders with current filters
 const reloadOrders = () => {
-    const query = {};
-    if (search.value) query.search = search.value;
-    if (status.value) query.status = status.value;
-    if (start_date.value) query.start_date = start_date.value;
-    if (end_date.value) query.end_date = end_date.value;
-    if (per_page.value) query.per_page = per_page.value;
-    router.get(route("purchase-orders.index"), query, {
+    router.get(route("purchase-orders.index"), {
+        search: search.value || undefined,
+        status: status.value || undefined,
+        start_date: start_date.value || undefined,
+        end_date: end_date.value || undefined,
+        per_page: per_page.value || undefined,
+        page: page.value || undefined,
+    }, {
         preserveState: true,
         preserveScroll: true,
-        only: ["purchase_orders", "suppliers", "products"],
+        replace: true,
+        only: ["purchase_orders", "suppliers", "products", 'filters'],
     });
 };
 

@@ -17,6 +17,7 @@ class PoItem extends Model
         'received_quantity',
         'unit_cost',
         'total_cost',
+        'deleted_at'
     ];
 
     protected $casts = [

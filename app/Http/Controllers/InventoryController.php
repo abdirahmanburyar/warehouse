@@ -29,14 +29,13 @@ class InventoryController extends Controller
             // $query = $query->where('warehouse_id', $user->warehouse_id);
         // }
         
-        $query = $query->with(['product.dosage.category', 'warehouse']);
+        $query = $query->with(['product.dosage', 'warehouse']);
 
         // Apply filters
         if ($request->has('search')) {
             $search = $request->search;
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
                   ->orWhere('barcode', 'like', "%{$search}%")
                   ->orWhereHas('category', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");

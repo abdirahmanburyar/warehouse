@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\InventoryUpdated;
 use App\Models\Product;
 use App\Models\Supply;
 use App\Models\Supplier;
 use App\Models\Warehouse;
-use App\Events\InventoryUpdated;
+use App\Models\PurchaseOrder;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use Illuminate\Http\Request;
@@ -22,23 +23,154 @@ class SupplyController extends Controller
      */
     public function index(Request $request)
     {
-        // Get suppliers data
-        $suppliers = Supplier::query();
-        if($request->filled('search')){
-            $suppliers->where(function ($query) use ($request) {
-                $query->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('contact_person', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%")
-                    ->orWhere('phone', 'like', "%{$request->search}%");
-            });
-        }
-        $suppliers = $suppliers->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+        $purchaseOrders = PurchaseOrder::with(['supplier', 'items.product'])
+            ->when($request->filled('search'), function($query, $search) {
+                $query->where('po_number', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->latest()
+            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
-        
+
         return Inertia::render('Supplies/Index', [
-            'suppliers' => SupplierResource::collection($suppliers),
+            'purchaseOrders' => [
+                'data' => collect($purchaseOrders->items())->map(function($po) {
+                    return [
+                        'id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'supplier' => $po->supplier ? [
+                            'id' => $po->supplier->id,
+                            'name' => $po->supplier->name
+                        ] : null,
+                        'items' => $po->items->map(function($item) {
+                            return [
+                                'id' => $item->id,
+                                'product_name' => $item->product->name,
+                                'quantity' => $item->quantity,
+                                'unit_cost' => $item->unit_cost,
+                                'total_cost' => $item->quantity * $item->unit_cost
+                            ];
+                        }),
+                        'status' => $po->status ?? 'pending',
+                        'created_at' => $po->created_at->format('Y-m-d')
+                    ];
+                }),
+                'meta' => [
+                    'current_page' => $purchaseOrders->currentPage(),
+                    'from' => $purchaseOrders->firstItem(),
+                    'last_page' => $purchaseOrders->lastPage(),
+                    'links' => $purchaseOrders->linkCollection()->toArray(),
+                    'path' => $purchaseOrders->path(),
+                    'per_page' => $purchaseOrders->perPage(),
+                    'to' => $purchaseOrders->lastItem(),
+                    'total' => $purchaseOrders->total(),
+                ]
+            ],
             'filters' => $request->only('search', 'page','per_page')
         ]);
+    }
+
+    public function newPO()
+    {
+        $products = Product::get();
+        $suppliers = Supplier::get();
+        
+        // Get the last PO number and increment it
+        $lastPO = PurchaseOrder::latest()->first();
+        $nextPONumber = $lastPO ? 'PO-' . str_pad((intval(substr($lastPO->po_number, 3)) + 1), 6, '0', STR_PAD_LEFT) : 'PO-000001';
+
+        return inertia('Supplies/NewPo', [
+            'products' => $products,
+            'suppliers' => $suppliers,
+            'po_number' => $nextPONumber
+        ]);
+    }
+
+    public function editPO($id)
+    {
+        try {
+            $products = Product::get();
+            $suppliers = Supplier::get();
+            
+            return inertia('Supplies/EditPo', [
+                'products' => $products,
+                'suppliers' => $suppliers,
+                'po_id' => $id
+            ]);
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Failed to load purchase order');
+        }
+    }
+
+    public function storePO(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'supplier_id' => 'required|exists:suppliers,id',
+                'po_number' => 'required',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.unit_cost' => 'required|numeric|min:0',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.total_cost' => 'required|numeric|min:0',
+            ]);
+
+            return DB::transaction(function () use ($validated) {
+                $po = PurchaseOrder::create([
+                    'po_number' => $validated['po_number'],
+                    'supplier_id' => $validated['supplier_id'],
+                    'po_date' => Carbon::now()->toDateString(),
+                    'created_by' => auth()->id(),
+                ]);
+
+                foreach ($validated['items'] as $item) {
+                    if (!isset($item['product_id'])) continue;
+                    
+                    $po->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_cost' => $item['unit_cost'],
+                        'total_cost' => $item['total_cost'],
+                    ]);
+                }
+
+                return response()->json('Purchase order created successfully', 200);
+            });
+
+        } catch (\Throwable $th) {
+            return response()->json( $th->getMessage(), 500);
+        }
+    }
+
+
+    public function searchsupplier(Request $request, $search){
+        try {
+            $supplier = Supplier::where('name', 'like', "%{$search}%")->first();
+            return response()->json($supplier, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+    
+    public function getSupplier(Request $request, $id){
+        try {
+            $supplier = Supplier::find($id);
+            $supplier['po_number'] = 98887;
+            return response()->json($supplier, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function searchProduct(Request $request, $id){
+        try {
+            $product = Product::find($id);
+            return response()->json($product, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
     }
 
     /**
@@ -508,6 +640,106 @@ class SupplyController extends Controller
             return response()->json([
                 'message' => 'Failed to delete supplies: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function searchSuppliers(Request $request)
+    {
+        $query = $request->input('query');
+        $suppliers = Supplier::query()
+            ->select('id', 'name')
+            ->when($query, function ($q) use ($query) {
+                return $q->where('name', 'like', "%{$query}%");
+            })
+            ->orderBy('name')
+            ->limit(10)
+            ->get()
+            ->map(function ($supplier) {
+                return [
+                    'value' => $supplier->id,
+                    'label' => $supplier->name
+                ];
+            });
+
+        return response()->json($suppliers);
+    }
+
+    public function getPurchaseOrder($id)
+    {
+        $purchaseOrder = PurchaseOrder::with(['items.product', 'supplier'])->findOrFail($id);
+        return response()->json([
+            'id' => $purchaseOrder->id,
+            'supplier_id' => $purchaseOrder->supplier_id,
+            'po_number' => $purchaseOrder->po_number,
+            'items' => $purchaseOrder->items->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'searchQuery' => $item->product->name,
+                    'barcode' => $item->product->barcode,
+                    'dose' => $item->product->dose,
+                    'quantity' => $item->quantity,
+                    'unit_cost' => $item->unit_cost,
+                    'total_cost' => $item->quantity * $item->unit_cost
+                ];
+            })
+        ]);
+    }
+
+    public function updatePurchaseOrder(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'supplier_id' => 'required|exists:suppliers,id',
+                'po_number' => 'required',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.unit_cost' => 'required|numeric|min:0',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.total_cost' => 'required|numeric|min:0',
+            ]);
+
+            return DB::transaction(function () use ($validated, $id) {
+                $po = PurchaseOrder::findOrFail($id);
+                
+                // Update PO details
+                $po->update([
+                    'po_number' => $validated['po_number'],
+                    'supplier_id' => $validated['supplier_id'],
+                ]);
+
+                // Delete existing items
+                $po->items()->delete();
+
+                // Create new items
+                foreach ($validated['items'] as $item) {
+                    if (!isset($item['product_id'])) continue;
+                    
+                    $po->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_cost' => $item['unit_cost'],
+                        'total_cost' => $item['total_cost'],
+                    ]);
+                }
+
+                return response()->json('Purchase order updated successfully', 200);
+            });
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function deletePurchaseOrder($id)
+    {
+        try {
+            $po = PurchaseOrder::findOrFail($id);
+            $po->items()->delete();
+            $po->delete();
+            return response()->json('Purchase order deleted successfully', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
 }

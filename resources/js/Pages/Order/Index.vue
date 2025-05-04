@@ -38,7 +38,7 @@
         </div>
         <!-- Orders Table -->
         <div
-            class="shadow-sm rounded-lg overflow-hidden mb-[100px] flex justify-between"
+            class="shadow-sm overflow-hidden mb-[100px] flex justify-between"
         >
             <div class="w-full overflow-x-auto">
                 <table

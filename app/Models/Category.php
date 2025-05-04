@@ -31,11 +31,6 @@ class Category extends Model
     
     public $timestamps = true;
 
-    public function dosages()
-    {
-        return $this->hasMany(Dosage::class);
-    }
-
     public function products()
     {
         return $this->hasMany(Product::class);

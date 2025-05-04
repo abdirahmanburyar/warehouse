@@ -1,61 +1,29 @@
 <template>
     <div class="app-container">
         <!-- Sidebar -->
-        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="overflow-scroll p-0 m-0">
+        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" >
             <div class="white-box" style="border-color: white;">
-                <Link :href="route('dashboard')" class="logo-container">
+                <Link :href="route('dashboard')" class="logo-container flex justify-between">
                 <img src="/assets/images/moh.png" class="moh-logo" style="height: 50px" />
                 <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 50px" />
                 </Link>
 
             </div>
-            <button @click="toggleSidebar" class="sidebar-toggle">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                    <path v-if="!sidebarOpen" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor" />
-                    <path v-else d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
-                </svg>
-            </button>
-
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 1rem;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 88px;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png" class="dashboard-icon"
-                            style="height: 24px" />
+                        <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png"
+                            class="dashboard-icon" style="height: 24px" />
                         <img v-else src="/assets/images/dashboard-w.png" class="dashboard-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Dashboard</span>
                 </div>
                 </Link>
 
-                <!-- add warehouse menu -->
-                <Link :href="route('warehouses.index')" class="menu-item"
-                    :class="{ active: route().current('warehouses.*') }" @click="setCurrentPage('warehouses')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('warehouses.*')" src="/assets/images/warehouse-b.png" class="warehouse-icon"
-                            style="height: 24px" />
-                        <img v-else src="/assets/images/warehouse-w.png" class="warehouse-icon" style="height: 24px" />
-                    </div>
-                    <span class="menu-text">Warehouses</span>
-                </div>
-                </Link>
-
-                <Link :href="route('districts.index')" class="menu-item"
-                    :class="{ active: route().current('districts.*') }" @click="setCurrentPage('districts')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('districts.*')" src="/assets/images/district-b.png" class="district-icon"
-                            style="height: 24px" />
-                        <img v-else src="/assets/images/district-w.png" class="district-icon" style="height: 24px" />
-                    </div>
-                    <span class="menu-text">Districts</span>
-                </div>
-                </Link>
-
-                <Link :href="route('orders.index')" class="menu-item"
-                    :class="{ active: route().current('orders.*') }" @click="setCurrentPage('orders')">
+                <Link :href="route('orders.index')" class="menu-item" :class="{ active: route().current('orders.*') }"
+                    @click="setCurrentPage('orders')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('orders.*')" src="/assets/images/tracking-b.png" class="order-icon"
@@ -70,7 +38,8 @@
                     :class="{ active: route().current('transfers.*') }" @click="setCurrentPage('transfers')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('transfers.*')" src="/assets/images/transfer-b.png" class="transfer-icon" style="height: 24px" />
+                        <img v-if="route().current('transfers.*')" src="/assets/images/transfer-b.png"
+                            class="transfer-icon" style="height: 24px" />
                         <img v-else src="/assets/images/transfer-w.png" class="transfer-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Transfers</span>
@@ -81,7 +50,8 @@
                     :class="{ active: route().current('products.*') }" @click="setCurrentPage('products')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('products.*')" src="/assets/images/product-b.png" class="product-icon" style="height: 24px" />
+                        <img v-if="route().current('products.*')" src="/assets/images/product-b.png"
+                            class="product-icon" style="height: 24px" />
                         <img v-else src="/assets/images/product-w.png" class="product-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Product List</span>
@@ -90,13 +60,16 @@
 
                 <!-- purchase orders -->
                 <Link :href="route('purchase-orders.index')" class="menu-item"
-                    :class="{ active: route().current('purchase-orders.*') }" @click="setCurrentPage('purchase-orders')">
+                    :class="{ active: route().current('purchase-orders.*') }"
+                    @click="setCurrentPage('purchase-orders')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('purchase-orders.*')" src="/assets/images/po-b.png" class="order-icon" style="height: 24px" />
+                        <img v-if="route().current('purchase-orders.*')" src="/assets/images/po-b.png"
+                            class="order-icon" style="height: 24px" />
                         <img v-else src="/assets/images/po-w.png" class="order-icon" style="height: 24px" />
                     </div>
-                    <span class="menu-text">Purchase Orders</span>
+                    <span class="menu-text">Sepplies</span>
+                    <!-- <span class="menu-text">Purchase Orders</span> -->
                 </div>
                 </Link>
 
@@ -104,7 +77,8 @@
                     :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('inventories.*')" src="/assets/images/inventory-b.png" class="inventory-icon" style="height: 24px" />
+                        <img v-if="route().current('inventories.*')" src="/assets/images/inventory-b.png"
+                            class="inventory-icon" style="height: 24px" />
                         <img v-else src="/assets/images/inventory-w.png" class="inventory-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Inventory</span>
@@ -115,7 +89,8 @@
                     @click="setCurrentPage('expired')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expired-icon" style="height: 24px" />
+                        <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expired-icon"
+                            style="height: 24px" />
                         <img v-else src="/assets/images/expire-w.png" class="expired-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Expires</span>
@@ -126,7 +101,8 @@
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('supplies.*')" src="/assets/images/supplier-b.png" class="supplies-icon" style="height: 24px" />
+                        <img v-if="route().current('supplies.*')" src="/assets/images/supplier-b.png"
+                            class="supplies-icon" style="height: 24px" />
                         <img v-else src="/assets/images/supplier-w.png" class="supplies-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Supplies</span>
@@ -137,29 +113,20 @@
                     :class="{ active: route().current('facilities.*') }" @click="setCurrentPage('facilities')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('facilities.*')" src="/assets/images/facility-b.png" class="facility-icon" style="height: 24px" />
+                        <img v-if="route().current('facilities.*')" src="/assets/images/facility-b.png"
+                            class="facility-icon" style="height: 24px" />
                         <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Facilities</span>
                 </div>
                 </Link>
 
-                <!-- <Link :href="route('dispatch.index')" class="menu-item"
-                    :class="{ active: route().current('dispatch.*') }" @click="setCurrentPage('dispatch')">
+                <Link :href="route('assets.index')" class="menu-item" :class="{ active: route().current('assets.*') }"
+                    @click="setCurrentPage('assets')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('dispatch.*')" src="/assets/images/dispatch-b.png" class="dispatch-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/dispatch-w.png" class="dispatch-icon" style="height: 24px" />
-                    </div>
-                    <span class="menu-text">Dispatch</span>
-                </div>
-                </Link> -->
-
-                <Link :href="route('assets.index')" class="menu-item"
-                    :class="{ active: route().current('assets.*') }" @click="setCurrentPage('assets')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('assets.*')" src="/assets/images/assets-b.png" class="assets-icon" style="height: 24px" />
+                        <img v-if="route().current('assets.*')" src="/assets/images/assets-b.png" class="assets-icon"
+                            style="height: 24px" />
                         <img v-else src="/assets/images/assets-w.png" class="assets-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Assets</span>
@@ -170,7 +137,8 @@
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('settings.*')" src="/assets/images/setting-b.png" class="setting-icon" style="height: 24px" />
+                        <img v-if="route().current('settings.*')" src="/assets/images/setting-b.png"
+                            class="setting-icon" style="height: 24px" />
                         <img v-else src="/assets/images/setting-w.png" class="setting-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Settings</span>
@@ -186,7 +154,7 @@
             <div class="top-nav">
                 <div class="inventory-banner">
                     <div class="flex justify-between">
-                        <div class="flex flex-col">
+                        <!-- <div class="flex flex-col"> -->
                             <button @click="toggleSidebar" class="back-button">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                                     <path v-if="sidebarOpen"
@@ -200,20 +168,13 @@
                                 <h1>{{ title }}</h1>
                                 <h3 class="text-black text-lg">"{{ description }}"</h3>
                             </div>
-                        </div>
+                        <!-- </div> -->
                         <div v-if="img">
-                            <img :src="img" alt="Inventory illustration" class="svg-image" />
+                            <img :src="img" alt="Inventory illustration" class="svg-image" heigth="50" />
                         </div>
                     </div>
                     <div class="user-section">
                         <div class="flex flex-row">
-                            <div class="notification-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                                    <path
-                                        d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"
-                                        fill="#FFF" />
-                                </svg>
-                            </div>
                             <div class="user-info">
                                 <div class="user-avatar">
                                     <span>A</span>
@@ -234,7 +195,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <img src="/assets/images/head_web.gif" alt="Inventory illustration" class="svg-image" />
+                        <!-- <img src="/assets/images/head_web.gif" alt="Inventory illustration" class="svg-image" /> -->
                     </div>
                 </div>
             </div>
@@ -249,11 +210,14 @@
                         <div class="flex justify-center items-center gap-4">
                             <img src="/assets/images/vista.png" alt="Vista" class="w-[80px]" />
                             <span class="flex items-center text-gray-400">|</span>
-                            <span class="flex items-center text-gray-600">Copyright 2025 Vista. All rights reserved.</span>
+                            <span class="flex items-center text-gray-600">Copyright 2025 Vista. All rights
+                                reserved.</span>
                             <span class="flex items-center text-gray-400">|</span>
-                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Terms of Use</span>
+                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Terms of
+                                Use</span>
                             <span class="flex items-center text-gray-400">|</span>
-                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Privacy</span>
+                            <span
+                                class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Privacy</span>
                         </div>
                     </div>
                 </div>
@@ -334,7 +298,7 @@ const logout = () => {
 
 .white-box {
     background-color: white;
-    padding: 1.5rem 0;
+    /* padding: 1.5rem 0; */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -403,7 +367,8 @@ const logout = () => {
 }
 
 .sidebar-menu::-webkit-scrollbar {
-    display: none; /* WebKit */
+    display: none;
+    /* WebKit */
 }
 
 .menu-item {
@@ -418,7 +383,7 @@ const logout = () => {
     padding: 0;
     z-index: 1;
     width: 100%;
-    height: 44px;
+    height: 50px;
 }
 
 .menu-item:hover {
@@ -543,7 +508,7 @@ const logout = () => {
     color: white;
     padding: 0.5rem 1.5rem;
     width: 100%;
-    height: 156px;
+    height: 120px;
     position: relative;
     overflow: hidden;
     border-top-left-radius: 40px;
@@ -611,7 +576,7 @@ const logout = () => {
 .user-info {
     display: flex;
     align-items: center;
-    margin-right:2rem;
+    margin-right: 2rem;
 }
 
 .user-avatar {

@@ -4,6 +4,8 @@ namespace App\Imports;
 
 use App\Models\PoItem;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Dosage;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Illuminate\Support\Facades\Log;
@@ -20,66 +22,70 @@ class PurchaseOrderItemsImport implements ToCollection
 
     public function collection(Collection $rows)
     {
-        // Skip header row
-        $rows = $rows->slice(1);
-
-        // Group items by item_code and unit_cost to handle duplicates
-        $groupedItems = [];
-
-        foreach ($rows as $index => $row) {
-            // Skip empty rows
-            if ($row->filter()->isEmpty()) {
-                continue;
-            }
-
-            $item_code = trim($row[0]);
-            $item_description = trim($row[1]);
-            $uom = trim($row[2]);
-            $quantity = floatval($row[3]);
-            $unit_cost = floatval($row[4]); 
-            $total_cost = floatval($row[5]); 
-            
-            // Validate all required fields
-            if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
-                continue;
-            }
-
-            // Create a unique key combining item code and unit cost
-            $item_key = $item_code . '_' . number_format($unit_cost, 2);
-
-            if (isset($groupedItems[$item_key])) {
-                // Same item with same unit cost - just add quantities
-                $existing = $groupedItems[$item_key];
-                $total_quantity = $existing['quantity'] + $quantity;
-                $total_cost = $unit_cost * $total_quantity;
-
-                $groupedItems[$item_key] = [
-                    'item_code' => $item_code,
-                    'item_description' => $item_description,
-                    'original_quantity' => $existing['original_quantity'] + $quantity,
-                    'uom' => $uom,
-                    'quantity' => $total_quantity,
-                    'unit_cost' => $unit_cost,
-                    'total_cost' => $total_cost,
-                    'row_index' => $index
-                ];
-            } else {
-                // New item or same item with different unit cost
-                $groupedItems[$item_key] = [
-                    'item_code' => $item_code,
-                    'item_description' => $item_description,
-                    'original_quantity' => $quantity,
-                    'uom' => $uom,
-                    'quantity' => $quantity,
-                    'unit_cost' => $unit_cost,
-                    'total_cost' => $quantity * $unit_cost,
-                    'row_index' => $index
-                ];
-            }
-        }
-
         DB::beginTransaction();
         try {
+            // Skip header row
+            $rows = $rows->slice(1);
+
+            // Group items by item_code and unit_cost to handle duplicates
+            $groupedItems = [];
+
+            foreach ($rows as $index => $row) {
+                // Skip empty rows
+                if ($row->filter()->isEmpty()) {
+                    continue;
+                }
+
+                $item_code = trim($row[0]);
+                $item_description = trim($row[1]);
+                $uom = trim($row[2]);
+                $dose = $row[3];
+                $quantity = floatval($row[4]);
+                $category = $row[5];
+                $dosage_form = $row[6];
+                $unit_cost = floatval($row[7]); 
+                $total_cost = floatval($row[8]); 
+                
+                // Validate all required fields
+                if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
+                    continue;
+                }
+
+                // Find or create Category
+                $categoryModel = Category::firstOrCreate(
+                    ['name' => $category],
+                    ['description' => $category, 'is_active' => true]
+                );
+
+                // Find or create Dosage
+                $dosageModel = Dosage::firstOrCreate(
+                    ['name' => $dosage_form],
+                    ['description' => $dosage_form, 'is_active' => true]
+                );
+
+                // Create a unique key combining item code and unit cost
+                $item_key = $item_code . '_' . number_format($unit_cost, 2);
+
+                if (isset($groupedItems[$item_key])) {
+                    // Same item with same unit cost - just add quantities
+                    $groupedItems[$item_key]['quantity'] += $quantity;
+                    $groupedItems[$item_key]['total_cost'] += $total_cost;
+                } else {
+                    // New item
+                    $groupedItems[$item_key] = [
+                        'purchase_order_id' => $this->purchaseOrderId,
+                        'item_code' => $item_code,
+                        'item_description' => $item_description,
+                        'uom' => $uom,
+                        'quantity' => $quantity,
+                        'original_quantity' => $quantity,
+                        'unit_cost' => $unit_cost,
+                        'total_cost' => $total_cost,
+                    ];
+                }
+            }
+
+       
             foreach ($groupedItems as $item) {
                 // Check if product exists by item_code (barcode) or description (name)
                 $product = Product::where('barcode', $item['item_code'])
@@ -91,7 +97,10 @@ class PurchaseOrderItemsImport implements ToCollection
                     $product = Product::create([
                         'barcode' => $item['item_code'],
                         'name' => $item['item_description'],
-                        'uom' => $item['uom'],
+                        'dose' => $item['dose'],
+                        'dosage_id' => $dosage_form->id,
+                        'category_id' => $category->id,
+                        'dose' => $item['dose'],
                         'status' => 'active'
                     ]);
                 }
@@ -116,7 +125,7 @@ class PurchaseOrderItemsImport implements ToCollection
                             'quantity' => $new_quantity,
                             'original_quantity' => $new_quantity,
                             'unit_cost' => $new_unit_cost,
-                            'total_cost' => $new_total_cost
+                            'total_cost' => $new_total_cost,
                         ]);
 
                     } catch (\Exception $e) {
@@ -137,7 +146,7 @@ class PurchaseOrderItemsImport implements ToCollection
                             'quantity' => $item['quantity'],
                             'original_quantity' => $item['quantity'],
                             'unit_cost' => $item['unit_cost'],
-                            'total_cost' => $item['total_cost']
+                            'total_cost' => $item['total_cost'],
                         ];
 
                         $newItem = PoItem::create($data);

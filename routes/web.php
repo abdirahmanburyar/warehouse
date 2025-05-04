@@ -17,7 +17,6 @@ use App\Http\Controllers\ExpiredController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TransferController;
-use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
@@ -93,15 +92,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::post('/categories', [CategoryController::class, 'store'])->middleware(PermissionMiddleware::class . ':category.create')->name('categories.store');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':category.edit')->name('categories.update');
-        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':category.delete')->name('categories.destroy');
-    });
-
-    // SubCategory Management Routes
-    Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])->group(function () {
-        Route::get('/subcategories', [SubCategoryController::class, 'index'])->name('subcategories.index');
-        Route::post('/subcategories', [SubCategoryController::class, 'store'])->middleware(PermissionMiddleware::class . ':category.create')->name('subcategories.store');
-        Route::put('/subcategories/{subcategory}', [SubCategoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':category.edit')->name('subcategories.update');
-        Route::delete('/subcategories/{subcategory}', [SubCategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':category.delete')->name('subcategories.destroy');
+        Route::get('/categories/{category}/destroy', [CategoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':category.delete')->name('categories.destroy');
     });
 
     // Warehouse Management Routes
@@ -120,8 +111,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->group(function () {
             Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':dosage.view')->name('dosages.index');
             Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':dosage.create')->name('dosages.store');
-            Route::delete('/{dosage}', 'destroy')->middleware(PermissionMiddleware::class . ':dosage.delete')->name('dosages.destroy');
-            Route::get('/by-category/{category}', 'getByCategory')->name('dosages.by-category');
+            Route::get('/{dosage}/destroy', 'destroy')->middleware(PermissionMiddleware::class . ':dosage.delete')->name('dosages.destroy');
         });
 
     // Product Management Routes
@@ -154,11 +144,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->prefix('/supplies')
         ->group(function () {
             Route::get('/', 'index')->name('supplies.index');
-            Route::post('/store', 'store')->name('supplies.store');
             Route::get('/items/{supply}', 'getItems')->name('supplies.items');
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
+            Route::get('/puchase-order', 'newPO')->name('supplies.purchase_order');
+            Route::get('/{id}/get', 'getSupplier')->name("supplier.get");
+            Route::get('/supplier/{search}', 'searchsupplier')->name("supplier.searchSupplier");
+            Route::get('/product/{id}', 'searchProduct')->name("product.search");
+
+            // Purchase Order Routes
+            Route::get('/purchase-order/create', 'create')->name('supplies.create');
+            Route::post('/purchase-order', 'storePO')->name('supplies.storePO');
+            Route::get('/purchase-order/{id}/edit', 'editPO')->name('supplies.editPO');
+            Route::get('/purchase-order/{id}', 'getPurchaseOrder')->name('supplies.getPO');
+            Route::put('/purchase-order/{id}', 'updatePurchaseOrder')->name('supplies.updatePO');
+            Route::delete('/purchase-order/{id}', 'deletePurchaseOrder')->name('supplies.deletePO');
         });
 
     // Supplier Routes

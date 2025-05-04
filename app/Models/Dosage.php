@@ -19,7 +19,6 @@ class Dosage extends Model
     protected $fillable = [
         'name',
         'description',
-        'category_id',
         'is_active',
     ];
 
@@ -40,11 +39,4 @@ class Dosage extends Model
         return $this->hasMany(Product::class);
     }
 
-    /**
-     * Get the category that owns the dosage.
-     */
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
 }
