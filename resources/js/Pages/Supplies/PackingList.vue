@@ -3,9 +3,10 @@
     <Head title="Purchase Order" />
     <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders">
         <div class="">
+            {{props.purchaseOrders}}
             <!-- Supplier Selection -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h2>
+            <div class=" p-6 mb-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Received New Supply</h2>
                 <div class="grid grid-cols-1 gap-6">
                     <div class="w-[400px] mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -13,8 +14,8 @@
                         </label>
                         <select v-model="form.supplier_id" @change="onSupplierChange"
                             class="w-full block appearance-none py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">Select supplier name</option>
-                            <option :value="s.id" v-for="s in props.suppliers">{{ s.name }}</option>
+                            <option value="">Select P.O Number</option>
+                            <option :value="s.id" v-for="s in props.purchaseOrders">{{ s.po_number }}</option>
                         </select>
                     </div>
 
@@ -201,9 +202,9 @@ import { useToast } from 'vue-toastification';
 const toast = useToast();
 
 const props = defineProps({
-    products: Array,
-    suppliers: Array,
-    po_number: Number
+    purchaseOrders: Array,
+    // suppliers: Array,
+    // po_number: Number
 });
 
 const selectedSupplier = ref(null);

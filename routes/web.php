@@ -22,6 +22,7 @@ use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -145,6 +146,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->group(function () {
             Route::get('/', 'index')->name('supplies.index');
             Route::get('/items/{supply}', 'getItems')->name('supplies.items');
+            Route::get('/purchase-order/{id}/show', 'showPO')->name('supplies.po-show');
+
+
+            
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
@@ -155,11 +160,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
 
             // Purchase Order Routes
             Route::get('/purchase-order/create', 'create')->name('supplies.create');
-            Route::post('/purchase-order', 'storePO')->name('supplies.storePO');
+            Route::post('/purchase-order/store', 'storePO')->name('supplies.storePO');
             Route::get('/purchase-order/{id}/edit', 'editPO')->name('supplies.editPO');
-            Route::get('/purchase-order/{id}', 'getPurchaseOrder')->name('supplies.getPO');
-            Route::put('/purchase-order/{id}', 'updatePurchaseOrder')->name('supplies.updatePO');
-            Route::delete('/purchase-order/{id}', 'deletePurchaseOrder')->name('supplies.deletePO');
+            Route::get('/purchase-order/{id}/get', 'getPurchaseOrder')->name('supplies.getPO');
+            Route::put('/purchase-order/{id}/update', 'updatePurchaseOrder')->name('supplies.updatePO');
+            Route::get('/purchase-order/{id}/delete', 'deletePurchaseOrder')->name('supplies.deletePO');
+            Route::delete('/purchase-order-item/{id}/delete', 'deletePurchaseOrderItem')->name('supplies.deleteItem');
+
+            // Packing list
+            Route::get('/packing-list', 'newPackingList')->name('supplies.packing-list');
         });
 
     // Supplier Routes
@@ -171,6 +180,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             })->name('suppliers.index');
             Route::post('/store', 'store')->name('suppliers.store');
             Route::delete('/{supplier}/destroy', 'destroy')->name('suppliers.destroy');
+            Route::get('/{supplier}/edit', 'edit')->name('suppliers.edit');            
         });
 
     // Purchase Orders
@@ -283,6 +293,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::get('/', [DispatchController::class, 'index'])->name('dispatch.index');
         Route::post('/process', [DispatchController::class, 'process'])->name('dispatch.process');
     });
+
+    Route::controller(ReportController::class)
+        ->prefix('/reports')
+        ->group(function () {
+            Route::get('/', 'index')->name('reports.index');
+            Route::get('/stock-level-report', 'stockLevelReport')->name('reports.stockLevelReport');
+        });
 });
 
 require __DIR__ . '/auth.php';

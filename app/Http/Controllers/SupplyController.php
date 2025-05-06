@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
+
 use App\Events\InventoryUpdated;
 use App\Models\Product;
 use App\Models\Supply;
@@ -10,7 +13,7 @@ use App\Models\Warehouse;
 use App\Models\PurchaseOrder;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
-use Illuminate\Http\Request;
+use App\Models\PurchaseOrderItem;
 use App\Http\Resources\SupplierResource;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -24,15 +27,34 @@ class SupplyController extends Controller
     public function index(Request $request)
     {
         $purchaseOrders = PurchaseOrder::with(['supplier', 'items.product'])
-            ->when($request->filled('search'), function($query, $search) {
-                $query->where('po_number', 'like', "%{$search}%")
-                    ->orWhereHas('supplier', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+            ->when($request->filled('search'), function($query) use ($request) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('po_number', 'like', "%{$search}%")
+                      ->orWhereHas('supplier', function($sq) use ($search) {
+                          $sq->where('name', 'like', "%{$search}%");
+                      });
+                });
             })
-            ->latest()
-            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->when($request->filled('supplier'), function($query) use ($request) {
+                $query->where('supplier_id', $request->supplier);
+            })
+            ->when($request->filled('status'), function($query) use ($request) {
+                $query->where('status', $request->status);
+            })
+            ->orderBy('po_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate($request->input('per_page', 10))
             ->withQueryString();
+
+        // Get statistics for the cards
+        $stats = [
+            'total_items' => PurchaseOrder::count(),
+            'total_cost' => PurchaseOrder::join('purchase_order_items', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
+                ->sum(DB::raw('quantity * unit_cost')),
+            'avg_lead_time' => '4 Months', // You can calculate this based on your needs
+            'pending_orders' => PurchaseOrder::where('status', 'pending')->count()
+        ];
 
         return Inertia::render('Supplies/Index', [
             'purchaseOrders' => [
@@ -40,6 +62,7 @@ class SupplyController extends Controller
                     return [
                         'id' => $po->id,
                         'po_number' => $po->po_number,
+                        'po_date' => $po->po_date,
                         'supplier' => $po->supplier ? [
                             'id' => $po->supplier->id,
                             'name' => $po->supplier->name
@@ -68,9 +91,31 @@ class SupplyController extends Controller
                     'total' => $purchaseOrders->total(),
                 ]
             ],
-            'filters' => $request->only('search', 'page','per_page')
+            'filters' => $request->only('search', 'page','per_page', 'supplier','status'),
+            'suppliers' => Supplier::get(),
+            'stats' => $stats
         ]);
     }
+
+    public function create(Request $request){
+        return inertia('Supplies/Create');
+    }
+
+    public function showPO(Request $request, $id){
+        $po = PurchaseOrder::where('id', $id)->with('items.product','supplier')->first();
+        return inertia("Supplies/Show", [
+            'po' => $po
+        ]);
+    }
+
+    public function newPackingList(Request $request){
+        $purchaseOrders = PurchaseOrder::get();
+        return inertia("Supplies/PackingList", [
+            'purchaseOrders' => $purchaseOrders
+        ]);
+    }
+
+    
 
     public function newPO()
     {
@@ -110,6 +155,7 @@ class SupplyController extends Controller
             $validated = $request->validate([
                 'supplier_id' => 'required|exists:suppliers,id',
                 'po_number' => 'required',
+                'po_date' => 'required',
                 'items' => 'required|array|min:1',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.unit_cost' => 'required|numeric|min:0',
@@ -121,7 +167,7 @@ class SupplyController extends Controller
                 $po = PurchaseOrder::create([
                     'po_number' => $validated['po_number'],
                     'supplier_id' => $validated['supplier_id'],
-                    'po_date' => Carbon::now()->toDateString(),
+                    'po_date' => $validated['po_date'],
                     'created_by' => auth()->id(),
                 ]);
 
@@ -731,13 +777,30 @@ class SupplyController extends Controller
         }
     }
 
-    public function deletePurchaseOrder($id)
-    {
+
+    public function deletePurchaseOrder(Request $request, $id){
         try {
-            $po = PurchaseOrder::findOrFail($id);
+            $po = PurchaseOrder::find($id);
+            logger()->info($po);
+            if($po->status != 'pending'){
+                return response()->json("This $po->po_number already approved and it can not be deleted", 500);
+            }
             $po->items()->delete();
             $po->delete();
-            return response()->json('Purchase order deleted successfully', 200);
+            return response()->json("Deleted succefyully", 200);
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+
+    public function deletePurchaseOrderItem($id)
+    {
+        try {
+            $item = \App\Models\PurchaseOrderItem::findOrFail($id);
+            $item->delete();
+            return response()->json('Item removed successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

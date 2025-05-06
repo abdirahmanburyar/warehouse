@@ -1,266 +1,119 @@
 <template>
-    <Head title="Edit Supply" />
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Supply</h2>
-                <Link :href="route('supplies.index')" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    Back to Supplies
-                </Link>
-            </div>
-        </template>
+        <div class="containe mx-auto py-6">
+            <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Back to Suppliers
+            </Link>
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200">
-                        <form @submit.prevent="submit">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Product Selection -->
-                                <div>
-                                    <InputLabel for="product_id" value="Product" />
-                                    <SelectInput
-                                        id="product_id"
-                                        v-model="form.product_id"
-                                        :options="productOptions"
-                                        class="mt-1 block w-full"
-                                        placeholder="Select a product"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.product_id" class="mt-2" />
-                                </div>
-
-                                <!-- Warehouse Selection -->
-                                <div>
-                                    <InputLabel for="warehouse_id" value="Warehouse" />
-                                    <SelectInput
-                                        id="warehouse_id"
-                                        v-model="form.warehouse_id"
-                                        :options="warehouseOptions"
-                                        class="mt-1 block w-full"
-                                        placeholder="Select a warehouse"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.warehouse_id" class="mt-2" />
-                                </div>
-
-                                <!-- Supplier Selection -->
-                                <div>
-                                    <InputLabel for="supplier_id" value="Supplier" />
-                                    <SelectInput
-                                        id="supplier_id"
-                                        v-model="form.supplier_id"
-                                        :options="supplierOptions"
-                                        class="mt-1 block w-full"
-                                        placeholder="Select a supplier"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.supplier_id" class="mt-2" />
-                                </div>
-
-                                <!-- Quantity -->
-                                <div>
-                                    <InputLabel for="quantity" value="Quantity" />
-                                    <TextInput
-                                        id="quantity"
-                                        type="number"
-                                        v-model="form.quantity"
-                                        class="mt-1 block w-full"
-                                        min="1"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.quantity" class="mt-2" />
-                                </div>
-
-                                <!-- Unit Price -->
-                                <div>
-                                    <InputLabel for="unit_price" value="Unit Price" />
-                                    <TextInput
-                                        id="unit_price"
-                                        type="number"
-                                        step="0.01"
-                                        v-model="form.unit_price"
-                                        class="mt-1 block w-full"
-                                        min="0"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.unit_price" class="mt-2" />
-                                </div>
-
-                                <!-- Total Price (Calculated) -->
-                                <div>
-                                    <InputLabel for="total_price" value="Total Price" />
-                                    <TextInput
-                                        id="total_price"
-                                        type="number"
-                                        step="0.01"
-                                        :value="calculateTotalPrice"
-                                        class="mt-1 block w-full bg-gray-100"
-                                        readonly
-                                    />
-                                </div>
-
-                                <!-- Supply Date -->
-                                <div>
-                                    <InputLabel for="supply_date" value="Supply Date" />
-                                    <TextInput
-                                        id="supply_date"
-                                        type="date"
-                                        v-model="form.supply_date"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
-                                    <InputError :message="form.errors.supply_date" class="mt-2" />
-                                </div>
-
-                                <!-- Invoice Number -->
-                                <div>
-                                    <InputLabel for="invoice_number" value="Invoice Number" />
-                                    <TextInput
-                                        id="invoice_number"
-                                        type="text"
-                                        v-model="form.invoice_number"
-                                        class="mt-1 block w-full"
-                                    />
-                                    <InputError :message="form.errors.invoice_number" class="mt-2" />
-                                </div>
-
-                                <!-- Batch Number -->
-                                <div>
-                                    <InputLabel for="batch_number" value="Batch Number" />
-                                    <TextInput
-                                        id="batch_number"
-                                        type="text"
-                                        v-model="form.batch_number"
-                                        class="mt-1 block w-full"
-                                    />
-                                    <InputError :message="form.errors.batch_number" class="mt-2" />
-                                </div>
-
-                                <!-- Manufacturing Date -->
-                                <div>
-                                    <InputLabel for="manufacturing_date" value="Manufacturing Date" />
-                                    <TextInput
-                                        id="manufacturing_date"
-                                        type="date"
-                                        v-model="form.manufacturing_date"
-                                        class="mt-1 block w-full"
-                                    />
-                                    <InputError :message="form.errors.manufacturing_date" class="mt-2" />
-                                </div>
-
-                                <!-- Expiry Date -->
-                                <div>
-                                    <InputLabel for="expiry_date" value="Expiry Date" />
-                                    <TextInput
-                                        id="expiry_date"
-                                        type="date"
-                                        v-model="form.expiry_date"
-                                        class="mt-1 block w-full"
-                                        :min="form.manufacturing_date"
-                                    />
-                                    <InputError :message="form.errors.expiry_date" class="mt-2" />
-                                </div>
-                            </div>
-
-                            <!-- Notes -->
-                            <div class="mt-6">
-                                <InputLabel for="notes" value="Notes" />
-                                <TextareaInput
-                                    id="notes"
-                                    v-model="form.notes"
-                                    :rows="3"
-                                    class="mt-1 block w-full"
-                                />
-                                <InputError :message="form.errors.notes" class="mt-2" />
-                            </div>
-
-                            <!-- Submit Button -->
-                            <div class="flex items-center justify-end mt-6">
-                                <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                                    Update Supply
-                                </PrimaryButton>
-                            </div>
-                        </form>
+        <div class=" rounded-lg p-6 mb-6">
+            <h2 class="text-2xl font-semibold mb-4">Create Supplier</h2>
+            <form @submit.prevent="submitForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" v-model="form.name" placeholder="Enter supplier name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Contact Person</label>
+                        <input type="text" v-model="form.contact_person" placeholder="Enter contact person name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" v-model="form.email" placeholder="Enter email address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Phone</label>
+                        <input type="tel" v-model="form.phone" placeholder="Enter phone number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Address</label>
+                        <textarea v-model="form.address" placeholder="Enter complete address" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required></textarea>
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" v-model="form.is_active" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-600">Active</span>
+                        </label>
                     </div>
                 </div>
-            </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <Link :href="route('supplies.index')" :disabled="isSubmitting" class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                        Cancel
+                    </Link>
+                    <button type="submit" :disable="isSubmitting" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                        {{ isSubmitting ? 'Creating...' : 'Create Supplier' }} 
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
+import { ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import TextareaInput from '@/Components/TextareaInput.vue';
-import SelectInput from '@/Components/SelectInput.vue';
-import InputError from '@/Components/InputError.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import axios from "axios";
+import Swal from 'sweetalert2'
 
 const props = defineProps({
-    supply: Object,
-    products: Array,
-    warehouses: Array,
-    suppliers: Array,
-});
-
-// Format dates for form
-const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toISOString().substr(0, 10);
-};
-
-// Initialize form with supply data
-const form = useForm({
-    product_id: props.supply.product_id,
-    warehouse_id: props.supply.warehouse_id,
-    supplier_id: props.supply.supplier_id,
-    quantity: props.supply.quantity,
-    unit_price: props.supply.unit_price,
-    supply_date: formatDate(props.supply.supply_date),
-    invoice_number: props.supply.invoice_number || '',
-    batch_number: props.supply.batch_number || '',
-    manufacturing_date: formatDate(props.supply.manufacturing_date),
-    expiry_date: formatDate(props.supply.expiry_date),
-    notes: props.supply.notes || '',
-});
-
-// Computed properties
-const productOptions = computed(() => {
-    return props.products.map(product => ({
-        value: product.id,
-        label: product.name
-    }));
-});
-
-const warehouseOptions = computed(() => {
-    return props.warehouses.map(warehouse => ({
-        value: warehouse.id,
-        label: warehouse.name
-    }));
-});
-
-const supplierOptions = computed(() => {
-    return props.suppliers.map(supplier => ({
-        value: supplier.id,
-        label: supplier.name
-    }));
-});
-
-const calculateTotalPrice = computed(() => {
-    if (form.quantity && form.unit_price) {
-        return (parseFloat(form.quantity) * parseFloat(form.unit_price)).toFixed(2);
+    supplier: {
+        required: true,
+        type: Object
     }
-    return '0.00';
 });
 
-// Submit form
-const submit = () => {
-    form.put(route('supplies.update', props.supply.id), {
-        preserveScroll: true,
-    });
-};
+const form = ref({
+    id: props.supplier?.id || null,
+    name: props.supplier?.name || '',
+    contact_person: props.supplier?.contact_person || '',
+    email: props.supplier?.email || '',
+    phone: props.supplier?.phone || '',
+    address: props.supplier?.address || '',
+    is_active: props.supplier?.is_active || true,
+})
+
+function reloadSuppliers(){
+    const query = {}
+    router.get(route('suppliers.index'), {}, {
+        preserveScroll: false,
+        preserveState: false,  
+    })
+}
+
+const tableHeaders = [
+    'Name',
+    'Contact Person',
+    'Email',
+    'Phone',
+    'Address',
+    'Status',
+    'Actions',
+]
+
+const isSubmitting = ref(false)
+
+async function submitForm(){
+    isSubmitting.value = true;
+    await axios.post(route('suppliers.store'), form.value)
+        .then((response) => {
+            isSubmitting.value = false;
+            console.log(response);
+            Swal.fire({
+                icon: 'success',
+                title: 'Supplier Added',
+                text: 'Supplier added successfully',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    reloadSuppliers();
+                }
+            })
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
 </script>

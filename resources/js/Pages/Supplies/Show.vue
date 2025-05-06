@@ -1,157 +1,175 @@
 <template>
-    <Head title="View Supply Details" />
+    <Head title="Purchase Order Details" />
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Supply Details</h2>
-                <div class="flex space-x-2">
-                    <Link :href="route('supplies.edit', supply.id)" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 focus:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Edit
-                    </Link>
-                    <Link :href="route('supplies.index')" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Back to Supplies
-                    </Link>
+            <!-- Back Button -->
+            <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700 mb-6">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Purchase Orders
+            </Link>
+
+            <!-- Header Section -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ props.po.po_number }}</h1>
+                        <p class="text-sm text-gray-500 mt-1">Created on {{ formatDate(props.po.created_at) }}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span :class="statusClass">{{ props.po.status }}</span>
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            Print PO
+                        </button>
+                    </div>
                 </div>
             </div>
-        </template>
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Supply Information -->
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Supply Information</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Product</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.product.name }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Warehouse</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.warehouse.name }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Quantity</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.quantity }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Unit Price</p>
-                                        <p class="mt-1 text-sm text-gray-900">${{ supply.unit_price }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Total Price</p>
-                                        <p class="mt-1 text-sm text-gray-900">${{ supply.total_price }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Supply Date</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(supply.supply_date) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Supplier Information -->
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Supplier Name</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.supplier ? supply.supplier.name : '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Contact Person</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.supplier ? supply.supplier.contact_person : '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Email</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.supplier ? supply.supplier.email : '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Phone</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.supplier ? supply.supplier.phone : '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Invoice Number</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.invoice_number || '—' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Batch Information -->
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Batch Information</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Batch Number</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ supply.batch_number || '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Manufacturing Date</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(supply.manufacturing_date) || '—' }}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500">Expiry Date</p>
-                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(supply.expiry_date) || '—' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Notes -->
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Notes</h3>
-                                
-                                <p class="text-sm text-gray-900">{{ supply.notes || 'No notes available' }}</p>
-                            </div>
+            <!-- Order Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">PO Date</span>
+                            <span class="font-medium">{{ formatDate(props.po.po_date) }}</span>
                         </div>
-                        
-                        <!-- Timestamps -->
-                        <div class="mt-6 pt-6 border-t border-gray-200">
-                            <div class="flex justify-between text-sm text-gray-500">
-                                <p>Created: {{ formatDateTime(supply.created_at) }}</p>
-                                <p>Last Updated: {{ formatDateTime(supply.updated_at) }}</p>
-                            </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Items</span>
+                            <span class="font-medium">{{ props.po.items.length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Amount</span>
+                            <span class="font-medium">{{ formatCurrency(calculateTotalAmount) }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Supplier Information</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Name</span>
+                            <span class="font-medium">{{ props.po.supplier.name }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Contact Person</span>
+                            <span class="font-medium">{{ props.po.supplier.contact_person }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Email</span>
+                            <span class="font-medium">{{ props.po.supplier.email }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Phone</span>
+                            <span class="font-medium">{{ props.po.supplier.phone }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Address</span>
+                            <span class="font-medium text-right">{{ props.po.supplier.address }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Status</span>
+                            <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', props.po.supplier.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
+                                {{ props.po.supplier.is_active ? 'Active' : 'Inactive' }}
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Items Table -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-[70px]">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Order Items</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border border-black">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black w-[40px]">SN#</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Unit Cost</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="(item, i) in props.po.items" :key="item.id" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap border border-black">{{i+1}}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                    <div>
+                                        <div class="text-sm font-medium text-black-900">{{ item.product.name }}</div>
+                                        <div class="text-sm text-black-500">{{ item.product.barcode }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black-500 border border-black">
+                                    {{ formatNumber(item.quantity) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black-500 border border-black">
+                                    {{ formatCurrency(item.unit_cost) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black-900 border border-black">
+                                    {{ formatCurrency(item.total_cost) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-900 text-right border border-black">Total</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-black">
+                                    {{ formatCurrency(calculateTotalAmount) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+     
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { computed } from 'vue';
 
 const props = defineProps({
-    supply: Object,
+    po: {
+        required: true,
+        type: Object
+    }
 });
 
-// Format date for display
 const formatDate = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 };
 
-// Format date and time for display
-const formatDateTime = (dateTimeString) => {
-    if (!dateTimeString) return null;
-    const date = new Date(dateTimeString);
-    return date.toLocaleString();
+const formatNumber = (number) => {
+    return number.toLocaleString('en-US');
 };
+
+const formatCurrency = (number) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(number);
+};
+
+const calculateTotalAmount = computed(() => {
+    return props.po.items.reduce((total, item) => total + item.total_cost, 0);
+});
+
+const statusClass = computed(() => {
+    const classes = {
+        pending: 'bg-yellow-100 text-yellow-800',
+        approved: 'bg-green-100 text-green-800',
+        rejected: 'bg-red-100 text-red-800'
+    };
+    return `px-3 py-1 rounded-full text-sm font-medium ${classes[props.po.status] || classes.pending}`;
+});
 </script>

@@ -58,7 +58,7 @@
                 </div>
                 </Link>
 
-                <!-- purchase orders -->
+                <!-- purchase orders
                 <Link :href="route('purchase-orders.index')" class="menu-item"
                     :class="{ active: route().current('purchase-orders.*') }"
                     @click="setCurrentPage('purchase-orders')">
@@ -69,9 +69,8 @@
                         <img v-else src="/assets/images/po-w.png" class="order-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Sepplies</span>
-                    <!-- <span class="menu-text">Purchase Orders</span> -->
                 </div>
-                </Link>
+                </Link> -->
 
                 <Link :href="route('inventories.index')" class="menu-item"
                     :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
@@ -106,6 +105,17 @@
                         <img v-else src="/assets/images/supplier-w.png" class="supplies-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Supplies</span>
+                </div>
+                </Link>
+                <Link :href="route('reports.index')" class="menu-item"
+                    :class="{ active: route().current('reports.*') }" @click="setCurrentPage('reports')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('reports.*')" src="/assets/images/facility-b.png"
+                            class="facility-icon" style="height: 24px" />
+                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Reports</span>
                 </div>
                 </Link>
 

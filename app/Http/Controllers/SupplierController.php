@@ -62,4 +62,11 @@ class SupplierController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+
+    public function edit(Request $request, $id){
+        $supplier = Supplier::find($id);
+        return inertia('Supplies/Edit', [
+            'supplier' => $supplier
+        ]);
+    }
 }
