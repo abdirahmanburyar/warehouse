@@ -4,19 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-
 use App\Events\InventoryUpdated;
 use App\Models\Product;
 use App\Models\Supply;
+use Illuminate\Support\Facades\DB;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Models\PurchaseOrder;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
+use App\Models\PackingList;
+use App\Models\PackingListDifference;
 use App\Models\PurchaseOrderItem;
 use App\Http\Resources\SupplierResource;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class SupplyController extends Controller
@@ -109,13 +110,178 @@ class SupplyController extends Controller
     }
 
     public function newPackingList(Request $request){
-        $purchaseOrders = PurchaseOrder::get();
+        $purchaseOrders = PurchaseOrder::select('id', 'po_number')->get();
+        $warehouses = Warehouse::select('id', 'name')->get();
         return inertia("Supplies/PackingList", [
+            'purchaseOrders' => $purchaseOrders,
+            'warehouses' => $warehouses,
+        ]);
+    }
+
+    public function getBackOrder(Request $request, $id){
+        try {
+            logger()->info($id);
+            $purchaseOrders = PackingListDifference::whereHas('packingList', function($query) use($id){
+                $query->where('purchase_order_id', $id);
+            })->get();
+            return response()->json($purchaseOrders, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+
+    public function backOrder(Request $request){
+        $purchaseOrders = PurchaseOrder::select('id','po_number')->get();
+        return inertia("Supplies/BackOrder", [
             'purchaseOrders' => $purchaseOrders
         ]);
     }
 
-    
+
+
+    public function getPO(Request $request, $id) {
+        try {
+            // Get PO items with remaining quantities using joins
+            $items = DB::table('purchase_order_items as poi')
+                ->select([
+                    'poi.id',
+                    'poi.product_id',
+                    'poi.unit_cost',
+                    'poi.quantity as original_quantity',
+                    'p.name as product_name',
+                    'p.barcode',
+                    DB::raw('COALESCE(SUM(pl.quantity), 0) as packed_quantity'),
+                    DB::raw('poi.quantity - COALESCE(SUM(pl.quantity), 0) as remaining_quantity')
+                ])
+                ->join('products as p', 'p.id', '=', 'poi.product_id')
+                ->leftJoin('packing_lists as pl', function($join) {
+                    $join->on('pl.product_id', '=', 'poi.product_id')
+                         ->on('pl.purchase_order_id', '=', 'poi.purchase_order_id');
+                })
+                ->where('poi.purchase_order_id', $id)
+                ->groupBy('poi.id', 'poi.product_id', 'poi.unit_cost', 'poi.quantity', 'p.name', 'p.barcode')
+                ->having(DB::raw('poi.quantity - COALESCE(SUM(pl.quantity), 0)'), '>', 0)
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->remaining_quantity,
+                        // 'remaining_quantity' => $item->remaining_quantity,
+                        'unit_cost' => $item->unit_cost,
+                        'total_cost' => $item->remaining_quantity * $item->unit_cost,
+                        'searchQuery' => $item->product_name,
+                        'barcode' => $item->barcode,
+                        'warehouse_id' => null,
+                        'expired_date' => '',
+                        'batch_number' => '',
+                        'location' => '',
+                        'original_quantity' => $item->original_quantity,
+                        'packed_quantity' => $item->packed_quantity,
+                        'received_quantity' => 0,
+                        'product' => [
+                            'id' => $item->product_id,
+                            'name' => $item->product_name,
+                            'barcode' => $item->barcode
+                        ]
+                    ];
+                })->toArray();
+
+            // Get PO with supplier
+            $po = PurchaseOrder::with('supplier')->find($id);
+            if (!$po) {
+                return response()->json(['error' => 'Purchase order not found'], 404);
+            }
+
+            // Get PO number before converting to array
+            $poNumber = $po->po_number;
+            
+            // Convert to array and add items
+            $po = $po->toArray();
+            $po['items'] = $items;
+            
+            // Generate packing list number
+            $lastPacking = PackingList::where('purchase_order_id', $id)
+                ->where('packing_list_number', 'like', "PKL-" . substr($poNumber, 3) . "-%")
+                ->orderBy('packing_list_number', 'desc')
+                ->first();
+            
+            $sequence = 1;
+            if ($lastPacking) {
+                $parts = explode('-', $lastPacking->packing_list_number);
+                if (count($parts) === 3) { // PKL-number-sequence
+                    $sequence = intval($parts[2]) + 1;
+                }
+            }
+            
+            $po['packing_list_number'] = sprintf("PKL-%s-%03d", substr($poNumber, 3), $sequence);
+            return response()->json($po, 200);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
+        }        
+    }
+
+    public function storePK(Request $request)
+    {
+        try {
+            return DB::transaction(function() use ($request){
+
+                $request->validate([
+                    'purchase_order_id' => 'required',
+                    'packing_list_number' => 'required',
+                    'pk_date' => 'required',
+                    'items' => 'required|array',
+                    'items.*.product_id' => 'required',
+                    'items.*.warehouse_id' => 'required',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.batch_number' => 'required',
+                    'items.*.expire_date' => 'required',
+                    'items.*.location' => 'required',
+                    'items.*.unit_cost' => 'required|numeric',
+                    'items.*.total_cost' => 'required|numeric',
+                ]);
+
+                // Create packing list for each item
+                foreach($request->items as $item){
+                    if($item['quantity'] == 0){
+                        continue;
+                    }
+                    $packingList = PackingList::create([
+                        'packing_list_number' => $request->packing_list_number,
+                        'purchase_order_id' => $request->purchase_order_id,
+                        'pk_date' => $request->pk_date,
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $item['warehouse_id'],
+                        'quantity' => $item['quantity'],
+                        'batch_number' => $item['batch_number'],
+                        'expire_date' => $item['expire_date'],
+                        'location' => $item['location'],
+                        'unit_cost' => $item['unit_cost'],
+                        'total_cost' => $item['total_cost']
+                    ]);
+
+                    // Handle differences if they exist
+                    if (!empty($item['differences'])) {
+                        foreach ($item['differences'] as $difference) {
+                            $packingList->differences()::updateOrCreate([
+                                'purchase_orderid' => $request->purchase_order_id
+                            ],[
+                                'quantity' => $difference['quantity'],
+                                'status' => $difference['status']
+                            ]);
+                        }
+                    }
+                }
+
+                return response()->json('Packing list created successfully', 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+
+    }
+        
 
     public function newPO()
     {

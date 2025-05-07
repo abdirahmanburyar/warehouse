@@ -16,6 +16,10 @@ class PurchaseOrder extends Model
         'total_amount',
         'notes',
         'status',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
         'created_by',
         'updated_by',
     ];

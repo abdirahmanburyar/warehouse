@@ -116,7 +116,7 @@
                         </tbody>
                         <tfoot class="bg-gray-50">
                             <tr>
-                                <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-900 text-right border border-black">Total</td>
+                                <td colspan="4" class="px-6 py-4 text-sm font-medium text-gray-900 text-right border border-black">Total</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-black">
                                     {{ formatCurrency(calculateTotalAmount) }}
                                 </td>

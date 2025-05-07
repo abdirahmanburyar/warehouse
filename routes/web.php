@@ -161,6 +161,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             // Purchase Order Routes
             Route::get('/purchase-order/create', 'create')->name('supplies.create');
             Route::post('/purchase-order/store', 'storePO')->name('supplies.storePO');
+            Route::post('/packing-list/store', 'storePK')->name('supplies.storePK');
+
+
             Route::get('/purchase-order/{id}/edit', 'editPO')->name('supplies.editPO');
             Route::get('/purchase-order/{id}/get', 'getPurchaseOrder')->name('supplies.getPO');
             Route::put('/purchase-order/{id}/update', 'updatePurchaseOrder')->name('supplies.updatePO');
@@ -168,7 +171,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/purchase-order-item/{id}/delete', 'deletePurchaseOrderItem')->name('supplies.deleteItem');
 
             // Packing list
+            Route::get('/back-order', 'backOrder')->name('supplies.back-order');
             Route::get('/packing-list', 'newPackingList')->name('supplies.packing-list');
+            Route::get('/packing-list/{id}/purchase-order', 'getPO')->name('supplies.get-purchaseOrder');
+            Route::get('/back-order/{id}/purchase-order', 'getBackOrder')->name('supplies.get-packingList');
         });
 
     // Supplier Routes

@@ -14,18 +14,24 @@ return new class extends Migration
         Schema::create('packing_lists', function (Blueprint $table) {
             $table->id();
             $table->string('packing_list_number')->unique();
-            $table->foreignId('purchase_order_id')->constrained()->cascadeOnDelete();
-            $table->date('packing_date');
-            $table->string('status')->default('pending'); // pending, completed
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('approved_by')->nullable()->constrained('users');
-            $table->timestamp('approved_at')->nullable();
-            $table->foreignId('verified_by')->nullable()->constrained('users');
-            $table->timestamp('verified_at')->nullable();
-            $table->foreignId('confirmed_by')->nullable()->constrained('users');
-            $table->timestamp('confirmed_at')->nullable();
+            $table->foreignId('purchase_order_id')->constrained();
+            $table->foreignId('product_id')->constrained();
+            $table->foreignId('warehouse_id')->constrained();
+            $table->date('expire_date')->nullable();
+            $table->string('batch_number')->nullable();
+            $table->string('location')->nullable();
+            $table->integer('quantity');
+            $table->double('unit_cost');
+            $table->double('total_cost');
             $table->timestamps();
-            $table->softDeletes();
+        });
+
+        Schema::create('packing_lists_differences', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('packing_list_id')->constrained()->cascadeOnDelete();
+            $table->integer('quantity');
+            $table->enum('status', ['Expired', 'Damaged']);
+            $table->timestamps();
         });
     }
 
@@ -34,6 +40,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('packing_lists_differences');
         Schema::dropIfExists('packing_lists');
     }
 };

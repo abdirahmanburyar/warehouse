@@ -57,7 +57,7 @@
                                 Data: <input 
                                     type="date" 
                                     v-model="po_date"
-                                    class="block ml-2 w-full border-0 p-0 text-gray-900 focus:ring-0 sm:text-sm bg-transparent"
+                                    class="block ml-2 border-0 p-0 text-gray-900 focus:ring-0 sm:text-sm bg-transparent"
                                     :min="moment().format('YYYY-MM-DD')"
                                 >
                             </div>

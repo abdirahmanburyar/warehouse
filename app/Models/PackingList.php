@@ -12,25 +12,34 @@ class PackingList extends Model
     protected $fillable = [
         'packing_list_number',
         'purchase_order_id',
-        'packing_date',
-        'created_by',
-        'updated_by',
-        'status'
+        'product_id',
+        'warehouse_id',
+        'expire_date',
+        'batch_number',
+        'location',
+        'quantity',
+        'unit_cost',
+        'total_cost'
     ];
-
-    public function receivedGoodsNotes()
-    {
-        return $this->hasOne(ReceivedGoodsNote::class, 'packing_list_id');
-    }
 
     public function purchaseOrder()
     {
-        return $this->belongsTo(PurchaseOrder::class);
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
-    public function items()
+    public function product()
     {
-        return $this->hasMany(PackingListItem::class);
+        return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function differences()
+    {
+        return $this->hasMany(PackingListDifference::class, 'packing_lists_id');
     }
 
     public function creator()

@@ -542,12 +542,12 @@ async function onPOChange(e) {
     selectedPO.value = null;
     console.log(e.target.value);
     const id = e.target.value;
-    await axios.get(route('supplies.get-purchaseOrder', id))
+    await axios.get(route('supplies.get-packingList', id))
         .then((response) => {
             isLoading.value = false;
-            selectedPO.value = response.data;
-            form.value.packing_list_number = response.data?.packing_list_number;
-            form.value.purchase_order_id = response.data?.id;
+            // selectedPO.value = response.data;
+            // form.value.packing_list_number = response.data?.packing_list_number;
+            // form.value.purchase_order_id = response.data?.id;
             console.log(response.data);
         })
         .catch((error) => {
