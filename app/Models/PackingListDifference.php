@@ -9,10 +9,11 @@ class PackingListDifference extends Model
 {
     use HasFactory;
 
-    protected $table = 'packing_lists_differences';
+    protected $table = 'packing_list_differences';
 
     protected $fillable = [
         'packing_list_id',
+        'product_id',
         'quantity',
         'status'
     ];
@@ -25,4 +26,11 @@ class PackingListDifference extends Model
     {
         return $this->belongsTo(PackingList::class, 'packing_list_id');
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    
 }

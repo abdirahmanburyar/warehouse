@@ -13,7 +13,15 @@ return new class extends Migration
     {
         Schema::create('disposals', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->nullable()->constrained('products')->nullOnDelete();
+            $table->foreignId('product_id')->nullable()->nullOnDelete();
+            $table->foreignId('purchase_order_id')->nullable()->nullOnDelete();
+            $table->foreignId('packing_list_id')->nullable()->nullOnDelete();
+            $table->foreignId('inventory_id')->nullable()->nullOnDelete();
+            $table->foreignId('disposed_by')->nullOnDelete();
+            $table->date('disposed_at');
+            $table->integer('quantity');
+            $table->string('status');
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }

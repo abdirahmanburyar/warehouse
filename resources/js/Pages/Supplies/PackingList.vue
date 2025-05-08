@@ -1,10 +1,9 @@
 <template>
-
     <Head title="Purchase Order" />
     <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders">
-        <div class="">
+        <div class="flex flex-col">
             <!-- Supplier Selection -->
-            <div class=" p-6 mb-6">
+            <div class="p-6 mb-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Received New Supply</h2>
                 <div class="grid grid-cols-1 gap-6">
                     <div class="w-[400px] mb-4">
@@ -76,213 +75,269 @@
             </div>
 
             <!-- Items List -->
-            <div class="mt-8 flex-1 flex flex-col">
-                <h2 class='h2'>Items</h2>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="w-[40px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">SN#</th>
-                                <th class="px-3 py-2 min-w-[200px] text-xs text-start border border-black text-gray-500 uppercase">Item</th>
-                                <th class="w-[120px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">P.O Qty</th>
-                                <th class="w-[120px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">Received Qty</th>
-                                <th class="min-w-[200px] px-3 py-2 text-sm text-start border border-black text-gray-500 uppercase">Warehouse</th>
-                                <th class=" px-3 py-2 text-sm text-start border border-black text-gray-500 uppercase">Location</th>
-                                <th class=" px-3 py-2 text-sm text-start border border-black text-gray-500 uppercase">Expire date</th>
-                                <th class=" px-3 py-2 text-sm text-start border border-black text-gray-500 uppercase">Batch Number</th>
-                                <th class="w-[120px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">Unit Cost</th>
-                                <th class="min-w-[120px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">Total Cost</th>
-                                <th class="min-w-[120px] px-3 py-2 text-xs text-start border border-black text-gray-500 uppercase">Fullfilment Rate</th>
-                                <th class="min-w-[40px] px-3 border border-black py-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="">
-                            <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50">
-                                <td class="px-3 py-2 text-sm text-gray-500 align-top border border-black pt-4">{{ index + 1 }}</td>
-                                <td class="px-3 py-2 relative border border-black ">
-                                    <div class="relative flex flex-col">
-                                        <span>{{item.searchQuery}}</span>
-                                        <span>Barcode: {{item.barcode}}</span>
+            <div class="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+                <h2 class="text-lg font-medium text-gray-900">Items</h2>
+            </div>
+            
+            <div class="overflow-auto w-full">
+            <!-- <div class="inline-block min-w-full align-middle"> -->
+                <table class="border border-black w-max table-fixed">
+                    <thead class="p-4">
+                        <tr>
+                            <th class="text-left text-sm text-black uppercase w-16 p-2 border border-black">SN#</th>
+                            <th class="min-w-[500px] text-left text-sm text-black uppercase w-64 p-2 border border-black">Product</th>
+                            <th class="min-w-[200px] text-left text-sm text-black uppercase w-32 p-2 border border-black">P.O Qty</th>
+                            <th class="min-w-[200px] text-left text-sm text-black uppercase w-32 p-2 border border-black">Received Qty</th>
+                            <th class="min-w-[400px] text-left text-sm text-black uppercase w-48 p-2 border border-black">Warehouse</th>
+                            <th class="min-w-[500px] text-left text-sm text-black uppercase w-48 p-2 border border-black">Location</th>
+                            <th class="text-left text-sm text-black uppercase w-40 p-2 border border-black">Expire date</th>
+                            <th class="min-w-[200px] text-left text-sm text-black uppercase w-40 p-2 border border-black">Batch Number</th>
+                            <th class="text-left text-sm text-black uppercase w-32 p-2 border border-black">Unit Cost</th>
+                            <th class="text-left text-sm text-black uppercase w-32 p-2 border border-black">Total Cost</th>
+                            <th class="min-w-[200px] text-left text-sm text-black uppercase w-32 p-2 border border-black">Fullfillment Rate</th>
+                            <th class="text-left text-sm text-black uppercase w-32 p-2 border border-black">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in form.items" :key="index">
+                            <td class="border border-black text-sm text-gray-900 p-2 w-16">{{ index + 1 }}</td>
+                            <td class="border border-black p-2 w-64">
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-gray-900">{{item.searchQuery}}</span>
+                                    <span class="text-sm text-gray-500">Barcode: {{item.barcode}}</span>
+                                </div>
+                            </td>
+                            <td class="border border-black text-sm p-2 w-32">
+                                <input type="number" v-model="item.quantity" @input="calculateTotal(index)"
+                                    class="block w-full p-1 border-0"
+                                    readonly
+                                    min="1">
+                            </td>
+                            <td class="border border-black text-sm p-2 w-32">
+                                <input type="number" v-model="item.received_quantity" @input="validateReceivedQuantity(index)"
+                                    :readonly="item.id != null"
+                                    class="block w-full p-1 border-0"
+                                    min="0" :max="item.quantity">
+                            </td>
+                            <td class="border border-black text-sm p-2 w-48">
+                                <select v-model="item.warehouse_id" class="block w-full p-1 border-0" placeholder="Select a warehouse">
+                                    <option value="" disable selected="selected">Select a warehouse</option>
+                                    <option :value="w.id" v-for="w in props.warehouses">{{w.name}}</option>
+                                </select>
+                            </td>
+                            <td class="border border-black text-sm p-2">
+                                <div class="absolute inset-0 w-full location-dropdown">
+                                    <div @click="activeLocationDropdown = index" class="cursor-pointer">
+                                        <input 
+                                            type="text" 
+                                            v-model="item.location"
+                                            @focus="activeLocationDropdown = index"
+                                            placeholder="Select a location..."
+                                            class="block w-full p-0 border-0"
+                                            readonly
+                                        >
                                     </div>
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="number" v-model="item.quantity" @input="calculateTotal(index)"
-                                        class="block w-full p-0 border-0"
-                                        min="1">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="number" v-model="item.received_quantity" @input="calculateTotal(index)"
-                                        class="block w-full p-0 border-0"
-                                        min="1">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <select v-model="item.warehouse_id" class="block w-full p-0 border-0" placeholder="Select a warehouse">
-                                        <option value="" disable selected="selected">Select a warehouse</option>
-                                        <option :value="w.id" v-for="w in props.warehouses">{{w.name}}</option>
-                                    </select>
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="text" v-model="item.location" placeholder="Add location"
-                                        class="block w-full p-0 border-0">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="date" v-model="item.expire_date"
-                                        class="block w-full p-0 border-0">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="text" v-model="item.batch_number"  placeholder="Add Batch number"
-                                        class="block w-full p-0 border-0">
-                                </td>                                
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="number" v-model="item.unit_cost"
-                                        class="block w-full p-0 border-0"
-                                        readonly
-                                        step="0.01" min="0">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    <input type="text" :value="formatCurrency(item.total_cost)" readonly
-                                        class="block w-full p-0 bg-transparent border-0">
-                                </td>
-                                <td class="px-3 py-2 border border-black">
-                                    90%
-                                </td>
-                                <td class="px-3 py-2 border border-black text-center">
-                                    <button type="button" @click="showDifference(item, index)"
-                                        class="text-gray-400 hover:text-red-600">
-                                        Back Order
-                                    </button>
-                                    <button type="button" @click="removeItem(index)"
-                                        class="text-gray-400 hover:text-red-600">
-                                        <TrashIcon class="h-4 w-4 text-red-500"/>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr v-if="form.items.length === 0">
-                                <td colspan="12" class="px-3 py-4 text-center text-sm text-gray-500 border border-black">
-                                    No items added. Click "Add Item" to start creating your purchase order.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    
+                                    <div v-if="activeLocationDropdown === index" 
+                                        class="absolute left-0 right-0 z-[999] mt-1 bg-white border rounded shadow-lg">
+                                        <input 
+                                            type="text" 
+                                            v-model="locationSearch" 
+                                            placeholder="Search locations..."
+                                            class="w-full p-2 border-b text-sm focus:outline-none"
+                                            @input="filterLocations"
+                                            ref="searchInput"
+                                        >
+                                        <a 
+                                            href="#" 
+                                            @click.prevent="showLocationForm = true; activeLocationDropdown = null"
+                                            class="block w-full text-left p-2 text-blue-600 hover:bg-gray-50 border-b text-sm"
+                                        >
+                                            + Add new location
+                                        </a>
+                                        <div class="max-h-48 overflow-y-auto py-1">
+                                            <div 
+                                                v-for="l in filteredLocations" 
+                                                :key="l.location"
+                                                @click="selectLocation(item, l.location)"
+                                                class="px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm"
+                                            >
+                                                {{ l.location }}
+                                            </div>
+                                            
+                                            <div v-if="filteredLocations.length === 0" class="p-3 text-sm text-gray-500 text-center">
+                                                {{ locationSearch ? 'No locations found' : 'Type to search locations' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border border-black text-sm p-2 w-40">
+                                <input type="date" v-model="item.expire_date"
+                                    class="block w-full p-1 border-0">
+                            </td>
+                            <td class="border border-black text-sm p-2 w-40">
+                                <input type="text" v-model="item.batch_number"  placeholder="Add Batch number"
+                                    class="block w-full p-1 border-0">
+                            </td>                                
+                            <td class="border border-black text-sm p-2 w-32">
+                                <input type="number" v-model="item.unit_cost"
+                                    class="block w-full p-1 border-0"
+                                    readonly
+                                    step="0.01" min="0">
+                            </td>
+                            <td class="border border-black text-sm p-2 w-32">
+                                <input type="text" :value="formatCurrency(item.total_cost)" readonly
+                                    class="block w-full p-1 bg-transparent border-0">
+                            </td>
+                            <td class="border border-black text-sm p-2 w-32">
+                                {{item.fullfillment_rate}}
+                            </td>
+                            <td class="border border-black text-sm p-2 w-32 text-center">
+                                <button type="button" v-if="item.received_quantity < item.quantity" @click="openDifferenceModal(index, item)" class="text-gray-500 hover:text-red-600 transition-colors">
+                                    Back Order
+                                </button>
+                            </td>
+                        </tr>
+                        <tr v-if="form.items.length === 0">
+                            <td colspan="12" class="px-3 py-4 text-center text-sm text-gray-500 border border-black">
+                                No items added. Click "Add Item" to start creating your purchase order.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Difference Modal -->
+            <TransitionRoot appear :show="isDifferenceModalOpen" as="template">
+                <Dialog as="div" @close="closeDifferenceModal" class="relative z-10">
+                    <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100"
+                        leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+                        <div class="fixed inset-0 bg-black bg-opacity-25" />
+                    </TransitionChild>
 
-                    <!-- Difference Modal -->
-                    <TransitionRoot appear :show="isDifferenceModalOpen" as="template">
-                        <Dialog as="div" @close="closeDifferenceModal" class="relative z-10">
-                            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100"
-                                leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
-                                <div class="fixed inset-0 bg-black bg-opacity-25" />
+                    <div class="fixed inset-0 overflow-y-auto">
+                        <div class="flex min-h-full items-center justify-center p-4 text-center">
+                            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95"
+                                enter-to="opacity-100 scale-100" leave="duration-200 ease-in"
+                                leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+                                <DialogPanel
+                                    class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                                    <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+                                        Record Differences
+                                    </DialogTitle>
+                                    <div class="mt-2">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <p class="text-sm text-gray-500">
+                                                Total Difference: {{ totalDifferenceQuantity }} / {{ remainingQuantity }}
+                                            </p>
+                                            <span :class="{
+                                                'text-green-600': totalDifferenceQuantity < remainingQuantity,
+                                                'text-yellow-600': totalDifferenceQuantity === remainingQuantity,
+                                                'text-red-600': totalDifferenceQuantity > remainingQuantity
+                                            }" class="text-sm font-medium">
+                                                {{ percentageUsed }}%
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="h-2 rounded-full transition-all duration-300"
+                                                :class="{
+                                                    'bg-green-500': totalDifferenceQuantity < remainingQuantity,
+                                                    'bg-yellow-500': totalDifferenceQuantity === remainingQuantity,
+                                                    'bg-red-500': totalDifferenceQuantity > remainingQuantity
+                                                }"
+                                                :style="`width: ${Math.min(100, percentageUsed)}%`">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Difference Table -->
+                                    <div class="mt-4">
+                                        <table class="min-w-full divide-y divide-gray-200 border border-black">
+                                            <thead>
+                                                <tr>
+                                                    <th class="px-4 py-2 text-left border border-black">Quantity</th>
+                                                    <th class="px-4 py-2 text-left border border-black">Status</th>
+                                                    <th class="w-10 px-4 py-2 border border-black"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(diff, idx) in selectedItemDifferences" :key="idx" class="border-b border-black">
+                                                    <td class="px-4 py-2 border-r border-black relative">
+                                                        <input type="number" 
+                                                            v-model="diff.quantity" 
+                                                            min="0"
+                                                            :max="remainingQuantity"
+                                                            :readonly="diff.id != null"
+                                                            @input="validateDifferenceQuantity($event, idx)"
+                                                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                                                        <div class="absolute inset-y-0 right-0 flex items-center">
+                                                            <button type="button"
+                                                                class="rounded-r-md border border-l-0 px-2 focus:outline-none"
+                                                                @click="incrementDifference(diff)">
+                                                                <ChevronUpIcon class="h-3 w-3 text-gray-400" />
+                                                            </button>
+                                                            <button type="button"
+                                                                class="rounded-r-md border border-l-0 px-2 focus:outline-none"
+                                                                @click="decrementDifference(diff)">
+                                                                <ChevronDownIcon class="h-3 w-3 text-gray-400" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-2 border-r border-black">
+                                                        <select :disabled="diff.id != null" v-model="diff.status" class="w-full bg-transparent border-0 p-0 focus:outline-none focus:ring-0">
+                                                            <option value="" disabled hidden>Select status</option>
+                                                            <option value="Expired">Expired</option>
+                                                            <option value="Damaged">Damaged</option>
+                                                            <option value="Missing">Missing</option>
+                                                        </select>
+                                                    </td>
+                                                    <td class="px-4 py-2 text-center">
+                                                        <button @click="removeDifference(idx)" class="text-red-500 hover:text-red-700">
+                                                            <TrashIcon class="h-4 w-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <button @click="addDifferenceRow"
+                                            :disabled="totalDifferenceQuantity >= remainingQuantity"
+                                            class="mt-4 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            :class="{
+                                                'bg-white hover:bg-gray-50': totalDifferenceQuantity < remainingQuantity,
+                                                'bg-gray-100': totalDifferenceQuantity >= remainingQuantity
+                                            }">
+                                            <PlusIcon class="h-4 w-4 mr-1" />
+                                            Add Row
+                                        </button>
+                                    </div>
+
+                                    <div class="mt-6 flex justify-end space-x-3">
+                                        <button @click="closeDifferenceModal"
+                                            class="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200">
+                                            Cancel
+                                        </button>
+                                        <button type="button"
+                                            class="inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 
+                                            bg-blue-600 hover:bg-blue-700"
+                                            @click="saveDifferences">Save</button>
+                                    </div>
+                                </DialogPanel>
                             </TransitionChild>
+                        </div>
+                    </div>
+                </Dialog>
+            </TransitionRoot>
 
-                            <div class="fixed inset-0 overflow-y-auto">
-                                <div class="flex min-h-full items-center justify-center p-4 text-center">
-                                    <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95"
-                                        enter-to="opacity-100 scale-100" leave="duration-200 ease-in"
-                                        leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-                                        <DialogPanel
-                                            class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                                            <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-                                                Record Differences
-                                            </DialogTitle>
-                                            <div class="mt-2">
-                                                <div class="flex justify-between items-center mb-1">
-                                                    <p class="text-sm text-gray-500">
-                                                        Total Difference: {{ totalDifferenceQuantity }} / {{ originalItemQuantity }}
-                                                    </p>
-                                                    <span :class="{
-                                                        'text-green-600': totalDifferenceQuantity < originalItemQuantity,
-                                                        'text-yellow-600': totalDifferenceQuantity === originalItemQuantity,
-                                                        'text-red-600': totalDifferenceQuantity > originalItemQuantity
-                                                    }" class="text-sm font-medium">
-                                                        {{ Math.round((totalDifferenceQuantity / originalItemQuantity) * 100) }}%
-                                                    </span>
-                                                </div>
-                                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                                    <div class="h-2 rounded-full transition-all duration-300"
-                                                        :class="{
-                                                            'bg-green-500': totalDifferenceQuantity < originalItemQuantity,
-                                                            'bg-yellow-500': totalDifferenceQuantity === originalItemQuantity,
-                                                            'bg-red-500': totalDifferenceQuantity > originalItemQuantity
-                                                        }"
-                                                        :style="`width: ${Math.min(100, (totalDifferenceQuantity / originalItemQuantity) * 100)}%`">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Difference Table -->
-                                            <div class="mt-4">
-                                                <table class="min-w-full divide-y divide-gray-200 border border-black">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class="px-4 py-2 text-left border border-black">Quantity</th>
-                                                            <th class="px-4 py-2 text-left border border-black">Status</th>
-                                                            <th class="w-10 px-4 py-2 border border-black"></th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr v-for="(diff, idx) in selectedItemDifferences" :key="idx" class="border-b border-black">
-                                                            <td class="px-4 py-2 border-r border-black">
-                                                                <input type="number" 
-                                                                    v-model="diff.quantity" 
-                                                                    min="1"
-                                                                    @input="validateQuantity(idx)"
-                                                                    class="w-full border-0 p-0 focus:ring-0">
-                                                            </td>
-                                                            <td class="px-4 py-2 border-r border-black">
-                                                                <select v-model="diff.status" class="w-full border-0 p-0 focus:ring-0">
-                                                                    <option value="" disabled>Select status</option>
-                                                                    <option value="Expired">Expired</option>
-                                                                    <option value="Damaged">Damaged</option>
-                                                                </select>
-                                                            </td>
-                                                            <td class="px-4 py-2 text-center">
-                                                                <button @click="removeDifference(idx)" class="text-red-500 hover:text-red-700">
-                                                                    <TrashIcon class="h-4 w-4" />
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-
-                                                <button @click="addDifference"
-                                                    :disabled="totalDifferenceQuantity >= originalItemQuantity"
-                                                    class="mt-4 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    :class="{
-                                                        'bg-white hover:bg-gray-50': totalDifferenceQuantity < originalItemQuantity,
-                                                        'bg-gray-100': totalDifferenceQuantity >= originalItemQuantity
-                                                    }">
-                                                    <PlusIcon class="h-4 w-4 mr-1" />
-                                                    Add Row
-                                                </button>
-                                            </div>
-
-                                            <div class="mt-6 flex justify-end space-x-3">
-                                                <button @click="closeDifferenceModal"
-                                                    class="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200">
-                                                    Cancel
-                                                </button>
-                                                <button @click="saveDifferences"
-                                                    class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                                                    Save
-                                                </button>
-                                            </div>
-                                        </DialogPanel>
-                                    </TransitionChild>
-                                </div>
-                            </div>
-                        </Dialog>
-                    </TransitionRoot>
-
-                    <!-- Footer -->
-                    <div class="border-t border-gray-200 px-3 py-4">
-                        <div class="flex justify-between items-center">
-                            <div class="flex space-x-2">
-                            </div>
-                            <div class="w-72 space-y-2">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="font-medium text-gray-900">Total</span>
-                                    <span class="text-gray-900">{{ formatCurrency(subtotal) }}</span>
-                                </div>
-                            </div>
+            <!-- Footer -->
+            <div class="border-t border-gray-200 px-3 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-2">
+                    </div>
+                    <div class="w-72 space-y-2">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="font-medium text-gray-900">Total</span>
+                            <span class="text-gray-900">{{ formatCurrency(subtotal) }}</span>
                         </div>
                     </div>
                 </div>
@@ -300,14 +355,13 @@
                 </button>
             </div>
         </div>
-
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { TrashIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import axios from 'axios';
 import moment from 'moment';
@@ -321,7 +375,7 @@ const toast = useToast();
 const props = defineProps({
     purchaseOrders: Array,
     warehouses: Array,
-    // suppliers: Array,
+    locations: Array,
     // po_number: Number
 });
 
@@ -339,7 +393,9 @@ const form = ref({
         expire_date: null,
         batch_number: "",
         location: "",
-        quantity: 1,
+        quantity: 0,
+        received_quantity: 0,
+        fullfillment_rate: "0%",
         unit_cost: 0,
         total_cost: 0,
         differences: []
@@ -363,13 +419,95 @@ function handleProductSelect(product, index) {
     addItem();
 }
 
-function calculateTotal(index) {
+function validateReceivedQuantity(index) {
     const item = form.value.items[index];
-    item.total_cost = item.quantity * item.unit_cost;
+    if (item.received_quantity > item.quantity) {
+        toast.error(`Received quantity cannot exceed ordered quantity (${item.quantity})`);
+        item.received_quantity = item.quantity;
+    }
+    calculateTotal(index);
 }
 
-function showDifference(item, index){
+function calculateTotal(index) {
+    const item = form.value.items[index];
+    item.total_cost = item.received_quantity * item.unit_cost;
+}
+
+function showDifference(item, index) {
+    const remainingDiff = item.quantity - item.received_quantity;
+    console.log(remainingDiff);
+    const currentTotal = item.differences?.reduce((sum, diff) => sum + diff.quantity, 0) || 0;
+    const maxDiff = remainingDiff - currentTotal;
+
+    if (maxDiff <= 0) {
+        toast.error('All differences have been recorded.');
+        return;
+    }
+
+    const currentDiffs = item.differences?.length ? 
+        `<div class="mb-4 p-3 bg-gray-50 rounded">
+            <p class="font-medium text-sm text-gray-700">Current Differences:</p>
+            ${item.differences.map(d => `<p class="text-sm text-gray-600">${d.quantity} units - ${d.status}</p>`).join('')}
+        </div>` : '';
+
+    Swal.fire({
+        title: 'Record Difference',
+        html: `
+            <div class="mb-4 text-left">
+                <p class="text-sm text-gray-600 mb-2">Order Quantity: ${item.quantity}</p>
+                <p class="text-sm text-gray-600 mb-2">Received Quantity: ${item.received_quantity}</p>
+                <p class="text-sm text-gray-600 mb-4">Total Difference: ${remainingDiff}</p>
+            </div>
+            ${currentDiffs}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Record (max: ${maxDiff})</label>
+                <input type="number" id="difference-quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" min="1" max="${maxDiff}" value="${maxDiff}">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="difference-status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="damaged">Damaged</option>
+                    <option value="missing">Missing</option>
+                    <option value="expired">Expired</option>
+                </select>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Record',
+        preConfirm: () => {
+            const quantity = parseInt(document.getElementById('difference-quantity').value);
+            const status = document.getElementById('difference-status').value;
+            
+            if (!quantity || quantity <= 0 || quantity > maxDiff) {
+                Swal.showValidationMessage(`Please enter a quantity between 1 and ${maxDiff}`);
+                return false;
+            }
+            
+            return { quantity, status };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (!item.differences) {
+                item.differences = [];
+            }
+            item.differences.push(result.value);
+            
+            // Check if all differences are recorded
+            const newTotal = item.differences.reduce((sum, diff) => sum + diff.quantity, 0);
+            if (newTotal === remainingDiff) {
+                toast.success('All differences have been recorded');
+            } else {
+                const remaining = remainingDiff - newTotal;
+                toast.success(`Difference recorded. ${remaining} units remaining to be recorded.`);
+            }
+        }
+    });
+}
+
+function openDifferenceModal(index) {
     selectedItemIndex.value = index;
+    const item = form.value.items[index];
+    remainingQuantity.value = Number(item.quantity - item.received_quantity) || 0;
     selectedItemDifferences.value = item.differences || [];
     isDifferenceModalOpen.value = true;
 }
@@ -378,17 +516,75 @@ function showDifference(item, index){
 const isDifferenceModalOpen = ref(false);
 const selectedItemIndex = ref(null);
 const selectedItemDifferences = ref([]);
+const remainingQuantity = ref(0);
+
+const percentageUsed = computed(() => {
+    const total = Number(totalDifferenceQuantity.value) || 0;
+    const remaining = Number(remainingQuantity.value) || 1; // prevent division by zero
+    return Math.round((total / remaining) * 100);
+});
+
+const isExceeded = computed(() => {
+    return totalDifferenceQuantity.value > remainingQuantity.value;
+});
+
+const canSave = computed(() => {
+    return !isExceeded.value && 
+           selectedItemDifferences.value.length > 0 && 
+           selectedItemDifferences.value.every(diff => diff.status !== '') &&
+           totalDifferenceQuantity.value === remainingQuantity.value;
+});
 
 function closeDifferenceModal() {
     isDifferenceModalOpen.value = false;
     selectedItemIndex.value = null;
 }
 
-function addDifference() {
-    selectedItemDifferences.value.push({
+function addDifferenceRow() {
+    const newRow = {
+        id: null,
         quantity: 1,
         status: ''
-    });
+    };
+    
+    if (totalDifferenceQuantity.value + newRow.quantity > remainingQuantity.value) {
+        toast.error(`Cannot exceed remaining quantity (${remainingQuantity.value})`);
+        return;
+    }
+    
+    selectedItemDifferences.value.push(newRow);
+}
+
+function validateDifferenceQuantity(event, index) {
+    const newValue = parseInt(event.target.value) || 0;
+    const currentDiff = selectedItemDifferences.value[index];
+    const otherDiffsTotal = selectedItemDifferences.value.reduce((sum, diff, idx) => {
+        return idx !== index ? sum + (parseInt(diff.quantity) || 0) : sum;
+    }, 0);
+    
+    const totalWithNew = otherDiffsTotal + newValue;
+    
+    if (totalWithNew > remainingQuantity.value) {
+        const maxAllowed = remainingQuantity.value - otherDiffsTotal;
+        currentDiff.quantity = Math.max(0, maxAllowed);
+        toast.error(`Total differences cannot exceed ${remainingQuantity.value}`);
+    } else if (newValue < 0) {
+        currentDiff.quantity = 0;
+    } else {
+        currentDiff.quantity = newValue;
+    }
+}
+
+function incrementDifference(diff) {
+    if (diff.quantity < remainingQuantity.value) {
+        diff.quantity++;
+    }
+}
+
+function decrementDifference(diff) {
+    if (diff.quantity > 0) {
+        diff.quantity--;
+    }
 }
 
 function removeDifference(index) {
@@ -396,13 +592,16 @@ function removeDifference(index) {
 }
 
 const totalDifferenceQuantity = computed(() => {
-    return selectedItemDifferences.value.reduce((sum, diff) => sum + (Number(diff.quantity) || 0), 0);
+    return selectedItemDifferences.value.reduce((total, diff) => {
+        const qty = typeof diff.quantity === 'string' ? parseInt(diff.quantity) : diff.quantity;
+        return total + (Number.isFinite(qty) ? qty : 0);
+    }, 0);
 });
 
 // Watch for changes in difference quantities
 watch(totalDifferenceQuantity, (newTotal) => {
-    if (newTotal > originalItemQuantity.value) {
-        toast.error(`Total quantity cannot exceed ${originalItemQuantity.value}`);
+    if (newTotal > remainingQuantity.value) {
+        toast.error(`Total difference quantity cannot exceed remaining quantity (${remainingQuantity.value})`);
     }
 });
 
@@ -431,8 +630,13 @@ const originalItemQuantity = computed(() => {
 function saveDifferences() {
     if (selectedItemIndex.value === null) return;
 
-    if (totalDifferenceQuantity.value > originalItemQuantity.value) {
-        toast.error(`Total difference quantity (${totalDifferenceQuantity.value}) cannot exceed original quantity (${originalItemQuantity.value})`);
+    if (totalDifferenceQuantity.value > remainingQuantity.value) {
+        toast.error(`Total difference quantity cannot exceed remaining quantity (${remainingQuantity.value})`);
+        return;
+    }
+
+    if (totalDifferenceQuantity.value < remainingQuantity.value) {
+        toast.error(`You must account for all remaining quantity (${remainingQuantity.value}). Current total: ${totalDifferenceQuantity.value}`);
         return;
     }
 
@@ -447,15 +651,18 @@ function saveDifferences() {
     closeDifferenceModal();
 }
 
-function removeItem(index){
-    form.value.items.splice(index, 1);
-}
-
 const subtotal = computed(() => {
     return form.value.items.reduce((sum, item) => sum + (item.total_cost || 0), 0);
 });
 
 const isSubmitting = ref(false);
+
+const checkDiffQty = (items) => {
+    if (!items || !items.length) return true;
+    const total = items.reduce((sum, i) => sum + (parseInt(i.quantity) || 0), 0);
+    console.log(parseInt(total) > 0);
+    return parseInt(total) > 0;
+}
 
 async function submitForm() {
     if (!form.value.packing_list_number) {
@@ -486,20 +693,31 @@ async function submitForm() {
                 return;
             }
 
+            console.log(form.value.items);
+
             const formData = {
                 packing_list_number: form.value.packing_list_number,
                 purchase_order_id: form.value.purchase_order_id,
                 pk_date: form.value.pk_date,
-                items: form.value.items.map(item => ({
+                items: form.value.items.filter(item => 
+                    item.warehouse_id && 
+                    // ((parseInt(item.received_quantity) > 0 && !item.differences?.length) || (parseInt(item.received_quantity) == 0 && checkDiffQty(item.differences))) && 
+                    item.expire_date &&
+                    item.batch_number &&
+                    item.location
+                ).map(item => ({
+                    id: item.id,
                     product_id: item.product_id,
                     warehouse_id: item.warehouse_id,
+                    received_quantity: item.received_quantity,
                     quantity: item.quantity,
                     batch_number: item.batch_number,
-                    expire_date: item.expire_date || item.expired_date,
+                    expire_date: item.expire_date,
                     location: item.location,
                     unit_cost: item.unit_cost,
                     total_cost: item.total_cost,
                     differences: item.differences?.length > 0 ? item.differences.map(i => ({
+                        id: i.id,
                         quantity: i.quantity,
                         status: i.status,
                     })) : []
@@ -536,6 +754,72 @@ function formatCurrency(value) {
     }).format(value);
 }
 
+const showLocationForm = ref(false);
+const activeLocationDropdown = ref(null);
+const locationSearch = ref('');
+const filteredLocations = ref([]);
+const locationForm = ref({
+    'location': ''
+});
+
+// Initialize filtered locations
+onMounted(() => {
+    filteredLocations.value = props.locations;
+});
+
+// Close dropdown when clicking outside
+// Handle clicks outside dropdown
+document.addEventListener('click', (e) => {
+    const dropdowns = document.querySelectorAll('.location-dropdown');
+    let clickedOutside = true;
+    dropdowns.forEach(dropdown => {
+        if (dropdown.contains(e.target)) {
+            clickedOutside = false;
+        }
+    });
+    if (clickedOutside) {
+        activeLocationDropdown.value = null;
+        locationSearch.value = '';
+    }
+});
+
+// Filter locations based on search
+function filterLocations() {
+    const query = locationSearch.value.toLowerCase();
+    filteredLocations.value = props.locations.filter(l => 
+        l.location.toLowerCase().includes(query)
+    );
+}
+
+function selectLocation(item, location) {
+    item.location = location;
+    activeLocationDropdown.value = null;
+    locationSearch.value = '';
+}
+
+async function handleLocationSubmit() {
+    await storeLocation();
+    showLocationForm.value = false;
+    locationForm.value.location = ''; // Reset form
+}
+
+async function storeLocation(){
+    await axios.post(route('supplies.location-store'), locationForm)
+        .then((response) => {
+            console.log(response.data);
+            router.get(route('supplies.packing-list'), {}, {
+                preserveScroll: false,
+                preserveState: false,
+                only: [
+                    'locations'
+                ]
+            })
+        })
+        .catch((error) => {
+            console.log(error.response.data);
+        });
+}
+
 const isLoading = ref(false);
 async function onPOChange(e) {
     isLoading.value = true;
@@ -552,7 +836,7 @@ async function onPOChange(e) {
         })
         .catch((error) => {
             isLoading.value = false;
-            console.log(error);
+            console.log(error.response);
         })
 }
 
@@ -683,5 +967,23 @@ tr {
 
 td {
     position: relative;
+}
+/* Custom scrollbar styles */
+.overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #666;
 }
 </style>

@@ -2,6 +2,10 @@
 
     <Head title="Purchase Order" />
     <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders">
+        <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Back to Suppliers
+        </Link>
         <div class="">
             <!-- Supplier Selection -->
             <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -189,7 +193,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';

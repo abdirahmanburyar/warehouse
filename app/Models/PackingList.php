@@ -39,7 +39,7 @@ class PackingList extends Model
 
     public function differences()
     {
-        return $this->hasMany(PackingListDifference::class, 'packing_lists_id');
+        return $this->hasMany(PackingListDifference::class, 'packing_list_id');
     }
 
     public function creator()

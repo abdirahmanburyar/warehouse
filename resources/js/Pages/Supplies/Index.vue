@@ -64,7 +64,7 @@
                                             role="menuitem">
                                             Create Supplier
                                         </a>
-                                        <a href="#" @click.prevent="openSuppliersModal"
+                                        <a href="#" @click="navigateToViewSupplier"
                                             class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                             role="menuitem">
                                             View Suppliers
@@ -280,109 +280,6 @@
                     </nav>
                 </div>
 
-                <!-- Suppliers Modal -->
-                <TransitionRoot appear :show="isSuppliersModalOpen" as="template">
-                    <Dialog as="div" @close="closeSuppliersModal" class="relative z-50">
-                        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0"
-                            enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
-                            <div class="fixed inset-0 bg-black bg-opacity-25" />
-                        </TransitionChild>
-
-                        <div class="fixed inset-0 overflow-y-auto">
-                            <div class="flex min-h-full items-center justify-center p-4 text-center">
-                                <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95"
-                                    enter-to="opacity-100 scale-100" leave="duration-200 ease-in"
-                                    leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-                                    <DialogPanel
-                                        class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                                        <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 flex justify-between items-center">
-                                            <span>Suppliers List</span>
-                                            <Link :href="route('supplies.create')"  class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
-                                                Add New Supplier
-                                        </Link>
-                                        </DialogTitle>
-                                        <div class="mt-4">
-                                            <div class="overflow-x-auto">
-                                                <table class="min-w-full divide-y divide-gray-200">
-                                                    <thead class="bg-gray-50">
-                                                        <tr>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Name
-                                                            </th>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Contact Person
-                                                            </th>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Email
-                                                            </th>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Phone
-                                                            </th>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Status
-                                                            </th>
-                                                            <th scope="col"
-                                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Actions
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="bg-white divide-y divide-gray-200">
-                                                        <tr v-for="supplier in props.suppliers" :key="supplier.id">
-                                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                {{ supplier.name }}
-                                                            </td>
-                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {{ supplier.contact_person }}
-                                                            </td>
-                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {{ supplier.email }}
-                                                            </td>
-                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {{ supplier.phone }}
-                                                            </td>
-                                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                                <span
-                                                                    :class="[
-                                                                        'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                                                                        supplier.is_active
-                                                                            ? 'bg-green-100 text-green-800'
-                                                                            : 'bg-red-100 text-red-800'
-                                                                    ]">
-                                                                    {{ supplier.is_active ? 'Active' : 'Inactive' }}
-                                                                </span>
-                                                            </td>
-                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                <Link :href="route('suppliers.edit', supplier.id)"
-                                                                    class="text-indigo-600 hover:text-indigo-900">
-                                                                    Edit
-                                                                </Link>
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-4 flex justify-end">
-                                            <button type="button"
-                                                class="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
-                                                @click="closeSuppliersModal">
-                                                Close
-                                            </button>
-                                        </div>
-                                    </DialogPanel>
-                                </TransitionChild>
-                            </div>
-                        </div>
-                    </Dialog>
-                </TransitionRoot>
-
             </div>
         </div>
     </AuthenticatedLayout>
@@ -505,21 +402,13 @@ const stats = computed(() => props.stats || {
     pending_orders: 0
 });
 
-const isSuppliersModalOpen = ref(false)
-
-function openSuppliersModal() {
-    isSuppliersModalOpen.value = true
-    showDropdown.value = false
-}
-
-function closeSuppliersModal() {
-    isSuppliersModalOpen.value = false
-}
 
 const navigateToCreateSupplier = () => {
-    router.get(route('supplies.create'))
-    showDropdown.value = false
-    isSuppliersModalOpen.value = false
+    router.get(route('supplies.create'));
+}
+
+const navigateToViewSupplier = () => {
+    router.get(route('supplies.show'));
 }
 
 watch([

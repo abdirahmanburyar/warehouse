@@ -1,175 +1,143 @@
 <template>
-    <Head title="Purchase Order Details" />
+    <Head title="Suppliers List" />
     <AuthenticatedLayout>
-            <!-- Back Button -->
-            <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700 mb-6">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Purchase Orders
-            </Link>
+        <!-- Back Button -->
+        <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700 mb-6">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to  Home
+        </Link>
 
-            <!-- Header Section -->
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">{{ props.po.po_number }}</h1>
-                        <p class="text-sm text-gray-500 mt-1">Created on {{ formatDate(props.po.created_at) }}</p>
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Suppliers</h2>
+                    <Link :href="route('supplies.create')" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add New Supplier
+                    </Link>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <input 
+                            type="text" 
+                            v-model="search" 
+                            placeholder="Search suppliers..." 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <span :class="statusClass">{{ props.po.status }}</span>
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            Print PO
-                        </button>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm text-gray-600">Status:</label>
+                        <select 
+                            v-model="statusFilter" 
+                            class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Summary -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">PO Date</span>
-                            <span class="font-medium">{{ formatDate(props.po.po_date) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Total Items</span>
-                            <span class="font-medium">{{ props.po.items.length }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Total Amount</span>
-                            <span class="font-medium">{{ formatCurrency(calculateTotalAmount) }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Supplier Information</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Name</span>
-                            <span class="font-medium">{{ props.po.supplier.name }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Contact Person</span>
-                            <span class="font-medium">{{ props.po.supplier.contact_person }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Email</span>
-                            <span class="font-medium">{{ props.po.supplier.email }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Phone</span>
-                            <span class="font-medium">{{ props.po.supplier.phone }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Address</span>
-                            <span class="font-medium text-right">{{ props.po.supplier.address }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Status</span>
-                            <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', props.po.supplier.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
-                                {{ props.po.supplier.is_active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Items Table -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-[70px]">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Order Items</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border border-black">
-                        <thead class="bg-gray-50">
+            <div class="relative overflow-hidden">
+                <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)]">
+                    <table class="min-w-full border border-black divide-y divide-black">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black w-[40px]">SN#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Quantity</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Unit Cost</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">Total Cost</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Contact Person</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Contact Info</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Address</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-black bg-gray-50">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(item, i) in props.po.items" :key="item.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap border border-black">{{i+1}}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                    <div>
-                                        <div class="text-sm font-medium text-black-900">{{ item.product.name }}</div>
-                                        <div class="text-sm text-black-500">{{ item.product.barcode }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black-500 border border-black">
-                                    {{ formatNumber(item.quantity) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black-500 border border-black">
-                                    {{ formatCurrency(item.unit_cost) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black-900 border border-black">
-                                    {{ formatCurrency(item.total_cost) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tfoot class="bg-gray-50">
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-sm font-medium text-gray-900 text-right border border-black">Total</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-black">
-                                    {{ formatCurrency(calculateTotalAmount) }}
-                                </td>
-                            </tr>
-                        </tfoot>
+
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="supplier in filteredSuppliers" :key="supplier.id" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                <div class="text-sm font-medium text-gray-900">{{ supplier.name }}</div>
+                                <div class="text-sm text-gray-500">Created: {{ formatDate(supplier.created_at) }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
+                                {{ supplier.contact_person }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                <div class="text-sm text-gray-900">{{ supplier.email }}</div>
+                                <div class="text-sm text-gray-500">{{ supplier.phone }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
+                                {{ supplier.address || 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                <span :class="[supplier.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full']">
+                                    {{ supplier.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-black text-sm font-medium">
+                                <Link :href="route('suppliers.edit', supplier.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Edit
+                                </Link>
+                                <button class="text-red-600 hover:text-red-900 inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
                     </table>
                 </div>
             </div>
-     
+        </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+
+const search = ref('');
+const statusFilter = ref('all');
 
 const props = defineProps({
-    po: {
+    suppliers: {
         required: true,
-        type: Object
+        type: Array
     }
+});
+
+const filteredSuppliers = computed(() => {
+    return props.suppliers.filter(supplier => {
+        const matchesSearch = 
+            supplier.name.toLowerCase().includes(search.value.toLowerCase()) ||
+            supplier.contact_person.toLowerCase().includes(search.value.toLowerCase()) ||
+            supplier.email.toLowerCase().includes(search.value.toLowerCase()) ||
+            supplier.phone.toLowerCase().includes(search.value.toLowerCase());
+
+        const matchesStatus = 
+            statusFilter.value === 'all' ||
+            (statusFilter.value === 'active' && supplier.is_active) ||
+            (statusFilter.value === 'inactive' && !supplier.is_active);
+
+        return matchesSearch && matchesStatus;
+    });
 });
 
 const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
     });
 };
-
-const formatNumber = (number) => {
-    return number.toLocaleString('en-US');
-};
-
-const formatCurrency = (number) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(number);
-};
-
-const calculateTotalAmount = computed(() => {
-    return props.po.items.reduce((total, item) => total + item.total_cost, 0);
-});
-
-const statusClass = computed(() => {
-    const classes = {
-        pending: 'bg-yellow-100 text-yellow-800',
-        approved: 'bg-green-100 text-green-800',
-        rejected: 'bg-red-100 text-red-800'
-    };
-    return `px-3 py-1 rounded-full text-sm font-medium ${classes[props.po.status] || classes.pending}`;
-});
 </script>

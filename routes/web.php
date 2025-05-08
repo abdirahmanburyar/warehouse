@@ -145,9 +145,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->prefix('/supplies')
         ->group(function () {
             Route::get('/', 'index')->name('supplies.index');
+            Route::get('/show', 'show')->name('supplies.show');
             Route::get('/items/{supply}', 'getItems')->name('supplies.items');
             Route::get('/purchase-order/{id}/show', 'showPO')->name('supplies.po-show');
-
 
             
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
@@ -175,6 +175,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/packing-list', 'newPackingList')->name('supplies.packing-list');
             Route::get('/packing-list/{id}/purchase-order', 'getPO')->name('supplies.get-purchaseOrder');
             Route::get('/back-order/{id}/purchase-order', 'getBackOrder')->name('supplies.get-packingList');
+
+            // back order 
+            Route::post('/back-order/status-change', 'BackOrderstatusChange')->name('supplies.backorder-status');
+
+            // locations
+            Route::post('/location/store', 'storeLocation')->name('supplies.location-store');
         });
 
     // Supplier Routes
