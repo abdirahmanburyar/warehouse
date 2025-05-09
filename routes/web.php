@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\DosageController;
+use App\Http\Controllers\EligibleItemController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\SupplierController;
@@ -29,6 +30,7 @@ use Inertia\Inertia;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
 // Welcome route - accessible without authentication
+
 Route::get('/welcome', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
@@ -107,13 +109,23 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
 
     // Dosage Management Routes
-    Route::controller(DosageController::class)
-        ->prefix('/dosages')
-        ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':dosage.view')->name('dosages.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':dosage.create')->name('dosages.store');
-            Route::get('/{dosage}/destroy', 'destroy')->middleware(PermissionMiddleware::class . ':dosage.delete')->name('dosages.destroy');
-        });
+    Route::prefix('product/dosages')->group(function () {
+        Route::get('/', [DosageController::class, 'index'])->middleware(PermissionMiddleware::class . ':dosage.view')->name('products.dosages.index');
+        Route::get('/create', [DosageController::class, 'create'])->middleware(PermissionMiddleware::class . ':dosage.create')->name('products.dosages.create');
+        Route::post('/', [DosageController::class, 'store'])->middleware(PermissionMiddleware::class . ':dosage.create')->name('products.dosages.store');
+        Route::get('/{dosage}/edit', [DosageController::class, 'edit'])->middleware(PermissionMiddleware::class . ':dosage.edit')->name('products.dosages.edit');
+        Route::put('/{dosage}', [DosageController::class, 'update'])->middleware(PermissionMiddleware::class . ':dosage.edit')->name('products.dosages.update');
+        Route::delete('/{dosage}', [DosageController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':dosage.delete')->name('products.dosages.destroy');
+    });
+
+    // Eligible Items Management Routes
+    Route::prefix('product/eligible')->group(function () {
+        Route::get('/', [EligibleItemController::class, 'index'])->name('products.eligible.index');
+        Route::get('/create', [EligibleItemController::class, 'create'])->name('products.eligible.create');
+        Route::post('/store', [EligibleItemController::class, 'store'])->name('products.eligible.store');
+        Route::get('/{eligible}/edit', [EligibleItemController::class, 'edit'])->name('products.eligible.edit');
+        Route::delete('/{eligible}', [EligibleItemController::class, 'destroy'])->name('products.eligible.destroy');
+    });
 
     // Product Management Routes
     Route::controller(ProductController::class)
@@ -121,12 +133,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->group(function () {
             Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':product.view')->name('products.index');
             Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':product.create')->name('products.store');
-            Route::put('/{product}', 'update')->middleware(PermissionMiddleware::class . ':product.edit')->name('products.update');
-            Route::delete('/{product}', 'destroy')->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
+            Route::get('/create', 'create')->name('products.create');
+
+            Route::delete('/{product}/destroy', 'destroy')->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
             Route::post('/bulk', 'bulk')->middleware(PermissionMiddleware::class . ':product.delete')->name('products.bulk');
             Route::post('/search', 'search')->name('products.search');
-            Route::post('/eligible/store', 'addEligibleItemStore')->name('eligible-items.store');
-            Route::get('/eligible/{id}', 'destroyEligibleItem')->name('eligible-items.destroy');
+
+            Route::get('/{product}/edit', 'edit')->name('products.edit');
+            
+            
+
         });
 
     // Inventory Routes
@@ -264,7 +280,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     // Remove duplicate resource routes since we already have individual routes defined above
     // Route::middleware('role:admin')->group(function () {
     //     Route::resource('users', UserController::class);
-    //     Route::resource('roles', RoleController::class);
+    //     Route::resource('products', ProductController::class);
+    Route::prefix('product/categories')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('products.categories.index');
+        Route::get('/create', [CategoryController::class, 'create'])->name('products.categories.create');
+        Route::post('/', [CategoryController::class, 'store'])->name('products.categories.store');
+        Route::get('/{category}/edit', [CategoryController::class, 'edit'])->name('products.categories.edit');
+        Route::put('/{category}', [CategoryController::class, 'update'])->name('products.categories.update');
+        Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('products.categories.destroy');
+    });
     // });
 
     Route::controller(TransferController::class)
@@ -312,6 +336,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('reports.index');
             Route::get('/stock-level-report', 'stockLevelReport')->name('reports.stockLevelReport');
         });
+
+    // Product Management Routes
 });
 
 require __DIR__ . '/auth.php';

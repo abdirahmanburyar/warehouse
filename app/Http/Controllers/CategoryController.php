@@ -36,62 +36,72 @@ class CategoryController extends Controller
         // Get paginated results
         $categories = $query->paginate(10)->withQueryString();
         
-        return Inertia::render('Category/Index', [
+        return Inertia::render('Product/Category/Index', [
             'categories' => CategoryResource::collection($categories),
             'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
         ]);
     }
 
     /**
-     * Store a newly created category in storage or update an existing one.
+     * Show the form for creating a new category.
+     */
+    public function create()
+    {
+        return Inertia::render('Product/Category/Create');
+    }
+
+    /**
+     * Show the form for editing a category.
+     */
+    public function edit(Category $category)
+    {
+        return Inertia::render('Product/Category/Edit', [
+            'category' => new CategoryResource($category)
+        ]);
+    }
+
+    /**
+     * Store a newly created category in storage.
      */
     public function store(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'id' => 'nullable|exists:categories,id',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
             ]);
             
             if ($validator->fails()) {
-                if ($request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validation failed',
-                        'errors' => $validator->errors()
-                    ], 422);
-                }
-                
                 return back()->withErrors($validator)->withInput();
             }
             
-            if ($request->id) {
-                $category = Category::findOrFail($request->id);
-                $category->update($request->all());
-                $message = 'Category updated successfully';
-            } else {
-                $category = Category::create($request->all());
-                $message = 'Category created successfully';
-            }
+            $category = Category::create($request->all());
             
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $message,
-                    'category' => new CategoryResource($category)
-                ]);
-            }
-            
-            return redirect()->route('categories.index')->with('success', $message);
+            return redirect()->route('products.categories.index')->with('success', 'Category created successfully');
         } catch (Throwable $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'An error occurred: ' . $e->getMessage()
-                ], 500);
+            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Update the specified category in storage.
+     */
+    public function update(Request $request, Category $category)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:1000',
+            ]);
+            
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
             }
             
+            $category->update($request->all());
+            
+            return redirect()->route('products.categories.index')->with('success', 'Category updated successfully');
+        } catch (Throwable $e) {
             return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
         }
     }

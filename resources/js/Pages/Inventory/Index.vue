@@ -19,6 +19,9 @@ import Swal from 'sweetalert2';
 const props = defineProps({
     inventories: Object,
     products: Array,
+    dosage: Array,
+    category: Array,
+    locations: Array,
     warehouses: Array,
     filters: Object,
     inventoryStatusCounts: Array
@@ -31,10 +34,10 @@ const search = ref(props.filters.search || '');
 const productId = ref(props.filters.product_id || '');
 const location = ref(props.filters.location || '');
 const batchNumber = ref(props.filters.batch_number || '');
-const expiryDateFrom = ref(props.filters.expiry_date_from || '');
-const expiryDateTo = ref(props.filters.expiry_date_to || '');
 const sortField = ref(props.filters.sort_field || 'created_at');
 const sortDirection = ref(props.filters.sort_direction || 'desc');
+const dosage = ref(props.filters.dosage || '');
+const category = ref(props.filters.category || '');
 const warehouse_id = ref(props.filters.warehouse_id || '');
 const perPage = ref(props.filters.per_page || 6);
 const isSubmitting = ref(false);
@@ -48,6 +51,26 @@ const inventoryToDelete = ref(null);
 const selectedItems = ref([]);
 const isBulkDeleting = ref(false);
 const showBulkDeleteModal = ref(false);
+
+const showLocationForm = ref(false);
+const locationSearch = ref('');
+const filteredLocations = ref([]);
+
+// Initialize filtered locations and add filterLocations function
+onMounted(() => {
+    filteredLocations.value = props.locations;
+});
+
+function filterLocations() {
+    if (!locationSearch.value) {
+        filteredLocations.value = props.locations;
+        return;
+    }
+    
+    filteredLocations.value = props.locations.filter(loc => 
+        loc.location.toLowerCase().includes(locationSearch.value.toLowerCase())
+    );
+}
 
 // Form states
 const form = ref({
@@ -113,9 +136,9 @@ const resetFilters = () => {
     productId.value = '';
     location.value = '';
     batchNumber.value = '';
-    expiryDateFrom.value = '';
-    expiryDateTo.value = '';
     warehouse_id.value = '';
+    dosage.value = '';
+    category.value = '';
     applyFilters();
 };
 
@@ -127,19 +150,19 @@ const applyFilters = () => {
     if (productId.value) query.product_id = productId.value
     if (location.value) query.location = location.value
     if (batchNumber.value) query.batch_number = batchNumber.value
-    if (expiryDateFrom.value) query.expiry_date_from = expiryDateFrom.value
-    if (expiryDateTo.value) query.expiry_date_to = expiryDateTo.value
     if (sortField.value) query.sort_field = sortField.value
     if (sortDirection.value) query.sort_direction = sortDirection.value
     if (perPage.value) query.per_page = perPage.value
     if (warehouse_id.value) query.warehouse_id = warehouse_id.value
+    if (dosage.value) query.dosage = dosage.value
+    if (category.value) query.category = category.value
 
     router.get(
         route('inventories.index'), query,
         {
             preserveState: true,
             preserveScroll: true,
-            only: ['inventories', 'products', 'warehouses', 'filters', 'inventoryStatusCounts'],
+            only: ['inventories', 'products', 'warehouses', 'filters', 'inventoryStatusCounts', 'locations','dosage', 'category'],
         }
     );
 };
@@ -153,18 +176,27 @@ const debouncedSearch = () => {
     }, 500);
 };
 
+
+
+function selectLocation(selectedLocation) {
+    location.value = selectedLocation;
+    showLocationForm.value = false;
+    locationSearch.value = '';
+    applyFilters();
+}
+
 // Watch for changes in search input
 watch([
     () => search.value,
     () => productId.value,
     () => location.value,
     () => batchNumber.value,
-    () => expiryDateFrom.value,
-    () => expiryDateTo.value,
     () => sortField.value,
     () => sortDirection.value,
     () => perPage.value,
     () => warehouse_id.value,
+    () => dosage.value,
+    () => category.value,
 ], () => {
     debouncedSearch();
 }, { deep: true });
@@ -180,17 +212,8 @@ const sort = (field) => {
 const addInventory = () => {
     formErrors.value = {};
     form.value = {
-        product_id: null,
-        product: null,
-        warehouse_id: '',
-        quantity: 0,
-        reorder_level: 10,
-        manufacturing_date: '',
-        expiry_date: '',
-        batch_number: '',
+        id: null,
         location: '',
-        notes: '',
-        is_active: true,
     };
     showAddModal.value = true;
     showEditModal.value = false;
@@ -199,11 +222,6 @@ const addInventory = () => {
 // Submit form
 const submitForm = async () => {
     isSubmitting.value = true;
-
-    // Set product_id from the selected product object if it exists
-    if (form.value.product && form.value.product.id) {
-        form.value.product_id = form.value.product.id;
-    }
 
     await axios.post(route('inventories.store'), form.value)
         .then(() => {
@@ -388,6 +406,7 @@ const bulkDelete = async () => {
     }
 };
 
+
 const echo = ref(null);
 </script>
 
@@ -402,7 +421,7 @@ const echo = ref(null);
                 <div class="mb-1 flex flex-wrap items-center gap-4">
                     <div class="flex-grow relative">
                         <TextInput v-model="search" type="text" class="w-full"
-                            placeholder="Search by product name, SKU, category or barcode" />
+                            placeholder="Search by item name, barcode" />
                         <button v-if="search" @click="search = ''; applyFilters()"
                             class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
@@ -415,7 +434,7 @@ const echo = ref(null);
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4">
-                        <div class="w-48">
+                        <div class="w-[300px]">
                             <select v-model="warehouse_id"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 @change="applyFilters">
@@ -425,21 +444,61 @@ const echo = ref(null);
                                 </option>
                             </select>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <TextInput v-model="expiryDateFrom" type="date" class="w-40" @change="applyFilters" />
-                            <span>to</span>
-                            <TextInput v-model="expiryDateTo" type="date" class="w-40" @change="applyFilters" />
+                        <div class="w-[300px]">
+                            <select v-model="category"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                @change="applyFilters">
+                                <option value="">Category</option>
+                                <option v-for="d in props.category" :key="d.id" :value="d.id">
+                                    {{ d.name }}
+                                </option>
+                            </select>
                         </div>
-                        <div class="w-48">
-                            <TextInput v-model="location" type="text" class="w-full" placeholder="Filter by location"
-                                @keyup.enter="applyFilters" />
+                        <div class="w-[300px]">
+                            <select v-model="dosage"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                @change="applyFilters">
+                                <option value="">Dosage Form</option>
+                                <option v-for="d in props.dosage" :key="d.id" :value="d.id">
+                                    {{ d.name }}
+                                </option>
+                            </select>
                         </div>
-
-                        <div class="w-48">
-                            <TextInput v-model="batchNumber" type="text" class="w-full"
-                                placeholder="Filter by batch number" @keyup.enter="applyFilters" />
+                        <div class="w-[300px] relative">
+                            <div 
+                                class="cursor-pointer border rounded p-2"
+                                @click="showLocationForm = !showLocationForm"
+                            >
+                                {{ location || 'Select a location' }}
+                            </div>
+                            
+                            <div v-if="showLocationForm" 
+                                class="absolute left-0 right-0 z-[999] mt-1 bg-white border rounded shadow-lg"
+                            >
+                                <input 
+                                    type="text" 
+                                    v-model="locationSearch" 
+                                    placeholder="Search locations..."
+                                    class="w-full p-2 border-b text-sm focus:outline-none"
+                                    @input="filterLocations"
+                                    ref="searchInput"
+                                >
+                                <div class="max-h-48 overflow-y-auto py-1">
+                                    <div 
+                                        v-for="loc in filteredLocations" 
+                                        :key="loc.location"
+                                        @click="selectLocation(loc.location)"
+                                        class="px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm"
+                                    >
+                                        {{ loc.location }}
+                                    </div>
+                                    
+                                    <div v-if="filteredLocations.length === 0" class="p-3 text-sm text-gray-500 text-center">
+                                        {{ locationSearch ? 'No locations found' : 'Type to search locations' }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
                         <SecondaryButton @click="resetFilters">Reset</SecondaryButton>
                         <select v-model="perPage"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -549,31 +608,6 @@ const echo = ref(null);
                                         <div v-if="inventory.product">
                                             <div class="font-medium text-gray-900 relative group cursor-help">
                                                 {{ inventory.product.name }}
-                                                <!-- Tooltip -->
-                                                <div
-                                                    class="absolute hidden group-hover:block z-[99] w-64 p-4 mt-1 bg-gray-800 rounded-lg shadow-lg">
-                                                    <div class="text-sm text-white space-y-2">
-                                                        <div class="border-b border-gray-700 pb-2">
-                                                            <span class="text-gray-400">SKU:</span>
-                                                            <span class="ml-2">{{ inventory.product.sku }}</span>
-                                                        </div>
-                                                        <div class="border-b border-gray-700 pb-2">
-                                                            <span class="text-gray-400">Dosage:</span>
-                                                            <span class="ml-2">{{ inventory.product.dosage ?
-                                                                inventory.product.dosage.name : 'No Dosage'
-                                                                }}</span>
-                                                        </div>
-                                                        <div>
-                                                            <span class="text-gray-400">Barcode:</span>
-                                                            <span class="ml-2">{{ inventory.product.category ?
-                                                                inventory.product.barcode : 'No Barcode' }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Arrow -->
-                                                    <div
-                                                        class="absolute -top-1 left-4 w-3 h-3 bg-gray-800 transform rotate-45">
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
                                         <div v-else class="text-sm text-gray-500">Product not found</div>

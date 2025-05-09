@@ -7,124 +7,148 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use App\Http\Resources\DosageResource;
+use Inertia\Inertia;
+use Throwable;
 
 class DosageController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the dosages.
      */
     public function index(Request $request)
     {
         $query = Dosage::query();
-
-        // Search functionality
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+        
+        // Handle search
+        if ($request->has('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
-
-        // Sorting
-        $sortField = $request->input('sort_field', 'id');
+        
+        // Handle sorting
+        $sortField = $request->input('sort_field', 'created_at');
         $sortDirection = $request->input('sort_direction', 'desc');
         
-        if (in_array($sortField, ['id', 'name', 'description', 'is_active', 'created_at'])) {
-            $query->orderBy($sortField, $sortDirection);
-        }
-
-        // Pagination
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Get paginated results with per_page parameter
         $perPage = $request->input('per_page', 10);
         $dosages = $query->paginate($perPage)->withQueryString();
+        
+        $paginatedDosages = DosageResource::collection($dosages)->response()->getData(true);
 
-        return response()->json([
-            'success' => true,
-            'data' => DosageResource::collection($dosages)
+        return Inertia::render('Product/Dosage/Index', [
+            'dosages' => [
+                'data' => $paginatedDosages['data'],
+                'meta' => [
+                    'total' => $dosages->total(),
+                    'per_page' => $dosages->perPage(),
+                    'current_page' => $dosages->currentPage(),
+                    'last_page' => $dosages->lastPage(),
+                ],
+                'links' => [
+                    'first' => $dosages->url(1),
+                    'last' => $dosages->url($dosages->lastPage()),
+                    'prev' => $dosages->previousPageUrl(),
+                    'next' => $dosages->nextPageUrl(),
+                ],
+            ],
+            'filters' => $request->only(['search', 'sort_field', 'sort_direction', 'per_page']),
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Show the form for creating a new dosage.
+     */
+    public function create()
+    {
+        return Inertia::render('Product/Dosage/Create');
+    }
+
+    /**
+     * Show the form for editing a dosage.
+     */
+    public function edit(Dosage $dosage)
+    {
+        return Inertia::render('Product/Dosage/Edit', [
+            'dosage' => new DosageResource($dosage)
+        ]);
+    }
+
+    /**
+     * Store a newly created dosage in storage.
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'id' => 'nullable|exists:dosages,id',
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('dosages', 'name')->ignore($request->id)
-            ],
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            Dosage::updateOrCreate(
-                ['id' => $request->id],
-                $validator->validated()
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Dosage saved successfully'
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        try {
-            $dosage = Dosage::findOrFail($id);
-            
-            return response()->json([
-                'success' => true,
-                'data' => $dosage
+            $validator = Validator::make($request->all(), [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('dosages', 'name')
+                ],
+                'description' => 'nullable|string|max:1000',
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dosage not found'
-            ], 404);
+            
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
+            }
+            
+            $dosage = Dosage::create($request->all());
+            
+            return redirect()->route('products.dosages.index')->with('success', 'Dosage created successfully');
+        } catch (Throwable $e) {
+            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Update the specified dosage in storage.
      */
-    public function destroy(string $id)
+    public function update(Request $request, Dosage $dosage)
     {
         try {
-            $dosage = Dosage::findOrFail($id);
+            $validator = Validator::make($request->all(), [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('dosages', 'name')->ignore($dosage->id)
+                ],
+                'description' => 'nullable|string|max:1000',
+            ]);
             
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
+            }
+            
+            $dosage->update($request->all());
+            
+            return redirect()->route('products.dosages.index')->with('success', 'Dosage updated successfully');
+        } catch (Throwable $e) {
+            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified dosage from storage.
+     */
+    public function destroy(Dosage $dosage)
+    {
+        try {
             // Check if the dosage is associated with any products
-            if ($dosage->products()->count() > 0) {
+            if ($dosage->products()->exists()) {
                 return response()->json('Cannot delete dosage. It is associated with one or more products.', 500);
             }
             
             $dosage->delete();
-            
             return response()->json('Dosage deleted successfully', 200);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }
     }
-
 }

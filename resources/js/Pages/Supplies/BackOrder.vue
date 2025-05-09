@@ -156,7 +156,7 @@ async function handleBackOrder(item, action, index) {
         
         toast.success(response.data);
         // Refresh the list
-        await onPOChange({ target: { value: form.value[0]?.purchase_order_id } });
+        await onPOChange();
     } catch (error) {
         console.log(error.response.data);
         toast.error(error.response?.data || 'An error occurred');
@@ -167,17 +167,16 @@ async function handleBackOrder(item, action, index) {
 
 const isLoading = ref(false);
 
-async function onPOChange(e) {
+async function onPOChange() {
     isLoading.value = true;
     form.value = [];
     
-    const id = e.target.value;
-    if(!id) {
+    if(!purchase_order_id.value) {
         isLoading.value = false;
         return;
     }
  
-    await axios.get(route('supplies.get-packingList', id))
+    await axios.get(route('supplies.get-packingList', purchase_order_id.value))
         .then((response) => {
             isLoading.value = false;
             console.log(response.data);

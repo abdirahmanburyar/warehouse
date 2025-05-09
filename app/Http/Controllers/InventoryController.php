@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Location;
+use App\Models\Category;
+use App\Models\Dosage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -24,10 +27,6 @@ class InventoryController extends Controller
         $query = Inventory::query();
 
         $user = auth()->user();
-
-        // if(!$user->hasRole('admin')) {
-            // $query = $query->where('warehouse_id', $user->warehouse_id);
-        // }
         
         $query = $query->with(['product.dosage', 'warehouse']);
 
@@ -37,9 +36,7 @@ class InventoryController extends Controller
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhereHas('category', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                  });
+                  ->orWhere('batch_number', 'like', "%{$search}%");
             });
         }
         
@@ -47,24 +44,25 @@ class InventoryController extends Controller
             $query->where('product_id', $request->product_id);
         }
 
+        if ($request->filled('category')) {
+            $query->whereHas('product.category', function ($q) use ($request) {
+                $q->where('category_id', $request->category);
+              });
+        }
+
+        if ($request->filled('dosage')) {
+            $query->whereHas('product.dosage', function ($q) use ($request) {
+                $q->where('dosage_id', $request->dosage);
+              });
+        }
+
+
         if ($request->has('warehouse_id') && $request->warehouse_id) {
             $query->where('warehouse_id', $request->warehouse_id);
         }
 
         if ($request->has('location') && $request->location) {
             $query->where('location', 'like', "%{$request->location}%");
-        }
-
-        if ($request->has('batch_number') && $request->batch_number) {
-            $query->where('batch_number', 'like', "%{$request->batch_number}%");
-        }
-
-        if ($request->has('expiry_date_from') && $request->expiry_date_from) {
-            $query->whereDate('expiry_date', '>=', $request->expiry_date_from);
-        }
-
-        if ($request->has('expiry_date_to') && $request->expiry_date_to) {
-            $query->whereDate('expiry_date', '<=', $request->expiry_date_to);
         }
 
         // Sort
@@ -80,6 +78,7 @@ class InventoryController extends Controller
 
         // Get warehouses for dropdown
         $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->get();
+        $locations = Location::get();
 
         // Get inventory status counts
         $inStockCount = Inventory::whereRaw('quantity > (products.reorder_level * 5)')
@@ -115,8 +114,11 @@ class InventoryController extends Controller
             'inventories' => InventoryResource::collection($inventories),
             'products' => $products,
             'warehouses' => $warehouses,
-            'filters' => $request->all(['search', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page', 'page']),
+            'filters' => $request->only('search', 'product_id', 'warehouse_id', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page', 'page'),
             'inventoryStatusCounts' => $inventoryStatusCounts,
+            'locations' => $locations,
+            'category' => Category::get(),
+            'dosage' => Dosage::get(),
         ]);
     }
 

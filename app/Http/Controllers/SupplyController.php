@@ -16,6 +16,7 @@ use App\Models\Location;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use App\Models\PackingList;
+use App\Models\IssuedQuantity;
 use App\Models\PackingListDifference;
 use App\Models\PurchaseOrderItem;
 use App\Http\Resources\SupplierResource;
@@ -342,6 +343,15 @@ class SupplyController extends Controller
                                 'updated_at' => now()
                             ]);
                         }
+                        IssuedQuantity::create([
+                            'product_id' => $item['product_id'],
+                            'quantity' => $item['received_quantity'],
+                            'unit_cost' => $item['unit_cost'],
+                            'total_cost' => $item['total_cost'],
+                            'warehouse_id' => $item['warehouse_id'],
+                            'issued_date' => Carbon::now()->toDateString(),
+                            'issued_by' => auth()->user()->id,
+                        ]);
                     }
 
                 }
@@ -1120,6 +1130,15 @@ class SupplyController extends Controller
                         'updated_at' => now()
                     ]);
                 }
+                IssuedQuantity::create([
+                    'product_id' => $packingListItem['product_id'],
+                    'quantity' => $request->quantity,
+                    'unit_cost' => $packingListItem['unit_cost'],
+                    'warehouse_id' => $packingListItem['warehouse_id'],
+                    'total_cost' => (double) $packingListItem['unit_cost'] * (double) $request->quantity,
+                    'issued_date' => Carbon::now()->toDateString(),
+                    'issued_by' => auth()->user()->id,
+                ]);
             } else if ($request->action === 'dispose') {
                 // Create disposal record
                 Disposal::create([
