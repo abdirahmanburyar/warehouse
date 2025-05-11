@@ -6,7 +6,7 @@
             <div class="p-6 mb-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Received New Supply</h2>
                 <div class="grid grid-cols-1 gap-6">
-                    <div class="w-[400px] mb-4">
+                    <div class="w-[400px]">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Select Supplier
                         </label>

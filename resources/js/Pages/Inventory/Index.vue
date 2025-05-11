@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -520,7 +520,7 @@ const echo = ref(null);
                         <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
                             <thead class="border-b border-gray-200">
                                 <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r">
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         <div class="flex items-center justify-center">
                                             <input
                                                 type="checkbox"
@@ -530,35 +530,35 @@ const echo = ref(null);
                                             />
                                         </div>
                                     </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r">
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Product Name
                                     </th>
                                     <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Category
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200"
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
                                         @click="sort('quantity')">
                                         In Stock
                                         <span v-if="sortField === 'quantity'">
                                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                                         </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200"
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
                                         @click="sort('location')">
                                         Location
                                         <span v-if="sortField === 'location'">
                                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                                         </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200"
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
                                         @click="sort('batch_number')">
                                         Batch Number
                                         <span v-if="sortField === 'batch_number'">
                                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                                         </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200"
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
                                         @click="sort('expiry_date')">
                                         Expiry Date
                                         <span v-if="sortField === 'expiry_date'">
@@ -566,17 +566,17 @@ const echo = ref(null);
                                         </span>
                                     </th>
                                     <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Status
                                     </th>
                                     <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <tr v-if="!currentInventories.data || currentInventories.data.length === 0">
+                                <tr v-if="!currentInventories.data || currentInventories.data.length === 0" class=" border border-black">
                                     <td colspan="10" class="px-3 py-16 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4"
@@ -593,7 +593,7 @@ const echo = ref(null);
                                 </tr>
                                 <tr v-else v-for="inventory in currentInventories.data" :key="inventory.id"
                                     class="hover:bg-gray-50">
-                                    <td class="px-3 py-2 whitespace-nowrap border-r">
+                                    <td class="px-3 py-2 whitespace-nowrap  border border-black">
                                         <div class="flex items-center justify-center">
                                             <input
                                                 type="checkbox"
@@ -604,7 +604,7 @@ const echo = ref(null);
                                         </div>
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div v-if="inventory.product">
                                             <div class="font-medium text-gray-900 relative group cursor-help">
                                                 {{ inventory.product.name }}
@@ -613,11 +613,11 @@ const echo = ref(null);
                                         <div v-else class="text-sm text-gray-500">Product not found</div>
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         {{ inventory.product.category ? inventory.product.category.name : 'No Category' }}
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div :class="{
                                             'font-medium': true,
                                             'text-red-600': isLowStock(inventory),
@@ -630,15 +630,15 @@ const echo = ref(null);
                                         </div>
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                             {{ inventory.location }}
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         {{ inventory.batch_number }}
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div :class="{
                                             'text-sm': true,
                                             'text-red-600': isExpired(inventory),
@@ -652,7 +652,7 @@ const echo = ref(null);
                                         </div>
                                     </td>
                                     <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div class="flex items-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
                                                 <img src="/assets/images/low_stock.png" title="Low Stock"
@@ -677,8 +677,11 @@ const echo = ref(null);
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium  border border-black">
                                         <div class="flex items-center space-x-3">
+                                            <Link :href="route('supplies.create')" class="rounded-full w-[34px] cursor-pointer">
+                                                <img src="/assets/images/ReorderAlert.png" />
+                                            </Link>
                                             <button @click="editInventory(inventory)"
                                                 class="text-indigo-600 hover:text-indigo-900">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"

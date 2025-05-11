@@ -16,6 +16,7 @@ use App\Models\Location;
 use App\Models\Inventory;
 use App\Models\SupplyItem;
 use App\Models\PackingList;
+use App\Models\BackOrder;
 use App\Models\IssuedQuantity;
 use App\Models\PackingListDifference;
 use App\Models\PurchaseOrderItem;
@@ -57,8 +58,11 @@ class SupplyController extends Controller
             'total_cost' => PurchaseOrder::join('purchase_order_items', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
                 ->sum(DB::raw('quantity * unit_cost')),
             'avg_lead_time' => '4 Months', // You can calculate this based on your needs
-            'pending_orders' => PurchaseOrder::where('status', 'pending')->count()
+            'pending_orders' => PurchaseOrder::where('status', 'pending')->count(),
+            'back_orders' => PAckingListDifference::sum('quantity'),
         ];
+
+        logger()->info($stats);
 
         return Inertia::render('Supplies/Index', [
             'purchaseOrders' => [
@@ -107,7 +111,7 @@ class SupplyController extends Controller
 
     public function showPO(Request $request, $id){
         $po = PurchaseOrder::where('id', $id)->with('items.product','supplier')->first();
-        return inertia("Supplies/Show", [
+        return inertia("Supplies/PurchaseO/Show", [
             'po' => $po
         ]);
     }

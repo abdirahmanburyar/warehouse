@@ -77,7 +77,7 @@
                 </div>
 
                 <!-- Status Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                     <div class="bg-[#F7DC6F] rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
                             <div>
@@ -115,6 +115,20 @@
                             <div class="p-3 bg-red-100 rounded-full">
                                 <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-teal-500 rounded-lg shadow-sm p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-black-600">Back Order Quantities</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ stats.back_orders }}</p>
+                            </div>
+                            <div class="p-3 bg-teal-100 rounded-full">
+                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                         </div>
@@ -337,7 +351,8 @@ const props = defineProps({
             total_items: 0,
             total_cost: 0,
             avg_lead_time: '0 Months',
-            pending_orders: 0
+            pending_orders: 0,
+            back_orders: 0,
         })
     },
     suppliers: {

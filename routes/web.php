@@ -169,12 +169,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
             Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
-            Route::get('/puchase-order', 'newPO')->name('supplies.purchase_order');
             Route::get('/{id}/get', 'getSupplier')->name("supplier.get");
             Route::get('/supplier/{search}', 'searchsupplier')->name("supplier.searchSupplier");
             Route::get('/product/{id}', 'searchProduct')->name("product.search");
-
+            
             // Purchase Order Routes
+            Route::get('/puchase-order', 'newPO')->name('supplies.purchase_order');
             Route::get('/purchase-order/create', 'create')->name('supplies.create');
             Route::post('/purchase-order/store', 'storePO')->name('supplies.storePO');
             Route::post('/packing-list/store', 'storePK')->name('supplies.storePK');
@@ -335,6 +335,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         ->group(function () {
             Route::get('/', 'index')->name('reports.index');
             Route::get('/stock-level-report', 'stockLevelReport')->name('reports.stockLevelReport');
+            Route::get('/issued-quantity', 'issuedQuantity')->name('reports.issuedQuantity');
         });
 
     // Product Management Routes
