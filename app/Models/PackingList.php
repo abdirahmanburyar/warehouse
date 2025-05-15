@@ -16,6 +16,7 @@ class PackingList extends Model
         'status',
         'product_id',
         'warehouse_id',
+        'ref_no',
         'expire_date',
         'batch_number',
         'location_id',

@@ -284,6 +284,7 @@ class SupplyController extends Controller
 
         if ($existingPackingList) {
             $result['packing_list_number'] = $existingPackingList->packing_list_number;
+            $result['ref_no'] = $existingPackingList->ref_no;
         } else {
             $result['packing_list_number'] = sprintf("PKL-%s-001", substr($po->po_number, 3));
         }
@@ -301,6 +302,7 @@ class SupplyController extends Controller
                 $request->validate([
                     'purchase_order_id' => 'required',
                     'packing_list_number' => 'required',
+                    'ref_no' => 'nullable',
                     'items' => 'required|array',
                     'items.*.product_id' => 'required',
                     'items.*.warehouse_id' => 'required',
@@ -333,6 +335,7 @@ class SupplyController extends Controller
                         'purchase_order_id' => $request->purchase_order_id,
                         'pk_date' => $request->pk_date,
                         'product_id' => $item['product_id'],
+                        'ref_no' => $request->ref_no,
                         'po_id' => $item['po_id'],
                         'warehouse_id' => $item['warehouse_id'],
                         'quantity' => $item['received_quantity'],
@@ -400,6 +403,7 @@ class SupplyController extends Controller
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_number' => 'required|unique:purchase_orders,po_number,' . $request->id,
                     'po_date' => 'required',
+                    'ref_no' => 'required',
                     'items' => 'required|array|min:1',
                     'items.*.id' => 'nullable|integer',
                     'items.*.product_id' => 'required|exists:products,id',

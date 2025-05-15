@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->constrained();
             $table->date('expire_date')->nullable();
             $table->string('batch_number')->nullable();
+            $table->string('ref_no')->nullable();
             $table->foreignId('location_id')->nullable();
             $table->integer('quantity');
             $table->double('unit_cost');

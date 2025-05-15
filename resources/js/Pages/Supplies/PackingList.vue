@@ -56,15 +56,17 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Purchase Order Info</h3>
-                        <p class="mt-1 text-sm text-gray-900">P.O Number #: <input type="text"
+                        <p class="mt-1 text-sm text-gray-900">PL No. #: <input type="text"
                                 v-model="form.packing_list_number" class="border-0" /></p>
+                        <p class="mt-1 text-sm text-gray-900">Ref. No. #: <input type="text"
+                                v-model="form.ref_no" class="border-0" /></p>
                         <div class="mt-1 flex flex-col gap-2">
                             <div class="flex items-center">
                                 P.O Data: {{ form.po_date }}
                             </div>
-                            <!-- <div class="flex items-center">
+                            <div class="flex items-center">
                                 PL Data: <input type="date" v-model="form.pk_date" class="border-0" />
-                            </div> -->
+                            </div>
 
                         </div>
                     </div>
@@ -273,11 +275,6 @@ const selectedItemIndex = ref(null);
 const hasApprovedItems = computed(() => {
     return form.value?.items?.some(item => item.status == 'approved') ?? false;
 });
-
-const hasNonApprovedItems = computed(() => {
-    return form.value?.items?.some(item => item.status !== 'approved') ?? false;
-});
-
 
 function hadleWarehouseSelect(index, selected) {
     console.log(selected, index);
