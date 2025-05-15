@@ -134,8 +134,8 @@
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                 </td>
                                 <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
-                                    <input type="date" v-model="item.expire_date"  :disabled="item.status == 'approved'"
-                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                    <input type="date" v-model="item.expire_date" :min="new Date(Date.now() + 86400000 * 180).toISOString().split('T')[0]"  :disabled="item.status == 'approved'"
+                                    class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                 </td>
                                 <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
                                     <input type="number" v-model="item.unit_cost" readonly

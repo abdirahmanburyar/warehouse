@@ -125,7 +125,7 @@
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm bg-transparent">
                                 </td>
                                 <td :class="[{'border-green-600 border-2': item.status === 'approved'}, {'border-yellow-500 border-2': item.status === 'reviewed'}, {'border-gray-500 border': !item.status || item.status === 'pending'}, 'px-3 py-2']">
-                                    <input type="number" v-model="item.received_quantity"
+                                    <input type="number" v-model="item.received_quantity" :disabled="item.status == 'approved'"
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm bg-transparent"
                                         @input="handleReceivedQuantityChange(index)">
                                 </td>
@@ -162,7 +162,7 @@
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                 </td>
                                 <td :class="[{'border-green-600 border-2': item.status === 'approved'}, {'border-yellow-500 border-2': item.status === 'reviewed'}, {'border-gray-500 border': !item.status || item.status === 'pending'}, 'px-3 py-2']">
-                                    <input type="date" v-model="item.expire_date" :min="new Date().toISOString().split('T')[0]"  :disabled="item.status === 'approved'"
+                                    <input type="date" v-model="item.expire_date" :min="new Date(Date.now() + 86400000 * 180).toISOString().split('T')[0]"  :disabled="item.status == 'approved'"
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                 </td>
                                 <td :class="[{'border-green-600 border-2': item.status === 'approved'}, {'border-yellow-500 border-2': item.status === 'reviewed'}, {'border-gray-500 border': !item.status || item.status === 'pending'}, 'px-3 py-2']">
@@ -203,8 +203,7 @@
                     <Link :href="route('supplies.index')" :disabled="isSubmitting" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Exit
                     </Link>
-                    <!-- {{hasApprovedItems}} -->
-                    <button v-if="!hasApprovedItems" :disabled="isSubmitting" @click="submit" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button v-if="hasApprovedItems" :disabled="isSubmitting" @click="submit" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         {{  isSubmitting ? "Saving..." : "Save and Exit" }}
                     </button>
                 </div>
@@ -272,7 +271,7 @@ const newLocation = ref('');
 const selectedItemIndex = ref(null);
 
 const hasApprovedItems = computed(() => {
-    return form.value?.items?.some(item => item.status === 'approved') ?? false;
+    return form.value?.items?.some(item => item.status == 'approved') ?? false;
 });
 
 const hasNonApprovedItems = computed(() => {
