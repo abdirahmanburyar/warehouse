@@ -403,7 +403,6 @@ class SupplyController extends Controller
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_number' => 'required|unique:purchase_orders,po_number,' . $request->id,
                     'po_date' => 'required',
-                    'ref_no' => 'required',
                     'items' => 'required|array|min:1',
                     'items.*.id' => 'nullable|integer',
                     'items.*.product_id' => 'required|exists:products,id',
