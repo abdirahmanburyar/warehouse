@@ -201,7 +201,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import * as XLSX from 'xlsx';
 import { ref, computed } from 'vue';
 import axios from 'axios';
