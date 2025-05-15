@@ -1061,7 +1061,7 @@ class SupplyController extends Controller
         $pk = PackingList::select('id', 'packing_list_number', 'total_cost', 'created_at', 'confirmed_at')
             ->get()
             ->groupBy('packing_list_number')
-            ->orderBy('confirmed_at', 'asc')
+            ->sortBy('confirmed_at')
             ->map(function ($group) {
                 $avgLeadTime = $group->avg(function($pl) {
                     if ($pl->confirmed_at) {
