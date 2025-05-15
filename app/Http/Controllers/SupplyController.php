@@ -318,9 +318,13 @@ class SupplyController extends Controller
                     'items.*.status' => 'required',
                 ]);
 
-                if(PurchaseOrder::find($request->purchase_order_id)
+                logger()->info(PurchaseOrder::find($request->purchase_order_id)
                 ->where('status', 'completed')
-                ->exists()) return response()->json("This P.O is completed and closed", 500);
+                ->exists());
+
+                // if(PurchaseOrder::find($request->purchase_order_id)
+                // ->where('status', 'completed')
+                // ->exists()) return response()->json("This P.O is completed and closed $request->purchase_order_id", 500);
 
                 // Create packing list for each item
                 foreach($request->items as $item){
@@ -350,6 +354,8 @@ class SupplyController extends Controller
                     ]);
 
                 }
+
+
 
                 return response()->json('Packing list created successfully', 200);
             });
@@ -1292,15 +1298,6 @@ class SupplyController extends Controller
                     }
 
                     // Record the issued quantity
-                    DB::table('issued_quantities')->insert([
-                        'product_id' => $packingListItem->product_id,
-                        'quantity' => $packingListItem->quantity,
-                        'unit_cost' => $packingListItem->unit_cost,
-                        'total_cost' => $packingListItem->total_cost,
-                        'warehouse_id' => $packingListItem->warehouse_id,
-                        'issued_date' => now()->toDateString(),
-                        'issued_by' => auth()->user()->id,
-                    ]);
 
                     DB::table('issued_quantities')->insert([
                         'product_id' => $packingListItem->product_id,
@@ -1317,6 +1314,31 @@ class SupplyController extends Controller
                         'quantity' => (int) $item['quantity'] - (int) $item['received_quantity'],
                         'status' => "Missing"
                     ]);
+                }
+            }
+
+            // Check if PO should be marked as completed
+            $purchaseOrder = PurchaseOrder::with(['items', 'packingLists' => function($query) {
+                $query->where('status', 'approved');
+            }])->find($request->id);
+            
+            if ($purchaseOrder) {
+                // Get total quantities from PO items
+                $poQuantities = $purchaseOrder->items->groupBy('product_id')
+                    ->map(fn($items) => $items->sum('quantity'));
+                
+                // Get total quantities from approved packing lists only
+                $plQuantities = $purchaseOrder->packingLists->groupBy('product_id')
+                    ->map(fn($items) => $items->sum('quantity'));
+                
+                // Check if quantities match for all products
+                $allReceived = $poQuantities->every(function($quantity, $productId) use ($plQuantities) {
+                    return $plQuantities->get($productId, 0) >= $quantity;
+                });
+
+                // Update PO status if all items received
+                if ($allReceived) {
+                    $purchaseOrder->update(['status' => 'completed']);
                 }
             }
 
