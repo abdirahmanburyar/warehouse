@@ -81,6 +81,13 @@
                                     >
                                         Upload Excel
                                     </button>
+                                    <button
+                                        type="button"
+                                        @click="downloadTemplate"
+                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    >
+                                        Download Template
+                                    </button>
                                     <span v-if="uploadStatus" class="text-sm text-gray-600">{{ uploadStatus }}</span>
                                 </div>
                             </div>
@@ -194,7 +201,8 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import * as XLSX from 'xlsx';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
@@ -238,30 +246,30 @@ async function handleFileUpload(event) {
     }
 
     uploadStatus.value = 'Creating purchase order...';
-    try {
-        // First create/update the purchase order
-        const poData = {
-            supplier_id: form.value.supplier_id,
-            po_date: moment(form.value.po_date).format('YYYY-MM-DD'),
-            po_number: form.value.po_number
-        };
 
-        const poResponse = await axios.post(route('purchase-orders.store'), poData);
-        const purchaseOrderId = poResponse.data.id;
+    // First create/update the purchase order
+    const poData = {
+        supplier_id: form.value.supplier_id,
+        po_date: moment(form.value.po_date).format('YYYY-MM-DD'),
+        po_number: form.value.po_number
+    };
 
-        // Now upload the Excel file
-        uploadStatus.value = 'Uploading items...';
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('purchase_order_id', purchaseOrderId);
-        form.value.id = purchaseOrderId;
+    const poResponse = await axios.post(route('purchase-orders.store'), poData);
+    const purchaseOrderId = poResponse.data.id;
 
-        const response = await axios.post(route('purchase-orders.import'), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+    // Now upload the Excel file
+    uploadStatus.value = 'Uploading items...';
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('purchase_order_id', purchaseOrderId);
+    form.value.id = purchaseOrderId;
 
+    const response = await axios.post(route('purchase-orders.import'), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then((response) => {
         // Update items with imported data
         form.value.items = response.data.map(item => ({
             id: item.id,
@@ -273,7 +281,6 @@ async function handleFileUpload(event) {
             uom: item.uom,
             product: item.product,
         }));
-
         // Show success message
         toast.success('Items imported successfully');
 
@@ -284,10 +291,12 @@ async function handleFileUpload(event) {
         // items.value = response.data.items;
         // totalAmount.value = response.data.total_amount;
         toast.success('Items imported successfully');
-    } catch (error) {
+        uploadStatus.value = "";
+    })
+    .catch((error) => {
         console.error('Upload failed:', error);
         uploadStatus.value = 'Upload failed: ' + (error.response.data);
-    }
+    });
 
     // Clear the file input
     event.target.value = '';
@@ -439,6 +448,25 @@ async function onSupplierChange(selected) {
     const supplier = props.suppliers.find(s => s.id == value);
     selectedSupplier.value = supplier;
     setTimeout(() => isLoading.value = false, 1000);
+}
+
+function downloadTemplate() {
+    // Define the template headers
+    const headers = ['Item Description', 'UoM', 'Quantity', 'Category', 'Dosage Form', 'Unit Cost', 'Total Cost'];
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    
+    // Auto-size columns
+    const colWidths = headers.map(header => ({ wch: header.length + 5 }));
+    ws['!cols'] = colWidths;
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    
+    // Generate and download file
+    XLSX.writeFile(wb, 'supplies_import_template.xlsx');
 }
 
 // const po_date = ref(moment().format('YYYY-MM-DD'));
