@@ -20,6 +20,9 @@ class PurchaseOrder extends Model
         'approved_at',
         'rejected_by',
         'rejected_at',
+        'reviewed_by',
+        'rejection_reason',
+        'reviewed_at',
         'created_by',
         'updated_by',
     ];

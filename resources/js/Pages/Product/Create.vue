@@ -41,31 +41,37 @@
                         <!-- Category -->
                         <div>
                             <InputLabel for="category_id" value="Category" />
-                            <select
-                                id="category_id"
-                                v-model="form.category_id"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            >
-                                <option value="">Select Category</option>
-                                <option v-for="category in categories.data" :key="category.id" :value="category.id">
-                                    {{ category.name }}
-                                </option>
-                            </select>
+                            <Multiselect v-model="form.category" :value="form.category_id" 
+                                :options="[ { id: 'new', name: '+ Add New Category', isAddNew: true}, ...props.categories.data]"
+                                :searchable="true" :close-on-select="true" :show-labels="false"
+                                :allow-empty="true" placeholder="Select Category" track-by="id" label="name"
+                                @select="handleCategorySelect">
+                                <template v-slot:option="{ option }">
+                                    <div :class="{ 'add-new-option': option.isAddNew }">
+                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                            New Category</span>
+                                        <span v-else>{{ option.name }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
                         </div>
 
                         <!-- Dosage -->
                         <div>
                             <InputLabel for="dosage_id" value="Dosage" />
-                            <select
-                                id="dosage_id"
-                                v-model="form.dosage_id"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            >
-                                <option value="">Select Dosage</option>
-                                <option v-for="dosage in dosages.data" :key="dosage.id" :value="dosage.id">
-                                    {{ dosage.name }}
-                                </option>
-                            </select>
+                            <Multiselect v-model="form.dosage" :value="form.dosage_id" 
+                                :options="[{ id: 'new', name: '+ Add New Dosage form', isAddNew: true }, ...props.dosages.data]"
+                                :searchable="true" :close-on-select="true" :show-labels="false"
+                                :allow-empty="true" placeholder="Select Dosage" track-by="id" label="name"
+                                @select="handleDosageSelect">
+                                <template v-slot:option="{ option }">
+                                    <div :class="{ 'add-new-option': option.isAddNew }">
+                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                            New Dosage Form</span>
+                                        <span v-else>{{ option.name }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
                         </div>
 
                         <!-- Dose -->
@@ -76,7 +82,6 @@
                                 type="text"
                                 class="mt-1 block w-full"
                                 v-model="form.dose"
-                                required
                             />
                         </div>
 
@@ -124,6 +129,10 @@ import { useToast } from "vue-toastification";
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
+
 const toast = useToast();
 
 const props = defineProps({
@@ -151,6 +160,8 @@ const form = ref({
     dosage_id: '',
     dose: '',
     reorder_level: 0,
+    category: null,
+    dosage: null,
     is_active: true
 });
 
@@ -175,4 +186,33 @@ const submit = async () => {
             toast.error(error.response.data)
         })
 };
+
+function handleCategorySelect(selected){
+    console.log(selected);
+    if(selected.isAddNew){
+        form.value.category_id = "";
+        form.value.category = null;
+        alert('hi');
+        return;
+    }
+
+    form.value.category_id = selected.id;
+    form.value.category_id = selected.id;
+}
+
+
+function handleDosageSelect(selected){
+    console.log(selected);
+    if(selected.isAddNew){
+        form.value.dosage_id = "";
+        form.value.dosage = null;
+        alert('hi');
+        return;
+    }
+
+    form.value.dosage_id = selected.id;
+    form.value.dosage_id = selected.id;
+}
+
+
 </script>

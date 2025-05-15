@@ -62,7 +62,9 @@ class InventoryController extends Controller
         }
 
         if ($request->has('location') && $request->location) {
-            $query->where('location', 'like', "%{$request->location}%");
+            $query->whereHas('location', function($query) use($request){
+                $query->where('location','like', "%{$request->location}%");
+            }); 
         }
 
         // Sort

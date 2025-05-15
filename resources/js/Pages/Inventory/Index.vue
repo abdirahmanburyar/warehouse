@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AuthenticatedTabs from '@/Layouts/AuthenticatedTabs.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -414,7 +414,7 @@ const echo = ref(null);
 
     <Head title="Inventory Management" />
 
-    <AuthenticatedLayout img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
+    <AuthenticatedTabs img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
         <div class="overflow-auto bg-transparent">
             <div class="text-gray-900">
                 <!-- Search and Filters -->
@@ -614,7 +614,10 @@ const echo = ref(null);
                                     </td>
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        {{ inventory.product.category ? inventory.product.category.name : 'No Category' }}
+                                        <div class="flex flex-col">
+                                            {{ inventory.product.category?.name }}
+                                            <span cass="text-xs">Dosage Form: {{ inventory.product?.dosage?.name }}</span>
+                                        </div>
                                     </td>
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
@@ -625,13 +628,10 @@ const echo = ref(null);
                                         }">
                                             {{ inventory.quantity }}
                                         </div>
-                                        <div class="text-sm text-gray-500">
-                                            Reorder Level: {{ inventory.product?.reorder_level }}
-                                        </div>
                                     </td>
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                            {{ inventory.location }}
+                                            {{ inventory.location?.location }}
                                     </td>
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
@@ -646,9 +646,6 @@ const echo = ref(null);
                                             'text-gray-900': !isExpiringSoon(inventory) && !isExpired(inventory),
                                         }">
                                             {{ formatDate(inventory.expiry_date) }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ formatDate(inventory.manufacturing_date) }}
                                         </div>
                                     </td>
                                     <td
@@ -829,7 +826,7 @@ const echo = ref(null);
             </div>
         </Modal>
 
-        <!-- Add at the end of the template, just before closing AuthenticatedLayout -->
+        <!-- Add at the end of the template, just before closing AuthenticatedTabs -->
         <!-- <PusherDebugPanel :debug="true" channel="inventory" class="mb-8" /> -->
-    </AuthenticatedLayout>
+    </AuthenticatedTabs>
 </template>

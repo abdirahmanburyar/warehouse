@@ -10,3 +10,8 @@ html {
 }
 
 /* Import splash screen styles directly here instead of using @import */
+
+::v-deep .multiselect__content-wrapper {
+  z-index: 9999 !important;
+  position: absolute !important;
+}

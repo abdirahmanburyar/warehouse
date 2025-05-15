@@ -127,9 +127,9 @@ class ProductController extends Controller
                 'barcode' => $request->id ? 'nullable|string|max:100' : 'nullable|string|max:100|unique:products,barcode',
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                'dose' => 'required',
+                'dose' => 'nullable',
                 'reorder_level' => 'nullable|numeric',
-                'is_active' => 'boolean',
+                'is_active' => 'required',
             ]);
 
             $product = Product::updateOrCreate(['id' => $validated['id']], $validated);

@@ -71,7 +71,7 @@ const form = ref({
 
 function reloadSuppliers(){
     const query = {}
-    router.get(route('suppliers.show'), {}, {
+    router.get(route('supplies.index'), {}, {
         preserveScroll: false,
         preserveState: false,  
     })
@@ -91,7 +91,7 @@ const isSubmitting = ref(false)
 
 async function submitForm(){
     isSubmitting.value = true;
-    await axios.post(route('suppliers.store'), form.value)
+    await axios.post(route('supplies.suppliers.store'), form.value)
         .then((response) => {
             isSubmitting.value = false;
             console.log(response);

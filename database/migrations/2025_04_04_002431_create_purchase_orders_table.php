@@ -18,9 +18,16 @@ return new class extends Migration
             $table->date('po_date');
             $table->double('total_amount')->default(0);
             $table->text('notes')->nullable();
+            $table->text('rejection_reason')->nullable();
             $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->foreignId('reviewed_by')->nullable()->constrained('users');
+            $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users');
+            $table->timestamp('rejected_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -13,6 +13,7 @@ use App\Http\Controllers\EligibleItemController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SupplyController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ReverbTestController;
 use App\Http\Controllers\ExpiredController;
 use App\Http\Controllers\SettingsController;
@@ -100,14 +101,23 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
 
     // Warehouse Management Routes
     Route::controller(WarehouseController::class)
-        ->prefix('/warehouses')
+        ->prefix('/inventories/warehouses')
         ->group(function () {
-            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':warehouse.view')->name('warehouses.index');
-            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':warehouse.create')->name('warehouses.store');
-            Route::put('/{warehouse}', 'update')->middleware(PermissionMiddleware::class . ':warehouse.edit')->name('warehouses.update');
-            Route::delete('/{warehouse}', 'destroy')->middleware(PermissionMiddleware::class . ':warehouse.delete')->name('warehouses.destroy');
+            Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':warehouse.view')->name('inventories.warehouses.index');
+            Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':warehouse.create')->name('inventories.warehouses.store');
+            Route::get('/create', 'create')->middleware(PermissionMiddleware::class . ':warehouse.create')->name('inventories.warehouses.create');
+            Route::get('/{warehouse}/edit', 'edit')->middleware(PermissionMiddleware::class . ':warehouse.edit')->name('inventories.warehouses.edit');
+            Route::delete('/{warehouse}/delete', 'destroy')->middleware(PermissionMiddleware::class . ':warehouse.delete')->name('inventories.warehouses.destroy');
         });
-
+    // Location Routes
+    Route::controller(LocationController::class)
+        ->prefix('/inventories/locations')
+        ->group(function () {
+            Route::get('/', 'index')->name('inventories.location.index');
+            Route::post('/store', 'store')->name('inventories.location.store');
+            Route::delete('/{id}/delete', 'destroy')->name('inventories.location.destroy');
+            Route::get('/{id}/edit', 'edit')->name('inventories.location.edit');
+        });
     // Dosage Management Routes
     Route::prefix('product/dosages')->group(function () {
         Route::get('/', [DosageController::class, 'index'])->middleware(PermissionMiddleware::class . ':dosage.view')->name('products.dosages.index');
@@ -149,7 +159,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::controller(InventoryController::class)
         ->prefix('/inventories')
         ->group(function () {
+            // Main inventory routes
             Route::get('/', 'index')->middleware(PermissionMiddleware::class . ':inventory.view')->name('inventories.index');
+            Route::get('/items', 'items')->middleware(PermissionMiddleware::class . ':inventory.view')->name('inventories.items');
+            
+            // CRUD operations
             Route::post('/store', 'store')->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.store');
             Route::put('/{inventory}', 'update')->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update');
             Route::delete('/{inventory}', 'destroy')->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.destroy');
@@ -163,11 +177,19 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('supplies.index');
             Route::get('/show', 'show')->name('supplies.show');
             Route::get('/items/{supply}', 'getItems')->name('supplies.items');
+            Route::get('/packing-list/{pk}/edit', 'editPK')->name('supplies.packing-list.edit');
+            Route::post('/packing-list/update', 'updatePK')->name('supplies.packing-list.update');
+            Route::post('/packing-list/review', 'reviewPK')->name('supplies.packing-list.review');
+            Route::post('/packing-list/approve', 'approvePK')->name('supplies.packing-list.approve');
+            Route::post('/packing-list/location', 'storePKLocation')->name('supplies.packing-list.location.store');
+            Route::get('/packing-list/show', 'showPK')->name('supplies.packing-list.showPK');
             Route::get('/purchase-order/{id}/show', 'showPO')->name('supplies.po-show');
+            Route::get('/locations', 'locationsShow')->name('supplies.locations');
+            Route::get('/locations/{id}/edit', 'locationEdit')->name('supplies.location.edit');            
 
             
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');
-            Route::delete('/{supply}', 'destroy')->name('supplies.destroy');
+            Route::delete('/{supply}/delete', 'destroy')->name('supplies.destroy');
             Route::post('/bulk-delete', 'bulkDelete')->name('supplies.bulk-delete');
             Route::get('/{id}/get', 'getSupplier')->name("supplier.get");
             Route::get('/supplier/{search}', 'searchsupplier')->name("supplier.searchSupplier");
@@ -177,6 +199,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/puchase-order', 'newPO')->name('supplies.purchase_order');
             Route::get('/purchase-order/create', 'create')->name('supplies.create');
             Route::post('/purchase-order/store', 'storePO')->name('supplies.storePO');
+            Route::post('/purchase-order/{id}/reject', 'rejectPO')->name('supplies.rejectPO');
+            Route::post('/purchase-order/{id}/approve', 'approvePO')->name('supplies.approvePO');
+            Route::post('/purchase-order/{id}/review', 'reviewPO')->name('supplies.reviewPO');
             Route::post('/packing-list/store', 'storePK')->name('supplies.storePK');
 
 
@@ -197,23 +222,23 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
 
             // locations
             Route::post('/location/store', 'storeLocation')->name('supplies.location-store');
+
+            // laod items
+            Route::get('/packing-list/{id}/load-items', 'loadItems')->name('supplies.packing-list.loadItems');
         });
 
     // Supplier Routes
     Route::controller(SupplierController::class)
         ->prefix('/suppliers')->group(function () {
-            // Redirect to supplies index with suppliers tab active
-            Route::get('/', function () {
-                return redirect()->route('supplies.index', ['tab' => 'suppliers']);
-            })->name('suppliers.index');
-            Route::post('/store', 'store')->name('suppliers.store');
-            Route::delete('/{supplier}/destroy', 'destroy')->name('suppliers.destroy');
-            Route::get('/{supplier}/edit', 'edit')->name('suppliers.edit');            
+            Route::post('/store', 'store')->name('supplies.suppliers.store');
+            Route::delete('/{supplier}/destroy', 'destroy')->name('supplies.suppliers.destroy');
+            Route::get('/{supplier}/edit', 'edit')->name('supplies.suppliers.edit');            
         });
 
     // Purchase Orders
     Route::controller(PurchaseOrderController::class)
         ->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            Route::post('/import', 'importItems')->name('import');
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
@@ -277,6 +302,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::delete('/{facility}', 'destroy')->name('facilities.destroy');
         });
 
+    Route::get('assets/locations/{location}/sub-locations', [AssetController::class, 'getSubLocations'])->name('assets.locations.sub-locations');
+
     // Remove duplicate resource routes since we already have individual routes defined above
     // Route::middleware('role:admin')->group(function () {
     //     Route::resource('users', UserController::class);
@@ -311,19 +338,42 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/', 'index')->name('dispatch.index');
             Route::post('/process', 'process')->name('dispatch.process');
         });
-    
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/', function () { return redirect('/dashboard'); });
-        Route::get('/dashboard', function () { return Inertia::render('Dashboard'); })->name('dashboard');
+    Route::controller(App\Http\Controllers\AssetController::class)
+        ->prefix('/assets-management')
+        ->group(function () {
+    // Asset Management Routes
+        Route::get('/', 'index')->name('assets.index');
+        Route::get('/get-assets', 'getAssets')->name('assets.get');
+        Route::get('/create', 'create')->name('assets.create');
+        Route::post('/store', 'store')->name('assets.store');
+        Route::get('/{asset}/edit', 'edit')->name('assets.edit');
+        Route::put('/{asset}', 'update')->name('assets.update');
+        Route::delete('/{asset}/delete', 'destroy')->name('assets.destroy');
+
+        
+        // Asset Categories Routes
+        Route::get('/categories', [App\Http\Controllers\AssetCategoryController::class, 'index'])->name('assets.categories.index');
+        Route::post('/categories', [App\Http\Controllers\AssetCategoryController::class, 'store'])->name('assets.categories.store');
+        
+        // Asset Locations Routes
+        Route::get('/locations', [App\Http\Controllers\AssetLocationController::class, 'index'])->name('assets.locations.index');
+        Route::post('/locations/store', [App\Http\Controllers\AssetLocationController::class, 'store'])->name('assets.locations.store');
+        Route::get('/locations/{location}/sub-locations', [App\Http\Controllers\AssetLocationController::class, 'getSubLocations'])->name('assets.locations.sub-locations');
+        Route::post('/locations/sub-locations', [App\Http\Controllers\AssetLocationController::class, 'storeSubLocation'])->name('assets.locations.sub-locations.store');
+        Route::get('/locations/create', [App\Http\Controllers\AssetLocationController::class, 'create'])->name('assets.locations.create');
+        Route::get('/locations/{id}/edit', [App\Http\Controllers\AssetLocationController::class, 'edit'])->name('assets.locations.edit');
+        Route::delete('/locations/{id}', [App\Http\Controllers\AssetLocationController::class, 'destroy'])->name('assets.locations.destroy');
+
+        // Asset Sub-Locations Routes
+        Route::get('/sub-locations', [App\Http\Controllers\SubLocationController::class, 'index'])->name('assets.sub-locations.index');
+        Route::get('/sub-locations/create', [App\Http\Controllers\SubLocationController::class, 'create'])->name('assets.sub-locations.create');
+        Route::post('/sub-locations/store', [App\Http\Controllers\SubLocationController::class, 'store'])->name('assets.sub-locations.store');
+        Route::get('/sub-locations/{id}/edit', [App\Http\Controllers\SubLocationController::class, 'edit'])->name('assets.sub-locations.edit');
+        Route::delete('/sub-locations/{id}', [App\Http\Controllers\SubLocationController::class, 'destroy'])->name('assets.sub-locations.destroy');
+
+        
     });
 
-    Route::prefix('/assets-management')->group(function () {
-        Route::get('/', [AssetController::class, 'index'])->name('assets.index');
-        Route::post('/store', [AssetController::class, 'store'])->name('assets.store');
-        Route::put('/{asset}', [AssetController::class, 'update'])->name('assets.update');
-        Route::delete('/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
-        Route::post('/{asset}/update-status', [AssetController::class, 'updateStatus'])->name('assets.update-status');
-    });
 
     Route::prefix('/dispatch')->group(function () {
         Route::get('/', [DispatchController::class, 'index'])->name('dispatch.index');

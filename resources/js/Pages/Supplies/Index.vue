@@ -18,15 +18,43 @@
                             </svg>
                             Receive Back Order 
                         </button>
-                        <button @click="router.get(route('supplies.packing-list'))"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Receive new Supply
-                        </button>
+                        <div class="relative inline-block text-left z-20" ref="supplyDropdownRef">
+                            <button type="button"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                id="supply-menu" :aria-expanded="showSupplyDropdown" aria-haspopup="true"
+                                @click.stop="toggleSupplyDropdown">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Receive new Supply
+                            </button>
+                            <transition enter-active-class="transition ease-out duration-100"
+                                enter-from-class="transform opacity-0 scale-95"
+                                enter-to-class="transform opacity-100 scale-100"
+                                leave-active-class="transition ease-in duration-75"
+                                leave-from-class="transform opacity-100 scale-100"
+                                leave-to-class="transform opacity-0 scale-95">
+                                <div v-if="showSupplyDropdown"
+                                    class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                    role="menu" aria-orientation="vertical" aria-labelledby="supply-menu">
+                                    <div class="py-1" role="none">
+                                        <a @click="router.get(route('supplies.packing-list'))"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                            role="menuitem">
+                                            Create New Supply
+                                        </a>
+                                        <a @click="router.get(route('supplies.packing-list.showPK'))"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                            role="menuitem">
+                                            View Supply List
+                                        </a>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
+                        
                         <button @click="router.get(route('supplies.purchase_order'))"
                             class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500 focus:bg-orange-500 active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
@@ -108,9 +136,22 @@
 
                     <div class="bg-orange-500 rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-black-600">Average Lead Time</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ stats.avg_lead_time }}</p>
+                            <div class="w-full">
+                                <p class="text-sm font-medium text-black-600 mb-2">Lead Times</p>
+                                <div class="flex justify-between w-full">
+                                    <div class="flex flex-col items-center flex-1">
+                                        <p class="text-xs font-medium text-black-600">Max</p>
+                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
+                                    </div>
+                                    <div class="flex flex-col items-center border-l border-r px-4 border-gray-200 flex-1">
+                                        <p class="text-xs font-medium text-black-600">Avg</p>
+                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
+                                    </div>
+                                    <div class="flex flex-col items-center flex-1">
+                                        <p class="text-xs font-medium text-black-600">Low</p>
+                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
+                                    </div>
+                                </div>
                             </div>
                             <div class="p-3 bg-red-100 rounded-full">
                                 <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -314,15 +355,26 @@ import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } fro
 const toast = useToast();
 const dropdownRef = ref(null);
 const showDropdown = ref(false);
+const showSupplyDropdown = ref(false);
+const supplyDropdownRef = ref(null);
 
 const toggleDropdown = () => {
     showDropdown.value = !showDropdown.value;
+    showSupplyDropdown.value = false;
+};
+
+const toggleSupplyDropdown = () => {
+    showSupplyDropdown.value = !showSupplyDropdown.value;
+    showDropdown.value = false;
 };
 
 onMounted(() => {
     document.addEventListener('click', (e) => {
         if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
             showDropdown.value = false;
+        }
+        if (supplyDropdownRef.value && !supplyDropdownRef.value.contains(e.target)) {
+            showSupplyDropdown.value = false;
         }
     });
 });
@@ -350,7 +402,11 @@ const props = defineProps({
         default: () => ({
             total_items: 0,
             total_cost: 0,
-            avg_lead_time: '0 Months',
+            lead_times: {
+                max: '0 Months',
+                min: '0 Months',
+                avg: '0 Months'
+            },
             pending_orders: 0,
             back_orders: 0,
         })
@@ -413,7 +469,11 @@ const confirmDelete = async (id) => {
 const stats = computed(() => props.stats || {
     total_items: 0,
     total_cost: 0,
-    avg_lead_time: '0 Months',
+    lead_times: {
+        max: '0 Months',
+        min: '0 Months',
+        avg: '0 Months'
+    },
     pending_orders: 0
 });
 

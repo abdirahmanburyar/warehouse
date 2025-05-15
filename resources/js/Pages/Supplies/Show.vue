@@ -9,7 +9,7 @@
             Back to  Home
         </Link>
 
-        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden mb-[60px]">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-900">Suppliers</h2>
@@ -74,12 +74,12 @@
                                 {{ supplier.address || 'N/A' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                <span :class="[supplier.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full']">
-                                    {{ supplier.is_active ? 'Active' : 'Inactive' }}
+                                <span :class="[supplier.status == 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full']">
+                                   {{ supplier.status }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap border border-black text-sm font-medium">
-                                <Link :href="route('suppliers.edit', supplier.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
+                                <Link :href="route('supplies.suppliers.edit', supplier.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>

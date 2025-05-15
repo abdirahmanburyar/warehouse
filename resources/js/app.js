@@ -22,6 +22,8 @@ const splashApp = createApp(SplashScreen, {
 });
 const splashInstance = splashApp.mount('#splash-container');
 
+
+
 // Create and mount the main application after splash completes
 setTimeout(() => {
     createInertiaApp({

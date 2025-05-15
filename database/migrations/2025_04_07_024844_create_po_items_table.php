@@ -18,9 +18,8 @@ return new class extends Migration
             $table->string('item_description');
             $table->string('uom')->nullable();
             $table->integer('quantity')->default(0);
-            $table->integer('original_quantity')->default(0);
-            $table->decimal('unit_cost', 10, 2)->default(0);
-            $table->decimal('total_cost', 10, 2)->default(0);
+            $table->double('unit_cost')->default(0);
+            $table->double('total_cost')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

@@ -80,13 +80,20 @@ class PurchaseOrderController extends Controller
     {
         try {
             $request->validate([
-                'po_number' => 'required|string|unique:purchase_orders,po_number,' . $request->input('id'),
+                'po_number' => 'nullable|string|unique:purchase_orders,po_number,' . $request->input('id'),
                 'supplier_id' => 'required|exists:suppliers,id',
                 'po_date' => 'required|date',
                 'notes' => 'nullable|string',
             ]);
 
             DB::beginTransaction();
+
+            // Generate PO number if not provided
+            if (!$request->filled('po_number')) {
+                $latestPo = PurchaseOrder::latest()->first();
+                $lastNumber = $latestPo ? intval(substr($latestPo->po_number, 2)) : 0;
+                $request->merge(['po_number' => 'PO' . str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT)]);
+            }
 
             $purchaseOrder = PurchaseOrder::updateOrCreate(
                 ['id' => $request->input('id')],
@@ -95,16 +102,22 @@ class PurchaseOrderController extends Controller
                     'supplier_id' => $request->input('supplier_id'),
                     'po_date' => $request->input('po_date'),
                     'notes' => $request->input('notes'),
+                    'status' => 'pending',
                     'created_by' => $request->input('id') ? Auth::id() : Auth::id(),
                     'updated_by' => $request->input('id') ? Auth::id() : null,
                 ]
             );
+
             DB::commit();
 
-            return response()->json($request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
+            return response()->json([
+                'message' => $request->input('id') ? 'Purchase order updated successfully' : 'Purchase order created successfully',
+                'id' => $purchaseOrder->id,
+                'po_number' => $purchaseOrder->po_number
+            ], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json($e->getMessage(), 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -341,6 +354,53 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function importItems(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => [
+                    'required',
+                    'file',
+                    'mimes:xlsx,xls'
+                ],
+                'purchase_order_id' => 'required|exists:purchase_orders,id'
+            ], [
+                'file.mimes' => 'The file must be an Excel file (xlsx or xls)',
+            ]);
+
+            DB::beginTransaction();
+            $import = new PurchaseOrderItemsImport($request->purchase_order_id);
+            Excel::import($import, $request->file('file'));
+
+            // Get the imported items
+            $items = PurchaseOrderItem::where('purchase_order_id', $request->purchase_order_id)
+                ->with('product')
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'unit_cost' => $item->unit_cost,
+                        'total_cost' => $item->total_cost,
+                        'uom' => $item->uom,
+                        'product' => $item->product
+                    ];
+                });
+            
+            // Update purchase order total amount
+            $totalAmount = $items->sum('total_cost');
+            PurchaseOrder::where('id', $request->purchase_order_id)
+                ->update(['total_amount' => $totalAmount]);
+
+            DB::commit();
+            return response()->json($items, 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
     public function getBackOrders(PurchaseOrder $purchaseOrder, $productId)
     {
         $backOrders = BackOrder::where('purchase_order_id', $purchaseOrder->id)
@@ -410,32 +470,9 @@ class PurchaseOrderController extends Controller
                     $item['product_id'] = $item->product->id;
                     return $item;
                 });
-            return response()->json($items, 200);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-        }
-    }
-
-    public function importItems(Request $request)
-    {
-        try {
-            $request->validate([
-                'file' => 'required|mimes:xlsx',
-                'purchase_order_id' => 'required|exists:purchase_orders,id'
-            ]);
-
-            $file = $request->file('file');
-            $purchaseOrderId = $request->purchase_order_id;
-
-            DB::beginTransaction();
-
-            Excel::import(new PurchaseOrderItemsImport($purchaseOrderId), $file);
-
-            DB::commit();
-            return response()->json('Items imported successfully', 200);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json($e->getMessage(), 500);
+            return response()->json(['items' => $items]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

@@ -19,17 +19,9 @@ class Inventory extends Model
         'manufacturing_date',
         'expiry_date',
         'batch_number',
-        'location',
+        'location_id',
         'notes',
         'is_active',
-    ];
-
-    protected $casts = [
-        'manufacturing_date' => 'date',
-        'expiry_date' => 'date',
-        'is_active' => 'boolean',
-        'unit_cost' => 'decimal:2',
-        'unit_price' => 'decimal:2',
     ];
 
     public function product()
@@ -40,5 +32,10 @@ class Inventory extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }

@@ -14,7 +14,7 @@ class AssetObserver
     {
         CustodyHistory::create([
             'asset_id' => $asset->id,
-            'custodian' => $asset->custody,
+            'custodian' => $asset->person_assigned,
             'assigned_by' => auth()->id(),
             'assigned_at' => now(),
             'status' => $asset->status,
@@ -31,9 +31,9 @@ class AssetObserver
         $notes = [];
 
         // Check for custody change
-        if ($asset->wasChanged('custody') && $asset->custody !== null) {
-            $changes['custodian'] = $asset->custody;
-            $notes[] = 'Custody changed to: ' . $asset->custody;
+        if ($asset->wasChanged('person_assigned') && $asset->person_assigned !== null) {
+            $changes['custodian'] = $asset->person_assigned;
+            $notes[] = 'Custody changed to: ' . $asset->person_assigned;
         }
 
         // Check for status change
@@ -58,7 +58,7 @@ class AssetObserver
             if (!$existingRecord) {
                 CustodyHistory::create([
                     'asset_id' => $asset->id,
-                    'custodian' => $changes['custodian'] ?? $asset->custody,
+                    'custodian' => $changes['custodian'] ?? $asset->person_assigned,
                     'assigned_by' => auth()->id(),
                     'assigned_at' => now(),
                     'status' => $changes['status'] ?? $asset->status,

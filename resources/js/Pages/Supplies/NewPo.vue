@@ -15,11 +15,12 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Select Supplier
                         </label>
-                        <select v-model="form.supplier_id" @change="onSupplierChange"
-                            class="w-full block appearance-none py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">Select supplier name</option>
-                            <option :value="s.id" v-for="s in props.suppliers">{{ s.name }}</option>
-                        </select>
+                        <Multiselect v-model="form.supplier" :value="form.supplier_id"
+                            :options="props.suppliers"
+                            :searchable="true" :close-on-select="true" :show-labels="false"
+                            :allow-empty="true" placeholder="Select supplier" track-by="id" label="name"
+                                @select="handleSupplierSelect">
+                        </Multiselect>
                     </div>
 
                     <!-- Supplier Details Card -->
@@ -56,14 +57,32 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Purchase Order Info</h3>
-                            <p class="mt-1 text-sm text-gray-900">P.O Number #: {{ props.po_number }}</p>
-                            <div class="mt-1 flex">
-                                Data: <input 
-                                    type="date" 
-                                    v-model="po_date"
-                                    class="block ml-2 border-0 p-0 text-gray-900 focus:ring-0 sm:text-sm bg-transparent"
-                                    :min="moment().format('YYYY-MM-DD')"
-                                >
+                            <p class="mt-1 text-sm text-gray-900">P.O Number #: <input type="text" v-model="form.po_number" class="border-0"/></p>
+                            <div class="mt-1 flex flex-col gap-2">
+                                <div class="flex items-center">
+                                    Data: <input 
+                                        type="date" 
+                                        v-model="form.date"
+                                        class="border-0"
+                                    />
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        ref="fileInput"
+                                        @change="handleFileUpload"
+                                        accept=".xlsx,.xls"
+                                        class="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="$refs.fileInput.click()"
+                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    >
+                                        Upload Excel
+                                    </button>
+                                    <span v-if="uploadStatus" class="text-sm text-gray-600">{{ uploadStatus }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -73,65 +92,51 @@
             <!-- Items List -->
             <div class="mt-8 flex-1 flex flex-col">
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <table class="min-w-full">
+                    <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="w-[40px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#
                                 </th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                                <th class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Barcode</th>
-                                <th class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Dose</th>
-                                <th class="w-[100px] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                <th class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                                <th class="w-[100px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                     Qty</th>
-                                <th class="w-[120px] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                <th class="w-[100px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    UoM</th>
+                                <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                     Unit Cost</th>
-                                <th class="w-[120px] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                     Amount</th>
                                 <th class="w-[40px] px-3 py-2"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50">
+                            <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50" :data-item-index="index">
                                 <td class="px-3 py-2 text-sm text-gray-500 align-top pt-4">{{ index + 1 }}</td>
-                                <td class="px-3 py-2 relative">
-                                    <div class="relative">
-                                        <input type="text" v-model="item.searchQuery" @input="filterProducts(index)"
-                                            class="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
-                                            placeholder="Select a product/service" autocomplete="off">
-                                        <div v-if="item.searchQuery && filteredProducts[index]?.length > 0"
-                                            class="absolute z-[999] mt-1 w-full bg-white shadow-xl max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-gray-100">
-                                            <div v-for="product in filteredProducts[index]" :key="product.id"
-                                                @click="handleProductSelect(product, index)"
-                                                class="cursor-pointer select-none py-2 px-4 hover:bg-gray-100 text-gray-900 text-sm">
-                                                {{ product.name }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
                                 <td class="px-3 py-2">
-                                    <input type="text" v-model="item.barcode" readonly
-                                        class="block w-full border-0 p-0 text-gray-500 focus:ring-0 sm:text-sm bg-transparent"
-                                        :placeholder="item.barcode || 'No barcode'">
-                                </td>
-                                <td class="px-3 py-2">
-                                    <input type="text" v-model="item.dose" readonly
-                                        class="block w-full border-0 p-0 text-gray-500 focus:ring-0 sm:text-sm bg-transparent">
+                                    <Multiselect v-model="item.product" :value="item.product_id"
+                                        :options="props.products"
+                                        :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :allow-empty="true" placeholder="Select item" track-by="id" label="name"
+                                            @select="hadleProductSelect(index, $event)">
+                                    </Multiselect>
                                 </td>
                                 <td class="px-3 py-2">
                                     <input type="number" v-model="item.quantity" @input="calculateTotal(index)"
-                                        class="block w-full border-0 p-0 text-right text-gray-900 focus:ring-0 sm:text-sm"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm"
                                         min="1">
                                 </td>
                                 <td class="px-3 py-2">
+                                    <input type="text" v-model="item.uom"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>                                
+                                <td class="px-3 py-2">
                                     <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)"
-                                        class="block w-full border-0 p-0 text-right text-gray-900 focus:ring-0 sm:text-sm"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm"
                                         step="0.01" min="0">
                                 </td>
                                 <td class="px-3 py-2">
                                     <input type="text" :value="formatCurrency(item.total_cost)" readonly
-                                        class="block w-full border-0 p-0 text-right text-gray-900 focus:ring-0 sm:text-sm bg-transparent">
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm bg-transparent">
                                 </td>
                                 <td class="px-3 py-2 text-center">
                                     <button type="button" @click="removeItem(index)"
@@ -163,10 +168,6 @@
                             </div>
                             <div class="w-72 space-y-2">
                                 <div class="flex justify-between items-center text-sm">
-                                    <span class="font-medium text-gray-900">Subtotal</span>
-                                    <span class="text-gray-900">{{ formatCurrency(subtotal) }}</span>
-                                </div>
-                                <div class="flex justify-between items-center text-sm">
                                     <span class="font-medium text-gray-900">Total</span>
                                     <span class="text-gray-900">{{ formatCurrency(subtotal) }}</span>
                                 </div>
@@ -178,13 +179,13 @@
 
             <!-- Action Buttons -->
             <div class="mt-6 flex justify-end space-x-3 mb-[80px]">
-                <button type="button"
+                <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Cancel
+                    Exit
                 </button>
-                <button @click="submitForm" type="button"
+                <button @click="submitForm" type="button" :disabled="isSubmitting"
                     class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Save and Exit
+                    {{  isSubmitting ? "Saving..." : "Save and Exit" }}
                 </button>
             </div>
         </div>
@@ -199,6 +200,9 @@ import axios from 'axios';
 import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import moment from 'moment';
 import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 
 import { useToast } from 'vue-toastification';
 
@@ -212,62 +216,113 @@ const props = defineProps({
 
 const selectedSupplier = ref(null);
 const form = ref({
+    id: null,
     supplier_id: "",
+    supplier: null,
     po_number: props.po_number,
     po_date: moment().format('YYYY-MM-DD'),
-    items: [
-        {
-            product_id: null,
-            searchQuery: '',
-            barcode: "",
-            dose: "",
-            quantity: 1,
-            unit_cost: 0,
-            total_cost: 0
-        }
-    ]
+    items: []
 });
 
-const filteredProducts = ref([[]]);  // Initialize with one empty array for first row
+const fileInput = ref(null);
+const uploadStatus = ref('');
+
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!form.value.supplier_id) {
+        uploadStatus.value = 'Please select a supplier first';
+        event.target.value = '';
+        return;
+    }
+
+    uploadStatus.value = 'Creating purchase order...';
+    try {
+        // First create/update the purchase order
+        const poData = {
+            supplier_id: form.value.supplier_id,
+            po_date: moment(form.value.po_date).format('YYYY-MM-DD'),
+            po_number: form.value.po_number
+        };
+
+        const poResponse = await axios.post(route('purchase-orders.store'), poData);
+        const purchaseOrderId = poResponse.data.id;
+
+        // Now upload the Excel file
+        uploadStatus.value = 'Uploading items...';
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('purchase_order_id', purchaseOrderId);
+        form.value.id = purchaseOrderId;
+
+        const response = await axios.post(route('purchase-orders.import'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        // Update items with imported data
+        form.value.items = response.data.map(item => ({
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_cost: item.total_cost,
+            uom: item.uom,
+            product: item.product,
+        }));
+
+        // Show success message
+        toast.success('Items imported successfully');
+
+        // Clear file input
+        event.target.value = '';
+
+        // // Display the imported items
+        // items.value = response.data.items;
+        // totalAmount.value = response.data.total_amount;
+        toast.success('Items imported successfully');
+    } catch (error) {
+        console.error('Upload failed:', error);
+        uploadStatus.value = 'Upload failed: ' + (error.response.data);
+    }
+
+    // Clear the file input
+    event.target.value = '';
+}
+
+function hadleProductSelect(index, selected){
+    form.value.items[index].product_id = selected.id;
+    form.value.items[index].product = selected;
+    addItem();
+}
+
+function handleSupplierSelect(selected){
+    form.value.supplier_id = selected.id;
+    form.value.supplier = selected;
+    onSupplierChange(selected);
+}
 
 function addItem() {
     form.value.items.push({
         product_id: null,
-        searchQuery: '',
-        barcode: "",
-        dose: "",
+        product: null,
+        uom: "",
         quantity: 1,
         unit_cost: 0,
         total_cost: 0
     });
-    // Add a new empty array for the new row's filtered products
-    filteredProducts.value.push([]);
 }
 
 function removeItem(index) {
     form.value.items.splice(index, 1);
-    // Also remove the filtered products for this row
-    filteredProducts.value.splice(index, 1);
 
     // If all items are removed, add one back
     if (form.value.items.length === 0) {
         addItem();
     }
-}
-
-function handleProductSelect(product, index) {
-    form.value.items[index].product_id = product.id;
-    form.value.items[index].searchQuery = product.name;
-    form.value.items[index].barcode = product.barcode || '';
-    form.value.items[index].dose = product.dose || '';
-    form.value.items[index].unit_cost = product.unit_cost || 0;
-    calculateTotal(index);
-
-    // Clear the filtered products to hide dropdown
-    filteredProducts.value[index] = [];
-
-    // Add new item after selection
-    addItem();
 }
 
 function calculateTotal(index) {
@@ -279,9 +334,51 @@ const subtotal = computed(() => {
     return form.value.items.reduce((sum, item) => sum + (item.total_cost || 0), 0);
 });
 
-async function submitForm() {
+const isSubmitting = ref(false);
+
+async function submitForm() {    
     if (!form.value.supplier_id) {
         toast.warning('Please select a supplier');
+        return;
+    }
+
+    // Reset any existing danger classes
+    document.querySelectorAll('tr.bg-red-50').forEach(tr => {
+        tr.classList.remove('bg-red-50');
+    });
+
+    let hasInvalidItems = false;
+
+    // Filter out items with no product_id and validate remaining items
+    form.value.items = form.value.items.filter(item => {
+        if (!item.product_id) return false;
+
+        // Check if required fields are empty
+        const isValid = item.quantity > 0 && 
+                       item.unit_cost > 0 && 
+                       item.uom && 
+                       item.total_cost > 0;
+
+        if (!isValid) {
+            // Find the TR element for this item and add danger class
+            const index = form.value.items.indexOf(item);
+            const tr = document.querySelector(`tr[data-item-index="${index}"]`);
+            if (tr) {
+                tr.classList.add('bg-red-50');
+                hasInvalidItems = true;
+            }
+        }
+
+        return true;
+    });
+
+    if (hasInvalidItems) {
+        toast.error('Please fill in all required fields for highlighted items');
+        return;
+    }
+
+    if (form.value.items.length === 0) {
+        toast.error('No valid items to submit');
         return;
     }
 
@@ -295,39 +392,27 @@ async function submitForm() {
         confirmButtonText: "Yes, create it!"
     }).then(async (result) => {
         if (result.isConfirmed) {
-            // Filter out items without product_id
-            const validItems = form.value.items.filter(item => item.product_id);
-            if (validItems.length === 0) {
-                toast.warning('Please add at least one item');
-                return;
-            }
-
-            try {
-                const formData = {
-                    ...form.value,
-                    items: validItems
-                };
-
-                const response = await axios.post(route('supplies.storePO'), formData);
-                Swal.fire({
-                    title: "Success!",
-                    text: "Purchase order created successfully",
-                    icon: "success"
-                }).then(() => {
-                    router.visit(route('supplies.index'));
-                });
-
-            } catch (error) {
-                if (error.response?.data?.errors) {
-                    // Show validation errors
-                    Object.values(error.response.data.errors).forEach(errors => {
-                        errors.forEach(error => toast.error(error));
+            console.log(form.value);    
+            isSubmitting.value = true;      
+            
+            await axios.post(route('supplies.storePO'), form.value)
+            .then((response) => {
+                    isSubmitting.value = false;
+                    Swal.fire({
+                        title: "Success!",
+                        text: response.data,
+                        icon: "success"
+                    }).then(() => {
+                        router.visit(route('supplies.index'));
                     });
-                } else {
+
+                })
+                .catch((error) => {
+                    console.log(error);
+                    
                     toast.error(error.response?.data || 'Failed to create purchase order');
-                }
-                console.error('Error:', error.response?.data);
-            }
+                    isSubmitting.value = false;
+                });
         }
     });
 }
@@ -340,9 +425,9 @@ function formatCurrency(value) {
 }
 
 const isLoading = ref(false);
-async function onSupplierChange(e) {
+async function onSupplierChange(selected) {
     isLoading.value = true;
-    let value = e.target.value;
+    let value = selected.id;
     if (!value) {
         selectedSupplier.value = null;
         form.value.supplier_id = null;
@@ -356,100 +441,5 @@ async function onSupplierChange(e) {
     setTimeout(() => isLoading.value = false, 1000);
 }
 
-function filterProducts(index) {
-    const query = form.value.items[index].searchQuery?.toLowerCase() || '';
-    if (!query) {
-        filteredProducts.value[index] = [];
-        return;
-    }
-    filteredProducts.value[index] = props.products.filter(p =>
-        p.name.toLowerCase().includes(query)
-    );
-}
-
 // const po_date = ref(moment().format('YYYY-MM-DD'));
 </script>
-
-<style>
-.multiselect-option.is-pointed {
-    color: white;
-    background: #4f46e5;
-}
-
-.multiselect-option.is-selected {
-    color: white;
-    background: #4f46e5;
-}
-
-.multiselect-option {
-    padding: 8px 12px;
-}
-
-.multiselect-single-label {
-    padding: 4px 0;
-}
-
-.multiselect.is-active {
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
-    border-color: #4f46e5;
-}
-
-.multiselect {
-    min-height: 42px;
-}
-
-.multiselect-no-options {
-    padding: 8px 12px;
-    color: #6b7280;
-}
-
-.product-select {
-    width: 100%;
-    --ms-tag-bg: #4f46e5;
-    --ms-tag-color: #ffffff;
-}
-
-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
-    height: 38px;
-}
-
-select:focus {
-    outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 1px #4f46e5;
-}
-
-.relative {
-    position: relative;
-}
-
-.absolute {
-    position: absolute;
-}
-
-.z-50 {
-    z-index: 50;
-}
-
-.shadow-xl {
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-tbody {
-    position: relative;
-}
-
-tr {
-    position: relative;
-}
-
-td {
-    position: relative;
-}
-</style>

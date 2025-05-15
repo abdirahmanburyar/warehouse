@@ -148,7 +148,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap border-r border-black">
                                         <span :class="[product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full']">
-                                            {{ product.is_active ? 'Active' : 'Inactive' }}
+                                            {{ product  }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium border-r border-black">

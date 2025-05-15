@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Category;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 
 class Warehouse extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     
     /**
      * The attributes that are mass assignable.
@@ -21,23 +21,14 @@ class Warehouse extends Model
         'code',
         'address',
         'city',
-        'state',
-        'country',
         'postal_code',
-        'latitude',
-        'longitude',
-        'capacity',
-        'temperature_min',
-        'temperature_max',
-        'humidity_min',
-        'humidity_max',
-        'status',
-        'has_cold_storage',
-        'has_hazardous_storage',
-        'is_active',
         'manager_name',
-        'manager_email',
         'manager_phone',
+        'manager_email',
+        'capacity',
+        'status',
+        'user_id',
+        'special_handling_capabilities',
         'notes'
     ];
     
@@ -47,22 +38,16 @@ class Warehouse extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'latitude' => 'float',
-        'longitude' => 'float',
         'capacity' => 'integer',
-        'temperature_min' => 'integer',
-        'temperature_max' => 'integer',
-        'has_cold_storage' => 'boolean',
-        'has_hazardous_storage' => 'boolean',
-        'is_active' => 'boolean',
+        'deleted_at' => 'datetime'
     ];
     
 
     /**
      * Get the users associated with the warehouse.
      */
-    public function users()
+    public function user()
     {
-        return $this->hasMany(User::class);
+        return $this->belongsTo(User::class);
     }
 }

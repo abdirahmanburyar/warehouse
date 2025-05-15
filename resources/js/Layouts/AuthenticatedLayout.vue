@@ -43,7 +43,7 @@
                         <img v-else src="/assets/images/transfer-w.png" class="transfer-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Transfers</span>
-                </div>
+                </div> 
                 </Link>
 
                 <Link :href="route('products.index')" class="menu-item"
@@ -58,19 +58,6 @@
                 </div>
                 </Link>
 
-                <!-- purchase orders
-                <Link :href="route('purchase-orders.index')" class="menu-item"
-                    :class="{ active: route().current('purchase-orders.*') }"
-                    @click="setCurrentPage('purchase-orders')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('purchase-orders.*')" src="/assets/images/po-b.png"
-                            class="order-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/po-w.png" class="order-icon" style="height: 24px" />
-                    </div>
-                    <span class="menu-text">Sepplies</span>
-                </div>
-                </Link> -->
 
                 <Link :href="route('inventories.index')" class="menu-item"
                     :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">

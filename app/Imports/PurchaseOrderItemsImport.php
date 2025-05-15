@@ -2,17 +2,23 @@
 
 namespace App\Imports;
 
-use App\Models\PoItem;
 use App\Models\Product;
+use App\Models\PurchaseOrderItem;
 use App\Models\Category;
 use App\Models\Dosage;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\Importable;
+use Illuminate\Validation\Rule;
 
-class PurchaseOrderItemsImport implements ToCollection
+class PurchaseOrderItemsImport implements ToCollection, WithHeadingRow, WithValidation
 {
+    use Importable;
+
     protected $purchaseOrderId;
 
     public function __construct($purchaseOrderId)
@@ -20,140 +26,96 @@ class PurchaseOrderItemsImport implements ToCollection
         $this->purchaseOrderId = $purchaseOrderId;
     }
 
+    public function rules(): array
+    {
+        return [
+            'item_description' => ['required', 'string', 'max:255'],
+            'quantity' => ['required', 'numeric', 'min:0'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+            'total_cost' => ['required', 'numeric', 'min:0'],
+            'uom' => ['required', 'string', 'max:50'],
+            '*.item_description' => ['required', 'string', 'max:255'],
+            '*.quantity' => ['required', 'numeric', 'min:0'],
+            '*.unit_cost' => ['required', 'numeric', 'min:0'],
+            '*.total_cost' => ['required', 'numeric', 'min:0'],
+            '*.uom' => ['required', 'string', 'max:50'],
+        ];
+    }
+
+    public function customValidationMessages()
+    {
+        return [
+            'item_description.required' => 'The item description is required',
+            'quantity.required' => 'The quantity is required',
+            'unit_cost.required' => 'The unit cost is required',
+            'total_cost.required' => 'The total cost is required',
+            'uom.required' => 'The unit of measure (UOM) is required',
+            'quantity.numeric' => 'The quantity must be a number',
+            'unit_cost.numeric' => 'The unit cost must be a number',
+            'total_cost.numeric' => 'The total cost must be a number',
+        ];
+    }
+
     public function collection(Collection $rows)
     {
+        if ($rows->isEmpty()) {
+            throw new \Exception('The Excel file is empty');
+        }
+
+        // Validate required columns
+        $requiredColumns = ['item_description', 'quantity', 'unit_cost', 'total_cost', 'uom'];
+        $missingColumns = array_diff($requiredColumns, array_keys($rows->first()->toArray()));
+        if (!empty($missingColumns)) {
+            throw new \Exception('Missing required columns: ' . implode(', ', $missingColumns));
+        }
+
         DB::beginTransaction();
         try {
-            // Skip header row
-            $rows = $rows->slice(1);
-
-            // Group items by item_code and unit_cost to handle duplicates
-            $groupedItems = [];
-
-            foreach ($rows as $index => $row) {
-                // Skip empty rows
-                if ($row->filter()->isEmpty()) {
+            foreach ($rows as $row) {
+                if (empty($row['item_description'])) {
                     continue;
                 }
 
-                $item_code = trim($row[0]);
-                $item_description = trim($row[1]);
-                $uom = trim($row[2]);
-                $dose = $row[3];
-                $quantity = floatval($row[4]);
-                $category = $row[5];
-                $dosage_form = $row[6];
-                $unit_cost = floatval($row[7]); 
-                $total_cost = floatval($row[8]); 
+                $item_description = trim($row['item_description']);
+                $uom = trim($row['uom']);
+                $quantity = floatval($row['quantity']);
+                $unit_cost = floatval($row['unit_cost']);
                 
-                // Validate all required fields
-                if (empty($item_code) || empty($item_description) || $quantity <= 0 || $unit_cost <= 0) {
-                    continue;
-                }
+                // Calculate total cost instead of using Excel value
+                $total_cost = $quantity * $unit_cost;
 
-                // Find or create Category
-                $categoryModel = Category::firstOrCreate(
-                    ['name' => $category],
-                    ['description' => $category, 'is_active' => true]
+                // Extract category from the row
+                $category = Category::firstOrCreate(
+                    ['name' => $row['category'] ?? 'Drug'],
+                    ['status' => 'active']
                 );
 
-                // Find or create Dosage
-                $dosageModel = Dosage::firstOrCreate(
-                    ['name' => $dosage_form],
-                    ['description' => $dosage_form, 'is_active' => true]
+                // Extract dosage form and create if not exists
+                $dosageForm = Dosage::firstOrCreate(
+                    ['name' => $row['dosage_form'] ?? 'Tablet'],
+                    ['status' => 'active']
                 );
 
-                // Create a unique key combining item code and unit cost
-                $item_key = $item_code . '_' . number_format($unit_cost, 2);
-
-                if (isset($groupedItems[$item_key])) {
-                    // Same item with same unit cost - just add quantities
-                    $groupedItems[$item_key]['quantity'] += $quantity;
-                    $groupedItems[$item_key]['total_cost'] += $total_cost;
-                } else {
-                    // New item
-                    $groupedItems[$item_key] = [
-                        'purchase_order_id' => $this->purchaseOrderId,
-                        'item_code' => $item_code,
-                        'item_description' => $item_description,
-                        'uom' => $uom,
-                        'quantity' => $quantity,
-                        'original_quantity' => $quantity,
-                        'unit_cost' => $unit_cost,
-                        'total_cost' => $total_cost,
-                    ];
-                }
-            }
-
-       
-            foreach ($groupedItems as $item) {
-                // Check if product exists by item_code (barcode) or description (name)
-                $product = Product::where('barcode', $item['item_code'])
-                    ->orWhere('name', $item['item_description'])
-                    ->first();
-
-                // If product doesn't exist, create it
-                if (!$product) {
-                    $product = Product::create([
-                        'barcode' => $item['item_code'],
-                        'name' => $item['item_description'],
-                        'dose' => $item['dose'],
-                        'dosage_id' => $dosage_form->id,
+                // Find or create product by name with category and dosage
+                $product = Product::firstOrCreate(
+                    ['name' => $item_description],
+                    [
+                        'status' => 'active',
                         'category_id' => $category->id,
-                        'dose' => $item['dose'],
-                        'status' => 'active'
-                    ]);
-                }
+                        'dosage_id' => $dosageForm->id
+                    ]
+                );
 
-                // Check if item already exists in this purchase order
-                $existingPoItem = PoItem::where('purchase_order_id', $this->purchaseOrderId)
-                    ->where(function($query) use ($item) {
-                        $query->where('item_code', $item['item_code'])
-                              ->orWhere('item_description', $item['item_description']);
-                    })
-                    ->first();
-
-                if ($existingPoItem) {
-                    // Update existing PO item
-                    $new_quantity = $existingPoItem->quantity + $item['quantity'];
-                    $new_total_cost = $existingPoItem->total_cost + $item['total_cost'];
-                    // Calculate unit cost by dividing total cost by total quantity
-                    $new_unit_cost = round($new_total_cost / $new_quantity, 2);
-
-                    try {
-                        $existingPoItem->update([
-                            'quantity' => $new_quantity,
-                            'original_quantity' => $new_quantity,
-                            'unit_cost' => $new_unit_cost,
-                            'total_cost' => $new_total_cost,
-                        ]);
-
-                    } catch (\Exception $e) {
-                        Log::error('Failed to update PO item:', [
-                            'item_code' => $item['item_code'],
-                            'error' => $e->getMessage()
-                        ]);
-                        throw $e;
-                    }
-                } else {
-                    try {
-                        // Create new PO Item
-                        $data = [
-                            'purchase_order_id' => $this->purchaseOrderId,
-                            'item_code' => $item['item_code'],
-                            'item_description' => $item['item_description'],
-                            'uom' => $item['uom'],
-                            'quantity' => $item['quantity'],
-                            'original_quantity' => $item['quantity'],
-                            'unit_cost' => $item['unit_cost'],
-                            'total_cost' => $item['total_cost'],
-                        ];
-
-                        $newItem = PoItem::create($data);
-                    } catch (\Exception $e) {
-                        throw $e;
-                    }
-                }
+                // Create new item for each row
+                $poi = PurchaseOrderItem::create([
+                    'purchase_order_id' => $this->purchaseOrderId,
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'unit_cost' => $unit_cost,
+                    'total_cost' => $total_cost,
+                    'uom' => $uom
+                ]);
+                logger()->info($poi);
             }
 
             DB::commit();

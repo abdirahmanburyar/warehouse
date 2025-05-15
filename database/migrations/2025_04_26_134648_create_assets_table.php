@@ -13,18 +13,18 @@ return new class extends Migration
     {
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('asset_tag');
+            $table->foreignId('asset_category_id');
             $table->string('serial_number')->unique();
-            $table->string('category');
-            $table->string('custody')->nullable();
-            $table->integer('quantity')->default(1);
-            $table->string('location');
-            $table->double('purchase_cost')->nullable();
-            $table->date('purchase_date')->nullable();
-            $table->date('transfer_date')->nullable();
-            $table->enum('status', ['active', 'in_use', 'maintenance', 'retired', 'damaged'])->default('active');
-            $table->text('notes')->nullable();
-            $table->string('current_custodian')->nullable();
+            $table->text('item_description');
+            $table->string('person_assigned')->nullable();
+            $table->foreignId('asset_location_id');
+            $table->foreignId('sub_location_id');
+            $table->string('sub_location')->nullable();
+            $table->date('acquisition_date');
+            $table->enum('status', ['active', 'in_use', 'maintenance', 'retired', 'disposed'])->default('active');
+            $table->decimal('original_value', 10, 2)->nullable();
+            $table->string('source_agency')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -2,7 +2,7 @@
 
     <Head title="Warehouses" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedTabs>
         <div class="flex justify-between items-center p-4 sticky top-0 bg-white z-20 border-b">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Warehouses</h2>
             <div class="flex items-center gap-2">
@@ -24,9 +24,9 @@
                     <option value="50">50 per page</option>
                     <option value="100">100 per page</option>
                 </select>
-                <PrimaryButton @click="openModal(null)">
+                <Link :href="route('inventories.warehouses.create')" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <i class="fas fa-plus mr-2"></i> Add Warehouse
-                </PrimaryButton>
+                </Link>
             </div>
         </div>
 
@@ -35,11 +35,11 @@
                 <div class="text-gray-900 overflow-hidden">
                     <div
                         class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-lg">
-                        <table class="w-full divide-y divide-gray-200 border-collapse table-auto">
+                        <table class="w-full divide-y divide-black border-collapse table-auto border border-black">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sticky left-0 bg-gray-50 z-20"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sticky left-0 bg-gray-50 z-20 border border-black"
                                         @click="updateSort('name')">
                                         Name
                                         <span v-if="sort === 'name' && direction === 'asc'" class="ml-1">↑</span>
@@ -58,16 +58,13 @@
                                     </th>
 
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        @click="updateSort('city')">
-                                        Location
-                                        <span v-if="sort === 'city' && direction === 'asc'" class="ml-1">↑</span>
-                                        <span v-else-if="sort === 'city' && direction === 'desc'" class="ml-1">↓</span>
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Manager
                                     </th>
 
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Manager
+                                        Special Handling
                                     </th>
 
                                     <th scope="col"
@@ -92,31 +89,19 @@
                                 <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id"
                                     class="hover:bg-gray-50">
                                     <td
-                                        class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
+                                        class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border border-black">
                                         <div class="font-medium text-gray-900">{{ warehouse.name }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
                                         <div class="text-sm text-gray-500">{{ warehouse.code }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
                                         <div class="text-sm text-gray-900">
                                             {{ warehouse.city }}, {{ warehouse.country || 'N/A' }}
                                         </div>
                                         <div class="text-sm text-gray-500">{{ warehouse.address || 'No address' }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div v-if="warehouse.latitude && warehouse.longitude"
-                                            class="text-sm text-gray-500">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-pointer"
-                                                @click="openMapModal(warehouse)">
-                                                {{ formatCoordinates(warehouse.latitude,
-                                                    warehouse.longitude) }}
-                                            </span>
-                                        </div>
-                                        <div v-else class="text-sm text-gray-500">No coordinates</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
                                         <div class="text-sm text-gray-900">
                                             {{ warehouse.manager_name || 'N/A' }}
                                         </div>
@@ -125,30 +110,27 @@
                                         <div class="text-sm text-gray-500">{{ warehouse.manager_phone || 'No phone' }}
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ warehouse.capacity ?
-                                            `${warehouse.capacity} m³` : 'N/A' }}</div>
-                                        <div class="text-sm text-gray-500">
-                                            <span
-                                                v-if="warehouse.temperature_min !== null && warehouse.temperature_max !== null">
-                                                {{ warehouse.temperature_min }}°C - {{
-                                                    warehouse.temperature_max
-                                                }}°C
-                                            </span>
+
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                        <div class="text-sm text-gray-900">
+                                            {{ warehouse.special_handling_capabilities || 'N/A' }}
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                        <div class="text-sm text-gray-900">{{ warehouse.capacity ?
+                                            `${warehouse.capacity} m³` : 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
                                         <span
                                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                            :class="warehouse.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                                            {{ warehouse.is_active ? 'Active' : 'Inactive' }}
+                                            :class="warehouse.status == 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                            {{ warehouse.status }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button @click="openModal(warehouse)"
-                                            class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-black">
+                                        <Link :href="route('inventories.warehouses.edit', warehouse.id)" class="text-indigo-600 hover:text-indigo-900">
                                             Edit
-                                        </button>
+                                        </Link>
                                         <button @click="confirmDelete(warehouse)"
                                             class="text-red-600 hover:text-red-900">
                                             Delete
@@ -164,249 +146,15 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="mt-4 flex justify-end items-center mt-3">
-                        <Pagination :links="props.warehouses.meta.links" />
-                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Warehouse Form Modal -->
-        <Modal :show="showModal" @close="closeModal" :max-width="'3xl'">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">
-                    {{ editMode ? 'Edit Warehouse' : 'Add New Warehouse' }}
-                </h2>
-
-                <form @submit.prevent="submitForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Basic Information -->
-                        <div>
-                            <InputLabel for="name" value="Name" />
-                            <TextInput id="name" type="text" v-model="form.name" class="mt-1 block w-full" required
-                                placeholder="Enter warehouse name" />
-                            <InputError :message="errors.name" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="code" value="Code" />
-                            <TextInput id="code" type="text" v-model="form.code" class="mt-1 block w-full" required
-                                placeholder="Enter warehouse code" />
-                            <InputError :message="errors.code" class="mt-2" />
-                        </div>
-
-                        <!-- Warehouse Manager Information -->
-                        <div class="mt-6 border-t pt-4">
-                            <h3 class="text-lg font-medium text-gray-900">Manager Information</h3>
-
-                            <div class="mt-4">
-                                <InputLabel for="manager_name" value="Manager Name" />
-                                <TextInput id="manager_name" type="text" class="mt-1 block w-full"
-                                    v-model="form.manager_name" />
-                            </div>
-
-                            <div class="mt-4">
-                                <InputLabel for="manager_email" value="Manager Email" />
-                                <TextInput id="manager_email" type="email" class="mt-1 block w-full"
-                                    v-model="form.manager_email" />
-                            </div>
-
-                            <div class="mt-4">
-                                <InputLabel for="manager_phone" value="Manager Phone" />
-                                <TextInput id="manager_phone" type="text" class="mt-1 block w-full"
-                                    v-model="form.manager_phone" />
-                            </div>
-                        </div>
-
-                        <!-- Location Information -->
-                        <div class="md:col-span-2">
-                            <InputLabel for="address" value="Address" />
-                            <textarea id="address" v-model="form.address"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                rows="2" placeholder="Enter street address"></textarea>
-                        </div>
-
-                        <div>
-                            <InputLabel for="city" value="City" />
-                            <TextInput id="city" type="text" v-model="form.city" class="mt-1 block w-full"
-                                placeholder="Enter city" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="state" value="State/Province" />
-                            <TextInput id="state" type="text" v-model="form.state" class="mt-1 block w-full"
-                                placeholder="Enter state or province" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="country" value="Country" />
-                            <TextInput id="country" type="text" v-model="form.country" class="mt-1 block w-full"
-                                placeholder="Enter country" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="postal_code" value="Postal Code" />
-                            <TextInput id="postal_code" type="text" v-model="form.postal_code" class="mt-1 block w-full"
-                                placeholder="Enter postal code" />
-                        </div>
-
-                        <!-- Coordinates -->
-                        <div>
-                            <InputLabel for="latitude" value="Latitude" />
-                            <TextInput id="latitude" type="text" v-model="form.latitude" class="mt-1 block w-full"
-                                placeholder="e.g. 40.7128" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="longitude" value="Longitude" />
-                            <TextInput id="longitude" type="text" v-model="form.longitude" class="mt-1 block w-full"
-                                placeholder="e.g. -74.0060" />
-                        </div>
-
-                        <!-- Storage Information -->
-                        <div>
-                            <InputLabel for="capacity" value="Storage Capacity (m³)" />
-                            <TextInput id="capacity" type="text" v-model="form.capacity" class="mt-1 block w-full"
-                                placeholder="Enter capacity in cubic meters" />
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel for="temperature_min" value="Min Temp (°C)" />
-                                <TextInput id="temperature_min" type="text" v-model="form.temperature_min"
-                                    class="mt-1 block w-full" placeholder="e.g. -5" />
-                            </div>
-                            <div>
-                                <InputLabel for="temperature_max" value="Max Temp (°C)" />
-                                <TextInput id="temperature_max" type="text" v-model="form.temperature_max"
-                                    class="mt-1 block w-full" placeholder="e.g. 25" />
-                            </div>
-                        </div>
-
-                        <!-- Storage Features -->
-                        <div class="md:col-span-2 flex flex-col space-y-2">
-                            <div class="flex items-center">
-                                <input id="has_cold_storage" type="checkbox" v-model="form.has_cold_storage"
-                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
-                                <label for="has_cold_storage" class="ml-2 text-sm text-gray-600">Has Cold
-                                    Storage</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input id="has_hazardous_storage" type="checkbox" v-model="form.has_hazardous_storage"
-                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
-                                <label for="has_hazardous_storage" class="ml-2 text-sm text-gray-600">Has Hazardous
-                                    Materials Storage</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input id="is_active" type="checkbox" v-model="form.is_active"
-                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
-                                <label for="is_active" class="ml-2 text-sm text-gray-600">Active</label>
-                            </div>
-                        </div>
-
-                        <!-- Notes -->
-                        <div class="md:col-span-2">
-                            <InputLabel for="notes" value="Notes" />
-                            <textarea id="notes" v-model="form.notes"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                rows="3"
-                                placeholder="Enter additional notes or information about this warehouse"></textarea>
-                            <InputError :message="errors.notes" class="mt-2" />
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end mt-4">
-                        <SecondaryButton @click="closeModal" class="mr-2">Cancel</SecondaryButton>
-                        <PrimaryButton :disabled="formSubmitting" :class="{ 'opacity-25': formSubmitting }">
-                            <span v-if="formSubmitting" class="inline-block animate-spin mr-2">
-                                <svg class="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
-                            </span>
-                            {{ editMode ? 'Update' : 'Create' }}
-                        </PrimaryButton>
-                    </div>
-                </form>
-            </div>
-        </Modal>
-
-        <!-- Map Modal -->
-        <Modal :show="showMapModal" @close="closeMapModal" max-width="2xl">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4" v-if="selectedWarehouse">
-                    {{ selectedWarehouse.name }} Location
-                </h2>
-
-                <div class="bg-gray-100 rounded-lg overflow-hidden" style="height: 500px;">
-                    <!-- Loading state -->
-                    <div v-if="!mapLoaded && !mapError" class="h-full flex items-center justify-center">
-                        <div class="text-center">
-                            <svg class="animate-spin h-10 w-10 text-indigo-600 mx-auto mb-4"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            <p class="text-gray-600">Loading map...</p>
-                        </div>
-                    </div>
-
-                    <!-- Error state -->
-                    <div v-else-if="mapError" class="h-full flex items-center justify-center">
-                        <div class="text-center">
-                            <svg class="h-12 w-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <p class="text-gray-800 font-medium mb-2">Failed to load map</p>
-                            <p class="text-gray-600">Please check your internet connection or try again later.</p>
-                            <div class="mt-4">
-                                <button @click="retryLoadMap"
-                                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
-                                    Retry
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Map container -->
-                    <div v-else id="map" class="h-full w-full"></div>
-                </div>
-
-                <!-- Location details -->
-                <div v-if="selectedWarehouse" class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="font-medium">Address:</span>
-                        <span>{{ selectedWarehouse.address || 'N/A' }}, {{ selectedWarehouse.city || '' }}, {{
-                            selectedWarehouse.state || '' }}, {{ selectedWarehouse.country || '' }}</span>
-                    </div>
-                    <div>
-                        <span class="font-medium">Coordinates:</span>
-                        <span>{{ formatCoordinates(selectedWarehouse.latitude, selectedWarehouse.longitude)
-                            }}</span>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="closeMapModal">Close</SecondaryButton>
-                </div>
-            </div>
-        </Modal>
-    </AuthenticatedLayout>
+    </AuthenticatedTabs>
 </template>
 
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AuthenticatedTabs from '@/Layouts/AuthenticatedTabs.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -437,22 +185,7 @@ const perPage = ref(props.filters?.perPage || 10);
 const loading = ref(false);
 
 // Debounced search function
-const debouncedSearch = debounce(() => {
-    const query = {}
-    if (search.value) query.search = search.value
-    if (sort.value) query.sort = sort.value
-    if (direction.value) query.direction = direction.value
-    if (perPage.value) query.perPage = perPage.value
-    router.get(
-        route('warehouses.index'),
-        query,
-        {
-            preserveState: true,
-            replace: true,
-            only: ['warehouses']
-        }
-    );
-}, 500);
+
 
 // Watch for search and filter changes
 watch([
@@ -461,7 +194,7 @@ watch([
     () => direction.value,
     () => perPage.value
 ], () => {
-    debouncedSearch();
+    reloadWarehouse();
 });
 
 // Update sorting
@@ -711,11 +444,17 @@ const confirmDelete = (warehouse) => {
 
 function reloadWarehouse() {
     const query = {}
-    router.get(route('warehouses.index'), query, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['warehouses']
-    });
+    if (search.value) query.search = search.value
+    if (perPage.value) query.perPage = perPage.value
+    router.get(
+        route('inventories.warehouses.index'),
+        query,
+        {
+            preserveState: true,
+            replace: true,
+            only: ['warehouses']
+        }
+    );
 }
 
 // Delete warehouse

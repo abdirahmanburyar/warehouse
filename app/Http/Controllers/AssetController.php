@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\SubLocation;
+use App\Models\AssetLocation;
+use App\Models\AssetCategory;
 use App\Models\CustodyHistory;
 use App\Http\Resources\AssetResource;
 use Illuminate\Http\Request;
@@ -13,97 +16,126 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
-        $assets = Asset::query();
+        $locations = AssetLocation::with('subLocations')->get();
+        return Inertia::render('Assets/Index', [
+            'locations' => $locations,
+        ]);
+    }
 
-        if($request->filled('search')){
-            $assets->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('category', 'like', '%' . $request->search . '%')
-                  ->orWhere('location', 'like', '%' . $request->search . '%')
-                  ->orWhere('custody', 'like', '%' . $request->search . '%');
-                  
+    public function getAssets(Request $request)
+    {
+        $query = Asset::query()
+            ->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history');
+
+        // Apply location filter if provided
+        if ($request->has('locations')) {
+            $locations = $request->locations;
+            if (!empty($locations)) {
+                $query->whereIn('asset_location_id', $locations);
+            }
         }
 
-        $assets = $assets->with(['custodyHistories' => function($query) {
-            $query->with('assignedBy')
-                  ->orderBy('assigned_at', 'desc');
-        }]);
-        
-        $assets = $assets->latest()->paginate(10);
+        // Apply sub-location filter if provided
+        if ($request->has('sub_locations')) {
+            $subLocations = $request->sub_locations;
+            if (!empty($subLocations)) {
+                $query->whereIn('sub_location_id', $subLocations);
+            }
+        }
 
-        $categories = Asset::distinct()->pluck('category')->filter()->values();
-        
-        // Get the latest serial number
-        $lastSerialNumber = Asset::orderBy('serial_number', 'desc')->value('serial_number') ?? '000000';
-        
+        $assets = $query->latest()->get();
+        return response()->json($assets);
+        $locations = AssetLocation::with('subLocations')->get();
         return Inertia::render('Assets/Index', [
-            'assets' => AssetResource::collection($assets),
-            'filters' => $request->only('search'),
-            'categories' => $categories,
-            'lastSerialNumber' => $lastSerialNumber
+            'assets' => $assets,
+            "locations" => $locations
+        ]);
+    }
+
+    public function create()
+    {
+        $locations = AssetLocation::all();
+        $categories = AssetCategory::all();
+        return Inertia::render('Assets/Create', [
+            'locations' => $locations,
+            'categories' => $categories
         ]);
     }
 
     public function store(Request $request)
-    {   
+    {
         try {
             $validated = $request->validate([
-                "id" => "nullable|exists:assets,id",
-                'name' => 'required|string|max:255',
+                'asset_tag' => 'required|string|max:255',
+                'asset_category_id' => 'required|exists:asset_categories,id',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $request->id,
-                'category' => 'required|string|max:255',
-                'location' => 'required|string|max:255',
-                'custody' => 'required|string|max:255',
-                'quantity' => 'required|integer|min:1',
-                'purchase_date' => 'required|date',
-                'transfer_date' => 'required|date',
-                'purchase_cost' => 'nullable|numeric',
-                'notes' => 'nullable|string',
+                'item_description' => 'required|string',
+                'person_assigned' => 'required',
+                'asset_location_id' => 'required|',
+                'sub_location_id' => 'nullable',
+                'acquisition_date' => 'required|date',
+                'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
+                'original_value' => 'required|numeric|min:0',
+                'source_agency' => 'required|string|max:255'
             ]);
     
-            $asset = Asset::updateOrCreate(['id' => $request->id], $validated);
-            return response()->json('Asset ' . ($request->id ? 'updated' : 'created') . ' successfully.', 200);
+            Asset::updateOrCreate(
+                ['id' => $request->id],
+                $validated
+            );
+    
+            return response()->json($request->id ? 'Updated' : 'Success', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
     }
 
-    public function history(Asset $asset)
+    public function edit(Asset $asset)
     {
-        $history = $asset->custodyHistories()
-            ->with('assignedBy')
-            ->latest()
-            ->get();
-
-        return Inertia::render('Assets/History', [
+        $locations = AssetLocation::all();
+        $categories = AssetCategory::all();
+        return Inertia::render('Assets/Edit', [
             'asset' => $asset,
-            'history' => $history
+            'locations' => $locations,
+            'categories' => $categories
         ]);
+    }
+
+    public function update(Request $request, Asset $asset)
+    {
+        try {
+            $validated = $request->validate([
+                'asset_tag' => 'required|string|max:255',
+                'asset_category_id' => 'required|exists:asset_categories,id',
+                'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $asset->id,
+                'item_description' => 'required|string',
+                'person_assigned' => 'required',
+                'asset_location_id' => 'required',
+                'sub_location_id' => 'nullable',
+                'acquisition_date' => 'required|date',
+                'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
+                'original_value' => 'required|numeric|min:0',
+                'source_agency' => 'required|string|max:255'
+            ]);
+    
+            $asset->update($validated);
+    
+            return response()->json('Updated', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
     }
 
     public function destroy(Asset $asset)
     {
         $asset->delete();
-        return redirect()->back()->with('success', 'Asset deleted successfully.');
+        return redirect()->route('assets.index');
     }
 
-    public function updateStatus(Request $request, Asset $asset)
+    public function getSubLocations($locationId)
     {
-        try {
-            $validated = $request->validate([
-                'status' => 'required|string|in:active,in_use,maintenance,retired,damaged',
-                'notes' => 'nullable|string',
-            ]);
-
-            $asset->update([
-                'status' => $validated['status']
-            ]);
-
-            return response()->json('Status updated successfully.', 200);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-        }
+        $subLocations = SubLocation::where('asset_location_id', $locationId)->get();
+        return response()->json($subLocations);
     }
+   
 }
-
-

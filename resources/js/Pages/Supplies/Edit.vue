@@ -7,6 +7,7 @@
             </Link>
 
         <div class=" rounded-lg p-6 mb-6">
+            {{form}}
             <h2 class="text-2xl font-semibold mb-4">Create Supplier</h2>
             <form @submit.prevent="submitForm">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -28,21 +29,23 @@
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700">Address</label>
-                        <textarea v-model="form.address" placeholder="Enter complete address" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required></textarea>
+                        <input type="text" v-model="form.address" placeholder="Enter complete address" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required />
                     </div>
                     <div>
-                        <label class="flex items-center">
-                            <input type="checkbox" v-model="form.is_active" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-600">Active</span>
-                        </label>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <select v-model="form.status" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Select Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <Link :href="route('supplies.index')" :disabled="isSubmitting" class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                        Cancel
+                    <Link :href="route('supplies.show')" :disabled="isSubmitting" class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                        Exit
                     </Link>
                     <button type="submit" :disable="isSubmitting" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-                        {{ isSubmitting ? 'Creating...' : 'Create Supplier' }} 
+                        {{ isSubmitting ? 'Updating...' : 'Update Supplier' }} 
                     </button>
                 </div>
             </form>
@@ -73,12 +76,12 @@ const form = ref({
     email: props.supplier?.email || '',
     phone: props.supplier?.phone || '',
     address: props.supplier?.address || '',
-    is_active: props.supplier?.is_active || true,
+    status: props.supplier?.status || true,
 })
 
 function reloadSuppliers(){
     const query = {}
-    router.get(route('suppliers.index'), {}, {
+    router.get(route('supplies.show'), {}, {
         preserveScroll: false,
         preserveState: false,  
     })
@@ -98,7 +101,7 @@ const isSubmitting = ref(false)
 
 async function submitForm(){
     isSubmitting.value = true;
-    await axios.post(route('suppliers.store'), form.value)
+    await axios.post(route('supplies.suppliers.store'), form.value)
         .then((response) => {
             isSubmitting.value = false;
             console.log(response);

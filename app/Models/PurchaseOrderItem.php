@@ -15,6 +15,7 @@ class PurchaseOrderItem extends Model
         'quantity',
         'unit_cost',
         'total_cost',
+        'uom',
     ];
 
 
@@ -25,5 +26,10 @@ class PurchaseOrderItem extends Model
 
     public function product(){
         return $this->belongsTo(Product::class);
+    }
+
+    public function packingLists()
+    {
+        return $this->hasMany(PackingList::class, 'po_id');
     }
 }

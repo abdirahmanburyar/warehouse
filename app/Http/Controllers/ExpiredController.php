@@ -38,7 +38,7 @@ class ExpiredController extends Controller
             case 'near':
                 // Items expiring in the next 30 days
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->where('inventories.is_active', true)
+                    // ->where('inventories.is_active', true)
                     ->where(function($query) {
                         $now = now();
                         $thirtyDaysFromNow = $now->copy()->addDays(30);
@@ -50,14 +50,14 @@ class ExpiredController extends Controller
             case 'expired':
                 // Items that have already expired but not marked as disposed
                 $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->where('inventories.is_active', true)
+                    // ->where('inventories.is_active', true)
                     ->whereDate('inventories.expiry_date', '<=', now());
                 break;
                 
             case 'disposed':
                 // Items marked as inactive (assuming this indicates disposal)
-                $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->where('inventories.is_active', false);
+                $inventoryQuery->whereNotNull('inventories.expiry_date');
+                    // ->where('inventories.is_active', false);
                 break;
                 
             default: // 'all'
@@ -69,17 +69,18 @@ class ExpiredController extends Controller
                         
                         $query->where(function($q) use ($now, $thirtyDaysFromNow) {
                             // Near expiry items
-                            $q->where('inventories.is_active', true)
-                              ->whereDate('inventories.expiry_date', '>', $now)
+                            // where('inventories.is_active', true)
+                            $q->whereDate('inventories.expiry_date', '>', $now)
                               ->whereDate('inventories.expiry_date', '<=', $thirtyDaysFromNow);
                         })->orWhere(function($q) use ($now) {
                             // Expired items
-                            $q->where('inventories.is_active', true)
-                              ->whereDate('inventories.expiry_date', '<=', $now);
-                        })->orWhere(function($q) {
-                            // Disposed items
-                            $q->where('inventories.is_active', false);
+                            // where('inventories.is_active', true)
+                              $q->whereDate('inventories.expiry_date', '<=', $now);
                         });
+                        // ->orWhere(function($q) {
+                        //     // Disposed items
+                        //     $q->where('inventories.is_active', false);
+                        // });
                     });
                 break;
         }
@@ -167,7 +168,7 @@ class ExpiredController extends Controller
                 'disposed' => $disposedCount,
                 'all' => $nearExpiryCount + $expiredCount + $disposedCount
             ],
-            'warehouses' => Warehouse::where('is_active', true)->get(['id', 'name']),
+            'warehouses' => Warehouse::get(['id', 'name']),
         ]);
     }
     

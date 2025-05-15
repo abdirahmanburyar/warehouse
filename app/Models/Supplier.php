@@ -22,17 +22,9 @@ class Supplier extends Model
         'phone',
         'address',
         'notes',
-        'is_active',
+        'status',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
 
     /**
      * Get the supplies for the supplier.

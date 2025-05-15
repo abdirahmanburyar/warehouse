@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
 
 class InventoryResource extends JsonResource
 {
@@ -45,8 +46,7 @@ class InventoryResource extends JsonResource
             'reorder_level' => $this->reorder_level,
             'unit_cost' => $this->unit_cost,
             'unit_price' => $this->unit_price,
-            'manufacturing_date' => $this->manufacturing_date ? $this->manufacturing_date->format('Y-m-d') : null,
-            'expiry_date' => $this->expiry_date ? $this->expiry_date->format('Y-m-d') : null,
+            'expiry_date' => $this->expiry_date,
             'batch_number' => $this->batch_number,
             'location' => $this->location,
             'notes' => $this->notes,

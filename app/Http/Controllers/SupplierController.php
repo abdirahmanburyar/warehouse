@@ -30,8 +30,10 @@ class SupplierController extends Controller
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:255',
                 'notes' => 'nullable|string',
-                'is_active' => 'boolean',
+                'status' => 'string',
             ]);
+
+            logger()->info($validated);
 
         $supplier = Supplier::updateOrCreate(
             ['id' => $request->id],

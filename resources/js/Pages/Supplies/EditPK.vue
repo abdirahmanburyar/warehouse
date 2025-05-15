@@ -1,0 +1,534 @@
+<template>
+    <AuthenticatedLayout title="Packing List">
+        <Link :href="route('supplies.packing-list.showPK')"
+            class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
+        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to Supplies
+        </Link>
+        <!-- Supplier Selection -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Edit Packing List</h2>
+            <div class="grid grid-cols-1 gap-6">
+
+                <div v-if="form"
+                    class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Supplier Details</h3>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.name }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.contact_person }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Contact Information</h3>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.email }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.phone }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.address }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Purchase Order Info</h3>
+                        <p class="mt-1 text-sm text-gray-900">PL Number #: {{ form.items[0]?.packing_list_number }}</p>
+                        <div class="mt-1 flex flex-col gap-2">
+                            <div class="flex items-center">
+                                PL Data: {{ form.items[0]?.created_at }}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div v-else>
+                    <span>No P.O Data found</span>
+                </div>
+                <!-- Items List -->
+                <div class="overflow-x-auto relative w-full" style="max-width: 100%; overflow-y: visible;">
+                    <table class="table-fixed w-full divide-y divide-gray-200 mb-[200px]" style="min-width: 1200px; position: relative; overflow-y: visible;" v-if="!isLoading && form">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th
+                                    class="w-[40px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 border-r">
+                                    #
+                                </th>
+                                <th
+                                    class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-[40px]  bg-gray-50 z-10 border-r">
+                                    Item</th>
+                                <th
+                                    class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Qty</th>
+                                <th
+                                    class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Received QTY</th>
+                                <th
+                                    class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Missmatched QTY</th>
+                                <th
+                                    class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Warehouse</th>
+                                <th
+                                    class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Locations</th>
+                                <th
+                                    class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Batch Number</th>
+                                <th
+                                    class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Expire Date</th>
+                                <th
+                                    class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Unit Cost</th>
+                                <th
+                                    class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Total Cost</th>
+                                <th
+                                    class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Fullfillment Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50">
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 bg-white z-10 border-r border border-gray-200']">{{ index + 1 }}</td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 sticky left-[40px] bg-white z-10 border-r border border-gray-200 whitespace-normal']">{{ item.product?.name }}</td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="number" v-model="item.quantity" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="number" 
+                                        v-model="item.received_quantity" 
+                                        @input="handleReceivedQuantityChange(index)"  
+                                        :disabled="item.status == 'approved'"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm" 
+                                        :max="item.quantity" 
+                                        min="0">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="text" :value="calculateMismatches(item)" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm bg-transparent">
+                                        
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <Multiselect v-model="item.warehouse" :value="item.warehouse_id"
+                                        :options="props.warehouses" :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :allow-empty="true" placeholder="Select Warehouse" track-by="id"
+                                        :disabled="item.status == 'approved'"
+                                        :append-to-body="true"
+                                        label="name" @select="hadleWarehouseSelect(index, $event)"></Multiselect>
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <Multiselect v-model="item.location" :value="item.location_id"                                    
+                                        :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...props.locations]"
+                                        :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :allow-empty="true" placeholder="Select Location" track-by="id"
+                                        :disabled="item.status == 'approved'"
+                                        label="location" @select="hadleLocationSelect(index, $event)">
+                                        <template v-slot:option="{ option }">
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                                <span v-else>{{ option.location }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="text" v-model="item.batch_number"  :disabled="item.status == 'approved'"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="date" v-model="item.expire_date"  :disabled="item.status == 'approved'"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="number" v-model="item.unit_cost" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 border border-gray-200']">
+                                    <input type="number" :value="item.total_cost" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td :class="[{'border-green-600 border-2': item.status?.trim() === 'approved'}, {'border-yellow-500 border-2': item.status?.trim() === 'reviewed'}, 'px-3 py-2 text-left border border-gray-200']">
+                                   {{ calculateFulfillmentRate(item) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="form?.items?.length === 0">
+                                <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500 border border-gray-200">
+                                    No items added. Click "Add Item" to start creating your purchase order.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="border-t border-gray-200 px-3 py-4">
+                    <div class="flex justify-end items-center">
+                        <div class="w-72 space-y-2">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="font-medium text-gray-900">Total</span>
+                                <span class="text-gray-900">{{ "subtotal" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <Link :href="route('supplies.index')" :disabled="isSubmitting" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Exit
+                    </Link>
+                    <button 
+                        v-if="!hasAllApproved"
+                        :disabled="isSubmitting" 
+                        type="submit"
+                        @click="submit"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-transparent rounded-md hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+                    </button>
+                    <button 
+                        v-if="hasPendingItems" 
+                        :disabled="isSubmitting" 
+                        @click="reviewPackingList" 
+                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    >
+                        {{ isSubmitting ? 'Reviewing...' : 'Review' }}
+                    </button>
+                    <button 
+                        v-if="hasReviewedItems" 
+                        :disabled="isSubmitting" 
+                        @click="approvePackingList" 
+                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                        {{ isSubmitting ? 'Approving...' : 'Approve' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- New Location Modal -->
+        <Modal :show="showLocationModal" @close="showLocationModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Location</h2>
+                <div class="mt-6">
+                    <InputLabel for="new_location" value="Location Name" />
+                    <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." :
+                        "Create new location" }}</PrimaryButton>
+                </div>
+            </div>
+        </Modal>
+
+    </AuthenticatedLayout>
+</template>
+<script setup>
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, router, Link } from '@inertiajs/vue3';
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
+import moment from 'moment';
+import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
+import Modal from '@/Components/Modal.vue';
+import TextInput from '@/Components/TextInput.vue';
+import InputLabel from '@/Components/InputLabel.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
+const props = defineProps({
+    warehouses: {
+        required: true,
+        type: Array
+    },
+    locations: {
+        required: true,
+        type: Array
+    },
+    packing_list: {
+        required: true,
+        type: Object
+    }
+})
+
+const form = ref(null);
+const isLoading = ref(false);
+const isSubmitting = ref(false);
+const showLocationModal = ref(false);
+const newLocation = ref('');
+const selectedItemIndex = ref(null);
+
+
+onMounted(() => {    
+    // Initialize form with packing list data
+    const { packing_lists, ...poData } = props.packing_list;
+
+    // First create a reactive form object
+    form.value = {
+        ...poData,
+        items: []
+    };
+
+    // Then set the items
+    if (packing_lists?.length > 0) {
+        
+        form.value.items = packing_lists.map(item => ({
+            id: item.id,
+            product_id: item.product_id,
+            product: item.product,
+            warehouse_id: item.warehouse_id,
+            warehouse: item.warehouse,
+            location_id: item.location_id,
+            location: item.location,
+            quantity: item.po_item?.quantity,
+            received_quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_cost: item.total_cost,
+            batch_number: item.batch_number || '',
+            expire_date: item.expire_date || '',
+            packing_list_number: item.packing_list_number,
+            status: item.status || 'pending',
+            created_at: item.created_at
+        }));
+    }
+    // Remove the packing_lists array to avoid duplication
+    delete form.value.packing_lists;
+});
+
+
+// Debug computed property
+const itemStatuses = computed(() => {
+    return form.value?.items?.map(item => ({
+        id: item.id,
+        status: item.status,
+        disabled: item.status == 'approved'
+    }));
+});
+
+// Computed properties for button visibility
+const hasPendingItems = computed(() => {
+    return form.value?.items?.some(item => item.status == 'pending');
+});
+
+const hasReviewedItems = computed(() => {
+    return form.value?.items?.some(item => item.status === 'reviewed');
+});
+
+const hasAllApproved = computed(() => {    
+    return form.value?.items?.every(item => item.status === 'approved');
+});
+
+
+
+function hadleWarehouseSelect(index, selected) {
+    if (selected.isAddNew) {
+        form.value.items[index].warehouse_id = "";
+        form.value.items[index].warehouse = null;
+        return;
+    }
+    form.value.items[index].warehouse_id = selected.id;
+    form.value.items[index].warehouse = selected;
+}
+
+function hadleLocationSelect(index, selected) {
+    if (selected.isAddNew) {
+        selectedItemIndex.value = index;
+        showLocationModal.value = true;
+        return;
+    }
+    form.value.items[index].location_id = selected.id;
+    form.value.items[index].location = selected;
+}
+
+function closeLocationModal() {
+    showLocationModal.value = false;
+    newLocation.value = '';
+}
+
+const isNewLocation = ref(false);
+async function createLocation() {
+    if (!newLocation.value) {
+        toast.error('Please enter a location name');
+        return;
+    }
+    isNewLocation.value = true;
+
+    await axios.post(route('supplies.packing-list.location.store'), {
+        location: newLocation.value
+    })
+    .then((response) => {
+        isNewLocation.value = false;
+        const newLocationData = response.data.location;
+        props.locations.push(newLocationData);
+        // Update the selected item's location
+        if (selectedItemIndex.value !== null) {
+            form.value.items[selectedItemIndex.value].location_id = newLocationData.id;
+            form.value.items[selectedItemIndex.value].location = newLocationData;
+        }
+        toast.success(response.data.message);
+        closeLocationModal();
+    })
+    .catch((error) => {
+        isNewLocation.value = false;
+        toast.error(error.response?.data || 'An error occurred while adding the location');
+    });
+
+}
+
+
+function handleReceivedQuantityChange(index) {
+    const item = form.value.items[index];
+    // Ensure received quantity doesn't exceed total quantity
+    if (item.received_quantity > item.quantity) {
+        item.received_quantity = item.quantity;
+    }
+    calculateTotal(index);
+}
+
+function calculateTotal(index) {
+    const item = form.value.items[index];
+    item.total_cost = item.received_quantity * item.unit_cost;
+}
+
+function calculateMismatches(item) {
+    if (!item.quantity || !item.received_quantity) return 0;
+    return item.quantity - item.received_quantity;
+}
+
+function calculateFulfillmentRate(item) {
+    if (!item.quantity || !item.received_quantity) return 0;
+    const rate = (item.received_quantity / item.quantity) * 100;
+    return rate.toFixed(2);
+}
+
+async function reviewPackingList() {
+    const confirm = await Swal.fire({
+        title: 'Review Packing List',
+        text: 'Are you sure you want to mark these items as reviewed?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, review it!'
+    });
+
+    if (confirm.isConfirmed) {
+        isSubmitting.value = true;
+        try {
+            await axios.post(route('supplies.packing-list.review'), {
+                id: form.value.id,
+                items: form.value.items.filter(item => item.status === 'pending').map(item => ({
+                    id: item.id,
+                    status: 'reviewed'
+                }))
+            });
+
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Items have been reviewed',
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            });
+
+            router.visit(route('supplies.packing-list.showPK'));
+        } catch (error) {
+            toast.error(error.response?.data || 'An error occurred while reviewing the items');
+        } finally {
+            isSubmitting.value = false;
+        }
+    }
+}
+
+async function approvePackingList() {
+    const confirm = await Swal.fire({
+        title: 'Approve Packing List',
+        text: 'Are you sure you want to approve these items?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, approve it!'
+    });
+
+    if (confirm.isConfirmed) {
+        isSubmitting.value = true;
+        await axios.post(route('supplies.packing-list.approve'), {
+            id: form.value.id,
+            items: form.value.items.filter(item => item.status === 'reviewed').map(item => ({
+                id: item.id,
+                status: 'approved',
+                quantity: item.quantity,
+                received_quantity: item.received_quantity,
+                product_id: item.product_id,
+            }))
+        })
+        .then((response) => {
+            isSubmitting.value = false;
+            Swal.fire({
+                title: 'Success!',
+                text: 'Items have been approved',
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            }).then(() => {
+                router.visit(route('supplies.packing-list.showPK'));
+            });
+        })
+        .catch((error) => {
+            console.log(error);
+            isSubmitting.value = false;
+            toast.error(error.response?.data || 'An error occurred while approving the items');
+        });
+    }
+}
+
+async function submit() {
+    const confirm = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You want to update this packing list?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, update it!'
+    });
+
+    if (confirm.isConfirmed) {
+        // Validate required fields
+        const invalidItems = form.value.items.filter(item => 
+            !item.warehouse_id || 
+            !item.location_id || 
+            !item.batch_number || 
+            !item.expire_date || 
+            item.received_quantity === null || 
+            item.received_quantity < 0
+        );
+
+        if (invalidItems.length > 0) {
+            toast.error('Please fill in all required fields for each item');
+            return;
+        }
+
+        isSubmitting.value = true;
+        await axios.post(route('supplies.packing-list.update'), form.value)
+        .then((response) => {
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            })
+            .then(() => {
+                router.visit(route('supplies.packing-list.showPK'));
+            });
+        })
+        .catch((error) => {
+            toast.error(error.response?.data || 'An error occurred while updating the packing list');
+            isSubmitting.value = false;
+        });
+    }
+}
+
+</script>
