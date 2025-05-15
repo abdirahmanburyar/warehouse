@@ -94,7 +94,7 @@ class SettingsController extends Controller
             'users' => UserResource::collection($users->paginate(10)->withQueryString()),
             'roles' => $roles->get(),
             'permissions' => Permission::all(),
-            'warehouses' => Warehouse::where('is_active', true)->get(),
+            'warehouses' => Warehouse::get(),
             'activeTab' => $tab,
             'filters' => $request->only('search', 'sort_field', 'sort_direction', 'tab'),
             'facilities' => Facility::get(),
