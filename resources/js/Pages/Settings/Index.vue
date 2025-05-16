@@ -31,7 +31,7 @@
                             <ul class="space-y-2">
                                 <li><Link :href="route('settings.roles.index')" class="text-gray-600 hover:text-indigo-600">Role-Based Access</Link></li>
                                 <li><a href="#" class="text-gray-600 hover:text-indigo-600">Permissions</a></li>
-                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Manage Users</a></li>
+                                <li><Link :href="route('settings.users.index')" class="text-gray-600 hover:text-indigo-600">Manage Users</Link></li>
                                 <li><a href="#" class="text-gray-600 hover:text-indigo-600">Audit Trials</a></li>
                             </ul>
                         </div>

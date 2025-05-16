@@ -108,13 +108,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
 
     // Role Management Routes
-    Route::middleware(PermissionMiddleware::class . ':user.view')->group(function () {
-        Route::get('/roles', [RoleController::class, 'index'])->name('settings.roles.index');
-        Route::get('/roles-permissions', [RoleController::class, 'getAllRolesAndPermissions'])->name('roles.get-all');
+    Route::middleware(PermissionMiddleware::class . ':user.view')
+        ->controler(RoleController::class)
+        ->group(function () {
+        Route::get('/roles', ['index'])->name('settings.roles.index');
+        Route::get('/roles-permissions', ['getAllRolesAndPermissions'])->name('roles.get-all');
     });
-    Route::post('/roles', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('roles.store');
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware(PermissionMiddleware::class . ':user.edit')->name('roles.update');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':user.delete')->name('roles.destroy');
+
+    Route::post('/roles/store', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('roles.store');
+    Route::delete('/roles/{role}/delete', [RoleController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':user.delete')->name('roles.destroy');
     Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])->middleware(PermissionMiddleware::class . ':user.edit')->name('users.roles.assign');
 
     // Category Management Routes
