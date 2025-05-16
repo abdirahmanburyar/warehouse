@@ -67,23 +67,49 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::middleware(PermissionMiddleware::class . ':user.view')
         ->prefix('users')
         ->group(function () {
-            Route::get('/', [UserController::class, 'index'])->name('users.index');
-            // Create and Edit routes for navigation purposes
-            Route::get('/create', function () {
-                return Inertia::render('User/Create');
-            })->middleware(PermissionMiddleware::class . ':user.create')->name('users.create');
-            Route::post('/store', [UserController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('users.store');
+            Route::get('/', [UserController::class, 'index'])->name('settings.users.index');
+            
+            // Create routes
+            Route::get('/create', [UserController::class, 'create'])
+                ->middleware(PermissionMiddleware::class . ':user.create')
+                ->name('settings.users.create');
+                
+            Route::post('/store', [UserController::class, 'store'])
+                ->middleware(PermissionMiddleware::class . ':user.create')
+                ->name('settings.users.store');
+
+            // Edit routes
+            Route::get('/{user}/edit', function ($user) {
+                return Inertia::render('User/Edit', [
+                    'user' => App\Models\User::with(['roles', 'warehouse'])->findOrFail($user),
+                    'roles' => App\Models\Role::all(),
+                    'warehouses' => App\Models\Warehouse::all()
+                ]);
+            })->middleware(PermissionMiddleware::class . ':user.edit')
+              ->name('settings.users.edit');
+            Route::put('/{user}/eidt', [UserController::class, 'update'])
+                ->middleware(PermissionMiddleware::class . ':user.edit')
+                ->name('users.update');
+
+            // Bulk actions
+            Route::post('/bulk-status', [UserController::class, 'bulkUpdateStatus'])
+                ->middleware(PermissionMiddleware::class . ':user.edit')
+                ->name('users.bulk-status');
 
             // User roles management
             Route::get('/{user}/roles', [UserController::class, 'showRoles'])
                 ->middleware(PermissionMiddleware::class . ':user.edit')
-                ->name('users.roles');
-            Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':user.delete')->name('users.destroy');
+                ->name('settings.users.roles');
+            
+            // Delete
+            Route::delete('/{user}', [UserController::class, 'destroy'])
+                ->middleware(PermissionMiddleware::class . ':user.delete')
+                ->name('users.destroy');
         });
 
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class . ':user.view')->group(function () {
-        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles', [RoleController::class, 'index'])->name('settings.roles.index');
         Route::get('/roles-permissions', [RoleController::class, 'getAllRolesAndPermissions'])->name('roles.get-all');
     });
     Route::post('/roles', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('roles.store');

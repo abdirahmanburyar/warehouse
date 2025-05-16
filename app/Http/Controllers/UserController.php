@@ -42,7 +42,7 @@ class UserController extends Controller
         $roles = \Spatie\Permission\Models\Role::all();
         
         // Get all warehouses for the warehouse selection
-        $warehouses = Warehouse::where('is_active', true)->get();
+        $warehouses = Warehouse::get();
 
         $facilities = Facility::get();
         logger()->info($facilities);
@@ -66,11 +66,9 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'username' => ['required', 'string', 'max:255'],
                 'email' => [
-                    'required', 
-                    'string', 
-                    'email', 
-                    'max:255', 
-                    Rule::unique('users', 'email')->ignore($request->id, 'id')
+                    'required',
+                    'email',
+                    'unique:users,email,' . $request->id,
                 ],
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
@@ -110,6 +108,17 @@ class UserController extends Controller
         
         return Inertia::render('User/Roles', [
             'user' => $user,
+            'roles' => $roles
+        ]);
+    }
+
+    public function create(Request $request)
+    {
+        $warehouses = \App\Models\Warehouse::all();
+        $roles = \App\Models\Role::all();
+        
+        return Inertia::render('User/Create', [
+            'warehouses' => $warehouses,
             'roles' => $roles
         ]);
     }

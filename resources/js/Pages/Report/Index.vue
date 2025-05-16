@@ -1,6 +1,6 @@
 <template>
     <Head title="Reports" />
-    <AuthenticatedLayout>
+    <AuthenticatedLayout title="Review Your Reports" description="Transforming Data into Impact" img="/assets/images/report.png">
         <div class="px-5">
             <h1 class="text-2xl font-semibold text-gray-900 mb-6">Reports</h1>
             
