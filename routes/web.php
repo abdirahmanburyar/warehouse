@@ -108,11 +108,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         });
 
     // Role Management Routes
-    Route::middleware(PermissionMiddleware::class . ':user.view')
-        ->controler(RoleController::class)
+    Route::controller(RoleController::class)
+        ->middleware(PermissionMiddleware::class . ':user.view')        
         ->group(function () {
-        Route::get('/roles', ['index'])->name('settings.roles.index');
-        Route::get('/roles-permissions', ['getAllRolesAndPermissions'])->name('roles.get-all');
+        Route::get('/roles', 'index')->name('settings.roles.index');
+        Route::get('/roles-permissions', 'getAllRolesAndPermissions')->name('roles.get-all');
     });
 
     Route::post('/roles/store', [RoleController::class, 'store'])->middleware(PermissionMiddleware::class . ':user.create')->name('roles.store');
