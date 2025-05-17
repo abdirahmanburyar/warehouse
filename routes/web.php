@@ -213,7 +213,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             Route::get('/packing-list/show', 'showPK')->name('supplies.packing-list.showPK');
             Route::get('/purchase-order/{id}/show', 'showPO')->name('supplies.po-show');
             Route::get('/locations', 'locationsShow')->name('supplies.locations');
-            Route::get('/locations/{id}/edit', 'locationEdit')->name('supplies.location.edit');            
+            Route::get('/locations/{id}/edit', 'locationEdit')->name('supplies.location.edit');     
+
+            // Back orde            
+            Route::get('/back-order/{id}/delete', 'deletePackingListDiff')->name("supplies.deletePackingListDiff");
+            Route::get("/back-order/show", 'showBackOrder')->name('supplies.showBackOrder');
 
             
             Route::patch('/items/{item}/status', 'approveItem')->name('supplies.items.update-status');

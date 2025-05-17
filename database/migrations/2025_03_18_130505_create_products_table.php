@@ -16,6 +16,7 @@ return new class extends Migration
         if (!Schema::hasTable('dosages')) {
             Schema::create('dosages', function (Blueprint $table) {
                 $table->id();
+                $table->integer('productID')->unique();
                 $table->string('name')->unique();
                 $table->text('description')->nullable();
                 $table->foreignIdFor(Category::class)->cascadeOnDelete();

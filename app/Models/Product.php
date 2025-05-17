@@ -22,6 +22,7 @@ class Product extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'productID',
         'name',
         'dose',
         'barcode',
@@ -31,6 +32,21 @@ class Product extends Model
         'reorder_level',
         'is_active',
     ];
+
+    
+    public $incrementing = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($product) {
+            static $id = 0;
+            $id++;
+            $product->productID = str_pad($id, 6, '0', STR_PAD_LEFT);
+        });
+    }
+
 
 
     public function category()

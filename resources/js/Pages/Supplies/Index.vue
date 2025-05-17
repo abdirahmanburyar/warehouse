@@ -9,15 +9,42 @@
                 <div class="flex items-center justify-between px-2 mb-6">
                     <h1>Purchase Orders</h1>
                     <div class="flex items-center gap-2">
-                        <button @click="router.get(route('supplies.back-order'))"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Receive Back Order 
-                        </button>
+                        <div class="relative inline-block text-left z-20" ref="backOrderDropdownRef">
+                            <button type="button"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                id="back-order-menu" :aria-expanded="showBackOrderDropdown" aria-haspopup="true"
+                                @click.stop="toggleBackOrderDropdown">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Back Orders
+                            </button>
+                            <transition enter-active-class="transition ease-out duration-100"
+                                enter-from-class="transform opacity-0 scale-95"
+                                enter-to-class="transform opacity-100 scale-100"
+                                leave-active-class="transition ease-in duration-75"
+                                leave-from-class="transform opacity-100 scale-100"
+                                leave-to-class="transform opacity-0 scale-95">
+                                <div v-if="showBackOrderDropdown"
+                                    class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                    role="menu" aria-orientation="vertical" aria-labelledby="back-order-menu">
+                                    <div class="py-1" role="none">
+                                        <a @click="router.get(route('supplies.back-order'))"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                            role="menuitem">
+                                            Back Order
+                                        </a>
+                                        <a @click="router.get(route('supplies.showBackOrder'))"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                            role="menuitem">
+                                            View Back Order
+                                        </a>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
                         <div class="relative inline-block text-left z-20" ref="supplyDropdownRef">
                             <button type="button"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -28,7 +55,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                 </svg>
-                                Receive new Supply
+                                Supplies
                             </button>
                             <transition enter-active-class="transition ease-out duration-100"
                                 enter-from-class="transform opacity-0 scale-95"
@@ -43,12 +70,12 @@
                                         <a @click="router.get(route('supplies.packing-list'))"
                                             class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                             role="menuitem">
-                                            Create New Supply
+                                            Receive New PL
                                         </a>
                                         <a @click="router.get(route('supplies.packing-list.showPK'))"
                                             class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                             role="menuitem">
-                                            View Supply List
+                                            View PL Lists
                                         </a>
                                     </div>
                                 </div>
@@ -357,15 +384,25 @@ const dropdownRef = ref(null);
 const showDropdown = ref(false);
 const showSupplyDropdown = ref(false);
 const supplyDropdownRef = ref(null);
+const backOrderDropdownRef = ref(null);
+const showBackOrderDropdown = ref(false);
 
 const toggleDropdown = () => {
     showDropdown.value = !showDropdown.value;
     showSupplyDropdown.value = false;
+    showBackOrderDropdown.value = false;
 };
 
 const toggleSupplyDropdown = () => {
     showSupplyDropdown.value = !showSupplyDropdown.value;
     showDropdown.value = false;
+    showBackOrderDropdown.value = false;
+};
+
+const toggleBackOrderDropdown = () => {
+    showBackOrderDropdown.value = !showBackOrderDropdown.value;
+    showDropdown.value = false;
+    showSupplyDropdown.value = false;
 };
 
 onMounted(() => {
@@ -375,6 +412,9 @@ onMounted(() => {
         }
         if (supplyDropdownRef.value && !supplyDropdownRef.value.contains(e.target)) {
             showSupplyDropdown.value = false;
+        }
+        if (backOrderDropdownRef.value && !backOrderDropdownRef.value.contains(e.target)) {
+            showBackOrderDropdown.value = false;
         }
     });
 });
