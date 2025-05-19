@@ -151,9 +151,10 @@ class SupplyController extends Controller
 
     public function getBackOrder(Request $request, $id){
         try {
+            logger()->info($id);
             
-            $packingLists = PackingListDifference::withWhereHas('packingList', function($q) use($id){
-                $q->where('id', $id);
+            $packingLists = PackingListDifference::whereHas('packingList', function($q) use($id){
+                $q->where('purchase_order_id', $id);
             })
             ->with('product', 'packingList:id,packing_list_number')->get();
             return response()->json($packingLists, 200);
@@ -163,9 +164,9 @@ class SupplyController extends Controller
     }
 
     public function backOrder(Request $request){
-        $packingLists = PackingList::select('id','packing_list_number')->distinct()->get();
+        $po = PurchaseOrder::select('id','po_number')->get();
         return inertia("Supplies/BackOrder", [
-            'packingLists' => $packingLists
+            'po' => $po
         ]);
     }
 
@@ -176,7 +177,8 @@ class SupplyController extends Controller
                 ->select(
                     'poi.*',
                     'p.name as product_name',
-                    'p.barcode',
+                    'pl.barcode',
+                    'poi.uom as po_uom',
                     'p.description as product_description',
                     'pl.id as packing_list_id',
                     'pl.quantity as received_quantity',
@@ -219,6 +221,7 @@ class SupplyController extends Controller
                             'id' => $pl->packing_list_id,
                             'quantity' => $pl->received_quantity,
                             'batch_number' => $pl->batch_number,
+                            'barcode' => $pl->barcode,
                             'expire_date' => $pl->expire_date,
                             'warehouse_id' => $pl->warehouse_id,
                             'warehouse' => $pl->warehouse_id ? [
@@ -231,6 +234,7 @@ class SupplyController extends Controller
                                 'name' => $pl->location_name
                             ] : null,
                             'status' => $pl->pl_status,
+                            'uom' => $pl->po_uom,
                             'differences' => []
                         ];
                     })->values();
@@ -269,6 +273,7 @@ class SupplyController extends Controller
                         'expire_date' => $latestPackingList ? $latestPackingList->expire_date : null,
                         'location_id' => $latestPackingList ? $latestPackingList->location_id : null,
                         'status' => $status,
+                        'uom' => $firstItem->po_uom,
                         'batch_number' => $latestPackingList ? $latestPackingList->batch_number : null,
                         'fullfillment_rate' => round(($received_quantity / $firstItem->quantity) * 100, 2) . '%',
                         'received_quantity' => $received_quantity,
@@ -305,6 +310,7 @@ class SupplyController extends Controller
             if ($existingPackingList) {
                 $result['packing_list_number'] = $existingPackingList->packing_list_number;
                 $result['ref_no'] = $existingPackingList->ref_no;
+                $result['pk_date'] = $existingPackingList->pk_date;
             } else {
                 $result['packing_list_number'] = sprintf("PKL-%s-001", substr($po->po_number, 3));
             }
@@ -323,6 +329,7 @@ class SupplyController extends Controller
                     'purchase_order_id' => 'required',
                     'packing_list_number' => 'required',
                     'ref_no' => 'nullable',
+                    'pk_date' => 'required',
                     'items' => 'required|array',
                     'items.*.product_id' => 'required',
                     'items.*.warehouse_id' => 'required',
@@ -330,14 +337,15 @@ class SupplyController extends Controller
                     'items.*.po_id' => 'required|exists:purchase_order_items,id',
                     'items.*.id' => 'nullable',
                     'items.*.quantity' => 'required|numeric',
+                    'items.*.barcode' => 'nullable',
+                    'items.*.uom' => 'nullable',
                     'items.*.batch_number' => 'required',
                     'items.*.expire_date' => 'required',
                     'items.*.location_id' => 'required',
                     'items.*.unit_cost' => 'required|numeric',
                     'items.*.total_cost' => 'required|numeric',
                     'items.*.status' => 'required',
-                    'items.*.differences' => 'nullable|array',
-                    'items.*.id' => 'nullable',
+                    'items.*.differences' => 'nullable|array'
                 ]);
 
                 // Create packing list for each item
@@ -358,6 +366,8 @@ class SupplyController extends Controller
                         'warehouse_id' => $item['warehouse_id'],
                         'quantity' => $item['received_quantity'],
                         'batch_number' => $item['batch_number'],
+                        'barcode' => $item['barcode'],
+                        'uom' => $item['uom'],
                         'expire_date' => $item['expire_date'],
                         'location_id' => $item['location_id'],
                         'unit_cost' => $item['unit_cost'],
@@ -442,6 +452,7 @@ class SupplyController extends Controller
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_number' => 'required|unique:purchase_orders,po_number,' . $request->id,
                     'po_date' => 'required',
+                    'original_po_no' => 'nullable',
                     'items' => 'required|array|min:1',
                     'items.*.id' => 'nullable|integer',
                     'items.*.product_id' => 'required|exists:products,id',
@@ -455,6 +466,7 @@ class SupplyController extends Controller
                     'id' => $request->id
                 ], [
                     'po_number' => $validated['po_number'],
+                    'original_po_no' => $validated['original_po_no'],
                     'supplier_id' => $validated['supplier_id'],
                     'po_date' => $validated['po_date'],
                     'created_by' => auth()->id()
@@ -974,7 +986,6 @@ class SupplyController extends Controller
     public function BackOrderstatusChange(Request $request)
     {
         try {
-            logger()->info($request->all());
             // Validate request data
             $validated = $request->validate([
                 'id' => 'required|exists:packing_list_differences,id',
@@ -984,6 +995,8 @@ class SupplyController extends Controller
                 'status' => 'required',
                 'action' => 'required'
             ]);
+
+           logger()->info($validated);
 
             DB::beginTransaction();
 
@@ -1008,6 +1021,11 @@ class SupplyController extends Controller
 
             if (!$packingListItem) {
                 return response()->json('Packing list item not found', 500);
+            }
+
+            // Check if packing list is approved
+            if ($packingListItem->status === 'approved') {
+                return response()->json('Cannot modify back order for approved packing list', 403);
             }
 
             if ($request->status == 'Missing') {
@@ -1038,7 +1056,9 @@ class SupplyController extends Controller
                         'batch_number' => $packingListItem->batch_number,
                         'expiry_date' => $packingListItem->expire_date,
                         'unit_cost' => $packingListItem->unit_cost,
-                        'location' => $packingListItem->location,
+                        'location_id' => $packingListItem->location_id,
+                        'barcode' => $packingListItem->barcode,
+                        'uom' => $packingListItem->uom,
                         'is_active' => true,
                         'created_at' => now(),
                         'updated_at' => now()
@@ -1098,8 +1118,19 @@ class SupplyController extends Controller
 
     public function showPK(Request $request){
         $pk = PackingList::with(['po_item', 'purchaseOrder.supplier'])
-            ->select('id', 'packing_list_number', 'total_cost', 'created_at', 'confirmed_at', 'purchase_order_id', 'po_id')
-            ->orderBy('created_at', 'desc')
+            ->select(
+                'packing_lists.id',
+                'packing_lists.packing_list_number',
+                'packing_lists.total_cost',
+                'packing_lists.created_at',
+                'packing_lists.confirmed_at',
+                'packing_lists.purchase_order_id',
+                'packing_lists.po_id',
+                'packing_lists.quantity as received_quantity',
+                'purchase_order_items.quantity as original_quantity'
+            )
+            ->join('purchase_order_items', 'packing_lists.po_id', '=', 'purchase_order_items.id')
+            ->orderBy('packing_lists.created_at', 'desc')
             ->get()
             ->groupBy('packing_list_number')
             ->map(function ($group) {
@@ -1109,11 +1140,11 @@ class SupplyController extends Controller
                 // Count unique product IDs
                 $uniqueProductIds = $group->pluck('product_id')->unique()->count();
                 
-                // Calculate fulfillment rate
+                // Calculate fulfillment rate based on original PO quantity
                 $fulfillmentRate = $group->avg(function($pl) {
                     $receivedQty = $pl->received_quantity ?? 0;
-                    $totalQty = $pl->quantity ?? 0;
-                    return $totalQty > 0 ? ($receivedQty / $totalQty) * 100 : 0;
+                    $originalQty = $pl->original_quantity ?? 0;
+                    return $originalQty > 0 ? ($receivedQty / $originalQty) * 100 : 0;
                 });
 
                 // Calculate average lead time
@@ -1135,7 +1166,7 @@ class SupplyController extends Controller
                     'total_product_ids' => $uniqueProductIds,
                     'total_cost' => $group->sum('total_cost'),
                     'avg_lead_time' => $avgLeadTime > 0 ? $avgLeadTime . ' Months' : 'N/A',
-                    'fulfillment_rate' => round($fulfillmentRate) . '%',
+                    'fulfillment_rate' => round($fulfillmentRate, 2) . '%',
                     'needs_back_order' => $fulfillmentRate < 100
                 ];
             });
@@ -1152,7 +1183,7 @@ class SupplyController extends Controller
     }
 
     public function showBackOrder(Request $request){
-        $history = BackOrderHistory::get();
+        $history = BackOrderHistory::with('packingList')->get();
         return inertia('Supplies/ShowBackOrder', [
             'history' => $history
         ]);
@@ -1178,8 +1209,6 @@ class SupplyController extends Controller
             'supplier'
         ])
         ->first();
-
-        logger()->info($packing_list);
 
         $warehouses = Warehouse::select('id', 'name')->get();
         $locations = Location::select('id', 'location')->get();
@@ -1220,7 +1249,7 @@ class SupplyController extends Controller
             return DB::transaction(function() use ($request){
                 $request->validate([
                     'id' => 'required',
-                    // 'pk_date' => 'required',
+                    'pk_date' => 'nullable',
                     'items' => 'required|array',
                     'items.*.product_id' => 'required',
                     'items.*.id' => 'required',
@@ -1255,6 +1284,8 @@ class SupplyController extends Controller
                         'warehouse_id' => $item['warehouse_id'],
                         'quantity' => $item['received_quantity'],
                         'batch_number' => $item['batch_number'],
+                        'pk_date' => $item['pk_date'],
+                        'ref_no' => $item['ref_no'],
                         'expire_date' => $item['expire_date'],
                         'location_id' => $item['location_id'],
                         'unit_cost' => $item['unit_cost'],
@@ -1366,6 +1397,7 @@ class SupplyController extends Controller
                                     'quantity' => DB::raw('quantity + ' . $receivedQuantity),
                                     'batch_number' => $packingListItem->batch_number,
                                     'expiry_date' => $packingListItem->expire_date,
+                                    'barcode' => $packingListItem->barcode,
                                     'unit_cost' => $packingListItem->unit_cost,
                                     'updated_at' => now()
                                 ]);
@@ -1376,6 +1408,8 @@ class SupplyController extends Controller
                                 'warehouse_id' => $packingListItem->warehouse_id,
                                 'quantity' => $receivedQuantity,
                                 'batch_number' => $packingListItem->batch_number,
+                                'barcode' => $packingListItem->barcode,
+                                'uom' => $packingListItem->uom,
                                 'expiry_date' => $packingListItem->expire_date,
                                 'unit_cost' => $packingListItem->unit_cost,
                                 'location_id' => $packingListItem->location_id,
@@ -1388,6 +1422,7 @@ class SupplyController extends Controller
                         // Record the issued quantity
                         DB::table('issued_quantities')->insert([
                             'product_id' => $packingListItem->product_id,
+                            // 'barcode' => $packingListItem->barcode,
                             'quantity' => $receivedQuantity,
                             'unit_cost' => $packingListItem->unit_cost,
                             'total_cost' => $packingListItem->unit_cost * $receivedQuantity,

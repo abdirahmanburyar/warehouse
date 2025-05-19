@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Packing List">
+    <AuthenticatedLayout title="Edit Packing List" descript="Edit Packing List">
         <Link :href="route('supplies.packing-list.showPK')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -10,7 +10,6 @@
         </Link>
         <!-- Supplier Selection -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Edit Packing List</h2>
             <div class="grid grid-cols-1 gap-6">
 
                 <div v-if="form" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
@@ -26,15 +25,10 @@
                         <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.address }}</p>
                     </div>
                     <div>
-                        <h3 class="text-sm font-medium text-gray-500">Purchase Order Info</h3>
+                        <h3 class="text-sm font-medium text-gray-500">More Info</h3>
                         <p class="mt-1 text-sm text-gray-900">PL Number #: {{ form.items[0]?.packing_list_number }}</p>
-                        <h3 class="text-sm font-medium text-gray-500">Purchase Order Info</h3>
-                        <p class="mt-1 text-sm text-gray-900">PL Ref. No #: <input :value="form.items[0]?.ref_no" /> </p>
-                        <div class="mt-1 flex flex-col gap-2">
-                            <div class="flex items-center">
-                                PL Data: {{ moment(form.items[0]?.created_at).format("DD/MM/YYYY") }}
-                            </div>
-                        </div>
+                        <p class="mt-1 text-sm text-gray-900">Ref. No #: <input type="text" :value="form.items[0]?.ref_no"/> </p>
+                        <p class="mt-1 text-sm text-gray-900">PL Date. #: <input type="date" :value="form.items[0]?.pk_date"/> </p>
                     </div>
                 </div>
 
@@ -77,7 +71,11 @@
                                 {{ index + 1 }}</td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
-                                {{ item.product?.name }}</td>
+                                <div class="flex flex-col">
+                                    {{ item.product?.name }}
+                                <span>UoM: <input type="text" v-model="item.uom" class="border-0" /></span>
+                                </div>
+                            </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <div class="flex flex-col">
@@ -154,19 +152,22 @@
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
+                                    <div>
+                                        <label for="barcode" class="text-xs">Barcode</label>
+                                        <input type="text" v-model="item.barcode"
+                                            :disabled="item.status === 'approved'"
+                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
+                                    </div>
                                 </div>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <div class="flex flex-col items-center">
-                                    <div>
+                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
+                                <div class="flex flex-col justify-center items-center">
+                                    <div class="flex flex-col">
                                         <label class="text-xs">Unit Cost</label>
-                                        <input type="number" v-model="item.unit_cost" readonly
-                                            :disabled="item.status === 'approved'"
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
-                                            step="0.01" min="0.01">
+                                        {{ item.unit_cost }}
                                     </div>
-                                    <div>
+                                    <div class="flex flex-col items-center">
                                         <label class="text-xs">Total Cost</label>
                                         <div class="text-sm text-gray-900">
                                             {{ Number(item.total_cost).toLocaleString('en-US', {
@@ -197,10 +198,13 @@
                 <!-- Footer -->
                 <div class="border-t border-gray-200 px-3 py-4">
                     <div class="flex justify-end items-center">
-                        <div class="w-72 space-y-2">
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="font-medium text-gray-900">Total</span>
-                                <span class="text-gray-900">{{ "subtotal" }}</span>
+                        <div class="w-72">
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Subtotal</p>
+                                <p class="text-2xl font-bold text-gray-900">
+                                    {{ Number(subTotal).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+                                    }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -391,7 +395,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <SecondaryButton @click="attemptCloseModal">Close</SecondaryButton>
+                        <PrimaryButton @click="attemptCloseModal">Save and Exit</PrimaryButton>
                     </div>
                 </div>
             </div>
@@ -512,7 +516,7 @@ const hasPendingItems = computed(() => {
 });
 
 const hasReviewedItems = computed(() => {
-    return form.value?.items?.some(item => item.status === 'reviewed');
+    return form.value?.items?.every(item => item.status == 'reviewed');
 });
 
 onMounted(() => {
@@ -524,6 +528,7 @@ onMounted(() => {
         ...poData,
         items: []
     };
+
 
     // Then set the items
     if (packing_lists?.length > 0) {
@@ -540,14 +545,18 @@ onMounted(() => {
             received_quantity: item.quantity,
             unit_cost: item.unit_cost,
             total_cost: item.total_cost,
-            ref_no: item.ref_no,
             batch_number: item.batch_number || '',
             expire_date: item.expire_date || '',
+            barcode: item.barcode || '',
+            uom: item.uom || '',
             packing_list_number: item.packing_list_number,
+            ref_no: item.ref_no,
+            pk_date: item.pk_date,
             status: item.status || 'pending',
             created_at: item.created_at,
             differences: item.differences
         }));
+        
     }
     // Remove the packing_lists array to avoid duplication
     delete form.value.packing_lists;
@@ -921,6 +930,7 @@ async function submit() {
             toast.error('Please fill in all required fields for each item');
             return;
         }
+        
 
         try {
             const response = await axios.post(route('supplies.packing-list.update'), form.value);

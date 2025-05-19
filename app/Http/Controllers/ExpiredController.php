@@ -6,194 +6,167 @@ use App\Http\Resources\ExpiredResource;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Warehouse;
+use App\Models\Disposal;
+use App\Models\Transfer;
+use App\Models\Facility;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ExpiredController extends Controller
 {
-    public function index(Request $request)
-    {
-        $user = auth()->user();
-        $tab = $request->query('tab', 'all');
-        $warehouseId = $request->query('warehouse_id');
-        
-        // Base query - with eager loading for better performance
-        $inventoryQuery = Inventory::with(['product', 'warehouse'])
-            ->join('products', 'inventories.product_id', '=', 'products.id')
-            ->select('inventories.*', 'products.name as product_name');
+    public function index(Request $request) {
+        $now = Carbon::now();
+        $sixMonthsFromNow = $now->copy()->addMonths(6);
+        $oneYearFromNow = $now->copy()->addYear();
 
-        // Apply warehouse filter for non-admin users
-        if (!$user->hasRole('admin') && $user->warehouse_id) {
-            $inventoryQuery->where('inventories.warehouse_id', $user->warehouse_id);
-        }
-        // Apply warehouse filter if provided in request
-        elseif ($warehouseId) {
-            $inventoryQuery->where('inventories.warehouse_id', $warehouseId);
-        }
-
-        // Apply tab-specific filters
-        switch ($tab) {
-            case 'near':
-                // Items expiring in the next 30 days
-                $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    // ->where('inventories.is_active', true)
-                    ->where(function($query) {
-                        $now = now();
-                        $thirtyDaysFromNow = $now->copy()->addDays(30);
-                        $query->whereDate('inventories.expiry_date', '>', $now)
-                            ->whereDate('inventories.expiry_date', '<=', $thirtyDaysFromNow);
-                    });
-                break;
-                
-            case 'expired':
-                // Items that have already expired but not marked as disposed
-                $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    // ->where('inventories.is_active', true)
-                    ->whereDate('inventories.expiry_date', '<=', now());
-                break;
-                
-            case 'disposed':
-                // Items marked as inactive (assuming this indicates disposal)
-                $inventoryQuery->whereNotNull('inventories.expiry_date');
-                    // ->where('inventories.is_active', false);
-                break;
-                
-            default: // 'all'
-                // All items with issues (near expiry, expired, or disposed)
-                $inventoryQuery->whereNotNull('inventories.expiry_date')
-                    ->where(function($query) {
-                        $now = now();
-                        $thirtyDaysFromNow = $now->copy()->addDays(30);
-                        
-                        $query->where(function($q) use ($now, $thirtyDaysFromNow) {
-                            // Near expiry items
-                            // where('inventories.is_active', true)
-                            $q->whereDate('inventories.expiry_date', '>', $now)
-                              ->whereDate('inventories.expiry_date', '<=', $thirtyDaysFromNow);
-                        })->orWhere(function($q) use ($now) {
-                            // Expired items
-                            // where('inventories.is_active', true)
-                              $q->whereDate('inventories.expiry_date', '<=', $now);
-                        });
-                        // ->orWhere(function($q) {
-                        //     // Disposed items
-                        //     $q->where('inventories.is_active', false);
-                        // });
-                    });
-                break;
-        }
-        
-        // Apply search filter if provided
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $inventoryQuery->where(function($q) use ($search) {
-                $q->where('products.name', 'like', "%{$search}%")
-                  ->orWhere('inventories.batch_number', 'like', "%{$search}%")
-                  ->orWhere('inventories.location', 'like', "%{$search}%");
-            });
-        }
-        
-        // Apply sorting if provided
-        if ($request->filled('sort_field')) {
-            $sortField = $request->input('sort_field', 'expiry_date');
-            $sortDirection = $request->input('sort_direction', 'asc');
-            
-            // Properly qualify the sort field if it's a common column name
-            if (in_array($sortField, ['is_active', 'expiry_date', 'manufacturing_date', 'quantity', 'batch_number', 'location'])) {
-                $sortField = 'inventories.' . $sortField;
-            } elseif ($sortField === 'product_name') {
-                $sortField = 'products.name';
-            }
-            
-            $inventoryQuery->orderBy($sortField, $sortDirection);
-        } else {
-            // Default sorting by expiry date
-            $inventoryQuery->orderBy('inventories.expiry_date', 'asc');
-        }
-        
-        // Paginate the results
-        $inventories = $inventoryQuery->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
-        ->withQueryString();
-
-        $inventories->setPath(route('expired.index'));
-        
-        // Extract non-empty filters
-        $filters = [];
-        if ($request->filled('search')) $filters['search'] = $request->input('search');
-        if ($request->filled('sort_field')) $filters['sort_field'] = $request->input('sort_field');
-        if ($request->filled('sort_direction')) $filters['sort_direction'] = $request->input('sort_direction');
-        if ($warehouseId) $filters['warehouse_id'] = $warehouseId;
-
-        
-        // Count expired items for dashboard metrics (using more efficient queries)
-        $baseQuery = Inventory::query()
-            ->whereNotNull('expiry_date')
-            ->when(!$user->hasRole('admin') && $user->warehouse_id, function($query) use ($user) {
-                return $query->where('warehouse_id', $user->warehouse_id);
+        $inventories = Inventory::query()
+            ->select('inventories.*', 'products.name as product_name')
+            ->join('products', 'products.id', '=', 'inventories.product_id')
+            ->where('quantity', '>', 0)
+            ->where(function($query) use ($now, $oneYearFromNow) {
+                $query->where('expiry_date', '<=', $oneYearFromNow) // Items expiring within next year
+                      ->orWhere('expiry_date', '<', $now); // Already expired items
             })
-            ->when($warehouseId && $user->hasRole('admin'), function($query) use ($warehouseId) {
-                return $query->where('warehouse_id', $warehouseId);
+            ->orderBy('expiry_date', 'asc')
+            ->get()
+            ->map(function($inventory) use ($now) {
+                // Calculate days until expiry
+                $expiryDate = Carbon::parse($inventory->expiry_date);
+                $daysUntilExpiry = ceil($now->floatDiffInDays($expiryDate, false));
+                
+                $inventory->expired = $expiryDate < $now;
+                $inventory->days_until_expiry = $daysUntilExpiry;
+                $inventory->disposed = (bool) $inventory->disposed;
+                
+                // Only mark as expiring soon if not expired and within 6 months
+                $inventory->expiring_soon = !$inventory->expired && $daysUntilExpiry > 0 && $daysUntilExpiry <= 180;
+                return $inventory;
             });
 
-        // Near expiry items (next 30 days)
-        $nearExpiryCount = (clone $baseQuery)
-            ->where('is_active', true)
-            ->where(function($query) {
-                $now = now();
-                $thirtyDaysFromNow = $now->copy()->addDays(30);
-                $query->whereDate('expiry_date', '>', $now)
-                    ->whereDate('expiry_date', '<=', $thirtyDaysFromNow);
-            })
-            ->count();
-            
-        // Already expired items
-        $expiredCount = (clone $baseQuery)
-            ->where('is_active', true)
-            ->whereDate('expiry_date', '<=', now())
-            ->count();
-            
-        // Disposed items
-        $disposedCount = (clone $baseQuery)
-            ->where('is_active', false)
-            ->count();
-        return Inertia::render('Expired/Index', [
-            'inventories' => ExpiredResource::collection($inventories),
-            'activeTab' => $tab,
-            'filters' => $filters,
-            'counts' => [
-                'near' => $nearExpiryCount,
-                'expired' => $expiredCount,
-                'disposed' => $disposedCount,
-                'all' => $nearExpiryCount + $expiredCount + $disposedCount
-            ],
-            'warehouses' => Warehouse::get(['id', 'name']),
+        return inertia('Expired/Index', [
+            'inventories' => $inventories,
+            'summary' => [
+                'total' => $inventories->count(),
+                'expiring_within_6_months' => $inventories->where('expiring_soon', true)->count(),
+                'expiring_within_1_year' => $inventories->where('expired', false)
+                    ->where('days_until_expiry', '<=', 365)->count(),
+                'expired' => $inventories->where('expired', true)->count()
+            ]
         ]);
     }
-    
-    // Mark expired items as disposed (inactive)
-    public function markAsDisposed(Request $request)
+
+    public function dispose($id)
     {
-        $user = auth()->user();
-        $request->validate([
-            'inventory_ids' => 'required|array',
-            'inventory_ids.*' => 'exists:inventories,id',
-            'notes' => 'nullable|string',
-        ]);
+        try {
+            $inventory = Inventory::findOrFail($id);
         
-        $query = Inventory::whereIn('id', $request->inventory_ids);
-        
-        // Restrict to user's warehouse if not admin
-        if (!$user->hasRole('admin') && $user->warehouse_id) {
-            $query->where('warehouse_id', $user->warehouse_id);
+            // Check if item is expired
+            if (!Carbon::parse($inventory->expiry_date)->isPast()) {
+                return response()->json(['message' => 'Only expired items can be disposed.'], 422);
+            }
+
+            DB::beginTransaction();
+            try {
+                // Create disposal record
+                Disposal::create([
+                    'inventory_id' => $inventory->id,
+                    'product_id' => $inventory->product_id,
+                    'quantity' => $inventory->quantity,
+                    'expired_date' => $inventory->expiry_date,
+                    'disposed_by' => Auth::id(),
+                    'disposed_at' => now(),
+                    'status' => 'disposed',
+                    'note' => 'Item disposed due to expiration on ' . Carbon::parse($inventory->expiry_date)->format('M d, Y')
+                ]);
+
+                // Mark inventory as disposed and set quantity to 0
+                $inventory->update([
+                    'disposed' => true,
+                    'disposed_at' => now(),
+                    'quantity' => 0
+                ]);
+
+                DB::commit();
+                return response()->json(['message' => 'Item has been disposed successfully.'], 200);
+            } catch (\Exception $e) {
+                DB::rollback();
+                return response()->json(['message' => 'Failed to dispose item. Please try again.'], 500);
+            }
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 500);
         }
-        
-        $count = $query->update([
-            'is_active' => false,
-            'notes' => $request->notes ? $request->notes : 'Marked as disposed due to expiration'
+    }
+
+    public function transfer(Request $request, $inventory)
+    {
+        if ($request->isMethod('get')) {
+            $inv = Inventory::with('product','location','warehouse')->find($inventory);
+            $facilities = Facility::get();
+            $warehouses = Warehouse::get();
+            if (!$inv) {
+                return redirect()->route('expired.index')->with('error', 'Inventory not found');
+            }
+
+            return inertia("Expired/Transfer", [
+                "inventory" => $inv,
+                'facilities' => $facilities,
+                'warehouses' => $warehouses
+            ]);
+        }
+
+        $request->validate([
+            'destination_type' => 'required|in:warehouse,facility',
+            'destination_id' => 'required|integer',
+            'quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:500'
         ]);
-        
-        return redirect()->back()->with('success', $count . ' items marked as disposed');
+
+        try {
+            DB::beginTransaction();
+
+            $inventory = Inventory::findOrFail($inventory);
+            
+            if ($request->quantity > $inventory->quantity) {
+                return response()->json([
+                    'message' => 'Transfer quantity cannot exceed available quantity'
+                ], 422);
+            }
+
+            // Generate transfer ID
+            $transferId = ExpiredTransfer::generateTransferId();
+
+            // Create transfer record
+            $transfer = ExpiredTransfer::create([
+                'transfer_id' => $transferId,
+                'inventory_id' => $inventory->id,
+                'destination_type' => $request->destination_type,
+                'destination_id' => $request->destination_id,
+                'quantity' => $request->quantity,
+                'notes' => $request->notes,
+                'transferred_by' => Auth::id(),
+                'status' => 'completed'
+            ]);
+
+            // Update inventory quantity
+            $inventory->update([
+                'quantity' => $inventory->quantity - $request->quantity
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Transfer completed successfully',
+                'transfer_id' => $transferId
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'message' => 'Failed to process transfer. ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

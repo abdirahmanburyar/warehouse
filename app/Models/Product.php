@@ -25,7 +25,6 @@ class Product extends Model
         'productID',
         'name',
         'dose',
-        'barcode',
         'description',
         'category_id',
         'dosage_id',

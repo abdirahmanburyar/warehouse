@@ -1,7 +1,7 @@
 <template>
 
     <Head title="Purchase Order" />
-    <AuthenticatedLayout title="Purchase Orders" description="Manage your purchase orders">
+    <AuthenticatedLayout title="Back Orderse" description="Manage your Back orders">
         <!-- Supplier Selection -->
         <div class="">
             <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700">
@@ -10,17 +10,16 @@
             </Link>
             
 
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Back Order</h2>
             <div class="grid grid-cols-1 gap-6">
                 <div class="w-[400px] mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Select Supplier
+                        Select P.O
                     </label>
-                    <select v-model="packing_list_id" @change="onPOChange"
-                        class="w-full block appearance-none py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select PL Number</option>
-                        <option :value="s.id" v-for="s in props.packingLists">{{ s.packing_list_number }}</option>
-                    </select>
+                    <Multiselect v-model="purchase_order"
+                        :options="props.po"
+                        :searchable="true" :close-on-select="true" :show-labels="false"
+                        :allow-empty="true" placeholder="Select P.O Number" track-by="id" label="po_number"
+                    @select="onPOChange"></Multiselect>
                 </div>
             </div>
         </div>
@@ -162,19 +161,22 @@ import Modal from '@/Components/Modal.vue';
 import axios from 'axios';
 import moment from 'moment';
 import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
 const props = defineProps({
-    packingLists: Array,
+    po: Array,
     warehouses: Array,
     // suppliers: Array,
     // po_number: Number
 });
 
-const packing_list_id = ref("")
+const purchase_order = ref(null)
 
 const form = ref([]);
 
@@ -198,9 +200,44 @@ const closeUpdateModal = () => {
     selectedItem.value = {};
 };
 
+const validateFields = (item) => {
+    const errors = [];
+    if (!item.quantity || item.quantity <= 0) errors.push('Quantity is required and must be greater than 0');
+    if (!item.status) errors.push('Status is required');
+    if (!item.packing_list_id) errors.push('Packing list is required');
+    if (!item.product_id) errors.push('Product is required');
+    return errors;
+};
+
 const updateQuantity = async () => {
     if (!validateQuantity(selectedItem.value)) return;
 
+    // Validate all required fields
+    const errors = validateFields(selectedItem.value);
+    if (errors.length > 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            html: errors.join('<br>'),
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+        return;
+    }
+
+    // Ask for confirmation
+    const confirmed = await Swal.fire({
+        title: 'Confirm Update',
+        text: 'Are you sure you want to update this back order?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, update it!',
+        cancelButtonText: 'No, cancel'
+    });
+
+    if (!confirmed.isConfirmed) return;
 
     try {
         processing.value = true;
@@ -267,67 +304,21 @@ const groupedItems = computed(() => {
     });
 });
 
-const validateDamagedQuantity = (item) => {
-    const damagedQty = parseFloat(item.damaged_quantity);
-    const currentQty = parseFloat(item.quantity);
 
-    if (damagedQty > currentQty) {
-        item.quantityError = `Cannot exceed quantity (${currentQty})`;
-        item.damaged_quantity = currentQty;
-        return false;
-    } else if (damagedQty < 0) {
-        item.quantityError = 'Cannot be negative';
-        item.damaged_quantity = 0;
-        return false;
-    } else {
-        item.quantityError = '';
-        return true;
-    }
-};
-
-async function updateDamagedQuantity(item) {
-    if (!validateDamagedQuantity(item)) return;
-
-    try {
-        await axios.put(route('supplies.packing-list.update-damaged', item.id), {
-            damaged_quantity: item.damaged_quantity
-        });
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: 'Damaged quantity updated successfully',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to update damaged quantity',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-    }
-};
-
-async function onPOChange() {
+async function onPOChange(selected) {
     isLoading.value = true;
     form.value = [];
     
-    if(!packing_list_id.value) {
+    if(!selected) {
         isLoading.value = false;
+        purchase_order.value = null;
         return;
     }
+    purchase_order.value = selected;
  
-    await axios.get(route('supplies.get-packingList', packing_list_id.value))
+    await axios.get(route('supplies.get-packingList', selected.id))
         .then((response) => {
             isLoading.value = false;
-            console.log(response.data);
             form.value = response.data;
         })
         .catch((error) => {
@@ -338,86 +329,3 @@ async function onPOChange() {
 
 </script>
 
-<style>
-.multiselect-option.is-pointed {
-    color: white;
-    background: #4f46e5;
-}
-
-.multiselect-option.is-selected {
-    color: white;
-    background: #4f46e5;
-}
-
-.multiselect-option {
-    padding: 8px 12px;
-}
-
-.multiselect-single-label {
-    padding: 4px 0;
-}
-
-.multiselect.is-active {
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
-    border-color: #4f46e5;
-}
-
-.multiselect {
-    min-height: 42px;
-}
-
-.multiselect-no-options {
-    padding: 8px 12px;
-    color: #6b7280;
-}
-
-.product-select {
-    width: 100%;
-    --ms-tag-bg: #4f46e5;
-    --ms-tag-color: #ffffff;
-}
-
-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
-    height: 38px;
-}
-
-select:focus {
-    outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 1px #4f46e5;
-}
-
-.relative {
-    position: relative;
-}
-
-.absolute {
-    position: absolute;
-}
-
-.z-50 {
-    z-index: 50;
-}
-
-.shadow-xl {
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-tbody {
-    position: relative;
-}
-
-tr {
-    position: relative;
-}
-
-td {
-    position: relative;
-}
-</style>

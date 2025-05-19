@@ -25,7 +25,7 @@ return new class extends Migration
             $table->double('total_cost')->nullable();
             $table->string('location')->nullable();
             $table->text('notes')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->string('uom')->nullable();
             $table->timestamps();
         });
     }

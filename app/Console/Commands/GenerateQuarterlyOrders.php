@@ -36,11 +36,14 @@ class GenerateQuarterlyOrders extends Command
     public function handle()
     {
         try {
-            DB::beginTransaction();
+            $this->info("Generating quarterly orders...");
             
-            // $today = Carbon::today();
-            $today = Carbon::parse('31-03-2024');
+            // Start transaction
+            DB::beginTransaction();
+            $this->info("Starting quarterly order generation...");
 
+            // Get today's date
+            $today = Carbon::parse('31-03-2024'); // For testing
             $month = $today->month;
             $day = $today->day;
             $year = $today->year;
@@ -71,26 +74,20 @@ class GenerateQuarterlyOrders extends Command
             $this->info("Generating orders for Quarter {$targetQuarter} starting {$orderStartDate->format('d-m-Y')}");
             $this->info("Using data from {$prevQuarterStart->format('d-m-Y')} to {$prevQuarterEnd->format('d-m-Y')}");
 
-            // First, calculate required quantities for all facilities
+            // Initialize tracking arrays
             $productOrders = [];
             $facilityOrders = [];
             $facilities = Facility::where('is_active', true)->get();
             $totalOrders = 0;
             $totalOrderItems = 0;
-
-            // Step 1: Calculate required quantities for all facilities
+            
+            $this->info("Found {$facilities->count()} active facilities");
+            
+            // First pass: Calculate total needs for each product
             foreach ($facilities as $facility) {
-                $this->info("\nCalculating requirements for facility: {$facility->name}");
-
-                $eligibleItems = EligibleItem::where('facility_type', $facility->facility_type)
-                    ->with('product')
-                    ->get();
-
-                if ($eligibleItems->isEmpty()) {
-                    $this->warn("No eligible items for {$facility->facility_type}");
-                    continue;
-                }
-
+                $this->info("\nCalculating needs for facility: {$facility->name}");
+                
+                // Create the order
                 $timestamp = now()->format('His');
                 $order = Order::create([
                     'facility_id' => $facility->id,
@@ -101,26 +98,147 @@ class GenerateQuarterlyOrders extends Command
                     'order_date' => $orderStartDate,
                     'expected_date' => $orderStartDate->copy()->addDays(7),
                 ]);
-
+                
                 $facilityOrders[$facility->id] = [
                     'order' => $order,
                     'items' => []
                 ];
-
+                
+                $eligibleItems = EligibleItem::where('facility_type', $facility->facility_type)
+                    ->with('product')
+                    ->get();
+                
                 foreach ($eligibleItems as $eligibleItem) {
                     $productId = $eligibleItem->product_id;
-
-                    // Check inventory with detailed batch information
-                    $inventoryBatches = DB::table('inventories as i')
-                    ->join('products as p', 'p.id', '=', 'i.product_id')
-                    ->where('i.product_id', $productId)
-                    ->where('i.quantity', '>', 0)
-                    ->orderBy('i.expiry_date', 'asc')
-                    ->select('i.*', 'p.name as product_name')
+                    $no_of_months = $this->getMonthsInQuarter($eligibleItem->product->movement ?? 'Normal');
+                    $amc = 120; // Default AMC
+                    $quantityNeeded = $amc * $no_of_months;
+                    
+                    if (!isset($productOrders[$productId])) {
+                        $productOrders[$productId] = [
+                            'total_needed' => 0,
+                            'product_name' => $eligibleItem->product->name,
+                            'facilities' => []
+                        ];
+                    }
+                    
+                    $productOrders[$productId]['total_needed'] += $quantityNeeded;
+                    $productOrders[$productId]['facilities'][] = [
+                        'facility_id' => $facility->id,
+                        'facility_name' => $facility->name,
+                        'order_id' => $order->id,
+                        'needed' => $quantityNeeded,
+                        'amc' => $amc
+                    ];
+                }
+            }
+            
+            $this->info("\nCalculated total needs for all products:");
+            foreach ($productOrders as $productId => $data) {
+                $this->info("Product {$data['product_name']}: {$data['total_needed']} units needed total");
+            }
+            
+            // Second pass: Process each product and allocate inventory
+            foreach ($productOrders as $productId => $productData) {
+                $this->info("\n=== Processing {$productData['product_name']} ===");
+                
+                // Get fresh inventory data
+                $inventory = DB::table('inventories')
+                    ->where('product_id', $productId)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('expiry_date', 'asc')
                     ->get();
-
-                    $this->info("\n================================================");
-                    $this->info("Checking inventory for product ID: {$productId}");
+                
+                $totalInventory = $inventory->sum('quantity');
+                $this->info("Total inventory available: {$totalInventory}");
+                $this->info("Total needed: {$productData['total_needed']}");
+                
+                if ($totalInventory > 0) {
+                    // Track inventory batches
+                    $inventoryTracker = collect($inventory)
+                        ->mapWithKeys(function ($batch) {
+                            return [$batch->id => [
+                                'batch_number' => $batch->batch_number,
+                                'quantity' => $batch->quantity,
+                                'expiry_date' => $batch->expiry_date,
+                                'warehouse_id' => $batch->warehouse_id,
+                                'location_id' => $batch->location_id
+                            ]];
+                        })->toArray();
+                    
+                    foreach ($productData['facilities'] as $facilityData) {
+                        $facilityId = $facilityData['facility_id'];
+                        $facility = $facilities->firstWhere('id', $facilityId);
+                        $quantityNeeded = $facilityData['needed'];
+                        $amc = $facilityData['amc'];
+                        
+                        // Calculate facility's share using the formula: (facility needed / total needed) * available inventory
+                        $facilityShare = ($quantityNeeded / $productData['total_needed']) * $totalInventory;
+                        $totalToAllocate = floor($facilityShare);
+                        
+                        $this->info("\nFacility {$facilityData['facility_name']}:");
+                        $this->info("  * Needs: {$quantityNeeded}");
+                        $this->info("  * Share calculation: ({$quantityNeeded} / {$productData['total_needed']}) * {$totalInventory}");
+                        $this->info("  * Share = " . number_format($facilityShare, 2) . " units");
+                        $this->info("  * Final allocation = {$totalToAllocate} units");
+                        
+                        if ($totalToAllocate > 0) {
+                            // Create order item
+                            $orderItem = OrderItem::create([
+                                'order_id' => $facilityData['order_id'],
+                                'product_id' => $productId,
+                                'quantity' => $quantityNeeded,
+                                'amc' => $amc,
+                                'qer' => 0,
+                                'quantity_to_release' => $totalToAllocate,
+                                'no_of_days' => 120
+                            ]);
+                            
+                            $totalOrderItems++;
+                            
+                            // Allocate from batches
+                            $remainingToAllocate = $totalToAllocate;
+                            foreach ($inventoryTracker as $batchId => &$batchData) {
+                                if ($remainingToAllocate <= 0 || $batchData['quantity'] <= 0) continue;
+                                
+                                $batchAllocation = min($batchData['quantity'], $remainingToAllocate);
+                                
+                                // Record allocation
+                                DB::table('inventory_allocations')->insert([
+                                    'order_item_id' => $orderItem->id,
+                                    'product_id' => $productId,
+                                    'warehouse_id' => $batchData['warehouse_id'],
+                                    'location_id' => $batchData['location_id'],
+                                    'batch_number' => $batchData['batch_number'],
+                                    'expiry_date' => $batchData['expiry_date'],
+                                    'allocated_quantity' => $batchAllocation,
+                                    'allocation_type' => 'quarterly',
+                                    'notes' => "Allocated from batch {$batchData['batch_number']} (expires {$batchData['expiry_date']})",
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                
+                                // Update inventory
+                                DB::table('inventories')
+                                    ->where('id', $batchId)
+                                    ->update([
+                                        'quantity' => DB::raw("quantity - {$batchAllocation}")
+                                    ]);
+                                
+                                $batchData['quantity'] -= $batchAllocation;
+                                $remainingToAllocate -= $batchAllocation;
+                                
+                                $this->info("    Allocated {$batchAllocation} units from batch {$batchData['batch_number']}");
+                                $this->info("    Remaining in batch: {$batchData['quantity']} units");
+                            }
+                            
+                            $this->info("✓ Total allocated {$totalToAllocate} units to order {$facilityOrders[$facilityId]['order']->order_number}");
+                            
+                            // Show remaining inventory after this allocation
+                            $remainingTotal = array_sum(array_column($inventoryTracker, 'quantity'));
+                            $this->info("Remaining total inventory: {$remainingTotal} units");
+                        
+                    }
 
                     if ($inventoryBatches->isEmpty()) {
                         $this->warn("Skipping {$eligibleItem->product->name} - No inventory available");
@@ -131,7 +249,7 @@ class GenerateQuarterlyOrders extends Command
                         $this->info("Product Name: {$inventoryBatches->first()->product_name}");
                         $this->info("\n=== Available Inventory Batches ===");
                         $totalAvailable = 0;
-                        foreach ($inventoryBatches as $batch) {
+                        foreach ($inventory as $batch) {
                             $this->info("Batch {$batch->batch_number}:");
                             $this->info("  - Quantity: {$batch->quantity} units");
                             $this->info("  - Location: Warehouse {$batch->warehouse_id}, Location {$batch->location_id}");
@@ -182,7 +300,7 @@ class GenerateQuarterlyOrders extends Command
                     $qto = $monthlyNeed - $currentSOH;
 
                     $this->info("4. Order Quantity Calculation:");
-                    $this->info("   - Monthly need: {$amc} × {self::MONTHS_IN_QUARTER} months = {$monthlyNeed} units");
+                    $this->info("   - Monthly need: {$amc} × {$monthsInQuarter} months = {$monthlyNeed} units");
                     $this->info("   - QTO = {$monthlyNeed} - {$currentSOH} = {$qto} units");
 
                     $this->info("5. Total Available in Central Inventory: {$totalAvailable} units");
@@ -201,7 +319,7 @@ class GenerateQuarterlyOrders extends Command
                                     'product_name' => $eligibleItem->product->name,
                                     'total_demand' => 0,
                                     'facilities' => [],
-                                    'available_batches' => $inventoryBatches
+                                    'available_batches' => $inventory
                                 ];
                             }
 
@@ -227,6 +345,7 @@ class GenerateQuarterlyOrders extends Command
                     }
                 }
             }
+            
 
             // Step 2: Check inventory and allocate quantities
             $globalInventoryTracker = [];
@@ -256,124 +375,116 @@ class GenerateQuarterlyOrders extends Command
                 }
 
                 $inventoryTracker = &$globalInventoryTracker[$productId];
-
                 $totalAvailable = array_sum(array_column($inventoryTracker, 'quantity'));
-                $this->info("\nCurrent inventory status:");
-                foreach ($inventoryTracker as $batchId => $batchData) {
-                    if ($batchData['quantity'] > 0) {
-                        $this->info("Batch {$batchData['batch_number']}: {$batchData['quantity']} units (Expires: {$batchData['expiry_date']}");
-                    }
-                }
 
-                $this->info("\nTotal available: {$totalAvailable} units");
-                $this->info("Total demand: {$productData['total_demand']} units");
+                $this->info("Total inventory available: {$totalAvailable}");
+                $this->info("Total needed: {$productData['total_needed']}");
+
+                if ($totalAvailable <= 0) {
+                    $this->warn("Skipping allocation - no inventory available");
+                    continue;
+                }
 
                 foreach ($productData['facilities'] as $facilityData) {
                     $facilityId = $facilityData['facility_id'];
-                    $quantityNeeded = $facilityData['quantity_needed'];
+                    $quantityNeeded = $facilityData['needed'];
                     
-                    // Calculate facility's share based on their proportion of total demand
-                    $facilityShare = $quantityNeeded / $productData['total_demand'];
+                    // Calculate facility's share based on their proportion of total needed
+                    $facilityShare = $quantityNeeded / $productData['total_needed'];
                     $totalToAllocate = floor($facilityShare * $totalAvailable);
                     $remainingToAllocate = $totalToAllocate;
                     
-                    $this->info("\nFacility {$facilityId}:");
-                    $this->info("- Needs: {$quantityNeeded} units");
-                    $this->info("- Allocation calculation:");
-                    $this->info("  * Share = ({$quantityNeeded} / {$productData['total_demand']}) = " . 
+                    $this->info("\nProcessing facility ID {$facilityId}:");
+                    $this->info("  * Needs: {$quantityNeeded} units");
+                    $this->info("  * Share calculation: ({$quantityNeeded} / {$productData['total_needed']}) = " . 
                         number_format($facilityShare * 100, 2) . "%");
-                    $this->info("  * Units = " . number_format($facilityShare * $totalAvailable, 2) . " units");
-                    $this->info("  * Final allocation = {$totalToAllocate} units");
+                    $this->info("  * Allocated units: {$totalToAllocate}");
 
-                    if ($totalToAllocate > 0) {
-                        // Calculate and store AMC, QER, needed quantity, and quantity to release
-                        $amc = $facilityData['amc'] ?? 120; // Use default 120 if not set
-                        $qer = $facilityData['qto'] ?? 0; // Use QTO as QER
-                        $neededQuantity = $quantityNeeded; // Use already calculated quantity needed
-                        
-                        // Get product movement and calculate months
-                        $this->info("\n########## START DEBUG ##########");
-                        $this->info("Calculating for product ID: {$productId}");
-                        $product = Product::find($productId);
-                        if (!$product) {
-                            $this->error("Product not found: {$productId}");
-                            $this->info("########## END DEBUG ##########\n");
-                            continue;
+                    $totalNeededForProduct = $productData['total_needed'];
+                    
+                    if ($totalNeededForProduct > 0 && $totalInventory > 0) {
+                        // Determine allocation based on available inventory
+                        if ($totalInventory >= $totalNeededForProduct) {
+                            // If we have enough inventory, give each facility what they need
+                            $totalToAllocate = $quantityNeeded;
+                            $this->info("Sufficient inventory available. Allocating requested amount.");
+                        } else {
+                            // If we don't have enough, use proportional allocation
+                            // (facility needed / total needed) * available inventory
+                            $facilityShare = ($quantityNeeded / $totalNeededForProduct) * $totalInventory;
+                            $totalToAllocate = floor($facilityShare); // Round down to nearest whole number
+                            $this->info("Insufficient inventory. Using proportional allocation.");
                         }
                         
-                        // Debug product details
-                        $this->info("Product name: {$product->name}");
-                        $this->info("Raw movement value: '{$product->movement}'");
-                        $this->info("Movement type: " . gettype($product->movement));
+                        $this->info("\nFacility {$facilityData['facility_name']}:");
+                        $this->info("  * Needs: {$quantityNeeded}");
+                        if ($totalInventory >= $totalNeededForProduct) {
+                            $this->info("  * Full allocation: {$totalToAllocate} units (100% of requested)");
+                        } else {
+                            $this->info("  * Share calculation: ({$quantityNeeded} / {$totalNeededForProduct}) * {$totalInventory}");
+                            $this->info("  * Share = " . number_format($facilityShare, 2) . " units");
+                        }
                         
-                        // Try to normalize the movement value
-                        $movement = trim($product->movement);
-                        $this->info("Trimmed movement: '{$movement}'");
-                        
-                        $monthsInQuarter = $this->getMonthsInQuarter($movement);
-                        $this->info("Months in quarter: {$monthsInQuarter}");
-                        
-                        $no_of_days = $monthsInQuarter * 30; // Approximate days in a month
-                        $this->info("Final no_of_days: {$no_of_days}");
-                        $this->info("########## END DEBUG ##########\n");
-                        
-                        // Create single order item for total allocation with calculations
-                        $orderItem = OrderItem::create([
-                            'order_id' => $facilityOrders[$facilityId]['order']->id,
-                            'product_id' => $productId,
-                            'quantity' => $neededQuantity, // This is the needed quantity based on AMC calculation
-                            'amc' => $amc,
-                            'qer' => $qer,
-                            'quantity_to_release' => $totalToAllocate, // This is the calculated quantity after inventory checks
-                            'no_of_days' => $no_of_days
-                        ]);
-
-                        // Allocate from batches and track in inventory_allocations
-                        foreach ($inventoryTracker as $batchId => &$batchData) {
-                            if ($remainingToAllocate <= 0 || $batchData['quantity'] <= 0) continue;
-
-                            $batchAllocation = min($batchData['quantity'], $remainingToAllocate);
-                            
-                            // Record allocation
-                            DB::table('inventory_allocations')->insert([
-                                'order_item_id' => $orderItem->id,
+                        if ($totalToAllocate > 0) {
+                            // Create order item
+                            $orderItem = OrderItem::create([
+                                'order_id' => $facilityData['order_id'],
                                 'product_id' => $productId,
-                                'warehouse_id' => $batchData['warehouse_id'],
-                                'location_id' => $batchData['location_id'],
-                                'batch_number' => $batchData['batch_number'],
-                                'expiry_date' => $batchData['expiry_date'],
-                                'allocated_quantity' => $batchAllocation,
-                                'allocation_type' => 'quarterly',
-                                'notes' => "Allocated from batch {$batchData['batch_number']} (expires {$batchData['expiry_date']})",
-                                'created_at' => now(),
-                                'updated_at' => now(),
+                                'quantity' => $quantityNeeded,
+                                'amc' => $facilityData['amc'],
+                                'qer' => 0,
+                                'quantity_to_release' => $totalToAllocate,
+                                'no_of_days' => 120
                             ]);
-
-                            // Update inventory
-                            DB::table('inventories')
-                                ->where('id', $batchId)
-                                ->update([
-                                    'quantity' => DB::raw("quantity - {$batchAllocation}")
+                            
+                            $totalOrderItems++;
+                            
+                            // Allocate from batches
+                            $remainingToAllocate = $totalToAllocate;
+                            foreach ($inventoryTracker as $batchId => &$batchData) {
+                                if ($remainingToAllocate <= 0 || $batchData['quantity'] <= 0) continue;
+                                
+                                $batchAllocation = min($batchData['quantity'], $remainingToAllocate);
+                                
+                                // Record allocation
+                                DB::table('inventory_allocations')->insert([
+                                    'order_item_id' => $orderItem->id,
+                                    'product_id' => $productId,
+                                    'warehouse_id' => $batchData['warehouse_id'],
+                                    'location_id' => $batchData['location_id'],
+                                    'batch_number' => $batchData['batch_number'],
+                                    'expiry_date' => $batchData['expiry_date'],
+                                    'allocated_quantity' => $batchAllocation,
+                                    'allocation_type' => 'quarterly',
+                                    'notes' => "Allocated from batch {$batchData['batch_number']} (expires {$batchData['expiry_date']})",
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
                                 ]);
-
-                            // Update in-memory tracker
-                            $batchData['quantity'] -= $batchAllocation;
-                            $remainingToAllocate -= $batchAllocation;
-
-                            $this->info("  Allocated {$batchAllocation} units from batch {$batchData['batch_number']}");
-                            $this->info("  Remaining in batch: {$batchData['quantity']} units");
+                                
+                                // Update inventory
+                                DB::table('inventories')
+                                    ->where('id', $batchId)
+                                    ->update([
+                                        'quantity' => DB::raw("quantity - {$batchAllocation}")
+                                    ]);
+                                
+                                $batchData['quantity'] -= $batchAllocation;
+                                $remainingToAllocate -= $batchAllocation;
+                                
+                                $this->info("    Allocated {$batchAllocation} units from batch {$batchData['batch_number']}");
+                                $this->info("    Remaining in batch: {$batchData['quantity']} units");
+                            }
+                            
+                            $this->info("✓ Total allocated {$totalToAllocate} units to order {$facilityOrders[$facilityId]['order']->order_number}");
+                            
+                            // Show remaining inventory after this allocation
+                            $remainingTotal = array_sum(array_column($inventoryTracker, 'quantity'));
+                            $this->info("Remaining total inventory: {$remainingTotal} units");
                         }
-
-                        $totalOrderItems++;
-                        $this->info("✓ Total allocated {$totalToAllocate} units to order {$facilityOrders[$facilityId]['order']->order_number}");
-
-                        // Show remaining inventory after this allocation
-                        $remainingTotal = array_sum(array_column($inventoryTracker, 'quantity'));
-                        $this->info("Remaining total inventory: {$remainingTotal} units");
                     }
                 }
             }
-
+            
             // Clean up empty orders
             foreach ($facilityOrders as $facilityId => $orderData) {
                 $orderItemCount = OrderItem::where('order_id', $orderData['order']->id)->count();
@@ -389,6 +500,7 @@ class GenerateQuarterlyOrders extends Command
             DB::commit();
             $this->info("\n✅ Completed Successfully!");
             $this->info("Total: {$totalOrders} orders with {$totalOrderItems} items.");
+        }
         } catch (\Exception $e) {
             DB::rollBack();
             $this->error('❌ Failed: ' . $e->getMessage());

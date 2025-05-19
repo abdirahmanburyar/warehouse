@@ -22,6 +22,7 @@ class PurchaseOrder extends Model
         'rejected_at',
         'reviewed_by',
         'rejection_reason',
+        'original_po_no',
         'reviewed_at',
         'created_by',
         'updated_by',

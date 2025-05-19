@@ -71,7 +71,7 @@
                 </div>
                 </Link>
 
-                <!-- <Link :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
+                <Link :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
                     @click="setCurrentPage('expired')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -81,7 +81,7 @@
                     </div>
                     <span class="menu-text">Expires</span>
                 </div>
-                </Link> -->
+                </Link>
 
                 <Link :href="route('supplies.index')" class="menu-item"
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">

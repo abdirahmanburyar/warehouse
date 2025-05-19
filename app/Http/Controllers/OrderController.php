@@ -883,10 +883,29 @@ class OrderController extends Controller
     {
         try {
             DB::beginTransaction();
-            $order = Order::where('id', $id)
-                ->with('items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location', 'facility', 'user')
-                ->firstOrFail();
+            $order = Order::where('orders.id', $id)
+                ->with(['items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location', 'facility', 'user'])
+                ->first();
+
+            // Get items with SOH using subquery
+            $items = DB::table('order_items')
+                ->select([
+                    'order_items.*',
+                    'products.name as product_name',
+                    'inventory_sums.total_quantity as soh'
+                ])
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->leftJoin(DB::raw('(
+                    SELECT product_id, SUM(quantity) as total_quantity
+                    FROM inventories
+                    GROUP BY product_id
+                ) as inventory_sums'), 'products.id', '=', 'inventory_sums.product_id')
+                ->where('order_items.order_id', $id)
+                ->get();
+
+            $order->items = $items;
             $products = Product::select('id','name')->get();
+            
             DB::commit();
             return inertia("Order/Show", ['order' => $order, 'products' => $products]);
         } catch (\Throwable $th) {

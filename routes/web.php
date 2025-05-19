@@ -23,6 +23,7 @@ use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    Route::controller(ExpiredController::class)
+        ->prefix('/expires')
+        ->name('expired.')
+        ->group(function(){
+            Route::get('/', 'index')->name('index');
+            Route::post('/{id}/dispose', 'dispose')->name('dispose');
+            Route::get('/transfer/{inventory}', 'transfer')->name('transfer');
+        });
+
     // Order Routes
     Route::controller(OrderController::class)
         ->prefix('orders')
@@ -81,6 +91,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 
     // User Management Routes
     Route::middleware(PermissionMiddleware::class . ':user.view')
@@ -160,11 +172,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
     Route::controller(WarehouseController::class)
         ->prefix('/inventories/warehouses')
         ->group(function () {
-            Route::get('/', 'index')->name('inventories.location.index');
-            Route::post('/store', 'store')->name('inventories.location.store');
-            Route::delete('/{id}/delete', 'destroy')->name('inventories.location.destroy');
-            Route::get('/{id}/edit', 'edit')->name('inventories.location.edit');
+            Route::get('/', 'index')->name('inventories.warehouses.index');
+            Route::post('/store', 'store')->name('inventories.warehouses.store');
+            Route::get('/create', 'create')->name('inventories.warehouses.create');
+            Route::delete('/{id}/delete', 'destroy')->name('inventories.warehouses.destroy');
+            Route::get('/{id}/edit', 'edit')->name('inventories.warehouses.edit');
         });
+
+     // Warehouse Management Routes
+     Route::controller(LocationController::class)
+     ->prefix('/inventories/locations')
+     ->group(function () {
+         Route::get('/', 'index')->name('inventories.location.index');
+         Route::post('/store', 'store')->name('inventories.location.store');
+         Route::delete('/{id}/delete', 'destroy')->name('inventories.location.destroy');
+         Route::get('/{id}/edit', 'edit')->name('inventories.location.edit');
+     });
 
     // Dosage Management Routes
     Route::prefix('product/dosages')->group(function () {
@@ -304,18 +327,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
                 Route::post('/delete-items', 'deleteItems')->name('deleteItems');
 
                 // Import Route
-                Route::post('/import-items', 'importItems')->name('import-items');
-            });
-
-        // Settings Routes
-        Route::middleware(PermissionMiddleware::class . ':settings.view')->group(function () {
-            Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-        });
-
-        // Order routes
-        Route::prefix('orders')->name('orders.')->middleware(['auth', 'verified'])->group(function () {
-            // Status-based list routes
-            Route::get('/pending', [OrderController::class, 'pending'])->name('pending');
             Route::get('/approved', [OrderController::class, 'approved'])->name('approved');
             Route::get('/in-process', [OrderController::class, 'inProcess'])->name('in-process');
             Route::get('/dispatched', [OrderController::class, 'dispatched'])->name('dispatched');
@@ -364,6 +375,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             ->prefix('/transfers')
             ->group(function () {
                 Route::get('/', 'index')->name('transfers.index');
+                Route::post('/store', 'store')->name('transfers.store');
+                Route::post('/approve/{id}', 'approve')->name('transfers.approve');
+                Route::post('/reject/{id}', 'reject')->name('transfers.reject');
+                Route::post('/inProcess/{id}', 'inProcess')->name('transfers.inProcess');
+                Route::post('/completeTransfer/{id}', 'completeTransfer')->name('transfers.completeTransfer');
             });
 
         Route::controller(DistrictController::class)
@@ -433,6 +449,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
                 Route::get('/', [DispatchController::class, 'index'])->name('index');
                 Route::post('/process', [DispatchController::class, 'process'])->name('process');
             });
+
 
         Route::controller(ReportController::class)
             ->prefix('/reports')

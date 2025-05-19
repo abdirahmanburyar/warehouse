@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(PurchaseOrderItem::class, 'po_id')->constrained();
             $table->foreignId('product_id')->constrained();
             $table->foreignId('warehouse_id')->constrained();
+            $table->string('barcode')->nullable();
             $table->date('expire_date')->nullable();
             $table->string('batch_number')->nullable();
             $table->string('ref_no')->nullable();

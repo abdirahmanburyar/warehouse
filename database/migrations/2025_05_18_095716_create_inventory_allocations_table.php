@@ -15,6 +15,8 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->foreignId('location_id')->constrained('locations');
             $table->string('batch_number');
+            $table->string('barcode');
+            $table->string('uom');
             $table->date('expiry_date');
             $table->integer('allocated_quantity');
             $table->string('allocation_type')->default('quarterly'); // quarterly, emergency, etc.

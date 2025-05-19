@@ -20,6 +20,7 @@
                         placeholder="Select supplier" track-by="id" label="po_number" @select="handlePOSelect">
                     </Multiselect>
                 </div>
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h2>
 
                 <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
                     <div>
@@ -42,7 +43,7 @@
 
                 <div v-else-if="!isLoading && form"
                     class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
-                    <h2 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h2>
+                    
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Supplier Details</h3>
                         <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.name }}</p>
@@ -66,7 +67,7 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <span>PL Data:</span>
-                                <input type="date" v-model="form.pk_date" class="border-0" />
+                                <input type="date" v-model="form.pk_date" class="border-0" :min="form.po_date" />
                             </div>
 
                         </div>
@@ -104,14 +105,19 @@
                     <tbody>
                         <tr v-for="(item, index) in form.items" :key="index" :class="[
                             'hover:bg-gray-50',
-                            { 'bg-red-50': hasIncompleteBackOrder(item) }
-                        ]">
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">
-                                {{ index + 1 }}</td>
+                            { 'bg-red-50': hasIncompleteBackOrder(item) },
+                            { 'border-red-500 border-2': item.hasError },
+                            { 'bg-red-50/20': item.hasError }
+                        ]" :data-row="index + 1">
+                            <td :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">{{ index + 1 }}</td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
-                                {{ item.product?.name }}</td>
+                                <div class="flex flex-col">
+                                    {{ item.product?.name }}
+                                    <span>UoM:  <input type="text" v-model="item.uom" readonly class="border-0"/></span>
+                                </div>
+
+                            </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <div class="flex flex-col">
@@ -121,7 +127,7 @@
                                     </div>
                                     <div>
                                         <label for="received_quantity" class="text-xs">Received Quantity</label>
-                                        <input type="number" v-model="item.received_quantity"
+                                        <input type="number" v-model="item.received_quantity" required min="1"
                                             :disabled="item.status == 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm"
                                             @input="handleReceivedQuantityChange(index)">
@@ -148,14 +154,14 @@
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <Multiselect v-model="item.warehouse" :value="item.warehouse_id"
                                     :options="props.warehouses" :searchable="true" :close-on-select="true"
-                                    :show-labels="false" :allow-empty="true" placeholder="Select Warehouse"
+                                    :show-labels="false" :allow-empty="true" placeholder="Select Warehouse" required
                                     track-by="id" :disabled="item.status === 'approved'" :append-to-body="true"
                                     label="name" @select="hadleWarehouseSelect(index, $event)">
                                 </Multiselect>
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <Multiselect v-model="item.location" :value="item.location_id"
+                                <Multiselect v-model="item.location" :value="item.location_id" required
                                     :disabled="item.status === 'approved'"
                                     :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...props.locations]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
@@ -175,14 +181,20 @@
                                 <div class="flex flex-col">
                                     <div>
                                         <label for="batch_number" class="text-xs">Batch Number</label>
-                                        <input type="text" v-model="item.batch_number"
+                                        <input type="text" v-model="item.batch_number" required
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                     </div>
                                     <div>
                                         <label for="expire_date" class="text-xs">Expire Date</label>
-                                        <input type="date" v-model="item.expire_date"
+                                        <input type="date" v-model="item.expire_date" required
                                             :min="moment().add(6, 'months').format('YYYY-MM-DD')"
+                                            :disabled="item.status === 'approved'"
+                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="barcode" class="text-xs">Barcode</label>
+                                        <input type="text" v-model="item.barcode" required
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                     </div>
@@ -321,13 +333,11 @@
                             </div>
 
                             <div>
-                                <SecondaryButton @click="attemptCloseModal">Close</SecondaryButton>
+                                <PrimaryButton @click="attemptCloseModal">Save and Exit</PrimaryButton>
                             </div>
                         </div>
                     </div>
                 </Modal>
-
-
                 <div class="flex justify-end space-x-3">
                     <Link :href="route('supplies.index')" :disabled="isSubmitting"
                         class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -437,16 +447,18 @@ function closeLocationModal() {
 }
 
 const isNewLocation = ref(false);
+
 async function createLocation() {
     if (!newLocation.value) {
         toast.error('Please enter a location name');
         return;
     }
+    
     isNewLocation.value = true;
 
     await axios.post(route('supplies.packing-list.location.store'), {
-        location: newLocation.value
-    })
+            location: newLocation.value
+        })
         .then((response) => {
             isNewLocation.value = false;
             const newLocationData = response.data.location;
@@ -464,9 +476,7 @@ async function createLocation() {
             console.log(error.response);
             toast.error(error.response?.data || 'An error occurred while adding the location');
         });
-
 }
-
 
 function handleReceivedQuantityChange(index) {
     const item = form.value.items[index];
@@ -517,9 +527,72 @@ async function handlePOSelect(selected) {
         })
 }
 
+const validateForm = () => {
+    let hasErrors = false;
+    let errorItems = [];
+
+    form.value.items.forEach((item, index) => {
+        item.hasError = false;
+        item.errorMessages = [];
+
+        // Required field validation
+        const requiredFields = [
+            { field: 'received_quantity', message: 'Received quantity is required' },
+            { field: 'warehouse_id', message: 'Warehouse selection is required' },
+            { field: 'location_id', message: 'Location selection is required' },
+            { field: 'batch_number', message: 'Batch number is required' },
+            { field: 'expire_date', message: 'Expiry date is required' },
+            { field: 'barcode', message: 'Barcode is required' },
+            { field: 'uom', message: 'UOM is required' }
+        ];
+
+        requiredFields.forEach(({ field, message }) => {
+            if (!item[field]) {
+                item.hasError = true;
+                item.errorMessages.push(message);
+            }
+        });
+
+        // Additional validations
+        if (item.received_quantity && item.received_quantity <= 0) {
+            item.hasError = true;
+            item.errorMessages.push('Received quantity must be greater than 0');
+        }
+
+        if (item.expire_date && new Date(item.expire_date) <= new Date()) {
+            item.hasError = true;
+            item.errorMessages.push('Expiry date must be in the future');
+        }
+
+        if (item.hasError) {
+            hasErrors = true;
+            errorItems.push(index + 1); // Add 1 for human-readable row numbers
+        }
+    });
+
+    if (hasErrors) {
+        // Show global error message with row numbers
+        toast.error(`Please fix the errors in rows: ${errorItems.join(', ')}`);
+        
+        // Scroll to the first error row
+        if (errorItems.length > 0) {
+            const firstErrorRow = document.querySelector(`tr[data-row="${errorItems[0]}"]`);
+            if (firstErrorRow) {
+                firstErrorRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+
+    return !hasErrors;
+};
+
 async function submit() {
     if (!form.value?.items?.length) {
         toast.error('No items to submit');
+        return;
+    }
+
+    if (!validateForm()) {
         return;
     }
 
@@ -544,16 +617,17 @@ async function submit() {
         try {
             isSubmitting.value = true;
 
-            // Filter out invalid items
-            form.value.items = form.value.items.filter(item =>
-                item.warehouse_id &&
-                item.location_id &&
-                item.batch_number &&
-                item.expire_date &&
-                item.received_quantity >= 0
-            );
+            // // Filter out invalid items
+            // form.value.items = form.value.items.filter(item =>
+            //     item.warehouse_id &&
+            //     item.location_id &&
+            //     item.batch_number &&
+            //     item.expire_date &&
+            //     item.uom &&
+            //     item.received_quantity >= 0
+            // );
 
-            const response = await axios.post(route('supplies.storePK'), form.value);
+            await axios.post(route('supplies.storePK'), form.value);
 
             await Swal.fire({
                 title: 'Success!',

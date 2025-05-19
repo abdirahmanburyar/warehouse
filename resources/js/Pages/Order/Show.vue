@@ -146,25 +146,17 @@
           </div>
         </div>
       </div>
-
       <!-- Order Items Table -->
       <div class="px-6 py-4 border border-gray-200 mb-[90px]">
         <h2 class="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
         <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
-          <colgroup>
-            <col class="w-[400px]">
-            <col class="w-[200px]">
-            <col class="w-[200px]">
-            <col class="w-[150px]">
-            <col class="w-[150px]">
-          </colgroup>
           <thead>
             <tr class="bg-gray-50">
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Item
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">unknown col</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity to
+              <th class="m-w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity to
                 release</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">No. of Months
               </th>
@@ -172,7 +164,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="item in form" :key="item.id">
+            <tr v-for="(item, index) in form" :key="item.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                 {{ item.product?.name }}
               </td>
@@ -193,27 +185,33 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                 <input type="number" v-model="item.quantity" />
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-               <div class="flex justify-between items-center">
-                {{ item.quantity_to_release }}
-                <table class="table">
-                  <tbody>
-                    <tr v-for="inv in item.inventory_allocations">
-                      <th class="flex items-start flex-col">
-                        <div>
-                          QTY: {{ inv.allocated_quantity }}
-                        </div>
-                        <div>
-                          Batch No: {{ inv.batch_number }}
-                        </div>
-                        <div>
-                          Warehouse: {{ inv.warehouse?.name }}
-                        </div>
-                        <div>
-                          Location: {{ inv.location?.location }}
-                        </div>
-                      </th>
-                    </tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 flex">
+                <div class="flex items-center space-x-2">
+                  <input 
+                    type="number" 
+                    v-model="item.quantity_to_release"
+                    class="w-20 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  />
+                </div>
+                <div class="border rounded-md overflow-hidden">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr v-for="inv in item.inventory_allocations" :key="inv.id" class="hover:bg-gray-50">
+                        <td class="px-3 py-2">
+                          <div class="grid grid-cols-2 text-xs">
+                            <div class="font-medium">QTY:</div>
+                            <div>{{ inv.allocated_quantity }}</div>
+                            <div class="font-medium">Batch No:</div>
+                            <div>{{ inv.batch_number }}</div>
+                            <div class="font-medium">Barcode:</div>
+                            <div>{{ inv.barcode }}</div>
+                            <div class="font-medium">Warehouse:</div>
+                            <div>{{ inv.warehouse?.name }}</div>
+                            <div class="font-medium">Location:</div>
+                            <div>{{ inv.location?.location }}</div>
+                          </div>
+                        </td>
+                      </tr>
                   </tbody>
                 </table>
                </div>
@@ -223,11 +221,19 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <button>Delete</button>
+                <button
+                  type="button"
+                  class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                  @click="submit(item, index)"
+                >
+                  Submit
+              </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
     </div>
   </AuthenticatedLayout>
 </template>
@@ -303,6 +309,10 @@ const getStatusProgress = (currentStatus) => {
     isPast: index < currentIndex
   }));
 };
+
+async function submit(item, index){
+  console.log(item)
+}
 
 const statusProgress = computed(() => getStatusProgress(props.order.status));
 

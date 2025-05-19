@@ -11,6 +11,7 @@ class Disposal extends Model
         'packing_list_id',
         'purchase_order_id',
         'quantity',
+        'expired_date',
         'disposed_by',
         'disposed_at',
         'status',

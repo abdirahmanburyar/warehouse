@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('packing_list_id')->nullable()->nullOnDelete();
             $table->foreignId('inventory_id')->nullable()->nullOnDelete();
             $table->foreignId('disposed_by')->nullOnDelete();
+            $table->date('expired_date')->nullable();
             $table->date('disposed_at');
             $table->integer('quantity');
             $table->string('status');

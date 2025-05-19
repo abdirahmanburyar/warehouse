@@ -21,6 +21,7 @@ class Inventory extends Model
         'batch_number',
         'location_id',
         'notes',
+        'uom',
         'is_active',
     ];
 
