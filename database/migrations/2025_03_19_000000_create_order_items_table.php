@@ -19,17 +19,13 @@ return new class extends Migration
             $table->foreignIdFor(Order::class)->cascadeOnDelete();
             $table->foreignIdFor(Product::class)->nullable()->cascadeOnDelete();
             $table->foreignIdFor(Warehouse::class)->nullable()->cascadeOnDelete();
-            $table->integer('quantity');
+            $table->integer('quantity'); // This stores the needed quantity
             $table->integer('quantity_on_order')->default(0);
-            $table->foreignId('reviewed_by')->nullable();
-            $table->date('reviewed_at')->nullable();
-            $table->foreignId('approved_by')->nullable();
-            $table->date('approved_at')->nullable();
-            $table->foreignId('dispatched_by')->nullable();
-            $table->date('dispatched_at')->nullable();
-            $table->boolean('in_process')->default(false);
-            $table->boolean('delivered')->default(false);
-            $table->string('status')->default('pending');
+            $table->integer('qer')->default(0);
+            $table->integer('soh')->default(0);
+            $table->double('amc')->default(0);
+            $table->integer('quantity_to_release')->default(0);
+            $table->integer('no_of_days')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

@@ -312,6 +312,7 @@ function handleSupplierSelect(selected){
     form.value.supplier_id = selected.id;
     form.value.supplier = selected;
     onSupplierChange(selected);
+    addItem();
 }
 
 function addItem() {

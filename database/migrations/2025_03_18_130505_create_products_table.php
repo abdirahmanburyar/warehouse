@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->string('name')->unique();
                 $table->text('description')->nullable();
                 $table->foreignIdFor(Category::class)->cascadeOnDelete();
-                $table->boolean('is_active')->default(true);
+                $table->string('movement');
                 $table->timestamps();
                 $table->softDeletes();
             });

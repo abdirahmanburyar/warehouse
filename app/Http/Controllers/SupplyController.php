@@ -152,19 +152,20 @@ class SupplyController extends Controller
     public function getBackOrder(Request $request, $id){
         try {
             
-            $purchaseOrders = PackingListDifference::withWhereHas('packingList', function($query) use($id){
-                $query->where('purchase_order_id', $id);
-            })->with('product', 'packingList:id,packing_list_number')->get();
-            return response()->json($purchaseOrders, 200);
+            $packingLists = PackingListDifference::withWhereHas('packingList', function($q) use($id){
+                $q->where('id', $id);
+            })
+            ->with('product', 'packingList:id,packing_list_number')->get();
+            return response()->json($packingLists, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
     }
 
     public function backOrder(Request $request){
-        $purchaseOrders = PurchaseOrder::select('id','po_number')->get();
+        $packingLists = PackingList::select('id','packing_list_number')->distinct()->get();
         return inertia("Supplies/BackOrder", [
-            'purchaseOrders' => $purchaseOrders
+            'packingLists' => $packingLists
         ]);
     }
 
@@ -1096,11 +1097,26 @@ class SupplyController extends Controller
     }
 
     public function showPK(Request $request){
-        $pk = PackingList::select('id', 'packing_list_number', 'total_cost', 'created_at', 'confirmed_at')
-            ->orderBy('created_at', 'asc')
+        $pk = PackingList::with(['po_item', 'purchaseOrder.supplier'])
+            ->select('id', 'packing_list_number', 'total_cost', 'created_at', 'confirmed_at', 'purchase_order_id', 'po_id')
+            ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy('packing_list_number')
             ->map(function ($group) {
+                $firstPL = $group->first();
+                $totalItems = $group->count();
+
+                // Count unique product IDs
+                $uniqueProductIds = $group->pluck('product_id')->unique()->count();
+                
+                // Calculate fulfillment rate
+                $fulfillmentRate = $group->avg(function($pl) {
+                    $receivedQty = $pl->received_quantity ?? 0;
+                    $totalQty = $pl->quantity ?? 0;
+                    return $totalQty > 0 ? ($receivedQty / $totalQty) * 100 : 0;
+                });
+
+                // Calculate average lead time
                 $avgLeadTime = $group->avg(function($pl) {
                     if ($pl->confirmed_at) {
                         return round(Carbon::parse($pl->confirmed_at)->diffInMonths(Carbon::now()), 1);
@@ -1109,10 +1125,18 @@ class SupplyController extends Controller
                 });
 
                 return [
-                    'packing_lists' => $group,
-                    'total_cost_sum' => $group->sum('total_cost'),
-                    'created_at' => $group->first()->created_at,
-                    'avg_lead_time' => $avgLeadTime > 0 ? round($avgLeadTime, 1) . ' Months' : 'N/A'
+                    'packing_list_number' => $firstPL->packing_list_number,
+                    'supplier' => $firstPL->purchaseOrder && $firstPL->purchaseOrder->supplier ? [
+                        'name' => $firstPL->purchaseOrder->supplier->name,
+                        'id' => $firstPL->purchaseOrder->supplier->id
+                    ] : null,
+                    'receiving_date' => $firstPL->created_at->format('M d, Y h:i A'),
+                    'total_items' => $totalItems,
+                    'total_product_ids' => $uniqueProductIds,
+                    'total_cost' => $group->sum('total_cost'),
+                    'avg_lead_time' => $avgLeadTime > 0 ? $avgLeadTime . ' Months' : 'N/A',
+                    'fulfillment_rate' => round($fulfillmentRate) . '%',
+                    'needs_back_order' => $fulfillmentRate < 100
                 ];
             });
 
@@ -1154,6 +1178,8 @@ class SupplyController extends Controller
             'supplier'
         ])
         ->first();
+
+        logger()->info($packing_list);
 
         $warehouses = Warehouse::select('id', 'name')->get();
         $locations = Location::select('id', 'location')->get();
@@ -1330,58 +1356,73 @@ class SupplyController extends Controller
                         ->where('batch_number', $packingListItem->batch_number)
                         ->first();
 
-                    if ($inventory) {
-                        // Update existing inventory
-                        DB::table('inventories')
-                            ->where('id', $inventory->id)
-                            ->update([
-                                'quantity' => DB::raw('quantity + ' . $packingListItem->quantity),
+                    $receivedQuantity = (int) $item['received_quantity'];
+                    if ($receivedQuantity > 0) {
+                        if ($inventory) {
+                            // Update existing inventory
+                            DB::table('inventories')
+                                ->where('id', $inventory->id)
+                                ->update([
+                                    'quantity' => DB::raw('quantity + ' . $receivedQuantity),
+                                    'batch_number' => $packingListItem->batch_number,
+                                    'expiry_date' => $packingListItem->expire_date,
+                                    'unit_cost' => $packingListItem->unit_cost,
+                                    'updated_at' => now()
+                                ]);
+                        } else {
+                            // Create new inventory record
+                            DB::table('inventories')->insert([
+                                'product_id' => $packingListItem->product_id,
+                                'warehouse_id' => $packingListItem->warehouse_id,
+                                'quantity' => $receivedQuantity,
                                 'batch_number' => $packingListItem->batch_number,
                                 'expiry_date' => $packingListItem->expire_date,
                                 'unit_cost' => $packingListItem->unit_cost,
+                                'location_id' => $packingListItem->location_id,
+                                'is_active' => true,
+                                'created_at' => now(),
                                 'updated_at' => now()
                             ]);
-                    } else {
-                        // Create new inventory record
-                        DB::table('inventories')->insert([
+                        }
+
+                        // Record the issued quantity
+                        DB::table('issued_quantities')->insert([
                             'product_id' => $packingListItem->product_id,
-                            'warehouse_id' => $packingListItem->warehouse_id,
-                            'quantity' => $packingListItem->quantity,
-                            'batch_number' => $packingListItem->batch_number,
-                            'expiry_date' => $packingListItem->expire_date,
+                            'quantity' => $receivedQuantity,
                             'unit_cost' => $packingListItem->unit_cost,
-                            'location_id' => $packingListItem->location_id,
-                            'is_active' => true,
+                            'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
+                            'warehouse_id' => $packingListItem->warehouse_id,
+                            'issued_date' => now()->toDateString(),
+                            'issued_by' => auth()->user()->id,
+                        ]);
+                    }
+
+                // Only create a difference record if there's actually a difference in quantity
+                $difference = (int) $packingListItem->quantity - (int) $item['received_quantity'];
+                if ($difference > 0) {
+                    // Check if a difference record already exists
+                    $existingDiff = DB::table('packing_list_differences')
+                        ->where('packing_list_id', $item['id'])
+                        ->where('status', 'Missing')
+                        ->first();
+                    
+                    if (!$existingDiff) {
+                        DB::table('packing_list_differences')->insert([
+                            'product_id' => $packingListItem->product_id,
+                            'packing_list_id' => $item['id'],
+                            'quantity' => $difference,
+                            'status' => 'Missing',
                             'created_at' => now(),
                             'updated_at' => now()
                         ]);
                     }
-
-                    // Record the issued quantity
-
-                    DB::table('issued_quantities')->insert([
-                        'product_id' => $packingListItem->product_id,
-                        'quantity' => $packingListItem->quantity,
-                        'unit_cost' => $packingListItem->unit_cost,
-                        'total_cost' => $packingListItem->total_cost,
-                        'warehouse_id' => $packingListItem->warehouse_id,
-                        'issued_date' => now()->toDateString(),
-                        'issued_by' => auth()->user()->id,
-                    ]);
-                    PackingListDifference::create([
-                        'product_id' => $packingListItem->product_id,
-                        'packing_list_id' => $item['id'],
-                        'quantity' => (int) $item['quantity'] - (int) $item['received_quantity'],
-                        'status' => "Missing"
-                    ]);
                 }
             }
 
             // Check if PO should be marked as completed
             $purchaseOrder = PurchaseOrder::with(['items', 'packingLists' => function($query) {
                 $query->where('status', 'approved');
-            }])->find($request->id);
-            
+            }])->find($request->id);        
             if ($purchaseOrder) {
                 // Get total quantities from PO items
                 $poQuantities = $purchaseOrder->items->groupBy('product_id')
@@ -1401,10 +1442,11 @@ class SupplyController extends Controller
                     $purchaseOrder->update(['status' => 'completed']);
                 }
             }
+        }
 
             DB::commit();
             return response()->json('Packing list items have been approved and inventory has been updated');
-        } catch (\Throwable $th) {
+        }catch (\Throwable $th) {
             DB::rollBack();
             logger()->error('Error approving packing list: ' . $th->getMessage());
             return response()->json($th->getMessage(), 500);

@@ -118,13 +118,6 @@
                                         Dosage Form
                                         <SortIcon :field="'dosage_id'" :currentSort="filters.sort_field" :direction="filters.sort_direction" />
                                     </th>
-                                    <th @click="sort('reorder_level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black">
-                                        Reorder Level
-                                        <SortIcon :field="'reorder_level'" :currentSort="filters.sort_field" :direction="filters.sort_direction" />
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
@@ -135,7 +128,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap border-r border-black">
                                         <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
                                         <div class="text-sm text-gray-500">Barcode: {{ product.barcode }}</div>
-                                        <div class="text-sm text-gray-500">Dose: {{ product.dose }}</div>
+                                        <div class="text-sm text-gray-500">Patern of Product: {{ product.movement }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
                                         {{ product.category?.name }}
@@ -143,13 +136,8 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
                                         {{ product.dosage?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
+                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
                                         {{ product.reorder_level }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border-r border-black">
-                                        <span :class="[product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full']">
-                                            {{ product  }}
-                                        </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium border-r border-black">
                                         <Link :href="route('products.edit', product.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">

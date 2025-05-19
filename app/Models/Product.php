@@ -29,8 +29,7 @@ class Product extends Model
         'description',
         'category_id',
         'dosage_id',
-        'reorder_level',
-        'is_active',
+        'movement',
     ];
 
     

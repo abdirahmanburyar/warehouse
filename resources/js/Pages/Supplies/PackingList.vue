@@ -10,7 +10,6 @@
         </Link>
 
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h2>
             <div class="grid grid-cols-1 gap-6">
                 <div class="w-[400px] mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -43,6 +42,7 @@
 
                 <div v-else-if="!isLoading && form"
                     class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Supplier Information</h2>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Supplier Details</h3>
                         <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.name }}</p>
@@ -102,11 +102,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(item, index) in form.items" :key="index"
-                            :class="[
-                                'hover:bg-gray-50',
-                                { 'bg-red-50': hasIncompleteBackOrder(item) }
-                            ]">                            
+                        <tr v-for="(item, index) in form.items" :key="index" :class="[
+                            'hover:bg-gray-50',
+                            { 'bg-red-50': hasIncompleteBackOrder(item) }
+                        ]">
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">
                                 {{ index + 1 }}</td>
@@ -132,6 +131,17 @@
                                         <input type="text" :value="calculateMismatches(item)" readonly
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                     </div>
+                                    <button v-if="calculateFulfillmentRate(item) < 100"
+                                            @click="openBackOrderModal(index)"
+                                            class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                            Back Order
+                                        </button>
+
+                                        <!-- Add tooltip for incomplete back orders -->
+                                        <div v-if="hasIncompleteBackOrder(item)"
+                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                            Please record the mismatch
+                                        </div>
                                 </div>
                             </td>
                             <td
@@ -192,7 +202,8 @@
                                         <div class="text-sm text-gray-900">
                                             {{ Number(item.total_cost).toLocaleString('en-US', {
                                                 style: 'currency',
-                                            currency: 'USD' }) }}
+                                                currency: 'USD'
+                                            }) }}
                                         </div>
                                     </div>
                                 </div>
@@ -202,17 +213,7 @@
                                 <div class="space-y-2">
                                     <div class="flex items-center flex-col">
                                         <span>{{ calculateFulfillmentRate(item) }}%</span>
-                                        <button v-if="calculateFulfillmentRate(item) < 100"
-                                            @click="openBackOrderModal(index)"
-                                            class="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                                            Back Order
-                                        </button>
-
-                                        <!-- Add tooltip for incomplete back orders -->
-                            <div v-if="hasIncompleteBackOrder(item)" 
-                                class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                Incomplete back orders
-                            </div>
+                                        
                                     </div>
                                 </div>
                             </td>
@@ -272,14 +273,15 @@
                                         <td class="px-3 py-2">
                                             <input type="number" v-model="row.quantity"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                min="0" @input="validateBackOrderQuantities">
+                                                min="0">
+                                                <!-- min="0" @input="validateBackOrderQuantities"> -->
                                         </td>
                                         <td class="px-3 py-2">
                                             <select v-model="row.status"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                                <option v-for="status in [row.status, ...availableStatuses.filter(s => s !== row.status)]" 
-                                                        :key="status" 
-                                                        :value="status">
+                                                <option
+                                                    v-for="status in [row.status, ...availableStatuses.filter(s => s !== row.status)]"
+                                                    :key="status" :value="status">
                                                     {{ status }}
                                                 </option>
                                             </select>
@@ -309,10 +311,12 @@
                                     Add Row
                                 </button>
                                 <div class="text-sm">
-                                    <span :class="{'text-green-600': isValidForSave, 'text-red-600': !isValidForSave}">
+                                    <span :class="{ 'text-green-600': isValidForSave, 'text-red-600': !isValidForSave }">
                                         {{ totalBackOrderQuantity }}
                                     </span>
-                                    <span class="text-gray-600"> / {{ selectedItem?.quantity - (selectedItem?.received_quantity || 0) }} items recorded</span>
+                                    <span class="text-gray-600"> / {{ selectedItem?.quantity -
+                                        (selectedItem?.received_quantity || 0) }}
+                                        items recorded</span>
                                 </div>
                             </div>
 
@@ -329,9 +333,7 @@
                         class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Exit
                     </Link>
-                    <button @click="submit" 
-                        :disabled="isSubmitting || !canSubmit"
-                        :title="submitButtonTitle"
+                    <button @click="submit" :disabled="isSubmitting || !canSubmit" :title="submitButtonTitle"
                         class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                         {{ isSubmitting ? "Saving..." : "Save and Exit" }}
                     </button>
@@ -511,7 +513,7 @@ async function handlePOSelect(selected) {
         .catch((error) => {
             isLoading.value = false;
             console.log(error.response);
-            toast.error(error.response.data);
+            toast.error(error);
         })
 }
 
@@ -541,18 +543,18 @@ async function submit() {
     if (confirm.isConfirmed) {
         try {
             isSubmitting.value = true;
-            
+
             // Filter out invalid items
-            form.value.items = form.value.items.filter(item => 
-                item.warehouse_id && 
-                item.location_id && 
-                item.batch_number && 
-                item.expire_date && 
+            form.value.items = form.value.items.filter(item =>
+                item.warehouse_id &&
+                item.location_id &&
+                item.batch_number &&
+                item.expire_date &&
                 item.received_quantity >= 0
             );
 
             const response = await axios.post(route('supplies.storePK'), form.value);
-            
+
             await Swal.fire({
                 title: 'Success!',
                 text: "Packing list created successfully",
@@ -607,27 +609,27 @@ function openBackOrderModal(index) {
     if (!item) return;
 
     selectedItem.value = item;
-    
+
     // Initialize backOrderRows with existing differences or a new row
-    backOrderRows.value = item.differences?.length > 0 
+    backOrderRows.value = item.differences?.length > 0
         ? [...item.differences] // Create a copy of existing differences
         : [{
             id: null,
             quantity: 0,
             status: 'Missing'
         }];
-        
+
     showBackOrderModal.value = true;
 };
 
 const hasIncompleteBackOrder = (item) => {
     if (!item?.received_quantity || item.received_quantity === item?.quantity) return false;
-    
+
     const mismatches = item.quantity - item.received_quantity;
     const totalDifferences = (item.differences || []).reduce(
         (total, diff) => total + (parseInt(diff?.quantity) || 0), 0
     );
-    
+
     return totalDifferences !== mismatches;
 };
 
@@ -655,9 +657,9 @@ const attemptCloseModal = async () => {
         const result = await Swal.fire({
             title: 'Incomplete Back Orders',
             html: `You need to record all mismatches.<br><br>` +
-                  `Expected: ${expectedMismatches}<br>` +
-                  `Recorded: ${totalDifferences}<br>` +
-                  `Remaining: ${expectedMismatches - totalDifferences}`,
+                `Expected: ${expectedMismatches}<br>` +
+                `Recorded: ${totalDifferences}<br>` +
+                `Remaining: ${expectedMismatches - totalDifferences}`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
@@ -712,10 +714,10 @@ const addBackOrderRow = () => {
 
     backOrderRows.value.push({
         id: null,
-        quantity: remaining,
+        quantity: 0,
         status: status
     });
-    
+
     // Sync after adding row
     nextTick(() => {
         syncBackOrdersWithDifferences();
@@ -723,7 +725,7 @@ const addBackOrderRow = () => {
 };
 
 const removeBackOrderRow = async (index, item) => {
-    try {        
+    try {
         if (item.id) {
             // If item has an ID, delete it from the server first
             const response = await axios.get(route('supplies.deletePackingListDiff', item.id));
@@ -743,11 +745,11 @@ const removeBackOrderRow = async (index, item) => {
             newRows.splice(index, 1);
             backOrderRows.value = newRows;
         }
-        
+
         // After successful removal, sync the differences
         await nextTick();
         syncBackOrdersWithDifferences();
-        
+
         // Check if we need to add a new row
         await nextTick();
         const remaining = remainingToAllocate.value;
@@ -784,7 +786,7 @@ const validateBackOrderQuantities = () => {
 
         // Calculate max allowed for this row
         const maxAllowed = missingQuantity.value - otherRowsTotal;
-        
+
         // Parse and validate the quantity
         let qty = parseInt(currentRow.quantity);
         if (isNaN(qty) || qty < 0) {
@@ -792,7 +794,7 @@ const validateBackOrderQuantities = () => {
         } else if (qty > maxAllowed) {
             qty = maxAllowed;
         }
-        
+
         // Update the row with validated quantity
         currentRow.quantity = qty;
     };

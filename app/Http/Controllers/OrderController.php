@@ -29,23 +29,22 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
+        $facility = $request->facility;
+        logger()->info($facility);
         $query = Order::with(['facility', 'user'])
             ->when($request->from && $request->to, function ($query) use ($request) {
                 $query->whereBetween('order_date', [$request->from, $request->to]);
             })
-            ->when($request->search, function ($query, $search) {
-                $query->where('order_number', 'like', "%{$search}%")
-                    ->orWhereHas('facility', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+            ->when($request->currentStatus, function ($query, $search) {
+                $query->where('status', $search);
             })
-            ->when($request->status, function ($query, $status) {
-                $query->where('status', $status);
+            ->when($request->facility, function ($query, $facility) {
+                $query->where('facility_id', $facility);
             })
             ->latest();
 
-        // Get order items statistics
-        $stats = DB::table('order_items')
+        // Get order statistics from orders table
+        $stats = DB::table('orders')
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
@@ -66,12 +65,15 @@ class OrderController extends Controller
 
         $stats = array_merge($defaultStats, $stats);
 
+        $orders = $query->paginate(500);
+
+        $facilities = Facility::select('id','name')->get();
+
         return Inertia::render('Order/Index', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page','currentStatus','facility'),
             'stats' => $stats,
-            'orders' => OrderResource::collection($query->get()),
-            'facilities' => Facility::select('id', 'name')->get(),
-            'filters' => $request->only('search', 'status', 'page', 'from', 'to'),
-            'warehouses' => Warehouse::select('id', 'name')->get(),
+            'facilities' => $facilities
         ]);
     }
 
@@ -234,7 +236,7 @@ class OrderController extends Controller
             // Validate request
             $validated = $request->validate([
                 'order_id' => 'required|exists:orders,id',
-                'status' => ['required', Rule::in(['approved', 'in process', 'dispatched', 'delivery_pending', 'delivered'])]
+                'status' => ['required', Rule::in(['approved', 'in_process', 'dispatched', 'delivered'])]
             ]);
 
             $order = Order::findOrFail($request->order_id);
@@ -242,10 +244,9 @@ class OrderController extends Controller
             // Define allowed transitions
             $allowedTransitions = [
                 'pending' => ['approved'],
-                'approved' => ['in process'],
-                'in process' => ['dispatched'],
-                'dispatched' => ['delivery_pending', 'delivered'],
-                'delivery_pending' => ['delivered']
+                'approved' => ['in_process'],
+                'in_process' => ['dispatched'],
+                'dispatched' => ['delivered']
             ];
 
             // Check if the transition is allowed
@@ -268,23 +269,24 @@ class OrderController extends Controller
                     $updates['approved_at'] = $now;
                     $updates['approved_by'] = $userId;
                     break;
-                case 'in process':
+                case 'in_process':
                     $updates['in_process'] = true;
+                    $updates['in_process_at'] = $now;
+                    $updates['in_process_by'] = $userId;
                     break;
                 case 'dispatched':
                     $updates['dispatched_by'] = $userId;
                     $updates['dispatched_at'] = $now;
                     break;
-                case 'delivery_pending':
-                    $updates['delivery_pending_at'] = $now;
-                    break;
                 case 'delivered':
                     $updates['delivered'] = true;
+                    $updates['delivered_at'] = $now;
+                    $updates['delivered_by'] = $userId;
                     break;
             }
 
             // Update the order
-            // $order->update($updates);
+            $order->update($updates);
 
             // Trigger Kafka event for order status change
             Kafka::publishOrderPlaced("Refreshed");
@@ -293,39 +295,13 @@ class OrderController extends Controller
 
             DB::commit();
             return response()->json('Order status updated successfully.', 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Order status change failed', [
                 'error' => $e->getMessage(),
                 'order_id' => $request->order_id ?? null
             ]);
             return response()->json('Failed to update order status: ' . $e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Get items for an order with their inventory quantities
-     */
-    public function items(Order $order)
-    {
-        try {
-            $items = $order->items()
-                ->with('product', 'warehouse')
-                ->get()
-                ->map(function ($item) {
-                    // Sum all inventory quantities for this product
-                    $inventoryQty = \App\Models\Inventory::where('product_id', $item->product_id)->sum('quantity');
-                    $item->inventory_quantity = $inventoryQty;
-                    return $item;
-                });
-
-            return response()->json($items);
-        } catch (\Exception $e) {
-            Log::error('Failed to get order items', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage()
-            ]);
-            return response()->json('Failed to load order items', 500);
         }
     }
 
@@ -903,17 +879,130 @@ class OrderController extends Controller
         }
     }
 
-    public function show(Request $request, Order $order)
+    public function show(Request $request, $id)
     {
         try {
             DB::beginTransaction();
-            $order->load('items.product', 'facility', 'user', 'items.warehouse');
-            $warehouses = Warehouse::select('id', 'name')->get();
+            $order = Order::where('id', $id)
+                ->with('items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location', 'facility', 'user')
+                ->firstOrFail();
+            $products = Product::select('id','name')->get();
             DB::commit();
-            return inertia("Order/Show", ['order' => $order, 'warehouses' => $warehouses]);
+            return inertia("Order/Show", ['order' => $order, 'products' => $products]);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return inertia("Order/Show", ['error' => $th->getMessage()]);
+            return inertia("Order/Show", ['error' =>  $th->getMessage()]);
         }
+    }
+
+    
+
+    public function pending(Request $request)
+    {
+        $query = Order::with(['facility', 'user'])
+            ->where('status', 'pending');
+
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('facility', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $orders = $query->latest()->paginate(10);
+
+        return Inertia::render('Order/Pending', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
+    }
+
+    public function approved(Request $request)
+    {
+        $orders = Order::with(['facility', 'user'])
+            ->where('status', 'approved')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Order/Approved', [
+            'orders' => $orders,
+        ]);
+    }
+
+    public function inProcess(Request $request)
+    {
+        $orders = Order::with(['facility', 'user'])
+            ->where('status', 'in_process')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Order/InProcess', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
+    }
+
+    public function dispatched(Request $request)
+    {
+        $orders = Order::with(['facility', 'user'])
+            ->where('status', 'dispatched')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Order/Dispatched', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
+    }
+
+    public function delivered(Request $request)
+    {
+        $orders = Order::with(['facility', 'user'])
+            ->where('status', 'delivered')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Order/Delivered', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
+    }
+
+    public function received(Request $request)
+    {
+        $orders = Order::with(['facility', 'user'])
+            ->where('status', 'received')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Order/Received', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
+    }
+
+    public function all(Request $request)
+    {
+        $query = Order::with(['facility', 'user']);
+
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('facility', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $orders = $query->latest()->paginate(10);
+
+        return Inertia::render('Order/All', [
+            'orders' => OrderResource::collection($orders),
+            'filters' => $request->only('search', 'page')
+        ]);
     }
 }

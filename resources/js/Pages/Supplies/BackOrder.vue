@@ -16,10 +16,10 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Select Supplier
                     </label>
-                    <select v-model="purchase_order_id" @change="onPOChange"
+                    <select v-model="packing_list_id" @change="onPOChange"
                         class="w-full block appearance-none py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select P.O Number</option>
-                        <option :value="s.id" v-for="s in props.purchaseOrders">{{ s.po_number }}</option>
+                        <option value="">Select PL Number</option>
+                        <option :value="s.id" v-for="s in props.packingLists">{{ s.packing_list_number }}</option>
                     </select>
                 </div>
             </div>
@@ -77,7 +77,13 @@
                                         @click="openUpdateModal(item)"
                                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
                                     >
-                                        Update
+                                        Receive
+                                    </button>
+                                    <button 
+                                        @click="liquidate(item)"
+                                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs"
+                                    >
+                                        Liquidate
                                     </button>
                                     </div>
                                 </td>
@@ -162,65 +168,17 @@ import { useToast } from 'vue-toastification';
 const toast = useToast();
 
 const props = defineProps({
-    purchaseOrders: Array,
+    packingLists: Array,
     warehouses: Array,
     // suppliers: Array,
     // po_number: Number
 });
 
-const purchase_order_id = ref("")
+const packing_list_id = ref("")
 
 const form = ref([]);
 
 const processing = ref(false);
-
-async function handleBackOrder(item, action, index) {
-    try {
-        let quantity = item.quantity;
-
-        if (action === 'update' && item.status.toLowerCase() === 'missing') {
-            const { value: inputQuantity } = await Swal.fire({
-                title: 'Enter received quantity',
-                input: 'number',
-                inputLabel: `Maximum quantity: ${item.quantity}`,
-                inputValue: 1,
-                showCancelButton: true,
-                inputValidator: (value) => {
-                    const num = parseInt(value);
-                    if (!value) {
-                        return 'Please enter a quantity';
-                    }
-                    if (num <= 0) {
-                        return 'Quantity must be greater than 0';
-                    }
-                    if (num > item.quantity) {
-                        return `Quantity cannot exceed ${item.quantity}`;
-                    }
-                }
-            });
-
-            if (!inputQuantity) return;
-            quantity = parseInt(inputQuantity);
-        }
-
-        processing.value[index] = true;
-        const response = await axios.post(route('supplies.backorder-status'), {
-            ...item,
-            action: action,
-            quantity: quantity
-        });
-        
-        toast.success(response.data);
-        // Refresh the list
-        await onPOChange();
-    } catch (error) {
-        console.log(error.response.data);
-        toast.error(error.response?.data || 'An error occurred');
-    } finally {
-        processing.value[index] = false;
-    }
-}
-
 
 const isLoading = ref(false);
 const showUpdateModal = ref(false);
@@ -229,6 +187,10 @@ const selectedItem = ref({});
 const openUpdateModal = (item) => {
     selectedItem.value = { ...item };
     showUpdateModal.value = true;
+};
+
+const liquidate = (item) => {
+    alert("hi");
 };
 
 const closeUpdateModal = () => {
@@ -357,12 +319,12 @@ async function onPOChange() {
     isLoading.value = true;
     form.value = [];
     
-    if(!purchase_order_id.value) {
+    if(!packing_list_id.value) {
         isLoading.value = false;
         return;
     }
  
-    await axios.get(route('supplies.get-packingList', purchase_order_id.value))
+    await axios.get(route('supplies.get-packingList', packing_list_id.value))
         .then((response) => {
             isLoading.value = false;
             console.log(response.data);

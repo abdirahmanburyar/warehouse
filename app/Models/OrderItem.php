@@ -15,16 +15,14 @@ class OrderItem extends Model
         'quantity',
         'warehouse_id',
         'quantity_on_order',
-        'reviewed_by',
-        'reviewed_at',
-        'status',
-        'approved_by',
-        'approved_at',
-        'dispatched_by',
-        'dispatched_at',
-        'in_process',
-        'delivered'
+        'qer',
+        'quantity_to_release',
+        'no_of_days',
     ];
+
+    public function inventory_allocations(){
+        return $this->hasMany(InventoryAllocation::class, 'order_item_id');
+    }
 
     public function order()
     {

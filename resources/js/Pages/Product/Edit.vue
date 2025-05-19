@@ -68,16 +68,6 @@
                             </select>
                         </div>
 
-                        <!-- Dose -->
-                        <div>
-                            <InputLabel for="dose" value="Dose" />
-                            <TextInput
-                                id="dose"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.dose"
-                            />
-                        </div>
 
                         <!-- Reorder Level -->
                         <div>
@@ -90,12 +80,17 @@
                             />
                         </div>
 
-                        <!-- Status -->
-                        <div class="flex items-center mt-4">
-                            <label class="flex items-center">
-                                <Checkbox v-model:checked="form.is_active" />
-                                <span class="ml-2 text-sm text-gray-600">Active</span>
-                            </label>
+                        <div>
+                            <InputLabel for="movement" value="Patern of Product" />
+                            <select
+                                id="movement"
+                                v-model="form.movement"
+                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                            >
+                                <option value="">Select Movement</option>
+                                <option value="Fast Moving">Fast Moving</option>
+                                <option value="Slow Moving">Slow Moving</option>
+                            </select>
                         </div>
                     </div>
 
@@ -116,7 +111,6 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import Checkbox from '@/Components/Checkbox.vue';
 import { Link, useForm, router } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { useToast } from "vue-toastification";
@@ -155,12 +149,11 @@ const processing = ref(false);
 const form = ref({
     id: props.product.id,
     name: props.product.name,
+    movement: props.product.movement,
     barcode: props.product.barcode,
     category_id: props.product.category_id,
     dosage_id: props.product.dosage_id,
-    dose: props.product.dose,
     reorder_level: props.product.reorder_level,
-    is_active: props.product.is_active
 });
 
 const submit = async () => {

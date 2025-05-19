@@ -74,17 +74,6 @@
                             </Multiselect>
                         </div>
 
-                        <!-- Dose -->
-                        <div>
-                            <InputLabel for="dose" value="Dose" />
-                            <TextInput
-                                id="dose"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.dose"
-                            />
-                        </div>
-
                         <!-- Reorder Level -->
                         <div>
                             <InputLabel for="reorder_level" value="Reorder Level" />
@@ -96,12 +85,18 @@
                             />
                         </div>
 
-                        <!-- Status -->
-                        <div class="flex items-center mt-4">
-                            <label class="flex items-center">
-                                <Checkbox v-model:checked="form.is_active" />
-                                <span class="ml-2 text-sm text-gray-600">Active</span>
-                            </label>
+                        <!-- Movement -->
+                        <div>
+                            <InputLabel for="movement" value="Movement" />
+                            <select
+                                id="movement"
+                                v-model="form.movement"
+                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                            >
+                                <option value="">Select Movement</option>
+                                <option value="Fast Moving">Fast Moving</option>
+                                <option value="Slow Moving">Slow Moving</option>
+                            </select>
                         </div>
                     </div>
 
@@ -156,13 +151,12 @@ const form = ref({
     id: null,
     name: '',
     barcode: '',
+    movement: '',
     category_id: '',
     dosage_id: '',
-    dose: '',
     reorder_level: 0,
     category: null,
     dosage: null,
-    is_active: true
 });
 
 const processing = ref(false);

@@ -2,11 +2,11 @@
     <AuthenticatedLayout title="Packing List">
         <Link :href="route('supplies.packing-list.showPK')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
-        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Supplies
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Supplies
         </Link>
         <!-- Supplier Selection -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -99,6 +99,17 @@
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
+                                    <button v-if="calculateFulfillmentRate(item) < 100"
+                                            @click="openBackOrderModal(index)"
+                                            class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                            Back Order
+                                        </button>
+
+                                        <!-- Add tooltip for incomplete back orders -->
+                                        <div v-if="hasIncompleteBackOrder(item)"
+                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                            Please record the mismatch
+                                        </div>
                                 </div>
                             </td>
                             <td
@@ -171,17 +182,7 @@
                                 <div class="space-y-2">
                                     <div class="flex items-center flex-col">
                                         <span>{{ calculateFulfillmentRate(item) }}%</span>
-                                        <button v-if="calculateFulfillmentRate(item) < 100"
-                                            @click="openBackOrderModal(index)"
-                                            class="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                                            Back Order
-                                        </button>
-
-                                        <!-- Add tooltip for incomplete back orders -->
-                                        <div v-if="hasIncompleteBackOrder(item)"
-                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                            Incomplete back orders
-                                        </div>
+                                        
                                     </div>
                                 </div>
                             </td>
@@ -205,24 +206,84 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end space-x-3">
-                    <button :disabled="isSubmitting || !hasPendingItems" @click="reviewPackingList"
-                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                        {{ isSubmitting ? 'Reviewing...' : 'Review' }}
-                    </button>
-                    <button :disabled="isSubmitting || !hasReviewedItems" @click="approvePackingList"
-                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        {{ isSubmitting ? 'Approving...' : 'Approve' }}
-                    </button>
-                    <Link :href="route('supplies.index')" :disabled="isSubmitting"
-                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Exit
-                    </Link>
-                    <button v-if="!hasAllApproved" :disabled="isSubmitting" type="submit" @click="submit"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-transparent rounded-md hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
-                    </button>
-                   
+                <!-- Action Buttons -->
+            <div class="flex flex-col items-end mb-[100px]">
+                <div class="flex justify-end space-x-3 mb-[80px]">
+                    <div class="mt-6 flex justify-end gap-x-4">
+                        <button type="button" @click="reviewPackingList" :class="[
+                            'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                            hasReviewedItems || hasAllApproved
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
+                        ]" :disabled="isSubmitting || hasReviewedItems || !hasPendingItems || hasAllApproved">
+                            <svg v-if="hasReviewedItems || hasAllApproved" class="w-5 h-5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                </path>
+                            </svg>
+                            {{ isSubmitting && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems || hasAllApproved) ? 'Reviewed' : 'Review') }}
+                        </button>
+                        <button type="button" @click="approvePackingList" :class="[
+                            'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                            hasAllApproved
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : !hasReviewedItems
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                        ]" :disabled="isSubmitting || !hasReviewedItems || hasAllApproved">
+                            <svg v-if="hasAllApproved" class="w-5 h-5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <svg v-else-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4"></path>
+                            </svg>
+                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                                </path>
+                            </svg>
+                            {{ isSubmitting && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved' : 'Approve') }}
+                        </button>
+                        <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
+                            class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
+                            Back
+                        </button>
+                        <button v-if="!hasAllApproved" type="button" @click="submit"
+                            class="flex justify-center items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="isSubmitting">
+                            {{ isSubmitting ? "Saving..." : "Save Changes" }}
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Status Information</h3>
+                    <div class="mt-2 space-y-2 text-sm">
+                        <div v-if="form?.value?.reviewed_by" class="flex items-center gap-x-2 text-amber-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Reviewed on {{ formatDate(form.value.reviewed_at) }}</span>
+                        </div>
+                        <div v-if="form?.value?.approved_by" class="flex items-center gap-x-2 text-green-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Approved on {{ formatDate(form.value.approved_at) }}</span>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>

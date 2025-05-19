@@ -70,8 +70,7 @@ class ProductController extends Controller
                     'id' => $product->dosage->id,
                     'name' => $product->dosage->name
                 ] : null,
-                'reorder_level' => $product->reorder_level,
-                'is_active' => $product->is_active
+                'reorder_level' => $product->reorder_level
             ];
         });
 
@@ -127,9 +126,7 @@ class ProductController extends Controller
                 'barcode' => $request->id ? 'nullable|string|max:100' : 'nullable|string|max:100|unique:products,barcode',
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                'dose' => 'nullable',
-                'reorder_level' => 'nullable|numeric',
-                'is_active' => 'required',
+                'movement' => 'required'
             ]);
 
             $product = Product::updateOrCreate(['id' => $validated['id']], $validated);

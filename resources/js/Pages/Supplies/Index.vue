@@ -164,18 +164,17 @@
                     <div class="bg-orange-500 rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
                             <div class="w-full">
-                                <p class="text-sm font-medium text-black-600 mb-2">Lead Times</p>
-                                <div class="flex justify-between w-full">
-                                    <div class="flex flex-col items-center flex-1">
-                                        <p class="text-xs font-medium text-black-600">Max</p>
+                                <div class="flex flex-col w-full">
+                                    <div class="flex items-center gap-5">
+                                        <p class="text-xs font-medium text-black-600">Max Lead Time</p>
                                         <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
                                     </div>
-                                    <div class="flex flex-col items-center border-l border-r px-4 border-gray-200 flex-1">
-                                        <p class="text-xs font-medium text-black-600">Avg</p>
+                                    <div class="flex items-center gap-5 ">
+                                        <p class="text-xs font-medium text-black-600">Avg Lead Time</p>
                                         <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
                                     </div>
-                                    <div class="flex flex-col items-center flex-1">
-                                        <p class="text-xs font-medium text-black-600">Low</p>
+                                    <div class="flex items-center gap-5">
+                                        <p class="text-xs font-medium text-black-600">Low Lead Time</p>
                                         <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
                                     </div>
                                 </div>
