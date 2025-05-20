@@ -305,6 +305,7 @@ class TransferController extends Controller
                     'product_id' => $item['product_id'],
                     'barcode' => $item['barcode'] ?? '',
                     'uom' => $item['uom'] ?? '',
+                    'quantity' => $item['quantity'],
                     'batch_number' => $item['batch_number'],
                     'expire_date' => $item['expire_date'] ?? null,
                 ]);
@@ -327,7 +328,7 @@ class TransferController extends Controller
     }
 
     public function show($id){
-        $transfer = Transfer::with('items')->first();
+        $transfer = Transfer::with(['items.product', 'fromWarehouse:id,name', 'toWarehouse:id,name', 'fromFacility:id,name', 'toFacility:id,name'])->findOrFail($id);
         return inertia('Transfer/Show', [
             'transfer' => $transfer
         ]);

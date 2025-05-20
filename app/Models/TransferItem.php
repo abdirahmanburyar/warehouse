@@ -9,6 +9,7 @@ class TransferItem extends Model
     protected $fillable = [
         'transfer_id',
         'product_id',
+        'quantity',
         'barcode',
         'uom',
         'batch_number',

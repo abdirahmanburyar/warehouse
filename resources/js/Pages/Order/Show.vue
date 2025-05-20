@@ -149,89 +149,97 @@
       <!-- Order Items Table -->
       <div class="px-6 py-4 border border-gray-200 mb-[90px]">
         <h2 class="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
-        <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
-          <thead>
-            <tr class="bg-gray-50">
-              <th class="w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Item
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">unknown col</th>
-              <th class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity</th>
-              <th class="w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity to
-                release</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">No. of Months
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(item, index) in form" :key="item.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                {{ item.product?.name }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">               
-                <div class="flex flex-col items_center">
-                  <span>QOO</span>
-                  {{ item.quantity_on_order }}
-                </div>
-                <div class="flex flex-col items_center">
-                  <span>SOH</span>
-                  {{ item.soh }}
-                </div>
-                <div class="flex flex-col items_center">
-                  <span>QER</span>
-                  <input type="number" v-model="item.qer" />
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                <input type="number" v-model="item.quantity" />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 flex">
-                <div class="flex items-center space-x-2">
+        <div class="overflow-x-auto shadow-sm rounded-lg">
+          <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="w-[150px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Item
+                </th>
+                <th class="w-[120px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Inventory</th>
+                <th class="w-[50px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Needed Quantity</th>
+                <th class="w-[180px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Quantity to
+                  release</th>
+                <th class="w-[90px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">No. of Months
+                </th>
+                <th class="w-[100px] px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="(item, index) in form" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150">
+                <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-sm">{{ item.product?.name }}</span>
+                  </div>
+                </td>
+                <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">               
+                  <div class="flex flex-col items-center text-sm">
+                    <span class="font-medium">QOO:</span>
+                    <span>{{ item.quantity_on_order }}</span>
+                    <span class="font-medium">SOH:</span>
+                    <span>{{ item.soh }}</span>
+                    <span class="font-medium">QER:</span>
+                    <input type="number" v-model="item.qer" class="w-12 h-6 text-sm rounded border-gray-300" />
+                  </div>
+                </td>
+                <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">
                   <input 
                     type="number" 
-                    v-model="item.quantity_to_release"
-                    class="w-20 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                    v-model="item.quantity" 
+                    class="w-16 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   />
-                </div>
-                <div class="border rounded-md overflow-hidden">
-                  <table class="min-w-full divide-y divide-gray-200">
-                    <tbody class="bg-white divide-y divide-gray-200">
-                      <tr v-for="inv in item.inventory_allocations" :key="inv.id" class="hover:bg-gray-50">
-                        <td class="px-3 py-2">
-                          <div class="grid grid-cols-2 text-xs">
-                            <div class="font-medium">QTY:</div>
-                            <div>{{ inv.allocated_quantity }}</div>
-                            <div class="font-medium">Batch No:</div>
-                            <div>{{ inv.batch_number }}</div>
-                            <div class="font-medium">Barcode:</div>
-                            <div>{{ inv.barcode }}</div>
-                            <div class="font-medium">Warehouse:</div>
-                            <div>{{ inv.warehouse?.name }}</div>
-                            <div class="font-medium">Location:</div>
-                            <div>{{ inv.location?.location }}</div>
-                          </div>
-                        </td>
-                      </tr>
-                  </tbody>
-                </table>
-               </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                {{ item.no_of_days }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <button>Delete</button>
-                <button
-                  type="button"
-                  class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                  @click="submit(item, index)"
-                >
-                  Submit
-              </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">
+                  <div class="flex flex-between gap-2 items-center space-y-2">
+                    <div class="flex items-center">
+                      <input 
+                        type="number" 
+                        v-model="item.quantity_to_release"
+                        class="w-16 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                      />
+                    </div>
+                    <div class="border rounded-md overflow-hidden text-sm">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <tbody class="bg-white divide-y divide-gray-200">
+                          <tr v-for="inv in item.inventory_allocations" :key="inv.id" class="hover:bg-gray-100">
+                            <td class="px-2 py-1">
+                              <div class="font-medium">QTY: {{ inv.allocated_quantity }}</div>
+                              <div class="font-medium">Batch: {{ inv.batch_number }}</div>
+                              <div class="font-medium">Barcode:{{ inv.barcode }}</div>
+                              <div class="font-medium">WH:{{ inv.warehouse?.name }}</div>
+                              <div class="font-medium">Loc: {{ inv.location?.location }}</div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    {{ item.no_of_days }}
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-sm text-gray-900">
+                  <div class="flex flex-col space-y-2">
+                    <button
+                      type="button"
+                      class="inline-flex items-center px-2 py-1 bg-red-100 border border-transparent rounded text-sm text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                    >
+                      Delete
+                    </button>
+                    <!-- <button
+                      type="button"
+                      class="inline-flex items-center px-2 py-1 bg-green-100 border border-transparent rounded text-sm text-green-700 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                      @click="submit(item, index)"
+                    >
+                      Submit
+                    </button> -->
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
@@ -264,12 +272,12 @@ const props = defineProps({
 });
 
 const statusClasses = {
-  pending: 'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium',
-  approved: 'bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium',
-  'in process': 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium',
-  dispatched: 'bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-medium',
-  delivered: 'bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium',
-  default: 'bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium'
+  pending: 'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium',
+  approved: 'bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium',
+  'in process': 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium',
+  dispatched: 'bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium',
+  delivered: 'bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium',
+  default: 'bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium'
 };
 
 const form = ref([]);

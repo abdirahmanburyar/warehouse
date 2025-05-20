@@ -29,6 +29,7 @@ class Transfer extends Model
         'note'
     ];
 
+
     public function fromWarehouse()
     {
         return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
