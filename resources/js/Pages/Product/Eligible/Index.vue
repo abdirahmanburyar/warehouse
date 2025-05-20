@@ -63,10 +63,6 @@
                                         Facility Type
                                         <SortIcon :field="'facility_type'" :sort-field="filters.sort_field" :sort-direction="filters.sort_direction" />
                                     </th>
-                                    <th scope="col" class="px-6 py-3 cursor-pointer" @click="sort('is_active')">
-                                        Status
-                                        <SortIcon :field="'is_active'" :sort-field="filters.sort_field" :sort-direction="filters.sort_direction" />
-                                    </th>
                                     <th scope="col" class="px-6 py-3">Actions</th>
                                 </tr>
                             </thead>
@@ -76,14 +72,6 @@
                                         {{ item.product.name }}
                                     </td>
                                     <td class="px-6 py-4">{{ item.facility_type }}</td>
-                                    <td class="px-6 py-4">
-                                        <span :class="[
-                                            'px-2 py-1 text-xs font-medium rounded-full',
-                                            item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        ]">
-                                            {{ item.is_active ? 'Active' : 'Inactive' }}
-                                        </span>
-                                    </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center space-x-3">
                                             <Link :href="route('products.eligible.edit', item.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">

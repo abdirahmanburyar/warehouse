@@ -27,17 +27,6 @@
                             />
                         </div>
 
-                        <!-- Barcode -->
-                        <div>
-                            <InputLabel for="barcode" value="Barcode" />
-                            <TextInput
-                                id="barcode"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.barcode"
-                            />
-                        </div>
-
                         <!-- Category -->
                         <div>
                             <InputLabel for="category_id" value="Category" />
@@ -55,10 +44,11 @@
                                 </template>
                             </Multiselect>
                         </div>
-
+                    </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Dosage -->
                         <div>
-                            <InputLabel for="dosage_id" value="Dosage" />
+                            <InputLabel for="dosage_id" value="Dosage Form" />
                             <Multiselect v-model="form.dosage" :value="form.dosage_id" 
                                 :options="[{ id: 'new', name: '+ Add New Dosage form', isAddNew: true }, ...props.dosages.data]"
                                 :searchable="true" :close-on-select="true" :show-labels="false"
@@ -87,7 +77,7 @@
 
                         <!-- Movement -->
                         <div>
-                            <InputLabel for="movement" value="Movement" />
+                            <InputLabel for="movement" value="Pattern of Product" />
                             <select
                                 id="movement"
                                 v-model="form.movement"
@@ -100,6 +90,30 @@
                         </div>
                     </div>
 
+                    <!-- Facility Types Multiselect -->
+                    <div class="col-span-2">
+                        <InputLabel for="facility_types" value="Applicable Facility Types" />
+                        <Multiselect
+                            v-model="form.facility_types"
+                            :options="facilityTypes"
+                            :multiple="true"
+                            :searchable="true"
+                            :close-on-select="false"
+                            :clear-on-select="false"
+                            :preserve-search="true"
+                            :show-labels="false"
+                            placeholder="Select facility types"
+                            class="mt-1"
+                        >
+                            <template v-slot:selection="{ values, search, isOpen }">
+                                <span class="multiselect__single" v-if="values.length && !isOpen">
+                                    {{ values.join(', ') }}
+                                </span>
+                            </template>
+                        </Multiselect>
+                        <p class="text-sm text-gray-500 mt-1">Select the facility types where this product can be used</p>
+                    </div>
+
                     <div class="flex items-center justify-end mt-4">
                         <PrimaryButton class="ml-4" :disabled="processing">
                             {{ processing ? "Creating..." : "Create Product"}}
@@ -109,6 +123,100 @@
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <!-- Category Modal -->
+    <div v-if="showCategoryModal" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Category</h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <InputLabel for="new-category-name" value="Category Name" />
+                                    <TextInput
+                                        id="new-category-name"
+                                        type="text"
+                                        class="mt-1 block w-full"
+                                        v-model="newCategory.name"
+                                    />
+                                </div>
+                                <div>
+                                    <InputLabel for="new-category-description" value="Description" />
+                                    <textarea
+                                        id="new-category-description"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        v-model="newCategory.description"
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="createNewCategory" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Create
+                    </button>
+                    <button @click="showCategoryModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dosage Modal -->
+    <div v-if="showDosageModal" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Dosage Form</h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <InputLabel for="new-dosage-name" value="Dosage Form Name" />
+                                    <TextInput
+                                        id="new-dosage-name"
+                                        type="text"
+                                        class="mt-1 block w-full"
+                                        v-model="newDosage.name"
+                                    />
+                                </div>
+                                <div>
+                                    <InputLabel for="new-dosage-description" value="Description" />
+                                    <textarea
+                                        id="new-dosage-description"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        v-model="newDosage.description"
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="createNewDosage" :disabled="processing" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        {{processing ? 'Creating...' : 'Create'}}
+                    </button>
+                    <button @click="showDosageModal = false" :disabled="processing" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Exit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -150,20 +258,39 @@ const props = defineProps({
 const form = ref({
     id: null,
     name: '',
-    barcode: '',
     movement: '',
     category_id: '',
     dosage_id: '',
     reorder_level: 0,
     category: null,
     dosage: null,
+    facility_types: [],
 });
 
 const processing = ref(false);
+const showCategoryModal = ref(false);
+const showDosageModal = ref(false);
+const newCategory = ref({ name: '', description: '' });
+const newDosage = ref({ name: '', description: '' });
+
+const facilityTypes = ref([
+    "Health Centre",
+    "Primary Health Unit",
+    "District Hospital",
+    "Regional Hospital",
+]);
 
 const submit = async () => {
+    
+    // Create a payload with the correct format
+    const payload = {
+        ...form.value,
+        // Ensure we're sending the IDs, not the objects
+        category_id: form.value.category?.id,
+        dosage_id: form.value.dosage?.id
+    };
     processing.value = true;
-    await axios.post(route('products.store'), form.value)
+      await axios.post(route('products.store'), payload)
         .then((response) => {
             processing.value = false;
             Swal.fire({
@@ -171,40 +298,118 @@ const submit = async () => {
                 title: 'Product Created',
                 text: response.data
             }).then(() => {
-            processing.value = false;
                 router.visit(route('products.index'))
-            })
+            });
         })
         .catch((error) => {
-            console.log(error.response.data);
-            toast.error(error.response.data)
-        })
+            processing.value = false;
+            console.error('Error creating product:', error);
+            toast.error(error.response?.data || 'Failed to create product');
+        });
+};
+
+// Function to create a new category
+async function createNewCategory() {
+    if (!newCategory.value.name) {
+        toast.error('Category name is required');
+        return;
+    }
+    
+    try {
+        console.log('Creating new category:', newCategory.value);
+        const response = await axios.post(route('products.categories.store'), newCategory.value);
+        console.log('Category created response:', response.data);
+        
+        // Add the new category to the categories list
+        const newCategoryObj = {
+            id: response.data.id || response.data,  // Handle different response formats
+            name: newCategory.value.name,
+            description: newCategory.value.description
+        };
+        
+        console.log('New category object:', newCategoryObj);
+        props.categories.data.push(newCategoryObj);
+        
+        // Select the newly created category
+        form.value.category = newCategoryObj;
+        form.value.category_id = newCategoryObj.id;
+        console.log('Updated form with new category:', form.value.category_id);
+        
+        // Reset and close modal
+        newCategory.value = { name: '', description: '' };
+        showCategoryModal.value = false;
+        
+        toast.success('Category created successfully');
+    } catch (error) {
+        console.error('Error creating category:', error);
+        toast.error(error.response?.data || 'Failed to create category');
+    }
+}
+
+// Function to create a new dosage form
+async function createNewDosage() {
+    if (!newDosage.value.name) {
+        toast.error('Dosage form name is required');
+        return;
+    }
+    
+    try {
+        console.log('Creating new dosage:', newDosage.value);
+        const response = await axios.post(route('products.dosages.store'), newDosage.value);
+        console.log('Dosage created response:', response.data);
+        
+        // Add the new dosage to the dosages list
+        const newDosageObj = {
+            id: response.data.id || response.data,  // Handle different response formats
+            name: newDosage.value.name,
+            description: newDosage.value.description
+        };
+        
+        console.log('New dosage object:', newDosageObj);
+        props.dosages.data.push(newDosageObj);
+        
+        // Select the newly created dosage
+        form.value.dosage = newDosageObj;
+        form.value.dosage_id = newDosageObj.id;
+        console.log('Updated form with new dosage:', form.value.dosage_id);
+        
+        // Reset and close modal
+        newDosage.value = { name: '', description: '' };
+        showDosageModal.value = false;
+        
+        toast.success('Dosage form created successfully');
+    } catch (error) {
+        console.error('Error creating dosage form:', error);
+        toast.error(error.response?.data || 'Failed to create dosage form');
+    }
 };
 
 function handleCategorySelect(selected){
-    console.log(selected);
+    console.log('Selected category:', selected);
     if(selected.isAddNew){
         form.value.category_id = "";
         form.value.category = null;
-        alert('hi');
+        showCategoryModal.value = true;
         return;
     }
 
-    form.value.category_id = selected.id;
+    // Make sure we're setting both the object and the ID
+    form.value.category = selected;
     form.value.category_id = selected.id;
 }
 
 
 function handleDosageSelect(selected){
-    console.log(selected);
+    console.log('Selected dosage:', selected);
     if(selected.isAddNew){
         form.value.dosage_id = "";
         form.value.dosage = null;
-        alert('hi');
+        showDosageModal.value = true;
         return;
     }
 
-    form.value.dosage_id = selected.id;
+    // Make sure we're setting both the object and the ID
+    form.value.dosage = selected;
     form.value.dosage_id = selected.id;
 }
 

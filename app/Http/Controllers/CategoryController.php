@@ -66,43 +66,23 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string|max:1000',
+            $request->validate([
+                'id' => 'nullable',
+                'name' => 'required',
+                'description' => 'nullable',
             ]);
             
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            
-            $category = Category::create($request->all());
-            
-            return redirect()->route('products.categories.index')->with('success', 'Category created successfully');
-        } catch (Throwable $e) {
-            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
-        }
-    }
-
-    /**
-     * Update the specified category in storage.
-     */
-    public function update(Request $request, Category $category)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string|max:1000',
+            $dosage = Category::updateOrCreate(
+                [
+                    'id' => $request->id
+                ],[
+                "name" => $request->name,
+                "description" => $request->description
             ]);
             
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            
-            $category->update($request->all());
-            
-            return redirect()->route('products.categories.index')->with('success', 'Category updated successfully');
+            return response()->json('Category created successfully', 200);
         } catch (Throwable $e) {
-            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
+            return response()->json($e->getMessage(), 500);
         }
     }
 

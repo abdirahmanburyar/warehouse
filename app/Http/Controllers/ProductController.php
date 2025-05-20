@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Models\EligibleItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class ProductController extends Controller
 {
@@ -123,16 +126,54 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'id' => 'nullable|exists:products,id',
                 'name' => $request->id ? 'required|string|max:255' : 'required|string|max:255|unique:products,name',
-                'barcode' => $request->id ? 'nullable|string|max:100' : 'nullable|string|max:100|unique:products,barcode',
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                'movement' => 'required'
+                'movement' => 'required',
+                'reorder_level' => 'nullable|numeric',
+                'facility_types' => 'nullable|array'
             ]);
 
-            $product = Product::updateOrCreate(['id' => $validated['id']], $validated);
-
+            DB::beginTransaction();
+            
+            // Create or update the product
+            $product = Product::updateOrCreate(['id' => $validated['id']], [
+                'name' => $validated['name'],
+                'category_id' => $validated['category_id'] ?? null,
+                'dosage_id' => $validated['dosage_id'] ?? null,
+                'movement' => $validated['movement'],
+                'reorder_level' => $request->reorder_level ?? null
+            ]);
+            
+            // For a new product, we need to make sure we have the correct ID
+            if ($request->id === null) {
+                // Get the latest product with this name
+                $freshProduct = Product::where('name', $validated['name'])->latest()->first();
+                
+                if ($freshProduct) {
+                    $product = $freshProduct;
+                    logger()->info('Using product with ID: ' . $product->id);
+                } else {
+                    logger()->error('Could not find the newly created product');
+                }
+            }
+            
+            // Handle facility types if provided - only for new products
+            if (!empty($request->facility_types) && $request->id === null && $product) {
+                // Create eligible items for each facility type
+                foreach ($request->facility_types as $facilityType) {
+                    EligibleItem::create([
+                        'product_id' => $product->id,
+                        'facility_type' => $facilityType
+                    ]);
+                }
+            }
+            
+            DB::commit();
+            
             return response()->json($request->id ? 'Product updated successfully.' : 'Product created successfully.', 200);
         } catch (Throwable $e) {
+            DB::rollBack();
+            logger()->info($e->getMessage());
             return response()->json($e->getMessage(), 500);
         }
     }

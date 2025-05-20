@@ -1025,7 +1025,7 @@ class SupplyController extends Controller
 
             // Check if packing list is approved
             if ($packingListItem->status === 'approved') {
-                return response()->json('Cannot modify back order for approved packing list', 403);
+                return response()->json('Cannot modify back order for approved packing list', 500);
             }
 
             if ($request->status == 'Missing') {

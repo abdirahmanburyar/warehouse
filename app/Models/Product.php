@@ -24,7 +24,6 @@ class Product extends Model
     protected $fillable = [
         'productID',
         'name',
-        'dose',
         'description',
         'category_id',
         'dosage_id',
@@ -86,5 +85,9 @@ class Product extends Model
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function eligible(){
+        return $this->hasMany(EligibleItem::class);
     }
 }

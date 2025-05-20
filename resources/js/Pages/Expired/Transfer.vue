@@ -11,7 +11,10 @@ import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import axios from 'axios';
+import { useToast } from 'vue-toastification'
 import Swal from 'sweetalert2';
+
+const toast = useToast();
 
 const props = defineProps({
     inventory: Object,
@@ -30,11 +33,23 @@ const loading = ref(false);
 const selectedDestination = ref(null);
 
 const form = ref({
-    inventory_id: props.inventory?.id,
+    source_type: 'warehouse', // Default source type is warehouse since it's an expired item
+    source_id: props.inventory?.warehouse_id, // Get warehouse ID from inventory
     destination_type: 'warehouse',
     destination_id: null,
-    quantity: props.inventory?.quantity || 0,
     notes: '',
+    items: [
+        {
+            inventory_id: props.inventory?.id,
+            inventory_id: props.inventory?.id,
+            product_id: props.inventory?.product_id,
+            quantity: props.inventory?.quantity || 0,
+            batch_number: props.inventory?.batch_number || '',
+            barcode: props.inventory?.product?.barcode || '',
+            expire_date: props.inventory?.expiry_date || null,
+            uom: props.inventory?.product?.uom || ''
+        }
+    ]
 });
 
 const errors = ref({});
@@ -53,7 +68,7 @@ const validateForm = () => {
         errors.value.destination_id = 'Please select a destination';
         return false;
     }
-    if (!form.value.quantity || form.value.quantity <= 0) {
+    if (!form.value.items[0].quantity || form.value.items[0].quantity <= 0) {
         errors.value.quantity = 'Please enter a valid quantity';
         return false;
     }
@@ -65,16 +80,15 @@ const submit = async () => {
         return;
     }
 
-   
-        const result = await Swal.fire({
-            title: 'Confirm Transfer',
-            text: `Are you sure you want to transfer ${form.value.quantity} units to the selected ${transferType.value}?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, transfer it!'
-        });
+    const result = await Swal.fire({
+        title: 'Confirm Transfer',
+        text: `Are you sure you want to transfer ${form.value.items[0].quantity} units to the selected ${transferType.value}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, transfer it!'
+    });
 
         if (result.isConfirmed) {
             loading.value = true;
@@ -132,6 +146,8 @@ const submit = async () => {
                             </div>
                         </div>
 
+                        {{props.inventory}}
+
                         <form @submit.prevent="submit" class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Transfer Type Selection -->
@@ -184,7 +200,7 @@ const submit = async () => {
                                     <InputLabel value="Quantity to Transfer" />
                                     <TextInput
                                         type="number"
-                                        v-model="form.quantity"
+                                        v-model="form.items[0].quantity"
                                         class="mt-1 block w-full"
                                         :max="inventory.quantity"
                                         min="1"

@@ -84,53 +84,23 @@ class DosageController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('dosages', 'name')
-                ],
-                'description' => 'nullable|string|max:1000',
+            $request->validate([
+                'id' => 'nullable',
+                'name' => 'required',
+                'description' => 'null',
             ]);
             
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            
-            $dosage = Dosage::create($request->all());
-            
-            return redirect()->route('products.dosages.index')->with('success', 'Dosage created successfully');
-        } catch (Throwable $e) {
-            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
-        }
-    }
-
-    /**
-     * Update the specified dosage in storage.
-     */
-    public function update(Request $request, Dosage $dosage)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('dosages', 'name')->ignore($dosage->id)
-                ],
-                'description' => 'nullable|string|max:1000',
+            $dosage = Dosage::updateOrCreate(
+                [
+                    'id' => $request->id
+                ],[
+                "name" => $request->name,
+                "description" => $request->description
             ]);
             
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-            
-            $dosage->update($request->all());
-            
-            return redirect()->route('products.dosages.index')->with('success', 'Dosage updated successfully');
+            return response()->json('Dosage created successfully', 200);
         } catch (Throwable $e) {
-            return back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
+            return response()->json($e->getMessage(), 500);
         }
     }
 

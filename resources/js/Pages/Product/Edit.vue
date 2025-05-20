@@ -27,17 +27,6 @@
                             />
                         </div>
 
-                        <!-- Barcode -->
-                        <div>
-                            <InputLabel for="barcode" value="Barcode" />
-                            <TextInput
-                                id="barcode"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.barcode"
-                            />
-                        </div>
-
                         <!-- Category -->
                         <div>
                             <InputLabel for="category_id" value="Category" />
@@ -150,7 +139,6 @@ const form = ref({
     id: props.product.id,
     name: props.product.name,
     movement: props.product.movement,
-    barcode: props.product.barcode,
     category_id: props.product.category_id,
     dosage_id: props.product.dosage_id,
     reorder_level: props.product.reorder_level,

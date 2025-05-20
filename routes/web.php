@@ -365,7 +365,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
         Route::prefix('product/categories')->group(function () {
             Route::get('/', [CategoryController::class, 'index'])->name('products.categories.index');
             Route::get('/create', [CategoryController::class, 'create'])->name('products.categories.create');
-            Route::post('/', [CategoryController::class, 'store'])->name('products.categories.store');
+            Route::post('/store', [CategoryController::class, 'store'])->name('products.categories.store');
             Route::get('/{category}/edit', [CategoryController::class, 'edit'])->name('products.categories.edit');
             Route::put('/{category}', [CategoryController::class, 'update'])->name('products.categories.update');
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('products.categories.destroy');
@@ -375,6 +375,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             ->prefix('/transfers')
             ->group(function () {
                 Route::get('/', 'index')->name('transfers.index');
+                Route::get('/create', 'create')->name('transfers.create');
                 Route::post('/store', 'store')->name('transfers.store');
                 Route::post('/approve/{id}', 'approve')->name('transfers.approve');
                 Route::post('/reject/{id}', 'reject')->name('transfers.reject');
@@ -448,6 +449,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             ->group(function () {
                 Route::get('/', [DispatchController::class, 'index'])->name('index');
                 Route::post('/process', [DispatchController::class, 'process'])->name('process');
+            });
+            
+        // Transfer routes
+        Route::prefix('transfers')
+            ->name('transfers.')
+            ->group(function () {
+                Route::get('/get-inventories', [TransferController::class, 'getInventories'])->name('getInventories');
             });
 
 

@@ -19,7 +19,6 @@
                                     required
                                     autofocus
                                 />
-                                <InputError class="mt-2" :message="form.errors.name" />
                             </div>
 
                             <div>
@@ -30,22 +29,22 @@
                                     v-model="form.description"
                                     rows="3"
                                 />
-                                <InputError class="mt-2" :message="form.errors.description" />
                             </div>
 
                             <div class="flex items-center justify-end mt-4">
                                 <Link
                                     :href="route('products.dosages.index')"
+                                    :disabled="isSubmitting"
                                     class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-3"
                                 >
-                                    Cancel
+                                    Exit
                                 </Link>
                                 <PrimaryButton
                                     class="ml-4"
-                                    :class="{ 'opacity-25': form.processing }"
-                                    :disabled="form.processing"
+                                    :class="{ 'opacity-25': isSubmitting }"
+                                    :disabled="isSubmitting"
                                 >
-                                    Update Dosage Form
+                                    {{ isSubmitting ? 'Updating...' : 'Update Dosage Form' }}
                                 </PrimaryButton>
                             </div>
                         </form>
@@ -57,7 +56,7 @@
 </template>
 
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -65,8 +64,9 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextArea from '@/Components/TextArea.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useToast } from 'vue-toastification';
-
-const toast = useToast();
+import Swal from 'sweetalert2';
+import { ref } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     dosage: {
@@ -75,19 +75,32 @@ const props = defineProps({
     }
 });
 
-const form = useForm({
+const form = ref({
+    id: props.dosage.data.id,
     name: props.dosage.data.name,
     description: props.dosage.data.description
 });
 
-const submit = () => {
-    form.put(route('products.dosages.update', props.dosage.data.id), {
-        onSuccess: () => {
-            toast.success('Dosage form updated successfully');
-        },
-        onError: () => {
-            toast.error('Error updating dosage form');
-        }
-    });
+const isSubmitting = ref(false);
+
+const submit = async () => {
+    isSubmitting.value = true;
+    await axios.post(route('products.dosages.store'), form.value)
+        .then((response) => {
+            isSubmitting.value = false;
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                router.get(route('products.dosages.index'));
+            });            
+        })
+        .catch((error) => {
+            isSubmitting.value = false;
+            console.log(error);
+            toast.error(error.response.data);
+        });
 };
 </script>

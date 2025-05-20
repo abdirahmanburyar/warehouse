@@ -18,12 +18,6 @@ return new class extends Migration
             $table->foreignId('to_warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->foreignId('from_facility_id')->nullable()->constrained('facilities')->onDelete('cascade');
             $table->foreignId('to_facility_id')->nullable()->constrained('facilities')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('inventory_id')->constrained()->onDelete('cascade');
-            $table->string('batch_no')->nullable();
-            $table->string('barcode')->nullable();
-            $table->date('expire_date')->nullable();
-            $table->string('uom')->nullable();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('dispatched_by')->nullable()->constrained('users')->onDelete('cascade');

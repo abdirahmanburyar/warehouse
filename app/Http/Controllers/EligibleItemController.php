@@ -64,28 +64,23 @@ class EligibleItemController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
-                'id' => 'nullable|exists:eligible_items,id',
-                'product_id' => 'required|exists:products,id',
-                'facility_type' => 'required|string'
+            $request->validate([
+                'products' => 'required|array|min:1',
+                'products.*.product_id' => 'required|exists:products,id',
+                'facility_types' => 'required|array|min:1'
             ]);
 
-            $id = $validated['id'] ?? null;
-            unset($validated['id']); // Remove id from validated data
+            foreach ($request->facility_types as $type) {
+                foreach ($request->products as $product) {
+                    $eligibleItem = EligibleItem::firstOrCreate([
+                        'product_id' => $product['product_id'],
+                        'facility_type' => $type,
+                    ]);
+    
+                }
+            }
 
-            $eligibleItem = EligibleItem::updateOrCreate(
-                ['id' => $id], // Conditions
-                [
-                    'product_id' => $validated['product_id'],
-                    'facility_type' => $validated['facility_type']
-                ]
-            );
-
-            $message = $id 
-                ? 'Eligible item updated successfully'
-                : 'Eligible item created successfully';
-
-            return response()->json($message, 200);
+            return response()->json("Created eligible items successfully", 200);
 
         } catch (\Throwable $e) {
             return response()->json($e->getMessage(), 500);

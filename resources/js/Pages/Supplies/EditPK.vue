@@ -940,7 +940,7 @@ async function submit() {
                 icon: 'success',
                 confirmButtonColor: '#10B981',
             });
-            router.visit(route('supplies.packing-list.showPK'));
+            router.visit(route('supplies.packing-list.edit', props.packing_list?.id));
         } catch (error) {
             toast.error(error.response?.data || 'An error occurred while updating the packing list');
         } finally {

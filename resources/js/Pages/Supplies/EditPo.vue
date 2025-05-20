@@ -424,7 +424,7 @@ async function submitForm() {
                         text: response.data,
                         icon: "success"
                     }).then(() => {
-                        router.visit(route('supplies.index'));
+                        router.visit(route('supplies.editPO', props.po?.id));
                     });
 
                 })
@@ -542,7 +542,7 @@ async function rejectPO() {
                     text: "Purchase order has been rejected.",
                     icon: "success"
                 }).then(() => {
-                    router.visit(route('supplies.index'));
+                    router.visit(route('supplies.editpk', props.po?.id));
                 });
             } catch (error) {
                 toast.error(error.response?.data || 'Failed to reject purchase order');

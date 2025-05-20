@@ -19,7 +19,6 @@
                                     required
                                     autofocus
                                 />
-                                <InputError class="mt-2" :message="form.errors.name" />
                             </div>
 
                             <div>
@@ -30,23 +29,23 @@
                                     v-model="form.description"
                                     rows="3"
                                 />
-                                <InputError class="mt-2" :message="form.errors.description" />
                             </div>
 
                             <div class="flex items-center gap-4">
-                                <PrimaryButton :disabled="form.processing">
-                                    <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                               
+                                <Link
+                                    :href="route('products.categories.index')" :disabled="isSubmitting"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-800 uppercase tracking-widest hover:bg-gray-300 focus:bg-gray-300 active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                >
+                                    Exit
+                                </Link>
+                                <PrimaryButton :disabled="isSubmitting">
+                                    <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Update
+                                    {{ isSubmitting ? 'Updating...' : 'Update'}}
                                 </PrimaryButton>
-                                <Link
-                                    :href="route('products.categories.index')"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-800 uppercase tracking-widest hover:bg-gray-300 focus:bg-gray-300 active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    Cancel
-                                </Link>
                             </div>
                         </form>
                     </div>
@@ -57,37 +56,52 @@
 </template>
 
 <script setup>
+import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import TextArea from '@/Components/TextArea.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import TextInput from '@/Components/TextInput.vue';
 import { useToast } from 'vue-toastification';
+import Swal from 'sweetalert2';
+import { ref } from 'vue';
+import axios from 'axios';
 
 const toast = useToast();
 
 const props = defineProps({
-    category: {
-        type: Object,
-        required: true
-    }
-});
+    category: Object
+})
 
-const form = useForm({
+const form = ref({
+    id: props.category.data.id,
     name: props.category.data.name,
     description: props.category.data.description
 });
 
-const submit = () => {
-    form.put(route('products.categories.update', props.category.data.id), {
-        onSuccess: () => {
-            toast.success('Category updated successfully');
-        },
-        onError: () => {
-            toast.error('Error updating category');
-        }
-    });
+const isSubmitting = ref(false);
+
+const submit = async () => {
+    isSubmitting.value = true;
+    await axios.post(route('products.categories.store'), form.value)
+        .then((response) => {
+            isSubmitting.value = false;
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                router.get(route('products.categories.index'));
+            });            
+        })
+        .catch((error) => {
+            isSubmitting.value = false;
+            console.log(error);
+            toast.error(error.response.data);
+        });
 };
 </script>
+
+
