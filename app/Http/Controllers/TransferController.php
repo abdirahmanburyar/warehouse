@@ -87,31 +87,36 @@ class TransferController extends Controller
     {
         DB::beginTransaction();
         try {
-            $transfer = Transfer::with(['toWarehouse', 'toFacility'])->findOrFail($id);
+            $transfer = Transfer::with(['toWarehouse', 'toFacility', 'items.product'])->findOrFail($id);
             
             if ($transfer->status !== 'in_process') {
                 return response()->json(['message' => 'Transfer must be in process to be completed'], 500);
             }
 
-            $inventoryData = [
-                'product_id' => $transfer->product_id,
-                'batch_number' => $transfer->batch_no,
-                'quantity' => $transfer->quantity,
-                'expiry_date' => $transfer->expire_date,
-                'uom' => 'pcs'
-            ];
-
             // Check if the transfer is to a warehouse or facility
-            if ($transfer->toWarehouse) {
-                // Add to warehouse inventory
-                $inventoryData['warehouse_id'] = $transfer->to_warehouse_id;
-                Inventory::create($inventoryData);
-            } else if ($transfer->toFacility) {
-                // Add to facility inventory
-                $inventoryData['facility_id'] = $transfer->to_facility_id;
-                FacilityInventory::create($inventoryData);
-            } else {
+            if (!$transfer->toWarehouse && !$transfer->toFacility) {
                 throw new \Exception('Invalid transfer destination');
+            }
+
+            // Process each transfer item
+            foreach ($transfer->items as $item) {
+                $inventoryData = [
+                    'product_id' => $item->product_id,
+                    'batch_number' => $item->batch_number,
+                    'quantity' => $transfer->quantity,
+                    'expiry_date' => $item->expire_date,
+                    'uom' => $item->uom ?? 'pcs'
+                ];
+
+                if ($transfer->toWarehouse) {
+                    // Add to warehouse inventory
+                    $inventoryData['warehouse_id'] = $transfer->to_warehouse_id;
+                    Inventory::create($inventoryData);
+                } else {
+                    // Add to facility inventory
+                    $inventoryData['facility_id'] = $transfer->to_facility_id;
+                    FacilityInventory::create($inventoryData);
+                }
             }
 
             $transfer->update([

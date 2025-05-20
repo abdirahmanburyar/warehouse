@@ -78,4 +78,9 @@ class Transfer extends Model
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }
+    
+    public function items()
+    {
+        return $this->hasMany(TransferItem::class);
+    }
 }
