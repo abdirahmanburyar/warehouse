@@ -58,6 +58,12 @@
 
                 <div class="flex items-center space-x-4">
 
+                    <button
+                        @click="router.visit(route('transfers.disposal'))"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Disposals
+                    </button>
+
                     <!-- New Transfer -->
                     <button
                         @click="router.visit(route('transfers.create'))"
@@ -139,7 +145,9 @@
                                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ transfer.transferID }}
+                                        <Link :href="route('transfers.show', transfer.id)">
+                                            {{ transfer.transferID }}
+                                        </Link>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ new Date(transfer.transfer_date).toLocaleDateString() }}
@@ -232,8 +240,8 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.approved.percentage }}%
-                                        <div class="text-xs opacity-75">{{ props.statistics.approved.stages.join(' → ')
-                                        }}</div>
+                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.approved.stages.join(' → ')
+                                        }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -252,8 +260,8 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.pending.percentage }}%
-                                        <div class="text-xs opacity-75">{{ props.statistics.pending.stages.join(' → ')
-                                        }}</div>
+                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.pending.stages.join(' → ')
+                                        }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -272,7 +280,7 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.in_process.percentage }}%
-                                        <div class="text-xs opacity-75">{{ props.statistics.in_process.stages.join(' → ') }}</div>
+                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.in_process.stages.join(' → ') }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -291,7 +299,7 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.transferred.percentage }}%
-                                        <div class="text-xs opacity-75">{{ props.statistics.transferred.stages.join(' → ') }}</div>
+                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.transferred.stages.join(' → ') }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -310,8 +318,8 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.rejected.percentage }}%
-                                        <div class="text-xs opacity-75">{{ props.statistics.rejected.stages.join(' → ')
-                                        }}</div>
+                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.rejected.stages.join(' → ')
+                                        }}</div> -->
                                     </div>
                                 </div>
                             </div>

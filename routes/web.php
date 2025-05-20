@@ -375,12 +375,17 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
             ->prefix('/transfers')
             ->group(function () {
                 Route::get('/', 'index')->name('transfers.index');
+                Route::get('/{id}/show', 'show')->name('transfers.show');
                 Route::get('/create', 'create')->name('transfers.create');
                 Route::post('/store', 'store')->name('transfers.store');
                 Route::post('/approve/{id}', 'approve')->name('transfers.approve');
                 Route::post('/reject/{id}', 'reject')->name('transfers.reject');
                 Route::post('/inProcess/{id}', 'inProcess')->name('transfers.inProcess');
                 Route::post('/completeTransfer/{id}', 'completeTransfer')->name('transfers.completeTransfer');
+
+                // disposals
+                Route::get('/disposals', 'disposal')->name('transfers.disposal');
+
             });
 
         Route::controller(DistrictController::class)

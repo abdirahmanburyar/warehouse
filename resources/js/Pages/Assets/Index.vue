@@ -49,9 +49,15 @@
             <!-- Main Content -->
             <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
                 <div class="p-6 flex-1 overflow-auto space-y-6">
-                    <div class="flex justify-end">
-                        <Link :href="route('assets.locations.index')">Locations</Link>
-                        <Link :href="route('assets.sub-locations.index')">Sub-Locations</Link>
+                    <div class="flex justify-end space-x-2">
+                        <Link :href="route('assets.locations.index')"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            Locations
+                        </Link>
+                        <Link :href="route('assets.sub-locations.index')"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            Sub-Locations
+                        </Link>
                     </div>
                     <!-- Loading State -->
                     <div v-if="loading" class="flex justify-center items-center h-32">

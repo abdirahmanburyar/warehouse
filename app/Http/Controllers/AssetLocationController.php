@@ -43,11 +43,12 @@ class AssetLocationController extends Controller
                 'name' => 'required|string|max:255'
             ]);
     
-            AssetLocation::updateOrCreate(['id' => $request->id], [
+            $location = AssetLocation::updateOrCreate(['id' => $request->id], [
                 'name' => $request->name
             ]);
             
             $location['isAddNew'] = false;
+            logger()->info($location);
             return response()->json($location, 200);
         } catch (Throwable $e) {
             return response()->json($e->getMessage(), 500);

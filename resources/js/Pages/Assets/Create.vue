@@ -67,6 +67,7 @@ const loadSubLocations = async (locationId) => {
         const response = await axios.get(route('assets.locations.sub-locations', locationId));
         subLocations.value = response.data;
     } catch (error) {
+        console.log(error);
         toast.error(error.response.data);
     }
 };
@@ -94,7 +95,6 @@ const isNewCategory = ref(false);
 const selectedLocationForSub = ref(null);
 
 const handleLocationSelect = (selected) => {
-    console.log(selected);
     if (!selected) {
         // Handle clearing the selection
         form.value.asset_location_id = null;
@@ -158,7 +158,7 @@ const createLocation = async () => {
         toast.success('Location created successfully');
     } catch (error) {
         console.error(error);
-        toast.error(error.response?.data || 'Error creating location');
+        // toast.error(error.response?.data || 'Error creating location');
     } finally {
         isNewLocation.value = false;
     }
@@ -213,17 +213,22 @@ const createCategory = async () => {
     }
 };
 
+const isSubLocationLoadint = ref(false);
+
 const createSubLocation = async () => {
     if (!newSubLocation.value || !selectedLocationForSub.value) {
         toast.error('Please enter a sub-location name and select a location');
         return;
     }
+    isNewLocation.value = true;
 
     try {
         const response = await axios.post(route('assets.locations.sub-locations.store'), {
             name: newSubLocation.value,
             asset_location_id: selectedLocationForSub.value
         });
+        isNewLocation.value = false;
+
 
         const newSubLocationData = response.data;
 
@@ -239,6 +244,7 @@ const createSubLocation = async () => {
 
         toast.success('Sub-location created successfully');
     } catch (error) {
+        isNewLocation.value = true;
         console.error('Error creating sub-location:', error);
         toast.error(error.response?.data || 'Error creating sub-location');
     }
@@ -249,7 +255,6 @@ const submit = async () => {
     form.value.asset_category_id = form.value.asset_category_id?.id;
     form.value.asset_location_id = form.value.asset_location_id?.id;
     form.value.sub_location_id = form.value.sub_location_id?.id;
-    console.log(form.value);
     await axios.post(route('assets.store'), form.value)
         .then((response) => {
             processing.value = false;
@@ -265,7 +270,6 @@ const submit = async () => {
         })
         .catch((error) => {
             processing.value = false;
-            console.log(error.response.data);
             toast.error(error.response?.data || 'Error creating asset');
         })
 };

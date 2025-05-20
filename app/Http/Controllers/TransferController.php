@@ -270,11 +270,25 @@ class TransferController extends Controller
                 if ($request->source_type === 'warehouse') {
                     $inventory = Inventory::where('warehouse_id', $request->source_id)
                         ->where('id', $item['inventory_id'])
-                        ->firstOrFail();
+                        ->first();
+                        
+                    if (!$inventory) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => 'Inventory item not found with ID: ' . $item['inventory_id']
+                        ], 404);
+                    }
                 } else {
                     $inventory = FacilityInventory::where('facility_id', $request->source_id)
                         ->where('id', $item['inventory_id'])
-                        ->firstOrFail();
+                        ->first();
+                        
+                    if (!$inventory) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => 'Insufficient stock hand in the inventory for ID: ' . $item['inventory_id']
+                        ], 404);
+                    }
                 }
                 
                 if ($item['quantity'] > $inventory->quantity) {
@@ -308,8 +322,19 @@ class TransferController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json('Failed to create transfer: ' . $e->getMessage(), 500);
+            return response()->json(['message' => 'Failed to create transfer: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function show($id){
+        $transfer = Transfer::with('items')->first();
+        return inertia('Transfer/Show', [
+            'transfer' => $transfer
+        ]);
+    }
+    
+    public function disposal(Request $request){
+        return inertia('Transfer/Disposal');
     }
 
     public function create(Request $request){
