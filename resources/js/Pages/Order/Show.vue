@@ -242,6 +242,123 @@
         </div>
       </div>
 
+      <!-- Status Actions Section - Single row with actions and status icons -->
+      <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-medium text-gray-900">Order Status Actions</h2>
+          
+          <!-- Status Action Buttons -->
+          <div class="flex items-center gap-2">
+            <!-- Show Approve button if status is pending -->
+            <button v-if="props.order.status === 'pending'" 
+              @click="changeStatus(props.order.id, 'approved')"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 text-green-700 bg-green-50 hover:bg-green-100 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <img v-else src="/assets/images/approved.png" class="w-8 h-8" alt="Approve" />
+              {{ isLoading ? 'Processing...' : 'Approve' }}
+            </button>
+            
+            <!-- Show Process button if status is approved -->
+            <button v-if="props.order.status === 'approved'" 
+              @click="changeStatus(props.order.id, 'in_process')"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 text-blue-700 bg-blue-50 hover:bg-blue-100 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <img v-else src="/assets/images/inprocess.png" class="w-8 h-8" alt="Process" />
+              {{ isLoading ? 'Processing...' : 'Start Processing' }}
+            </button>
+            
+            <!-- Show Dispatch button if status is in_process -->
+            <button v-if="props.order.status === 'in_process'" 
+              @click="changeStatus(props.order.id, 'dispatched')"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 text-purple-700 bg-purple-50 hover:bg-purple-100 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-purple-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <img v-else src="/assets/images/dispatch.png" class="w-8 h-8" alt="Dispatch" />
+              {{ isLoading ? 'Processing...' : 'Dispatch' }}
+            </button>
+            
+            <!-- Show Deliver button if status is dispatched -->
+            <button v-if="props.order.status === 'dispatched'" 
+              @click="changeStatus(props.order.id, 'delivered')"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <img v-else src="/assets/images/delivery.png" class="w-8 h-8" alt="Deliver" />
+              {{ isLoading ? 'Processing...' : 'Mark Delivered' }}
+            </button>
+            
+            <!-- Show Receive button if status is delivered -->
+            <button v-if="props.order.status === 'delivered'" 
+              @click="changeStatus(props.order.id, 'received')"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 text-gray-700 bg-gray-50 hover:bg-gray-100 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <img v-else src="/assets/images/received.png" class="w-8 h-8" alt="Receive" />
+              {{ isLoading ? 'Processing...' : 'Mark Received' }}
+            </button>
+            
+            <!-- Show status messages for terminal states -->
+            <span v-if="props.order.status === 'delivered' && !isLoading">Waiting to be received</span>
+            <span v-if="props.order.status === 'received'" class="text-green-700 font-medium">Successfully received</span>
+          </div>
+        </div>
+        
+        <!-- Status Icons Row - Single row with all status icons -->
+        <div class="flex items-center justify-center gap-8">
+          <!-- Always show pending as it's the initial state -->
+          <div class="flex flex-col items-center">
+            <img src="/assets/images/pending.svg" class="w-16 h-16" alt="pending" />
+            <span class="mt-2 text-sm font-medium text-gray-700">Pending</span>
+          </div>
+          
+          <!-- Only show approved if status is approved or further -->
+          <div v-if="['approved', 'in_process', 'dispatched', 'delivered', 'received'].includes(props.order.status)" class="flex flex-col items-center">
+            <img src="/assets/images/approved.png" class="w-16 h-16" alt="Approved" />
+            <span class="mt-2 text-sm font-medium text-gray-700">Approved</span>
+          </div>
+          
+          <!-- Only show in_process if status is in_process or further -->
+          <div v-if="['in_process', 'dispatched', 'delivered', 'received'].includes(props.order.status)" class="flex flex-col items-center">
+            <img src="/assets/images/inprocess.png" class="w-16 h-16" alt="In Process" />
+            <span class="mt-2 text-sm font-medium text-gray-700">In Process</span>
+          </div>
+          
+          <!-- Only show dispatched if status is dispatched or further -->
+          <div v-if="['dispatched', 'delivered', 'received'].includes(props.order.status)" class="flex flex-col items-center">
+            <img src="/assets/images/dispatch.png" class="w-16 h-16" alt="Dispatched" />
+            <span class="mt-2 text-sm font-medium text-gray-700">Dispatched</span>
+          </div>
+          
+          <!-- Only show delivered if status is delivered or received -->
+          <div v-if="['delivered', 'received'].includes(props.order.status)" class="flex flex-col items-center">
+            <img src="/assets/images/delivery.png" class="w-16 h-16" alt="Delivered" />
+            <span class="mt-2 text-sm font-medium text-gray-700">Delivered</span>
+          </div>
+          
+          <!-- Only show received if status is received -->
+          <div v-if="props.order.status === 'received'" class="flex flex-col items-center">
+            <img src="/assets/images/received.png" class="w-16 h-16" alt="Received" />
+            <span class="mt-2 text-sm font-medium text-gray-700">Received</span>
+          </div>
+        </div>
+      </div>
     </div>
   </AuthenticatedLayout>
 </template>
@@ -281,6 +398,7 @@ const statusClasses = {
 };
 
 const form = ref([]);
+const isLoading = ref(false);
 
 onMounted(() => {
   form.value = props.order.items || [];
@@ -308,6 +426,60 @@ const getAllocationStatus = (item) => {
 };
 
 const statusOrder = ['pending', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
+
+// Function to change order status
+const changeStatus = (orderId, newStatus) => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: `Do you want to change the order status to ${newStatus}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, change it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Set loading state
+      isLoading.value = true;
+      
+      axios.post(route('orders.change-status'), {
+        order_id: orderId,
+        status: newStatus
+      })
+        .then(response => {
+          // Reset loading state
+          isLoading.value = false;
+          
+          Swal.fire({
+            title: 'Updated!',
+            text: 'Order status has been updated.',
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          }).then(() => {
+            // Reload the page to show the updated status
+            router.reload();
+          });
+        })
+        .catch(error => {
+          // Reset loading state
+          isLoading.value = false;
+          
+          Swal.fire({
+            title: 'Error!',
+            text: error.response?.data || 'Failed to update order status',
+            icon: 'error',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          });
+        });
+    }
+  });
+};
 
 const getStatusProgress = (currentStatus) => {
   const currentIndex = statusOrder.indexOf(currentStatus);

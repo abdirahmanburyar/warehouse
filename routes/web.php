@@ -470,6 +470,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\TwoFactorAuth::class
                 Route::get('/', 'index')->name('reports.index');
                 Route::get('/stock-level-report', 'stockLevelReport')->name('reports.stockLevelReport');
                 Route::get('/issued-quantity', 'issuedQuantity')->name('reports.issuedQuantity');
+                Route::get('/facilities/monthly-quantity', 'monthlyConsumption')->name('reports.monthlyConsumption');
             });
 });
 

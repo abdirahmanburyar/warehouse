@@ -345,19 +345,30 @@ const formatDate = (date) => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <!-- Status Progress Icons -->
+                                            <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-1">
-                                                <img src="/assets/images/pending.svg" class="w-12 h-12" alt="pending"
-                                                    :class="{'opacity-50': !['pending', 'in_process', 'dispatched', 'delivered'].includes(order.status)}" />
+                                                <!-- Always show pending as it's the initial state -->
+                                                <img src="/assets/images/pending.svg" class="w-12 h-12" alt="pending" />
                                                 
-                                                <img src="/assets/images/approved.png" class="w-12 h-12" alt="Approved"
-                                                    :class="{'opacity-50': !['approved', 'in_process', 'dispatched', 'delivered'].includes(order.status)}" />
-                                                <img src="/assets/images/inprocess.png" class="w-12 h-12" alt="In Process"
-                                                    :class="{'opacity-50': !['in_process', 'dispatched', 'delivered'].includes(order.status)}" />
-                                                <img src="/assets/images/dispatch.png" class="w-12 h-12" alt="Dispatched"
-                                                    :class="{'opacity-50': !['dispatched', 'delivered'].includes(order.status)}" />
-                                                <img src="/assets/images/delivery.png" class="w-12 h-12" alt="Delivered"
-                                                    :class="{'opacity-50': order.status !== 'delivered'}" />
+                                                <!-- Only show approved if status is approved or further -->
+                                                <img v-if="['approved', 'in_process', 'dispatched', 'delivered', 'received'].includes(order.status)" 
+                                                    src="/assets/images/approved.png" class="w-12 h-12" alt="Approved" />
+                                                
+                                                <!-- Only show in_process if status is in_process or further -->
+                                                <img v-if="['in_process', 'dispatched', 'delivered', 'received'].includes(order.status)" 
+                                                    src="/assets/images/inprocess.png" class="w-12 h-12" alt="In Process" />
+                                                
+                                                <!-- Only show dispatched if status is dispatched or further -->
+                                                <img v-if="['dispatched', 'delivered', 'received'].includes(order.status)" 
+                                                    src="/assets/images/dispatch.png" class="w-12 h-12" alt="Dispatched" />
+                                                
+                                                <!-- Only show delivered if status is delivered or received -->
+                                                <img v-if="['delivered', 'received'].includes(order.status)" 
+                                                    src="/assets/images/delivery.png" class="w-12 h-12" alt="Delivered" />
+                                                
+                                                <!-- Only show received if status is received -->
+                                                <img v-if="order.status === 'received'" 
+                                                    src="/assets/images/received.png" class="w-12 h-12" alt="Received" />
                                             </div>
                                         </div>
                                     </td>
