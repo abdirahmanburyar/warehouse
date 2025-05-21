@@ -8,6 +8,7 @@ use App\Models\IssuedQuantity;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Facility;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -33,11 +34,10 @@ class ReportController extends Controller
 
     public function monthlyConsumption(Request $request)
     {
-        // Get filter parameters
         $facilityId = $request->input('facility_id');
-        $productId = $request->input('product_id');
-        $startMonth = $request->input('start_month');
-        $endMonth = $request->input('end_month');
+        // Product filtering is now handled client-side
+        $startMonth = $request->input('start_month', Carbon::now()->startOfYear()->format('Y-m'));
+        $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
         $isSubmitted = $request->input('is_submitted', false);
         
         // Initialize empty data
@@ -86,10 +86,7 @@ class ReportController extends Controller
                     ->where('mc.month_year', '>=', $startMonth)
                     ->where('mc.month_year', '<=', $endMonth);
                 
-                // Apply product filter if provided
-                if ($productId) {
-                    $query->where('mc.product_id', $productId);
-                }
+                // Product filtering is now handled client-side
                 
                 // Group by product
                 $query->groupBy('mc.product_id', 'p.name');
@@ -116,7 +113,6 @@ class ReportController extends Controller
             'facilityInfo' => $facilityInfo,
             'filters' => [
                 'facility_id' => $facilityId,
-                'product_id' => $productId,
                 'start_month' => $startMonth,
                 'end_month' => $endMonth
             ]

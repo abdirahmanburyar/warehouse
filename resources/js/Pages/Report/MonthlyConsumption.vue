@@ -4,57 +4,47 @@
             <div class="p-6 bg-white border-b border-gray-200">
                 <h1 class="text-2xl font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
 
-                <!-- Filters -->
-                <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                <!-- We'll move the product filter to the item column header -->
+
+                <!-- Filters in a single row -->
+                <div class="mb-6 flex flex-wrap items-end gap-4">
+                    <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
-                        <select v-model="filters.facility_id"
+                        <Multiselect 
+                            v-model="filters.facility_id"
+                            :options="[{id: null, name: 'All Facilities'}, ...facilities]"
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :show-labels="false"
+                            :allow-empty="true" 
+                            placeholder="Select Facility" 
+                            track-by="id" 
+                            label="name"
+                            class="mt-1">
+                            <template v-slot:option="{ option }">
+                                <div>
+                                    <span>{{ option.name }} {{ option.id ? `(${option.facility_type})` : '' }}</span>
+                                </div>
+                            </template>
+                        </Multiselect>
+                    </div>
+
+                    <div class="w-40">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
+                        <input type="month" v-model="filters.start_month"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-                            <option :value="null">All Facilities</option>
-                            <option v-for="facility in facilities" :key="facility.id" :value="facility.id">
-                                {{ facility.name }} ({{ facility.facility_type }})
-                            </option>
-                        </select>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                        <select v-model="filters.product_id"
+                    
+                    <div class="w-40">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
+                        <input type="month" v-model="filters.end_month"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-                            <option :value="null">All Products</option>
-                            <option v-for="product in products" :key="product.id" :value="product.id">
-                                {{ product.name }}
-                            </option>
-                        </select>
                     </div>
 
-                    <div class="flex space-x-4">
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
-                            <input type="month" v-model="filters.start_month"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" />
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
-                            <input type="month" v-model="filters.end_month"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" />
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-3 flex justify-end space-x-4 items-center">
-                        <div v-if="loading" class="flex items-center">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span class="text-sm text-gray-600">Loading data...</span>
-                        </div>
-                        <button @click="clearFilters" :disabled="loading"
-                            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Clear Filters
+                    <div class="flex space-x-2">
+                        <button @click="clearFilters"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Clear
                         </button>
                         <button @click="exportToExcel" v-if="pivotData.length > 0" :disabled="loading"
                             class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
@@ -64,8 +54,12 @@
                             Export to Excel
                         </button>
                         <button @click="applyFilters" :disabled="loading"
-                            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                            Generate Report
+                            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ loading ? 'Generating' : 'Generate'  }}
                         </button>
                     </div>
                 </div>
@@ -122,14 +116,31 @@
 
                 <!-- Data Table -->
                 <div class="overflow-x-auto">
-                    <table v-if="pivotData.length > 0" class="min-w-full border-collapse border border-gray-200">
+                    <table v-if="filteredPivotData && filteredPivotData.length > 0" class="min-w-full divide-y divide-gray-200 border">
                         <thead class="bg-gray-50">
                             <tr class="border-b border-gray-200">
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     SN
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Items
+                                    <div class="flex flex-col">
+                                        <span class="mb-2">Items Description</span>
+                                        <div v-if="pivotData && pivotData.length > 0" class="flex">
+                                            <input 
+                                                v-model="localFilters.productSearch" 
+                                                type="text" 
+                                                placeholder="Filter items..." 
+                                                class="block w-full text-sm font-normal rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                                            >
+                                            <button 
+                                                v-if="localFilters.productSearch" 
+                                                @click="localFilters.productSearch = ''" 
+                                                class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    </div>
                                 </th>
                                 <!-- Regular month columns and average columns after every 3 months -->
                                 <template v-for="(month, index) in months" :key="month">
@@ -149,8 +160,8 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr v-for="row in pivotData" :key="row.product_id" class="border-b border-gray-200">
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="(row, index) in filteredPivotData" :key="index" class="border-b border-gray-200">
                                 <td
                                     class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 text-center">
                                     {{ row.sn }}
@@ -182,6 +193,16 @@
                         </tbody>
                     </table>
 
+                    <div v-else-if="pivotData && pivotData.length > 0 && filteredPivotData.length === 0" class="text-center py-10 text-gray-500">
+                        No products match your search criteria. Clear the search to see all products.
+                    </div>
+                    <div v-else-if="loading" class="text-center py-10 text-gray-500">
+                        <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p>Loading consumption data...</p>
+                    </div>
                     <div v-else class="text-center py-10 text-gray-500">
                         No consumption data found for the selected filters.
                     </div>
@@ -192,11 +213,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 
 const props = defineProps({
     pivotData: Array,
@@ -204,13 +228,29 @@ const props = defineProps({
     facilities: Array,
     products: Array,
     facilityInfo: Object,
-    filters: Object
+    yearMonths: Array,
+});
+
+// For local filtering after report is loaded
+const localFilters = ref({
+    productSearch: ''
+});
+
+// Filtered data based on text search
+const filteredPivotData = computed(() => {
+    if (!props.pivotData || !localFilters.value.productSearch) {
+        return props.pivotData;
+    }
+    
+    const searchTerm = localFilters.value.productSearch.toLowerCase();
+    return props.pivotData.filter(item => 
+        item.item_name && item.item_name.toLowerCase().includes(searchTerm)
+    );
 });
 
 // Initialize filters with props values or defaults
 const filters = ref({
     facility_id: props.filters?.facility_id || null,
-    product_id: props.filters?.product_id || null,
     start_month: props.filters?.start_month || '',
     end_month: props.filters?.end_month || ''
 });
