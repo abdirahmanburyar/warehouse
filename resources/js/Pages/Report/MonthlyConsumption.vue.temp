@@ -1,0 +1,55 @@
+// Handle Excel file upload
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate facility selection
+    if (!filters.value.facility_id) {
+        Swal.fire({
+            title: 'Facility Required',
+            text: 'Please select a facility before uploading consumption data.',
+            icon: 'warning',
+            confirmButtonColor: '#f97316'
+        });
+        if (fileInput.value) fileInput.value.value = null;
+        return;
+    }
+    
+    uploading.value = true;
+    
+    try {
+        // Create form data
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('facility_id', filters.value.facility_id);
+        
+        // Upload the file
+        const response = await axios.post(route('reports.upload-consumption'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        // Show success message
+        Swal.fire({
+            title: 'Upload Successful',
+            text: response.data.message,
+            icon: 'success',
+            confirmButtonColor: '#f97316'
+        });
+        
+        // Reload the data
+        applyFilters();
+    } catch (error) {
+        // Show error message
+        Swal.fire({
+            title: 'Upload Failed',
+            text: error.response?.data?.message || 'An error occurred while uploading the file.',
+            icon: 'error',
+            confirmButtonColor: '#f97316'
+        });
+    } finally {
+        uploading.value = false;
+        if (fileInput.value) fileInput.value.value = null; // Reset file input
+    }
+}

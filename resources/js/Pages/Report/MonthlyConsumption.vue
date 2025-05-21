@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout>
+        <AuthenticatedLayout title="Review Your Reports" description="Facilities - Monthly Consumptions" img="/assets/images/report.png">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-[100px]">
             <div class="p-6 bg-white border-b border-gray-200">
                 <h1 class="text-2xl font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
@@ -60,6 +60,15 @@
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             {{ loading ? 'Generating' : 'Generate'  }}
+                        </button>
+                        
+                        <!-- Excel Upload Button -->
+                        <button @click="openUploadModal" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            Upload Excel
                         </button>
                     </div>
                 </div>
@@ -209,11 +218,83 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Excel Upload Modal -->
+        <div v-if="showUploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-[60%] mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium">Upload Consumption Data</h3>
+                    <button @click="showUploadModal = false" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Facility</label>
+                    <Multiselect 
+                        v-model="modalFacilityId"
+                        :options="facilities"
+                        :searchable="true" 
+                        :close-on-select="true" 
+                        :show-labels="false"
+                        :allow-empty="false" 
+                        placeholder="Select Facility" 
+                        track-by="id" 
+                        label="name"
+                        class="mt-1">
+                        <template v-slot:option="{ option }">
+                            <div>
+                                <span>{{ option.name }} {{ option.facility_type ? `(${option.facility_type})` : '' }}</span>
+                            </div>
+                        </template>
+                    </Multiselect>
+                    <p v-if="modalFacilityError" class="mt-1 text-sm text-red-600">{{ modalFacilityError }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Excel File</label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col w-full h-32 border-2 border-dashed hover:bg-gray-100 hover:border-gray-300 rounded-lg">
+                            <div class="flex flex-col items-center justify-center pt-7" v-if="!selectedFile">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">Select Excel file</p>
+                            </div>
+                            <div class="flex flex-col items-center justify-center pt-7" v-else>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <p class="pt-1 text-sm text-gray-700">{{ selectedFile.name }}</p>
+                                <p class="text-xs text-gray-500">{{ formatFileSize(selectedFile.size) }}</p>
+                            </div>
+                            <input type="file" class="opacity-0" @change="handleFileSelect" accept=".xlsx, .xls" />
+                        </label>
+                    </div>
+                    <p v-if="fileError" class="mt-1 text-sm text-red-600">{{ fileError }}</p>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button @click="showUploadModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                    <button @click="uploadFile" :disabled="uploading" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <svg v-if="uploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ uploading ? 'Uploading...' : 'Upload' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import * as XLSX from 'xlsx';
@@ -221,6 +302,7 @@ import Swal from 'sweetalert2';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
+import axios from 'axios';
 
 const props = defineProps({
     pivotData: Array,
@@ -255,8 +337,17 @@ const filters = ref({
     end_month: props.filters?.end_month || ''
 });
 
-// Loading state
+// Loading states
 const loading = ref(false);
+const uploading = ref(false);
+const fileInput = ref(null);
+
+// Upload modal states
+const showUploadModal = ref(false);
+const modalFacilityId = ref(null);
+const modalFacilityError = ref(null);
+const selectedFile = ref(null);
+const fileError = ref(null);
 
 // Apply filters and reload data
 function applyFilters() {
@@ -291,7 +382,20 @@ function applyFilters() {
 
     // Set loading state
     loading.value = true;
-
+    
+    // Show loading indicator
+    Swal.fire({
+        title: 'Generating Report',
+        text: 'Preparing report data...',
+        icon: 'info',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Directly fetch the data with current filters - don't clear filters
     router.get(route('reports.monthlyConsumption'), {
         facility_id: filters.value.facility_id,
         product_id: filters.value.product_id,
@@ -304,12 +408,25 @@ function applyFilters() {
         onFinish: () => {
             // Reset loading state when request completes
             loading.value = false;
+            Swal.close();
         }
     });
 }
 
 // Clear all filters and reset to default values
 function clearFilters() {
+    // Show loading indicator
+    Swal.fire({
+        title: 'Clearing Data',
+        text: 'Clearing all filters, facility information, and report data...',
+        icon: 'info',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
     // Reset filters to default values
     filters.value = {
         facility_id: null,
@@ -323,36 +440,24 @@ function clearFilters() {
     const baseUrl = window.location.pathname;
     window.history.replaceState({}, document.title, baseUrl);
     
-    // Clear the data display if any exists
-    if (props.pivotData && props.pivotData.length > 0) {
-        router.visit(route('reports.monthlyConsumption'), {
-            method: 'get',
-            data: {},
-            preserveState: false,
-            replace: true,
-            onSuccess: () => {
-                // Show a success message
-                Swal.fire({
-                    title: 'Filters Cleared',
-                    text: 'All filters have been reset to default values',
-                    icon: 'success',
-                    confirmButtonColor: '#f97316',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            }
-        });
-    } else {
-        // Show a success message
-        Swal.fire({
-            title: 'Filters Cleared',
-            text: 'All filters have been reset to default values',
-            icon: 'success',
-            confirmButtonColor: '#f97316',
-            timer: 2000,
-            timerProgressBar: true
-        });
-    }
+    // Always clear the data display completely
+    router.visit(route('reports.monthlyConsumption'), {
+        method: 'get',
+        data: {},
+        preserveState: false,
+        replace: true,
+        onSuccess: () => {
+            // Show a success message
+            Swal.fire({
+                title: 'Data Cleared',
+                text: 'All filters, facility information, and report data have been cleared',
+                icon: 'success',
+                confirmButtonColor: '#f97316',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+    });
 }
 
 // Format month from YYYY-MM to MMM YYYY (e.g., 2025-05 to May 2025)
@@ -367,6 +472,207 @@ function formatMonthShort(monthStr) {
     const [year, month] = monthStr.split('-');
     const date = new Date(year, parseInt(month) - 1);
     return date.toLocaleDateString('en-US', { month: 'short' });
+}
+
+// Open the upload modal
+function openUploadModal() {
+    showUploadModal.value = true;
+    
+    // Set the selected facility in the modal
+    if (filters.value.facility_id) {
+        // Find the facility object that matches the ID
+        const selectedFacility = props.facilities.find(f => f.id === filters.value.facility_id);
+        modalFacilityId.value = selectedFacility || null;
+    } else {
+        modalFacilityId.value = null;
+    }
+    
+    selectedFile.value = null;
+    fileError.value = null;
+    modalFacilityError.value = null;
+}
+
+// Handle file selection in the modal
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!validTypes.includes(file.type)) {
+        fileError.value = 'Please select a valid Excel file (.xlsx or .xls)';
+        selectedFile.value = null;
+        return;
+    }
+    
+    selectedFile.value = file;
+    fileError.value = null;
+}
+
+// Format file size for display
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Upload file from the modal
+async function uploadFile() {
+    // Reset errors
+    fileError.value = null;
+    modalFacilityError.value = null;
+    
+    // Validate inputs
+    if (!modalFacilityId.value) {
+        modalFacilityError.value = 'Please select a facility';
+        return;
+    }
+    
+    if (!selectedFile.value) {
+        fileError.value = 'Please select an Excel file';
+        return;
+    }
+    
+    // Get the facility ID from the selected facility object
+    const facilityId = modalFacilityId.value.id;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', selectedFile.value);
+    formData.append('facility_id', parseInt(facilityId));
+    
+    // Set uploading state
+    uploading.value = true;
+    
+    try {
+        // Upload the file
+        const response = await axios.post(route('reports.upload-consumption'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        // Show success message
+        Swal.fire({
+            title: 'Upload Successful',
+            text: 'File uploaded successfully. Previous report data has been cleared.',
+            icon: 'success',
+            confirmButtonColor: '#f97316'
+        });
+        
+        // Close modal and reset form
+        showUploadModal.value = false;
+        selectedFile.value = null;
+        
+        // Store the facility object before resetting modalFacilityId
+        const uploadedFacility = modalFacilityId.value;
+        modalFacilityId.value = null;
+        
+        // Update filters to match the uploaded facility (using the full facility object)
+        filters.value.facility_id = uploadedFacility;
+        
+        // Set date range from February to December of current year
+        const currentYear = new Date().getFullYear();
+        filters.value.start_month = `${currentYear}-02`; // February
+        filters.value.end_month = `${currentYear}-12`;   // December
+        
+        // Log the selected facility for debugging
+        console.log('Selected facility after upload:', filters.value.facility_id);
+        
+        // Refresh report data with explicit facility_id
+        applyFilters();
+    } catch (error) {
+        console.error('Upload error:', error);
+        
+        let errorMessage = 'An error occurred during upload';
+        
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.log('Error data:', error.response.data);
+            console.log('Error status:', error.response.status);
+            
+            if (error.response.data.errors) {
+                const errors = error.response.data.errors;
+                if (errors.facility_id) {
+                    modalFacilityError.value = errors.facility_id[0];
+                }
+                if (errors.file) {
+                    fileError.value = errors.file[0];
+                }
+                errorMessage = 'Please correct the errors above';
+            } else if (error.response.data.message) {
+                errorMessage = error.response.data.message;
+            }
+        }
+        
+        Swal.fire({
+            title: 'Upload Error',
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonColor: '#f97316'
+        });
+    } finally {
+        uploading.value = false;
+    }
+}
+
+// Legacy file upload handler (keeping for backward compatibility)
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate facility selection - must be a specific facility with an integer ID
+    if (!Number.isInteger(Number(filters.value.facility_id))) {
+        Swal.fire({
+            title: 'Specific Facility Required',
+            text: 'Please select a specific facility before uploading consumption data. "All Facilities" option cannot be used for uploads.',
+            icon: 'warning',
+            confirmButtonColor: '#f97316'
+        });
+        if (fileInput.value) fileInput.value.value = null;
+        return;
+    }
+    
+    uploading.value = true;
+    
+    try {
+        // Create form data
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('facility_id', filters.value.facility_id);
+        
+        // Upload the file
+        const response = await axios.post(route('reports.upload-consumption'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        // Show success message
+        Swal.fire({
+            title: 'Upload Successful',
+            text: response.data.message,
+            icon: 'success',
+            confirmButtonColor: '#f97316'
+        });
+        
+        // Reload the data
+        applyFilters();
+    } catch (error) {
+        // Show error message
+        Swal.fire({
+            title: 'Upload Failed',
+            text: error.response?.data?.message || 'An error occurred while uploading the file.',
+            icon: 'error',
+            confirmButtonColor: '#f97316'
+        });
+    } finally {
+        uploading.value = false;
+        if (fileInput.value) fileInput.value.value = null; // Reset file input
+    }
 }
 
 // Format year from YYYY-MM to YY (e.g., 2025-05 to 25)

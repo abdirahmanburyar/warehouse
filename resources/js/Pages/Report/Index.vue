@@ -69,6 +69,11 @@
                             <li>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Order History</a>
                             </li>
+                            <li>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                                    <Link :href="route('reports.monthlyConsumption')">Monthly Consumption</Link>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
