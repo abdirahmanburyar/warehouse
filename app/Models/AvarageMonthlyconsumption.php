@@ -25,8 +25,7 @@ class AvarageMonthlyconsumption extends Model
         'facility_id',
         'product_id',
         'month_year',
-        'quantity',
-        'amc'
+        'quantity'
     ];
 
     /**

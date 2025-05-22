@@ -83,14 +83,35 @@ class TransferController extends Controller
         }
     }
 
+    public function dispatch($id)
+    {
+        try {
+            $transfer = Transfer::findOrFail($id);
+            
+            if ($transfer->status !== 'in_process') {
+                return response()->json(['message' => 'Transfer must be in process to be dispatched'], 400);
+            }
+
+            $transfer->update([
+                'status' => 'dispatched',
+                'dispatched_by' => Auth::id(),
+                'dispatched_at' => now()
+            ]);
+
+            return response()->json(['message' => 'Transfer has been dispatched']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to dispatch transfer: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function completeTransfer($id)
     {
         DB::beginTransaction();
         try {
             $transfer = Transfer::with(['toWarehouse', 'toFacility', 'items.product'])->findOrFail($id);
             
-            if ($transfer->status !== 'in_process') {
-                return response()->json(['message' => 'Transfer must be in process to be completed'], 500);
+            if ($transfer->status !== 'dispatched') {
+                return response()->json(['message' => 'Transfer must be dispatched to be completed'], 400);
             }
 
             // Check if the transfer is to a warehouse or facility
@@ -182,15 +203,81 @@ class TransferController extends Controller
 
     public function index(Request $request)
     {
-        $transfers = Transfer::with('fromWarehouse','toWarehouse','fromFacility','toFacility')->get();
+        // Start building the query
+        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility', 'toFacility', 'items');
         
-        // Calculate statistics
-        $total = $transfers->count();
-        $approvedCount = $transfers->whereIn('status', ['approved', 'in_process', 'dispatched', 'transferred'])->count();
-        $inProcessCount = $transfers->whereIn('status', ['in_process', 'dispatched'])->count();
-        $transferredCount = $transfers->where('status', 'transferred')->count();
-        $rejectedCount = $transfers->where('status', 'rejected')->count();
-        $pendingCount = $transfers->where('status', 'pending')->count();
+        // Apply filters
+        // Filter by tab/status
+        if ($request->has('tab') && $request->tab !== 'all') {
+            $query->where('status', $request->tab);
+        }
+        
+        // Filter by search term
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('transferID', 'like', $searchTerm)
+                  ->orWhereHas('fromFacility', function($q) use ($searchTerm) {
+                      $q->where('name', 'like', $searchTerm);
+                  })
+                  ->orWhereHas('toFacility', function($q) use ($searchTerm) {
+                      $q->where('name', 'like', $searchTerm);
+                  })
+                  ->orWhereHas('fromWarehouse', function($q) use ($searchTerm) {
+                      $q->where('name', 'like', $searchTerm);
+                  })
+                  ->orWhereHas('toWarehouse', function($q) use ($searchTerm) {
+                      $q->where('name', 'like', $searchTerm);
+                  });
+            });
+        }
+        
+        // Filter by facility (supports multiple selections)
+        if ($request->has('facility_id') && !empty($request->facility_id)) {
+            $facilityIds = explode(',', $request->facility_id);
+            $query->where(function($q) use ($facilityIds) {
+                $q->whereIn('from_facility_id', $facilityIds)
+                  ->orWhereIn('to_facility_id', $facilityIds);
+            });
+        }
+        
+        // Filter by warehouse (supports multiple selections)
+        if ($request->has('warehouse_id') && !empty($request->warehouse_id)) {
+            $warehouseIds = explode(',', $request->warehouse_id);
+            $query->where(function($q) use ($warehouseIds) {
+                $q->whereIn('from_warehouse_id', $warehouseIds)
+                  ->orWhereIn('to_warehouse_id', $warehouseIds);
+            });
+        }
+        
+        // Filter by location (supports multiple selections)
+        if ($request->has('location_id') && !empty($request->location_id)) {
+            $locationIds = explode(',', $request->location_id);
+            $query->whereHas('items', function($q) use ($locationIds) {
+                $q->whereIn('location_id', $locationIds);
+            });
+        }
+        
+        // Filter by date range
+        if ($request->has('date_from') && !empty($request->date_from)) {
+            $query->whereDate('transfer_date', '>=', $request->date_from);
+        }
+        
+        if ($request->has('date_to') && !empty($request->date_to)) {
+            $query->whereDate('transfer_date', '<=', $request->date_to);
+        }
+        
+        // Execute the query
+        $transfers = $query->get();
+        
+        // Get all transfers for statistics (unfiltered)
+        $allTransfers = Transfer::all();
+        $total = $allTransfers->count();
+        $approvedCount = $allTransfers->whereIn('status', ['approved', 'in_process', 'dispatched', 'transferred'])->count();
+        $inProcessCount = $allTransfers->whereIn('status', ['in_process', 'dispatched'])->count();
+        $transferredCount = $allTransfers->where('status', 'transferred')->count();
+        $rejectedCount = $allTransfers->where('status', 'rejected')->count();
+        $pendingCount = $allTransfers->where('status', 'pending')->count();
         
         $statistics = [
             'approved' => [
@@ -219,10 +306,19 @@ class TransferController extends Controller
                 'stages' => ['rejected']
             ]
         ];
+        
+        // Get data for filter dropdowns
+        $facilities = Facility::select('id', 'name')->orderBy('name')->get();
+        $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
+        $locations = DB::table('locations')->select('id', 'location')->orderBy('location')->get();
 
         return inertia('Transfer/Index', [
             'transfers' => $transfers,
-            'statistics' => $statistics
+            'statistics' => $statistics,
+            'facilities' => $facilities,
+            'warehouses' => $warehouses,
+            'locations' => $locations,
+            'filters' => $request->only(['search', 'facility_id', 'warehouse_id', 'location_id', 'date_from', 'date_to', 'tab'])
         ]);
     }
 
@@ -358,20 +454,52 @@ class TransferController extends Controller
             'source_id' => 'required|integer',
         ]);
         
-        if ($request->source_type === 'warehouse') {
-            // Get warehouse inventories
-            $inventories = Inventory::with('product')
-                ->where('warehouse_id', $request->source_id)
-                ->where('quantity', '>', 0)
-                ->get();
-        } else {
-            // Get facility inventories
-            $inventories = FacilityInventory::with('product')
-                ->where('facility_id', $request->source_id)
-                ->where('quantity', '>', 0)
-                ->get();
+        try {
+            if ($request->source_type === 'warehouse') {
+                // Get warehouse inventories
+                $inventories = Inventory::with(['product', 'warehouse'])
+                    ->where('warehouse_id', $request->source_id)
+                    ->where('quantity', '>', 0)
+                    ->get()
+                    ->map(function ($inventory) {
+                        return [
+                            'id' => $inventory->id,
+                            'product_id' => $inventory->product_id,
+                            'product_name' => $inventory->product->name,
+                            'batch_number' => $inventory->batch_number,
+                            'barcode' => $inventory->barcode,
+                            'expire_date' => $inventory->expire_date,
+                            'uom' => $inventory->uom,
+                            'available_quantity' => $inventory->quantity,
+                            'warehouse_id' => $inventory->warehouse_id,
+                            'warehouse_name' => $inventory->warehouse->name
+                        ];
+                    });
+            } else {
+                // Get facility inventories
+                $inventories = FacilityInventory::with(['product', 'facility'])
+                    ->where('facility_id', $request->source_id)
+                    ->where('quantity', '>', 0)
+                    ->get()
+                    ->map(function ($inventory) {
+                        return [
+                            'id' => $inventory->id,
+                            'product_id' => $inventory->product_id,
+                            'product_name' => $inventory->product->name,
+                            'batch_number' => $inventory->batch_number,
+                            'barcode' => $inventory->barcode,
+                            'expire_date' => $inventory->expire_date,
+                            'uom' => $inventory->uom,
+                            'available_quantity' => $inventory->quantity,
+                            'facility_id' => $inventory->facility_id,
+                            'facility_name' => $inventory->facility->name
+                        ];
+                    });
+            }
+            
+            return response()->json($inventories);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-        
-        return response()->json($inventories);
     }
 }

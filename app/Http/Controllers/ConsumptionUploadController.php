@@ -136,9 +136,7 @@ class ConsumptionUploadController extends Controller
                         // Get quantity from cell
                         $quantity = is_numeric($row[$monthIndex]) ? (int)$row[$monthIndex] : 0;
                         
-                        // Calculate AMC (for now, just use the quantity as AMC)
-                        // In a real implementation, you would calculate the average based on multiple months
-                        $amc = $quantity;
+                        // AMC is now calculated dynamically in the report, not stored in the database
                         
                         // Add to records
                         $records[] = [
@@ -146,7 +144,6 @@ class ConsumptionUploadController extends Controller
                             'product_id' => $productId,
                             'month_year' => $monthYear,
                             'quantity' => $quantity,
-                            'amc' => $amc,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];

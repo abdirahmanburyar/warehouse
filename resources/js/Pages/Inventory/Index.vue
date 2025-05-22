@@ -615,8 +615,8 @@ const echo = ref(null);
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div class="flex flex-col">
-                                            {{ inventory.product.category?.name }}
-                                            <span cass="text-xs">Dosage Form: {{ inventory.product?.dosage?.name }}</span>
+                                            {{ inventory.product?.category?.name || 'N/A' }}
+                                            <span class="text-xs">Dosage Form: {{ inventory.product?.dosage?.name || 'N/A' }}</span>
                                         </div>
                                     </td>
                                     <td

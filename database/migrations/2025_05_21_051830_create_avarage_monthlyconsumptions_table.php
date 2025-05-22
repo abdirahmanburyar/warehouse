@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('month_year');
             $table->integer('quantity')->default(0)->comment('Actual consumption quantity for this month');
-            $table->integer('amc')->default(0)->comment('Avarage consumption');
             $table->timestamps();
             
             // Create a unique index to ensure we only have one record per facility/product/month-year combination

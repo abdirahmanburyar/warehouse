@@ -67,10 +67,27 @@ class ReportController extends Controller
                 // Build the dynamic SQL for the pivot table
                 $monthColumns = [];
                 
-                // Just add the regular month columns for now
+                // Add the regular month columns
                 foreach ($monthsQuery as $month) {
                     $monthColumns[] = "MAX(CASE WHEN mc.month_year = '{$month}' THEN mc.quantity ELSE 0 END) as '{$month}'";
                 }
+                
+                // Add AMC column (calculated from the last 3-4 months)
+                $monthsArray = $monthsQuery->toArray();
+                $monthCount = count($monthsArray);
+                
+                if ($monthCount >= 3) {
+                    // Take the last 3 or 4 months for AMC calculation
+                    $amcMonths = array_slice($monthsArray, max(0, $monthCount - 4), min(4, $monthCount));
+                    $amcCalc = [];
+                    
+                    foreach ($amcMonths as $month) {
+                        $amcCalc[] = "COALESCE(MAX(CASE WHEN mc.month_year = '{$month}' THEN mc.quantity ELSE 0 END), 0)";
+                    }
+                    
+                    $amcFormula = "ROUND((".implode(" + ", $amcCalc).") / ".count($amcCalc).", 0)";
+                    $monthColumns[] = "{$amcFormula} as 'AMC'";  
+                }    
                 
                 $monthColumnsStr = implode(", ", $monthColumns);
                 

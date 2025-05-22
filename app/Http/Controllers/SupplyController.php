@@ -99,7 +99,7 @@ class SupplyController extends Controller
                         'items' => $po->items->map(function($item) {
                             return [
                                 'id' => $item->id,
-                                'product_name' => $item->product->name,
+                                'product_name' => "kk",
                                 'quantity' => $item->quantity,
                                 'unit_cost' => $item->unit_cost,
                                 'total_cost' => $item->quantity * $item->unit_cost

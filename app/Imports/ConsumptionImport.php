@@ -2,8 +2,10 @@
 
 namespace App\Imports;
 
-use App\Models\MonthlyConsumption;
+use App\Models\AvarageMonthlyconsumption;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Dosage;
 use App\Models\EligibleItem;
 use App\Models\Facility;
 use Illuminate\Support\Collection;
@@ -131,27 +133,28 @@ class ConsumptionImport implements ToCollection
                             
                             Log::info("Found existing product: {$itemName} with ID: {$productId}");
                         } else {
-                            // Product doesn't exist, create a new one with a unique 6-digit productID
-                            $latestProduct = Product::orderBy('created_at', 'desc')->first();
-                            $nextId = 1;
-                            
-                            if ($latestProduct && $latestProduct->productID) {
-                                $nextId = (int)$latestProduct->productID + 1;
-                            }
-                            
-                            $productID = str_pad($nextId, 6, '0', STR_PAD_LEFT);
-                            
-                            // Create the product
+                            // Create the product - productID will be auto-generated in the Product model boot method
                             $product = new Product();
                             $product->name = $itemName;
-                            $product->description = $itemName;
-                            $product->productID = $productID;
+                            
+                            // Set category_id if needed
+                            if (isset($row['category']) && !empty($row['category'])) {
+                                $category = Category::firstOrCreate(['name' => $row['category']]);
+                                $product->category_id = $category->id;
+                            }
+                            
+                            // Set dosage_id if needed
+                            if (isset($row['dosage_form']) && !empty($row['dosage_form'])) {
+                                $dosage = Dosage::firstOrCreate(['name' => $row['dosage_form']]);
+                                $product->dosage_id = $dosage->id;
+                            }
+                            
                             $product->save();
                             
                             $productId = $product->id;
                             $this->productCache[$itemName] = $productId;
                             
-                            Log::info("Created new product: {$itemName} with ID: {$productId} and productID: {$productID}");
+                            Log::info("Created new product: {$itemName} with ID: {$productId} and productID: {$product->productID}");
                         }
                         
                         // Check if this product is already in eligible_items for this facility type
@@ -196,17 +199,12 @@ class ConsumptionImport implements ToCollection
                         $quantity = (float)$row[$monthKey];
                     }
                     
-                    // Calculate AMC with proper rounding (≥ 0.5 rounds up, < 0.5 rounds down)
-                    // For example, 100.5 becomes 101, but 100.4 becomes 100
-                    $amc = round($quantity);
-                    
                     // Add to records
                     $this->records[] = [
                         'facility_id' => $this->facilityId,
                         'product_id' => $productId,
                         'month_year' => $monthYear,
                         'quantity' => $quantity,
-                        'amc' => $amc,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
@@ -224,15 +222,14 @@ class ConsumptionImport implements ToCollection
         // Insert or update records in a single batch
         if (!empty($this->records)) {
             foreach ($this->records as $record) {
-                MonthlyConsumption::updateOrCreate(
+                AvarageMonthlyconsumption::updateOrCreate(
                     [
                         'facility_id' => $record['facility_id'],
                         'product_id' => $record['product_id'],
                         'month_year' => $record['month_year']
                     ],
                     [
-                        'quantity' => $record['quantity'],
-                        'amc' => $record['amc']
+                        'quantity' => $record['quantity']
                     ]
                 );
             }
@@ -244,19 +241,34 @@ class ConsumptionImport implements ToCollection
      */
     private function saveRecords()
     {
-        foreach ($this->records as $record) {
-            MonthlyConsumption::updateOrCreate(
-                [
-                    'facility_id' => $record['facility_id'],
-                    'product_id' => $record['product_id'],
-                    'month_year' => $record['month_year']
-                ],
-                [
-                    'quantity' => $record['quantity'],
-                    'amc' => $record['amc']
-                ]
-            );
+        if (empty($this->records)) {
+            return;
         }
+        
+        // Filter out records with null product_id
+        $validRecords = array_filter($this->records, function($record) {
+            return !is_null($record['product_id']);
+        });
+        
+        if (empty($validRecords)) {
+            Log::warning("No valid records to save (all had null product_id)");
+            $this->records = [];
+            return;
+        }
+        
+        try {
+            // Insert records in chunks to avoid memory issues
+            $chunks = array_chunk($validRecords, 100);
+            foreach ($chunks as $chunk) {
+                AvarageMonthlyconsumption::insert($chunk);
+            }
+            
+            Log::info("Saved " . count($validRecords) . " consumption records");
+        } catch (\Exception $e) {
+            Log::error("Error saving consumption records: " . $e->getMessage());
+        }
+        
+        // Clear records array
         $this->records = [];
     }
     

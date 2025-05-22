@@ -19,11 +19,13 @@ return new class extends Migration
             $table->foreignIdFor(User::class)->cascadeOnDelete();
             $table->string('order_number')->unique();
             $table->string('order_type');
-            $table->enum('status', ['pending', 'approved', 'in_process', 'dispatched', 'delivered', 'received'])->default('pending');
+            $table->enum('status', ['pending', 'approved','rejected', 'in_process', 'dispatched', 'delivered', 'received'])->default('pending');
             $table->dateTime('order_date');
             $table->date('expected_date')->nullable();
             $table->foreignIdFor(User::class, 'approved_by')->nullable();
+            $table->foreignIdFor(User::class, 'rejected_by')->nullable();
             $table->dateTime('approved_at')->nullable();
+            $table->dateTime('rejected_at')->nullable();
             $table->foreignIdFor(User::class, 'dispatched_by')->nullable();
             $table->dateTime('dispatched_at')->nullable();
             $table->timestamps();

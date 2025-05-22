@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <AuthenticatedLayout :title="`Transfer - ${props.transfer.transferID}`">
     <!-- Transfer Header -->
     <div v-if="props.error">
       {{ props.error }}
@@ -31,11 +31,12 @@
             <BuildingOfficeIcon class="h-5 w-5 text-gray-400 mr-2" />
             <span class="text-sm text-gray-600">Facility: {{ props.transfer.from_facility.name }}</span>
           </div>
-          <div v-if="!props.transfer.from_warehouse && !props.transfer.from_facility" class="text-sm text-gray-500 italic">
+          <div v-if="!props.transfer.from_warehouse && !props.transfer.from_facility"
+            class="text-sm text-gray-500 italic">
             No source location information available
           </div>
         </div>
-        
+
         <!-- To Location Information -->
         <div class="bg-gray-50 rounded-lg p-4 space-y-2">
           <h2 class="text-lg font-medium text-gray-900">To Location Details</h2>
@@ -51,9 +52,6 @@
             No destination location information available
           </div>
         </div>
-
-        <!-- Transfer Details -->
-       
       </div>
 
       <!-- Status Stage Timeline -->
@@ -62,8 +60,8 @@
           <!-- Timeline Track Background -->
           <div class="absolute top-5 left-0 right-0 h-1 bg-gray-200 z-0"></div>
 
-          <!-- Timeline Progress -->
-          <div class="absolute top-5 left-0 h-1 bg-orange-500 z-0 transition-all duration-500 ease-in-out" :style="{
+          <!-- Timeline Progress - changed to green -->
+          <div class="absolute top-5 left-0 h-1 bg-green-500 z-0 transition-all duration-500 ease-in-out" :style="{
             width: `${(statusOrder.indexOf(props.transfer.status) / (statusOrder.length - 1)) * 100}%`
           }"></div>
 
@@ -71,57 +69,72 @@
           <div class="relative flex justify-between">
             <!-- Pending -->
             <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('pending') ? 'bg-orange-500 border-orange-200' : 'bg-white border-gray-200']">
-                <img src="/assets/images/pending.svg" class="w-6 h-6" alt="Pending"
-                  :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('pending') ? '' : 'opacity-40'" />
+              <div class="w-10 h-10 rounded-full flex items-center justify-center z-10 relative">
+                <div class="absolute inset-0 rounded-full" :class="{
+                  'bg-white border-2 border-gray-200': statusOrder.indexOf(props.transfer.status) < statusOrder.indexOf('pending'),
+                  'bg-green-50 border-2 border-green-200': statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('pending')
+                }"></div>
+                <img src="/assets/images/pending.svg" class="w-6 h-6 z-10 relative" alt="Pending" />
               </div>
               <span class="mt-2 text-sm font-medium"
-                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('pending') ? 'text-orange-600' : 'text-gray-500'">Pending</span>
+                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('pending') ? 'text-green-600' : 'text-gray-500'">Pending</span>
             </div>
 
             <!-- Approved -->
             <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('approved') ? 'bg-orange-500 border-orange-200' : 'bg-white border-gray-200']">
-                <img src="/assets/images/approved.png" class="w-6 h-6" alt="Approved"
+              <div class="w-10 h-10 rounded-full flex items-center justify-center z-10 relative">
+                <div class="absolute inset-0 rounded-full" :class="{
+                  'bg-white border-2 border-gray-200': statusOrder.indexOf(props.transfer.status) < statusOrder.indexOf('approved'),
+                  'bg-green-50 border-2 border-green-200': statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('approved')
+                }"></div>
+                <img src="/assets/images/approved.png" class="w-6 h-6 z-10 relative" alt="Approved"
                   :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('approved') ? '' : 'opacity-40'" />
               </div>
               <span class="mt-2 text-sm font-medium"
-                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('approved') ? 'text-orange-600' : 'text-gray-500'">Approved</span>
+                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('approved') ? 'text-green-600' : 'text-gray-500'">Approved</span>
             </div>
 
             <!-- In Process -->
             <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('in_process') ? 'bg-orange-500 border-orange-200' : 'bg-white border-gray-200']">
-                <img src="/assets/images/inprocess.png" class="w-6 h-6" alt="In Process"
+              <div class="w-10 h-10 rounded-full flex items-center justify-center z-10 relative">
+                <div class="absolute inset-0 rounded-full" :class="{
+                  'bg-white border-2 border-gray-200': statusOrder.indexOf(props.transfer.status) < statusOrder.indexOf('in_process'),
+                  'bg-green-50 border-2 border-green-200': statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('in_process')
+                }"></div>
+                <img src="/assets/images/inprocess.png" class="w-6 h-6 z-10 relative" alt="In Process"
                   :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('in_process') ? '' : 'opacity-40'" />
               </div>
               <span class="mt-2 text-sm font-medium"
-                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('in_process') ? 'text-orange-600' : 'text-gray-500'">In Process</span>
+                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('in_process') ? 'text-green-600' : 'text-gray-500'">In
+                Process</span>
             </div>
 
-            <!-- Transferred -->
+            <!-- Dispatched (renamed from Transferred for clarity) -->
             <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('transferred') ? 'bg-orange-500 border-orange-200' : 'bg-white border-gray-200']">
-                <img src="/assets/images/dispatch.png" class="w-6 h-6" alt="Transferred"
+              <div class="w-10 h-10 rounded-full flex items-center justify-center z-10 relative">
+                <div class="absolute inset-0 rounded-full" :class="{
+                  'bg-white border-2 border-gray-200': statusOrder.indexOf(props.transfer.status) < statusOrder.indexOf('transferred'),
+                  'bg-green-50 border-2 border-green-200': statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('transferred')
+                }"></div>
+                <img src="/assets/images/dispatch.png" class="w-6 h-6 z-10 relative" alt="Dispatched"
                   :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('transferred') ? '' : 'opacity-40'" />
               </div>
               <span class="mt-2 text-sm font-medium"
-                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('transferred') ? 'text-orange-600' : 'text-gray-500'">Transferred</span>
+                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('transferred') ? 'text-green-600' : 'text-gray-500'">Dispatch</span>
             </div>
 
-            <!-- Received -->
+            <!-- Received (Delivered) -->
             <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('received') ? 'bg-orange-500 border-orange-200' : 'bg-white border-gray-200']">
-                <img src="/assets/images/received.png" class="w-6 h-6" alt="Received"
+              <div class="w-10 h-10 rounded-full flex items-center justify-center z-10 relative">
+                <div class="absolute inset-0 rounded-full" :class="{
+                  'bg-white border-2 border-gray-200': statusOrder.indexOf(props.transfer.status) < statusOrder.indexOf('received'),
+                  'bg-green-50 border-2 border-green-200': statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('received')
+                }"></div>
+                <img src="/assets/images/received.png" class="w-6 h-6 z-10 relative" alt="Delivered"
                   :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('received') ? '' : 'opacity-40'" />
               </div>
               <span class="mt-2 text-sm font-medium"
-                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('received') ? 'text-orange-600' : 'text-gray-500'">Received</span>
+                :class="statusOrder.indexOf(props.transfer.status) >= statusOrder.indexOf('received') ? 'text-green-600' : 'text-gray-500'">Delivered</span>
             </div>
           </div>
         </div>
@@ -135,37 +148,52 @@
             Total Items: <span class="font-medium">{{ props.transfer.items.length }}</span>
           </div>
         </div>
-        
+
         <div class="overflow-x-auto shadow-sm rounded-lg">
           <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
             <thead>
               <tr class="bg-gray-50">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[250px]">Product</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[100px]">UOM</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[100px]">Quantity</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[150px]">Barcode</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[150px]">Batch Number</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[150px]">Expiry Date</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[300px] min-w-[300px] max-w-[300px]">
+                  Product</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[100px]">
+                  UOM</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[100px]">
+                  Quantity</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[150px]">
+                  Barcode</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-[150px]">
+                  Batch Number</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[150px]">
+                  Expiry Date</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="item in props.transfer.items" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150">
+              <tr v-for="item in props.transfer.items" :key="item.id"
+                class="hover:bg-gray-50 transition-colors duration-150">
                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-200">
                   <div class="flex flex-col">
-                    <span class="font-medium">{{ item.product.name }}</span>
+                    <span class="font-medium">{{ item.product?.name || 'Unknown Product' }}</span>
                     <span class="text-xs text-gray-500">ID: {{ item.product_id }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-200">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     {{ item.uom || 'N/A' }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-200">
-                  <span v-if="item.quantity" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span v-if="item.quantity"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     {{ item.quantity }}
                   </span>
-                  <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                  <span v-else
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
                     Not specified
                   </span>
                 </td>
@@ -175,10 +203,11 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-200">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {{ item.batch_number }}
                   </span>
-                </td>              
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
                   <div class="flex items-center">
                     <CalendarIcon class="h-4 w-4 text-gray-400 mr-1" />

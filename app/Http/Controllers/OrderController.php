@@ -27,19 +27,65 @@ use App\Facades\Kafka;
 
 class OrderController extends Controller
 {
+    /**
+     * Reject an entire order
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function rejectOrder(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $request->validate([
+                'order_id' => 'required|exists:orders,id',
+            ]);
+            
+            $order = Order::findOrFail($request->order_id);
+            
+            // Update order status to rejected
+            $order->status = 'rejected';
+            $order->rejected_by = auth()->id();
+            $order->rejected_at = now();
+            $order->save();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Order has been rejected successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     public function index(Request $request)
     {
         $facility = $request->facility;
         logger()->info($facility);
         $query = Order::with(['facility', 'user'])
-            ->when($request->from && $request->to, function ($query) use ($request) {
-                $query->whereBetween('order_date', [$request->from, $request->to]);
+            ->when($request->dateFrom && $request->dateTo, function ($query) use ($request) {
+                $query->whereBetween('order_date', [$request->dateFrom, $request->dateTo]);
             })
             ->when($request->currentStatus, function ($query, $search) {
                 $query->where('status', $search);
             })
             ->when($request->facility, function ($query, $facility) {
                 $query->where('facility_id', $facility);
+            })
+            ->when($request->orderType, function ($query, $orderType) {
+                $query->where('order_type', $orderType);
+            })
+            ->when($request->facilityLocation, function ($query, $facilityLocation) {
+                $query->whereHas('facility', function($q) use ($facilityLocation) {
+                    $q->where('district_id', $facilityLocation);
+                });
             })
             ->latest();
 
@@ -57,10 +103,12 @@ class OrderController extends Controller
         $defaultStats = [
             'pending' => 0,
             'approved' => 0,
+            'rejected' => 0,
             'in_process' => 0,
             'dispatched' => 0,
             'delivery_pending' => 0,
-            'delivered' => 0
+            'delivered' => 0,
+            'received' => 0
         ];
 
         $stats = array_merge($defaultStats, $stats);
@@ -69,11 +117,17 @@ class OrderController extends Controller
 
         $facilities = Facility::select('id','name')->get();
 
+        // Order types are now fixed in the frontend
+        
+        // Get districts for facility location filter
+        $facilityLocations = DB::table('districts')->select('id', 'district_name as name')->get();
+        
         return Inertia::render('Order/Index', [
             'orders' => OrderResource::collection($orders),
-            'filters' => $request->only('search', 'page','currentStatus','facility'),
+            'filters' => $request->only('search', 'page', 'currentStatus', 'facility', 'orderType', 'facilityLocation', 'dateFrom', 'dateTo'),
             'stats' => $stats,
-            'facilities' => $facilities
+            'facilities' => $facilities,
+            'facilityLocations' => $facilityLocations
         ]);
     }
 
@@ -246,7 +300,8 @@ class OrderController extends Controller
                 'pending' => ['approved'],
                 'approved' => ['in_process'],
                 'in_process' => ['dispatched'],
-                'dispatched' => ['delivered']
+                'dispatched' => ['delivered'],
+                'rejected' => ['approved'] // Allow rejected orders to be approved
             ];
 
             // Check if the transition is allowed
@@ -268,6 +323,12 @@ class OrderController extends Controller
                 case 'approved':
                     $updates['approved_at'] = $now;
                     $updates['approved_by'] = $userId;
+                    
+                    // If transitioning from rejected to approved, clear rejection data
+                    if ($order->status === 'rejected') {
+                        $updates['rejected_by'] = null;
+                        $updates['rejected_at'] = null;
+                    }
                     break;
                 case 'in_process':
                     $updates['in_process'] = true;
@@ -913,8 +974,6 @@ class OrderController extends Controller
             return inertia("Order/Show", ['error' =>  $th->getMessage()]);
         }
     }
-
-    
 
     public function pending(Request $request)
     {

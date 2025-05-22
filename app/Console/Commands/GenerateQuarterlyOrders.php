@@ -38,12 +38,12 @@ class GenerateQuarterlyOrders extends Command
         try {
             $this->info("Generating quarterly orders...");
             
-            // Start transaction
-            DB::beginTransaction();
+            // Don't start a transaction for the entire process to avoid timeouts
+            // We'll use smaller transactions for critical operations
             $this->info("Starting quarterly order generation...");
 
             // Get today's date
-            $today = Carbon::parse('31-03-2024'); // For testing
+            $today = Carbon::parse('31-03-2025'); // For testing
             $month = $today->month;
             $day = $today->day;
             $year = $today->year;
@@ -78,11 +78,20 @@ class GenerateQuarterlyOrders extends Command
             // Initialize tracking arrays
             $productOrders = [];
             $facilityOrders = [];
-            $facilities = Facility::where('is_active', true)->get();
+            // Process only Dangorayo Health Center
+            $facilities = Facility::where('is_active', true)
+                ->where('name', 'Dangorayo Health Center')
+                ->get();
+            
+            if ($facilities->isEmpty()) {
+                $this->error("Dangorayo Health Center not found or not active");
+                return;
+            }
+            
             $totalOrders = 0;
             $totalOrderItems = 0;
             
-            $this->info("Found {$facilities->count()} active facilities");
+            $this->info("Processing only Dangorayo Health Center");
             
             // First pass: Calculate total needs for each product
             foreach ($facilities as $facility) {
@@ -120,24 +129,60 @@ class GenerateQuarterlyOrders extends Command
                     
                     $this->info("Processing product: {$product->name} [{$product->movement_type}]");
                     
-                    // Calculate AMC (Average Monthly Consumption)
-                    $amc = DB::table('order_items')
-                        ->join('orders', 'orders.id', '=', 'order_items.order_id')
-                        ->where('orders.facility_id', $facility->id)
-                        ->where('order_items.product_id', $productId)
-                        ->where('orders.status', 'received')
-                        ->where('orders.created_at', '>=', $prevQuarterStart)
-                        ->where('orders.created_at', '<=', $prevQuarterEnd)
-                        ->sum('order_items.quantity');
+                    // Calculate AMC (Average Monthly Consumption) from monthly_consumption table
+                    $monthsInQuarter = $this->getMonthsInQuarter($product->movement_type);
                     
-                    // For testing, set a minimum AMC if it's zero
-                    if ($amc == 0) {
-                        $amc = 10; // Set a default AMC for testing
-                        $this->info("Setting default AMC of 10 for testing");
+                    // Get the previous months for AMC calculation
+                    $months = [];
+                    $currentDate = $today->copy();
+                    
+                    // Get the last 4 months (or as many as needed based on movement type)
+                    for ($i = 0; $i < 4; $i++) {
+                        $monthYear = $currentDate->format('Y-m');
+                        $months[] = $monthYear;
+                        $currentDate->subMonth();
                     }
                     
-                    $monthsInQuarter = $this->getMonthsInQuarter($product->movement_type);
-                    $amc = $amc / 3; // Divide by 3 months to get monthly average
+                    // Limit to the number of months we need based on movement type
+                    $months = array_slice($months, 0, $monthsInQuarter);
+                    
+                    $this->info("Calculating AMC using months: " . implode(', ', $months));
+                    
+                    // Get consumption data from monthly_consumptions table
+                    $this->info("Querying monthly_consumptions for facility_id: {$facility->id}, product_id: {$productId}");
+                    
+                    try {
+                        $consumptionData = DB::table('monthly_consumptions')
+                            ->where('facility_id', $facility->id)
+                            ->where('product_id', $productId)
+                            ->whereIn('month_year', $months)
+                            ->get();
+                            
+                        $this->info("Found " . count($consumptionData) . " consumption records");
+                        
+                        // Debug: Show each consumption record
+                        foreach ($consumptionData as $record) {
+                            $this->info("  Month: {$record->month_year}, Quantity: {$record->quantity}");
+                        }
+                        
+                        $totalConsumption = $consumptionData->sum('quantity');
+                        $monthsWithData = $consumptionData->count();
+                        $this->info("Total consumption: {$totalConsumption}, Months with data: {$monthsWithData}");
+                    } catch (\Exception $e) {
+                        $this->error("Error querying consumption data: " . $e->getMessage());
+                        $totalConsumption = 0;
+                        $monthsWithData = 0;
+                    }
+                    
+                    // Calculate AMC
+                    if ($monthsWithData > 0) {
+                        $amc = $totalConsumption / $monthsWithData;
+                        $this->info("Calculated AMC from $monthsWithData months: $amc");
+                    } else {
+                        // For testing, set a minimum AMC if no data is available
+                        $amc = 10; // Set a default AMC for testing
+                        $this->info("No consumption data found. Setting default AMC of 10 for testing");
+                    }
                     
                         // Calculate SOH (Stock on Hand)
                     $soh = DB::table('facility_inventories')
@@ -279,53 +324,65 @@ class GenerateQuarterlyOrders extends Command
                     
                     $this->info("Allocating {$totalToAllocate} units of {$product->name} to {$facility->name}");
                     
-                    // Create order item
-                    $orderItem = OrderItem::create([
-                        'order_id' => $facilityOrders[$facilityId]['order']->id,
-                        'product_id' => $productId,
-                        'quantity' => $totalToAllocate,
-                        'unit_price' => $product->unit_price ?? 0,
-                        'total_price' => ($product->unit_price ?? 0) * $totalToAllocate,
-                        'amc' => $facilityOrders[$facilityId]['items'][$productId]['needed'] / $this->getMonthsInQuarter($product->movement_type),
-                        'no_of_days' => 120
-                    ]);
-                    
-                    $totalOrderItems++;
-                    
-                    // Allocate from batches
-                    $remainingToAllocate = $totalToAllocate;
-                    foreach ($inventoryTracker as $batchId => &$batchData) {
-                        if ($remainingToAllocate <= 0 || $batchData['quantity'] <= 0) continue;
-                        
-                        $batchAllocation = min($batchData['quantity'], $remainingToAllocate);
-                        
-                        // Record allocation
-                        DB::table('inventory_allocations')->insert([
-                            'order_item_id' => $orderItem->id,
+                    // Use a transaction for each order item creation and inventory allocation
+                    DB::beginTransaction();
+                    try {
+                        // Create order item
+                        $orderItem = OrderItem::create([
+                            'order_id' => $facilityOrders[$facilityId]['order']->id,
                             'product_id' => $productId,
-                            'warehouse_id' => $batchData['warehouse_id'],
-                            'location_id' => $batchData['location_id'],
-                            'batch_number' => $batchData['batch_number'],
-                            'expiry_date' => $batchData['expiry_date'],
-                            'allocated_quantity' => $batchAllocation,
-                            'allocation_type' => 'quarterly',
-                            'notes' => "Allocated from batch {$batchData['batch_number']} (expires {$batchData['expiry_date']})",
-                            'created_at' => now(),
-                            'updated_at' => now(),
+                            'quantity' => $totalToAllocate,
+                            'unit_price' => $product->unit_price ?? 0,
+                            'total_price' => ($product->unit_price ?? 0) * $totalToAllocate,
+                            'amc' => $facilityOrders[$facilityId]['items'][$productId]['needed'] / $this->getMonthsInQuarter($product->movement_type),
+                            'no_of_days' => 120
                         ]);
                         
-                        // Update inventory
-                        DB::table('inventories')
-                            ->where('id', $batchId)
-                            ->update([
-                                'quantity' => DB::raw("quantity - {$batchAllocation}")
+                        $totalOrderItems++;
+                        
+                        // Allocate from batches
+                        $remainingToAllocate = $totalToAllocate;
+                        foreach ($inventoryTracker as $batchId => &$batchData) {
+                            if ($remainingToAllocate <= 0 || $batchData['quantity'] <= 0) continue;
+                            
+                            $batchAllocation = min($batchData['quantity'], $remainingToAllocate);
+                            
+                            // Record allocation
+                            DB::table('inventory_allocations')->insert([
+                                'order_item_id' => $orderItem->id,
+                                'product_id' => $productId,
+                                'warehouse_id' => $batchData['warehouse_id'],
+                                'location_id' => $batchData['location_id'],
+                                'batch_number' => $batchData['batch_number'],
+                                'expiry_date' => $batchData['expiry_date'],
+                                'allocated_quantity' => $batchAllocation,
+                                'allocation_type' => 'quarterly',
+                                'notes' => "Allocated from batch {$batchData['batch_number']} (expires {$batchData['expiry_date']})",
+                                'created_at' => now(),
+                                'updated_at' => now(),
                             ]);
+                            
+                            // Update inventory
+                            DB::table('inventories')
+                                ->where('id', $batchId)
+                                ->update([
+                                    'quantity' => DB::raw("quantity - {$batchAllocation}")
+                                ]);
+                            
+                            $batchData['quantity'] -= $batchAllocation;
+                            $remainingToAllocate -= $batchAllocation;
+                            
+                            $this->info("    Allocated {$batchAllocation} units from batch {$batchData['batch_number']}");
+                            $this->info("    Remaining in batch: {$batchData['quantity']} units");
+                        }
                         
-                        $batchData['quantity'] -= $batchAllocation;
-                        $remainingToAllocate -= $batchAllocation;
-                        
-                        $this->info("    Allocated {$batchAllocation} units from batch {$batchData['batch_number']}");
-                        $this->info("    Remaining in batch: {$batchData['quantity']} units");
+                        // Commit the transaction for this order item
+                        DB::commit();
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                        $this->error("Error processing order item: " . $e->getMessage());
+                        // Continue with the next item
+                        continue;
                     }
                     
                     $this->info("✓ Total allocated {$totalToAllocate} units to order {$facilityOrders[$facilityId]['order']->order_number}");
@@ -338,21 +395,26 @@ class GenerateQuarterlyOrders extends Command
             
             // Clean up empty orders
             foreach ($facilityOrders as $facilityId => $orderData) {
-                $orderItemCount = OrderItem::where('order_id', $orderData['order']->id)->count();
-                if ($orderItemCount === 0) {
-                    $orderData['order']->delete();
-                    $this->warn("No items allocated, deleted order for facility ID: {$facilityId}");
-                } else {
-                    $totalOrders++;
-                    $this->info("Finalized order with {$orderItemCount} items for facility ID: {$facilityId}");
+                try {
+                    DB::beginTransaction();
+                    $orderItemCount = OrderItem::where('order_id', $orderData['order']->id)->count();
+                    if ($orderItemCount === 0) {
+                        $orderData['order']->delete();
+                        $this->warn("No items allocated, deleted order for facility ID: {$facilityId}");
+                    } else {
+                        $totalOrders++;
+                        $this->info("Finalized order with {$orderItemCount} items for facility ID: {$facilityId}");
+                    }
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    $this->error("Error cleaning up order: " . $e->getMessage());
                 }
             }
 
-            DB::commit();
             $this->info("\n✅ Completed Successfully!");
             $this->info("Total: {$totalOrders} orders with {$totalOrderItems} items.");
         } catch (\Exception $e) {
-            DB::rollBack();
             $this->error('❌ Failed: ' . $e->getMessage());
             throw $e;
         }

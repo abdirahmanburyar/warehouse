@@ -13,6 +13,8 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
 use Illuminate\Support\Facades\DB;
 use Throwable;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ProductsImport;
 
 class ProductController extends Controller
 {
@@ -187,5 +189,59 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', 'Product deleted successfully.');
+    }
+
+    /**
+     * Import products from Excel file.
+     */
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            // Start database transaction
+            DB::beginTransaction();
+            
+            // Create a new instance of ProductsImport
+            $import = new ProductsImport();
+            
+            // Get the file extension to determine how to process it
+            $extension = $request->file('file')->getClientOriginalExtension();
+            
+            // Try to use ZipArchive if available, but don't require it
+            if (!class_exists('ZipArchive')) {
+                logger()->warning('ZipArchive extension not available. Using alternative import method.');
+            }
+            
+            // Import the Excel file
+            Excel::import($import, $request->file('file'));
+            
+            // Commit the transaction if everything is successful
+            DB::commit();
+
+            // Get import statistics
+            $importedCount = $import->getImportedCount();
+            $skippedCount = $import->getSkippedCount();
+            $errors = $import->getErrors();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully imported {$importedCount} products. Skipped {$skippedCount} products.",
+                'imported' => $importedCount,
+                'skipped' => $skippedCount,
+                'errors' => $errors
+            ]);
+        } catch (\Throwable $e) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+            
+            logger()->info('Excel import error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error importing products: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -24,10 +24,11 @@ class Product extends Model
     protected $fillable = [
         'productID',
         'name',
-        'description',
         'category_id',
         'dosage_id',
         'movement',
+        'reorder_level',
+        'is_active',
     ];
 
     
@@ -38,9 +39,19 @@ class Product extends Model
         parent::boot();
 
         static::creating(function ($product) {
-            static $id = 0;
-            $id++;
-            $product->productID = str_pad($id, 6, '0', STR_PAD_LEFT);
+            // Find the highest productID in the database
+            $maxProductId = self::max('productID');
+            
+            // If there are existing products, increment the highest productID
+            if ($maxProductId) {
+                $nextId = (int)$maxProductId + 1;
+            } else {
+                // Start from 1 if no products exist
+                $nextId = 1;
+            }
+            
+            // Format as 6-digit number with leading zeros
+            $product->productID = str_pad($nextId, 6, '0', STR_PAD_LEFT);
         });
     }
 

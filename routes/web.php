@@ -26,6 +26,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ConsumptionUploadController;
+use App\Http\Controllers\ProductUploadController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -120,12 +121,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])
         ->group(function () {
             Route::get('/categories', [CategoryController::class, 'index'])->name('products.categories.index');
-            Route::post('/categories/store', [CategoryController::class, 'store'])
-                ->middleware(PermissionMiddleware::class . ':category.create')
-                ->name('categories.store');
+            Route::post('/categories/store', [CategoryController::class, 'store'])->name('categories.store');
+            Route::get('/categories/create', [CategoryController::class, 'create'])->name('products.categories.create');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])
-                ->middleware(PermissionMiddleware::class . ':category.edit')
-                ->name('categories.edit');
+                ->name('products.categories.edit');
             Route::get('/categories/{category}/destroy', [CategoryController::class, 'destroy'])
                 ->middleware(PermissionMiddleware::class . ':category.delete')
                 ->name('categories.destroy');
@@ -170,25 +169,37 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{product}/edit', [ProductController::class, 'edit'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.edit');
         Route::put('/{product}', [ProductController::class, 'update'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
+        Route::post('/import-excel', [ProductUploadController::class, 'upload'])->name('products.import-excel');
     });
 
     // Eligible Items Management Routes
     Route::prefix('eligible-items')->group(function () {
-        Route::get('/', [EligibleItemController::class, 'index'])->middleware(PermissionMiddleware::class . ':eligible-item.view')->name('products.eligible.index');
-        Route::get('/create', [EligibleItemController::class, 'create'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('eligible-items.create');
-        Route::post('/', [EligibleItemController::class, 'store'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('eligible-items.store');
-        Route::get('/{eligibleItem}/edit', [EligibleItemController::class, 'edit'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('eligible-items.edit');
-        Route::put('/{eligibleItem}', [EligibleItemController::class, 'update'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('eligible-items.update');
-        Route::delete('/{eligibleItem}', [EligibleItemController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':eligible-item.delete')->name('eligible-items.destroy');
+        Route::get('/', [EligibleItemController::class, 'index'])->name('products.eligible.index');
+        Route::get('/create', [EligibleItemController::class, 'create'])->name('products.eligible.create');
+        Route::post('/store', [EligibleItemController::class, 'store'])->name('products.eligible.store');
+        Route::get('/{eligibleItem}/edit', [EligibleItemController::class, 'edit'])->name('products.eligible.edit');
+        Route::put('/{eligibleItem}', [EligibleItemController::class, 'update'])->name('eligible-items.update');
+        Route::delete('/{eligibleItem}', [EligibleItemController::class, 'destroy'])->name('eligible-items.destroy');
     });
 
     // Supply Management Routes
     Route::prefix('supplies')->group(function () {
         Route::get('/', [SupplyController::class, 'index'])->name('supplies.index');
-        Route::get('/create', [SupplyController::class, 'create'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.create');
-        Route::post('/', [SupplyController::class, 'store'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.store');
-        Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.edit');
-        Route::put('/{supply}', [SupplyController::class, 'update'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.update');
+        Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create');
+        Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create');
+        Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->name('supplies.po-show');
+        Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->name('supplies.packing-list-getPO');
+        Route::get('/packing-list/{pk}/edit', [SupplyController::class, 'editPK'])->name('supplies.packing-list.edit');
+        Route::get('/packing-list/show', [SupplyController::class, 'showPK'])->name('supplies.packing-list.showPK');
+        Route::get('/back-orders', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
+        Route::get('/purchase_orders', [SupplyController::class, 'newPO'])->name('supplies.purchase_order');
+        Route::post('/purchase_orders/store', [SupplyController::class, 'storePO'])->name('supplies.storePO');
+        Route::get('/purchase_orders/{id}/edit', [SupplyController::class, 'editPO'])->name('supplies.editPO');
+        
+    
+        Route::post('/store', [SupplyController::class, 'store'])->name('supplies.store');
+        Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->name('supplies.edit');
+        Route::put('/{supply}', [SupplyController::class, 'update'])->name('supplies.update');
         Route::delete('/{supply}', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.destroy');
     });
 
@@ -204,17 +215,18 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Expired Management Routes
     Route::prefix('expired')->group(function () {
-        Route::get('/', [ExpiredController::class, 'index'])->middleware(PermissionMiddleware::class . ':expired.view')->name('expired.index');
-        Route::get('/create', [ExpiredController::class, 'create'])->middleware(PermissionMiddleware::class . ':expired.create')->name('expired.create');
-        Route::post('/', [ExpiredController::class, 'store'])->middleware(PermissionMiddleware::class . ':expired.create')->name('expired.store');
-        Route::get('/{expired}/edit', [ExpiredController::class, 'edit'])->middleware(PermissionMiddleware::class . ':expired.edit')->name('expired.edit');
-        Route::put('/{expired}', [ExpiredController::class, 'update'])->middleware(PermissionMiddleware::class . ':expired.edit')->name('expired.update');
-        Route::delete('/{expired}', [ExpiredController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':expired.delete')->name('expired.destroy');
+        Route::get('/', [ExpiredController::class, 'index'])->name('expired.index');
+        Route::get('/create', [ExpiredController::class, 'create'])->name('expired.create');
+        Route::post('/', [ExpiredController::class, 'store'])->name('expired.store');
+        Route::get('/{expired}/edit', [ExpiredController::class, 'edit'])->name('expired.edit');
+        Route::put('/{expired}', [ExpiredController::class, 'update'])->name('expired.update');
+        Route::delete('/{expired}', [ExpiredController::class, 'destroy'])->name('expired.destroy');
+        Route::get('/{transfer}/transfer', [ExpiredController::class, 'transfer'])->name('expired.transfer');
     });
 
     // Settings Management Routes
     Route::prefix('settings')->group(function () {
-        Route::get('/', [SettingsController::class, 'index'])->middleware(PermissionMiddleware::class . ':settings.view')->name('settings.index');
+        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
         Route::get('/create', [SettingsController::class, 'create'])->middleware(PermissionMiddleware::class . ':settings.create')->name('settings.create');
         Route::post('/', [SettingsController::class, 'store'])->middleware(PermissionMiddleware::class . ':settings.create')->name('settings.store');
         Route::get('/{settings}/edit', [SettingsController::class, 'edit'])->middleware(PermissionMiddleware::class . ':settings.edit')->name('settings.edit');
@@ -224,22 +236,45 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Order Management Routes
     Route::prefix('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index'])->middleware(PermissionMiddleware::class . ':order.view')->name('orders.index');
-        Route::get('/create', [OrderController::class, 'create'])->middleware(PermissionMiddleware::class . ':order.create')->name('orders.create');
-        Route::post('/', [OrderController::class, 'store'])->middleware(PermissionMiddleware::class . ':order.create')->name('orders.store');
-        Route::get('/{order}/edit', [OrderController::class, 'edit'])->middleware(PermissionMiddleware::class . ':order.edit')->name('orders.edit');
-        Route::put('/{order}', [OrderController::class, 'update'])->middleware(PermissionMiddleware::class . ':order.edit')->name('orders.update');
-        Route::delete('/{order}', [OrderController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':order.delete')->name('orders.destroy');
+        Route::get('/', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/{id}/show', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('/change-status', [OrderController::class, 'changeItemStatus'])->name('orders.change-status');
+        Route::post('/reject', [OrderController::class, 'rejectOrder']);
+
+        Route::get('/create', [OrderController::class, 'create'])->name('orders.create');
+        Route::post('/', [OrderController::class, 'store'])->name('orders.store');
+        Route::get('/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
+        Route::put('/{order}', [OrderController::class, 'update'])->name('orders.update');
+        Route::delete('/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
     });
 
     // Transfer Management Routes
+    // ->middleware(PermissionMiddleware::class . ':transfer.view')
     Route::prefix('transfers')->group(function () {
-        Route::get('/', [TransferController::class, 'index'])->middleware(PermissionMiddleware::class . ':transfer.view')->name('transfers.index');
-        Route::get('/create', [TransferController::class, 'create'])->middleware(PermissionMiddleware::class . ':transfer.create')->name('transfers.create');
-        Route::post('/', [TransferController::class, 'store'])->middleware(PermissionMiddleware::class . ':transfer.create')->name('transfers.store');
-        Route::get('/{transfer}/edit', [TransferController::class, 'edit'])->middleware(PermissionMiddleware::class . ':transfer.edit')->name('transfers.edit');
-        Route::put('/{transfer}', [TransferController::class, 'update'])->middleware(PermissionMiddleware::class . ':transfer.edit')->name('transfers.update');
-        Route::delete('/{transfer}', [TransferController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':transfer.delete')->name('transfers.destroy');
+        Route::get('/', [TransferController::class, 'index'])->name('transfers.index');
+        Route::get('/{id}/show', [TransferController::class, 'show'])->name('transfers.show');
+        Route::get('/create', [TransferController::class, 'create'])->name('transfers.create');
+        Route::post('/', [TransferController::class, 'store'])->name('transfers.store');
+        Route::get('/{transfer}/edit', [TransferController::class, 'edit'])->name('transfers.edit');
+        Route::put('/{transfer}', [TransferController::class, 'update'])->name('transfers.update');
+        Route::delete('/{transfer}', [TransferController::class, 'destroy'])->name('transfers.destroy');
+        
+        // Transfer Status Change Routes
+        Route::post('/{id}/approve', [TransferController::class, 'approve'])->name('transfers.approve');
+        Route::post('/{id}/reject', [TransferController::class, 'reject'])->name('transfers.reject');
+        Route::post('/{id}/in-process', [TransferController::class, 'inProcess'])->name('transfers.inProcess');
+        Route::post('/{id}/dispatch', [TransferController::class, 'dispatch'])->name('transfers.dispatch');
+        Route::post('/{id}/complete', [TransferController::class, 'completeTransfer'])->name('transfers.completeTransfer');
+        
+        // Route to get available inventories for transfer
+        Route::get('/get-inventories', [TransferController::class, 'getInventories'])->name('transfers.getInventories');
+        
+        // Bulk Status Change Routes
+        Route::post('/bulk-approve', [TransferController::class, 'bulkApprove'])->name('transfers.bulkApprove');
+        Route::post('/bulk-reject', [TransferController::class, 'bulkReject'])->name('transfers.bulkReject');
+        Route::post('/bulk-in-process', [TransferController::class, 'bulkInProcess'])->name('transfers.bulkInProcess');
+        Route::post('/bulk-dispatch', [TransferController::class, 'bulkDispatch'])->name('transfers.bulkDispatch');
+        Route::post('/bulk-complete', [TransferController::class, 'bulkComplete'])->name('transfers.bulkComplete');
     });
 
     // Purchase Order Management Routes
@@ -310,6 +345,14 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
         // Excel Upload Route
         Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->name('reports.upload-consumption');
+    });
+    
+    // Order Management Routes
+    Route::prefix('orders')->group(function () {
+        Route::post('/change-status', [OrderController::class, 'changeStatus'])->name('orders.change-status');
+        Route::post('/change-item-status', [OrderController::class, 'changeItemStatus'])->name('orders.change-item-status');
+        Route::post('/bulk-change-status', [OrderController::class, 'bulkChangeStatus'])->name('orders.bulk-change-status');
+        Route::post('/bulk-change-item-status', [OrderController::class, 'bulkChangeItemStatus'])->name('orders.bulk-change-item-status');
     });
     // Approval Routes
     Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->prefix('approvals')->group(function () {
