@@ -132,8 +132,6 @@ const selectedFacility = ref(props.filters?.facility ?
     props.facilities.find(f => f.id === parseInt(props.filters.facility)) || null : null);
 const selectedOrderType = ref(props.filters?.orderType ?
     orderTypes.find(t => t.id === props.filters.orderType) || null : null);
-const selectedFacilityLocation = ref(props.filters?.facilityLocation ?
-    props.facilityLocations.find(l => l.id === parseInt(props.filters.facilityLocation)) || null : null);
 
 function handleSelect(selected) {
     selectedFacility.value = selected;
@@ -274,10 +272,9 @@ const formatDate = (date) => {
 
                 <!-- District Filter -->
                 <div class="w-full sm:w-auto flex-none min-w-[200px] w-[220px]">
-                    <Multiselect v-model="selectedFacilityLocation" :options="props.facilityLocations"
+                    <Multiselect v-model="facilityLocation" :options="props.facilityLocations"
                         :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
-                        placeholder="Select District" track-by="id" label="name" @select="handleFacilityLocationSelect"
-                        @remove="handleRemove('facilityLocation')">
+                        placeholder="Select District">
                     </Multiselect>
                 </div>
 

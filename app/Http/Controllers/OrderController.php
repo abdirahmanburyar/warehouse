@@ -9,7 +9,7 @@ use App\Models\Facility;
 use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Inventory;
-
+use App\Models\District;
 // App Events and Resources
 use App\Events\OrderEvent;
 use App\Http\Resources\OrderResource;
@@ -68,7 +68,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $facility = $request->facility;
-        logger()->info($facility);
+        $facilityLocation = $request->facilityLocation;
         $query = Order::with(['facility', 'user'])
             ->when($request->dateFrom && $request->dateTo, function ($query) use ($request) {
                 $query->whereBetween('order_date', [$request->dateFrom, $request->dateTo]);
@@ -82,9 +82,9 @@ class OrderController extends Controller
             ->when($request->orderType, function ($query, $orderType) {
                 $query->where('order_type', $orderType);
             })
-            ->when($request->facilityLocation, function ($query, $facilityLocation) {
+            ->when($request->facilityLocation, function ($query) use($facilityLocation) {
                 $query->whereHas('facility', function($q) use ($facilityLocation) {
-                    $q->where('district_id', $facilityLocation);
+                    $q->where('district', $facilityLocation);
                 });
             })
             ->latest();
@@ -116,11 +116,7 @@ class OrderController extends Controller
         $orders = $query->paginate(500);
 
         $facilities = Facility::select('id','name')->get();
-
-        // Order types are now fixed in the frontend
-        
-        // Get districts for facility location filter
-        $facilityLocations = DB::table('districts')->select('id', 'name')->get();
+        $facilityLocations = District::select('id','name')->pluck('name')->toArray();
         
         return Inertia::render('Order/Index', [
             'orders' => OrderResource::collection($orders),

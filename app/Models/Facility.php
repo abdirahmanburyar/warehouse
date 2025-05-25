@@ -30,8 +30,4 @@ class Facility extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function district(): BelongsTo
-    {
-        return $this->belongsTo(District::class);
-    }
 }
