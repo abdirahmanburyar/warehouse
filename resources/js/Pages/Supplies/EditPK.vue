@@ -122,8 +122,8 @@
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <Multiselect v-model="item.location" :value="item.location_id"
-                                    :disabled="item.status === 'approved'"
-                                    :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...props.locations]"
+                                    :disabled="item.status === 'approved' || !item.warehouse_id"
+                                    :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...getFilteredLocations(item.warehouse_id)]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                     placeholder="Select Location" track-by="id" label="location"
                                     @select="hadleLocationSelect(index, $event)">
@@ -299,10 +299,17 @@
                     <InputLabel for="new_location" value="Location Name" />
                     <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
                 </div>
+                <div class="mt-6">
+                    <InputLabel for="warehouse_id" value="Warehouse" />
+                    <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true" 
+                        :close-on-select="true" :show-labels="false" :allow-empty="false"
+                        placeholder="Select Warehouse" track-by="id" label="name" required>
+                    </Multiselect>
+                </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
                     </SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." :
+                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">{{ isNewLocation ? "Waiting..." :
                         "Create new location" }}</PrimaryButton>
                 </div>
             </div>
@@ -443,6 +450,7 @@ const processing = ref(false);
 const isSubmitting = ref(false);
 const showLocationModal = ref(false);
 const isLoading = ref(false);
+const selectedItemIndex = ref(null);
 
 const hasIncompleteBackOrder = (item) => {
     if (!item?.received_quantity || item.received_quantity === item?.quantity) return false;
@@ -459,6 +467,13 @@ const showIncompleteBackOrderModal = ref(false);
 const selectedItem = ref(null);
 const backOrderRows = ref([]);
 const isNewLocation = ref(false);
+const selectedWarehouse = ref(null);
+
+// Function to filter locations based on warehouse_id
+function getFilteredLocations(warehouseId) {
+    if (!warehouseId) return [];
+    return props.locations.filter(location => location.warehouse_id === warehouseId);
+}
 
 const hasNotApprovedItems = computed(() => {
     return form.value?.items?.some(item => item.status != 'approved') ?? false;
@@ -574,7 +589,15 @@ function handleWarehouseSelect(index, selected) {
 
 function hadleLocationSelect(index, selected) {
     if (selected.isAddNew) {
+        // Check if warehouse is selected
+        if (!form.value.items[index].warehouse_id) {
+            toast.error('Please select a warehouse first');
+            return;
+        }
+        
         selectedItemIndex.value = index;
+        // Pre-select the warehouse in the modal based on the item's warehouse
+        selectedWarehouse.value = form.value.items[index].warehouse;
         showLocationModal.value = true;
         return;
     }
@@ -585,6 +608,7 @@ function hadleLocationSelect(index, selected) {
 function closeLocationModal() {
     showLocationModal.value = false;
     newLocation.value = '';
+    selectedWarehouse.value = null;
 }
 
 async function createLocation() {
@@ -592,10 +616,17 @@ async function createLocation() {
         toast.error('Please enter a location name');
         return;
     }
+    
+    if (!selectedWarehouse.value) {
+        toast.error('Please select a warehouse');
+        return;
+    }
+    
     isNewLocation.value = true;
 
-    await axios.post(route('supplies.packing-list.location.store'), {
-        location: newLocation.value
+    await axios.post(route('supplies.store-location'), {
+        location: newLocation.value,
+        warehouse_id: selectedWarehouse.value.id
     })
         .then((response) => {
             isNewLocation.value = false;
@@ -872,6 +903,22 @@ async function approvePackingList() {
 
 
 
+// Format date to YYYY-MM-DD for HTML date inputs
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+    }
+    
+    // Parse the date and format it as YYYY-MM-DD
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return ''; // Invalid date
+    
+    return date.toISOString().split('T')[0];
+}
+
 async function submit() {
     if (!form.value?.items?.length) {
         toast.error('No items to submit');
@@ -931,6 +978,16 @@ async function submit() {
             return;
         }
         
+        // Format dates properly for all items before submission
+        form.value.items.forEach(item => {
+            if (item.expire_date) {
+                item.expire_date = formatDateForInput(item.expire_date);
+            }
+            // Format any other date fields if needed
+            if (item.pk_date) {
+                item.pk_date = formatDateForInput(item.pk_date);
+            }
+        });
 
         try {
             const response = await axios.post(route('supplies.packing-list.update'), form.value);
@@ -942,6 +999,7 @@ async function submit() {
             });
             router.visit(route('supplies.packing-list.edit', props.packing_list?.id));
         } catch (error) {
+            console.error('Update error:', error);
             toast.error(error.response?.data || 'An error occurred while updating the packing list');
         } finally {
             isSubmitting.value = false;

@@ -208,6 +208,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         Route::post('/packing-list/review', [SupplyController::class, 'reviewPK'])->name('supplies.reviewPK');
         Route::post('/packing-list/approve', [SupplyController::class, 'approvePK'])->name('supplies.approvePK');
+        Route::post('/packing-list/update', [SupplyController::class, 'updatePK'])->name('supplies.packing-list.update');
 
         Route::get('/back-order', [SupplyController::class, 'backOrder'])->name('supplies.back-order');
         Route::get('/packing-list/showBackOrder', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');

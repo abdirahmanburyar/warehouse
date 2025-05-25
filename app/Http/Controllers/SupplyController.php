@@ -1348,15 +1348,26 @@ class SupplyController extends Controller
                 'warehouse_id' => $request->warehouse_id
             ]);
             
+            // Load the warehouse relationship to ensure complete data
+            $location->load('warehouse');
+            
             return response()->json([
                 'message' => 'Location created successfully',
-                'location' => $location
+                'location' => [
+                    'id' => $location->id,
+                    'location' => $location->location,
+                    'warehouse_id' => $location->warehouse_id,
+                    'warehouse' => $location->warehouse ? [
+                        'id' => $location->warehouse->id,
+                        'name' => $location->warehouse->name
+                    ] : null
+                ]
             ], 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
     }
-
+    
     public function BackOrderstatusChange(Request $request)
     {
         try {
@@ -1672,8 +1683,6 @@ class SupplyController extends Controller
                         $packingList->differences()->delete();
                         continue;
                     }
-
-                    logger()->info($item);
 
                     // Handle differences if they exist
                     if (!empty($item['differences'])) {

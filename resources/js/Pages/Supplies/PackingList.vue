@@ -93,7 +93,7 @@
                             <th class="w-[300px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Warehouse</th>
                             <th class="w-[300px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Locations</th>
+                               Storage Locations</th>
                             <th class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Batch Number</th>
                             <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -187,7 +187,8 @@
                                     </div>
                                     <div>
                                         <label for="expire_date" class="text-xs">Expire Date</label>
-                                        <input type="date" v-model="item.expire_date" required
+                                        <input type="date" :value="formatDateForInput(item.expire_date)" required
+                                            @input="item.expire_date = $event.target.value"
                                             :min="moment().add(6, 'months').format('YYYY-MM-DD')"
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm">
@@ -453,7 +454,9 @@ function hadleLocationSelect(index, selected) {
         showLocationModal.value = true;
         return;
     }
+    // Set the location_id for backend validation
     form.value.items[index].location_id = selected.id;
+    // Store the full location object for frontend display
     form.value.items[index].location = selected;
 }
 
@@ -484,27 +487,38 @@ async function createLocation() {
     
     isNewLocation.value = true;
 
-    await axios.post(route('supplies.store-location'), {
+    try {
+        const response = await axios.post(route('supplies.store-location'), {
             location: newLocation.value,
             warehouse_id: selectedWarehouse.value.id
-        })
-        .then((response) => {
-            isNewLocation.value = false;
-            const newLocationData = response.data.location;
-            props.locations.push(newLocationData);
-            // Update the selected item's location
-            if (selectedItemIndex.value !== null) {
-                form.value.items[selectedItemIndex.value].location_id = newLocationData.id;
-                form.value.items[selectedItemIndex.value].location = newLocationData;
-            }
-            toast.success(response.data.message);
-            closeLocationModal();
-        })
-        .catch((error) => {
-            isNewLocation.value = false;
-            console.log(error.response);
-            toast.error(error.response?.data || 'An error occurred while adding the location');
         });
+        
+        isNewLocation.value = false;
+        const newLocationData = response.data.location;
+        
+        // Ensure the location data has the correct structure
+        const formattedLocation = {
+            id: newLocationData.id,
+            location: newLocationData.location,
+            warehouse_id: newLocationData.warehouse_id
+        };
+        
+        // Add to locations array
+        props.locations.push(formattedLocation);
+        
+        // Update the selected item's location
+        if (selectedItemIndex.value !== null) {
+            form.value.items[selectedItemIndex.value].location_id = formattedLocation.id;
+            form.value.items[selectedItemIndex.value].location = formattedLocation;
+        }
+        
+        toast.success(response.data.message);
+        closeLocationModal();
+    } catch (error) {
+        isNewLocation.value = false;
+        console.error('Location creation error:', error);
+        toast.error(error.response?.data || 'An error occurred while adding the location');
+    }
 }
 
 function handleReceivedQuantityChange(index) {
@@ -615,6 +629,22 @@ const validateForm = () => {
     return !hasErrors;
 };
 
+// Format date to YYYY-MM-DD for HTML date inputs
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+    }
+    
+    // Parse the date and format it as YYYY-MM-DD
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return ''; // Invalid date
+    
+    return date.toISOString().split('T')[0];
+}
+
 async function submit() {
     if (!form.value?.items?.length) {
         toast.error('No items to submit');
@@ -631,6 +661,13 @@ async function submit() {
         toast.error(`Please complete back orders for ${incompleteItems.length} item(s) before submitting`);
         return;
     }
+    
+    // Format dates properly for all items
+    form.value.items.forEach(item => {
+        if (item.expire_date) {
+            item.expire_date = formatDateForInput(item.expire_date);
+        }
+    });
 
     const confirm = await Swal.fire({
         title: 'Are you sure?',
