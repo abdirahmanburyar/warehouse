@@ -1338,9 +1338,20 @@ class SupplyController extends Controller
 
     public function storeLocation(Request $request){
         try {
-            Location::create([
-                'location' => $request->location
+            $request->validate([
+                'location' => 'required|string',
+                'warehouse_id' => 'required|exists:warehouses,id'
             ]);
+            
+            $location = Location::create([
+                'location' => $request->location,
+                'warehouse_id' => $request->warehouse_id
+            ]);
+            
+            return response()->json([
+                'message' => 'Location created successfully',
+                'location' => $location
+            ], 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

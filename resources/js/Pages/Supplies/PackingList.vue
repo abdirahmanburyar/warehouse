@@ -162,8 +162,8 @@
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <Multiselect v-model="item.location" :value="item.location_id" required
-                                    :disabled="item.status === 'approved'"
-                                    :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...props.locations]"
+                                    :disabled="item.status === 'approved' || !item.warehouse_id"
+                                    :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...getFilteredLocations(item.warehouse_id)]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                     placeholder="Select Location" track-by="id" label="location"
                                     @select="hadleLocationSelect(index, $event)">
@@ -358,10 +358,17 @@
                     <InputLabel for="new_location" value="Location Name" />
                     <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
                 </div>
+                <div class="mt-6">
+                    <InputLabel for="warehouse_id" value="Warehouse" />
+                    <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true" 
+                        :close-on-select="true" :show-labels="false" :allow-empty="false"
+                        placeholder="Select Warehouse" track-by="id" label="name" required>
+                    </Multiselect>
+                </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
                     </SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." :
+                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">{{ isNewLocation ? "Waiting..." :
                         "Create new location" }}</PrimaryButton>
                 </div>
             </div>
@@ -412,6 +419,7 @@ const isSubmitting = ref(false);
 const showLocationModal = ref(false);
 const newLocation = ref('');
 const selectedItemIndex = ref(null);
+const selectedWarehouse = ref(null);
 
 const hasNotApprovedItems = computed(() => {
     return form.value?.items?.some(item => item.status != 'approved') ?? false;
@@ -433,7 +441,15 @@ const subTotal = computed(() => {
 
 function hadleLocationSelect(index, selected) {
     if (selected.isAddNew) {
+        // Check if warehouse is selected
+        if (!form.value.items[index].warehouse_id) {
+            toast.error('Please select a warehouse first');
+            return;
+        }
+        
         selectedItemIndex.value = index;
+        // Pre-select the warehouse in the modal based on the item's warehouse
+        selectedWarehouse.value = form.value.items[index].warehouse;
         showLocationModal.value = true;
         return;
     }
@@ -444,9 +460,16 @@ function hadleLocationSelect(index, selected) {
 function closeLocationModal() {
     showLocationModal.value = false;
     newLocation.value = '';
+    selectedWarehouse.value = null;
 }
 
 const isNewLocation = ref(false);
+
+// Function to filter locations based on warehouse_id
+function getFilteredLocations(warehouseId) {
+    if (!warehouseId) return [];
+    return props.locations.filter(location => location.warehouse_id === warehouseId);
+}
 
 async function createLocation() {
     if (!newLocation.value) {
@@ -454,10 +477,16 @@ async function createLocation() {
         return;
     }
     
+    if (!selectedWarehouse.value) {
+        toast.error('Please select a warehouse');
+        return;
+    }
+    
     isNewLocation.value = true;
 
-    await axios.post(route('supplies.packing-list.location.store'), {
-            location: newLocation.value
+    await axios.post(route('supplies.store-location'), {
+            location: newLocation.value,
+            warehouse_id: selectedWarehouse.value.id
         })
         .then((response) => {
             isNewLocation.value = false;

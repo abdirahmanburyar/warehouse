@@ -215,6 +215,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/back-order/liquidate', [SupplyController::class, 'liquidate'])->name('back-order.liquidate');
         Route::post('/back-order/dispose', [SupplyController::class, 'dispose'])->name('back-order.dispose');
         Route::post('/back-order/receive', [SupplyController::class, 'receive'])->name('back-order.receive');
+        Route::post('/store-location', [SupplyController::class, 'storeLocation'])->name('supplies.store-location');
                
     
         Route::post('/store', [SupplyController::class, 'store'])->name('supplies.store');
