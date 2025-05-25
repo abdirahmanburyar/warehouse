@@ -120,7 +120,7 @@ class OrderController extends Controller
         // Order types are now fixed in the frontend
         
         // Get districts for facility location filter
-        $facilityLocations = DB::table('districts')->select('id', 'district_name as name')->get();
+        $facilityLocations = DB::table('districts')->select('id', 'name')->get();
         
         return Inertia::render('Order/Index', [
             'orders' => OrderResource::collection($orders),
