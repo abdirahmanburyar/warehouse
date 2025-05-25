@@ -997,7 +997,8 @@ async function submit() {
                 icon: 'success',
                 confirmButtonColor: '#10B981',
             });
-            router.visit(route('supplies.packing-list.edit', props.packing_list?.id));
+            // The route parameter for supplies.packing-list.edit is 'pk', not 'id' or 'packing_list_number'
+            router.visit(route('supplies.packing-list.edit', { pk: props.packing_list?.packing_lists[0]?.packing_list_number }));
         } catch (error) {
             console.error('Update error:', error);
             toast.error(error.response?.data || 'An error occurred while updating the packing list');
