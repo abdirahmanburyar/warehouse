@@ -22,11 +22,13 @@ return new class extends Migration
             $table->date('expire_date')->nullable();
             $table->string('batch_number')->nullable();
             $table->string('ref_no')->nullable();
+            $table->timestamp('pk_date')->default(now());
             $table->foreignId('location_id')->nullable();
             $table->integer('quantity');
+            $table->string('uom');
             $table->double('unit_cost');
             $table->double('total_cost');
-            $table->status('status')->default('pending');
+            $table->string('status')->default('pending');
             $table->foreignId('confirmed_by')->nullable()->constrained('users');
             $table->timestamp('confirmed_at')->nullable()->constrained('users');
             $table->foreignId('reviewed_by')->nullable()->constrained('users');
@@ -41,6 +43,7 @@ return new class extends Migration
             $table->foreignId('packing_list_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->integer('quantity');
+            $table->string('finalized')->nullable();
             $table->enum('status', ['Expired', 'Damaged','Missing']);
             $table->timestamps();
         });

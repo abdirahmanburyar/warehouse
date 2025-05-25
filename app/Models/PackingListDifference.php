@@ -15,11 +15,8 @@ class PackingListDifference extends Model
         'packing_list_id',
         'product_id',
         'quantity',
+        'finalized',
         'status'
-    ];
-
-    protected $casts = [
-        'quantity' => 'integer'
     ];
 
     public function packingList()

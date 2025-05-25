@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
-import AuthenticatedTabs from '@/Layouts/AuthenticatedTabs.vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -13,6 +13,7 @@ import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 import moment from 'moment';
 import Swal from 'sweetalert2';
 
@@ -21,7 +22,6 @@ const props = defineProps({
     products: Array,
     dosage: Array,
     category: Array,
-    locations: Array,
     warehouses: Array,
     filters: Object,
     inventoryStatusCounts: Array
@@ -29,54 +29,50 @@ const props = defineProps({
 
 const toast = useToast();
 
+
+
 // Search and filter states
 const search = ref(props.filters.search || '');
-const productId = ref(props.filters.product_id || '');
 const location = ref(props.filters.location || '');
-const batchNumber = ref(props.filters.batch_number || '');
-const sortField = ref(props.filters.sort_field || 'created_at');
-const sortDirection = ref(props.filters.sort_direction || 'desc');
 const dosage = ref(props.filters.dosage || '');
 const category = ref(props.filters.category || '');
-const warehouse_id = ref(props.filters.warehouse_id || '');
+const warehouse = ref(props.filters.warehouse || '');
 const perPage = ref(props.filters.per_page || 6);
+const loadedLocation = ref([]);
 const isSubmitting = ref(false);
 
 // Modal states
 const showAddModal = ref(false);
-const showDeleteModal = ref(false);
-const inventoryToDelete = ref(null);
 
-// Bulk delete states
-const selectedItems = ref([]);
-const isBulkDeleting = ref(false);
-const showBulkDeleteModal = ref(false);
-
-const showLocationForm = ref(false);
-const locationSearch = ref('');
-const filteredLocations = ref([]);
-
-// Initialize filtered locations and add filterLocations function
-onMounted(() => {
-    filteredLocations.value = props.locations;
-});
-
-function filterLocations() {
-    if (!locationSearch.value) {
-        filteredLocations.value = props.locations;
+watch([
+    () => warehouse.value
+], () => {
+    if(warehouse.value == null){
+        location.value = null;
         return;
     }
-    
-    filteredLocations.value = props.locations.filter(loc => 
-        loc.location.toLowerCase().includes(locationSearch.value.toLowerCase())
-    );
+    loadLocations();
+});
+async function loadLocations(){
+    console.log("warehouse:", warehouse.value);    
+    await axios.post(route('invetnories.getLocations'), {
+        warehouse: warehouse.value
+    })
+    .then((response) => {
+        console.log(response.data);     
+        loadedLocation.value = response.data;   
+    })
+    .catch((error) => {
+        console.log(error);
+        toast.error(error.response.data);
+    });
 }
 
 // Form states
 const form = ref({
     product_id: null,
     product: null,
-    warehouse_id: '',
+    warehouse: '',
     quantity: 0,
     reorder_level: 10,
     manufacturing_date: '',
@@ -102,24 +98,6 @@ watch(() => props.inventories, (newInventories) => {
     currentInventories.meta = { ...newInventories.meta };
 }, { deep: true });
 
-// Pusher debugging variables
-const pusherStatus = ref('Not connected');
-const lastEventTime = ref(null);
-const pusherEvents = ref([]);
-const pusherError = ref(null);
-const maxEvents = 5;
-
-// Listen for inventory changes with detailed debugging
-onMounted(() => {
-    window.Echo.channel('inventory')
-        .listen('.refresh', (event) => {
-            applyFilters();
-        });
-});
-
-onBeforeUnmount(() => {
-    window.Echo.leaveChannel('inventory');
-});
 
 // Watch for product changes to update product_id
 watch(() => form.value.product, (newProduct) => {
@@ -130,30 +108,13 @@ watch(() => form.value.product, (newProduct) => {
     }
 }, { deep: true });
 
-// Reset filters
-const resetFilters = () => {
-    search.value = '';
-    productId.value = '';
-    location.value = '';
-    batchNumber.value = '';
-    warehouse_id.value = '';
-    dosage.value = '';
-    category.value = '';
-    applyFilters();
-};
-
 // Apply filters
 const applyFilters = () => {
-    console.log('[PUSHER-DEBUG] Applying filters');
     const query = {}
     if (search.value) query.search = search.value
-    if (productId.value) query.product_id = productId.value
     if (location.value) query.location = location.value
-    if (batchNumber.value) query.batch_number = batchNumber.value
-    if (sortField.value) query.sort_field = sortField.value
-    if (sortDirection.value) query.sort_direction = sortDirection.value
     if (perPage.value) query.per_page = perPage.value
-    if (warehouse_id.value) query.warehouse_id = warehouse_id.value
+    if (warehouse.value) query.warehouse = warehouse.value
     if (dosage.value) query.dosage = dosage.value
     if (category.value) query.category = category.value
 
@@ -167,57 +128,18 @@ const applyFilters = () => {
     );
 };
 
-// Debounce search
-let searchTimeout;
-const debouncedSearch = () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        applyFilters();
-    }, 500);
-};
-
-
-
-function selectLocation(selectedLocation) {
-    location.value = selectedLocation;
-    showLocationForm.value = false;
-    locationSearch.value = '';
-    applyFilters();
-}
-
 // Watch for changes in search input
 watch([
     () => search.value,
-    () => productId.value,
     () => location.value,
-    () => batchNumber.value,
-    () => sortField.value,
-    () => sortDirection.value,
     () => perPage.value,
-    () => warehouse_id.value,
+    () => warehouse.value,
     () => dosage.value,
     () => category.value,
 ], () => {
-    debouncedSearch();
-}, { deep: true });
-
-// Sort table
-const sort = (field) => {
-    sortDirection.value = sortField.value === field && sortDirection.value === 'asc' ? 'desc' : 'asc';
-    sortField.value = field;
     applyFilters();
-};
+});
 
-// Add new inventory item
-const addInventory = () => {
-    formErrors.value = {};
-    form.value = {
-        id: null,
-        location: '',
-    };
-    showAddModal.value = true;
-    showEditModal.value = false;
-};
 
 // Submit form
 const submitForm = async () => {
@@ -238,26 +160,11 @@ const submitForm = async () => {
         });
 };
 
-// Delete inventory item
-const confirmDelete = (inventory) => {
-    inventoryToDelete.value = inventory;
-    showDeleteModal.value = true;
-};
-
-const deleteInventory = () => {
-    router.delete(route('inventories.destroy', inventoryToDelete.value.id), {
-        onSuccess: () => {
-            showDeleteModal.value = false;
-            inventoryToDelete.value = null;
-            addToast('Inventory item deleted successfully', 'success');
-        },
-    });
-};
 
 // Format date
 const formatDate = (date) => {
     if (!date) return 'N/A';
-    return moment(date).format('LL');
+    return moment(date).format('DD/MM/YYYY');
 };
 
 // Check if inventory is low
@@ -334,89 +241,34 @@ function editInventory(inventory) {
     showEditModal.value = true;
 }
 
-// Bulk delete methods
-const toggleSelectAll = () => {
-    if (selectedItems.value.length === currentInventories.data.length) {
-        selectedItems.value = [];
-    } else {
-        selectedItems.value = currentInventories.data.map(item => item.id);
-    }
-};
 
-const confirmBulkDelete = () => {
-    if (selectedItems.value.length === 0) {
-        toast.warning('Please select items to delete');
-        return;
-    }
-    showBulkDeleteModal.value = true;
-};
-
-const bulkDelete = async () => {
-    let timerInterval;
-    try {
-        isBulkDeleting.value = true;
-        showBulkDeleteModal.value = false;
-
-        // Show the countdown Swal
-        await Swal.fire({
-            title: "Deleting Items",
-            html: "Processing will complete in <b></b> milliseconds.",
-            timer: 2000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-                const timer = Swal.getPopup().querySelector("b");
-                timerInterval = setInterval(() => {
-                    timer.textContent = `${Swal.getTimerLeft()}`;
-                }, 100);
-            },
-            willClose: () => {
-                clearInterval(timerInterval);
-            }
-        });
-
-        // Perform the actual delete operation
-        const response = await axios.post(route('inventories.bulk'), {
-            ids: selectedItems.value,
-            action: 'delete'
-        });
-        
-        // Show success message
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: 'Selected items have been deleted successfully',
-            timer: 1500,
-            showConfirmButton: false
-        });
-
-        selectedItems.value = [];
-        applyFilters();
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: error.response?.data?.message || 'An error occurred while deleting items',
-            confirmButtonText: 'OK'
-        });
-    } finally {
-        isBulkDeleting.value = false;
-    }
-};
-
-
-const echo = ref(null);
 </script>
 
 <template>
 
     <Head title="Inventory Management" />
 
-    <AuthenticatedTabs img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
+    <AuthenticatedLayout img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
         <div class="overflow-auto bg-transparent">
             <div class="text-gray-900">
+                <!-- Navigation Buttons -->
+                <div class="flex justify-end items-center mb-4">
+                    <div class="flex space-x-4">
+                        <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Locations List
+                        </Link>
+                        <Link :href="route('inventories.warehouses.index')" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            Warehouses List
+                        </Link>
+                    </div>
+                </div>
                 <!-- Search and Filters -->
                 <div class="mb-1 flex flex-wrap items-center gap-4">
                     <div class="flex-grow relative">
@@ -433,87 +285,70 @@ const echo = ref(null);
                         </button>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-4">                       
                         <div class="w-[300px]">
-                            <select v-model="warehouse_id"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                @change="applyFilters">
-                                <option value="">All Warehouses</option>
-                                <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-                                    {{ warehouse.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="w-[300px]">
-                            <select v-model="category"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                @change="applyFilters">
-                                <option value="">Category</option>
-                                <option v-for="d in props.category" :key="d.id" :value="d.id">
-                                    {{ d.name }}
-                                </option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <Multiselect
+                                v-model="category"
+                                :options="props.category"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select a category"
+                                :allow-empty="true"
+                                @input="applyFilters"
+                            > </Multiselect>
                         </div>
                         <div class="w-[300px]">
-                            <select v-model="dosage"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                @change="applyFilters">
-                                <option value="">Dosage Form</option>
-                                <option v-for="d in props.dosage" :key="d.id" :value="d.id">
-                                    {{ d.name }}
-                                </option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Form</label>
+                            <Multiselect
+                                v-model="dosage"
+                                :options="props.dosage"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select a dosage form"
+                                :allow-empty="true"
+                            > </Multiselect>
                         </div>
-                        <div class="w-[300px] relative">
-                            <div 
-                                class="cursor-pointer border rounded p-2"
-                                @click="showLocationForm = !showLocationForm"
-                            >
-                                {{ location || 'Select a location' }}
-                            </div>
-                            
-                            <div v-if="showLocationForm" 
-                                class="absolute left-0 right-0 z-[999] mt-1 bg-white border rounded shadow-lg"
-                            >
-                                <input 
-                                    type="text" 
-                                    v-model="locationSearch" 
-                                    placeholder="Search locations..."
-                                    class="w-full p-2 border-b text-sm focus:outline-none"
-                                    @input="filterLocations"
-                                    ref="searchInput"
-                                >
-                                <div class="max-h-48 overflow-y-auto py-1">
-                                    <div 
-                                        v-for="loc in filteredLocations" 
-                                        :key="loc.location"
-                                        @click="selectLocation(loc.location)"
-                                        class="px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm"
-                                    >
-                                        {{ loc.location }}
-                                    </div>
-                                    
-                                    <div v-if="filteredLocations.length === 0" class="p-3 text-sm text-gray-500 text-center">
-                                        {{ locationSearch ? 'No locations found' : 'Type to search locations' }}
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="w-[300px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                            <Multiselect
+                                v-model="warehouse"
+                                :options="props.warehouses"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select a warehouse"
+                                :allow-empty="true"
+                            > </Multiselect>
                         </div>
-                        <SecondaryButton @click="resetFilters">Reset</SecondaryButton>
-                        <select v-model="perPage"
-                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                @change="applyFilters">
-                                <option :value="6">6 per page</option>
-                                <option :value="25">25 per page</option>
-                                <option :value="50">50 per page</option>
-                                <option :value="100">100 per page</option>
-                            </select>
+                        <div class="w-[300px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                            <Multiselect
+                                v-model="location"
+                                :options="loadedLocation"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select a S. Location"
+                                :allow-empty="true"
+                                :disabled="warehouse == null"
+                            > </Multiselect>
+                        </div>
                     </div>
                 </div>
+                <select v-model="perPage"
+                    class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    >
+                    <option :value="6">6 per page</option>
+                    <option :value="25">25 per page</option>
+                    <option :value="50">50 per page</option>
+                    <option :value="100">100 per page</option>
+                </select>
 
                 <!-- Add Button -->
-
-
+                
                 <div class="flex justify-between">
                     <!-- Inventory Table -->
                     <div class="overflow-auto w-full">
@@ -521,49 +356,23 @@ const echo = ref(null);
                             <thead class="border-b border-gray-200">
                                 <tr>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        <div class="flex items-center justify-center">
-                                            <input
-                                                type="checkbox"
-                                                :checked="selectedItems.length === currentInventories.data.length && currentInventories.data.length > 0"
-                                                @change="toggleSelectAll"
-                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                            />
-                                        </div>
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Product Name
+                                        Item
                                     </th>
                                     <th
                                         class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Category
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
-                                        @click="sort('quantity')">
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         In Stock
-                                        <span v-if="sortField === 'quantity'">
-                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                        </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
-                                        @click="sort('location')">
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Location
-                                        <span v-if="sortField === 'location'">
-                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                        </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
-                                        @click="sort('batch_number')">
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Batch Number
-                                        <span v-if="sortField === 'batch_number'">
-                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                        </span>
                                     </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black"
-                                        @click="sort('expiry_date')">
+                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
                                         Expiry Date
-                                        <span v-if="sortField === 'expiry_date'">
-                                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                                        </span>
                                     </th>
                                     <th
                                         class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
@@ -593,16 +402,6 @@ const echo = ref(null);
                                 </tr>
                                 <tr v-else v-for="inventory in currentInventories.data" :key="inventory.id"
                                     class="hover:bg-gray-50">
-                                    <td class="px-3 py-2 whitespace-nowrap  border border-black">
-                                        <div class="flex items-center justify-center">
-                                            <input
-                                                type="checkbox"
-                                                v-model="selectedItems"
-                                                :value="inventory.id"
-                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                            />
-                                        </div>
-                                    </td>
                                     <td
                                         class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
                                         <div v-if="inventory.product">
@@ -744,20 +543,6 @@ const echo = ref(null);
             </div>
         </div>
 
-        <!-- Bulk Actions -->
-        <div v-if="selectedItems.length > 0" 
-            class="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center rounded-lg shadow-lg border border-gray-200 px-4 py-2 space-x-2">
-            <span class="text-sm text-gray-600">{{ selectedItems.length }} items selected</span>
-            <button 
-                @click="confirmBulkDelete"
-                class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete
-            </button>
-        </div>
-
         <!-- Add Inventory Modal -->
         <Modal :show="showAddModal" @close="showAddModal = false">
             <div class="p-6">
@@ -796,37 +581,5 @@ const echo = ref(null);
             </div>
         </Modal>
 
-        <!-- Delete Confirmation Modal -->
-        <Modal :show="showDeleteModal" @close="showDeleteModal = false">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Delete Inventory Item</h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    Are you sure you want to delete this inventory item? This action cannot be undone.
-                </p>
-
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="showDeleteModal = false" class="mr-2">Cancel</SecondaryButton>
-                    <DangerButton @click="deleteInventory">Delete</DangerButton>
-                </div>
-            </div>
-        </Modal>
-
-        <!-- Bulk Delete Confirmation Modal -->
-        <Modal :show="showBulkDeleteModal" @close="showBulkDeleteModal = false">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Delete Selected Inventory Items</h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    Are you sure you want to delete the selected inventory items? This action cannot be undone.
-                </p>
-
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="showBulkDeleteModal = false" class="mr-2">Cancel</SecondaryButton>
-                    <DangerButton @click="bulkDelete">Delete</DangerButton>
-                </div>
-            </div>
-        </Modal>
-
-        <!-- Add at the end of the template, just before closing AuthenticatedTabs -->
-        <!-- <PusherDebugPanel :debug="true" channel="inventory" class="mb-8" /> -->
-    </AuthenticatedTabs>
+    </AuthenticatedLayout>
 </template>

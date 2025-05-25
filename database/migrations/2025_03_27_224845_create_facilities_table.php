@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\District;
 
+use Illuminate\Support\Facades\DB;
+
 return new class extends Migration
 {
     /**
@@ -18,15 +20,11 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->foreignIdFor(User::class)->cascadeOnDelete();
-            $table->foreignIdFor(District::class)->cascadeOnDelete();
+            $table->string('district');
             $table->string('phone');
             $table->string('address');
-            $table->string('city');
-            $table->string('state')->nullable();
-            $table->string('facility_type')->comment('hospital, clinic, pharmacy, etc');
+            $table->string('facility_type');
             $table->boolean('has_cold_storage')->default(false);
-            $table->text('special_handling_capabilities')->nullable();
-            $table->boolean('is_24_hour')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -38,6 +36,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('facilities');
+         // Disable foreign key checks
+         DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        
+         Schema::dropIfExists('facilities');
+         
+         // Re-enable foreign key checks
+         DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 };

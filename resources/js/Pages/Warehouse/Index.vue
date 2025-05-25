@@ -2,31 +2,109 @@
 
     <Head title="Warehouses" />
 
-    <AuthenticatedTabs>
-        <div class="flex justify-between items-center p-4 sticky top-0 bg-white z-20 border-b">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Warehouses</h2>
-            <div class="flex items-center gap-2">
-                <div class="relative mr-4">
-                    <input type="text" v-model="search" placeholder="Search warehouses..."
-                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4 pl-10 w-64" />
-                    <div class="absolute left-3 top-2.5 text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
+    <AuthenticatedLayout title="Warehouse Management">
+        <!-- Page Header -->
+        <div class="p-6 bg-white border-b flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">Warehouse</h1>
+            <Link :href="route('inventories.warehouses.create')" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <i class="fas fa-plus mr-2"></i> Add Warehouse
+            </Link>
+        </div>
+        
+        <!-- Filters Section -->
+        <div class="p-6 bg-white border-b">
+            <!-- Filter Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <!-- Search Bar -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input type="text" v-model="search" placeholder="Name, code, manager..."
+                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4 pl-10" />
                 </div>
-                <select v-model="perPage"
-                    class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
-                    <option value="10">10 per page</option>
-                    <option value="25">25 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                </select>
-                <Link :href="route('inventories.warehouses.create')" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <i class="fas fa-plus mr-2"></i> Add Warehouse
-                </Link>
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select v-model="status"
+                        class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>   
+                </div>
+                
+                <!-- State Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <Multiselect
+                        v-model="selectedState"
+                        :options="props.states || []"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select state"
+                        label="name"
+                        track-by="id"
+                        @update:modelValue="handleStateChange"
+                        class="multiselect-blue"
+                    >
+                        <template #noResult>No states found</template>
+                    </Multiselect>
+                </div>
+                
+                <!-- District Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">District</label>
+                    <Multiselect
+                        v-model="selectedDistrict"
+                        :options="props.districts || []"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select district"
+                        label="name"
+                        track-by="id"
+                        @update:modelValue="handleDistrictChange"
+                        :disabled="!selectedState"
+                        class="multiselect-blue"
+                    >
+                        <template #noResult>No districts found</template>
+                    </Multiselect>
+                </div>
+                
+                <!-- City Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <Multiselect
+                        v-model="selectedCity"
+                        :options="props.cities || []"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select city"
+                        label="name"
+                        track-by="id"
+                        :disabled="!selectedDistrict"
+                        class="multiselect-blue"
+                    >
+                        <template #noResult>No cities found</template>
+                    </Multiselect>
+                </div>
+                
+                <!-- Per Page Selector -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
+                    <select v-model="perPage"
+                        class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                        <option value="500">500 per page</option>
+                    </select>
+                </div>
+                
+
             </div>
         </div>
 
@@ -35,110 +113,95 @@
                 <div class="text-gray-900 overflow-hidden">
                     <div
                         class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-lg">
-                        <table class="w-full divide-y divide-black border-collapse table-auto border border-black">
+                        <table class="w-full divide-y divide-black border-collapse table-auto border-2 border-black">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sticky left-0 bg-gray-50 z-20 border border-black"
-                                        @click="updateSort('name')">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-2 border-black">
                                         Name
-                                        <span v-if="sort === 'name' && direction === 'asc'" class="ml-1">↑</span>
-                                        <span v-else-if="sort === 'name' && direction === 'desc'" class="ml-1">↓</span>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        @click="updateSort('code')">
-                                        Code
-                                        <span v-if="sort === 'code' && direction === 'asc'" class="ml-1">↑</span>
-                                        <span v-else-if="sort === 'code' && direction === 'desc'" class="ml-1">↓</span>
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Address
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                                        Location
                                     </th>
 
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
                                         Manager
                                     </th>
 
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Special Handling
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                                        Status
                                     </th>
 
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        @click="updateSort('capacity')">
-                                        Capacity
-                                        <span v-if="sort === 'capacity' && direction === 'asc'" class="ml-1">↑</span>
-                                        <span v-else-if="sort === 'capacity' && direction === 'desc'"
-                                            class="ml-1">↓</span>
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id"
-                                    class="hover:bg-gray-50">
+                                    class="bg-white hover:bg-gray-50">
                                     <td
-                                        class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border border-black">
-                                        <div class="font-medium text-gray-900">{{ warehouse.name }}</div>
+                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 border-2 border-black">
+                                        {{ warehouse.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                        <div class="text-sm text-gray-500">{{ warehouse.code }}</div>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
+                                        {{ warehouse.code }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                        <div class="text-sm text-gray-900">
-                                            {{ warehouse.city }}, {{ warehouse.country || 'N/A' }}
+                                    <td class="px-6 py-4 text-sm text-gray-500 border-2 border-black">
+                                        <div class="flex flex-col">
+                                            <span class="font-semibold">State:</span> {{ warehouse.state ? warehouse.state.name : 'N/A' }}
+                                            <span class="font-semibold">District:</span> {{ warehouse.district ? warehouse.district.name : 'N/A' }}
+                                            <span class="font-semibold">City:</span> {{ warehouse.city ? warehouse.city.name : 'N/A' }}
                                         </div>
-                                        <div class="text-sm text-gray-500">{{ warehouse.address || 'No address' }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                        <div class="text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
+                                        <div class="text-sm font-medium text-gray-900">
                                             {{ warehouse.manager_name || 'N/A' }}
                                         </div>
-                                        <div class="text-sm text-gray-500">{{ warehouse.manager_email || 'No email' }}
+                                        <div v-if="warehouse.manager_email" class="text-xs text-gray-500">
+                                            <span class="inline-flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                                {{ warehouse.manager_email }}
+                                            </span>
                                         </div>
-                                        <div class="text-sm text-gray-500">{{ warehouse.manager_phone || 'No phone' }}
+                                        <div v-if="warehouse.manager_phone" class="text-xs text-gray-500">
+                                            <span class="inline-flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                </svg>
+                                                {{ warehouse.manager_phone }}
+                                            </span>
                                         </div>
                                     </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                        <div class="text-sm text-gray-900">
-                                            {{ warehouse.special_handling_capabilities || 'N/A' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
-                                        <div class="text-sm text-gray-900">{{ warehouse.capacity ?
-                                            `${warehouse.capacity} m³` : 'N/A' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                            :class="warehouse.status == 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                                            :class="warehouse.status_badge">
                                             {{ warehouse.status }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-black">
-                                        <Link :href="route('inventories.warehouses.edit', warehouse.id)" class="text-indigo-600 hover:text-indigo-900">
-                                            Edit
-                                        </Link>
-                                        <button @click="confirmDelete(warehouse)"
-                                            class="text-red-600 hover:text-red-900">
-                                            Delete
-                                        </button>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium border-2 border-black">
+                                        <div class="flex space-x-3 justify-center">
+                                            <Link :href="route('inventories.warehouses.edit', warehouse.id)"
+                                                class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100">
+                                                <i class="fas fa-edit"></i>
+                                            </Link>
+                                            <button @click="confirmDelete(warehouse)"
+                                                class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="props.warehouses.data.length === 0">
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 border-2 border-black">
                                         No warehouses found
                                     </td>
                                 </tr>
@@ -149,12 +212,17 @@
                 </div>
             </div>
         </div>
-    </AuthenticatedTabs>
+    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedTabs from '@/Layouts/AuthenticatedTabs.vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -165,8 +233,6 @@ import Pagination from '@/Components/Pagination.vue';
 import { ref, watch, onMounted } from 'vue';
 import { debounce } from 'lodash';
 import { useToast } from 'vue-toastification';
-import axios from 'axios';
-import Swal from 'sweetalert2';
 
 const toast = useToast();
 
@@ -177,12 +243,60 @@ const props = defineProps({
     errors: Object
 });
 
+// Click outside directive
+const vClickOutside = {
+    mounted(el, binding) {
+        el._clickOutside = (event) => {
+            if (!(el === event.target || el.contains(event.target))) {
+                binding.value(event);
+            }
+        };
+        document.addEventListener('click', el._clickOutside);
+    },
+    unmounted(el) {
+        document.removeEventListener('click', el._clickOutside);
+    }
+};
+
+// Register directives
+const directives = {
+    'click-outside': vClickOutside
+};
+
 // Reactive state
 const search = ref(props.filters?.search || '');
-const sort = ref(props.filters?.sort || 'name');
-const direction = ref(props.filters?.direction || 'asc');
+const status = ref(props.filters?.status || '');
 const perPage = ref(props.filters?.perPage || 10);
 const loading = ref(false);
+
+// Multiselect variables
+const selectedState = ref(null);
+const selectedDistrict = ref(null);
+const selectedCity = ref(null);
+
+// Action menu state
+const openActionMenuId = ref(null);
+
+// Toggle action menu
+const toggleActionMenu = (warehouseId) => {
+    openActionMenuId.value = openActionMenuId.value === warehouseId ? null : warehouseId;
+};
+
+// Initialize selected values if filters exist
+if (props.filters?.state_id) {
+    const state = props.states.find(s => s.id == props.filters.state_id);
+    if (state) selectedState.value = state;
+}
+
+if (props.filters?.district_id) {
+    const district = props.districts.find(d => d.id == props.filters.district_id);
+    if (district) selectedDistrict.value = district;
+}
+
+if (props.filters?.city_id) {
+    const city = props.cities.find(c => c.id == props.filters.city_id);
+    if (city) selectedCity.value = city;
+}
 
 // Debounced search function
 
@@ -190,21 +304,37 @@ const loading = ref(false);
 // Watch for search and filter changes
 watch([
     () => search.value,
-    () => sort.value,
-    () => direction.value,
-    () => perPage.value
+    () => perPage.value,
+    () => status.value,
+    () => selectedState.value,
+    () => selectedDistrict.value,
+    () => selectedCity.value
 ], () => {
     reloadWarehouse();
 });
 
-// Update sorting
-const updateSort = (column) => {
-    if (sort.value === column) {
-        direction.value = direction.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sort.value = column;
-        direction.value = 'asc';
-    }
+// Handle state change - reset district and city
+const handleStateChange = () => {
+    selectedDistrict.value = null;
+    selectedCity.value = null;
+    reloadWarehouse();
+};
+
+// Handle district change - reset city
+const handleDistrictChange = () => {
+    selectedCity.value = null;
+    reloadWarehouse();
+};
+
+// Clear all filters
+const clearFilters = () => {
+    search.value = '';
+    status.value = '';
+    selectedState.value = null;
+    selectedDistrict.value = null;
+    selectedCity.value = null;
+    perPage.value = 10;
+    reloadWarehouse();
 };
 
 // Format coordinates for display
@@ -443,19 +573,25 @@ const confirmDelete = (warehouse) => {
 };
 
 function reloadWarehouse() {
-    const query = {}
-    if (search.value) query.search = search.value
-    if (perPage.value) query.perPage = perPage.value
+    loading.value = true;
+    const query = {
+        search: search.value,
+        perPage: perPage.value,
+        status: status.value,
+        state_id: selectedState.value ? selectedState.value.id : '',
+        district_id: selectedDistrict.value ? selectedDistrict.value.id : '',
+        city_id: selectedCity.value ? selectedCity.value.id : ''
+    };
+    
     router.get(
         route('inventories.warehouses.index'),
         query,
         {
             preserveState: true,
-            replace: true,
-            only: ['warehouses']
+            only: ['warehouses', 'districts', 'cities']
         }
     );
-}
+};
 
 // Delete warehouse
 const deleteWarehouse = (warehouse) => {

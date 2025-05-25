@@ -13,11 +13,17 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'product_id',
         'quantity',
+        'original_quantity',
+        'original_uom',
+        'edited_by',
         'unit_cost',
         'total_cost',
         'uom',
     ];
 
+    public function edited(){
+        return $this->belongsTo(User::class, 'edited_by');
+    }
 
     public function purchaseOrder()
     {

@@ -5,10 +5,13 @@
         description="Ensuring an Optimcal Flow of Essentials Resource" img="/assets/images/supplies.png">
         <div class="overflow-hidden mb-[80px]">
             <div class="text-gray-900">
-                <!-- Top Actions Bar -->
-                <div class="flex items-center justify-between px-2 mb-6">
-                    <h1>Purchase Orders</h1>
-                    <div class="flex items-center gap-2">
+                <!-- Page Title -->
+                <div class="px-2 mb-6">
+                    <h1 class="text-2xl font-bold">Purchase Orders</h1>
+                </div>
+                
+                <!-- Action Buttons Row -->
+                <div class="flex flex-wrap items-center justify-end gap-2 px-2 mb-6">
                         <div class="relative inline-block text-left z-20" ref="backOrderDropdownRef">
                             <button type="button"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -128,6 +131,30 @@
                                 </div>
                             </transition>
                         </div>
+                </div>
+                
+                <!-- Search and Filter Row -->
+                <div class="flex flex-wrap justify-between w-full px-2 mb-6">
+                    <div class="flex-1 mr-2">
+                        <label for="search" class="text-sm font-medium text-gray-700">Search</label>
+                        <input type="text" v-model="search" placeholder="Search by PO number, supplier or status..."
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                    </div>
+                    <div class="flex-1 mx-2">
+                        <label for="supplier" class="text-sm font-medium text-gray-700">Supplier</label>
+                        <select v-model="supplier" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="">Filter by Supplier</option>
+                            <option :value="s.id" v-for="s in props.suppliers">{{ s.name }}</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 ml-2">
+                        <label for="status" class="text-sm font-medium text-gray-700">Status</label>
+                        <select v-model="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="">Filter by Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
                     </div>
                 </div>
 
@@ -166,16 +193,16 @@
                             <div class="w-full">
                                 <div class="flex flex-col w-full">
                                     <div class="flex items-center gap-5">
-                                        <p class="text-xs font-medium text-black-600">Max Lead Time</p>
-                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
+                                        <p class="text-xs font-bold text-black-600">Max Lead Time</p>
+                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
                                     </div>
                                     <div class="flex items-center gap-5 ">
-                                        <p class="text-xs font-medium text-black-600">Avg Lead Time</p>
-                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
+                                        <p class="text-xs font-bold text-black-600">Avg Lead Time</p>
+                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
                                     </div>
                                     <div class="flex items-center gap-5">
-                                        <p class="text-xs font-medium text-black-600">Low Lead Time</p>
-                                        <p class="text-lg font-semibold text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
+                                        <p class="text-xs font-bold text-black-600">Low Lead Time</p>
+                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -190,7 +217,7 @@
                     <div class="bg-teal-500 rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-black-600">Back Order Quantities</p>
+                                <p class="text-sm font-medium text-black-600">Number of Back Orders</p>
                                 <p class="text-2xl font-semibold text-gray-900">{{ stats.back_orders }}</p>
                             </div>
                             <div class="p-3 bg-teal-100 rounded-full">
@@ -216,35 +243,14 @@
                     </div>
                 </div>
 
-                <!-- Search and Delete Bar -->
-                <div class="flex justify-between w-full mb-4">
-                    <div class="flex-1 mr-2">
-                        <label for="search" class="text-sm font-medium text-gray-700">Search</label>
-                        <input type="text" v-model="search" placeholder="Search by PO number, supplier or status..."
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
-                    </div>
-                    <div class="flex-1 mx-2">
-                        <label for="supplier" class="text-sm font-medium text-gray-700">Supplier</label>
-                        <select v-model="supplier" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="">Filter by Supplier</option>
-                            <option :value="s.id" v-for="s in props.suppliers">{{ s.name }}</option>
-                        </select>
-                    </div>
-                    <div class="flex-1 ml-2">
-                        <label for="status" class="text-sm font-medium text-gray-700">Status</label>
-                        <select v-model="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="">Filter by Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Purchase Orders Table with Fixed Header -->
-                <div class="relative">
-                    <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)]">
-                        <table class="min-w-full border border-black border-t-0">
+                <!-- Purchase Orders Table and Statistics Row -->
+                <div class="px-2 mb-6">
+                    <div class="grid grid-cols-12 gap-4">
+                        <!-- Table Column (10/12) -->
+                        <div class="col-span-10">
+                            <div class="relative">
+                                <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)]">
+                                    <table class="min-w-full border border-black border-t-0">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs text-center font-medium text-black-500 uppercase tracking-wider border border-black">SN#</th>
@@ -257,11 +263,11 @@
                                         Supplier
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
                                         P.O Date
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
                                         Total Amount
                                     </th>
                                     <th
@@ -269,7 +275,7 @@
                                         Status
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider border border-black">
                                         Actions
                                     </th>
                                 </tr>
@@ -278,31 +284,43 @@
                                 <tr v-for="(po, i) in purchaseOrders.data" :key="po.id" class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-black border border-black">{{ i + 1 }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black border border-black">
-                                        <Link :href="route('supplies.po-show', po.id)">
+                                        <Link :href="route('supplies.editPO', po.id)" class="text-indigo-600 hover:text-indigo-900">
                                             {{ po.po_number }}
                                         </Link>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-black border border-black">
                                         {{ po.supplier?.name || 'No supplier' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black text-right border border-black">
-                                        {{ moment(po.po_date).format('LL') }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black text-left border border-black">
+                                        {{ moment(po.po_date).format('DD/MM/YYYY') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black text-right border border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black text-left border border-black">
                                         {{formatCurrency(po.items?.reduce((sum, item) => sum + (item.total_cost || 0),
                                         0) || 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm border border-black">
-                                        <span :class="{
-                                            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full': true,
-                                            'bg-green-100 text-green-800': po.status === 'completed',
-                                            'bg-yellow-100 text-yellow-800': po.status === 'pending',
-                                            'bg-blue-100 text-blue-800': po.status === 'processing'
-                                        }">
-                                            {{ po.status }}
-                                        </span>
+                                        <div class="flex items-center space-x-4">
+                                            <!-- Always show Pending Icon (all statuses start as pending) -->
+                                            <img src="/assets/images/pending.svg" class="w-12 h-12" alt="Pending" />
+                                            
+                                            <!-- Show Reviewed Icon if status is reviewed, approved, or rejected -->
+                                            <svg v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'" 
+                                                 class="w-12 h-12 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            
+                                            <!-- Show Approved Icon if status is approved -->
+                                            <img v-if="po.status === 'approved'" src="/assets/images/approved.png" class="w-12 h-12" alt="Approved" />
+                                            
+                                            <!-- Show Rejected Icon if status is rejected -->
+                                            <svg v-if="po.status === 'rejected'" class="w-12 h-12 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2 border border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium space-x-2 border border-black">
                                         <button @click="router.visit(route('supplies.editPO', po.id))"
                                             class="text-indigo-600 hover:text-indigo-900">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -327,7 +345,104 @@
                                     </td>
                                 </tr>
                             </tbody>
-                        </table>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Statistics Column (2/12) -->
+                        <div class="col-span-2">
+                            <div class="sticky top-4 bg-white rounded-lg shadow-md p-4 h-full">
+                                <h3 class="text-sm font-bold text-gray-900 mb-6">Order Statistics</h3>
+                                <div class="space-y-8">
+                                    <!-- Pending -->
+                                    <div class="relative">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-16 h-16 relative mr-4">
+                                                <svg class="w-16 h-16 transform -rotate-90">
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#eab308" stroke-width="4"
+                                                        :stroke-dasharray="`${(stats.pending_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
+                                                </svg>
+                                                <div class="absolute inset-0 flex items-center justify-center">
+                                                    <span class="text-base font-bold text-yellow-600">{{ stats.total_orders > 0 ?
+                                                        Math.round((stats.pending_orders / stats.total_orders) * 100) : 0 }}%</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-lg font-bold text-gray-900">{{ stats.pending_orders || 0 }}</div>
+                                                <div class="text-base text-gray-600">Pending</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Reviewed -->
+                                    <div class="relative">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-16 h-16 relative mr-4">
+                                                <svg class="w-16 h-16 transform -rotate-90">
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#3b82f6" stroke-width="4"
+                                                        :stroke-dasharray="`${(stats.reviewed_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
+                                                </svg>
+                                                <div class="absolute inset-0 flex items-center justify-center">
+                                                    <span class="text-base font-bold text-blue-600">{{ stats.total_orders > 0 ?
+                                                        Math.round((stats.reviewed_orders / stats.total_orders) * 100) : 0 }}%</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-lg font-bold text-gray-900">{{ stats.reviewed_orders || 0 }}</div>
+                                                <div class="text-base text-gray-600">Reviewed</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Approved -->
+                                    <div class="relative">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-16 h-16 relative mr-4">
+                                                <svg class="w-16 h-16 transform -rotate-90">
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#22c55e" stroke-width="4"
+                                                        :stroke-dasharray="`${(stats.approved_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
+                                                </svg>
+                                                <div class="absolute inset-0 flex items-center justify-center">
+                                                    <span class="text-base font-bold text-green-600">{{ stats.total_orders > 0 ?
+                                                        Math.round((stats.approved_orders / stats.total_orders) * 100) : 0 }}%</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-lg font-bold text-gray-900">{{ stats.approved_orders || 0 }}</div>
+                                                <div class="text-base text-gray-600">Approved</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Rejected -->
+                                    <div class="relative">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-16 h-16 relative mr-4">
+                                                <svg class="w-16 h-16 transform -rotate-90">
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                                    <circle cx="32" cy="32" r="28" fill="none" stroke="#ef4444" stroke-width="4"
+                                                        :stroke-dasharray="`${(stats.rejected_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
+                                                </svg>
+                                                <div class="absolute inset-0 flex items-center justify-center">
+                                                    <span class="text-base font-bold text-red-600">{{ stats.total_orders > 0 ?
+                                                        Math.round((stats.rejected_orders / stats.total_orders) * 100) : 0 }}%</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-lg font-bold text-gray-900">{{ stats.rejected_orders || 0 }}</div>
+                                                <div class="text-base text-gray-600">Rejected</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -447,6 +562,10 @@ const props = defineProps({
                 avg: '0 Months'
             },
             pending_orders: 0,
+            reviewed_orders: 0,
+            approved_orders: 0,
+            rejected_orders: 0,
+            total_orders: 0,
             back_orders: 0,
         })
     },
@@ -505,15 +624,38 @@ const confirmDelete = async (id) => {
     }
 };
 
-const stats = computed(() => props.stats || {
-    total_items: 0,
-    total_cost: 0,
-    lead_times: {
-        max: '0 Months',
-        min: '0 Months',
-        avg: '0 Months'
-    },
-    pending_orders: 0
+// Calculate order statistics based on purchaseOrders status
+const orderStats = computed(() => {
+    const orders = props.purchaseOrders?.data || [];
+    const pending = orders.filter(order => order.status?.toLowerCase() === 'pending').length;
+    const reviewed = orders.filter(order => order.status?.toLowerCase() === 'reviewed').length;
+    const approved = orders.filter(order => order.status?.toLowerCase() === 'approved').length;
+    const rejected = orders.filter(order => order.status?.toLowerCase() === 'rejected').length;
+    const total = orders.length;
+    
+    return {
+        pending_orders: pending,
+        reviewed_orders: reviewed,
+        approved_orders: approved,
+        rejected_orders: rejected,
+        total_orders: total
+    };
+});
+
+const stats = computed(() => {
+    return {
+        ...props.stats || {
+            total_items: 0,
+            total_cost: 0,
+            lead_times: {
+                max: '0 Months',
+                min: '0 Months',
+                avg: '0 Months'
+            },
+            back_orders: 0
+        },
+        ...orderStats.value
+    };
 });
 
 

@@ -23,7 +23,7 @@ class TransferController extends Controller
             $transfer = Transfer::findOrFail($id);
             
             if ($transfer->status !== 'pending') {
-                return response()->json(['message' => 'Transfer must be pending to be approved'], 400);
+                return redirect()->back()->with('error', 'Transfer must be pending to be approved');
             }
 
             $transfer->update([
@@ -32,9 +32,9 @@ class TransferController extends Controller
                 'approved_at' => now()
             ]);
 
-            return response()->json(['message' => 'Transfer approved successfully']);
+            return redirect()->route('transfers.show', $id)->with('success', 'Transfer approved successfully');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to approve transfer: ' . $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Failed to approve transfer: ' . $e->getMessage());
         }
     }
 
@@ -44,7 +44,7 @@ class TransferController extends Controller
             $transfer = Transfer::findOrFail($id);
             
             if ($transfer->status !== 'pending') {
-                return response()->json(['message' => 'Transfer must be pending to be rejected'], 400);
+                return redirect()->back()->with('error', 'Transfer must be pending to be rejected');
             }
 
             $transfer->update([
@@ -53,13 +53,15 @@ class TransferController extends Controller
                 'rejected_at' => now()
             ]);
 
-            // Return inventory quantity
-            $inventory = Inventory::findOrFail($transfer->inventory_id);
-            $inventory->increment('quantity', $transfer->quantity);
+            // Return inventory quantity if applicable
+            if (!empty($transfer->inventory_id)) {
+                $inventory = Inventory::findOrFail($transfer->inventory_id);
+                $inventory->increment('quantity', $transfer->quantity);
+            }
 
-            return response()->json(['message' => 'Transfer rejected successfully']);
+            return redirect()->route('transfers.show', $id)->with('success', 'Transfer rejected successfully');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to reject transfer: ' . $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Failed to reject transfer: ' . $e->getMessage());
         }
     }
 
@@ -69,7 +71,7 @@ class TransferController extends Controller
             $transfer = Transfer::findOrFail($id);
             
             if ($transfer->status !== 'approved') {
-                return response()->json(['message' => 'Transfer must be approved to be set in process'], 400);
+                return redirect()->back()->with('error', 'Transfer must be approved to be set in process');
             }
 
             $transfer->update([
@@ -77,9 +79,9 @@ class TransferController extends Controller
                 'process_started_at' => now()
             ]);
 
-            return response()->json(['message' => 'Transfer marked as in process']);
+            return redirect()->route('transfers.show', $id)->with('success', 'Transfer marked as in process');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to update transfer status: ' . $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Failed to update transfer status: ' . $e->getMessage());
         }
     }
 
@@ -89,7 +91,7 @@ class TransferController extends Controller
             $transfer = Transfer::findOrFail($id);
             
             if ($transfer->status !== 'in_process') {
-                return response()->json(['message' => 'Transfer must be in process to be dispatched'], 400);
+                return redirect()->back()->with('error', 'Transfer must be in process to be dispatched');
             }
 
             $transfer->update([
@@ -98,9 +100,9 @@ class TransferController extends Controller
                 'dispatched_at' => now()
             ]);
 
-            return response()->json(['message' => 'Transfer has been dispatched']);
+            return redirect()->route('transfers.show', $id)->with('success', 'Transfer has been dispatched');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to dispatch transfer: ' . $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Failed to dispatch transfer: ' . $e->getMessage());
         }
     }
 
@@ -111,7 +113,7 @@ class TransferController extends Controller
             $transfer = Transfer::with(['toWarehouse', 'toFacility', 'items.product'])->findOrFail($id);
             
             if ($transfer->status !== 'dispatched') {
-                return response()->json(['message' => 'Transfer must be dispatched to be completed'], 400);
+                return redirect()->back()->with('error', 'Transfer must be dispatched to be completed');
             }
 
             // Check if the transfer is to a warehouse or facility
@@ -141,14 +143,14 @@ class TransferController extends Controller
             }
 
             $transfer->update([
-                'status' => 'transferred'
+                'status' => 'received'
             ]);
 
             DB::commit();
-            return response()->json(['message' => 'Transfer completed successfully']);
+            return redirect()->route('transfers.show', $id)->with('success', 'Transfer completed successfully');
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['message' => 'Error completing transfer: ' . $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Error completing transfer: ' . $e->getMessage());
         }
     }
 
@@ -424,7 +426,13 @@ class TransferController extends Controller
     }
 
     public function show($id){
-        $transfer = Transfer::with(['items.product', 'fromWarehouse:id,name', 'toWarehouse:id,name', 'fromFacility:id,name', 'toFacility:id,name'])->findOrFail($id);
+        $transfer = Transfer::where('id', $id)->with([
+            'items.product', 
+            'fromWarehouse:id,name', 
+            'toWarehouse:id,name', 
+            'fromFacility:id,name', 
+            'toFacility:id,name'
+        ])->first();
         return inertia('Transfer/Show', [
             'transfer' => $transfer
         ]);
@@ -445,6 +453,41 @@ class TransferController extends Controller
     }
     
     /**
+     * Delete a transfer item
+     */
+    public function destroyItem($id)
+    {
+        try {
+            $transferItem = TransferItem::findOrFail($id);
+            
+            // Check if the transfer is in a state where items can be deleted
+            $transfer = Transfer::findOrFail($transferItem->transfer_id);
+            
+            if (!in_array($transfer->status, ['pending', 'draft'])) {
+                return response()->json([
+                    'message' => 'Cannot delete items from a transfer that is not in pending or draft status'
+                ], 403);
+            }
+            
+            // Delete the transfer item
+            $transferItem->delete();
+            
+            return response()->json([
+                'message' => 'Transfer item deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('Error deleting transfer item: ' . $e->getMessage(), [
+                'item_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to delete transfer item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Get inventories based on source type and ID
      */
     public function getInventories(Request $request)
@@ -456,49 +499,86 @@ class TransferController extends Controller
         
         try {
             if ($request->source_type === 'warehouse') {
-                // Get warehouse inventories
-                $inventories = Inventory::with(['product', 'warehouse'])
-                    ->where('warehouse_id', $request->source_id)
-                    ->where('quantity', '>', 0)
+                // Get warehouse inventories directly with DB query
+                $result = DB::table('inventories as i')
+                    ->join('products as p', 'i.product_id', '=', 'p.id')
+                    ->leftJoin('warehouses as w', 'i.warehouse_id', '=', 'w.id')
+                    ->where('i.warehouse_id', $request->source_id)
+                    ->where('i.quantity', '>', 0)
+                    ->whereNotNull('p.id') // Ensure product exists
+                    ->select([
+                        'i.id',
+                        'i.product_id',
+                        'p.name',
+                        'i.batch_number',
+                        'i.quantity',
+                        'i.expiry_date',
+                        'i.warehouse_id',
+                        'w.name as warehouse_name',
+                        // Add JSON for product object
+                        DB::raw("JSON_OBJECT('id', p.id, 'name', p.name) as product_json")
+                    ])
                     ->get()
-                    ->map(function ($inventory) {
-                        return [
-                            'id' => $inventory->id,
-                            'product_id' => $inventory->product_id,
-                            'product_name' => $inventory->product->name,
-                            'batch_number' => $inventory->batch_number,
-                            'barcode' => $inventory->barcode,
-                            'expire_date' => $inventory->expire_date,
-                            'uom' => $inventory->uom,
-                            'available_quantity' => $inventory->quantity,
-                            'warehouse_id' => $inventory->warehouse_id,
-                            'warehouse_name' => $inventory->warehouse->name
-                        ];
+                    ->map(function($item) {
+                        // Convert product_json to actual product array
+                        $item->product = json_decode($item->product_json);
+                        unset($item->product_json);
+                        
+                        // Add missing fields with default values
+                        $item->uom = 'N/A'; // Default UoM since column doesn't exist
+                        $item->barcode = ''; // Default barcode since column doesn't exist
+                        $item->batch_number = $item->batch_number ?? '';
+                        $item->warehouse_name = $item->warehouse_name ?? 'Unknown';
+                        
+                        return $item;
                     });
             } else {
-                // Get facility inventories
-                $inventories = FacilityInventory::with(['product', 'facility'])
-                    ->where('facility_id', $request->source_id)
-                    ->where('quantity', '>', 0)
+                // Get facility inventories directly with DB query
+                $result = DB::table('facility_inventories as fi')
+                    ->join('products as p', 'fi.product_id', '=', 'p.id')
+                    ->leftJoin('facilities as f', 'fi.facility_id', '=', 'f.id')
+                    ->where('fi.facility_id', $request->source_id)
+                    ->where('fi.quantity', '>', 0)
+                    ->whereNotNull('p.id') // Ensure product exists
+                    ->select([
+                        'fi.id',
+                        'fi.product_id',
+                        'p.name',
+                        'fi.batch_number',
+                        'fi.quantity',
+                        'fi.expiry_date',
+                        'fi.facility_id',
+                        'f.name as facility_name',
+                        // Add JSON for product object
+                        DB::raw("JSON_OBJECT('id', p.id, 'name', p.name) as product_json")
+                    ])
                     ->get()
-                    ->map(function ($inventory) {
-                        return [
-                            'id' => $inventory->id,
-                            'product_id' => $inventory->product_id,
-                            'product_name' => $inventory->product->name,
-                            'batch_number' => $inventory->batch_number,
-                            'barcode' => $inventory->barcode,
-                            'expire_date' => $inventory->expire_date,
-                            'uom' => $inventory->uom,
-                            'available_quantity' => $inventory->quantity,
-                            'facility_id' => $inventory->facility_id,
-                            'facility_name' => $inventory->facility->name
-                        ];
+                    ->map(function($item) {
+                        // Convert product_json to actual product array
+                        $item->product = json_decode($item->product_json);
+                        unset($item->product_json);
+                        
+                        // Add missing fields with default values
+                        $item->uom = 'N/A'; // Default UoM since column doesn't exist
+                        $item->barcode = ''; // Default barcode since column doesn't exist
+                        $item->batch_number = $item->batch_number ?? '';
+                        $item->facility_name = $item->facility_name ?? 'Unknown';
+                        
+                        return $item;
                     });
             }
             
-            return response()->json($inventories);
+            // Log the count of items found
+            $count = $result->count();
+            logger()->info("Found {$count} inventory items for {$request->source_type} ID: {$request->source_id}");
+            
+            return response()->json($result, 200);
         } catch (\Exception $e) {
+            logger()->error('Error in getInventories: ' . $e->getMessage(), [
+                'source_type' => $request->source_type,
+                'source_id' => $request->source_id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

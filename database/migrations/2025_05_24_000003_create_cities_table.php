@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('districts', function (Blueprint $table) {
+        Schema::create('cities', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('state_id');
+            $table->unsignedBigInteger('district_id');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            
+            $table->foreign('district_id')->references('id')->on('districts')->onDelete('cascade');
+            // Add unique constraint for name within a district
+            $table->unique(['name', 'district_id']);
         });
     }
 
@@ -25,8 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
-        Schema::dropIfExists('districts');
-        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        Schema::dropIfExists('cities');
     }
 };

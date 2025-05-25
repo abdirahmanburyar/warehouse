@@ -12,22 +12,12 @@ class Facility extends Model
         'name',
         'email',
         'user_id',
-        'district_id',
+        'district',
         'phone',
         'address',
-        'city',
-        'state',
         'facility_type',
         'has_cold_storage',
-        'special_handling_capabilities',
-        'is_24_hour',
         'is_active',
-    ];
-
-    protected $casts = [
-        'has_cold_storage' => 'boolean',
-        'is_24_hour' => 'boolean',
-        'is_active' => 'boolean',
     ];
 
     public function inventories()

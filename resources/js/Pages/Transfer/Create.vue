@@ -45,12 +45,13 @@ const form = ref({
     source_id: null,
     destination_type: 'warehouse',
     destination_id: null,
-    notes: '',
     items: [
         {
             inventory_id: null,
-            product_id: null,
+            product_id: '',
+            product: null,
             quantity: 0,
+            available_quantity: 0,
             batch_number: '',
             barcode: '',
             expire_date: null,
@@ -80,13 +81,12 @@ const filteredDestinationOptions = computed(() => {
 const handleSourceSelect = async (selected) => {
     form.value.source_id = selected ? selected.id : null;
     selectedInventory.value = null;
-    
+
     // Reset the items array to have only one empty item when source changes
     form.value.items = [{
         inventory_id: null,
         product_id: null,
-        selected_inventory: null,
-        product_name: '',
+        product: null,
         quantity: 0,
         batch_number: '',
         barcode: '',
@@ -94,7 +94,7 @@ const handleSourceSelect = async (selected) => {
         uom: '',
         available_quantity: 0
     }];
-    
+
     if (selected) {
         await fetchInventories();
     } else {
@@ -107,90 +107,194 @@ const handleDestinationSelect = (selected) => {
     form.value.destination_id = selected ? selected.id : null;
 };
 
-const handleInventorySelect = (inventory) => {
-    form.value.inventory_id = inventory ? inventory.id : null;
-    selectedInventory.value = inventory;
-};
 
 const fetchInventories = async () => {
+    // If no source selected, reset and exit
     if (!selectedSource.value || !form.value.source_id) {
-        return;
-    }
-    
-    loadingInventories.value = true;
-    filteredInventories.value = [];
-    searchQuery.value = '';
-    
-    try {
-        const sourceId = form.value.source_id;
-        const response = await axios.get(route('transfers.getInventories'), {
-            params: {
-                source_type: sourceType.value,
-                source_id: sourceId
-            }
-        });
-
-        console.log(response.data);
-
-        
-        availableInventories.value = response.data;
-    } catch (error) {
-        console.error('Failed to fetch inventories:', error);
-    } finally {
-        loadingInventories.value = false;
-    }
-};
-
-const searchInventories = () => {
-    if (!searchQuery.value || searchQuery.value.trim() === '') {
+        availableInventories.value = [];
         filteredInventories.value = [];
         return;
     }
-    
-    const query = searchQuery.value.toLowerCase();
-    filteredInventories.value = availableInventories.value.filter(item => {
-        const productName = item.product?.name?.toLowerCase() || '';
-        const batchNumber = item.batch_number?.toLowerCase() || '';
-        const barcode = item.product?.barcode?.toLowerCase() || '';
-        
-        return productName.includes(query) || 
-               batchNumber.includes(query) || 
-               barcode.includes(query);
+
+    // Set loading state
+    loadingInventories.value = true;
+    filteredInventories.value = [];
+    searchQuery.value = '';
+
+    // Show Swal loading counter
+    let timerInterval;
+    const swalLoading = Swal.fire({
+        title: 'Loading Inventory',
+        html: 'Fetching inventory items... <b></b>',
+        timer: 30000, // 30 seconds max timeout
+        timerProgressBar: true,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+            const timer = Swal.getPopup().querySelector('b');
+            timerInterval = setInterval(() => {
+                timer.textContent = `${Math.ceil(Swal.getTimerLeft() / 1000)}s`;
+            }, 100);
+        },
+        willClose: () => {
+            clearInterval(timerInterval);
+        }
     });
+
+    // Use axios with then/catch pattern
+    await axios.get(route('transfers.getInventories'), {
+        params: {
+            source_type: sourceType.value,
+            source_id: form.value.source_id
+        }
+    })
+        .then(response => {
+            console.log('[DEBUG] Inventory response:', response.data);
+
+            if (!response.data || !Array.isArray(response.data)) {
+                throw new Error('Invalid response format');
+            }
+
+            // Filter valid items
+            const validItems = response.data.filter(item => {
+                return item && item.product && item.product.name;
+            });
+
+            // Update available inventories
+            console.log(validItems);
+
+            availableInventories.value = validItems;
+
+            // Close Swal and show appropriate message
+            swalLoading.close();
+            if (validItems.length > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Inventory Loaded',
+                    text: `Successfully loaded ${validItems.length} inventory items`,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No Inventory',
+                    text: 'No inventory items available',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+            }
+        })
+        .catch(error => {
+            console.error('[ERROR] Fetch inventories failed:', error);
+            availableInventories.value = [];
+
+            // Close Swal loading
+            swalLoading.close();
+
+            // Handle different error types
+            if (error.response) {
+                console.error('[ERROR] Server response:', error.response.status, error.response.data);
+                if (error.response.status === 500) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Server Error',
+                        text: 'The inventory service is currently unavailable',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: `Error ${error.response.status}`,
+                        text: error.response.data?.message || 'Unknown error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            } else if (error.request) {
+                console.error('[ERROR] No response received');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'No response received from server',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                console.error('[ERROR] Request setup error:', error.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Unknown error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        })
+        .finally(() => {
+            // Always clean up
+            console.log('[DEBUG] Fetch inventories completed');
+            loadingInventories.value = false;
+        });
 };
 
 const validateForm = () => {
     errors.value = {};
-    if (!form.value.source_id) errors.value.source_id = 'Please select a source.';
-    if (!form.value.destination_id) errors.value.destination_id = 'Please select a destination.';
-    
-    // Validate that at least one item is selected
-    let validItems = true;
-    let hasItems = false;
-    
+    let isValid = true;
+
+    // Validate source and destination
+    if (!form.value.source_id) {
+        errors.value.source_id = 'Please select a source.';
+        isValid = false;
+    }
+
+    if (!form.value.destination_id) {
+        errors.value.destination_id = 'Please select a destination.';
+        isValid = false;
+    }
+
+    // Check if source and destination are the same
+    if (form.value.source_id === form.value.destination_id &&
+        form.value.source_type === form.value.destination_type) {
+        errors.value.destination_id = 'Source and destination cannot be the same.';
+        isValid = false;
+    }
+
+    // Validate that all items are properly filled
+    let hasValidItems = false;
+
     form.value.items.forEach((item, index) => {
+        // Check if inventory item is selected
         if (!item.inventory_id) {
             errors.value[`item_${index}_inventory`] = 'Please select an inventory item.';
-            validItems = false;
+            isValid = false;
         }
-        
-        if (item.inventory_id && (!item.quantity || item.quantity <= 0)) {
-            errors.value[`item_${index}_quantity`] = 'Quantity must be greater than 0.';
-            validItems = false;
+
+        // Check if quantity is valid (must be at least 1)
+        if (item.inventory_id && (!item.quantity || item.quantity < 1)) {
+            errors.value[`item_${index}_quantity`] = 'Quantity must be at least 1.';
+            isValid = false;
         }
-        
-        // Removed the constraint that prevents quantity from exceeding available quantity
-        
-        if (item.inventory_id && item.quantity > 0) {
-            hasItems = true;
+
+        // Check if quantity exceeds available quantity
+        if (item.inventory_id && item.quantity > item.available_quantity) {
+            errors.value[`item_${index}_quantity`] = `Maximum available quantity is ${item.available_quantity}.`;
+            isValid = false;
+        }
+
+        // Track if we have at least one valid item
+        if (item.inventory_id && item.quantity >= 1 && item.quantity <= item.available_quantity) {
+            hasValidItems = true;
         }
     });
-    
-    if (!hasItems) {
-        errors.value.items = 'At least one item must be selected with a quantity greater than 0.';
+
+    // Ensure at least one valid item exists
+    if (!hasValidItems) {
+        errors.value.items = 'At least one item must be selected with a valid quantity.';
+        isValid = false;
     }
-    
-    return Object.keys(errors.value).length === 0 && validItems && hasItems;
+
+    return isValid;
 };
 
 // Watch for changes in source type and update form
@@ -212,118 +316,36 @@ watch(destinationType, (newValue) => {
 });
 
 const submit = async () => {
-    if (!validateForm()) {
-        toast.error('Please correct the errors in the form.');
-        return;
-    }
-    
-    // Filter out items with no quantity or inventory_id
-    const validItems = form.value.items.filter(item => item.inventory_id && item.quantity > 0);
-    const totalItems = validItems.length;
-    const totalQuantity = validItems.reduce((sum, item) => sum + item.quantity, 0);
-    
-    if (totalItems === 0) {
-        toast.error('Please select at least one item to transfer.');
-        return;
-    }
-    
-    // Create confirmation message based on number of items
-    let confirmMessage = totalItems === 1 
-        ? `Are you sure you want to transfer ${validItems[0].quantity} units of ${validItems[0].product_name}?`
-        : `Are you sure you want to transfer ${totalItems} different items (total quantity: ${totalQuantity})?`;
 
-    const result = await Swal.fire({
-        title: 'Confirm Transfer',
-        text: confirmMessage,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, transfer it!',
-        cancelButtonText: 'Cancel'
-    });
+    loading.value = true;
 
-    if (result.isConfirmed) {
-        loading.value = true;
-        
-        // Create payload with only valid items
-        const payload = {
-            source_type: form.value.source_type,
-            source_id: form.value.source_id,
-            destination_type: form.value.destination_type,
-            destination_id: form.value.destination_id,
-            notes: form.value.notes,
-            items: validItems
-        };
-
-        try {
-            const response = await axios.post(route('transfers.store'), payload);
-            
-            Swal.fire({
-                title: 'Transfer Successful!',
-                text: `Transfer ID: ${response.data.transfer_id}`,
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                router.visit(route('transfers.index'));
-            });
-        } catch (error) {
-            console.error('Transfer error:', error);
-            if (error.response && error.response.data) {
-                if (typeof error.response.data === 'string') {
-                    toast.error(error.response.data);
-                } else if (error.response.data.message) {
-                    toast.error(error.response.data.message);
-                } else {
-                    toast.error('An error occurred while creating the transfer.');
-                }
-                
-                if (error.response.data.errors) {
-                    errors.value = error.response.data.errors;
-                }
-            } else {
-                toast.error('An error occurred while creating the transfer.');
-            }
-        } finally {
-            loading.value = false;
-        }
-    }
+    console.log('Submitting transfer with payload:', form.value);
+    await axios.post(route('transfers.store'), form.value)
+        .then((response) => {
+            console.log(response.data);            
+        })
+        .catch((error) => {
+            console.log(error);            
+        });
 };
 
 function handleProductSelect(index, selected) {
     const item = form.value.items[index];
-    if (selected) {
-        // Store the full inventory object in selectedInventory for reference
-        console.log('Selected inventory item:', selected);
-        
-        item.inventory_id = selected.id;
-        item.product_id = selected.product_id;
-        item.selected_inventory = selected; // Store the full inventory object
-        item.product_name = selected.product?.name || ''; 
-        item.batch_number = selected.batch_number || '';
-        item.barcode = selected.product?.barcode || '';
-        item.expire_date = selected.expiry_date || selected.expire_date || null;
-        item.uom = selected.product?.uom || '';
-        item.available_quantity = selected.quantity || 0;
-        item.quantity = 0; // Reset quantity when new item selected
-    } else {
-        // Reset item properties if selection is cleared
-        item.inventory_id = null;
-        item.product_id = null;
-        item.selected_inventory = null;
-        item.product_name = '';
-        item.batch_number = '';
-        item.barcode = '';
-        item.expire_date = null;
-        item.uom = '';
-        item.available_quantity = 0;
-        item.quantity = 0;
-    }
+
+    //    console.log(selected);
+    item.uom = selected.uom;
+    item.batch_number = selected.batch_number;
+    item.barcode = selected.barcode;
+    item.expire_date = selected.expire_date;
+    item.available_quantity = selected.quantity;
+
 }
 
 function addNewItem() {
     form.value.items.push({
         inventory_id: null,
         product_id: null,
-        selected_inventory: null,
+        product: null,
         product_name: '',
         quantity: 0,
         batch_number: '',
@@ -335,13 +357,43 @@ function addNewItem() {
 }
 
 function removeItem(index) {
+    // Check if we have more than one item before removing
     if (form.value.items.length > 1) {
-        form.value.items.splice(index, 1);
+        const itemToRemove = form.value.items[index];
+        const itemName = itemToRemove.product_name || 'this item';
+
+        // Show confirmation dialog
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: `Are you sure you want to remove ${itemName}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Remove the item from the local array
+                form.value.items.splice(index, 1);
+
+                // Show success message
+                toast.success('Item removed successfully');
+            }
+        });
     }
 }
 
 function checkQuantity(index) {
     const item = form.value.items[index];
+
+    // Ensure quantity is at least 1
+    if (item.quantity < 1) {
+        item.quantity = 1;
+        toast.info('Minimum quantity is 1');
+    }
+
+    // Ensure quantity doesn't exceed available quantity
     if (item.quantity > item.available_quantity) {
         // Reset to available quantity if exceeded
         item.quantity = item.available_quantity;
@@ -352,10 +404,30 @@ function checkQuantity(index) {
 
 <template>
     <AuthenticatedLayout title="Transfer Item">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="mb-5">
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-semibold mb-6">Transfer Item</h2>
-                
+
+                <div class="mb-4">
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    Select source and destination locations, then choose inventory items to transfer.
+                                    The quantity must not exceed available quantity.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <form @submit.prevent="submit" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Source Type Selection -->
@@ -363,64 +435,42 @@ function checkQuantity(index) {
                             <InputLabel value="Transfer From" />
                             <div class="mt-2 space-x-4">
                                 <label class="inline-flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        v-model="sourceType" 
-                                        value="warehouse" 
-                                        class="form-radio">
+                                    <input type="radio" v-model="sourceType" value="warehouse" class="form-radio">
                                     <span class="ml-2">Warehouse</span>
                                 </label>
                                 <label class="inline-flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        v-model="sourceType" 
-                                        value="facility" 
-                                        class="form-radio">
+                                    <input type="radio" v-model="sourceType" value="facility" class="form-radio">
                                     <span class="ml-2">Facility</span>
                                 </label>
                             </div>
                         </div>
-                        
+
                         <!-- Source Selection -->
                         <div>
-                            <InputLabel :value="`Select Source ${sourceType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
-                            <Multiselect
-                                v-model="selectedSource"
-                                :options="sourceOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
+                            <InputLabel
+                                :value="`Select Source ${sourceType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
+                            <Multiselect v-model="selectedSource" :options="sourceOptions" :searchable="true"
+                                :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 :placeholder="`Select source ${sourceType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                track-by="id"
-                                label="name"
-                                @select="handleSourceSelect"
-                            >
+                                track-by="id" label="name" @select="handleSourceSelect"
+                                :class="{ 'border-red-500': errors.source_id }" @open="errors.source_id = null">
                                 <template v-slot:option="{ option }">
                                     <span>{{ option.name }}</span>
                                 </template>
                             </Multiselect>
                             <InputError :message="errors.source_id" class="mt-2" />
                         </div>
-                        
+
                         <!-- Destination Type Selection -->
                         <div>
                             <InputLabel value="Transfer To" />
                             <div class="mt-2 space-x-4">
                                 <label class="inline-flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        v-model="destinationType" 
-                                        value="warehouse" 
-                                        class="form-radio">
+                                    <input type="radio" v-model="destinationType" value="warehouse" class="form-radio">
                                     <span class="ml-2">Warehouse</span>
                                 </label>
                                 <label class="inline-flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        v-model="destinationType" 
-                                        value="facility" 
-                                        class="form-radio">
+                                    <input type="radio" v-model="destinationType" value="facility" class="form-radio">
                                     <span class="ml-2">Facility</span>
                                 </label>
                             </div>
@@ -428,114 +478,90 @@ function checkQuantity(index) {
 
                         <!-- Destination Selection -->
                         <div>
-                            <InputLabel :value="`Select Destination ${destinationType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
-                            <Multiselect
-                                v-model="selectedDestination"
-                                :options="filteredDestinationOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
+                            <InputLabel
+                                :value="`Select Destination ${destinationType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
+                            <Multiselect v-model="selectedDestination" :options="filteredDestinationOptions"
+                                :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 :placeholder="`Select destination ${destinationType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                track-by="id"
-                                label="name"
-                                @select="handleDestinationSelect"
-                            >
+                                track-by="id" label="name" @select="handleDestinationSelect"
+                                required
+                                :class="{ 'border-red-500': errors.destination_id }"
+                                @open="errors.destination_id = null">
                                 <template v-slot:option="{ option }">
                                     <span>{{ option.name }}</span>
                                 </template>
                             </Multiselect>
                             <InputError :message="errors.destination_id" class="mt-2" />
                         </div>
-                        
-                       <!-- here for items -->
+                        <!-- here for items -->
+                    </div>
 
-
-                       
-                       
-                       
-                    </div>                    
                     <div class="mb-4">
-                        <table class="min-w-full divide-y divide-gray-200 border">
+                        <table class="min-w-full">
                             <thead class="w-full bg-gray-50">
                                 <tr>
-                                    <th class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Batch number
-                                    </th> 
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UoM</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available quantity</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity to release</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th
+                                        class="w-auto px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border border-black">
+                                        Item</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        UoM</th>
+                                    <th
+                                        class="w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        Item Information
+                                    </th>
+                                    <th
+                                        class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        Available quantity</th>
+                                    <th
+                                        class="w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        Quantity to release</th>
+                                    <th
+                                        class="w-[70px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-if="loadingInventories">
-                                </tr>
-                                <tr v-else-if="!selectedSource">
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Select a source {{ sourceType === 'warehouse' ? 'warehouse' : 'facility' }} first</td>
-                                </tr>
-                                <tr v-else-if="filteredInventories.length === 0 && searchQuery">
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No matching inventory items found</td>
-                                </tr>
-                                <tr v-else-if="filteredInventories.length === 0 && !searchQuery && availableInventories.length === 0">
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No inventory items available in this {{ sourceType === 'warehouse' ? 'warehouse' : 'facility' }}</td>
-                                </tr>
-                                
                                 <!-- Inventory Items rows -->
                                 <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <Multiselect 
-                                            v-model="item.selected_inventory"
-                                            :options="filteredInventories.length ? filteredInventories : availableInventories"
-                                            :searchable="true"
-                                            :close-on-select="true"
-                                            :show-labels="false"
-                                            :allow-empty="true"
-                                            placeholder="Select product"
-                                            track-by="id"
-                                            @select="handleProductSelect(index, $event)"
-                                        >
-                                            <template v-slot:option="{ option }">
-                                                <span>{{ option.product?.name }}</span>
-                                            </template>
-                                            <template v-slot:singleLabel="{ option }">
-                                                <span>{{ option.product?.name }}</span>
-                                            </template>
-                                        </Multiselect>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap border border-black text-sm font-medium text-gray-900">
+                                        <Multiselect v-model="item.product" :value="item.product_id"
+                                            :options="availableInventories" placeholder="Search for an item..."
+                                            required
+                                            track-by="id" label="name" :searchable="true" :allow-empty="true"
+                                            @select="handleProductSelect(index, $event)"></Multiselect>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
-                                        <div>{{ item.batch_number }}</div>
-                                        <div>Barcode: {{ item.barcode }}</div>
-                                        <div>Expire Date: {{ item.expire_date ? new Date(item.expire_date).toLocaleDateString() : 'N/A' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
                                         {{ item.uom }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
+                                        <div>{{ item.batch_number }}</div>
+                                        <div>Batch Number: {{ item.batch_number }}</div>
+                                        <div>Barcode: {{ item.barcode }}</div>
+                                        <div>Expire Date: {{ item.expire_date ?
+                                            moment(item.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
                                         {{ item.available_quantity }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                        <TextInput 
-                                            type="number" 
-                                            v-model.number="item.quantity" 
-                                            class="w-24 text-sm" 
-                                            min="1"
-                                            :max="item.available_quantity"
-                                            :disabled="!item.inventory_id"
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
+                                        <input type="text" v-model.number="item.quantity" required :class="[
+                                            'w-full text-sm',
+                                            errors[`item_${index}_quantity`] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                                        ]" min="1" :max="item.available_quantity" :disabled="!item.product?.id"
                                             placeholder="0"
-                                            @input="checkQuantity(index)"
-                                        />
+                                            @input="checkQuantity(index); errors[`item_${index}_quantity`] = null" />
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <button 
-                                            type="button" 
-                                            @click="removeItem(index)" 
-                                            class="text-red-600 hover:text-red-900"
-                                            :disabled="form.items.length <= 1"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
+                                        <button type="button" @click="removeItem(index)"
+                                            class="text-red-600 hover:text-red-900" :disabled="form.items.length <= 1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
                                     </td>
@@ -543,36 +569,33 @@ function checkQuantity(index) {
                             </tbody>
                         </table>
                     </div>
-                    
-                    <div class="mb-4">
-                        <button 
-                            type="button" 
-                            @click="addNewItem" 
-                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
+
+
+                    <div class="flex items-center justify-between space-x-4 mb-4">
+                        <button type="button" @click="addNewItem"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             Add Another Item
                         </button>
-                    </div>
-                    
-                    <!-- Notes Field -->
-                    <div class="mb-4">
-                        <InputLabel value="Notes" />
-                        <textarea
-                            v-model="form.notes"
-                            rows="3"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            placeholder="Add any additional notes here..."
-                        ></textarea>
-                        <InputError :message="errors.notes" class="mt-2" />
-                    </div>
-
-                    <div class="flex items-center justify-end space-x-4">
-                        <SecondaryButton :href="route('expired.index')" as="a">
-                            Cancel
-                        </SecondaryButton>
-                        <PrimaryButton :disabled="loading">
-                            {{ loading ? 'Processing...' : 'Transfer Item' }}
-                        </PrimaryButton>
+                        <div>
+                            <SecondaryButton :href="route('transfers.index')" as="a" :disabled="loading"
+                                class="opacity-75" :class="{ 'opacity-50 cursor-not-allowed': loading }">
+                                Cancel
+                            </SecondaryButton>
+                            <PrimaryButton :disabled="loading" class="relative">
+                                <span v-if="loading" class="absolute left-2">
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <span :class="{ 'pl-7': loading }">{{ loading ? 'Processing...' : 'Transfer Item'
+                                }}</span>
+                            </PrimaryButton>
+                        </div>
                     </div>
                 </form>
             </div>

@@ -20,28 +20,18 @@ class Warehouse extends Model
         'name',
         'code',
         'address',
+        'state',
+        'district',
         'city',
-        'postal_code',
+        'state_id',
+        'district_id',
+        'city_id',
         'manager_name',
         'manager_phone',
         'manager_email',
-        'capacity',
         'status',
         'user_id',
-        'special_handling_capabilities',
-        'notes'
-    ];
-    
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'capacity' => 'integer',
-        'deleted_at' => 'datetime'
-    ];
-    
+    ];    
 
     /**
      * Get the users associated with the warehouse.
@@ -49,5 +39,29 @@ class Warehouse extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    /**
+     * Get the state associated with the warehouse.
+     */
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+    
+    /**
+     * Get the district associated with the warehouse.
+     */
+    public function district()
+    {
+        return $this->belongsTo(District::class);
+    }
+    
+    /**
+     * Get the city associated with the warehouse.
+     */
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 }

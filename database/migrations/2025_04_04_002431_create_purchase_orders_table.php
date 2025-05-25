@@ -19,8 +19,8 @@ return new class extends Migration
             $table->date('po_date');
             $table->double('total_amount')->default(0);
             $table->text('notes')->nullable();
-            $table->text('rejection_reason')->nullable();
-            $table->enum('status', ['pending', 'completed'])->default('pending');
+            $table->string('original_uom')->nullable(); // Track original UOM before edits
+            $table->enum('status', ['pending','approved','rejected','reviewed', 'completed'])->default('pending');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->foreignId('reviewed_by')->nullable()->constrained('users');

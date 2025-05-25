@@ -17,8 +17,7 @@ class FacilityController extends Controller
         if($request->has('search')) {
             $facilities->where('name', 'like', "%{$request->search}%")
                 ->orWhereHas('district', function($q) use ($request) {
-                    $q->where('district_name', 'like', "%{$request->search}%")
-                        ->orWhere('region_name', 'like', "%{$request->search}%");
+                    $q->where('name', 'like', "%{$request->search}%");
                 });
         }
         
@@ -29,8 +28,25 @@ class FacilityController extends Controller
         return inertia('Facility/Index', [
             'facilities' => FacilityResource::collection($facilities),
             'users' => User::get(),
-            'filters' => $request->only('page', 'per_page', 'search'),
-            'districts' => District::get(),
+            'filters' => $request->only('page', 'per_page', 'search','district'),
+            'districts' => District::pluck('name')->toArray(),
+        ]);
+    }
+    
+    public function create()
+    {
+        return inertia('Facility/Create', [
+            'users' => User::get(),
+            'districts' => District::pluck('name')->toArray(),
+        ]);
+    }
+    
+    public function edit(Facility $facility)
+    {
+        return inertia('Facility/Edit', [
+            'facility' => $facility,
+            'users' => User::get(),
+            'districts' => District::pluck('name')->toArray(),
         ]);
     }
 
@@ -42,13 +58,9 @@ class FacilityController extends Controller
                 'email' => 'required|email|unique:facilities,email,' . $request->id,
                 'phone' => 'required|string|max:20',
                 'address' => 'required|string|max:255',
-                'city' => 'required|string|max:100',
-                'state' => 'nullable|string|max:100',
-                'district_id' => 'required',
+                'district' => 'required|string',
                 'facility_type' => 'required|string|max:50',
                 'has_cold_storage' => 'boolean',
-                'special_handling_capabilities' => 'nullable|string',
-                'is_24_hour' => 'boolean',
                 'is_active' => 'boolean',
                 'user_id' => 'required'
             ]);

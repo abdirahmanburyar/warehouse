@@ -350,7 +350,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="(row, index) in backOrderRows" :key="index">
                                 <td class="px-3 py-2">
-                                    <input type="number" v-model="row.quantity"
+                                    <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                         min="0" @input="validateBackOrderQuantities">
                                 </td>
@@ -365,7 +365,7 @@
                                     </select>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <button @click="removeBackOrderRow(index, row)"
+                                    <button @click="removeBackOrderRow(index, row)" v-if="!row.finalized"
                                         class="text-red-600 hover:text-red-800">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
@@ -804,7 +804,7 @@ async function reviewPackingList() {
     if (confirm.isConfirmed) {
         isSubmitting.value = true;
         try {
-            await axios.post(route('supplies.packing-list.review'), {
+            await axios.post(route('supplies.reviewPK'), {
                 id: form.value.id,
                 items: form.value.items.filter(item => item.status === 'pending').map(item => ({
                     id: item.id,
@@ -841,7 +841,7 @@ async function approvePackingList() {
 
     if (confirm.isConfirmed) {
         isSubmitting.value = true;
-        await axios.post(route('supplies.packing-list.approve'), {
+        await axios.post(route('supplies.approvePK'), {
             id: form.value.id,
             items: form.value.items.filter(item => item.status === 'reviewed').map(item => ({
                 id: item.id,

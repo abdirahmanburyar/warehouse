@@ -195,42 +195,42 @@
                 <!-- Table Section (9 cols) -->
                 <div class="col-span-9">
                     <div class="shadow overflow-x-auto max-w-full">
-                        <table class="min-w-full border border-black divide-y divide-black overflow-hidden">
+                        <table class="min-w-full border border-black divide-y divide-black overflow-hidden border-collapse">
                             <thead class="bg-gray-50 border-b border-black">
                                 <tr>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Transfer
+                                        class="text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
+                                        Transfer ID
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
                                         Transfer Date
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
                                         Transferred From
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
                                         Transferred To
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
                                         Number of Items
                                     </th>
                                     <th scope="col"
-                                        class="min-w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="min-w-[300px] text-left text-xs font-medium text-gray-500 uppercase border border-black p-2">
                                         Current Status
                                     </th>
                                     <th scope="col"
-                                        class="min-w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
+                                        class="min-w-[200px] text-left text-xs font-medium text-gray-500 uppercase text-right border border-black p-2">
                                         Action
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="border-b border-black">
                                 <tr v-if="filteredTransfers.length === 0">
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500 border-b border-black">
+                                    <td colspan="7" class="text-center text-gray-500 border border-black p-2">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -241,24 +241,24 @@
                                     </td>
                                 </tr>
                                 <tr v-for="transfer in filteredTransfers" :key="transfer.id" class="hover:bg-gray-50 border-b border-black">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td class="whitespace-nowrap text-sm font-medium text-gray-900 border border-black p-2">
                                         <Link :href="route('transfers.show', transfer.id)">
                                         {{ transfer.transferID }}
                                         </Link>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500 border border-black p-2">
                                         {{ new Date(transfer.transfer_date).toLocaleDateString() }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500 border border-black p-2">
                                         {{ transfer.from_warehouse?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500 border border-black p-2">
                                         {{ transfer.to_warehouse?.name || transfer.to_facility?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500 border border-black p-2">
                                         {{ transfer.quantity }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 text-left">
+                                    <td class="text-sm text-gray-500 text-left border border-black p-2">
                                         <div class="flex items-center gap-2">
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-1">
@@ -341,7 +341,7 @@
                     <div class="flex justify-between gap-2">
                         <!-- Approved -->
                         <div class="flex flex-col items-center">
-                            <div class="h-[400px] w-12 bg-blue-100 rounded-2xl relative overflow-hidden px-2">
+                            <div class="h-[350px] w-12 bg-blue-100 rounded-2xl relative overflow-hidden px-2">
                                 <div
                                     class="absolute top-3 left-1/2 transform -translate-x-1/2 bg-blue-50 p-2 rounded-lg z-10">
                                     <img src="/assets/images/approved_small.png" alt="Approved"
@@ -362,7 +362,7 @@
 
                         <!-- Pending Approval -->
                         <div class="flex flex-col items-center">
-                            <div class="h-[400px] w-12 bg-orange-100 rounded-2xl relative overflow-hidden px-2">
+                            <div class="h-[350px] w-12 bg-orange-100 rounded-2xl relative overflow-hidden px-2">
                                 <div
                                     class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-orange-50 p-2 rounded-lg z-10">
                                     <img src="/assets/images/pending_small.png" class="h-6 w-6" alt="Pending" />
@@ -372,8 +372,6 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.pending.percentage }}%
-                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.pending.stages.join(' → ')
-                                        }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -382,7 +380,7 @@
 
                         <!-- In Process -->
                         <div class="flex flex-col items-center">
-                            <div class="h-[400px] w-12 bg-gray-100 rounded-2xl relative overflow-hidden px-2">
+                            <div class="h-[350px] w-12 bg-gray-100 rounded-2xl relative overflow-hidden px-2">
                                 <div
                                     class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gray-50 p-2 rounded-lg z-10">
                                     <img src="/assets/images/inprocess.png" class="h-6 w-6" alt="In Process" />
@@ -392,7 +390,6 @@
                                     <div
                                         class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-medium text-sm">
                                         {{ props.statistics.in_process.percentage }}%
-                                        <!-- <div class="text-xs opacity-75">{{ props.statistics.in_process.stages.join(' → ') }}</div> -->
                                     </div>
                                 </div>
                             </div>
@@ -401,7 +398,7 @@
 
                         <!-- Transferred -->
                         <div class="flex flex-col items-center">
-                            <div class="h-[400px] w-12 bg-green-100 rounded-2xl relative overflow-hidden px-2">
+                            <div class="h-[350px] w-12 bg-green-100 rounded-2xl relative overflow-hidden px-2">
                                 <div
                                     class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-50 p-2 rounded-lg z-10">
                                     <img src="/assets/images/approved_small.png" class="h-6 w-6" alt="Transferred" />
@@ -420,7 +417,7 @@
 
                         <!-- Rejected -->
                         <div class="flex flex-col items-center">
-                            <div class="h-[400px] w-12 bg-red-100 rounded-2xl relative overflow-hidden px-2">
+                            <div class="h-[350px] w-12 bg-red-100 rounded-2xl relative overflow-hidden px-2">
                                 <div
                                     class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-50 p-2 rounded-lg z-10">
                                     <img src="/assets/images/rejected.png" class="h-6 w-6" alt="Rejected" />

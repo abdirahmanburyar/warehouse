@@ -23,6 +23,8 @@ class PurchaseOrder extends Model
         'reviewed_by',
         'rejection_reason',
         'original_po_no',
+        'original_quantity',
+        'original_uom',
         'reviewed_at',
         'created_by',
         'updated_by',

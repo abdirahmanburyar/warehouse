@@ -46,19 +46,21 @@ class InventoryController extends Controller
 
         if ($request->filled('category')) {
             $query->whereHas('product.category', function ($q) use ($request) {
-                $q->where('category_id', $request->category);
+                $q->where('name', $request->category);
               });
         }
 
         if ($request->filled('dosage')) {
             $query->whereHas('product.dosage', function ($q) use ($request) {
-                $q->where('dosage_id', $request->dosage);
+                $q->where('name', $request->dosage);
               });
         }
 
 
-        if ($request->has('warehouse_id') && $request->warehouse_id) {
-            $query->where('warehouse_id', $request->warehouse_id);
+        if ($request->filled('warehouse')) {
+            $query->whereHas('warehouse', function($query) use($request){
+                $query->where('name','like', "%{$request->warehouse}%");
+            });
         }
 
         if ($request->has('location') && $request->location) {
@@ -67,11 +69,6 @@ class InventoryController extends Controller
             }); 
         }
 
-        // Sort
-        $sortField = $request->input('sort_field', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
         $inventories = $query->paginate($request->input('per_page', 8), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -79,8 +76,8 @@ class InventoryController extends Controller
         $products = Product::select('id', 'name')->get();
 
         // Get warehouses for dropdown
-        $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->get();
-        $locations = Location::get();
+        $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->pluck('name')->toArray();
+    
 
         // Get inventory status counts
         $inStockCount = Inventory::whereRaw('quantity > (products.reorder_level * 5)')
@@ -116,11 +113,10 @@ class InventoryController extends Controller
             'inventories' => InventoryResource::collection($inventories),
             'products' => $products,
             'warehouses' => $warehouses,
-            'filters' => $request->only('search', 'product_id', 'warehouse_id', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'sort_field', 'sort_direction', 'per_page', 'page'),
+            'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page'),
             'inventoryStatusCounts' => $inventoryStatusCounts,
-            'locations' => $locations,
-            'category' => Category::get(),
-            'dosage' => Dosage::get(),
+            'category' => Category::pluck('name')->toArray(),
+            'dosage' => Dosage::pluck('name')->toArray(),
         ]);
     }
 
@@ -191,43 +187,14 @@ class InventoryController extends Controller
         }   
     }
     
-    /**
-     * Handle bulk actions for inventory items
-     */
-    public function bulk(Request $request)
-    {
+    public function getLocations(Request $request){
         try {
-            $validator = Validator::make($request->all(), [
-                'ids' => 'required|array',
-                'ids.*' => 'exists:inventories,id',
-                'action' => 'required|string|in:delete'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
-            }
-
-            DB::beginTransaction();
-            try {
-                if ($request->action === 'delete') {
-                    $inventories = Inventory::whereIn('id', $request->ids)->get();
-                    foreach ($inventories as $inventory) {
-                        $inventory->delete();
-                    }
-                    
-                    // Broadcast the event to refresh other clients
-                    broadcast(new InventoryUpdated())->toOthers();
-                }
-                DB::commit();
-
-                return response()->json(['message' => 'Bulk action completed successfully']);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
-            }
-        } catch (\Exception $e) {
-            Log::error('Bulk action failed: ' . $e->getMessage());
-            return response()->json(['message' => 'An error occurred while processing the bulk action'], 500);
+            $locations = Location::whereHas('warehouse', function($query) use($request){
+                $query->where('name', $request->warehouse);
+            })->pluck('location')->toArray();
+            return response()->json($locations, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
 }

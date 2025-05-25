@@ -115,10 +115,21 @@
                                         :disabled="form.approved_at"
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
                                         min="1">
+                                    <div v-if="item.original_quantity" 
+                                        class="text-xs mt-1 line-through text-red-500 pt-1 flex flex-col">
+                                        {{ item.original_quantity }}
+                                    </div>
+                                    <span v-if="item.edited" class="text-xs mt-1 text-red-500 pt-1 flex flex-col">
+                                        By: {{ item.edited.name }}
+                                    </span>
                                 </td>
                                 <td class="px-3 py-2">
                                     <input type="text" v-model="item.uom" :disabled="form.approved_at"
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-50 disabled:cursor-not-allowed">
+                                    <div v-if="item.original_uom" 
+                                        class="text-xs mt-1 line-through text-red-500 pt-1">
+                                        {{ item.original_uom }}
+                                    </div>
                                 </td>
                                 <td class="px-3 py-2">
                                     <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)"
@@ -153,10 +164,6 @@
                                     class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     Add Item
                                 </button>
-                                <!-- <button type="button" @click="form.items = []"
-                                    class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Clear all Items
-                                </button> -->
                             </div>
                             <div class="w-72 space-y-2">
                                 <div class="flex justify-between items-center text-sm">
@@ -177,9 +184,11 @@
                         <button type="button" @click="reviewPO" :class="[
                             'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                             form.reviewed_at
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
-                        ]" :disabled="isSubmitting || form.reviewed_at">
+                                ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                : isProcessing.review
+                                    ? 'bg-yellow-400 text-white cursor-wait'
+                                    : 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2'
+                        ]" :disabled="isProcessing.review || isProcessing.approve || isProcessing.reject || form.reviewed_at || form.approved_at || form.rejected_at">
                             <svg v-if="form.reviewed_at" class="w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -192,7 +201,11 @@
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
                                 </path>
                             </svg>
-                            {{ form.reviewed_at ? 'Reviewed' : 'Review' }}
+                            <svg v-if="isProcessing.review" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ form.reviewed_at ? 'Reviewed' : isProcessing.review ? 'Processing...' : 'Review' }}
                         </button>
                         <button type="button" @click="approvePO" :class="[
                             'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
@@ -200,8 +213,10 @@
                                 ? 'bg-green-50 text-green-700 border border-green-200'
                                 : !form.reviewed_at
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-                        ]" :disabled="isSubmitting || !form.reviewed_at || form.approved_at || form.rejected_at">
+                                    : isProcessing.approve
+                                        ? 'bg-green-400 text-white cursor-wait'
+                                        : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                        ]" :disabled="isProcessing.review || isProcessing.approve || isProcessing.reject || !form.reviewed_at || form.approved_at || form.rejected_at">
                             <svg v-if="form.approved_at" class="w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -217,16 +232,22 @@
                                     d="M5 13l4 4L19 7">
                                 </path>
                             </svg>
-                            {{ form.approved_at ? 'Approved' : 'Approve' }}
+                            <svg v-if="isProcessing.approve" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ form.approved_at ? 'Approved' : isProcessing.approve ? 'Processing...' : 'Approve' }}
                         </button>
-                        <button type="button" @click="rejectPO" :class="[
+                        <button v-if="!form.approved_at" type="button" @click="rejectPO" :class="[
                             'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                             form.rejected_at
                                 ? 'bg-red-50 text-red-700 border border-red-200'
                                 : !form.reviewed_at
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-red-500 text-white hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
-                        ]" :disabled="isSubmitting || !form.reviewed_at || form.rejected_at || form.approved_at">
+                                    : isProcessing.reject
+                                        ? 'bg-red-400 text-white cursor-wait'
+                                        : 'bg-red-500 text-white hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
+                        ]" :disabled="isProcessing.review || isProcessing.approve || isProcessing.reject || !form.reviewed_at || form.rejected_at || form.approved_at">
                             <svg v-if="form.rejected_at" class="w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -241,7 +262,11 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            {{ form.rejected_at ? 'Rejected' : 'Reject' }}
+                            <svg v-if="isProcessing.reject" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ form.rejected_at ? 'Rejected' : isProcessing.reject ? 'Processing...' : 'Reject' }}
                         </button>
                         <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
                             class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
@@ -307,7 +332,8 @@ const toast = useToast();
 const props = defineProps({
     products: Array,
     suppliers: Array,
-    po: Object
+    po: Object,
+    users: Array
 });
 
 const selectedSupplier = ref(null);
@@ -347,7 +373,10 @@ const form = ref(props.po ? {
         product_id: item.product_id,
         product: item.product,
         quantity: item.quantity,
+        original_quantity: item.original_quantity,
         uom: item.uom,
+        original_uom: item.original_uom,
+        edited: item.edited,
         unit_cost: item.unit_cost,
         total_cost: item.total_cost
     })) || []
@@ -446,19 +475,21 @@ function formatCurrency(value) {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(date);
+    return moment(date).format('DD/MM/YYYY');
 }
 
 const isLoading = ref(false);
+const isProcessing = ref({
+    review: false,
+    approve: false,
+    reject: false
+});
 
 async function reviewPO() {
-    Swal.fire({
+    // Prevent multiple clicks
+    if (isProcessing.review) return;
+    
+    const result = await Swal.fire({
         title: "Review Purchase Order",
         text: "Are you sure you want to mark this purchase order for review?",
         icon: "question",
@@ -466,26 +497,53 @@ async function reviewPO() {
         confirmButtonColor: "#EAB308",
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, review it!"
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                await axios.post(route('supplies.reviewPO', { id: form.value.id }));
-                Swal.fire({
-                    title: "Success!",
-                    text: "Purchase order has been marked for review.",
-                    icon: "success"
-                }).then(() => {
-                    router.visit(route('supplies.index'));
-                });
-            } catch (error) {
-                toast.error(error.response?.data || 'Failed to review purchase order');
-            }
-        }
     });
+    
+    if (result.isConfirmed) {
+        try {
+            // Set processing state
+            isProcessing.review = true;
+            console.log('Setting review processing to true');
+            
+            // Show loading indicator
+            Swal.fire({
+                title: "Processing...",
+                text: "Marking purchase order for review",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            await axios.post(route('supplies.reviewPO', { id: form.value.id }));
+            
+            // Close loading indicator
+            Swal.close();
+            
+            await Swal.fire({
+                title: "Success!",
+                text: "Purchase order has been marked for review.",
+                icon: "success"
+            });
+            router.visit(route('supplies.index'));
+        } catch (error) {
+            // Close loading indicator
+            Swal.close();
+            
+            toast.error(error.response?.data || 'Failed to review purchase order');
+            // Reset processing state on error
+            isProcessing.review = false;
+            console.log('Setting review processing to false (error)');
+        }
+    }
 }
 
 async function approvePO() {
-    Swal.fire({
+    // Prevent multiple clicks
+    if (isProcessing.approve) return;
+    
+    const result = await Swal.fire({
         title: "Approve Purchase Order",
         text: "Are you sure you want to approve this purchase order?",
         icon: "question",
@@ -493,26 +551,53 @@ async function approvePO() {
         confirmButtonColor: "#22C55E",
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, approve it!"
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                await axios.post(route('supplies.approvePO', { id: form.value.id }));
-                Swal.fire({
-                    title: "Success!",
-                    text: "Purchase order has been approved.",
-                    icon: "success"
-                }).then(() => {
-                    router.visit(route('supplies.index'));
-                });
-            } catch (error) {
-                toast.error(error.response?.data || 'Failed to approve purchase order');
-            }
-        }
     });
+    
+    if (result.isConfirmed) {
+        try {
+            // Set processing state
+            isProcessing.approve = true;
+            console.log('Setting approve processing to true');
+            
+            // Show loading indicator
+            Swal.fire({
+                title: "Processing...",
+                text: "Approving purchase order",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            await axios.post(route('supplies.approvePO', { id: form.value.id }));
+            
+            // Close loading indicator
+            Swal.close();
+            
+            await Swal.fire({
+                title: "Success!",
+                text: "Purchase order has been approved.",
+                icon: "success"
+            });
+            router.visit(route('supplies.index'));
+        } catch (error) {
+            // Close loading indicator
+            Swal.close();
+            
+            toast.error(error.response?.data || 'Failed to approve purchase order');
+            // Reset processing state on error
+            isProcessing.approve = false;
+            console.log('Setting approve processing to false (error)');
+        }
+    }
 }
 
 async function rejectPO() {
-    Swal.fire({
+    // Prevent multiple clicks
+    if (isProcessing.reject) return;
+    
+    const result = await Swal.fire({
         title: "Reject Purchase Order",
         text: "Are you sure you want to reject this purchase order?",
         input: 'textarea',
@@ -531,24 +616,48 @@ async function rejectPO() {
                 return 'You need to provide a reason for rejection'
             }
         }
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                await axios.post(route('supplies.rejectPO', { id: form.value.id }), {
-                    reason: result.value
-                });
-                Swal.fire({
-                    title: "Rejected!",
-                    text: "Purchase order has been rejected.",
-                    icon: "success"
-                }).then(() => {
-                    router.visit(route('supplies.editpk', props.po?.id));
-                });
-            } catch (error) {
-                toast.error(error.response?.data || 'Failed to reject purchase order');
-            }
-        }
     });
+    
+    if (result.isConfirmed) {
+        try {
+            // Set processing state
+            isProcessing.reject = true;
+            console.log('Setting reject processing to true');
+            
+            // Show loading indicator
+            Swal.fire({
+                title: "Processing...",
+                text: "Rejecting purchase order",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            await axios.post(route('supplies.rejectPO', { id: form.value.id }), {
+                reason: result.value
+            });
+            
+            // Close loading indicator
+            Swal.close();
+            
+            await Swal.fire({
+                title: "Rejected!",
+                text: "Purchase order has been rejected.",
+                icon: "success"
+            });
+            router.visit(route('supplies.editpk', props.po?.id));
+        } catch (error) {
+            // Close loading indicator
+            Swal.close();
+            
+            toast.error(error.response?.data || 'Failed to reject purchase order');
+            // Reset processing state on error
+            isProcessing.reject = false;
+            console.log('Setting reject processing to false (error)');
+        }
+    }
 }
 
 async function onSupplierChange(selected) {

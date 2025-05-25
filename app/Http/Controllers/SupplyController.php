@@ -19,6 +19,7 @@ use App\Models\BackOrderHistory;
 use App\Models\SupplyItem;
 use App\Models\BackOrder;
 use App\Models\IssuedQuantity;
+use App\Models\Liquidate;
 use App\Models\PackingListDifference;
 use App\Models\Location;
 use App\Models\Disposal;
@@ -80,10 +81,8 @@ class SupplyController extends Controller
                 'low' => round($leadTimes->low_lead_time ?? 0, 1) . ' Months',
             ],
             'pending_orders' => PurchaseOrder::where('status', 'pending')->count(),
-            'back_orders' => PackingListDifference::sum('quantity'),
+            'back_orders' => PackingListDifference::count(), // Count the number of back orders instead of summing quantities
         ];
-
-        logger()->info($stats);
 
         return Inertia::render('Supplies/Index', [
             'purchaseOrders' => [
@@ -151,15 +150,333 @@ class SupplyController extends Controller
 
     public function getBackOrder(Request $request, $id){
         try {
-            logger()->info($id);
-            
             $packingLists = PackingListDifference::whereHas('packingList', function($q) use($id){
                 $q->where('purchase_order_id', $id);
             })
-            ->with('product', 'packingList:id,packing_list_number')->get();
-            return response()->json($packingLists, 200);
+            ->with(['product', 'packingList'])
+            ->get();
+            
+            return response()->json([
+                'packingLists' => $packingLists
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function liquidate(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'id' => 'required|exists:packing_list_differences,id',
+                'product_id' => 'required|exists:products,id',
+                'packing_list_id' => 'required|exists:packing_lists,id',
+                'quantity' => 'required|integer|min:1',
+                'status' => 'required|string',
+                'note' => 'nullable|string|max:255',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'nullable|file|mimes:pdf|max:10240', // Max 10MB per file
+            ]);
+            
+            // Start a database transaction
+            DB::beginTransaction();
+            
+            // Get the packing list to include its number in the note
+            $packingList = PackingList::find($request->packing_list_id);
+            $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
+            
+            // Generate note based on condition and source
+            $note = "PL ($packingListNumber) - {$request->status}";
+            if ($request->note) {
+                $note .= " - {$request->note}";
+            }
+            
+            // Handle file attachments if any
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('attachments/liquidations', $fileName, 'public');
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'type' => $file->getClientMimeType(),
+                        'size' => $file->getSize(),
+                        'uploaded_at' => now()->toDateTimeString()
+                    ];
+                }
+            }
+            
+            // Create a new liquidation record
+            $liquidate = Liquidate::create([
+                'product_id' => $request->product_id,
+                'packing_list_id' => $request->packing_list_id,
+                'liquidated_by' => auth()->id(),
+                'liquidated_at' => Carbon::now(),
+                'quantity' => $request->quantity,
+                'status' => 'pending', // Default status is pending
+                'note' => $note,
+                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+            ]);
+            
+            // Find and delete the record from PackingListDifference table
+            $packingListDiff = PackingListDifference::find($request->id);
+            if ($packingListDiff) {
+                // Create a record in BackOrderHistory before deleting
+                BackOrderHistory::create([
+                    'packing_list_id' => $packingListDiff->packing_list_id,
+                    'product_id' => $packingListDiff->product_id,
+                    'quantity' => $packingListDiff->quantity,
+                    'status' => 'Liquidated',
+                    'note' => $request->note ?? 'Liquidated by ' . auth()->user()->name,
+                    'performed_by' => auth()->id()
+                ]);
+                
+                // Delete the record
+                $packingListDiff->update([
+                    'finalized' => 'Liquidated'
+                ]);
+            }
+            
+            // Commit the transaction
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Item has been liquidated successfully',
+                'liquidate' => $liquidate
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+            
+            return response()->json([
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function dispose(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'id' => 'required|exists:packing_list_differences,id',
+                'product_id' => 'required|exists:products,id',
+                'packing_list_id' => 'required|exists:packing_lists,id',
+                'purchase_order_id' => 'required|exists:purchase_orders,id',
+                'quantity' => 'required|integer|min:1',
+                'status' => 'required|string',
+                'note' => 'nullable|string|max:255',
+                'expired_date' => 'nullable|date',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'nullable|file|mimes:pdf|max:10240', // Max 10MB per file
+            ]);
+            
+            // Store the reason for disposal
+            $reason = strtolower($request->status);
+            
+            // Check if reason is valid for disposal
+            $validReasons = ['damaged', 'lost', 'expired', 'missing'];
+            if (!in_array($reason, $validReasons)) {
+                return response()->json([
+                    'message' => 'The selected reason is invalid. Valid reasons are: ' . implode(', ', $validReasons)
+                ], 422);
+            }
+            
+            // Start a database transaction
+            DB::beginTransaction();
+            
+            // Get the packing list to retrieve batch number and expiry date if available
+            $packingList = PackingList::find($request->packing_list_id);
+            
+            // Handle file attachments if any
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('attachments/disposals', $fileName, 'public');
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'type' => $file->getClientMimeType(),
+                        'size' => $file->getSize(),
+                        'uploaded_at' => now()->toDateTimeString()
+                    ];
+                }
+            }
+            
+            // Create a new disposal record
+            $disposal = Disposal::create([
+                'product_id' => $request->product_id,
+                'packing_list_id' => $request->packing_list_id,
+                'purchase_order_id' => $request->purchase_order_id,
+                'inventory_id' => $request->inventory_id ?? null,
+                'disposed_by' => auth()->id(),
+                'disposed_at' => Carbon::now(),
+                'expired_date' => $request->expired_date ?? ($packingList ? $packingList->expire_date : null),
+                'quantity' => $request->quantity,
+                'status' => 'pending', // Default status is pending
+                'note' => $this->generateDisposalNote($request, $reason, $packingList),
+                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+            ]);
+            
+            // Find and update the record from PackingListDifference table
+            $packingListDiff = PackingListDifference::find($request->id);
+            if ($packingListDiff) {
+                // Create a record in BackOrderHistory
+                BackOrderHistory::create([
+                    'packing_list_id' => $packingListDiff->packing_list_id,
+                    'product_id' => $packingListDiff->product_id,
+                    'quantity' => $packingListDiff->quantity,
+                    'status' => 'Disposed',
+                    'note' => $disposal->note,
+                    'performed_by' => auth()->id()
+                ]);
+                
+                // Mark as disposed but don't delete the record
+                $packingListDiff->update([
+                    'finalized' => 'Disposed',
+                    'updated_at' => now()
+                ]);
+            }
+            
+            // Commit the transaction
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Item has been disposed successfully',
+                'disposal' => $disposal->load(['product', 'packingList', 'disposedBy'])
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+            
+            return response()->json([
+                'message' => 'Error disposing item: ' . $th->getMessage(),
+                'error' => $th->getMessage(),
+                'trace' => config('app.debug') ? $th->getTraceAsString() : null
+            ], 500);
+        }
+    }
+    
+    /**
+     * Generate a descriptive note for the disposal record
+     *
+     * @param Request $request
+     * @param string $status
+     * @param PackingList|null $packingList
+     * @return string
+     */
+    private function generateDisposalNote(Request $request, string $status, $packingList = null)
+    {
+        // Get the packing list number
+        $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
+        
+        // Generate note based on condition and source
+        $note = "PL ($packingListNumber) - {$status}";
+        
+        // Append user's note if provided
+        if ($request->note) {
+            $note .= " - {$request->note}";
+        }
+        
+        return $note;
+    }
+    
+    public function receive(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'id' => 'required|exists:packing_list_differences,id',
+                'product_id' => 'required|exists:products,id',
+                'packing_list_id' => 'required|exists:packing_lists,id',
+                'purchase_order_id' => 'required|exists:purchase_orders,id',
+                'quantity' => 'required|integer|min:1',
+                'original_quantity' => 'required|integer|min:1',
+            ]);
+            
+            // Start a database transaction
+            DB::beginTransaction();
+            
+            // Find the packing list difference record
+            $packingListDiff = PackingListDifference::find($request->id);
+            
+            if (!$packingListDiff) {
+                return response()->json([
+                    'message' => 'Back order item not found'
+                ], 404);
+            }
+            
+            // Calculate the remaining quantity
+            $receivedQuantity = $request->quantity;
+            $originalQuantity = $request->original_quantity;
+            $remainingQuantity = $originalQuantity - $receivedQuantity;
+            
+            // Create a record in BackOrderHistory for the received items
+            BackOrderHistory::create([
+                'packing_list_id' => $packingListDiff->packing_list_id,
+                'product_id' => $packingListDiff->product_id,
+                'quantity' => $receivedQuantity,
+                'status' => 'Received',
+                'note' => $request->note ?? 'Received by ' . auth()->user()->name,
+                'performed_by' => auth()->id()
+            ]);
+            
+            // Update inventory with the received items
+            $inventory = Inventory::where('product_id', $request->product_id)->first();
+            
+            if ($inventory) {
+                $inventory->quantity += $receivedQuantity;
+                $inventory->save();
+            } else {
+                // Create a new inventory record if it doesn't exist
+                Inventory::create([
+                    'product_id' => $request->product_id,
+                    'quantity' => $receivedQuantity,
+                    'status' => 'active'
+                ]);
+            }
+            
+            // Update the packing list quantity
+            $packingList = PackingList::find($request->packing_list_id);
+            if ($packingList) {
+                // Add the received quantity to the packing list quantity
+                $packingList->quantity += $receivedQuantity;
+                $packingList->save();
+            }
+            
+            // Handle the packing list difference record based on remaining quantity
+            if ($remainingQuantity <= 0) {
+                // If nothing remains, delete the record
+                $packingListDiff->delete();
+            } else {
+                // If some items remain, update the quantity
+                $packingListDiff->quantity = $remainingQuantity;
+                $packingListDiff->save();
+            }
+            
+            // Commit the transaction
+            DB::commit();
+            
+            return response()->json([
+                'message' => "Successfully received {$receivedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
+                'received_quantity' => $receivedQuantity,
+                'remaining_quantity' => $remainingQuantity
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+            
+            return response()->json([
+                'message' => $th->getMessage()
+            ], 500);
         }
     }
 
@@ -179,7 +496,6 @@ class SupplyController extends Controller
                     'p.name as product_name',
                     'pl.barcode',
                     'poi.uom as po_uom',
-                    'p.description as product_description',
                     'pl.id as packing_list_id',
                     'pl.quantity as received_quantity',
                     'pl.batch_number',
@@ -281,7 +597,6 @@ class SupplyController extends Controller
                         'product' => [
                             'id' => $firstItem->product_id,
                             'name' => $firstItem->product_name,
-                            'description' => $firstItem->product_description
                         ],
                         'warehouse' => $latestPackingList ? [
                             'id' => $latestPackingList->warehouse_id,
@@ -429,7 +744,7 @@ class SupplyController extends Controller
         try {
             $products = Product::get();
             $suppliers = Supplier::get();
-            $po = PurchaseOrder::with('supplier','items.product:id,name')->findOrFail($id);
+            $po = PurchaseOrder::with('supplier','items.product:id,name','items.edited:id,name')->findOrFail($id);
             
             return inertia('Supplies/EditPo', [
                 'products' => $products,
@@ -462,6 +777,9 @@ class SupplyController extends Controller
                     'items.*.total_cost' => 'required|numeric|min:0',
                 ]);
 
+                // Check if this is a new purchase order or an update
+                $isNew = !$request->id;
+                
                 $po = PurchaseOrder::updateOrCreate([
                     'id' => $request->id
                 ], [
@@ -474,15 +792,51 @@ class SupplyController extends Controller
 
                 // Process each item individually
                 foreach ($validated['items'] as $item) {
-                    PurchaseOrderItem::updateOrCreate(['id' => $item['id'] ?? null],[
+                    // If this is an update (not a new PO) and the item exists, get the existing item to check for quantity changes
+                    $existingItem = null;
+                    if (!$isNew && isset($item['id'])) {
+                        $existingItem = PurchaseOrderItem::find($item['id']);
+                    }
+                    
+                    // Prepare the data for update or create
+                    $itemData = [
                         'purchase_order_id' => $po->id,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'uom' => $item['uom'],
                         'unit_cost' => $item['unit_cost'],
                         'total_cost' => $item['total_cost']
-                    ]);
+                    ];
+                    
+                    // Only track original quantity when editing an existing item
+                    if (!$isNew && isset($item['id'])) {
+                        // If this is an existing item and the quantity has changed, keep the original quantity
+                        if ($existingItem && $existingItem->quantity != $item['quantity']) {
+                            // If original_quantity is not set yet, use the existing quantity as the original
+                            if (!$existingItem->original_quantity) {
+                                $itemData['original_quantity'] = $existingItem->quantity;
+                            }
+                            // Otherwise keep the existing original_quantity
+                            else {
+                                $itemData['original_quantity'] = $existingItem->original_quantity;
+                            }
+                            
+                            // Same logic for original_uom
+                            if (!$existingItem->original_uom) {
+                                $itemData['original_uom'] = $existingItem->uom;
+                            } else {
+                                $itemData['original_uom'] = $existingItem->original_uom;
+                            }
+                            
+                            // Add edited_by to track who made the change
+                            $itemData['edited_by'] = auth()->id();
+                        }
+                    }
+                    
+                    // Update or create the purchase order item
+                    $poItem = PurchaseOrderItem::updateOrCreate(['id' => $item['id'] ?? null], $itemData);
                 }
+                
                 return response()->json($request->id ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
             });
         } catch (\Throwable $th) {
@@ -587,6 +941,15 @@ class SupplyController extends Controller
                 $po->approved_by = auth()->id();
                 $po->approved_at = now();
                 $po->save();
+                
+                // Reset original quantity and UOM for all items
+                foreach ($po->items as $item) {
+                    $item->update([
+                        'original_quantity' => null,
+                        'original_uom' => null,
+                        'edited_by' => null
+                    ]);
+                }
 
                 return response()->json('Purchase order has been approved and inventory has been updated');
             });

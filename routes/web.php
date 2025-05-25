@@ -25,6 +25,7 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\LiquidateDisposalController;
 use App\Http\Controllers\ConsumptionUploadController;
 use App\Http\Controllers\ProductUploadController;
 use Illuminate\Foundation\Application;
@@ -139,6 +140,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::get('/create', 'create')->name('inventories.warehouses.create');
             Route::delete('/{id}/delete', 'destroy')->name('inventories.warehouses.destroy');
             Route::get('/{id}/edit', 'edit')->name('inventories.warehouses.edit');
+
         });
 
      // Warehouse Management Routes
@@ -149,6 +151,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
          Route::post('/store', 'store')->name('inventories.location.store');
          Route::delete('/{id}/delete', 'destroy')->name('inventories.location.destroy');
          Route::get('/{id}/edit', 'edit')->name('inventories.location.edit');
+         Route::get('/create', 'create')->name('inventories.location.create');
      });
 
     // Dosage Management Routes
@@ -188,20 +191,44 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create');
         Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create');
         Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->name('supplies.po-show');
-        Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->name('supplies.packing-list-getPO');
+        Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->name('supplies.get-purchaseOrder');
         Route::get('/packing-list/{pk}/edit', [SupplyController::class, 'editPK'])->name('supplies.packing-list.edit');
         Route::get('/packing-list/show', [SupplyController::class, 'showPK'])->name('supplies.packing-list.showPK');
+        Route::get('/packing-list', [SupplyController::class, 'newPackingList'])->name('supplies.packing-list');
         Route::get('/back-orders', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
         Route::get('/purchase_orders', [SupplyController::class, 'newPO'])->name('supplies.purchase_order');
         Route::post('/purchase_orders/store', [SupplyController::class, 'storePO'])->name('supplies.storePO');
         Route::get('/purchase_orders/{id}/edit', [SupplyController::class, 'editPO'])->name('supplies.editPO');
-        
+        Route::post('/packing-list/store', [SupplyController::class, 'storePK'])->name('supplies.storePK');
+
+        // edit po - actions
+        Route::post('/purchase_orders/{id}/review', [SupplyController::class, 'reviewPO'])->name('supplies.reviewPO');
+        Route::post('/purchase_orders/{id}/approve', [SupplyController::class, 'approvePO'])->name('supplies.approvePO');
+        Route::post('/purchase_orders/{id}/reject', [SupplyController::class, 'rejectPO'])->name('supplies.rejectPO');
+
+        Route::post('/packing-list/review', [SupplyController::class, 'reviewPK'])->name('supplies.reviewPK');
+        Route::post('/packing-list/approve', [SupplyController::class, 'approvePK'])->name('supplies.approvePK');
+
+        Route::get('/back-order', [SupplyController::class, 'backOrder'])->name('supplies.back-order');
+        Route::get('/packing-list/showBackOrder', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
+        Route::get('/packing-list/getBackOrder/{id}', [SupplyController::class, 'getBackOrder'])->name('supplies.get-packingList');
+        Route::post('/back-order/liquidate', [SupplyController::class, 'liquidate'])->name('back-order.liquidate');
+        Route::post('/back-order/dispose', [SupplyController::class, 'dispose'])->name('back-order.dispose');
+        Route::post('/back-order/receive', [SupplyController::class, 'receive'])->name('back-order.receive');
+               
     
         Route::post('/store', [SupplyController::class, 'store'])->name('supplies.store');
         Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->name('supplies.edit');
         Route::put('/{supply}', [SupplyController::class, 'update'])->name('supplies.update');
         Route::delete('/{supply}', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.destroy');
     });
+
+    Route::controller(LiquidateDisposalController::class)
+        ->name('liquidate-disposal.')
+        ->group(function(){
+            Route::get('/disposals', 'disposals')->name('disposals');
+            Route::get('/liquidates', 'liquidates')->name('liquidates');
+        });
 
     // Supplier Management Routes
     Route::prefix('suppliers')->group(function () {
@@ -269,6 +296,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // Route to get available inventories for transfer
         Route::get('/get-inventories', [TransferController::class, 'getInventories'])->name('transfers.getInventories');
         
+        // Route to delete a transfer item
+        Route::delete('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
+        
         // Bulk Status Change Routes
         Route::post('/bulk-approve', [TransferController::class, 'bulkApprove'])->name('transfers.bulkApprove');
         Route::post('/bulk-reject', [TransferController::class, 'bulkReject'])->name('transfers.bulkReject');
@@ -299,12 +329,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Facility Management Routes
     Route::prefix('facilities')->group(function () {
-        Route::get('/', [FacilityController::class, 'index'])->middleware(PermissionMiddleware::class . ':facility.view')->name('facilities.index');
-        Route::get('/create', [FacilityController::class, 'create'])->middleware(PermissionMiddleware::class . ':facility.create')->name('facilities.create');
-        Route::post('/', [FacilityController::class, 'store'])->middleware(PermissionMiddleware::class . ':facility.create')->name('facilities.store');
-        Route::get('/{facility}/edit', [FacilityController::class, 'edit'])->middleware(PermissionMiddleware::class . ':facility.edit')->name('facilities.edit');
-        Route::put('/{facility}', [FacilityController::class, 'update'])->middleware(PermissionMiddleware::class . ':facility.edit')->name('facilities.update');
-        Route::delete('/{facility}', [FacilityController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':facility.delete')->name('facilities.destroy');
+        Route::get('/', [FacilityController::class, 'index'])->name('facilities.index');
+        Route::get('/create', [FacilityController::class, 'create'])->name('facilities.create');
+        Route::post('/store', [FacilityController::class, 'store'])->name('facilities.store');
+        Route::get('/{facility}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
+        Route::delete('/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
     });
 
     // District Management Routes
@@ -335,6 +364,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{inventory}/edit', [InventoryController::class, 'edit'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.edit');
         Route::put('/{inventory}', [InventoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update');
         Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.destroy');
+
+
+        Route::post('/get-locations', [InventoryController::class, 'getLocations'])->name('invetnories.getLocations');
     });
 
     // Report Routes

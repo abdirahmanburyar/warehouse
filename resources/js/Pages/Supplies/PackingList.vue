@@ -283,7 +283,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="(row, index) in backOrderRows" :key="index">
                                         <td class="px-3 py-2">
-                                            <input type="number" v-model="row.quantity"
+                                            <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                                 min="0">
                                                 <!-- min="0" @input="validateBackOrderQuantities"> -->

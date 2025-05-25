@@ -18,9 +18,15 @@ return new class extends Migration
             $table->string('type'); // damaged, missing
             $table->integer('quantity');
             $table->text('notes')->nullable();
-            $table->string('status')->default('pending'); // pending, completed
+            $table->enum('status', ['pending','approved','rejected','reviewed', 'completed'])->default('pending');
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('cascade');
+            $table->foreignId('reviewed_by')->nullable()->constrained('users');
+            $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users');
+            $table->timestamp('rejected_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
     }

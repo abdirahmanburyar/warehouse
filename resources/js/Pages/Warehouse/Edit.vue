@@ -1,11 +1,13 @@
 <template>
-    <AuthenticatedTabs>
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Warehouse</h2>
+    <AuthenticatedLayout title="Edit Warehouse">
+        <div class="p-6 bg-white border-b flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">Edit Warehouse</h1>
+        </div>
 
         <div class=" overflow-hidden sm:rounded-lg p-6">
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Basic Information -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
                         <input type="text" id="name" v-model="form.name" 
@@ -18,26 +20,64 @@
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required>
                     </div>
-                </div>
-
-                <!-- Location Information -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                        <textarea id="address" v-model="form.address" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                        <input type="text" id="address" v-model="form.address"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                            <input type="text" id="city" v-model="form.city"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="postal_code" class="block text-sm font-medium text-gray-700">Postal Code</label>
-                            <input type="text" id="postal_code" v-model="form.postal_code"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        </div>
+                </div>
+                
+                <!-- State, District, City Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="state" class="block text-sm font-medium text-gray-700">State</label>
+                        <Multiselect
+                            v-model="selectedState"
+                            :options="states"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select state"
+                            label="name"
+                            track-by="id"
+                            class="multiselect-blue"
+                        >
+                            <template #noResult>No states found</template>
+                        </Multiselect>
+                    </div>
+                    <div>
+                        <label for="district" class="block text-sm font-medium text-gray-700">District</label>
+                        <Multiselect
+                            v-model="selectedDistrict"
+                            :options="filteredDistricts"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select district"
+                            label="name"
+                            track-by="id"
+                            :disabled="!selectedState"
+                            class="multiselect-blue"
+                        >
+                            <template #noResult>No districts found</template>
+                        </Multiselect>
+                    </div>
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                        <Multiselect
+                            v-model="selectedCity"
+                            :options="filteredCities"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select city"
+                            label="name"
+                            track-by="id"
+                            :disabled="!selectedDistrict"
+                            class="multiselect-blue"
+                        >
+                            <template #noResult>No cities found</template>
+                        </Multiselect>
                     </div>
                 </div>
 
@@ -60,13 +100,8 @@
                     </div>
                 </div>
 
-                <!-- Warehouse Details -->
+                <!-- Warehouse Status -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity (m³)</label>
-                        <input type="number" id="capacity" v-model="form.capacity"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
                         <select id="status" v-model="form.status"
@@ -75,22 +110,6 @@
                             <option value="inactive">Inactive</option>
                             <option value="maintenance">Maintenance</option>
                         </select>
-                    </div>
-                </div>
-
-                <!-- Additional Information -->
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <label for="special_handling_capabilities" class="block text-sm font-medium text-gray-700">
-                            Special Handling Capabilities
-                        </label>
-                        <textarea id="special_handling_capabilities" v-model="form.special_handling_capabilities" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
-                    </div>
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                        <textarea id="notes" v-model="form.notes" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
                     </div>
                 </div>
 
@@ -112,40 +131,128 @@
                 </div>
             </form>
         </div>
-    </AuthenticatedTabs>
+    </AuthenticatedLayout>
 </template>
 
 <script setup>
-import AuthenticatedTabs from '@/Layouts/AuthenticatedTabs.vue';
-import { Link, useForm, router } from '@inertiajs/vue3';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ref, computed, watch, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-import { ref } from 'vue';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
 
-const loading = ref(false);
 const props = defineProps({
     warehouse: {
         required: true,
         type: Object
+    },
+    states: {
+        type: Array,
+        default: () => []
+    },
+    districts: {
+        type: Array,
+        default: () => []
+    },
+    cities: {
+        type: Array,
+        default: () => []
     }
 });
 
+// Use the data passed from the controller
+const states = ref(props.states || []);
+const districts = ref(props.districts || []);
+const cities = ref(props.cities || []);
+
+// Selected values
+const selectedState = ref(null);
+const selectedDistrict = ref(null);
+const selectedCity = ref(null);
+
+// Filter districts based on selected state
+const filteredDistricts = computed(() => {
+    if (!selectedState.value) return [];
+    return districts.value.filter(d => d.state_id === selectedState.value.id);
+});
+
+// Filter cities based on selected district
+const filteredCities = computed(() => {
+    if (!selectedDistrict.value) return [];
+    return cities.value.filter(c => c.district_id === selectedDistrict.value.id);
+});
+
+// Initialize selected values if they exist
+onMounted(() => {
+    console.log('Warehouse data:', props.warehouse);
+    console.log('States data:', states.value);
+    
+    // Set state
+    if (props.warehouse.state_id && states.value.length > 0) {
+        selectedState.value = states.value.find(s => s.id === props.warehouse.state_id);
+    }
+    
+    // Set district
+    if (props.warehouse.district_id && districts.value.length > 0) {
+        selectedDistrict.value = districts.value.find(d => d.id === props.warehouse.district_id);
+    }
+    
+    // Set city
+    if (props.warehouse.city_id && cities.value.length > 0) {
+        selectedCity.value = cities.value.find(c => c.id === props.warehouse.city_id);
+    }
+});
+
+// Form data
+const loading = ref(false);
 const form = ref({
     id: props.warehouse.id,
     name: props.warehouse.name,
     code: props.warehouse.code,
     address: props.warehouse.address,
-    city: props.warehouse.city,
-    postal_code: props.warehouse.postal_code,
+    state_id: props.warehouse.state_id,
+    district_id: props.warehouse.district_id,
+    city_id: props.warehouse.city_id,
     manager_name: props.warehouse.manager_name,
     manager_email: props.warehouse.manager_email,
     manager_phone: props.warehouse.manager_phone,
-    capacity: props.warehouse.capacity,
-    status: props.warehouse.status,
-    special_handling_capabilities: props.warehouse.special_handling_capabilities,
-    notes: props.warehouse.notes,
+    status: props.warehouse.status || 'active',
 });
 
+// Watch for state changes
+watch(selectedState, (newState) => {
+    form.value.state_id = newState ? newState.id : null;
+    // Reset district and city when state changes
+    if (selectedDistrict.value && selectedDistrict.value.state_id !== form.value.state_id) {
+        selectedDistrict.value = null;
+        form.value.district_id = null;
+    }
+    // Also reset city
+    if (selectedCity.value) {
+        selectedCity.value = null;
+        form.value.city_id = null;
+    }
+});
+
+// Watch for district changes
+watch(selectedDistrict, (newDistrict) => {
+    form.value.district_id = newDistrict ? newDistrict.id : null;
+    // Reset city when district changes
+    if (selectedCity.value && selectedCity.value.district_id !== form.value.district_id) {
+        selectedCity.value = null;
+        form.value.city_id = null;
+    }
+});
+
+// Watch for city changes
+watch(selectedCity, (newCity) => {
+    form.value.city_id = newCity ? newCity.id : null;
+});
+
+// Submit form
 const submit = async () => {
     loading.value = true;
     try {

@@ -11,21 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('disposals', function (Blueprint $table) {
+        Schema::create('liquidates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->nullable()->nullOnDelete();
             $table->foreignId('purchase_order_id')->nullable()->nullOnDelete();
             $table->foreignId('packing_list_id')->nullable()->nullOnDelete();
             $table->foreignId('inventory_id')->nullable()->nullOnDelete();
-            $table->foreignId('disposed_by')->nullOnDelete();
-            $table->date('expired_date')->nullable();
-            $table->date('disposed_at');
+            $table->foreignId('liquidated_by')->nullable()->nullOnDelete();
+            $table->date('liquidated_at');
             $table->integer('quantity');
             $table->string('status');
             $table->text('note')->nullable();
-            $table->json('attaches')->nullable();
             $table->foreignId('approved_by')->nullable()->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
+            $table->json('attaches')->nullable();
             $table->timestamps();
         });
     }
@@ -35,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('disposals');
+        Schema::dropIfExists('liquidates');
     }
 };

@@ -5,23 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Disposal extends Model
+class Liquidate extends Model
 {
     protected $fillable = [
-        'inventory_id',
-        'packing_list_id',
+        'product_id',
         'purchase_order_id',
+        'packing_list_id',
+        'inventory_id',
+        'liquidated_by',
+        'liquidated_at',
         'quantity',
-        'expired_date',
-        'disposed_by',
-        'disposed_at',
         'status',
         'note',
-        'product_id',
+        'approved_by',
+        'approved_at',
     ];
 
     /**
-     * Get the product that owns the disposal record
+     * Get the product that owns the liquidate record
      */
     public function product(): BelongsTo
     {
@@ -29,7 +30,7 @@ class Disposal extends Model
     }
 
     /**
-     * Get the purchase order that owns the disposal record
+     * Get the purchase order that owns the liquidate record
      */
     public function purchaseOrder(): BelongsTo
     {
@@ -37,7 +38,7 @@ class Disposal extends Model
     }
 
     /**
-     * Get the packing list that owns the disposal record
+     * Get the packing list that owns the liquidate record
      */
     public function packingList(): BelongsTo
     {
@@ -45,7 +46,7 @@ class Disposal extends Model
     }
 
     /**
-     * Get the inventory that owns the disposal record
+     * Get the inventory that owns the liquidate record
      */
     public function inventory(): BelongsTo
     {
@@ -53,15 +54,15 @@ class Disposal extends Model
     }
 
     /**
-     * Get the user who disposed the item
+     * Get the user who liquidated the item
      */
-    public function disposedBy(): BelongsTo
+    public function liquidatedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'disposed_by');
+        return $this->belongsTo(User::class, 'liquidated_by');
     }
 
     /**
-     * Get the user who approved the disposal
+     * Get the user who approved the liquidation
      */
     public function approvedBy(): BelongsTo
     {

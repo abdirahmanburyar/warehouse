@@ -18,7 +18,7 @@
                     <label for="warehouse_id" class="block text-sm font-medium text-gray-700">Warehouse</label>
                     <select 
                         id="warehouse_id" 
-                        v-model="form.waerhouse_id" 
+                        v-model="form.warehouse_id" 
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         required
                     >
@@ -52,17 +52,13 @@ import Swal from 'sweetalert2';
 
 
 const props = defineProps({
-    location: {
-        required: true,
-        type: Object
-    },
     warehouses: Array
 });
 
 const form = ref({
-    id: props.location.id,
-    location: props.location.location,
-    warehouse_id: props.location.warehouse_id
+    id: null,
+    location: '',
+    warehouse_id: null
 });
 
 const processing = ref(false);

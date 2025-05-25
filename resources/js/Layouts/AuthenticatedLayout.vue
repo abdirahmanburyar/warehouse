@@ -11,7 +11,7 @@
             </div>
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 88px;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 75px;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png"
@@ -82,6 +82,20 @@
                     <span class="menu-text">Expires</span>
                 </div>
                 </Link>
+
+                <!-- Liquidate and disposals -->
+                <Link :href="route('liquidate-disposal.liquidates')" class="menu-item"
+                    :class="{ active: route().current('liquidate-disposal.*') }" @click="setCurrentPage('liquidate-disposal')">
+                <div class="menu-content">
+                    <div class="menu-icon">
+                        <img v-if="route().current('liquidate-disposal.*')" src="/assets/images/liquidate-disposal-b.png"
+                            class="liquidate-disposal-icon" style="height: 24px" />
+                        <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 24px" />
+                    </div>
+                    <span class="menu-text">Liquidate & Disposal</span>
+                </div>
+                </Link>
+                
 
                 <Link :href="route('supplies.index')" class="menu-item"
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
