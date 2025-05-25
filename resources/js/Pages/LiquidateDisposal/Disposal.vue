@@ -217,12 +217,6 @@ const parseAttachments = (attachmentsJson: string | null) => {
     <Tab title="Disposal" activeTab="disposal">
         <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
             <h2 class="text-xl font-semibold">Disposal Records</h2>
-            <button 
-                @click="openDisposeModal(null)"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-                New Disposal
-            </button>
         </div>
 
         <!-- Table Section -->
