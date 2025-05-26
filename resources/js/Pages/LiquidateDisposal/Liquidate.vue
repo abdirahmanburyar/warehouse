@@ -126,7 +126,7 @@ const reviewLiquidation = (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.liquidates'), {
+                        router.get(route('liquidate-disposal.liquidates'), {}, {
                             preserveState: true,
                             preserveScroll: true,
                             only: ['liquidates']
@@ -167,7 +167,7 @@ const approveLiquidation = async (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.liquidates'), {
+                        router.get(route('liquidate-disposal.liquidates'), {}, {
                             preserveState: true,
                             preserveScroll: true,
                             only: ['liquidates']
@@ -231,7 +231,7 @@ const rejectLiquidation = async (id) => {
                     icon: 'success',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    router.get(route('liquidate-disposal.liquidates'), {
+                    router.get(route('liquidate-disposal.liquidates'), {}, {
                         preserveState: true,
                         preserveScroll: true,
                         only: ['liquidates']

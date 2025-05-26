@@ -134,7 +134,7 @@ const reviewDisposal = (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.disposals'), {
+                        router.get(route('liquidate-disposal.disposals'), {}, {
                             preserveState: true,
                             preserveScroll: true,
                             only: ['disposals']
@@ -166,7 +166,7 @@ const approveDisposal = async (id) => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             isApproving.value = true;
-            await axios.get(route('liquidate-disposal.liquidates.approve', id))
+            await axios.get(route('liquidate-disposal.disposals.approve', id))
                 .then((response) => {
                     isApproving.value = false;
                     Swal.fire({
@@ -175,10 +175,10 @@ const approveDisposal = async (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.liquidates'), {
+                        router.get(route('liquidate-disposal.disposals'), {}, {
                             preserveState: true,
                             preserveScroll: true,
-                            only: ['liquidates']
+                            only: ['disposals']
                         });
                     });
                 })
@@ -239,7 +239,7 @@ const rejectDisposal = async (id) => {
                     icon: 'success',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    router.get(route('liquidate-disposal.liquidates'), {
+                    router.get(route('liquidate-disposal.disposals'), {}, {
                         preserveState: true,
                         preserveScroll: true,
                         only: ['disposals']
