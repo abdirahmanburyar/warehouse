@@ -181,7 +181,7 @@ class LiquidateDisposalController extends Controller
                 $disposal->status = 'approved';
                 $disposal->approved_at = now();
                 $disposal->rejected_at = null;
-                $disposal->rejected_reason = null;
+                $disposal->rejection_reason = null;
                 $disposal->rejected_by = null;
                 $disposal->approved_by = Auth::id();
                 $disposal->save();
