@@ -197,64 +197,58 @@ const isRejecting = ref(false);
 const rejectDisposal = async (id) => {
     if (!id) return;
     
-    // First prompt for rejection reason
-    const { value: reason } = await Swal.fire({
-        title: 'Rejection Reason',
-        input: 'textarea',
-        inputLabel: 'Please provide a reason for rejection',
-        inputPlaceholder: 'Enter your reason here...',
-        inputAttributes: {
-            'aria-label': 'Rejection reason'
-        },
-        showCancelButton: true,
-        inputValidator: (value) => {
-            if (!value) {
-                return 'You must provide a reason for rejection'
-            }
-        }
-    });
+    try {
+        const result = await Swal.fire({
+            title: 'Reject Disposal',
+            icon: 'warning',
+            html: '<div class="mb-3 flex flex-col"><label class="form-label">Reason for rejection</label><textarea id="rejection-reason" class="form-control" rows="3" placeholder="Enter your reason here..."></textarea></div>',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Reject',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                const reason = document.getElementById('rejection-reason').value;
+                if (!reason.trim()) {
+                    Swal.showValidationMessage('Please provide a reason for rejection');
+                    return false;
+                }
+                return reason;
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        });
 
-    if (!reason) return; // User cancelled or didn't provide a reason
-
-    // Then confirm the rejection
-    isRejecting.value = true;
-    Swal.fire({
-        title: 'Confirm Rejection',
-        text: 'Are you sure you want to reject this liquidation?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Yes, reject it!'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
+        if (result.isConfirmed && result.value) {
             isRejecting.value = true;
-            await axios.post(route('liquidate-disposal.liquidates.reject', id), {
-                reason: reason
-            })
-            .then((response) => {
-                isRejecting.value = false;
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Liquidation rejected successfully',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    router.get(route('liquidate-disposal.disposals'), {}, {
-                        preserveState: true,
-                        preserveScroll: true,
-                        only: ['disposals']
-                    });
-                });
-            })
-            .catch((error) => {
-                isRejecting.value = false;
-                console.error('Error rejecting liquidation:', error);
-                toast.error('An error occurred while rejecting the liquidation');
+            await axios.get(route('liquidate-disposal.disposals.reject', id), {
+                reason: result.value
             });
-        } else {
-            isRejecting.value = false;
+            
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Disposal rejected successfully',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+
+            // Refresh the page
+            router.get(route('liquidate-disposal.disposals'), {}, {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['disposals']
+            });
         }
-    });
+    } catch (error) {
+        console.error('Error rejecting disposal:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to reject disposal'
+        });
+    } finally {
+        isRejecting.value = false;
+    }
 
 };
 
@@ -283,7 +277,7 @@ const parseAttachments = (attachmentsJson: string | null) => {
             <h2 class="text-xl font-semibold">Disposal Records</h2>
         </div>
         <!-- Table Section -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto mb-6">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
@@ -291,7 +285,6 @@ const parseAttachments = (attachmentsJson: string | null) => {
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposal ID</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
                         <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
-                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Warehouse/Location</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposed At</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Note</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
@@ -313,12 +306,8 @@ const parseAttachments = (attachmentsJson: string | null) => {
                             <span>Batch Number: {{ disposal.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ disposal.barcode || 'N/A' }}</span>
                             <span>Expiry Date: {{ disposal.expire_date ? moment(disposal.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
-                        </td>
-                        <td class="px-4 py-2 border-r border-gray-300 ">
-                           <div class="flex flex-col">
-                                <span>Warehouse: {{ disposal.packing_list?.warehouse?.name || disposal.inventory?.warehouse?.name || 'N/A' }}</span>
-                                <span>Location: {{ disposal.packing_list?.location?.location || disposal.inventory?.location?.location || 'N/A' }}</span>
-                           </div>
+                            <span>Warehouse: {{ disposal.packing_list?.warehouse?.name || disposal.inventory?.warehouse?.name || 'N/A' }}</span>
+                            <span>Location: {{ disposal.packing_list?.location?.location || disposal.inventory?.location?.location || 'N/A' }}</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ disposal.disposed_at ? new Date(disposal.disposed_at).toLocaleDateString() : 'N/A' }}

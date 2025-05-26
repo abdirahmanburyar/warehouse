@@ -67,11 +67,11 @@ class ExpiredController extends Controller
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
-                'note' => 'nullable|string|max:255',
-                'barcode' => 'nullable|string',
-                'expire_date' => 'nullable|date',
-                'batch_number' => 'nullable|string',
-                'uom' => 'nullable|string',
+                'note' => 'required|string|max:255',
+                'barcode' => 'required|string',
+                'expiry_date' => 'required|date',
+                'batch_number' => 'required|string',
+                'uom' => 'required|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
@@ -128,29 +128,7 @@ class ExpiredController extends Controller
             // Commit the transaction
             DB::commit();
             
-            return response()->json([
-                'message' => 'Item has been disposed successfully',
-                'disposal' => $disposal
-            ], 200);
-            //     'quantity' => $request->quantity,
-            //     'expired_date' => $inventory->expiry_date,
-            //     'barcode' => $inventory->barcode,
-            //     'batch_number' => $inventory->batch_number,
-            //     'uom' => $inventory->uom,
-            //     'disposed_by' => Auth::id(),
-            //     'disposed_at' => now(),
-            //     'status' => 'disposed',
-            //     'note' => $request->note
-            // ]);
-
-            // // Mark inventory as disposed and set quantity to 0
-            // $inventory->update([
-            //     'quantity' => $inventory->quantity - $request->quantity
-            // ]);
-
-            // DB::commit();
-            // return response()->json('Item has been disposed successfully.', 200);
-            return response()->json($request->all(), 200);
+            return response()->json('Item has been disposed successfully', 200);
         } catch (\Throwable $e) {
             DB::rollback();
             return response()->json($e->getMessage(), 500);

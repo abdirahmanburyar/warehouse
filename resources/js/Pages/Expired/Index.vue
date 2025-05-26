@@ -316,7 +316,7 @@ const submitDisposal = async () => {
         formData.append('barcode', selectedItem.value.barcode);
         formData.append('batch_number', selectedItem.value.batch_number);
         formData.append('uom', selectedItem.value.uom);
-        formData.append('expired_date', selectedItem.value.expiry_date);
+        formData.append('expiry_date', selectedItem.value.expiry_date);
         formData.append('status', 'Expired');
         formData.append('product_id', selectedItem.value.product_id);
         
