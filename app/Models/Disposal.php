@@ -7,17 +7,40 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Disposal extends Model
 {
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($disposal) {
+            $latestDisposal = static::latest()->first();
+            $nextId = $latestDisposal ? intval(substr($latestDisposal->disposal_id, -7)) + 1 : 1;
+            $disposal->disposal_id = str_pad($nextId, 7, '0', STR_PAD_LEFT);
+        });
+    }
+
     protected $fillable = [
-        'inventory_id',
-        'packing_list_id',
+        'disposal_id',
+        'product_id',
         'purchase_order_id',
-        'quantity',
-        'expired_date',
+        'packing_list_id',
+        'inventory_id',
         'disposed_by',
         'disposed_at',
+        'quantity',
         'status',
+        'barcode',
+        'expire_date',
+        'batch_number',
+        'uom',
+        'attachments',
         'note',
-        'product_id',
+        'reviewed_by',
+        'reviewed_at',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     /**
@@ -66,5 +89,21 @@ class Disposal extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the user who reviewed the disposal
+     */
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the user who rejected the disposal
+     */
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 }

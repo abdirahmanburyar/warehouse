@@ -16,10 +16,14 @@ const formData = ref({
   packing_list_id: '',
   purchase_order_id: '',
   quantity: 0,
+  original_quantity: 0,
+  barcode: '',
+  expire_date: '',
+  batch_number: '',
+  uom: '',
   status: '',
   note: '',
-  expired_date: '',
-  inventory_id: null
+  attachments: [] as File[]
 });
 
 const isSubmitting = ref(false);
@@ -31,14 +35,18 @@ watch(() => props.isOpen, (isOpen) => {
   if (isOpen && props.item) {
     formData.value = {
       id: props.item.id || '',
-      product_id: props.item.product_id || '',
-      packing_list_id: props.item.packing_list_id || '',
+      product_id: props.item.product?.id || '',
+      packing_list_id: props.item.packing_list?.id || '',
       purchase_order_id: props.item.purchase_order_id || '',
       quantity: props.item.quantity || 0,
+      original_quantity: props.item.quantity || 0,
+      barcode: props.item.packing_list?.barcode || '',
+      expire_date: props.item.packing_list?.expire_date || '',
+      batch_number: props.item.packing_list?.batch_number || '',
+      uom: props.item.packing_list?.uom || '',
       status: props.item.status || '',
       note: '',
-      expired_date: props.item.expired_date || '',
-      inventory_id: props.item.inventory_id || null
+      attachments: []
     };
     error.value = '';
   }
@@ -77,11 +85,23 @@ const handleSubmit = async () => {
     const submitData = new FormData();
     
     // Add all form fields
-    Object.entries(formData.value).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        submitData.append(key, value.toString());
-      }
-    });
+    submitData.append('id', formData.value.id);
+    submitData.append('product_id', formData.value.product_id);
+    submitData.append('packing_list_id', formData.value.packing_list_id);
+    submitData.append('purchase_order_id', formData.value.purchase_order_id);
+    submitData.append('quantity', formData.value.quantity);
+    submitData.append('original_quantity', formData.value.original_quantity);
+    submitData.append('barcode', formData.value.barcode);
+    submitData.append('expire_date', formData.value.expire_date);
+    submitData.append('batch_number', formData.value.batch_number);
+    submitData.append('uom', formData.value.uom);
+    submitData.append('status', formData.value.status);
+    submitData.append('note', formData.value.note);
+    
+    // Append each attachment
+    for (let i = 0; i < formData.value.attachments.length; i++) {
+      submitData.append('attachments[]', formData.value.attachments[i]);
+    }
     
     // Submit the form
     emit('submit', submitData);

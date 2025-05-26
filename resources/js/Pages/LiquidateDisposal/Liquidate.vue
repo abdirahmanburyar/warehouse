@@ -4,6 +4,9 @@ import ActionModal from '@/Components/ActionModal.vue';
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
+import moment from 'moment';
+import Swal from 'sweetalert2';
+import axios from 'axios';
 
 interface Product {
     id: number;
@@ -100,68 +103,150 @@ const handleLiquidateSubmit = async (formData) => {
     }
 };
 
-// Method to approve a liquidation
-const approveLiquidate = async (id: number) => {
-    if (confirm('Are you sure you want to approve this liquidation?')) {
-        isLoading.value = true;
-        try {
-            const response = await fetch(`/api/liquidates/${id}/approve`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
+const isReviewing = ref(false);
+const reviewLiquidation = (id) => {
+    if (!id) return;    
+    isReviewing.value = true;
+    Swal.fire({
+        title: 'Review Liquidation?',
+        text: 'Are you sure you want to review this liquidation?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, review it!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            isReviewing.value = true;
+            await axios.get(route('liquidate-disposal.liquidates.review', id))
+                .then((response) => {
+                    isReviewing.value = false;
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Liquidation reviewed successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        router.get(route('liquidate-disposal.liquidates'), {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ['liquidates']
+                        });
+                    });
+                })
+            .catch((error) => {
+                isReviewing.value = false;
+                console.error('Error reviewing liquidation:', error);
+                toast.error('An error occurred while reviewing the liquidation');
             });
-            
-            const result = await response.json();
-            
-            if (response.ok) {
-                toast.success('Liquidation approved successfully');
-                // Refresh the page to show updated data
-                router.reload();
-            } else {
-                toast.error(result.message || 'Failed to approve liquidation');
-            }
-        } catch (error) {
-            console.error('Error approving liquidation:', error);
-            toast.error('An error occurred while approving the liquidation');
-        } finally {
-            isLoading.value = false;
+        } else {
+            isReviewing.value = false;
         }
-    }
+    });
 };
 
-// Method to reject a liquidation
-const rejectLiquidate = async (id: number) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (reason) {
-        isLoading.value = true;
-        try {
-            const response = await fetch(`/api/liquidates/${id}/reject`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                body: JSON.stringify({ reason })
+const isApproving = ref(false);
+const approveLiquidation = async (id) => {
+    if (!id) return;
+    isApproving.value = true;
+    Swal.fire({
+        title: 'Approve Liquidation?',
+        text: 'Are you sure you want to approve this liquidation?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, approve it!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            isApproving.value = true;
+            await axios.get(route('liquidate-disposal.liquidates.approve', id))
+                .then((response) => {
+                    isApproving.value = false;
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Liquidation approved successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        router.get(route('liquidate-disposal.liquidates'), {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ['liquidates']
+                        });
+                    });
+                })
+            .catch((error) => {
+                isApproving.value = false;
+                console.error('Error approving liquidation:', error);
+                toast.error('An error occurred while approving the liquidation');
             });
-            
-            const result = await response.json();
-            
-            if (response.ok) {
-                toast.success('Liquidation rejected successfully');
-                // Refresh the page to show updated data
-                router.reload();
-            } else {
-                toast.error(result.message || 'Failed to reject liquidation');
-            }
-        } catch (error) {
-            console.error('Error rejecting liquidation:', error);
-            toast.error('An error occurred while rejecting the liquidation');
-        } finally {
-            isLoading.value = false;
+        } else {
+            isApproving.value = false;
         }
-    }
+    });
+};
+
+const isRejecting = ref(false);
+const rejectLiquidation = async (id) => {
+    if (!id) return;
+    
+    // First prompt for rejection reason
+    const { value: reason } = await Swal.fire({
+        title: 'Rejection Reason',
+        input: 'textarea',
+        inputLabel: 'Please provide a reason for rejection',
+        inputPlaceholder: 'Enter your reason here...',
+        inputAttributes: {
+            'aria-label': 'Rejection reason'
+        },
+        showCancelButton: true,
+        inputValidator: (value) => {
+            if (!value) {
+                return 'You must provide a reason for rejection'
+            }
+        }
+    });
+
+    if (!reason) return; // User cancelled or didn't provide a reason
+
+    // Then confirm the rejection
+    isRejecting.value = true;
+    Swal.fire({
+        title: 'Confirm Rejection',
+        text: 'Are you sure you want to reject this liquidation?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, reject it!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            isRejecting.value = true;
+            await axios.post(route('liquidate-disposal.liquidates.reject', id), {
+                reason: reason
+            })
+            .then((response) => {
+                isRejecting.value = false;
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Liquidation rejected successfully',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    router.get(route('liquidate-disposal.liquidates'), {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['liquidates']
+                    });
+                });
+            })
+            .catch((error) => {
+                isRejecting.value = false;
+                console.error('Error rejecting liquidation:', error);
+                toast.error('An error occurred while rejecting the liquidation');
+            });
+        } else {
+            isRejecting.value = false;
+        }
+    });
 };
 
 // Method to rollback an approved liquidation
@@ -217,139 +302,115 @@ const parseAttachments = (attachmentsJson: string | null) => {
         <div class="mb-6 flex flex-wrap gap-4 items-center">
             <h2 class="text-xl font-semibold">Liquidation Records</h2>
         </div>
-
         <!-- Table Section -->
-        <div class="overflow-auto">
+        <div class="overflow-x-auto">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">SN</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidation ID</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Batch No/Barcode</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Warehouse/Location</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Expiry Date</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidate QTY</th>
+                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
+                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Warehouse/Location</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidated At</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
-                        <th class="px-4 py-2 text-left text-black">Actions</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="props.liquidates.length === 0">
-                        <td colspan="11" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
                     </tr>
                     <tr v-for="(liquidate, index) in props.liquidates" :key="liquidate.id" class="border-b border-gray-300">
                         <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
-                        <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.id }}</td>
+                        <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.liquidate_id }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ liquidate.product ? liquidate.product.name : 'N/A' }}
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
-                            {{ liquidate.inventory?.batch_number || liquidate.packing_list?.batch_number || 'N/A' }}
+                        <td class="px-4 py-2 border-r border-gray-300 flex flex-col">
+                            <span>Batch Number: {{ liquidate.batch_number || 'N/A' }}</span>
+                            <span>Barcode: {{ liquidate.barcode || 'N/A' }}</span>
+                            <span>Expiry Date: {{ liquidate.expire_date ? moment(liquidate.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
+                        </td>
+                        <td class="px-4 py-2 border-r border-gray-300 ">
+                           <div class="flex flex-col">
+                                <span>Warehouse: {{ liquidate.packing_list?.warehouse?.name || 'N/A' }}</span>
+                                <span>Location: {{ liquidate.packing_list?.location?.location || 'N/A' }}</span>
+                           </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            {{ liquidate.inventory?.location || 
-                               (liquidate.packing_list?.warehouse_id ? 'Warehouse ' + liquidate.packing_list.warehouse_id : 'N/A') }}
+                            {{ liquidate.liquidated_at ? new Date(liquidate.liquidated_at).toLocaleDateString() : 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            {{ liquidate.inventory?.expiry_date ? new Date(liquidate.inventory.expiry_date).toLocaleDateString() : 
-                               (liquidate.packing_list?.expire_date ? new Date(liquidate.packing_list.expire_date).toLocaleDateString() : 'N/A') }}
-                        </td>
-                        <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.quantity }}</td>
-                        <td class="px-4 py-2 border-r border-gray-300">
-                            <div v-if="liquidate.packing_list_id">
-                                Packing List ({{ liquidate.packing_list?.packing_list_number || 'PL' }})
-                                <span v-if="liquidate.status" class="text-sm font-medium ml-1 px-2 py-0.5 rounded" 
-                                      :class="{
-                                          'bg-red-100 text-red-800': liquidate.status === 'damaged',
-                                          'bg-yellow-100 text-yellow-800': liquidate.status === 'expired',
-                                          'bg-blue-100 text-blue-800': liquidate.status === 'Missing',
-                                          'bg-gray-100 text-gray-800': liquidate.status === 'pending'
-                                      }">
-                                    {{ liquidate.status.charAt(0).toUpperCase() + liquidate.status.slice(1) }}
-                                </span>
-                            </div>
-                            <div v-else-if="liquidate.inventory_id">
-                                Inventory
-                                <span v-if="liquidate.status === 'expired'" class="text-sm bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded ml-1">Expired</span>
-                            </div>
-                            <div class="mt-1 text-sm text-gray-600">
-                                {{ liquidate.note || '' }}
-                            </div>
+                            {{ liquidate.note || 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            <span 
-                                :class="{
-                                    'px-2 py-1 rounded text-white text-xs font-medium': true,
-                                    'bg-red-500': liquidate.status === 'damaged',
-                                    'bg-yellow-500': liquidate.status === 'expired',
-                                    'bg-blue-500': liquidate.status === 'Missing',
-                                    'bg-gray-500': liquidate.status === 'pending',
-                                    'bg-green-500': liquidate.approved_by !== null
-                                }"
-                            >
-                                {{ liquidate.approved_by !== null ? 'Approved' : 
-                                   (liquidate.status ? (liquidate.status.charAt(0).toUpperCase() + liquidate.status.slice(1)) : 'N/A') }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
-                            <div v-if="liquidate.attachments">
-                                <div v-for="(attachment, idx) in parseAttachments(liquidate.attachments)" :key="idx" class="flex items-center mb-1">
-                                    <a :href="`/storage/${attachment.path}`" target="_blank" class="text-blue-500 hover:underline flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            <div class="flex flex-col gap-1">
+                                <!-- Always show Pending -->
+                                <span class="text-gray-600 text-sm">Pending</span>
+                                
+                                <!-- Show Reviewed if reviewed -->
+                                <template v-if="liquidate.reviewed_at">
+                                    <span class="flex items-center text-sm">
+                                        <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                         </svg>
-                                        {{ attachment.name }}
-                                    </a>
-                                </div>
-                            </div>
-                            <span v-else>-</span>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700" title="View Details">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                                <!-- Show Approve button for pending records -->
-                                <button 
-                                    v-if="liquidate.status === 'pending' && !liquidate.approved_by" 
-                                    class="text-green-500 hover:text-green-700" 
-                                    title="Approve"
-                                    @click="approveLiquidate(liquidate.id)"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </button>
-                                <!-- Show Reject button for pending records -->
-                                <button 
-                                    v-if="liquidate.status === 'pending'" 
-                                    class="text-red-500 hover:text-red-700" 
-                                    title="Reject"
-                                    @click="rejectLiquidate(liquidate.id)"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                                <!-- Show Rollback button for approved records -->
-                                <button 
-                                    v-if="liquidate.approved_by" 
-                                    class="text-yellow-500 hover:text-yellow-700" 
-                                    title="Rollback"
-                                    @click="rollbackLiquidate(liquidate.id)"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                    </svg>
-                                </button>
+                                        <span class="text-blue-600">Reviewed</span>
+                                    </span>
+                                </template>
+                                
+                                <!-- Show Approved/Rejected if either one is present -->
+                                <template v-if="liquidate.approved_at">
+                                    <span class="flex items-center text-sm">
+                                        <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="text-green-600">Approved</span>
+                                    </span>
+                                </template>
+                                <template v-if="liquidate.rejected_at">
+                                    <span class="flex items-center text-sm">
+                                        <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="text-red-600">Rejected</span>
+                                    </span>
+                                </template>
                             </div>
                         </td>
+                        <td class="px-4 py-2 border-r border-gray-300">
+                            <div v-if="liquidate.approved_at" class="text-gray-600 text-sm">
+                                Closed (Approved)
+                            </div>
+                            <div v-else class="flex flex-col gap-2">
+                                <button 
+                                    v-if="!liquidate.reviewed_at" 
+                                    @click="reviewLiquidation(liquidate.id)" 
+                                    :disabled="isReviewing"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm">
+                                    {{isReviewing ? 'Processing...' : 'Review'}}
+                                </button>
+                                <!-- Show approve/reject buttons after review -->
+                                <template v-if="liquidate.reviewed_at && !liquidate.approved_at">
+                                    <div class="flex flex-col gap-2">
+                                        <button 
+                                            @click="approveLiquidation(liquidate.id)" 
+                                            :disabled="isApproving"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm">
+                                            {{isApproving ? 'Processing...' : liquidate.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
+                                        </button>
+                                        <button 
+                                            v-if="!liquidate.rejected_at"
+                                            @click="rejectLiquidation(liquidate.id)"
+                                            :disabled="isRejecting"
+                                            class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm">
+                                            {{isRejecting ? 'Processing...' : 'Reject'}}
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </td>                       
                     </tr>
                 </tbody>
             </table>

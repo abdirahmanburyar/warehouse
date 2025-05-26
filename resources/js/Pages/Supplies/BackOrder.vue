@@ -1,756 +1,661 @@
 <template>
-
-    <Head title="Purchase Order" />
-    <AuthenticatedLayout title="Back Orderse" description="Manage your Back orders">
-        <!-- Supplier Selection -->
-        <div class="">
-            <Link :href="route('supplies.index')" class="flex items-center text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                Back to Suppliers
-            </Link>
-            
-
-            <div class="grid grid-cols-1 gap-6">
-                <div class="w-[400px] mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Select P.O
-                    </label>
-                    <Multiselect v-model="purchase_order"
+    <AuthenticatedLayout>
+        <div class="bg-white">
+            <div class="p-6 text-gray-900">
+                <div class="mb-4">
+                    <label for="po" class="block text-sm font-medium text-gray-700">Select Purchase Order</label>
+                    <Multiselect
+                        v-model="selectedPo"
                         :options="props.po"
-                        :searchable="true" :close-on-select="true" :show-labels="false"
-                        :allow-empty="true" placeholder="Select P.O Number" track-by="id" label="po_number"
-                    @select="onPOChange"></Multiselect>
+                        :searchable="true"
+                        :create-option="false"
+                        class="mt-1"
+                        placeholder="Select Purchase Order"
+                        label="po_number"
+                        track-by="id"
+                        @select="handlePoChange"
+                    />
                 </div>
-            </div>
-        </div>
 
-        <!-- Back Order Stats -->        
-        <div class="mb-6 mt-4" v-if="groupedItems.length > 0">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 text-blue-500 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-500">Total Items</div>
-                            <div class="text-lg font-semibold">{{ form.length }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-500 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-500">Missing Items</div>
-                            <div class="text-lg font-semibold">{{ form.filter(item => item.status === 'Missing').length }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-red-100 text-red-500 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-500">Damaged Items</div>
-                            <div class="text-lg font-semibold">{{ form.filter(item => item.status === 'Damaged').length }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 text-green-500 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-500">Received Items</div>
-                            <div class="text-lg font-semibold">{{ form.filter(item => item.status === 'Received').length }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Back Order Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-            <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-800">Back Order Items</h2>
-                <div class="flex space-x-2">
-                    <button v-if="form.length > 0" @click="exportToExcel" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Export
-                    </button>
-                    <button @click="fetchBackOrders" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 border-collapse">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 border-b-2 border-r border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th class="px-6 py-3 border-b-2 border-r border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing List</th>
-                            <th class="px-6 py-3 border-b-2 border-r border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                            <th class="px-6 py-3 border-b-2 border-r border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 border-b-2 border-r border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 border-b-2 border-black text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-if="isLoading">
-                            <td colspan="6" class="px-6 py-10 text-center">
-                                <div class="flex justify-center">
-                                    <svg class="animate-spin h-8 w-8 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                <div class="mt-6" v-if="selectedPo">
+                    <h3 class="text-lg font-medium text-gray-900">Back Order Items</h3>
+                    <div class="mt-4 flex flex-col">
+                        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product ID</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing List</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <template v-if="isLoading">
+                                                <tr v-for="i in 3" :key="i">
+                                                    <td v-for="j in 6" :key="j" class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="animate-pulse h-4 bg-gray-200 rounded"></div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                                <tr v-for="item in items" :key="item.id">
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.product.productID }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.product.name }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.packing_list.packing_list_number }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ moment(item.created_at).format('DD/MM/YYYY') }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.quantity }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <span :class="{
+                                                            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full': true,
+                                                            'bg-yellow-100 text-yellow-800': item.status === 'Missing',
+                                                            'bg-red-100 text-red-800': ['Damaged', 'Expired'].includes(item.status)
+                                                        }">
+                                                            {{ item.status }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                        <button
+                                                            v-if="['Missing', 'Damaged', 'Expired'].includes(item.status)"
+                                                            @click="handleReceive(item)"
+                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                            :disabled="isLoading"
+                                                        >
+                                                            Receive
+                                                        </button>
+                                                        <button
+                                                            v-if="item.status === 'Missing'"
+                                                            @click="handleLiquidate(item)"
+                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                                            :disabled="isLoading"
+                                                        >
+                                                            Liquidate
+                                                        </button>
+                                                        <button
+                                                            v-if="['Damaged', 'Expired'].includes(item.status)"
+                                                            @click="handleDispose(item)"
+                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                            :disabled="isLoading"
+                                                        >
+                                                            Dispose
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr v-if="items.length === 0">
+                                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No back order items found</td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <p class="mt-2 text-sm text-gray-500">Loading back orders...</p>
-                            </td>
-                        </tr>
-                        <template v-else-if="groupedItems.length > 0">
-                            <template v-for="group in groupedItems" :key="group.product_id + '-' + group.packing_list_number">
-                                <tr v-for="(item, index) in group.items" :key="item.id" 
-                                    class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
-                                    <td v-if="index === 0" :rowspan="group.items.length" class="px-6 py-4 border-r border-gray-200">
-                                        <div class="flex flex-col">
-                                            <div class="text-sm font-medium text-gray-900">{{ group.product_name }}</div>
-                                            <div class="text-xs text-gray-500 mt-1">ID: {{ group.product || 'N/A' }}</div>
-                                        </div>
-                                    </td>
-                                    <td v-if="index === 0" :rowspan="group.items.length" class="px-6 py-4 border-r border-gray-200">
-                                        <div class="flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                            </svg>
-                                            <span class="text-sm text-gray-700">{{ group.packing_list_number }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 border-r border-gray-200">
-                                        <span class="text-sm font-medium">{{ item.quantity }}</span>
-                                    </td>
-                                    <td class="px-6 py-4 border-r border-gray-200">
-                                        <span :class="{
-                                            'px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full': true,
-                                            'bg-red-100 text-red-800': item.status === 'Damaged',
-                                            'bg-yellow-100 text-yellow-800': item.status === 'Missing',
-                                            'bg-green-100 text-green-800': item.status === 'Received',
-                                            'bg-gray-100 text-gray-800': !['Damaged', 'Missing', 'Received'].includes(item.status)
-                                        }">
-                                            {{ item.status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 border-r border-gray-200 text-sm text-gray-500">
-                                        <div class="flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            <span class="ml-1 text-sm text-black">{{ moment(item.created_at).format('DD/MM/YYYY HH:MM') }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <div class="flex space-x-2">
-                                            <!-- Receive button for all items -->
-                                            <button @click="openReceiveModal(item)" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded-md text-xs flex items-center transition-colors duration-150">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Receive
-                                            </button>
-                                            
-                                            <!-- Liquidate button for missing items -->
-                                            <button v-if="item.status.toLowerCase() === 'missing'" @click="liquidate(item)" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded-md text-xs flex items-center transition-colors duration-150">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                                Liquidate
-                                            </button>
-                                            
-                                            <!-- Dispose button for damaged and lost items -->
-                                            <button v-if="['damaged', 'lost'].includes(item.status.toLowerCase())" @click="dispose(item)" class="bg-orange-600 hover:bg-orange-700 text-white py-1 px-3 rounded-md text-xs flex items-center transition-colors duration-150">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                                Dispose
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-                        </template>
-                        <tr v-else>
-                            <td colspan="6" class="px-6 py-10 text-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                </svg>
-                                <p class="text-gray-500 text-lg font-medium">No back orders found</p>
-                                <p class="text-gray-400 text-sm mt-1">Select a purchase order to view its back orders</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Quantity Update Modal -->
-        <Modal :show="showUpdateModal" @close="closeUpdateModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Update Quantity</h2>
+        <!-- Liquidation Modal -->
+        <Modal :show="showLiquidateModal" max-width="xl" @close="showLiquidateModal = false">
+            <form id="liquidationForm" class="p-6 space-y-4" @submit.prevent="submitLiquidation">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Liquidate Item</h2>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Current Quantity
-                    </label>
-                    <input
-                        type="number"
-                        v-model="selectedItem.quantity"
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        :class="{ 'border-red-500': selectedItem.quantityError }"
-                        min="0"
-                        step="1"
+                <!-- Product Info -->
+                <div v-if="selectedItem" class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.product.productID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product Name</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.product.name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Packing List</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list.packing_list_number }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Status</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.status }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        v-model="liquidateForm.quantity"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        :min="1"
+                        :max="selectedItem?.quantity"
+                        required
                     >
-                    <p v-if="selectedItem.quantityError" class="mt-1 text-sm text-red-600">{{ selectedItem.quantityError }}</p>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Status
-                    </label>
-                    <select 
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    v-model="selectedItem.status">
-                        <option value="Missing" >Received</option>
-                        <option value="Lost" >Lost</option>
-                        <option value="Damaged" >Damaged</option>
-                        <option value="Expired" >Expired</option>
-                    </select>
+                <!-- Note -->
+                <div>
+                    <label for="note" class="block text-sm font-medium text-gray-700">Note</label>
+                    <textarea 
+                        id="note" 
+                        v-model="liquidateForm.note"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        rows="3"
+                        required
+                    ></textarea>
                 </div>
 
-                <div class="flex justify-end space-x-3">
+                <!-- Attachments -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
+                    <input 
+                        type="file" 
+                        ref="attachments"
+                        @change="(e) => handleFileChange('liquidate', e)"
+                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        multiple
+                        accept=".pdf"
+                        required
+                    >
+                </div>
+
+                <!-- Selected Files Preview -->
+                <div v-if="liquidateForm.attachments.length > 0" class="mt-2">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                    <ul class="space-y-2">
+                        <li v-for="(file, index) in liquidateForm.attachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                            <span>{{ file.name }}</span>
+                            <button 
+                                type="button"
+                                @click="removeLiquidateFile(index)" 
+                                class="text-red-500 hover:text-red-700"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 flex justify-end space-x-3">
                     <button
-                        @click="closeUpdateModal"
-                        class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        type="button"
+                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        @click="showLiquidateModal = false"
                     >
                         Cancel
                     </button>
                     <button
-                        @click="updateQuantity"
-                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        :disabled="processing"
+                        type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                        :disabled="isSubmitting"
                     >
-                        {{ processing ? 'Updating...' : 'Update' }}
+                        {{ isSubmitting ? 'Liquidating...' : 'Liquidate' }}
                     </button>
                 </div>
-            </div>
+            </form>
         </Modal>
-        
-        <!-- File Upload Modal -->
-        <FileUploadModal 
-            :is-open="showFileUploadModal" 
-            :title="fileUploadModalTitle"
-            @close="showFileUploadModal = false"
-            @submit="handleFileSubmit"
-        />
+
+
+          <!-- Dispose Modal -->
+          <Modal :show="showDisposeModal" max-width="xl" @close="showDisposeModal = false">
+            <form id="disposeForm" class="p-6 space-y-4" @submit.prevent="submitDisposal">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Dispose Item</h2>
+                
+                <!-- Product Info -->
+                <div v-if="selectedItem" class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.product.productID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product Name</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.product.name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Packing List</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list.packing_list_number }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Status</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.status }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        v-model="disposeForm.quantity"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        :min="1"
+                        :max="selectedItem?.quantity"
+                        required
+                    >
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label for="note" class="block text-sm font-medium text-gray-700">Note</label>
+                    <textarea 
+                        id="note" 
+                        v-model="disposeForm.note"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- Attachments -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
+                    <input 
+                        type="file" 
+                        ref="attachments"
+                        @change="(e) => handleFileChange('dispose', e)"
+                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        multiple
+                        accept=".pdf"
+                        required
+                    >
+                </div>
+
+                <!-- Selected Files Preview -->
+                <div v-if="disposeForm.attachments.length > 0" class="mt-2">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                    <ul class="space-y-2">
+                        <li v-for="(file, index) in disposeForm.attachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                            <span>{{ file.name }}</span>
+                            <button 
+                                type="button"
+                                @click="removeDisposeFile(index)" 
+                                class="text-red-500 hover:text-red-700"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        @click="showDisposeModal = false"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                        :disabled="isSubmitting"
+                    >
+                        {{ isSubmitting ? 'Disposing...' : 'Dispose' }}
+                    </button>
+                </div>
+            </form>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, Link } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
-import { TrashIcon, PlusIcon } from '@heroicons/vue/24/outline';
-import Modal from '@/Components/Modal.vue';
-import FileUploadModal from '@/Components/FileUploadModal.vue';
-import axios from 'axios';
-import moment from 'moment';
-import Swal from 'sweetalert2';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
-import * as XLSX from 'xlsx';
+import { ref } from 'vue';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import moment from 'moment';
+import Modal from '@/Components/Modal.vue';
 
-import { useToast } from 'vue-toastification';
-
-const toast = useToast();
-
-const props = defineProps({
-    po: Array,
-    warehouses: Array,
-    // suppliers: Array,
-    // po_number: Number
+// Component state
+const selectedPo = ref(null);
+const items = ref([]);
+const isLoading = ref(false);
+const isSubmitting = ref(false);
+const showLiquidateModal = ref(false);
+const showDisposeModal = ref(false);
+const selectedItem = ref(null);
+const liquidateForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
 });
 
-const purchase_order = ref(null)
+const disposeForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
+});
 
-const form = ref([]);
-
-const processing = ref(false);
-
-const isLoading = ref(false);
-const showUpdateModal = ref(false);
-const selectedItem = ref({});
-
-const openUpdateModal = (item) => {
-    selectedItem.value = { ...item };
-    showUpdateModal.value = true;
-};
-
-const showFileUploadModal = ref(false);
-const fileUploadModalTitle = ref('');
-const fileUploadAction = ref('');
-const currentItem = ref(null);
-const currentNote = ref('');
-
-const liquidate = async (item) => {
-    // First show the basic confirmation dialog
-    const { isConfirmed, value: note } = await Swal.fire({
-        title: 'Liquidate Item',
-        text: `Are you sure you want to liquidate this item?`,
-        icon: 'warning',
-        input: 'text',
-        inputPlaceholder: 'Note (optional)',
-        inputAttributes: {
-            autocapitalize: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Yes, liquidate it!',
-    });
-    
-    if (!isConfirmed) return;
-    
-    // Open the file upload modal
-    currentItem.value = item;
-    currentNote.value = note || '';
-    fileUploadModalTitle.value = 'Attach Files for Liquidation';
-    fileUploadAction.value = 'liquidate';
-    showFileUploadModal.value = true;
-};
-
-// Handle file submission for liquidation
-const handleFileSubmit = async (files) => {
-    if (!currentItem.value) return;
-    
-    // Show loading state
-    Swal.fire({
-        title: 'Processing...',
-        html: 'Please wait while we process your request',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    // Create FormData and append files
-    const formData = new FormData();
-    const item = currentItem.value;
-    
-    // Determine which action to take
-    if (fileUploadAction.value === 'liquidate') {
-        formData.append('id', item.id);
-        formData.append('product_id', item.product_id);
-        formData.append('packing_list_id', item.packing_list_id);
-        formData.append('quantity', item.quantity);
-        formData.append('status', item.status);
-        formData.append('note', currentNote.value);
-        
-        // Append files if any
-        if (files && files.length > 0) {
-            for (let i = 0; i < files.length; i++) {
-                formData.append(`attachments[${i}]`, files[i]);
-            }
-        }
-        
-        try {
-            const response = await axios.post(route('back-order.liquidate'), formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            
-            showFileUploadModal.value = false;
-            
-            Swal.fire({
-                title: 'Liquidated!',
-                text: response.data.message,
-                icon: 'success'
-            });
-            
-            fetchBackOrders(); // Refresh the data
-        } catch (error) {
-            showFileUploadModal.value = false;
-            
-            Swal.fire({
-                title: 'Error',
-                text: error.response?.data?.message || 'An error occurred while processing your request',
-                icon: 'error'
-            });
-        }
-    } else if (fileUploadAction.value === 'dispose') {
-        formData.append('id', item.id);
-        formData.append('product_id', item.product_id);
-        formData.append('packing_list_id', item.packing_list_id);
-        formData.append('purchase_order_id', purchase_order.value?.id);
-        formData.append('quantity', item.quantity);
-        formData.append('status', item.status);
-        formData.append('note', currentNote.value);
-        
-        // Append files if any
-        if (files && files.length > 0) {
-            for (let i = 0; i < files.length; i++) {
-                formData.append(`attachments[${i}]`, files[i]);
-            }
-        }
-        
-        try {
-            const response = await axios.post(route('back-order.dispose'), formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            
-            showFileUploadModal.value = false;
-            
-            Swal.fire({
-                title: 'Disposed!',
-                text: response.data.message,
-                icon: 'success'
-            });
-            
-            fetchBackOrders(); // Refresh the data
-        } catch (error) {
-            showFileUploadModal.value = false;
-            
-            Swal.fire({
-                title: 'Error',
-                text: error.response?.data?.message || 'An error occurred while processing your request',
-                icon: 'error'
-            });
-        }
+const handleFileChange = (formType, e) => {
+    const files = Array.from(e.target.files || []);
+    if (formType === 'liquidate') {
+        liquidateForm.value.attachments = files;
+    } else {
+        disposeForm.value.attachments = files;
     }
 };
 
-const dispose = async (item) => {
-    // First show the basic confirmation dialog
-    const { isConfirmed, value: note } = await Swal.fire({
-        title: 'Dispose Item',
-        text: `Are you sure you want to dispose this ${item.status.toLowerCase()} item?`,
-        icon: 'warning',
-        input: 'text',
-        inputPlaceholder: 'Note (optional)',
-        inputAttributes: {
-            autocapitalize: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Yes, dispose it!',
-    });
-    
-    if (!isConfirmed) return;
-    
-    // Open the file upload modal
-    currentItem.value = item;
-    currentNote.value = note || '';
-    fileUploadModalTitle.value = 'Attach Files for Disposal';
-    fileUploadAction.value = 'dispose';
-    showFileUploadModal.value = true;
+const removeLiquidateFile = (index) => {
+    liquidateForm.value.attachments.splice(index, 1);
 };
 
-const openReceiveModal = (item) => {
-    Swal.fire({
-        title: 'Receive Item',
-        html: `
-            <div class="mb-4">
-                <p class="text-sm text-gray-600 mb-2">Item: ${item.product?.name || 'Unknown'}</p>
-                <p class="text-sm text-gray-600 mb-2">Total Quantity: ${item.quantity}</p>
-            </div>
-            <div class="mb-4">
-                <label for="receive-quantity" class="block text-sm font-medium text-gray-700 text-left mb-1">Quantity to Receive:</label>
-                <input type="number" id="receive-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
-                       min="1" max="${item.quantity}" value="${item.quantity}">
-            </div>
-            <div class="mb-4">
-                <label for="receive-note" class="block text-sm font-medium text-gray-700 text-left mb-1">Note (optional):</label>
-                <textarea id="receive-note" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" rows="2"></textarea>
-            </div>
-        `,
+const removeDisposeFile = (index) => {
+    disposeForm.value.attachments.splice(index, 1);
+};
+
+// Component props
+const props = defineProps({
+    po: {
+        required: true,
+        type: Array
+    }
+});
+
+// Action handlers
+const receiveItems = async (item) => {
+    const { value: quantity } = await Swal.fire({
+        title: 'Enter Quantity to Receive',
+        input: 'number',
+        inputLabel: `Maximum quantity: ${item.quantity}`,
+        inputValue: item.quantity,
+        inputAttributes: {
+            min: '1',
+            max: item.quantity.toString(),
+            step: '1'
+        },
         showCancelButton: true,
         confirmButtonText: 'Receive',
-        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#6B7280',
         showLoaderOnConfirm: true,
-        preConfirm: () => {
-            const quantity = document.getElementById('receive-quantity').value;
-            const note = document.getElementById('receive-note').value;
-            
-            if (!quantity || quantity <= 0 || quantity > item.quantity) {
-                Swal.showValidationMessage('Please enter a valid quantity (1 to ' + item.quantity + ')');
+        preConfirm: async (value) => {
+            const num = parseInt(value);
+            if (!value || num < 1) {
+                Swal.showValidationMessage('Please enter a quantity greater than 0');
+                return false;
+            }
+            if (num > item.quantity) {
+                Swal.showValidationMessage(`Cannot receive more than ${item.quantity} items`);
                 return false;
             }
             
-            return axios.post(route('back-order.receive'), {
-                id: item.id,
-                product_id: item.product_id,
-                packing_list_id: item.packing_list_id,
-                purchase_order_id: purchase_order.value?.id,
-                quantity: parseInt(quantity),
-                original_quantity: item.quantity,
-                note: note
-            })
-            .then(response => {
-                return response.data;
-            })
-            .catch(error => {
-                Swal.showValidationMessage(
-                    `Request failed: ${error.response?.data?.message || error.message}`
-                );
+            try {
+                isLoading.value = true;
+                await axios.post(route('back-order.receive'), {
+                    id: item.id,
+                    product_id: item.product.id,
+                    packing_list_id: item.packing_list.id,
+                    purchase_order_id: selectedPo.value?.id,
+                    quantity: num,
+                    original_quantity: item.quantity
+                })
+                .then(response => {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: response.data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#10B981',
+                    });
+                })
+                .catch(error => {
+                    console.error('Failed to receive items:', error);
+                    Swal.showValidationMessage(error.response?.data?.message || 'Failed to receive items');
+                });
+                await handlePoChange(selectedPo.value);
+                return true;
+            } catch (error) {
+                console.error('Failed to receive items:', error);
+                Swal.showValidationMessage(error.response?.data?.message || 'Failed to receive items');
                 return false;
-            });
+            } finally {
+                isLoading.value = false;
+            }
         },
         allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            Swal.fire({
-                title: 'Received!',
-                text: result.value.message,
-                icon: 'success'
-            });
-            fetchBackOrders(); // Refresh the data
-        }
     });
 };
 
-const closeUpdateModal = () => {
-    showUpdateModal.value = false;
-    selectedItem.value = {};
-};
-
-const validateFields = (item) => {
-    const errors = [];
-    if (!item.quantity || item.quantity <= 0) errors.push('Quantity is required and must be greater than 0');
-    if (!item.status) errors.push('Status is required');
-    if (!item.packing_list_id) errors.push('Packing list is required');
-    if (!item.product_id) errors.push('Product is required');
-    return errors;
-};
-
-const updateQuantity = async () => {
-    if (!validateQuantity(selectedItem.value)) return;
-
-    // Validate all required fields
-    const errors = validateFields(selectedItem.value);
-    if (errors.length > 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            html: errors.join('<br>'),
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-        return;
-    }
-
-    // Ask for confirmation
-    const confirmed = await Swal.fire({
-        title: 'Confirm Update',
-        text: 'Are you sure you want to update this back order?',
-        icon: 'warning',
+const liquidateItems = async (item) => {
+    const { value: formValues } = await Swal.fire({
+        title: 'Liquidate Items',
+        html: `
+            <form id="liquidationForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        min="1"
+                        max="${item.quantity}"
+                        value="${item.quantity}"
+                        required
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Note</label>
+                    <textarea 
+                        id="note" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Attachments</label>
+                    <input 
+                        type="file" 
+                        id="attachments" 
+                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        required
+                    >
+                </div>
+            </form>
+        `,
         showCancelButton: true,
-        confirmButtonText: 'Yes, update it!',
-        cancelButtonText: 'No, cancel'
-    });
-
-    if (!confirmed.isConfirmed) return;
-
-    try {
-        processing.value = true;
-        await axios.post(route('supplies.backorder-status'), {
-            id: selectedItem.value.id,
-            packing_list_id: selectedItem.value.packing_list_id,
-            product_id: selectedItem.value.product_id,
-            quantity: selectedItem.value.quantity,
-            status: selectedItem.value.status,
-            action: 'Received'
-        });
-        
-        toast.success('Back order updated successfully');
-        await fetchBackOrders(); // Use the new function to refresh data
-        closeUpdateModal();
-    } catch (error) {
-        console.error(error);
-        toast.error(error.response?.data || 'Failed to update back order');
-    } finally {
-        processing.value = false;
-    }
-};
-
-const validateQuantity = (item) => {
-    const qty = parseFloat(item.quantity);
-    
-    if (isNaN(qty) || qty < 0) {
-        item.quantityError = 'Quantity must be a positive number';
-        return false;
-    }
-    
-    item.quantityError = '';
-    return true;
-};
-
-const groupedItems = computed(() => {
-    const groups = {};
-    
-    if (!form.value || !Array.isArray(form.value)) return [];
-    
-    form.value.forEach(item => {
-        if (!item.product_id) return;
-        
-        const key = `${item.product_id}-${item.packing_list?.packing_list_number}`;
-        
-        if (!groups[key]) {
-            groups[key] = {
-                product_id: item.product_id,
-                packing_list_number: item.packing_list?.packing_list_number,
-                product_name: item.product?.name,
-                product_barcode: item.product?.barcode,
-                items: []
-            };
-        }
-        groups[key].items.push(item);
-    });
-
-    // Sort by product name and packing list number
-    return Object.values(groups).sort((a, b) => {
-        if (a.product_name === b.product_name) {
-            return (a.packing_list_number || '').localeCompare(b.packing_list_number || '');
-        }
-        return (a.product_name || '').localeCompare(b.product_name || '');
-    });
-});
-
-
-async function onPOChange(selected) {
-    isLoading.value = true;
-    form.value = [];
-    
-    if(!selected) {
-        isLoading.value = false;
-        purchase_order.value = null;
-        return;
-    }
-    purchase_order.value = selected;
- 
-    await axios.get(route('supplies.get-packingList', selected.id))
-        .then((response) => {
-            isLoading.value = false;
-            // Check if the data is nested under packingLists key
-            if (response.data && response.data.packingLists) {
-                form.value = response.data.packingLists;
-            } else {
-                form.value = response.data;
+        confirmButtonText: 'Liquidate',
+        confirmButtonColor: '#EAB308',
+        cancelButtonColor: '#6B7280',
+        showLoaderOnConfirm: true,
+        preConfirm: async () => {
+            const form = document.getElementById('liquidationForm');
+            const quantity = parseInt(form.querySelector('#quantity').value);
+            const note = form.querySelector('#note').value;
+            const attachments = form.querySelector('#attachments').files;
+            
+            if (!quantity || quantity < 1) {
+                Swal.showValidationMessage('Please enter a quantity greater than 0');
+                return false;
             }
-            console.log(response.data);
-        })
-        .catch((error) => {
-            isLoading.value = false;
-            console.log(error.response.data);
-        });
-}
+            if (quantity > item.quantity) {
+                Swal.showValidationMessage(`Cannot liquidate more than ${item.quantity} items`);
+                return false;
+            }
+            if (!note.trim()) {
+                Swal.showValidationMessage('Please enter a note');
+                return false;
+            }
+            if (attachments.length === 0) {
+                Swal.showValidationMessage('Please upload at least one attachment');
+                return false;
+            }
+            
+            try {
+                isLoading.value = true;
+                const formData = new FormData();
+                formData.append('id', item.id);
+                formData.append('product_id', item.product.id);
+                formData.append('packing_list_id', item.packing_list.id);
+                formData.append('purchase_order_id', selectedPo.value?.id);
+                formData.append('quantity', quantity);
+                formData.append('original_quantity', item.quantity);
+                formData.append('note', note);
+                
+                for (let i = 0; i < attachments.length; i++) {
+                    formData.append('attachments[]', attachments[i]);
+                }
+                
+                await axios.post(route('back-order.liquidate'), formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                await handlePoChange(selectedPo.value);
+                return true;
+            } catch (error) {
+                console.error('Failed to liquidate items:', error);
+                Swal.showValidationMessage(error.response?.data?.message || 'Failed to liquidate items');
+                return false;
+            } finally {
+                isLoading.value = false;
+            }
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+};
 
-// Function to fetch back orders for the current purchase order
-const fetchBackOrders = async () => {
-    if (!purchase_order.value) return;
-    
-    isLoading.value = true;
+
+// Event handlers
+const handlePoChange = async (po) => {
     try {
-        const response = await axios.get(route('supplies.get-packingList', purchase_order.value.id));
-        // Check if the data is nested under packingLists key
-        if (response.data && response.data.packingLists) {
-            form.value = response.data.packingLists;
-        } else {
-            form.value = response.data;
+        if (!po) {
+            items.value = [];
+            return;
         }
+
+        isLoading.value = true;
+        const response = await axios.get(route('supplies.get-packingList', po.id));
+        items.value = response.data;
     } catch (error) {
-        console.error('Error fetching back orders:', error);
-        Swal.fire({
-            title: 'Error!',
-            text: 'Failed to refresh back order data',
-            icon: 'error',
-            confirmButtonText: 'OK'
-        });
+        console.error('Failed to fetch items:', error);
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to fetch items', 'error');
+        items.value = [];
     } finally {
         isLoading.value = false;
     }
-}
+};
 
-// Function to export back order data to Excel
-const exportToExcel = () => {
-    if (!form.value || form.value.length === 0) {
-        Swal.fire({
-            title: 'No Data',
-            text: 'There is no data to export',
-            icon: 'warning',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
-    
+const handleReceive = async (item) => {
+    await receiveItems(item);
+};
+
+const handleLiquidate = (item) => {
+    selectedItem.value = item;
+    liquidateForm.value = {
+        quantity: item.quantity,
+        note: '',
+        attachments: []
+    };
+    showLiquidateModal.value = true;
+};
+
+const submitLiquidation = async () => {
     try {
-        // Prepare data for export
-        const exportData = form.value.map(item => ({
-            'Product ID': item.product?.productID || '',
-            'Product Name': item.product?.name || '',
-            'Packing List': item.packing_list?.packing_list_number || '',
-            'Batch Number': item.packing_list?.batch_number || '',
-            'Quantity': item.quantity,
-            'Status': item.status,
-            'Created Date': new Date(item.created_at).toLocaleString(),
-            'Expire Date': item.packing_list?.expire_date || ''
-        }));
+        console.log(selectedItem.value);
+        isSubmitting.value = true;
+        const formData = new FormData();
+        formData.append('id', selectedItem.value.id);
+        formData.append('product_id', selectedItem.value.product.id);
+        formData.append('packing_list_id', selectedItem.value.packing_list.id);
+        formData.append('purchase_order_id', selectedPo.value?.id);
+        formData.append('quantity', liquidateForm.value.quantity);
+        formData.append('original_quantity', selectedItem.value.quantity);
+        formData.append('barcode', selectedItem.value.packing_list.barcode);
+        formData.append('expire_date', selectedItem.value.packing_list.expire_date);
+        formData.append('batch_number', selectedItem.value.packing_list.batch_number);
+        formData.append('uom', selectedItem.value.packing_list.uom);
+        formData.append('status', selectedItem.value.status);
+        formData.append('note', liquidateForm.value.note);
         
-        // Create worksheet
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        // Append each attachment
+        for (let i = 0; i < liquidateForm.value.attachments.length; i++) {
+            formData.append('attachments[]', liquidateForm.value.attachments[i]);
+        }
         
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Back Orders');
-        
-        // Generate filename with current date
-        const fileName = `BackOrders_${purchase_order.value.po_number}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        
-        // Export to file
-        XLSX.writeFile(workbook, fileName);
-        
-        toast.success('Back order data exported successfully');
-    } catch (error) {
-        console.error('Error exporting data:', error);
-        Swal.fire({
-            title: 'Export Failed',
-            text: 'There was an error exporting the data',
-            icon: 'error',
-            confirmButtonText: 'OK'
+        await axios.post(route('back-order.liquidate'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         });
+        
+        await handlePoChange(selectedPo.value);
+        showLiquidateModal.value = false;
+        alert('Item has been liquidated successfully');
+    } catch (error) {
+        console.error('Failed to liquidate items:', error);
+        alert(error.response?.data?.message || 'Failed to liquidate items');
+    } finally {
+        isSubmitting.value = false;
     }
-}
+};
+
+
+const handleDispose = async (item) => {
+    selectedItem.value = item;
+    disposeForm.value = {
+        quantity: item.quantity,
+        note: '',
+        attachments: []
+    };
+    showDisposeModal.value = true;
+};
+
+const submitDisposal = async () => {
+    try {
+        isSubmitting.value = true;
+        const formData = new FormData();
+        formData.append('id', selectedItem.value.id);
+        formData.append('product_id', selectedItem.value.product.id);
+        formData.append('packing_list_id', selectedItem.value.packing_list.id);
+        formData.append('purchase_order_id', selectedPo.value?.id);
+        formData.append('quantity', disposeForm.value.quantity);
+        formData.append('original_quantity', selectedItem.value.quantity);
+        formData.append('barcode', selectedItem.value.packing_list.barcode);
+        formData.append('expire_date', selectedItem.value.packing_list.expire_date);
+        formData.append('batch_number', selectedItem.value.packing_list.batch_number);
+        formData.append('uom', selectedItem.value.packing_list.uom);
+        formData.append('status', selectedItem.value.status);
+        formData.append('note', disposeForm.value.note);
+        
+        // Append each attachment
+        for (let i = 0; i < disposeForm.value.attachments.length; i++) {
+            formData.append('attachments[]', disposeForm.value.attachments[i]);
+        }
+        
+        await axios.post(route('back-order.dispose'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        await handlePoChange(selectedPo.value);
+        showDisposeModal.value = false;
+        alert('Item has been disposed successfully');
+    } catch (error) {
+        console.error('Failed to dispose items:', error);
+        alert(error.response?.data?.message || 'Failed to dispose items');
+    } finally {
+        isSubmitting.value = false;
+    }
+};
 
 </script>
-

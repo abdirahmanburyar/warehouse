@@ -29,7 +29,7 @@ defineProps<{
               : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
         >
-          Liquidate
+          Liquidates
         </Link>
         <Link 
           href="/disposals" 
@@ -40,7 +40,7 @@ defineProps<{
               : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
         >
-          Disposal
+          Disposals
         </Link>
       </div>
 

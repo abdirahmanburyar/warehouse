@@ -14,10 +14,13 @@ class LiquidateDisposalController extends Controller
         $disposals = Disposal::with([
             'product',
             'purchaseOrder',
-            'packingList',
+            'packingList.warehouse',
+            'packingList.location',
             'inventory',
             'disposedBy',
-            'approvedBy'
+            'approvedBy',
+            'reviewedBy',
+            'rejectedBy'
         ])->latest('disposed_at')->get();
         
         return inertia('LiquidateDisposal/Disposal', [
@@ -29,10 +32,13 @@ class LiquidateDisposalController extends Controller
         $liquidates = Liquidate::with([
             'product',
             'purchaseOrder',
-            'packingList',
+            'packingList.warehouse',
+            'packingList.location',
             'inventory',
             'liquidatedBy',
-            'approvedBy'
+            'approvedBy',
+            'reviewedBy',
+            'rejectedBy'
         ])->latest('liquidated_at')->get();
         
         return inertia('LiquidateDisposal/Liquidate', [
@@ -40,63 +46,6 @@ class LiquidateDisposalController extends Controller
         ]);
     }
     
-    /**
-     * Approve a disposal record
-     */
-    public function approveDisposal(Request $request, $id)
-    {
-        $disposal = Disposal::findOrFail($id);
-        
-        // Check if already approved
-        if ($disposal->approved_by !== null) {
-            return response()->json([
-                'message' => 'This disposal has already been approved.'
-            ], 422);
-        }
-        
-        // Update the disposal record
-        $disposal->approved_by = Auth::id();
-        $disposal->approved_at = now();
-        $disposal->save();
-        
-        return response()->json([
-            'message' => 'Disposal approved successfully',
-            'disposal' => $disposal
-        ]);
-    }
-    
-    /**
-     * Reject a disposal record
-     */
-    public function rejectDisposal(Request $request, $id)
-    {
-        $request->validate([
-            'reason' => 'required|string|max:255'
-        ]);
-        
-        $disposal = Disposal::findOrFail($id);
-        
-        // Check if already approved
-        if ($disposal->approved_by !== null) {
-            return response()->json([
-                'message' => 'Cannot reject an already approved disposal.'
-            ], 422);
-        }
-        
-        // Update the disposal record with rejection note
-        $disposal->status = 'rejected';
-        $disposal->note = $request->reason;
-        $disposal->save();
-        
-        return response()->json([
-            'message' => 'Disposal rejected successfully',
-            'disposal' => $disposal
-        ]);
-    }
-    
-    /**
-     * Rollback an approved disposal to pending status
-     */
     public function rollbackDisposal(Request $request, $id)
     {
         $disposal = Disposal::findOrFail($id);
@@ -117,60 +66,6 @@ class LiquidateDisposalController extends Controller
         return response()->json([
             'message' => 'Disposal rolled back successfully',
             'disposal' => $disposal
-        ]);
-    }
-    
-    /**
-     * Approve a liquidation record
-     */
-    public function approveLiquidate(Request $request, $id)
-    {
-        $liquidate = Liquidate::findOrFail($id);
-        
-        // Check if already approved
-        if ($liquidate->approved_by !== null) {
-            return response()->json([
-                'message' => 'This liquidation has already been approved.'
-            ], 422);
-        }
-        
-        // Update the liquidation record
-        $liquidate->approved_by = Auth::id();
-        $liquidate->approved_at = now();
-        $liquidate->save();
-        
-        return response()->json([
-            'message' => 'Liquidation approved successfully',
-            'liquidate' => $liquidate
-        ]);
-    }
-    
-    /**
-     * Reject a liquidation record
-     */
-    public function rejectLiquidate(Request $request, $id)
-    {
-        $request->validate([
-            'reason' => 'required|string|max:255'
-        ]);
-        
-        $liquidate = Liquidate::findOrFail($id);
-        
-        // Check if already approved
-        if ($liquidate->approved_by !== null) {
-            return response()->json([
-                'message' => 'Cannot reject an already approved liquidation.'
-            ], 422);
-        }
-        
-        // Update the liquidation record with rejection note
-        $liquidate->status = 'rejected';
-        $liquidate->note = $request->reason;
-        $liquidate->save();
-        
-        return response()->json([
-            'message' => 'Liquidation rejected successfully',
-            'liquidate' => $liquidate
         ]);
     }
     
@@ -199,4 +94,118 @@ class LiquidateDisposalController extends Controller
             'liquidate' => $liquidate
         ]);
     }
+
+    public function reviewLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            if(!$liquidate) return response()->json("Liquidate not found", 500);
+            if($liquidate->status == 'pending') {
+                $liquidate->status = 'reviewed';
+                $liquidate->reviewed_at = now();
+                $liquidate->reviewed_by = Auth::id();
+                $liquidate->save();
+            }
+        
+            return response()->json("Liquidate Reviewed", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function approveLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            if(!$liquidate) return response()->json("Liquidate not found", 500);
+            if($liquidate->status == 'reviewed' || $liquidate->status == 'rejected') {
+                $liquidate->status = 'approved';
+                $liquidate->approved_at = now();
+                $liquidate->rejected_at = null;
+                $liquidate->rejected_reason = null;
+                $liquidate->rejected_by = null;
+                $liquidate->approved_by = Auth::id();
+                $liquidate->save();
+            }        
+            return response()->json("Liquidate Approved", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function rejectLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            if(!$liquidate) return response()->json("Liquidate not found", 500);
+            if($liquidate->status == 'reviewed') {
+                $liquidate->status = 'rejected';
+                $liquidate->rejected_at = now();
+                $liquidate->rejection_reason = $request->reason;
+                $liquidate->rejected_by = Auth::id();
+                $liquidate->save();
+            }        
+            return response()->json("Liquidate Rejected", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    // disposals
+    public function reviewDisposal(Request $request, $id)
+    {
+        try {
+            $disposal = Disposal::findOrFail($id);
+            if(!$disposal) return response()->json("Disposal not found", 500);
+            if($disposal->status == 'pending') {
+                $disposal->status = 'reviewed';
+                $disposal->reviewed_at = now();
+                $disposal->reviewed_by = Auth::id();
+                $disposal->save();
+            }
+        
+            return response()->json("Disposal Reviewed", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function approveDisposal(Request $request, $id)
+    {
+        try {
+            $disposal = Disposal::findOrFail($id);
+            if(!$disposal) return response()->json("Disposal not found", 500);
+            if($disposal->status == 'reviewed' || $disposal->status == 'rejected') {
+                $disposal->status = 'approved';
+                $disposal->approved_at = now();
+                $disposal->rejected_at = null;
+                $disposal->rejected_reason = null;
+                $disposal->rejected_by = null;
+                $disposal->approved_by = Auth::id();
+                $disposal->save();
+            }        
+            return response()->json("Disposal Approved", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function rejectDisposal(Request $request, $id)
+    {
+        try {
+            $disposal = Disposal::findOrFail($id);
+            if(!$disposal) return response()->json("Disposal not found", 500);
+            if($disposal->status == 'reviewed') {
+                $disposal->status = 'rejected';
+                $disposal->rejected_at = now();
+                $disposal->rejection_reason = $request->reason;
+                $disposal->rejected_by = Auth::id();
+                $disposal->save();
+            }        
+            return response()->json("Disposal Rejected", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
 }

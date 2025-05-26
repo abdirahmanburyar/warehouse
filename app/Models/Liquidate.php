@@ -7,7 +7,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Liquidate extends Model
 {
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($liquidate) {
+            $latestLiquidate = static::latest()->first();
+            $nextId = $latestLiquidate ? intval(substr($latestLiquidate->liquidate_id, -7)) + 1 : 1;
+            $liquidate->liquidate_id = str_pad($nextId, 7, '0', STR_PAD_LEFT);
+        });
+    }
+
     protected $fillable = [
+        'liquidate_id',
         'product_id',
         'purchase_order_id',
         'packing_list_id',
@@ -16,9 +28,19 @@ class Liquidate extends Model
         'liquidated_at',
         'quantity',
         'status',
+        'barcode',
+        'expire_date',
+        'batch_number',
+        'uom',
+        'attachments',
         'note',
+        'reviewed_by',
+        'reviewed_at',
         'approved_by',
         'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     /**
@@ -67,5 +89,21 @@ class Liquidate extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the user who reviewed the liquidation
+     */
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the user who rejected the liquidation
+     */
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 }

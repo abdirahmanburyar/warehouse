@@ -230,6 +230,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         ->group(function(){
             Route::get('/disposals', 'disposals')->name('disposals');
             Route::get('/liquidates', 'liquidates')->name('liquidates');
+            Route::get('/liquidates/{id}/review', 'reviewLiquidate')->name('liquidates.review');
+            Route::get('/liquidates/{id}/approve', 'approveLiquidate')->name('liquidates.approve');
+            Route::post('/liquidates/{id}/reject', 'rejectLiquidate')->name('liquidates.reject');
+
+            Route::get('/disposals/{id}/review', 'reviewDisposal')->name('disposals.review');
+            Route::get('/disposals/{id}/approve', 'approveDisposal')->name('disposals.approve');
+            Route::post('/disposals/{id}/reject', 'rejectDisposal')->name('disposals.reject');
         });
 
     // Supplier Management Routes

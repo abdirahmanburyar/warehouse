@@ -148,21 +148,20 @@ class SupplyController extends Controller
         ]);
     }
 
-    public function getBackOrder(Request $request, $id){
+    public function getBackOrder(Request $request, $id)
+    {
         try {
-            $packingLists = PackingListDifference::whereHas('packingList', function($q) use($id){
-                $q->where('purchase_order_id', $id);
+            // Join packing_list_differences, products, and packing_lists
+            $results = PackingListDifference::whereHas('packingList', function($query) use ($id) {
+                $query->where('purchase_order_id', $id);
             })
-            ->with(['product', 'packingList'])
-            ->get();
-            
-            return response()->json([
-                'packingLists' => $packingLists
-            ], 200);
+                ->with('product:id,name,productID','packingList')
+                ->get();
+
+            return response()->json($results, 200);
+
         } catch (\Throwable $th) {
-            return response()->json([
-                'message' => $th->getMessage()
-            ], 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
     
@@ -177,8 +176,12 @@ class SupplyController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
                 'note' => 'nullable|string|max:255',
+                'barcode' => 'nullable|string',
+                'expire_date' => 'nullable|date',
+                'batch_number' => 'nullable|string',
+                'uom' => 'nullable|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|file|mimes:pdf|max:10240', // Max 10MB per file
+                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
             
             // Start a database transaction
@@ -219,6 +222,10 @@ class SupplyController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'barcode' => $request->barcode,
+                'expire_date' => $request->expire_date,
+                'batch_number' => $request->batch_number,
+                'uom' => $request->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
             ]);
             
@@ -267,37 +274,35 @@ class SupplyController extends Controller
                 'id' => 'required|exists:packing_list_differences,id',
                 'product_id' => 'required|exists:products,id',
                 'packing_list_id' => 'required|exists:packing_lists,id',
-                'purchase_order_id' => 'required|exists:purchase_orders,id',
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
                 'note' => 'nullable|string|max:255',
-                'expired_date' => 'nullable|date',
+                'barcode' => 'nullable|string',
+                'expire_date' => 'nullable|date',
+                'batch_number' => 'nullable|string',
+                'uom' => 'nullable|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|file|mimes:pdf|max:10240', // Max 10MB per file
+                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
-            
-            // Store the reason for disposal
-            $reason = strtolower($request->status);
-            
-            // Check if reason is valid for disposal
-            $validReasons = ['damaged', 'lost', 'expired', 'missing'];
-            if (!in_array($reason, $validReasons)) {
-                return response()->json([
-                    'message' => 'The selected reason is invalid. Valid reasons are: ' . implode(', ', $validReasons)
-                ], 422);
-            }
             
             // Start a database transaction
             DB::beginTransaction();
             
-            // Get the packing list to retrieve batch number and expiry date if available
+            // Get the packing list to include its number in the note
             $packingList = PackingList::find($request->packing_list_id);
+            $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
+            
+            // Generate note based on condition and source
+            $note = "PL ($packingListNumber) - {$request->status}";
+            if ($request->note) {
+                $note .= " - {$request->note}";
+            }
             
             // Handle file attachments if any
             $attachments = [];
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $index => $file) {
-                    $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
                     $path = $file->storeAs('attachments/disposals', $fileName, 'public');
                     $attachments[] = [
                         'name' => $file->getClientOriginalName(),
@@ -309,38 +314,38 @@ class SupplyController extends Controller
                 }
             }
             
-            // Create a new disposal record
+            // Create a new liquidation record
             $disposal = Disposal::create([
                 'product_id' => $request->product_id,
                 'packing_list_id' => $request->packing_list_id,
-                'purchase_order_id' => $request->purchase_order_id,
-                'inventory_id' => $request->inventory_id ?? null,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => Carbon::now(),
-                'expired_date' => $request->expired_date ?? ($packingList ? $packingList->expire_date : null),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
-                'note' => $this->generateDisposalNote($request, $reason, $packingList),
+                'note' => $note,
+                'barcode' => $request->barcode,
+                'expire_date' => $request->expire_date,
+                'batch_number' => $request->batch_number,
+                'uom' => $request->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
             ]);
             
-            // Find and update the record from PackingListDifference table
+            // Find and delete the record from PackingListDifference table
             $packingListDiff = PackingListDifference::find($request->id);
             if ($packingListDiff) {
-                // Create a record in BackOrderHistory
+                // Create a record in BackOrderHistory before deleting
                 BackOrderHistory::create([
                     'packing_list_id' => $packingListDiff->packing_list_id,
                     'product_id' => $packingListDiff->product_id,
                     'quantity' => $packingListDiff->quantity,
                     'status' => 'Disposed',
-                    'note' => $disposal->note,
+                    'note' => $request->note ?? 'Disposed by ' . auth()->user()->name,
                     'performed_by' => auth()->id()
                 ]);
                 
-                // Mark as disposed but don't delete the record
+                // Delete the record
                 $packingListDiff->update([
-                    'finalized' => 'Disposed',
-                    'updated_at' => now()
+                    'finalized' => 'Disposed'
                 ]);
             }
             
@@ -349,7 +354,7 @@ class SupplyController extends Controller
             
             return response()->json([
                 'message' => 'Item has been disposed successfully',
-                'disposal' => $disposal->load(['product', 'packingList', 'disposedBy'])
+                'disposal' => $disposal
             ], 200);
             
         } catch (\Throwable $th) {
@@ -357,35 +362,9 @@ class SupplyController extends Controller
             DB::rollBack();
             
             return response()->json([
-                'message' => 'Error disposing item: ' . $th->getMessage(),
-                'error' => $th->getMessage(),
-                'trace' => config('app.debug') ? $th->getTraceAsString() : null
+                'message' => $th->getMessage()
             ], 500);
         }
-    }
-    
-    /**
-     * Generate a descriptive note for the disposal record
-     *
-     * @param Request $request
-     * @param string $status
-     * @param PackingList|null $packingList
-     * @return string
-     */
-    private function generateDisposalNote(Request $request, string $status, $packingList = null)
-    {
-        // Get the packing list number
-        $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
-        
-        // Generate note based on condition and source
-        $note = "PL ($packingListNumber) - {$status}";
-        
-        // Append user's note if provided
-        if ($request->note) {
-            $note .= " - {$request->note}";
-        }
-        
-        return $note;
     }
     
     public function receive(Request $request)
