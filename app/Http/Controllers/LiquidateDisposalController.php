@@ -122,7 +122,7 @@ class LiquidateDisposalController extends Controller
                 $liquidate->status = 'approved';
                 $liquidate->approved_at = now();
                 $liquidate->rejected_at = null;
-                $liquidate->rejected_reason = null;
+                $liquidate->rejection_reason = null;
                 $liquidate->rejected_by = null;
                 $liquidate->approved_by = Auth::id();
                 $liquidate->save();
