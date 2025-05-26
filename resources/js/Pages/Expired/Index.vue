@@ -299,7 +299,6 @@ const removeFile = (index) => {
 };
 
 const disposeItem = (item) => {
-    console.log(item)
     selectedItem.value = item;
     disposeForm.value = {
         quantity: item.quantity || 0,

@@ -291,7 +291,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/', [TransferController::class, 'index'])->name('transfers.index');
         Route::get('/{id}/show', [TransferController::class, 'show'])->name('transfers.show');
         Route::get('/create', [TransferController::class, 'create'])->name('transfers.create');
-        Route::post('/', [TransferController::class, 'store'])->name('transfers.store');
+        Route::post('/store', [TransferController::class, 'store'])->name('transfers.store');
         Route::get('/{transfer}/edit', [TransferController::class, 'edit'])->name('transfers.edit');
         Route::put('/{transfer}', [TransferController::class, 'update'])->name('transfers.update');
         Route::delete('/{transfer}', [TransferController::class, 'destroy'])->name('transfers.destroy');

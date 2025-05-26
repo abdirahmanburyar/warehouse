@@ -2,17 +2,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import InputError from '@/Components/InputError.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import axios from 'axios';
 import { useToast } from 'vue-toastification'
 import Swal from 'sweetalert2';
+import moment from 'moment';
 
 const toast = useToast();
 
@@ -31,209 +27,184 @@ const props = defineProps({
 const transferType = ref('warehouse');
 const loading = ref(false);
 const selectedDestination = ref(null);
-
-const form = ref({
-    source_type: 'warehouse', // Default source type is warehouse since it's an expired item
-    source_id: props.inventory?.warehouse_id, // Get warehouse ID from inventory
-    destination_type: 'warehouse',
-    destination_id: null,
-    notes: '',
-    items: [
-        {
-            inventory_id: props.inventory?.id,
-            inventory_id: props.inventory?.id,
-            product_id: props.inventory?.product_id,
-            quantity: props.inventory?.quantity || 0,
-            batch_number: props.inventory?.batch_number || '',
-            barcode: props.inventory?.product?.barcode || '',
-            expire_date: props.inventory?.expiry_date || null,
-            uom: props.inventory?.product?.uom || ''
-        }
-    ]
-});
-
-const errors = ref({});
+const quantityToTransfer = ref('');
 
 const destinations = computed(() => {
-    return transferType.value === 'warehouse' ? (props.warehouses || []) : (props.facilities || []);
+    return transferType.value === 'warehouse' ? props.warehouses : props.facilities;
 });
 
-const handleDestinationSelect = (selected) => {
-    form.value.destination_id = selected ? selected.id : null;
-};
+const isSubmitting = ref(false);
 
-const validateForm = () => {
-    errors.value = {};
-    if (!form.value.destination_id) {
-        errors.value.destination_id = 'Please select a destination';
-        return false;
+const handleSubmit = async () => {
+    if (!selectedDestination.value || !quantityToTransfer.value) {
+        toast.error('Please fill in all required fields');
+        return;
     }
-    if (!form.value.items[0].quantity || form.value.items[0].quantity <= 0) {
-        errors.value.quantity = 'Please enter a valid quantity';
-        return false;
-    }
-    return true;
-};
 
-const submit = async () => {
-    if (!validateForm()) {
+    if (parseInt(quantityToTransfer.value) > props.inventory.quantity) {
+        toast.error('Transfer quantity cannot exceed available quantity');
         return;
     }
 
     const result = await Swal.fire({
         title: 'Confirm Transfer',
-        text: `Are you sure you want to transfer ${form.value.items[0].quantity} units to the selected ${transferType.value}?`,
-        icon: 'question',
+        html: `
+            <div class="text-left">
+                <p><strong>Item:</strong> ${props.inventory.product.name}</p>
+                <p><strong>Quantity:</strong> ${quantityToTransfer.value}</p>
+                <p><strong>Destination:</strong> ${selectedDestination.value.name}</p>
+            </div>
+        `,
+        icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, transfer it!'
+        confirmButtonText: 'Yes, transfer it!',
+        cancelButtonText: 'Cancel'
     });
 
-        if (result.isConfirmed) {
-            loading.value = true;
-            errors.value = {};
+    if (!result.isConfirmed) return;
 
-           await axios.post(route('transfers.store'), form.value)
-                .then((response) => {
-                    loading.value = false;
-                    console.log(response.data);
-                    
-                    Swal.fire({
-                        title: 'Transfer Successful!',
-                        text: `Transfer ID: ${response.data.transfer_id}`,
-                        icon: 'success',
-                        confirmButtonText: 'OK'
-                    })
-                    .then(() => {
-                        router.visit(route('expired.index'));
-                    })
+    isSubmitting.value = true;
 
-                })
-                .catch((error) => {
-                    loading.value = false;
-                    console.log(error);
-                    toast.error(error.response.data);
-                    
-                })
-            
-        }
-        
-    
+    try {
+        const response = await axios.post(route('transfers.store'), {
+            source_type: 'warehouse',
+            source_id: props.inventory.warehouse_id,
+            destination_type: transferType.value,
+            destination_id: selectedDestination.value.id,
+            items: [{
+                inventory_id: props.inventory.id,
+                product_id: props.inventory.product_id,
+                quantity: parseInt(quantityToTransfer.value),
+                batch_number: props.inventory.batch_number,
+                barcode: props.inventory.barcode || null,
+                expire_date: props.inventory.expiry_date || null,
+                uom: props.inventory.uom || null
+            }],
+            notes: `Transferred ${quantityToTransfer.value} items to ${selectedDestination.value.name}`
+        });
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Transfer Successful!',
+            text: `Transfer ID: ${response.data.transfer_id}`,
+            showConfirmButton: false,
+            timer: 1500
+        });
+
+        router.get(route('expired.transfer', props.inventory.id), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['inventory']
+        });
+    } catch (error) {
+        console.error(error);
+        toast.error(error.response?.data?.message || 'An error occurred');
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 </script>
 
 <template>
-    <AuthenticatedLayout title="Transfer Expired Item">
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
-                        <h2 class="text-2xl font-semibold mb-6">Transfer Expired Item</h2>
-                        
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                            <div class="flex items-start">
-                                <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-yellow-800">Item Details</h3>
-                                    <div class="mt-2 text-sm text-yellow-700">
-                                        <p><strong>Product:</strong> {{ inventory?.product?.name }}</p>
-                                        <p><strong>Batch Number:</strong> {{ inventory?.batch_number }}</p>
-                                        <p><strong>Expiry Date:</strong> {{ inventory?.expiry_date }}</p>
-                                        <p><strong>Current Location:</strong> {{ inventory?.location?.location }}</p>
-                                        <p><strong>Available Quantity:</strong> {{ inventory?.quantity }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{props.inventory}}
-
-                        <form @submit.prevent="submit" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Transfer Type Selection -->
-                                <div>
-                                    <InputLabel value="Transfer To" />
-                                    <div class="mt-2 space-x-4">
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" 
-                                                v-model="transferType" 
-                                                value="warehouse" 
-                                                class="form-radio" 
-                                                @change="form.destination_type = 'warehouse'; form.destination_id = null; selectedDestination = null">
-                                            <span class="ml-2">Warehouse</span>
-                                        </label>
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" 
-                                                v-model="transferType" 
-                                                value="facility" 
-                                                class="form-radio"
-                                                @change="form.destination_type = 'facility'; form.destination_id = null; selectedDestination = null">
-                                            <span class="ml-2">Facility</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Destination Selection -->
-                                <div>
-                                    <InputLabel :value="`Select ${transferType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
-                                    <Multiselect
-                                        v-model="selectedDestination"
-                                        :options="destinations"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        :placeholder="`Select ${transferType === 'warehouse' ? 'Warehouse' : 'Facility'}`"
-                                        track-by="id"
-                                        label="name"
-                                        @select="handleDestinationSelect"
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <span>{{ option.name }}</span>
-                                        </template>
-                                    </Multiselect>
-                                    <InputError :message="errors.destination_id" class="mt-2" />
-                                </div>
-
-                                <!-- Quantity -->
-                                <div>
-                                    <InputLabel value="Quantity to Transfer" />
-                                    <TextInput
-                                        type="number"
-                                        v-model="form.items[0].quantity"
-                                        class="mt-1 block w-full"
-                                        :max="inventory.quantity"
-                                        min="1"
-                                        required
-                                    />
-                                    <InputError :message="errors.quantity" class="mt-2" />
-                                </div>
-
-                                <!-- Notes -->
-                                <div>
-                                    <InputLabel value="Notes" />
-                                    <textarea
-                                        v-model="form.notes"
-                                        rows="3"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        placeholder="Add any additional notes here..."
-                                    ></textarea>
-                                    <InputError :message="errors.notes" class="mt-2" />
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-end space-x-4">
-                                <SecondaryButton :href="route('expired.index')" as="a">
-                                    Cancel
-                                </SecondaryButton>
-                                <PrimaryButton :disabled="loading">
-                                    {{ loading ? 'Processing...' : 'Transfer Item' }}
-                                </PrimaryButton>
-                            </div>
-                        </form>
+    <AuthenticatedLayout title="Transfer Item" description="Transfer expired or soon to be expired items to warehouse or facility" img="/assets/images/transfer.png">
+        <form @submit.prevent="handleSubmit">
+            <div class="p-6 text-gray-900 mb-6">
+            <div class="flex flex-col space-y-6">
+                <div class="flex items-start flex-col w-full gap-5 mb-6">
+                    <div class="flex items-start gap-5">
+                        <label class="inline-flex items-center">
+                            <input type="radio" v-model="transferType" value="warehouse" class="form-radio" />
+                            <span class="ml-2">Warehouse</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" v-model="transferType" value="facility" class="form-radio" />
+                            <span class="ml-2">Facility</span>
+                        </label>
                     </div>
+
+                    <div class="w-[400px]">
+                        <Multiselect
+                            v-model="selectedDestination"
+                            :options="destinations"
+                            :searchable="true"
+                            :create-option="false"
+                            placeholder="Select destination"
+                            label="name"
+                            track-by="id"
+                        />
+                    </div>                   
+                </div>
+
+                <div class="border border-black overflow-hidden">
+                    <table class="min-w-full border-collapse">
+                        <thead>
+                            <tr class="border-b border-black">
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Item</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">UOM</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Item Information</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Available Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Quantity to Transfer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-black">
+                                <td class="px-6 py-3 text-sm border-r border-black">
+                                    {{ inventory.product.name }}
+                                </td>
+                                <td class="px-6 py-3 text-sm border-r border-black">
+                                    {{ inventory.uom || 'N/A' }}
+                                </td>
+                                <td class="px-6 py-3 text-sm border-r border-black">
+                                    <div class="space-y-1">
+                                        <p>Batch Number: {{ inventory.batch_number }}</p>
+                                        <p>Barcode: {{ inventory.barcode }}</p>
+                                        <p>Expire Date: {{ moment(inventory.expiry_date).format('DD/MM/YYYY') || 'N/A' }}</p>
+                                        <p>Warehouse: {{ inventory.warehouse?.name || 'N/A' }}</p>
+                                        <p>Location: {{ inventory.location?.location || 'N/A' }}</p>
+
+                                    </div>
+                                </td>
+                                <td class="px-6 py-3 text-sm font-medium border-r border-black">
+                                    {{ inventory.quantity }}
+                                </td>
+                                <td class="px-6 py-3 text-sm border-r border-black">
+                                    <input
+                                        type="number"
+                                        v-model="quantityToTransfer"
+                                        class="w-full px-2 py-1 border border-gray-300 rounded"
+                                        min="1"
+                                        :max="inventory.quantity"
+                                        placeholder="0"
+                                    />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end items-center space-x-6">
+                    <a
+                        :href="route('expired.index')"
+                        :disabled="loading"
+                        class="text-gray-500 hover:text-gray-700"
+                    >
+                        Exit
+                    </a>
+                    <button
+                        type="submit"
+                        :disabled="isSubmitting || !selectedDestination || !quantityToTransfer"
+                        class="text-white bg-blue-600 px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 min-w-[100px]"
+                    >
+                        <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ isSubmitting ? 'Processing...' : 'Transfer' }}
+                    </button>                    
                 </div>
             </div>
         </div>
+        </form>
     </AuthenticatedLayout>
 </template>
