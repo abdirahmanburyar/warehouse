@@ -212,7 +212,7 @@
             </div>
 
             <!-- Page Content -->
-            <main class="flex flex-col relative pb-16">
+            <main class="flex flex-col">
                 <div class="flex-1">
                     <slot />
                 </div>
@@ -274,13 +274,6 @@ const logout = () => {
 </script>
 
 <style scoped>
-/* Base Styles */
-.app-container {
-    display: flex;
-    min-height: 100vh;
-    background-color: #f9fafb;
-}
-
 /* Sidebar Styles */
 .sidebar {
     width: 0;

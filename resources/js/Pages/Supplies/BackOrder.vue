@@ -1,98 +1,110 @@
 <template>
-    <AuthenticatedLayout>
-        <div class="bg-white">
-            <div class="p-6 text-gray-900">
-                <div class="mb-4">
-                    <label for="po" class="block text-sm font-medium text-gray-700">Select Purchase Order</label>
-                    <Multiselect
-                        v-model="selectedPo"
-                        :options="props.po"
-                        :searchable="true"
-                        :create-option="false"
-                        class="mt-1"
-                        placeholder="Select Purchase Order"
-                        label="po_number"
-                        track-by="id"
-                        @select="handlePoChange"
-                    />
-                </div>
+    <AuthenticatedLayout :title="'Back Order'" description="Track Your Back Orders" img="/assets/images/orders.png">
+        <div class="p-6 text-gray-900">
+            <div class="mb-4 w-[400px]">
+                <label for="po" class="block text-sm font-medium text-gray-700">Select Purchase Order</label>
+                <Multiselect
+                    v-model="selectedPo"
+                    :options="props.po"
+                    :searchable="true"
+                    :create-option="false"
+                    class="mt-1"
+                    placeholder="Select Purchase Order"
+                    label="po_number"
+                    track-by="id"
+                    @select="handlePoChange"
+                />
+            </div>
 
-                <div class="mt-6" v-if="selectedPo">
-                    <h3 class="text-lg font-medium text-gray-900">Back Order Items</h3>
-                    <div class="mt-4 flex flex-col">
-                        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product ID</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing List</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <div class="mt-6" v-if="selectedPo">
+                <h3 class="text-lg font-medium text-gray-900">Back Order Items</h3>
+                <div class="mt-4 flex flex-col">
+                    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                            <div class="border border-black overflow-hidden">
+                                <table class="min-w-full border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-black">
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Item ID</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Item Name</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Packing List</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Date</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Quantity</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">Status</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template v-if="isLoading">
+                                            <tr v-for="i in 3" :key="i">
+                                                <td v-for="j in 7" :key="j" class="px-6 py-4">
+                                                    <div class="animate-pulse h-4 bg-gray-200 rounded"></div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
-                                            <template v-if="isLoading">
-                                                <tr v-for="i in 3" :key="i">
-                                                    <td v-for="j in 6" :key="j" class="px-6 py-4 whitespace-nowrap">
-                                                        <div class="animate-pulse h-4 bg-gray-200 rounded"></div>
+                                        </template>
+                                        <template v-else>
+                                            <template v-for="item in groupedItems" :key="item.id">
+                                                <tr v-for="(row, index) in item.rows" :key="index" 
+                                                    class="border-b border-black hover:bg-gray-50 last:border-b-0">
+                                                    <td class="px-6 py-3 text-sm border-r border-black" v-if="index === 0" :rowspan="item.rows.length">
+                                                        {{ item.product.productID }}
                                                     </td>
-                                                </tr>
-                                            </template>
-                                            <template v-else>
-                                                <tr v-for="item in items" :key="item.id">
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.product.productID }}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.product.name }}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.packing_list.packing_list_number }}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ moment(item.created_at).format('DD/MM/YYYY') }}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.quantity }}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <span :class="{
-                                                            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full': true,
-                                                            'bg-yellow-100 text-yellow-800': item.status === 'Missing',
-                                                            'bg-red-100 text-red-800': ['Damaged', 'Expired'].includes(item.status)
-                                                        }">
-                                                            {{ item.status }}
+                                                    <td class="px-6 py-3 text-sm border-r border-black" v-if="index === 0" :rowspan="item.rows.length">
+                                                        {{ item.product.name }}
+                                                    </td>
+                                                    <td class="px-6 py-3 text-sm border-r border-black" v-if="index === 0" :rowspan="item.rows.length">
+                                                        {{ item.packing_list.packing_list_number }}
+                                                    </td>
+                                                    <td class="px-6 py-3 text-sm border-r border-black" v-if="index === 0" :rowspan="item.rows.length">
+                                                        {{ moment(item.created_at).format('DD/MM/YYYY') }}
+                                                    </td>
+                                                    <td class="px-6 py-3 text-sm font-medium border-r border-black">
+                                                        {{ row.quantity }}
+                                                    </td>
+                                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                                        <span v-if="row.status === 'Missing'" class="text-yellow-600 font-medium">
+                                                            Missing
+                                                        </span>
+                                                        <span v-if="row.status === 'Damaged'" class="text-red-600 font-medium">
+                                                            Damaged
                                                         </span>
                                                     </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                                        <button
-                                                            v-if="['Missing', 'Damaged', 'Expired'].includes(item.status)"
-                                                            @click="handleReceive(item)"
-                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                                            :disabled="isLoading"
-                                                        >
-                                                            Receive
-                                                        </button>
-                                                        <button
-                                                            v-if="item.status === 'Missing'"
-                                                            @click="handleLiquidate(item)"
-                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                                                            :disabled="isLoading"
-                                                        >
-                                                            Liquidate
-                                                        </button>
-                                                        <button
-                                                            v-if="['Damaged', 'Expired'].includes(item.status)"
-                                                            @click="handleDispose(item)"
-                                                            class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                                            :disabled="isLoading"
-                                                        >
-                                                            Dispose
-                                                        </button>
+                                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                                        <div class="flex gap-2">
+                                                            <button
+                                                                v-if="row.status === 'Missing' || row.status === 'Damaged'"
+                                                                @click="handleAction('Receive', {...item, status: row.status, quantity: row.quantity})"
+                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
+                                                                :disabled="isLoading"
+                                                            >
+                                                                Receive
+                                                            </button>
+                                                            <button
+                                                                v-if="row.status === 'Missing'"
+                                                                @click="handleAction('Liquidate', {...item, status: row.status, quantity: row.quantity})"
+                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                                                                :disabled="isLoading"
+                                                            >
+                                                                Liquidate
+                                                            </button>
+                                                            <button
+                                                                v-if="row.status === 'Damaged'"
+                                                                @click="handleAction('Dispose', {...item, status: row.status, quantity: row.quantity})"
+                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
+                                                                :disabled="isLoading"
+                                                            >
+                                                                Dispose
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
-                                                <tr v-if="items.length === 0">
-                                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No back order items found</td>
-                                                </tr>
                                             </template>
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            <tr v-if="items.length === 0">
+                                                <td colspan="7" class="px-6 py-4 text-sm text-gray-500 text-center">No back order items found</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -203,7 +215,6 @@
                 </div>
             </form>
         </Modal>
-
 
           <!-- Dispose Modal -->
           <Modal :show="showDisposeModal" max-width="xl" @close="showDisposeModal = false">
@@ -316,20 +327,68 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import moment from 'moment';
 import Modal from '@/Components/Modal.vue';
-import { router } from '@inertiajs/vue3';
 // Component state
 const selectedPo = ref(null);
 const items = ref([]);
+
+
+const groupedItems = computed(() => {
+    const result = [];
+    
+    // Group items by product, packing list, and date
+    items.value.forEach(item => {
+        const existingGroup = result.find(g => 
+            g.product.productID === item.product.productID &&
+            g.packing_list.packing_list_number === item.packing_list.packing_list_number
+        );
+        
+        if (!existingGroup) {
+            result.push({
+                id: item.id,
+                product: item.product,
+                packing_list: item.packing_list,
+                created_at: item.created_at,
+                rows: [{
+                    quantity: item.quantity,
+                    status: item.status,
+                    actions: getAvailableActions(item.status)
+                }]
+            });
+        } else {
+            existingGroup.rows.push({
+                quantity: item.quantity,
+                status: item.status,
+                actions: getAvailableActions(item.status)
+            });
+        }
+    });
+
+    return result;
+});
+
+const getAvailableActions = (status) => {
+    if (status === 'Missing') return ['Receive', 'Liquidate'];
+    if (status === 'Damaged') return ['Receive', 'Dispose'];
+    return [];
+};
+
 const isLoading = ref(false);
 const isSubmitting = ref(false);
+const showReceiveModal = ref(false);
 const showLiquidateModal = ref(false);
 const showDisposeModal = ref(false);
 const selectedItem = ref(null);
+const receiveForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
+});
+
 const liquidateForm = ref({
     quantity: 0,
     note: '',
@@ -533,46 +592,30 @@ const liquidateItems = async (item) => {
     });
 };
 
-
 // Event handlers
 const handlePoChange = async (po) => {
-    try {
-        if (!po) {
-            items.value = [];
-            return;
-        }
-
-        isLoading.value = true;
-        const response = await axios.get(route('supplies.get-packingList', po.id));
-        items.value = response.data;
-    } catch (error) {
-        console.error('Failed to fetch items:', error);
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to fetch items', 'error');
+    if (!po) {
         items.value = [];
+        return;
+    }
+    
+    isLoading.value = true;
+    try {
+        const response = await axios.get(route('supplies.get-packingList', po.id));
+        // Sort items by created_at to ensure consistent grouping
+        items.value = response.data.sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+    } catch (error) {
+        console.error('Error fetching back order items:', error);
     } finally {
         isLoading.value = false;
     }
 };
 
-const handleReceive = async (item) => {
-    await receiveItems(item);
-};
-
-const handleLiquidate = (item) => {
-    selectedItem.value = item;
-    liquidateForm.value = {
-        quantity: item.quantity,
-        note: '',
-        attachments: []
-    };
-    showLiquidateModal.value = true;
-};
-
 const submitLiquidation = async () => {
     isSubmitting.value = true;
     const formData = new FormData();
-    formData.append('id', selectedItem.value.id);
-    formData.append('product_id', selectedItem.value.product.id);
     formData.append('packing_list_id', selectedItem.value.packing_list.id);
     formData.append('purchase_order_id', selectedPo.value?.id);
     formData.append('quantity', liquidateForm.value.quantity);
@@ -609,7 +652,6 @@ const submitLiquidation = async () => {
                 note: '',
                 attachments: []
             };
-            router.get(route('back-order.index'));
         });
     })
     .catch((error) => {
@@ -625,14 +667,32 @@ const submitLiquidation = async () => {
 };
 
 
-const handleDispose = async (item) => {
+const handleAction = async (action, item) => {
     selectedItem.value = item;
-    disposeForm.value = {
-        quantity: item.quantity,
-        note: '',
-        attachments: []
-    };
-    showDisposeModal.value = true;
+    
+    switch (action) {
+        case 'Receive':
+            await receiveItems(item);
+            break;
+            
+        case 'Liquidate':
+            liquidateForm.value = {
+                quantity: item.quantity,
+                note: '',
+                attachments: []
+            };
+            showLiquidateModal.value = true;
+            break;
+            
+        case 'Dispose':
+            disposeForm.value = {
+                quantity: item.quantity,
+                note: '',
+                attachments: []
+            };
+            showDisposeModal.value = true;
+            break;
+    }
 };
 
 const submitDisposal = async () => {

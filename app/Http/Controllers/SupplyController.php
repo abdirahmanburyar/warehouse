@@ -411,7 +411,7 @@ class SupplyController extends Controller
             $inventory = Inventory::where('product_id', $request->product_id)->first();
             
             if ($inventory) {
-                $inventory->quantity += $receivedQuantity;
+                $inventory->increment('quantity', $receivedQuantity);
                 $inventory->save();
             } else {
                 // Create a new inventory record if it doesn't exist
