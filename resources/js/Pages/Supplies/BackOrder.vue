@@ -569,43 +569,59 @@ const handleLiquidate = (item) => {
 };
 
 const submitLiquidation = async () => {
-    try {
-        console.log(selectedItem.value);
-        isSubmitting.value = true;
-        const formData = new FormData();
-        formData.append('id', selectedItem.value.id);
-        formData.append('product_id', selectedItem.value.product.id);
-        formData.append('packing_list_id', selectedItem.value.packing_list.id);
-        formData.append('purchase_order_id', selectedPo.value?.id);
-        formData.append('quantity', liquidateForm.value.quantity);
-        formData.append('original_quantity', selectedItem.value.quantity);
-        formData.append('barcode', selectedItem.value.packing_list.barcode);
-        formData.append('expire_date', selectedItem.value.packing_list.expire_date);
-        formData.append('batch_number', selectedItem.value.packing_list.batch_number);
-        formData.append('uom', selectedItem.value.packing_list.uom);
-        formData.append('status', selectedItem.value.status);
-        formData.append('note', liquidateForm.value.note);
-        
-        // Append each attachment
-        for (let i = 0; i < liquidateForm.value.attachments.length; i++) {
-            formData.append('attachments[]', liquidateForm.value.attachments[i]);
-        }
-        
-        await axios.post(route('back-order.liquidate'), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-        
-        await handlePoChange(selectedPo.value);
-        showLiquidateModal.value = false;
-        alert('Item has been liquidated successfully');
-    } catch (error) {
-        console.error('Failed to liquidate items:', error);
-        alert(error.response?.data?.message || 'Failed to liquidate items');
-    } finally {
-        isSubmitting.value = false;
+    isSubmitting.value = true;
+    const formData = new FormData();
+    formData.append('id', selectedItem.value.id);
+    formData.append('product_id', selectedItem.value.product.id);
+    formData.append('packing_list_id', selectedItem.value.packing_list.id);
+    formData.append('purchase_order_id', selectedPo.value?.id);
+    formData.append('quantity', liquidateForm.value.quantity);
+    formData.append('original_quantity', selectedItem.value.quantity);
+    formData.append('barcode', selectedItem.value.packing_list.barcode);
+    formData.append('expire_date', selectedItem.value.packing_list.expire_date);
+    formData.append('batch_number', selectedItem.value.packing_list.batch_number);
+    formData.append('uom', selectedItem.value.packing_list.uom);
+    formData.append('status', selectedItem.value.status);
+    formData.append('note', liquidateForm.value.note);
+    
+    // Append each attachment
+    for (let i = 0; i < liquidateForm.value.attachments.length; i++) {
+        formData.append('attachments[]', liquidateForm.value.attachments[i]);
     }
+    
+    await axios.post(route('back-order.liquidate'), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then((response) => {
+        isSubmitting.value = false
+        Swal.fire({
+            icon: 'success',
+            title: response.data.message,
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            await handlePoChange(selectedPo.value);
+            showLiquidateModal.value = false;
+            liquidateForm.value = {
+                quantity: 0,
+                note: '',
+                attachments: []
+            };
+            router.get(route('back-order.index'));
+        });
+    })
+    .catch((error) => {
+        isSubmitting.value = false
+        console.error('Failed to liquidate items:', error);
+        Swal.fire({
+            icon: 'error',
+            title: error.response.data,
+            showConfirmButton: false,
+            timer: 1500
+        });
+    });
 };
 
 
@@ -620,42 +636,59 @@ const handleDispose = async (item) => {
 };
 
 const submitDisposal = async () => {
-    try {
-        isSubmitting.value = true;
-        const formData = new FormData();
-        formData.append('id', selectedItem.value.id);
-        formData.append('product_id', selectedItem.value.product.id);
-        formData.append('packing_list_id', selectedItem.value.packing_list.id);
-        formData.append('purchase_order_id', selectedPo.value?.id);
-        formData.append('quantity', disposeForm.value.quantity);
-        formData.append('original_quantity', selectedItem.value.quantity);
-        formData.append('barcode', selectedItem.value.packing_list.barcode);
-        formData.append('expire_date', selectedItem.value.packing_list.expire_date);
-        formData.append('batch_number', selectedItem.value.packing_list.batch_number);
-        formData.append('uom', selectedItem.value.packing_list.uom);
-        formData.append('status', selectedItem.value.status);
-        formData.append('note', disposeForm.value.note);
-        
-        // Append each attachment
-        for (let i = 0; i < disposeForm.value.attachments.length; i++) {
-            formData.append('attachments[]', disposeForm.value.attachments[i]);
-        }
-        
-        await axios.post(route('back-order.dispose'), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-        
-        await handlePoChange(selectedPo.value);
-        showDisposeModal.value = false;
-        alert('Item has been disposed successfully');
-    } catch (error) {
-        console.error('Failed to dispose items:', error);
-        alert(error.response?.data?.message || 'Failed to dispose items');
-    } finally {
-        isSubmitting.value = false;
+    isSubmitting.value = true;
+    const formData = new FormData();
+    formData.append('id', selectedItem.value.id);
+    formData.append('product_id', selectedItem.value.product.id);
+    formData.append('packing_list_id', selectedItem.value.packing_list.id);
+    formData.append('purchase_order_id', selectedPo.value?.id);
+    formData.append('quantity', disposeForm.value.quantity);
+    formData.append('original_quantity', selectedItem.value.quantity);
+    formData.append('barcode', selectedItem.value.packing_list.barcode);
+    formData.append('expire_date', selectedItem.value.packing_list.expire_date);
+    formData.append('batch_number', selectedItem.value.packing_list.batch_number);
+    formData.append('uom', selectedItem.value.packing_list.uom);
+    formData.append('status', selectedItem.value.status);
+    formData.append('note', disposeForm.value.note);
+    
+    // Append each attachment
+    for (let i = 0; i < disposeForm.value.attachments.length; i++) {
+        formData.append('attachments[]', disposeForm.value.attachments[i]);
     }
+    
+    await axios.post(route('back-order.dispose'), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then((response) => {
+        isSubmitting.value = false
+        Swal.fire({
+            icon: 'success',
+            title: response.data.message,
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            await handlePoChange(selectedPo.value);
+            showDisposeModal.value = false;
+            disposeForm.value = {
+                quantity: 0,
+                note: '',
+                attachments: []
+            };
+            router.get(route('back-order.index'));
+        });
+    })
+    .catch((error) => {
+        isSubmitting.value = false
+        console.error('Failed to dispose items:', error);
+        Swal.fire({
+            icon: 'error',
+            title: error.response.data,
+            showConfirmButton: false,
+            timer: 1500
+        });
+    });
 };
 
 </script>

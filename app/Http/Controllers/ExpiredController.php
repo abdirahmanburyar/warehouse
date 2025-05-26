@@ -73,7 +73,7 @@ class ExpiredController extends Controller
                 'batch_number' => 'required|string',
                 'uom' => 'required|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
+                'attachments.*' => 'nullable|file|mimes:pdf', // Max 10MB per file
             ]);
             
             // Start a database transaction
@@ -92,15 +92,17 @@ class ExpiredController extends Controller
             $attachments = [];
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $index => $file) {
-                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('attachments/disposals'), $fileName);
-                    $attachments[] = [
-                        'name' => $file->getClientOriginalName(),
-                        'path' => '/attachments/disposals/' . $fileName,
-                        'type' => $file->getClientMimeType(),
-                        'size' => $file->getSize(),
-                        'uploaded_at' => now()->toDateTimeString()
-                    ];
+                    if ($file->isValid()) {
+                        $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                        $file->move(public_path('attachments/disposals'), $fileName);
+                        $attachments[] = [
+                            'name' => $file->getClientOriginalName(),
+                            'path' => '/attachments/disposals/' . $fileName,
+                            'type' => $file->getClientMimeType(),
+                            'size' => filesize(public_path('attachments/disposals/' . $fileName)),
+                            'uploaded_at' => now()->toDateTimeString()
+                        ];
+                    }
                 }
             }
             

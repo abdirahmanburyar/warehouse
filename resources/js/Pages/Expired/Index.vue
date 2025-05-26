@@ -219,6 +219,7 @@
             <div class="mt-6 flex justify-end space-x-3">
                 <button
                     type="button"
+                    :disabled="isDisposing"
                     class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     @click="showDisposeModal = false"
                 >
@@ -226,9 +227,10 @@
                 </button>
                 <button
                     type="submit"
+                    :disabled="isDisposing"
                     class="inline-flex justify-center rounded-md border border-transparent bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
                 >
-                    Dispose
+                    {{ isDisposing ? "Disposing..." : "Dispose"}}
                 </button>
             </div>
         </form>
@@ -307,63 +309,63 @@ const disposeItem = (item) => {
     showDisposeModal.value = true;
 };
 
+const isDisposing = ref(false)
+
 const submitDisposal = async () => {
-    try {
-        const formData = new FormData();
-        formData.append('id', selectedItem.value.id);
-        formData.append('quantity', disposeForm.value.quantity);
-        formData.append('note', disposeForm.value.note);
-        formData.append('barcode', selectedItem.value.barcode);
-        formData.append('batch_number', selectedItem.value.batch_number);
-        formData.append('uom', selectedItem.value.uom);
-        formData.append('expiry_date', selectedItem.value.expiry_date);
-        formData.append('status', 'Expired');
-        formData.append('product_id', selectedItem.value.product_id);
-        
-        // Append each attachment
-        for (let i = 0; i < disposeForm.value.attachments.length; i++) {
-            formData.append('attachments[]', disposeForm.value.attachments[i]);
+    isDisposing.value = true
+    const formData = new FormData();
+    formData.append('id', selectedItem.value.id);
+    formData.append('quantity', disposeForm.value.quantity);
+    formData.append('note', disposeForm.value.note);
+    formData.append('barcode', selectedItem.value.barcode);
+    formData.append('batch_number', selectedItem.value.batch_number);
+    formData.append('uom', selectedItem.value.uom);
+    formData.append('expiry_date', selectedItem.value.expiry_date);
+    formData.append('status', 'Expired');
+    formData.append('product_id', selectedItem.value.product_id);
+    
+    // Append each attachment
+    for (let i = 0; i < disposeForm.value.attachments.length; i++) {
+        formData.append('attachments[]', disposeForm.value.attachments[i]);
+    }
+    
+    await axios.post(route('expired.dispose', selectedItem.value.id), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
         }
-        
-        await axios.post(route('expired.dispose', selectedItem.value.id), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        .then((response) => {
-           Swal.fire({
-                icon: 'success',
-                title: response.data.message,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                showDisposeModal.value = false;
-                disposeForm.value = {
-                    quantity: 0,
-                    note: '',
-                    attachments: []
-                };
-                router.get(route('expired.index'));
-            });
-        })
-        .catch(error => {
-            console.error('Error disposing item:', error);
-            Swal.fire({
-                icon: 'error',
-                title: error.response.data,
-                showConfirmButton: false,
-                timer: 1500
+    })
+    .then((response) => {
+        isDisposing.value = false
+        Swal.fire({
+            icon: 'success',
+            title: response.data.message,
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            isDisposing.value = false
+            showDisposeModal.value = false;
+            disposeForm.value = {
+                quantity: 0,
+                note: '',
+                attachments: []
+            };
+            router.get(route('expired.index'), {}, {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['inventories']
             });
         });
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error disposing item:', error);
+        isDisposing.value = false
         Swal.fire({
             icon: 'error',
-            title: error,
+            title: error.response.data,
             showConfirmButton: false,
             timer: 1500
         });
-    }
+    });
 };
 
 const filteredStats = computed(() => {
