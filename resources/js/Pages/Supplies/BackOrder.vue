@@ -321,7 +321,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import moment from 'moment';
 import Modal from '@/Components/Modal.vue';
-
+import { router } from '@inertiajs/vue3';
 // Component state
 const selectedPo = ref(null);
 const items = ref([]);
@@ -602,7 +602,7 @@ const submitLiquidation = async () => {
             showConfirmButton: false,
             timer: 1500
         }).then(() => {
-            await handlePoChange(selectedPo.value);
+            handlePoChange(selectedPo.value);
             showLiquidateModal.value = false;
             liquidateForm.value = {
                 quantity: 0,
@@ -669,14 +669,13 @@ const submitDisposal = async () => {
             showConfirmButton: false,
             timer: 1500
         }).then(() => {
-            await handlePoChange(selectedPo.value);
             showDisposeModal.value = false;
             disposeForm.value = {
                 quantity: 0,
                 note: '',
                 attachments: []
             };
-            router.get(route('back-order.index'));
+            handlePoChange(selectedPo.value);
         });
     })
     .catch((error) => {

@@ -207,7 +207,7 @@ class SupplyController extends Controller
                         'name' => $file->getClientOriginalName(),
                         'path' => '/attachments/liquidations/' . $fileName,
                         'type' => $file->getClientMimeType(),
-                        'size' => $file->getSize(),
+                        'size' => filesize(public_path('attachments/liquidations/' . $fileName)),
                         'uploaded_at' => now()->toDateTimeString()
                     ];
                 }
@@ -308,7 +308,7 @@ class SupplyController extends Controller
                         'name' => $file->getClientOriginalName(),
                         'path' => '/attachments/disposals/' . $fileName,
                         'type' => $file->getClientMimeType(),
-                        'size' => $file->getSize(),
+                        'size' => filesize(public_path('attachments/disposals/' . $fileName)),
                         'uploaded_at' => now()->toDateTimeString()
                     ];
                 }
