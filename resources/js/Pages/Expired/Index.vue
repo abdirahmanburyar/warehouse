@@ -67,13 +67,12 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Until Expiry</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Transfer</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="item in filteredInventories" :key="item.id" :class="{ 'bg-yellow-50': item.expiring_soon }">
                             <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900">{{ item.product_name }}</div>
+                                <p class="text-sm text-gray-900">{{ item.product_name }}</p>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ item.quantity }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(item.expiry_date) }}</td>
@@ -98,26 +97,11 @@
                                     Expiring Soon
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <button 
-                                    v-if="item.expired && !item.disposed" 
-                                    @click="disposeItem(item.id)"
-                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                >
-                                    Dispose
-                                </button>
-                                <span 
-                                    v-else-if="item.disposed"
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                                >
-                                    Disposed
-                                </span>
-                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <template v-if="item.expired">
                                     <button
                                         class="text-red-600 hover:text-red-900"
-                                        @click="disposeItem(item.id)"
+                                        @click="disposeItem(item)"
                                     >
                                         Dispose
                                     </button>
@@ -138,15 +122,130 @@
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <!-- Dispose Modal -->
+    <Modal :show="showDisposeModal" @close="showDisposeModal = false">
+        <form @submit.prevent="submitDisposal" class="p-6 space-y-4">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Dispose Item</h2>
+            
+            <!-- Product Info -->
+            <div v-if="selectedItem" class="bg-gray-50 p-4 rounded-lg">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Product ID</p>
+                        <p class="text-sm text-gray-900">{{ selectedItem.product_id }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Product Name</p>
+                        <p class="text-sm text-gray-900">{{ selectedItem.product_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Batch Number</p>
+                        <p class="text-sm text-gray-900">{{ selectedItem.batch_number }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Barcode</p>
+                        <p class="text-sm text-gray-900">{{ selectedItem.barcode }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">UOM</p>
+                        <p class="text-sm text-gray-900">{{ selectedItem.uom }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Expiry Date</p>
+                        <p class="text-sm text-gray-900">{{ formatDate(selectedItem.expiry_date) }}</p>
+                        <p class="text-sm" :class="{'text-red-600': selectedItem.expired, 'text-green-600': !selectedItem.expired}">{{ selectedItem.expired ? 'Expired' : 'Not Expired' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div>
+                <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                <input 
+                    type="number" 
+                    id="quantity" 
+                    v-model="disposeForm.quantity"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    :min="1"
+                    :max="selectedItem?.quantity"
+                    required
+                >
+            </div>
+
+            <!-- Note -->
+            <div>
+                <label for="note" class="block text-sm font-medium text-gray-700">Note</label>
+                <textarea 
+                    id="note" 
+                    v-model="disposeForm.note"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    rows="3"
+                    required
+                ></textarea>
+            </div>
+
+            <!-- Attachments -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
+                <input 
+                    type="file" 
+                    @change="handleFileChange"
+                    class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    multiple
+                    accept=".pdf"
+                    required
+                >
+            </div>
+
+            <!-- Selected Files Preview -->
+            <div v-if="disposeForm.attachments.length > 0" class="mt-2">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                <ul class="space-y-2">
+                    <li v-for="(file, index) in disposeForm.attachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                        <span>{{ file.name }}</span>
+                        <button 
+                            type="button"
+                            @click="removeFile(index)" 
+                            class="text-red-500 hover:text-red-700"
+                        >
+                            Remove
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex justify-end space-x-3">
+                <button
+                    type="button"
+                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    @click="showDisposeModal = false"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="inline-flex justify-center rounded-md border border-transparent bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                >
+                    Dispose
+                </button>
+            </div>
+        </form>
+    </Modal>
 </template>
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { format, addMonths, addYears } from 'date-fns'
 import { ref, computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import Transfer from './Transfer.vue'
+import Modal from '@/Components/Modal.vue'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 const props = defineProps({
     inventories: Array
@@ -180,35 +279,92 @@ const formatDate = (date) => {
 const showTransferModal = ref(false)
 const selectedInventory = ref(null)
 
-const disposeItem = async (id) => {
-    const result = await Swal.fire({
-        title: 'Dispose Item?',
-        text: 'Are you sure you want to dispose of this item?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Yes, dispose it!',
-        cancelButtonText: 'Cancel'
-    });
+const showDisposeModal = ref(false);
+const selectedItem = ref(null);
+const disposeForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
+});
 
-    if (result.isConfirmed) {
-        try {
-            const response = await axios.post(route('expired.dispose', id));
-            await Swal.fire({
-                title: 'Success!',
-                text: response.data.message,
-                icon: 'success'
-            });
-            window.location.reload();
-        } catch (error) {
-            await Swal.fire({
-                title: 'Error!',
-                text: error.response?.data?.message || 'Failed to dispose item',
-                icon: 'error'
-            });
+const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    disposeForm.value.attachments = files;
+};
+
+const removeFile = (index) => {
+    disposeForm.value.attachments.splice(index, 1);
+};
+
+const disposeItem = (item) => {
+    console.log(item)
+    selectedItem.value = item;
+    disposeForm.value = {
+        quantity: item.quantity || 0,
+        note: '',
+        attachments: []
+    };
+    showDisposeModal.value = true;
+};
+
+const submitDisposal = async () => {
+    try {
+        const formData = new FormData();
+        formData.append('id', selectedItem.value.id);
+        formData.append('quantity', disposeForm.value.quantity);
+        formData.append('note', disposeForm.value.note);
+        formData.append('barcode', selectedItem.value.barcode);
+        formData.append('batch_number', selectedItem.value.batch_number);
+        formData.append('uom', selectedItem.value.uom);
+        formData.append('expired_date', selectedItem.value.expiry_date);
+        formData.append('status', 'Expired');
+        formData.append('product_id', selectedItem.value.product_id);
+        
+        // Append each attachment
+        for (let i = 0; i < disposeForm.value.attachments.length; i++) {
+            formData.append('attachments[]', disposeForm.value.attachments[i]);
         }
+        
+        await axios.post(route('expired.dispose', selectedItem.value.id), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        .then((response) => {
+           Swal.fire({
+                icon: 'success',
+                title: response.data.message,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                showDisposeModal.value = false;
+                disposeForm.value = {
+                    quantity: 0,
+                    note: '',
+                    attachments: []
+                };
+                router.get(route('expired.index'));
+            });
+        })
+        .catch(error => {
+            console.error('Error disposing item:', error);
+            Swal.fire({
+                icon: 'error',
+                title: error.response.data,
+                showConfirmButton: false,
+                timer: 1500
+            });
+        });
+    } catch (error) {
+        console.error('Error disposing item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: error,
+            showConfirmButton: false,
+            timer: 1500
+        });
     }
-}
+};
 
 const filteredStats = computed(() => {
     const yearItems = props.inventories.filter(item => !item.expired && item.days_until_expiry <= 365).length

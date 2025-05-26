@@ -58,45 +58,102 @@ class ExpiredController extends Controller
         ]);
     }
 
-    public function dispose($id)
+    public function dispose(Request $request)
     {
         try {
-            $inventory = Inventory::findOrFail($id);
-        
-            // Check if item is expired
-            if (!Carbon::parse($inventory->expiry_date)->isPast()) {
-                return response()->json(['message' => 'Only expired items can be disposed.'], 422);
-            }
-
+            // Validate the request
+            $validated = $request->validate([
+                'id' => 'required|exists:inventories,id',
+                'product_id' => 'required|exists:products,id',
+                'quantity' => 'required|integer|min:1',
+                'status' => 'required|string',
+                'note' => 'nullable|string|max:255',
+                'barcode' => 'nullable|string',
+                'expire_date' => 'nullable|date',
+                'batch_number' => 'nullable|string',
+                'uom' => 'nullable|string',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
+            ]);
+            
+            // Start a database transaction
             DB::beginTransaction();
-            try {
-                // Create disposal record
-                Disposal::create([
-                    'inventory_id' => $inventory->id,
-                    'product_id' => $inventory->product_id,
-                    'quantity' => $inventory->quantity,
-                    'expired_date' => $inventory->expiry_date,
-                    'disposed_by' => Auth::id(),
-                    'disposed_at' => now(),
-                    'status' => 'disposed',
-                    'note' => 'Item disposed due to expiration on ' . Carbon::parse($inventory->expiry_date)->format('M d, Y')
-                ]);
-
-                // Mark inventory as disposed and set quantity to 0
-                $inventory->update([
-                    'disposed' => true,
-                    'disposed_at' => now(),
-                    'quantity' => 0
-                ]);
-
-                DB::commit();
-                return response()->json(['message' => 'Item has been disposed successfully.'], 200);
-            } catch (\Exception $e) {
-                DB::rollback();
-                return response()->json(['message' => 'Failed to dispose item. Please try again.'], 500);
+            
+            // Get the inventory to include its number in the note
+            $inventory = Inventory::find($request->id);
+            
+            // Generate note based on condition and source
+            $note = "Inventory ($inventory->id) - {$request->status}";
+            if ($request->note) {
+                $note .= " - {$request->note}";
             }
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
+            
+            // Handle file attachments if any
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('attachments/disposals', $fileName, 'public');
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'type' => $file->getClientMimeType(),
+                        'size' => $file->getSize(),
+                        'uploaded_at' => now()->toDateTimeString()
+                    ];
+                }
+            }
+            
+            // Create a new liquidation record
+            $disposal = Disposal::create([
+                'inventory_id' => $request->id,
+                'product_id' => $request->product_id,
+                'disposed_by' => auth()->id(),
+                'disposed_at' => Carbon::now(),
+                'quantity' => $request->quantity,
+                'status' => 'pending', // Default status is pending
+                'note' => $note,
+                'barcode' => $request->barcode,
+                'expire_date' => $request->expiry_date,
+                'batch_number' => $request->batch_number,
+                'uom' => $request->uom,
+                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+            ]);
+            
+            // Update the inventory quantity
+            $inventory->update([
+                'quantity' => $inventory->quantity - $request->quantity
+            ]);
+            
+            // Commit the transaction
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Item has been disposed successfully',
+                'disposal' => $disposal
+            ], 200);
+            //     'quantity' => $request->quantity,
+            //     'expired_date' => $inventory->expiry_date,
+            //     'barcode' => $inventory->barcode,
+            //     'batch_number' => $inventory->batch_number,
+            //     'uom' => $inventory->uom,
+            //     'disposed_by' => Auth::id(),
+            //     'disposed_at' => now(),
+            //     'status' => 'disposed',
+            //     'note' => $request->note
+            // ]);
+
+            // // Mark inventory as disposed and set quantity to 0
+            // $inventory->update([
+            //     'quantity' => $inventory->quantity - $request->quantity
+            // ]);
+
+            // DB::commit();
+            // return response()->json('Item has been disposed successfully.', 200);
+            return response()->json($request->all(), 200);
+        } catch (\Throwable $e) {
+            DB::rollback();
+            return response()->json($e->getMessage(), 500);
         }
     }
 

@@ -316,8 +316,8 @@ const parseAttachments = (attachmentsJson: string | null) => {
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300 ">
                            <div class="flex flex-col">
-                                <span>Warehouse: {{ disposal.packing_list?.warehouse?.name || 'N/A' }}</span>
-                                <span>Location: {{ disposal.packing_list?.location?.location || 'N/A' }}</span>
+                                <span>Warehouse: {{ disposal.packing_list?.warehouse?.name || disposal.inventory?.warehouse?.name || 'N/A' }}</span>
+                                <span>Location: {{ disposal.packing_list?.location?.location || disposal.inventory?.location?.location || 'N/A' }}</span>
                            </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">

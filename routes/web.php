@@ -258,6 +258,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::put('/{expired}', [ExpiredController::class, 'update'])->name('expired.update');
         Route::delete('/{expired}', [ExpiredController::class, 'destroy'])->name('expired.destroy');
         Route::get('/{transfer}/transfer', [ExpiredController::class, 'transfer'])->name('expired.transfer');
+        Route::post('/dispose', [ExpiredController::class, 'dispose'])->name('expired.dispose');
     });
 
     // Settings Management Routes

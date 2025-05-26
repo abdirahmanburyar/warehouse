@@ -92,7 +92,7 @@
                             class="liquidate-disposal-icon" style="height: 24px" />
                         <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 24px" />
                     </div>
-                    <span class="menu-text">Liquidate & Disposal</span>
+                    <span class="menu-text">Liquidate/Disposal</span>
                 </div>
                 </Link>
                 
