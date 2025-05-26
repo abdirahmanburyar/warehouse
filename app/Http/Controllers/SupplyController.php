@@ -202,10 +202,10 @@ class SupplyController extends Controller
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $index => $file) {
                     $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('attachments/liquidations', $fileName, 'public');
+                    $file->move(public_path('attachments/liquidations'), $fileName);
                     $attachments[] = [
                         'name' => $file->getClientOriginalName(),
-                        'path' => $path,
+                        'path' => '/attachments/liquidations/' . $fileName,
                         'type' => $file->getClientMimeType(),
                         'size' => $file->getSize(),
                         'uploaded_at' => now()->toDateTimeString()
@@ -303,10 +303,10 @@ class SupplyController extends Controller
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $index => $file) {
                     $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('attachments/disposals', $fileName, 'public');
+                    $file->move(public_path('attachments/disposals'), $fileName);
                     $attachments[] = [
                         'name' => $file->getClientOriginalName(),
-                        'path' => $path,
+                        'path' => '/attachments/disposals/' . $fileName,
                         'type' => $file->getClientMimeType(),
                         'size' => $file->getSize(),
                         'uploaded_at' => now()->toDateTimeString()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Tab from './Tab.vue';
 import ActionModal from '@/Components/ActionModal.vue';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
 import moment from 'moment';
@@ -277,18 +277,43 @@ const rollbackLiquidate = async (id: number) => {
 /**
  * Parse JSON attachments string into an array of attachment objects
  */
-const parseAttachments = (attachmentsJson: string | null) => {
-    if (!attachmentsJson) return [];
+const parseAttachments = (attachments) => {
+    if (!attachments) return [];
+    const files = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+    return files.map(file => ({
+        name: file.name || file.path.split('/').pop(),
+        url: `${file.path}`
+    }));
+};
+
+const activeDropdown = ref(null);
+
+const toggleDropdown = (id) => {
+    activeDropdown.value = activeDropdown.value === id ? null : id;
+};
+
+const handleClickOutside = (event) => {
+    const dropdowns = document.querySelectorAll('.attachments-dropdown');
+    let clickedInside = false;
     
-    try {
-        return typeof attachmentsJson === 'string' 
-            ? JSON.parse(attachmentsJson) 
-            : attachmentsJson;
-    } catch (error) {
-        console.error('Error parsing attachments:', error);
-        return [];
+    dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+            clickedInside = true;
+        }
+    });
+    
+    if (!clickedInside) {
+        activeDropdown.value = null;
     }
 };
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
@@ -297,7 +322,7 @@ const parseAttachments = (attachmentsJson: string | null) => {
             <h2 class="text-xl font-semibold">Liquidation Records</h2>
         </div>
         <!-- Table Section -->
-        <div class="overflow-x-auto mb-6">
+        <div class="mb-6">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
@@ -307,6 +332,7 @@ const parseAttachments = (attachmentsJson: string | null) => {
                         <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidated At</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Actions</th>
                     </tr>
@@ -333,6 +359,35 @@ const parseAttachments = (attachmentsJson: string | null) => {
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ liquidate.note || 'N/A' }}
+                        </td>
+                        <td class="px-4 py-2 border-r border-gray-300">
+                            <div v-if="parseAttachments(liquidate.attachments).length > 0" class="relative attachments-dropdown">
+                                <button 
+                                    @click="toggleDropdown(liquidate.id)"
+                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm"
+                                >
+                                    <span>View Files ({{ parseAttachments(liquidate.attachments).length }})</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div 
+                                    v-show="activeDropdown === liquidate.id"
+                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48"
+                                >
+                                    <a 
+                                        v-for="attachment in parseAttachments(liquidate.attachments)" 
+                                        :key="attachment.name"
+                                        :href="attachment.url"
+                                        target="_blank"
+                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        @click="activeDropdown = null"
+                                    >
+                                        {{ attachment.name }}
+                                    </a>
+                                </div>
+                            </div>
+                            <span v-else class="text-gray-500 text-sm">No attachments</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div class="flex flex-col gap-1">
@@ -372,6 +427,7 @@ const parseAttachments = (attachmentsJson: string | null) => {
                             <div v-if="liquidate.approved_at" class="text-gray-600 text-sm">
                                 Closed (Approved)
                             </div>
+                            
                             <div v-else class="flex flex-col gap-2">
                                 <button 
                                     v-if="!liquidate.reviewed_at" 

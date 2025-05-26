@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Tab from './Tab.vue';
 import ActionModal from '@/Components/ActionModal.vue';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
 import moment from 'moment';
@@ -194,6 +194,34 @@ const approveDisposal = async (id) => {
 };
 
 const isRejecting = ref(false);
+const activeDropdown = ref(null);
+
+const toggleDropdown = (id) => {
+    activeDropdown.value = activeDropdown.value === id ? null : id;
+};
+
+const handleClickOutside = (event) => {
+    const dropdowns = document.querySelectorAll('.attachments-dropdown');
+    let clickedInside = false;
+    
+    dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+            clickedInside = true;
+        }
+    });
+    
+    if (!clickedInside) {
+        activeDropdown.value = null;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 const rejectDisposal = async (id) => {
     if (!id) return;
     
@@ -256,17 +284,13 @@ const rejectDisposal = async (id) => {
 /**
  * Parse JSON attachments string into an array of attachment objects
  */
-const parseAttachments = (attachmentsJson: string | null) => {
-    if (!attachmentsJson) return [];
-    
-    try {
-        return typeof attachmentsJson === 'string' 
-            ? JSON.parse(attachmentsJson) 
-            : attachmentsJson;
-    } catch (error) {
-        console.error('Error parsing attachments:', error);
-        return [];
-    }
+const parseAttachments = (attachments) => {
+    if (!attachments) return [];
+    const files = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+    return files.map(file => ({
+        name: file.name || file.path.split('/').pop(),
+        url: `${file.path}`
+    }));
 };
 
 </script>
@@ -277,7 +301,7 @@ const parseAttachments = (attachmentsJson: string | null) => {
             <h2 class="text-xl font-semibold">Disposal Records</h2>
         </div>
         <!-- Table Section -->
-        <div class="overflow-x-auto mb-6">
+        <div class="mb-6">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
@@ -316,16 +340,31 @@ const parseAttachments = (attachmentsJson: string | null) => {
                             {{ disposal.note || 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            <div v-if="parseAttachments(disposal.attachments).length > 0" class="flex flex-wrap gap-1">
-                                <a 
-                                    v-for="attachment in parseAttachments(disposal.attachments)" 
-                                    :key="attachment.name"
-                                    :href="attachment.url"
-                                    target="_blank"
-                                    class="text-blue-600 hover:text-blue-800 underline text-sm"
+                            <div v-if="parseAttachments(disposal.attachments).length > 0" class="relative attachments-dropdown">
+                                <button 
+                                    @click="toggleDropdown(disposal.id)"
+                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm"
                                 >
-                                    {{ attachment.name }}
-                                </a>
+                                    <span>View Files ({{ parseAttachments(disposal.attachments).length }})</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div 
+                                    v-show="activeDropdown === disposal.id"
+                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48"
+                                >
+                                    <a 
+                                        v-for="attachment in parseAttachments(disposal.attachments)" 
+                                        :key="attachment.name"
+                                        :href="attachment.url"
+                                        target="_blank"
+                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        @click="activeDropdown = null"
+                                    >
+                                        {{ attachment.name }}
+                                    </a>
+                                </div>
                             </div>
                             <span v-else class="text-gray-500 text-sm">No attachments</span>
                         </td>
