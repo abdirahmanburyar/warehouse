@@ -16,6 +16,7 @@ import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import moment from 'moment';
 import Swal from 'sweetalert2';
+import { TailwindPagination } from 'laravel-vue-pagination';
 
 const props = defineProps({
     inventories: Object,
@@ -117,6 +118,7 @@ const applyFilters = () => {
     if (warehouse.value) query.warehouse = warehouse.value
     if (dosage.value) query.dosage = dosage.value
     if (category.value) query.category = category.value
+    if (props.filters.page) query.page = props.filters.page
 
     router.get(
         route('inventories.index'), query,
@@ -136,6 +138,7 @@ watch([
     () => warehouse.value,
     () => dosage.value,
     () => category.value,
+    () => props.filters.page,
 ], () => {
     applyFilters();
 });
@@ -241,6 +244,10 @@ function editInventory(inventory) {
     showEditModal.value = true;
 }
 
+function getResults(page = 1) {
+    props.filters.page = page;
+    applyFilters();
+}
 
 </script>
 
@@ -249,293 +256,288 @@ function editInventory(inventory) {
     <Head title="Inventory Management" />
 
     <AuthenticatedLayout img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
-        <div class="overflow-auto bg-transparent">
-            <div class="text-gray-900">
-                <!-- Navigation Buttons -->
-                <div class="flex justify-end items-center mb-4">
-                    <div class="flex space-x-4">
-                        <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Locations List
-                        </Link>
-                        <Link :href="route('inventories.warehouses.index')" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            Warehouses List
-                        </Link>
+        <div class="text-gray-900">
+            <!-- Navigation Buttons -->
+            <div class="flex justify-end items-center mb-4">
+                <div class="flex space-x-4">
+                    <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Locations List
+                    </Link>
+                    <Link :href="route('inventories.warehouses.index')" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Warehouses List
+                    </Link>
+                </div>
+            </div>
+            <!-- Search and Filters -->
+            <div class="mb-1 flex flex-wrap items-center gap-4">
+                <div class="flex-grow relative">
+                    <label>Search</label>
+                    <TextInput v-model="search" type="text" class="w-full"
+                        placeholder="Search by item name, barcode" />
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4">                       
+                    <div class="w-[300px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <Multiselect
+                            v-model="category"
+                            :options="props.category"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select a category"
+                            :allow-empty="true"
+                            @input="applyFilters"
+                        > </Multiselect>
+                    </div>
+                    <div class="w-[300px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Form</label>
+                        <Multiselect
+                            v-model="dosage"
+                            :options="props.dosage"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select a dosage form"
+                            :allow-empty="true"
+                        > </Multiselect>
+                    </div>
+                    <div class="w-[300px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                        <Multiselect
+                            v-model="warehouse"
+                            :options="props.warehouses"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select a warehouse"
+                            :allow-empty="true"
+                        > </Multiselect>
+                    </div>
+                    <div class="w-[300px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                        <Multiselect
+                            v-model="location"
+                            :options="loadedLocation"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select a S. Location"
+                            :allow-empty="true"
+                            :disabled="warehouse == null"
+                        > </Multiselect>
                     </div>
                 </div>
-                <!-- Search and Filters -->
-                <div class="mb-1 flex flex-wrap items-center gap-4">
-                    <div class="flex-grow relative">
-                        <TextInput v-model="search" type="text" class="w-full"
-                            placeholder="Search by item name, barcode" />
-                        <button v-if="search" @click="search = ''; applyFilters()"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
+            </div>
+           <div class="flex justify-end mt-3">
+            <select v-model="perPage"
+                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3"
+                >
+                <option :value="6">6 per page</option>
+                <option :value="25">25 per page</option>
+                <option :value="50">50 per page</option>
+                <option :value="100">100 per page</option>
+            </select>
+           </div>
 
-                    <div class="flex flex-wrap items-center gap-4">                       
-                        <div class="w-[300px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                            <Multiselect
-                                v-model="category"
-                                :options="props.category"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a category"
-                                :allow-empty="true"
-                                @input="applyFilters"
-                            > </Multiselect>
-                        </div>
-                        <div class="w-[300px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Form</label>
-                            <Multiselect
-                                v-model="dosage"
-                                :options="props.dosage"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a dosage form"
-                                :allow-empty="true"
-                            > </Multiselect>
-                        </div>
-                        <div class="w-[300px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
-                            <Multiselect
-                                v-model="warehouse"
-                                :options="props.warehouses"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a warehouse"
-                                :allow-empty="true"
-                            > </Multiselect>
-                        </div>
-                        <div class="w-[300px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
-                            <Multiselect
-                                v-model="location"
-                                :options="loadedLocation"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a S. Location"
-                                :allow-empty="true"
-                                :disabled="warehouse == null"
-                            > </Multiselect>
-                        </div>
-                    </div>
-                </div>
-                <select v-model="perPage"
-                    class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                    <option :value="6">6 per page</option>
-                    <option :value="25">25 per page</option>
-                    <option :value="50">50 per page</option>
-                    <option :value="100">100 per page</option>
-                </select>
-
-                <!-- Add Button -->
-                
-                <div class="flex justify-between">
-                    <!-- Inventory Table -->
-                    <div class="overflow-auto w-full">
-                        <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
-                            <thead class="border-b border-gray-200">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Item
-                                    </th>
-                                    <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Category
-                                    </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        In Stock
-                                    </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Location
-                                    </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Batch Number
-                                    </th>
-                                    <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Expiry Date
-                                    </th>
-                                    <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Status
-                                    </th>
-                                    <th
-                                        class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <tr v-if="!currentInventories.data || currentInventories.data.length === 0" class=" border border-black">
-                                    <td colspan="10" class="px-3 py-16 text-center">
-                                        <div class="flex flex-col items-center justify-center text-gray-500">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Add Button -->
+            
+            <div class="flex justify-between">
+                <!-- Inventory Table -->
+                <div class="overflow-auto w-full">
+                    <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
+                        <thead class="border-b border-gray-200">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Item
+                                </th>
+                                <th
+                                    class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Category
+                                </th>
+                                <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    In Stock
+                                </th>
+                                <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Location
+                                </th>
+                                <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Batch Number
+                                </th>
+                                <th class="cursor-pointer px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Expiry Date
+                                </th>
+                                <th
+                                    class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Status
+                                </th>
+                                <th
+                                    class="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider border border-black">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr v-if="!currentInventories.data || currentInventories.data.length === 0" class=" border border-black">
+                                <td colspan="10" class="px-3 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                stroke-width="1"
+                                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <span class="text-lg font-medium">No inventory items found</span>
+                                        <p class="text-sm text-gray-400 mt-1">Try adjusting your search or
+                                            filters</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="inventory in currentInventories.data" :key="inventory.id"
+                                class="hover:bg-gray-50">
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    <div v-if="inventory.product">
+                                        <div class="font-medium text-gray-900 relative group cursor-help">
+                                            {{ inventory.product.name }}
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-sm text-gray-500">Product not found</div>
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    <div class="flex flex-col">
+                                        {{ inventory.product?.category?.name || 'N/A' }}
+                                        <span class="text-xs">Dosage Form: {{ inventory.product?.dosage?.name || 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    <div :class="{
+                                        'font-medium': true,
+                                        'text-red-600': isLowStock(inventory),
+                                        'text-gray-900': !isLowStock(inventory),
+                                    }">
+                                        {{ inventory.quantity }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                        {{ inventory.location?.location }}
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    {{ inventory.batch_number }}
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    <div :class="{
+                                        'text-sm': true,
+                                        'text-red-600': isExpired(inventory),
+                                        'text-orange-500': isExpiringSoon(inventory) && !isExpired(inventory),
+                                        'text-gray-900': !isExpiringSoon(inventory) && !isExpired(inventory),
+                                    }">
+                                        {{ formatDate(inventory.expiry_date) }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
+                                    <div class="flex items-center space-x-2">
+                                        <div v-if="isLowStock(inventory)" class="flex items-center">
+                                            <img src="/assets/images/low_stock.png" title="Low Stock"
+                                                class="w-6 h-6" alt="Low Stock" />
+                                        </div>
+                                        <div v-if="!isOutOfStock(inventory) && isExpiringSoon(inventory)" class="flex items-center">
+                                            <img src="/assets/images/soon_expire.png" title="Expire soon"
+                                                class="w-6 h-6" alt="Expire soon" />
+                                        </div>
+                                        <div v-if="isExpired(inventory)" class="flex items-center">
+                                            <img src="/assets/images/expired_stock.png" title="Expired"
+                                                class="w-6 h-6" alt="Expired" />
+                                        </div>
+                                        <div v-if="isOutOfStock(inventory)" class="flex items-center">
+                                            <img src="/assets/images/out_stock.png" title="Out of Stock"
+                                                class="w-6 h-6" alt="Out of Stock" />
+                                        </div>
+                                        <div v-if="!isLowStock(inventory) && !isExpiringSoon(inventory) && !isExpired(inventory) && !isOutOfStock(inventory)"
+                                            class="flex items-center">
+                                            <img src="/assets/images/in_stock.png" title="In Stock"
+                                                class="w-6 h-6" alt="In Stock" />
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium  border border-black">
+                                    <div class="flex items-center space-x-3">
+                                        <Link :href="route('supplies.create')" class="rounded-full w-[34px] cursor-pointer">
+                                            <img src="/assets/images/ReorderAlert.png" />
+                                        </Link>
+                                        <button @click="editInventory(inventory)"
+                                            class="text-indigo-600 hover:text-indigo-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                                    stroke-width="1"
-                                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                    stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
-                                            <span class="text-lg font-medium">No inventory items found</span>
-                                            <p class="text-sm text-gray-400 mt-1">Try adjusting your search or
-                                                filters</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-else v-for="inventory in currentInventories.data" :key="inventory.id"
-                                    class="hover:bg-gray-50">
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        <div v-if="inventory.product">
-                                            <div class="font-medium text-gray-900 relative group cursor-help">
-                                                {{ inventory.product.name }}
-                                            </div>
-                                        </div>
-                                        <div v-else class="text-sm text-gray-500">Product not found</div>
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        <div class="flex flex-col">
-                                            {{ inventory.product?.category?.name || 'N/A' }}
-                                            <span class="text-xs">Dosage Form: {{ inventory.product?.dosage?.name || 'N/A' }}</span>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        <div :class="{
-                                            'font-medium': true,
-                                            'text-red-600': isLowStock(inventory),
-                                            'text-gray-900': !isLowStock(inventory),
-                                        }">
-                                            {{ inventory.quantity }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                            {{ inventory.location?.location }}
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        {{ inventory.batch_number }}
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        <div :class="{
-                                            'text-sm': true,
-                                            'text-red-600': isExpired(inventory),
-                                            'text-orange-500': isExpiringSoon(inventory) && !isExpired(inventory),
-                                            'text-gray-900': !isExpiringSoon(inventory) && !isExpired(inventory),
-                                        }">
-                                            {{ formatDate(inventory.expiry_date) }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-3 py-2 whitespace-nowrap text-sm text-gray-900  border border-black">
-                                        <div class="flex items-center space-x-2">
-                                            <div v-if="isLowStock(inventory)" class="flex items-center">
-                                                <img src="/assets/images/low_stock.png" title="Low Stock"
-                                                    class="w-6 h-6" alt="Low Stock" />
-                                            </div>
-                                            <div v-if="!isOutOfStock(inventory) && isExpiringSoon(inventory)" class="flex items-center">
-                                                <img src="/assets/images/soon_expire.png" title="Expire soon"
-                                                    class="w-6 h-6" alt="Expire soon" />
-                                            </div>
-                                            <div v-if="isExpired(inventory)" class="flex items-center">
-                                                <img src="/assets/images/expired_stock.png" title="Expired"
-                                                    class="w-6 h-6" alt="Expired" />
-                                            </div>
-                                            <div v-if="isOutOfStock(inventory)" class="flex items-center">
-                                                <img src="/assets/images/out_stock.png" title="Out of Stock"
-                                                    class="w-6 h-6" alt="Out of Stock" />
-                                            </div>
-                                            <div v-if="!isLowStock(inventory) && !isExpiringSoon(inventory) && !isExpired(inventory) && !isOutOfStock(inventory)"
-                                                class="flex items-center">
-                                                <img src="/assets/images/in_stock.png" title="In Stock"
-                                                    class="w-6 h-6" alt="In Stock" />
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium  border border-black">
-                                        <div class="flex items-center space-x-3">
-                                            <Link :href="route('supplies.create')" class="rounded-full w-[34px] cursor-pointer">
-                                                <img src="/assets/images/ReorderAlert.png" />
-                                            </Link>
-                                            <button @click="editInventory(inventory)"
-                                                class="text-indigo-600 hover:text-indigo-900">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </button>
-                                            <button @click="confirmDelete(inventory)"
-                                                class="text-red-600 hover:text-red-900">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <!-- Pagination - Only show if we have data -->
-                        <div v-if="currentInventories.data && currentInventories.data.length > 0" class="mt-4 mb-[50px]">
-                            <Pagination :links="currentInventories.meta.links" />
+                                        </button>
+                                        <button @click="confirmDelete(inventory)"
+                                            class="text-red-600 hover:text-red-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- Pagination - Only show if we have data -->
+                    <div class="mt-3 flex justify-end items-center">
+                        <TailwindPagination
+                            :data="props.inventories"
+                            @pagination-change-page="getResults"
+                        />
+                    </div>                        
+                    
+                </div>
+                <div class="sticky top-0 z-10 shadow-sm p-2">
+                    <div class="space-y-4">
+                        <div class="flex items-center p-3 rounded-lg bg-green-50">
+                            <img src="/assets/images/in_stock.png" class="w-[60px] h-[60px]" alt="In Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-xl font-bold text-green-600">{{ inStockCount }}</span>
+                                <span class="ml-2 text-xs text-green-600">In Stock</span>
+                            </div>
                         </div>
-                        
-                    </div>
-                    <div class="sticky top-0 z-10 shadow-sm p-2">
-                        <div class="space-y-4">
-                            <div class="flex items-center p-3 rounded-lg bg-green-50">
-                                <img src="/assets/images/in_stock.png" class="w-[60px] h-[60px]" alt="In Stock" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-xl font-bold text-green-600">{{ inStockCount }}</span>
-                                    <span class="ml-2 text-xs text-green-600">In Stock</span>
-                                </div>
+                        <div class="flex items-center p-3 rounded-lg bg-orange-50">
+                            <img src="/assets/images/low_stock.png" class="w-[60px] h-[60px]" alt="Low Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-xl font-bold text-orange-600">{{ lowStockCount }}</span>
+                                <span class="ml-2 text-xs text-orange-600">Low Stock</span>
                             </div>
-                            <div class="flex items-center p-3 rounded-lg bg-orange-50">
-                                <img src="/assets/images/low_stock.png" class="w-[60px] h-[60px]" alt="Low Stock" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-xl font-bold text-orange-600">{{ lowStockCount }}</span>
-                                    <span class="ml-2 text-xs text-orange-600">Low Stock</span>
-                                </div>
+                        </div>
+                        <div class="flex items-center p-3 rounded-lg bg-red-50">
+                            <img src="/assets/images/out_stock.png" class="w-[60px] h-[60px]" alt="Out of Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-xl font-bold text-red-600">{{ outOfStockCount }}</span>
+                                <span class="ml-2 text-xs text-red-600">Out of Stock</span>
                             </div>
-                            <div class="flex items-center p-3 rounded-lg bg-red-50">
-                                <img src="/assets/images/out_stock.png" class="w-[60px] h-[60px]" alt="Out of Stock" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-xl font-bold text-red-600">{{ outOfStockCount }}</span>
-                                    <span class="ml-2 text-xs text-red-600">Out of Stock</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-3 rounded-lg bg-gray-50">
-                                <img src="/assets/images/expired_stock.png" class="w-[60px] h-[60px]" alt="Expired" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-xl font-bold text-gray-600">{{ expiredCount }}</span>
-                                    <span class="ml-2 text-xs text-gray-600">Expired</span>
-                                </div>
+                        </div>
+                        <div class="flex items-center p-3 rounded-lg bg-gray-50">
+                            <img src="/assets/images/expired_stock.png" class="w-[60px] h-[60px]" alt="Expired" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-xl font-bold text-gray-600">{{ expiredCount }}</span>
+                                <span class="ml-2 text-xs text-gray-600">Expired</span>
                             </div>
                         </div>
                     </div>

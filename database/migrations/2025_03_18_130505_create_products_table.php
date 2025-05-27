@@ -19,7 +19,6 @@ return new class extends Migration
                 $table->integer('productID')->unique();
                 $table->string('name')->unique();
                 $table->foreignIdFor(Category::class)->cascadeOnDelete();
-                $table->string('movement');
                 $table->timestamps();
                 $table->softDeletes();
             });
@@ -31,6 +30,7 @@ return new class extends Migration
             $table->foreignIdFor(Category::class)->nullable()->constrained()->nullOnDelete();
             $table->unsignedBigInteger('dosage_id')->nullable();
             $table->double('reorder_level')->default(0);
+            $table->string('movement');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

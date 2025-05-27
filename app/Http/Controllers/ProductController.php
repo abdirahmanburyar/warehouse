@@ -23,7 +23,31 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::query();
+        $lastFourMonths = now()->subMonths(4)->format('Y-m');
+        $leadTime = 5; // days
+
+        // Method 1: Calculate AMC and reorder level using SQL (efficient way)
+        // Update reorder levels with a default of 0 for products without AMC data
+        DB::statement("
+            UPDATE products p
+            SET reorder_level = COALESCE(
+                (
+                    SELECT CEIL(avg_quantity * ? + avg_quantity)
+                    FROM (
+                        SELECT 
+                            product_id, 
+                            CEIL(AVG(quantity)) as avg_quantity
+                        FROM warehouse_amcs
+                        WHERE month_year >= ?
+                        GROUP BY product_id
+                    ) amc
+                    WHERE amc.product_id = p.id
+                ),
+                0  -- Default value if no AMC data exists
+            )
+        ", [$leadTime, $lastFourMonths]);
+
+        $query = Product::with(['category', 'dosage'])->latest();
 
         // Search functionality
         if ($request->filled('search')) {
@@ -35,13 +59,17 @@ class ProductController extends Controller
         }
 
         // Category filter
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', $request->category);
+            });
         }
 
         // Dosage filter
-        if ($request->filled('dosage_id')) {
-            $query->where('dosage_id', $request->dosage_id);
+        if ($request->filled('dosage')) {
+            $query->whereHas('dosage', function ($q) use ($request) {
+                $q->where('name', $request->dosage);
+            });
         }
 
         // Sorting
@@ -51,48 +79,16 @@ class ProductController extends Controller
 
         $query->with('dosage','category');
 
-        // Handle pagination parameters
-        $perPage = $request->input('per_page', 10);
-        $page = $request->input('page', 1);
-        
-        // Get paginated products
-        $products = $query->paginate(
-            perPage: $perPage,
-            page: $page
-        );
+        $products = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $products->setPath(url()->current()); // Force Laravel to use full URLs
 
-        // Transform the paginator instance
-        $products->through(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'barcode' => $product->barcode,
-                'category' => $product->category ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->name
-                ] : null,
-                'dosage' => $product->dosage ? [
-                    'id' => $product->dosage->id,
-                    'name' => $product->dosage->name
-                ] : null,
-                'reorder_level' => $product->reorder_level
-            ];
-        });
-
-        // Ensure proper URL generation for pagination
-        $products->withPath(route('products.index'));
-        $products->appends($request->except('page'));
-
-        // Add current page info to filters
-        $filters = $request->all();
-        $filters['page'] = $page;
-        $filters['per_page'] = $perPage;
 
         return Inertia::render('Product/Index', [
             'products' => ProductResource::collection($products),
-            'categories' => CategoryResource::collection(Category::all()),
-            'dosages' => DosageResource::collection(Dosage::all()),
-            'filters' => $filters
+            'categories' => Category::pluck('name')->toArray(),
+            'dosages' => Dosage::pluck('name')->toArray(),
+            'filters' => $request->only(['search', 'category', 'dosage', 'per_page', 'page'])
         ]);
     }
 

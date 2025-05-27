@@ -126,6 +126,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('products.categories.create');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])
                 ->name('products.categories.edit');
+            Route::get('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])
+                // ->middleware(PermissionMiddleware::class . ':category.edit')
+                ->name('products.categories.toggle-status');
+
             Route::get('/categories/{category}/destroy', [CategoryController::class, 'destroy'])
                 ->middleware(PermissionMiddleware::class . ':category.delete')
                 ->name('categories.destroy');
@@ -158,9 +162,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::prefix('product/dosages')->group(function () {
         Route::get('/', [DosageController::class, 'index'])->middleware(PermissionMiddleware::class . ':dosage.view')->name('products.dosages.index');
         Route::get('/create', [DosageController::class, 'create'])->middleware(PermissionMiddleware::class . ':dosage.create')->name('products.dosages.create');
-        Route::post('/', [DosageController::class, 'store'])->middleware(PermissionMiddleware::class . ':dosage.create')->name('products.dosages.store');
+        Route::post('/store', [DosageController::class, 'store'])->middleware(PermissionMiddleware::class . ':dosage.create')->name('products.dosages.store');
         Route::get('/{dosage}/edit', [DosageController::class, 'edit'])->middleware(PermissionMiddleware::class . ':dosage.edit')->name('products.dosages.edit');
-        Route::put('/{dosage}', [DosageController::class, 'update'])->middleware(PermissionMiddleware::class . ':dosage.edit')->name('products.dosages.update');
+        Route::get('/{dosage}/toggle-status', [DosageController::class, 'toggleStatus'])->name('products.dosages.toggle-status');
         Route::delete('/{dosage}', [DosageController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':dosage.delete')->name('products.dosages.destroy');
     });
 

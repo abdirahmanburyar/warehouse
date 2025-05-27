@@ -12,6 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Generate AMC records on the first day of each month at 00:01 AM
+        $schedule->command('warehouse:generate-amc')->monthlyOn(1, '00:01');
         // Send low stock notification emails twice a day (9 AM and 3 PM)
         $schedule->command('inventory:notify-low-stock')->twiceDaily(9, 15);
         $schedule->command('inventory:check-low-stock')->everyFiveMinutes();

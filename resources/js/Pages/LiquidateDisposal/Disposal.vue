@@ -1,71 +1,52 @@
 <script setup lang="ts">
 import Tab from './Tab.vue';
 import ActionModal from '@/Components/ActionModal.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
 import moment from 'moment';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-
-interface Product {
-    id: number;
-    name: string;
-    productID?: string;
-}
-
-interface User {
-    id: number;
-    name: string;
-    username?: string;
-    email?: string;
-    warehouse_id?: number;
-    facility_id?: number;
-}
-
-interface Inventory {
-    id: number;
-    batch_number?: string;
-    location?: string;
-    expiry_date?: string;
-}
-
-interface PackingList {
-    id: number;
-    packing_list_number: string;
-    batch_number?: string;
-    expire_date?: string;
-    location_id?: number;
-    warehouse_id?: number;
-}
-
-interface Disposal {
-    id: number;
-    product_id: number;
-    purchase_order_id: number | null;
-    packing_list_id: number | null;
-    inventory_id: number | null;
-    disposed_by: User;
-    disposed_at: string;
-    quantity: number;
-    status: string;
-    note: string;
-    approved_by: number | null;
-    approved_at: string | null;
-    product?: Product;
-    inventory?: Inventory;
-    packing_list?: PackingList;
-    attachments?: string | null;
-}
+import { TailwindPagination } from 'laravel-vue-pagination';
 
 const isLoading = ref(false);
 const toast = useToast();
 const showDisposalModal = ref(false);
 const selectedItem = ref(null);
 
-const props = defineProps<{
-    disposals: Disposal[];
-}>();
+const props = defineProps({
+    disposals: Object,
+    filters: Object,
+});
+
+const search = ref(props.filters?.search || "");
+const per_page = ref(props.filters?.per_page || 2);
+
+watch([
+    () => search.value,
+    () => per_page.value,
+    () => props.filters.page
+], () => {
+    reloadDisposals();
+});
+
+const reloadDisposals = () => {
+    const query = {};
+    if (search.value) {
+        query.search = search.value;
+    }
+    if (per_page.value) {
+        query.per_page = per_page.value;
+    }
+    if (props.filters.page) {
+        query.page = props.filters.page;
+    }
+    router.get(route('liquidate-disposal.disposals'), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['disposals']
+    });
+};
 
 // Method to open the disposal modal
 const openDisposalModal = (disposal) => {
@@ -79,35 +60,6 @@ const openDisposalModal = (disposal) => {
         attachments: disposal.attachments
     };
     showDisposalModal.value = true;
-};
-
-// Method to handle disposal form submission
-const handleDisposalSubmit = async (formData) => {
-    isLoading.value = true;
-    try {
-        const response = await axios.post('/api/disposal', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
-        });
-        
-        if (response.status === 200) {
-            toast.success('Item disposed successfully');
-            showDisposalModal.value = false;
-            // Refresh the page to show updated data
-            router.get(route('liquidate-disposal.disposals'), {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['disposals']
-            });
-        }
-    } catch (error) {
-        console.error('Error disposing item:', error);
-        toast.error(error.response?.data?.message || 'An error occurred while disposing the item');
-    } finally {
-        isLoading.value = false;
-    }
 };
 
 const isReviewing = ref(false);
@@ -134,11 +86,7 @@ const reviewDisposal = (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.disposals'), {}, {
-                            preserveState: true,
-                            preserveScroll: true,
-                            only: ['disposals']
-                        });
+                       reloadDisposals();
                     });
                 })
             .catch((error) => {
@@ -175,11 +123,7 @@ const approveDisposal = async (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.disposals'), {}, {
-                            preserveState: true,
-                            preserveScroll: true,
-                            only: ['disposals']
-                        });
+                       reloadDisposals();
                     });
                 })
             .catch((error) => {
@@ -222,6 +166,7 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
+
 const rejectDisposal = async (id) => {
     if (!id) return;
     
@@ -261,11 +206,7 @@ const rejectDisposal = async (id) => {
             });
 
             // Refresh the page
-            router.get(route('liquidate-disposal.disposals'), {}, {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['disposals']
-            });
+            reloadDisposals();
         }
     } catch (error) {
         console.error('Error rejecting disposal:', error);
@@ -293,12 +234,28 @@ const parseAttachments = (attachments) => {
     }));
 };
 
+function getResults(page = 1) {
+    props.filters.page = page;
+    reloadDisposals();
+}
+
 </script>
 
 <template>
     <Tab title="Disposal" activeTab="disposal">
         <div class="mb-6 flex flex-wrap gap-4 items-center">
             <h2 class="text-xl font-semibold">Disposal Records</h2>
+        </div>
+        <div class="mb-6 flex justify-between items-center">
+            <input type="text" v-model="search" placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..." class="w-[600px] form-control">
+            <select v-model="per_page" class="w-[200px] form-select">
+                <option value="2"> Per Page 2</option>
+                <option value="5"> Per Page 5</option>
+                <option value="10"> Per Page 10</option>
+                <option value="25"> Per Page 25</option>
+                <option value="50"> Per Page 50</option>
+                <option value="100"> Per Page 100</option>
+            </select>
         </div>
         <!-- Table Section -->
         <div class="mb-6">
@@ -317,10 +274,10 @@ const parseAttachments = (attachments) => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.disposals.length === 0">
-                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">No disposal records found</td>
+                    <tr v-if="props.disposals.data.length === 0">
+                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">No disposal records found</td>
                     </tr>
-                    <tr v-for="(disposal, index) in props.disposals" :key="disposal.id" class="border-b border-gray-300">
+                    <tr v-for="(disposal, index) in props.disposals.data" :key="disposal.id" class="border-b border-gray-300">
                         <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">{{ disposal.disposal_id }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">
@@ -437,15 +394,11 @@ const parseAttachments = (attachments) => {
                     </tr>
                 </tbody>
             </table>
+            <div class="flex justify-end items-center mt-3">
+                <TailwindPagination :data="props.disposals" 
+                @pagination-change-page="getResults"
+            />
+            </div>
         </div>
-        <!-- Disposal Modal -->
-    <ActionModal
-        :is-open="showDisposalModal"
-        title="Dispose Item"
-        action-type="disposal"
-        :item="selectedItem"
-        @close="showDisposalModal = false"
-        @submit="handleDisposalSubmit"
-    />
 </Tab>
 </template>

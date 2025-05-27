@@ -1,106 +1,28 @@
 <script setup lang="ts">
 import Tab from './Tab.vue';
 import ActionModal from '@/Components/ActionModal.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
 import moment from 'moment';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-
-interface Product {
-    id: number;
-    name: string;
-    productID?: string;
-}
-
-interface User {
-    id: number;
-    name: string;
-    username?: string;
-    email?: string;
-    warehouse_id?: number;
-    facility_id?: number;
-}
-
-interface Inventory {
-    id: number;
-    batch_number?: string;
-    location?: string;
-    expiry_date?: string;
-}
-
-interface PackingList {
-    id: number;
-    packing_list_number: string;
-    batch_number?: string;
-    expire_date?: string;
-    location_id?: number;
-    warehouse_id?: number;
-}
-
-interface Liquidate {
-    id: number;
-    product_id: number;
-    purchase_order_id: number | null;
-    packing_list_id: number | null;
-    inventory_id: number | null;
-    liquidated_by: User;
-    liquidated_at: string;
-    quantity: number;
-    status: string;
-    note: string;
-    approved_by: number | null;
-    approved_at: string | null;
-    product?: Product;
-    inventory?: Inventory;
-    packing_list?: PackingList;
-    attachments?: string | null;
-}
+import { TailwindPagination } from 'laravel-vue-pagination';
 
 const isLoading = ref(false);
 const toast = useToast();
 const showLiquidateModal = ref(false);
 const selectedItem = ref(null);
 
-const props = defineProps<{
-    liquidates: Liquidate[];
-}>();
+const props = defineProps({
+    liquidates: Object,
+    filters: Object,
+});
 
 // Method to open the liquidate modal
 const openLiquidateModal = (item) => {
     selectedItem.value = item;
     showLiquidateModal.value = true;
-};
-
-// Method to handle liquidate form submission
-const handleLiquidateSubmit = async (formData) => {
-    isLoading.value = true;
-    try {
-        const response = await fetch('/api/liquidate', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            toast.success('Item liquidated successfully');
-            showLiquidateModal.value = false;
-            // Refresh the page to show updated data
-            router.reload();
-        } else {
-            toast.error(result.message || 'Failed to liquidate item');
-        }
-    } catch (error) {
-        console.error('Error liquidating item:', error);
-        toast.error('An error occurred while liquidating the item');
-    } finally {
-        isLoading.value = false;
-    }
 };
 
 const isReviewing = ref(false);
@@ -126,11 +48,7 @@ const reviewLiquidation = (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.liquidates'), {}, {
-                            preserveState: true,
-                            preserveScroll: true,
-                            only: ['liquidates']
-                        });
+                        reloadLiquidates();
                     });
                 })
             .catch((error) => {
@@ -167,11 +85,7 @@ const approveLiquidation = async (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        router.get(route('liquidate-disposal.liquidates'), {}, {
-                            preserveState: true,
-                            preserveScroll: true,
-                            only: ['liquidates']
-                        });
+                        reloadLiquidates();
                     });
                 })
             .catch((error) => {
@@ -225,11 +139,7 @@ const rejectLiquidation = async (id) => {
             });
 
             // Refresh the page
-            router.get(route('liquidate-disposal.liquidates'), {}, {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['liquidates']
-            });
+            reloadLiquidates();
         }
     } catch (error) {
         console.error('Error rejecting liquidation:', error);
@@ -314,12 +224,58 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
+
+const search = ref(props.filters?.search || "");
+const per_page = ref(props.filters?.per_page || 2);
+
+watch([
+    () => search.value,
+    () => per_page.value,
+    () => props.filters.page
+], () => {
+    reloadDisposals();
+});
+
+const reloadDisposals = () => {
+    const query = {};
+    if (search.value) {
+        query.search = search.value;
+    }
+    if (per_page.value) {
+        query.per_page = per_page.value;
+    }
+    if (props.filters.page) {
+        query.page = props.filters.page;
+    }
+    router.get(route('liquidate-disposal.disposals'), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['disposals']
+    });
+};
+
+function getResults(page = 1) {
+    props.filters.page = page;
+    reloadDisposals();
+}
+
 </script>
 
 <template>
     <Tab title="Liquidate" activeTab="liquidate">
         <div class="mb-6 flex flex-wrap gap-4 items-center">
             <h2 class="text-xl font-semibold">Liquidation Records</h2>
+        </div>
+        <div class="mb-6 flex justify-between items-center">
+            <input type="text" v-model="search" placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..." class="w-[600px] form-control">
+            <select v-model="per_page" class="w-[200px] form-select">
+                <option value="2"> Per Page 2</option>
+                <option value="5"> Per Page 5</option>
+                <option value="10"> Per Page 10</option>
+                <option value="25"> Per Page 25</option>
+                <option value="50"> Per Page 50</option>
+                <option value="100"> Per Page 100</option>
+            </select>
         </div>
         <!-- Table Section -->
         <div class="mb-6">
@@ -338,10 +294,10 @@ onUnmounted(() => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.liquidates.length === 0">
-                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
+                    <tr v-if="props.liquidates.data.length === 0">
+                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
                     </tr>
-                    <tr v-for="(liquidate, index) in props.liquidates" :key="liquidate.id" class="border-b border-gray-300">
+                    <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id" class="border-b border-gray-300">
                         <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.liquidate_id }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">
@@ -460,14 +416,10 @@ onUnmounted(() => {
                 </tbody>
             </table>
         </div>
-        <!-- Liquidate Modal -->
-    <ActionModal
-        :is-open="showLiquidateModal"
-        title="Liquidate Item"
-        action-type="liquidate"
-        :item="selectedItem"
-        @close="showLiquidateModal = false"
-        @submit="handleLiquidateSubmit"
-    />
-</Tab>
+        <div class="flex justify-end items-center mt-3">
+            <TailwindPagination :data="props.liquidates" 
+            @pagination-change-page="getResults"
+        />
+        </div>
+    </Tab>
 </template>

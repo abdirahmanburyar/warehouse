@@ -7,11 +7,13 @@ use App\Models\Disposal;
 use App\Models\Liquidate;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\DisposalResource;
+use App\Http\Resources\LiquidateResource;
 
 class LiquidateDisposalController extends Controller
 {
     public function disposals(Request $request){
-        $disposals = Disposal::with([
+        $disposals = Disposal::query()->with([
             'product',
             'purchaseOrder',
             'packingList.warehouse',
@@ -22,15 +24,30 @@ class LiquidateDisposalController extends Controller
             'approvedBy',
             'reviewedBy',
             'rejectedBy'
-        ])->latest('disposed_at')->get();
+        ])->latest('disposed_at');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $disposals->whereHas('product', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%")
+                  ->orWhere('batch_number', 'like', "%{$search}%");
+            });
+        }
+
+        $disposals = $disposals->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        $disposals->setPath(url()->current()); // Force Laravel to use full URLs
         
         return inertia('LiquidateDisposal/Disposal', [
-            'disposals' => $disposals
+            'disposals' => DisposalResource::collection($disposals),
+            'filters' => $request->only('search', 'per_page', 'page'),
         ]);
     }
 
     public function liquidates(Request $request){   
-        $liquidates = Liquidate::with([
+        $liquidates = Liquidate::query()->with([
             'product',
             'purchaseOrder',
             'packingList.warehouse',
@@ -41,10 +58,25 @@ class LiquidateDisposalController extends Controller
             'approvedBy',
             'reviewedBy',
             'rejectedBy'
-        ])->latest('liquidated_at')->get();
+        ])->latest('liquidated_at');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $liquidates->whereHas('product', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%")
+                  ->orWhere('batch_number', 'like', "%{$search}%");
+            });
+        }
+
+        $liquidates = $liquidates->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $liquidates->setPath(url()->current()); // Force Laravel to use full URLs
+
         
         return inertia('LiquidateDisposal/Liquidate', [
-            'liquidates' => $liquidates
+            'liquidates' => LiquidateResource::collection($liquidates),
+            'filters' => $request->only('search', 'per_page', 'page'),
         ]);
     }
     

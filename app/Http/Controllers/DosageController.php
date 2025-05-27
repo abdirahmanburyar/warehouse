@@ -23,40 +23,18 @@ class DosageController extends Controller
         if ($request->has('search')) {
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('description', 'like', "%{$searchTerm}%");
+                $q->where('name', 'like', "%{$searchTerm}%");;
             });
         }
-        
-        // Handle sorting
-        $sortField = $request->input('sort_field', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        
-        $query->orderBy($sortField, $sortDirection);
-        
-        // Get paginated results with per_page parameter
-        $perPage = $request->input('per_page', 10);
-        $dosages = $query->paginate($perPage)->withQueryString();
-        
-        $paginatedDosages = DosageResource::collection($dosages)->response()->getData(true);
 
+        $dosages = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+        $dosages->setPath(url()->current()); // Force Laravel to use full URLs        
+        
+        
         return Inertia::render('Product/Dosage/Index', [
-            'dosages' => [
-                'data' => $paginatedDosages['data'],
-                'meta' => [
-                    'total' => $dosages->total(),
-                    'per_page' => $dosages->perPage(),
-                    'current_page' => $dosages->currentPage(),
-                    'last_page' => $dosages->lastPage(),
-                ],
-                'links' => [
-                    'first' => $dosages->url(1),
-                    'last' => $dosages->url($dosages->lastPage()),
-                    'prev' => $dosages->previousPageUrl(),
-                    'next' => $dosages->nextPageUrl(),
-                ],
-            ],
-            'filters' => $request->only(['search', 'sort_field', 'sort_direction', 'per_page']),
+            'dosages' => DosageResource::collection($dosages),
+            'filters' => $request->only(['search', 'per_page', 'page']),
         ]);
     }
 
@@ -87,7 +65,6 @@ class DosageController extends Controller
             $request->validate([
                 'id' => 'nullable',
                 'name' => 'required',
-                'description' => 'null',
             ]);
             
             $dosage = Dosage::updateOrCreate(
@@ -95,7 +72,6 @@ class DosageController extends Controller
                     'id' => $request->id
                 ],[
                 "name" => $request->name,
-                "description" => $request->description
             ]);
             
             return response()->json('Dosage created successfully', 200);
@@ -107,6 +83,20 @@ class DosageController extends Controller
     /**
      * Remove the specified dosage from storage.
      */
+    /**
+     * Toggle the active status of a dosage
+     */
+    public function toggleStatus(Dosage $dosage)
+    {
+        try {
+            $dosage->update(['is_active' => !$dosage->is_active]);
+            $status = $dosage->is_active ? 'activated' : 'deactivated';
+            return response()->json("Dosage {$status} successfully");
+        } catch (Throwable $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+
     public function destroy(Dosage $dosage)
     {
         try {

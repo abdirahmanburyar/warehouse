@@ -160,10 +160,10 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="createNewCategory" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Create
+                    <button @click="createNewCategory" :disabled="processing" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        {{processing ? 'Creating...' : 'Create'}}
                     </button>
-                    <button @click="showCategoryModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button @click="showCategoryModal = false" :disabled="processing" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                         Cancel
                     </button>
                 </div>
@@ -192,15 +192,6 @@
                                         class="mt-1 block w-full"
                                         v-model="newDosage.name"
                                     />
-                                </div>
-                                <div>
-                                    <InputLabel for="new-dosage-description" value="Description" />
-                                    <textarea
-                                        id="new-dosage-description"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        v-model="newDosage.description"
-                                        rows="3"
-                                    ></textarea>
                                 </div>
                             </div>
                         </div>
@@ -290,22 +281,22 @@ const submit = async () => {
         dosage_id: form.value.dosage?.id
     };
     processing.value = true;
-      await axios.post(route('products.store'), payload)
-        .then((response) => {
-            processing.value = false;
-            Swal.fire({
-                icon: 'success',
-                title: 'Product Created',
-                text: response.data
-            }).then(() => {
-                router.visit(route('products.index'))
-            });
-        })
-        .catch((error) => {
-            processing.value = false;
-            console.error('Error creating product:', error);
-            toast.error(error.response?.data || 'Failed to create product');
+    await axios.post(route('products.store'), payload)
+    .then((response) => {
+        processing.value = false;
+        Swal.fire({
+            icon: 'success',
+            title: 'Product Created',
+            text: response.data
+        }).then(() => {
+            router.visit(route('products.index'))
         });
+    })
+    .catch((error) => {
+        processing.value = false;
+        console.error('Error creating product:', error);
+        toast.error(error.response?.data || 'Failed to create product');
+    });
 };
 
 // Function to create a new category
@@ -316,9 +307,8 @@ async function createNewCategory() {
     }
     
     try {
-        console.log('Creating new category:', newCategory.value);
-        const response = await axios.post(route('products.categories.store'), newCategory.value);
-        console.log('Category created response:', response.data);
+        processing.value = true;
+        const response = await axios.post(route('categories.store'), newCategory.value);
         
         // Add the new category to the categories list
         const newCategoryObj = {
@@ -327,21 +317,20 @@ async function createNewCategory() {
             description: newCategory.value.description
         };
         
-        console.log('New category object:', newCategoryObj);
         props.categories.data.push(newCategoryObj);
         
         // Select the newly created category
         form.value.category = newCategoryObj;
         form.value.category_id = newCategoryObj.id;
-        console.log('Updated form with new category:', form.value.category_id);
         
         // Reset and close modal
         newCategory.value = { name: '', description: '' };
         showCategoryModal.value = false;
         
         toast.success('Category created successfully');
+        processing.value = false;
     } catch (error) {
-        console.error('Error creating category:', error);
+        processing.value = false;
         toast.error(error.response?.data || 'Failed to create category');
     }
 }
@@ -354,38 +343,34 @@ async function createNewDosage() {
     }
     
     try {
-        console.log('Creating new dosage:', newDosage.value);
+        processing.value = true;
         const response = await axios.post(route('products.dosages.store'), newDosage.value);
-        console.log('Dosage created response:', response.data);
         
         // Add the new dosage to the dosages list
         const newDosageObj = {
             id: response.data.id || response.data,  // Handle different response formats
-            name: newDosage.value.name,
-            description: newDosage.value.description
+            name: newDosage.value.name
         };
         
-        console.log('New dosage object:', newDosageObj);
         props.dosages.data.push(newDosageObj);
         
         // Select the newly created dosage
         form.value.dosage = newDosageObj;
         form.value.dosage_id = newDosageObj.id;
-        console.log('Updated form with new dosage:', form.value.dosage_id);
         
         // Reset and close modal
-        newDosage.value = { name: '', description: '' };
+        newDosage.value = { name: '', id: '' };
         showDosageModal.value = false;
         
         toast.success('Dosage form created successfully');
+        processing.value = false;
     } catch (error) {
-        console.error('Error creating dosage form:', error);
+        processing.value = false;
         toast.error(error.response?.data || 'Failed to create dosage form');
     }
 };
 
 function handleCategorySelect(selected){
-    console.log('Selected category:', selected);
     if(selected.isAddNew){
         form.value.category_id = "";
         form.value.category = null;
@@ -400,7 +385,6 @@ function handleCategorySelect(selected){
 
 
 function handleDosageSelect(selected){
-    console.log('Selected dosage:', selected);
     if(selected.isAddNew){
         form.value.dosage_id = "";
         form.value.dosage = null;

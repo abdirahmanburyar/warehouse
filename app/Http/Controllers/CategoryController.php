@@ -27,14 +27,9 @@ class CategoryController extends Controller
             });
         }
         
-        // Handle sorting
-        $sortField = $request->input('sort_field', 'id');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        
-        $query->orderBy($sortField, $sortDirection);
-        
-        // Get paginated results
-        $categories = $query->paginate(10)->withQueryString();
+        $categories = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+    $categories->setPath(url()->current()); // Force Laravel to use full URLs
         
         return Inertia::render('Product/Category/Index', [
             'categories' => CategoryResource::collection($categories),
@@ -121,6 +116,20 @@ class CategoryController extends Controller
     /**
      * Remove the specified category from storage.
      */
+    /**
+     * Toggle the active status of a category
+     */
+    public function toggleStatus(Category $category)
+    {
+        try {
+            $category->update(['is_active' => !$category->is_active]);
+            $status = $category->is_active ? 'activated' : 'deactivated';
+            return response()->json("Category {$status} successfully");
+        } catch (Throwable $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+
     public function destroy(Category $category)
     {
         try {

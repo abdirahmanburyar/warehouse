@@ -69,7 +69,7 @@ class InventoryController extends Controller
             }); 
         }
 
-        $inventories = $query->paginate($request->input('per_page', 8), ['*'], 'page', $request->input('page', 1))
+        $inventories = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         // Get products for dropdown
