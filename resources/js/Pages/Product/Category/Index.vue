@@ -126,8 +126,7 @@
                     </tbody>
                 </table>
            <div class="mt-4 flex justify-end">
-            {{props.categories}}
-            <TailwindPagination :data="categories" @page-changed="getResults" />
+            <TailwindPagination :data="categories" @pagination-change-page="getResults" />
            </div>
         </div>
     </div>
@@ -161,7 +160,7 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || '');
-const per_page = ref(props.filters.per_page || 10);
+const per_page = ref(props.filters.per_page);
 
 watch([() => search.value, () => per_page.value, () => props.filters.page], () => {
     updateRoute();

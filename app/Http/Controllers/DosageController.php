@@ -34,7 +34,7 @@ class DosageController extends Controller
         
         return Inertia::render('Product/Dosage/Index', [
             'dosages' => DosageResource::collection($dosages),
-            'filters' => $request->only(['search', 'per_page', 'page']),
+            'filters' => $request->only('search', 'per_page', 'page'),
         ]);
     }
 

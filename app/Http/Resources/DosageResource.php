@@ -14,13 +14,6 @@ class DosageResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description ?? '',
-            'is_active' => (bool) $this->is_active,
-            'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
-            'updated_at' => $this->updated_at ? $this->updated_at->format('Y-m-d H:i:s') : null,
-        ];
+        return parent::toArray($request);
     }
 }

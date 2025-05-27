@@ -164,6 +164,9 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="mt-4 flex justify-end">
+                <TailwindPagination :data="dosages" @pagination-change-page="getResults" />
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -180,6 +183,7 @@ import Pagination from "@/Components/Pagination.vue";
 import { debounce } from "lodash";
 import moment from "moment";
 import axios from "axios";
+import {TailwindPagination} from "laravel-vue-pagination";
 
 const toast = useToast();
 
@@ -219,6 +223,10 @@ function updateRoute() {
         preserveScroll: true,
         replace: true,
     });
+}
+
+function getResults(page=1) {
+    props.filters.page = page;
 }
 
 const confirmToggleStatus = (dosage) => {
