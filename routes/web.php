@@ -177,6 +177,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::put('/{product}', [ProductController::class, 'update'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
         Route::post('/import-excel', [ProductUploadController::class, 'upload'])->name('products.import-excel');
+        Route::get('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     });
 
     // Eligible Items Management Routes

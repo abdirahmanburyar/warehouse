@@ -224,7 +224,12 @@
                                 Reorder Level
                             </th>
                             <th
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
+                            >
+                                Status
+                            </th>
+                            <th
+                                class="px-6 py-3 text-right text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black"
                             >
                                 Actions
                             </th>
@@ -262,46 +267,48 @@
                                 {{ product.reorder_level }}
                             </td>
                             <td
-                                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium border border-black"
+                                class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-black"
                             >
-                                <Link
-                                    :href="route('products.edit', product.id)"
-                                    class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center"
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                    :class="{
+                                        'bg-green-100 text-green-800': product.is_active,
+                                        'bg-red-100 text-red-800': !product.is_active
+                                    }"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
+                                    {{ product.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium border border-black">
+                                <div class="flex items-center justify-end gap-4">
+                                    <Link
+                                        :href="route('products.edit', product.id)"
+                                        class="text-indigo-600 hover:text-indigo-900"
                                     >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                        />
-                                    </svg>
-                                </Link>
-                                <button
-                                    @click="confirmDelete(product)"
-                                    class="text-red-600 hover:text-red-900 inline-flex items-center"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
+                                        Edit
+                                    </Link>
+                                    <button
+                                        @click="confirmToggleStatus(product)"
+                                        class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        :class="{
+                                            'bg-red-600': product.is_active,
+                                            'bg-green-600': !product.is_active,
+                                            'opacity-50 cursor-wait': loadingProducts.has(product.id)
+                                        }"
+                                        :disabled="loadingProducts.has(product.id)"
                                     >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        <span 
+                                            class="inline-block h-4 w-4 transform rounded-full transition-transform duration-300"
+                                            :class="{
+                                                'translate-x-6': product.is_active,
+                                                'translate-x-1': !product.is_active,
+                                                'bg-white': !loadingProducts.has(product.id),
+                                                'bg-gray-200 animate-pulse': loadingProducts.has(product.id)
+                                            }"
                                         />
-                                    </svg>
-                                </button>
+                                    </button>
+                                    
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -520,9 +527,10 @@ const dosage = ref(props.filters.dosage || "");
 const perPage = ref(props.filters.per_page || "10");
 const isLoading = ref(false);
 const fileInput = ref(null);
-const isUploading = ref(false);
 const showUploadModal = ref(false);
+const loadingProducts = ref(new Set());
 const selectedFile = ref(null);
+const isUploading = ref(false);
 
 function updateRoute() {
     isLoading.value = true;
@@ -662,6 +670,38 @@ const uploadFile = async () => {
             fileInput.value.value = null;
         }
     }
+};
+
+const confirmToggleStatus = (product) => {
+    const action = product.is_active ? 'deactivate' : 'activate';
+    
+    Swal.fire({
+        title: 'Are you sure?',
+        html: `<p>Do you want to ${action} ${product.name}?</p>`,
+        showConfirmButton: true,
+        icon: undefined,
+        showCancelButton: true,
+        confirmButtonColor: product.is_active ? '#d33' : '#3085d6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: product.is_active ? 'Yes, deactivate!' : 'Yes, activate!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            loadingProducts.value.add(product.id);
+            try {
+                await axios.get(route('products.toggle-status', product.id));
+                updateRoute();
+                Swal.fire(
+                    action === 'activate' ? 'Activated!' : 'Deactivated!',
+                    `Product has been ${action}d.`,
+                    'success'
+                );
+            } catch (error) {
+                toast.error(error.response?.data || 'An error occurred');
+            } finally {
+                loadingProducts.value.delete(product.id);
+            }
+        }
+    });
 };
 
 const confirmDelete = (product) => {

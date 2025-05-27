@@ -240,4 +240,16 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    public function toggleStatus(Product $product)
+    {
+        try {
+            $product->is_active = !$product->is_active;
+            $product->save();
+
+            return response()->json($product->is_active ? 'Product activated successfully.' : 'Product deactivated successfully.', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 }
