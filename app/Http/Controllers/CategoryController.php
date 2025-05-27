@@ -33,7 +33,7 @@ class CategoryController extends Controller
         
         return Inertia::render('Product/Category/Index', [
             'categories' => CategoryResource::collection($categories),
-            'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
+            'filters' => $request->only(['search', 'per_page', 'page']),
         ]);
     }
 

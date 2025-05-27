@@ -50,45 +50,39 @@
                     </Link>
                 </div>
             </div>
-            <div v-else class="overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <div class="relative">
-                        <div class="overflow-x-auto">
-                            <div class="inline-block min-w-full align-middle">
-                                <div class="overflow-hidden border border-black rounded-lg">
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full divide-y divide-black">
-                                            <thead class="bg-gray-50 sticky top-0 z-10">
-                                                <tr>
-                                                    <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
-                                                        Name
-                                                    </th>
-                                                    <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
-                                                        Description
-                                                    </th>
-                                                    <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
-                                                        Created At
-                                                    </th>
-                                                    <th class="px-6 py-3 text-center text-xs font-medium text-black uppercase border border-black">
-                                                        Status
-                                                    </th>
-                                                    <th class="px-6 py-3 text-right text-xs font-medium text-black uppercase border border-black">
-                                                        Actions
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="bg-white divide-y divide-black">
-                    <tr v-for="category in categories.data" :key="category.id" class="hover:bg-gray-50 border-b border-black">
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm font-medium text-black">{{ category.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-black border border-black">
-                            {{ category.description || '-' }}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-black border border-black">
-                            {{ moment(category.created_at).format('DD/MM/YYYY') }}
-                        </td>
-                        <td class="px-6 py-4 text-center text-sm font-medium border border-black">
+            <div v-else class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-black">
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
+                                Name
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
+                                Description
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
+                                Created At
+                            </th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-black uppercase border border-black">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-black uppercase border border-black">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-black">
+                        <tr v-for="category in categories.data" :key="category.id" class="hover:bg-gray-50 border-b border-black">
+                            <td class="px-6 py-4 border border-black">
+                                <div class="text-sm font-medium text-black">{{ category.name }}</div>
+                                </td>
+                            <td class="px-6 py-4 text-sm text-black border border-black">
+                                {{ category.description || '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-black border border-black">
+                                {{ moment(category.created_at).format('DD/MM/YYYY') }}
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm font-medium border border-black">
                             <span 
                                 :class="{
                                     'bg-green-100 text-green-800': category.is_active,
@@ -98,9 +92,9 @@
                             >
                                 {{ category.is_active ? 'Active' : 'Inactive' }}
                             </span>
-                        </td>
-                        <td class="px-6 py-4 text-right text-sm font-medium border border-black">
-                            <Link :href="route('products.categories.edit', category.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium border border-black">
+                                <Link :href="route('products.categories.edit', category.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -127,14 +121,16 @@
                                     }"
                                 />
                             </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
            <div class="mt-4 flex justify-end">
-            <TailwindPagination :data="props.categories" @page-changed="getResults" />
+            {{props.categories}}
+            <TailwindPagination :data="categories" @page-changed="getResults" />
            </div>
         </div>
+    </div>
     </AuthenticatedLayout>
 </template>
 
@@ -186,6 +182,7 @@ function updateRoute() {
 }
 
 function getResults(page = 1) {
+    console.log(page);
     props.filters.page = page;
 }
 
