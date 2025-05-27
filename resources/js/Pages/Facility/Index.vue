@@ -1,22 +1,22 @@
 <template>
     <AuthenticatedLayout title="Facilities">
         <!-- Page Header -->
-        <div class="p-6 bg-white border-b flex justify-between items-center">
+        <div class="p-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-gray-900">Facilities</h1>
             <Link :href="route('facilities.create')"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <i class="fas fa-plus mr-2"></i> Add Facility
             </Link>
         </div>
         
         <!-- Filters Section -->
-        <div class="p-6 bg-white border-b">
+        <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <!-- Search Bar -->
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
                     <input type="text" v-model="search" placeholder="Search by name, type, manager..."
-                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4">
+                        class="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500 py-2 px-4">
                 </div>
                 
                 <!-- District Filter -->
@@ -36,7 +36,7 @@
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Items Per Page</label>
                     <select v-model="per_page"
-                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
                         <option value="10">10 per page</option>
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
@@ -75,8 +75,9 @@
                         <tr v-for="facility in props.facilities.data" :key="facility.id" class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
                                 <div class="flex items-center">
-                                    <i class="fas fa-building mr-2 text-indigo-500"></i>
-                                    <span class="font-medium text-gray-900">{{ facility.name }}</span>
+                                    <Link :href="route('facilities.show', facility.id)">
+                                        {{ facility.name }}
+                                    </Link>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
@@ -124,11 +125,30 @@
                                 <div class="flex space-x-3 justify-center">
                                     <Link :href="route('facilities.edit', facility.id)"
                                         class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100">
-                                        <i class="fas fa-edit"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                            <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                                        </svg>
                                     </Link>
-                                    <button @click="deleteFacility(facility.id)" 
-                                        class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100">
-                                        <i class="fas fa-trash"></i>
+                                    <button
+                                        @click="confirmToggleStatus(facility)"
+                                        class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        :class="{
+                                            'bg-red-600': facility.is_active,
+                                            'bg-green-600': !facility.is_active,
+                                            'opacity-50 cursor-wait': loadingProducts.has(facility.id)
+                                        }"
+                                        :disabled="loadingProducts.has(facility.id)"
+                                    >
+                                        <span 
+                                            class="inline-block h-4 w-4 transform rounded-full transition-transform duration-300"
+                                            :class="{
+                                                'translate-x-6': facility.is_active,
+                                                'translate-x-1': !facility.is_active,
+                                                'bg-white': !loadingProducts.has(facility.id),
+                                                'bg-gray-200 animate-pulse': loadingProducts.has(facility.id)
+                                            }"
+                                        />
                                     </button>
                                 </div>
                             </td>
@@ -152,14 +172,8 @@
                     </Link>
                 </div>
             </div>
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="text-sm text-gray-500" v-if="props.facilities.meta.total">
-                        Showing {{ props.facilities.meta.from }} to {{ props.facilities.meta.to }} of {{
-                            props.facilities.meta.total }} results
-                    </div>
-                    <Pagination :links="props.facilities.meta.links" />
-                </div>
+            <div class="flex items-center justify-end mt-3 mb-6">
+                <TailwindPagination :data="props.facilities" @pagination-change-page="getResults" />
             </div>
         </div>
 
@@ -170,13 +184,17 @@
 import { ref, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import axios from 'axios'
-import { toast } from 'vue3-toastify'
-import 'vue3-toastify/dist/index.css'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
 import '@/Components/multiselect.css'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
+import Swal from 'sweetalert2'
+import { useToast } from 'vue-toastification'
+import { TailwindPagination } from "laravel-vue-pagination";
+
+
+const toast = useToast()
 
 const props = defineProps({
     facilities: {
@@ -197,14 +215,14 @@ const props = defineProps({
     }
 })
 
-const page = ref(props.filters.page)
-const per_page = ref(props.filters.per_page || 10)
-const search = ref(props.filters.search || '')
-const district = ref(props.filters.district || null)
+const per_page = ref(props.filters.per_page)
+const search = ref(props.filters.search)
+const district = ref(props.filters.district)
+const loadingProducts = ref(new Set());
 
 watch([
     () => per_page.value,
-    () => page.value,
+    () => props.filters.page,
     () => search.value,
     () => district.value
 ], () => {
@@ -216,7 +234,7 @@ watch([
 const reloadFacility = () => {
     const query = {}
     if (per_page.value) query.per_page = per_page.value
-    if (page.value) query.page = page.value
+    if (props.filters.page) query.page = props.filters.page
     if (search.value) query.search = search.value
     if (district.value) query.district = district.value
     router.get(route('facilities.index'), query, {
@@ -225,6 +243,42 @@ const reloadFacility = () => {
         only: ['facilities']
     })
 }
+
+const getResults = (page) => {
+   props.filters.page = page;
+}
+
+const confirmToggleStatus = (product) => {
+    const action = product.is_active ? 'deactivate' : 'activate';
+    
+    Swal.fire({
+        title: 'Are you sure?',
+        html: `<p>Do you want to ${action} ${product.name}?</p>`,
+        showConfirmButton: true,
+        icon: undefined,
+        showCancelButton: true,
+        confirmButtonColor: product.is_active ? '#d33' : '#3085d6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: product.is_active ? 'Yes, deactivate!' : 'Yes, activate!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            loadingProducts.value.add(product.id);
+            try {
+                await axios.get(route('facilities.toggle-status', product.id));
+                reloadFacility();
+                Swal.fire(
+                    action === 'activate' ? 'Activated!' : 'Deactivated!',
+                    `Product has been ${action}d.`,
+                    'success'
+                );
+            } catch (error) {
+                toast.error(error.response?.data || 'An error occurred');
+            } finally {
+                loadingProducts.value.delete(product.id);
+            }
+        }
+    });
+};
 
 
 

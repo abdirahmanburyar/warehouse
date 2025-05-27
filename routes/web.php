@@ -345,10 +345,17 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Facility Management Routes
     Route::prefix('facilities')->group(function () {
         Route::get('/', [FacilityController::class, 'index'])->name('facilities.index');
+        Route::get('/{id}/show', [FacilityController::class, 'show'])->name('facilities.show');
         Route::get('/create', [FacilityController::class, 'create'])->name('facilities.create');
         Route::post('/store', [FacilityController::class, 'store'])->name('facilities.store');
         Route::get('/{facility}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
         Route::delete('/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
+        Route::get('/{facility}/toggle-status', [FacilityController::class, 'toggleStatus'])->name('facilities.toggle-status');
+
+        // tabs
+        Route::get('/{facility}/inventory', [FacilityController::class, 'inventory'])->name('facilities.inventory');
+        Route::get('/{facility}/dispence', [FacilityController::class, 'dispence'])->name('facilities.dispence');
+        Route::get('/{facility}/expiry', [FacilityController::class, 'expiry'])->name('facilities.expiry');
     });
 
     // District Management Routes

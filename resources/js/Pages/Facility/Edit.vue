@@ -85,8 +85,7 @@
                     </label>
 
                     <label class="flex items-center">
-                        <Checkbox :checked="form.is_active" :modelValue="form.is_active"
-                            @update:modelValue="(value) => form.is_active = value" />
+                       <input type="checkbox" v-model="form.is_active" />
                         <span class="ml-2 text-sm text-gray-600">Active</span>
                     </label>
                 </div>
@@ -136,39 +135,24 @@ const isSubmitting = ref(false)
 const errors = ref({})
 
 const form = ref({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    facility_type: '',
-    has_cold_storage: false,
-    is_active: true,
-    user_id: '',
-    district: ''
+    id: props.facility.id,
+    name: props.facility.name,
+    email: props.facility.email,
+    phone: props.facility.phone,
+    address: props.facility.address,
+    facility_type: props.facility.facility_type,
+    has_cold_storage: props.facility.has_cold_storage,
+    is_active: !!props.facility.is_active,
+    user_id: props.facility.user_id,
+    district: props.facility.district
 })
 
-onMounted(() => {
-    // Initialize form with facility data
-    form.value = {
-        name: props.facility.name,
-        email: props.facility.email,
-        phone: props.facility.phone,
-        address: props.facility.address,
-        facility_type: props.facility.facility_type,
-        has_cold_storage: props.facility.has_cold_storage,
-        is_active: props.facility.is_active,
-        user_id: props.facility.user_id,
-        district: props.facility.district
-    }
-})
 
 const submitForm = async () => {
     isSubmitting.value = true
-    // Add the facility id to the form data
-    form.value.id = props.facility.id
     
     try {
-        const response = await axios.post(route('facilities.store'), form.value)
+        const response = await axios.post(route('facilities.update', form.value.id), form.value)
         
         Swal.fire({
             title: 'Success!',

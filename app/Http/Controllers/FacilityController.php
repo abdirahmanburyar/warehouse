@@ -21,7 +21,7 @@ class FacilityController extends Controller
                 });
         }
         
-        $facilities = $facilities->with(['user','district'])->paginate($request->per_page ?? 10, ['*'], 'page', $request->get('page', 1));
+        $facilities = $facilities->with(['user'])->paginate($request->per_page ?? 1, ['*'], 'page', $request->get('page', 1));
 
         $facilities->setPath(url()->current());
 
@@ -30,6 +30,47 @@ class FacilityController extends Controller
             'users' => User::get(),
             'filters' => $request->only('page', 'per_page', 'search','district'),
             'districts' => District::pluck('name')->toArray(),
+        ]);
+    }
+
+    public function show(Request $request, $id){
+        $facility = Facility::find($id);
+        return inertia('Facility/Show', [
+            'facility' => $facility,
+            'currentTab' => $request->get('tab', 'inventory')
+        ]);
+    }
+
+    // tabs
+    public function inventory(Request $request, $id){
+        $facility = Facility::find($id);
+        return inertia('Facility/Inventory', [
+            'facility' => $facility,
+            'currentTab' => $request->get('tab', 'inventory')
+        ]);
+    }
+
+    public function dispence(Request $request, $id){
+        $facility = Facility::find($id);
+        return inertia('Facility/Dispence', [
+            'facility' => $facility,
+            'currentTab' => $request->get('tab', 'inventory')
+        ]);
+    }
+
+    public function stock(Request $request, $id){
+        $facility = Facility::find($id);
+        return inertia('Facility/Stock', [
+            'facility' => $facility,
+            'currentTab' => $request->get('tab', 'inventory')
+        ]);
+    }
+
+    public function expiry(Request $request, $id){
+        $facility = Facility::find($id);
+        return inertia('Facility/Expiry', [
+            'facility' => $facility,
+            'currentTab' => $request->get('tab', 'inventory')
         ]);
     }
     
@@ -78,6 +119,17 @@ class FacilityController extends Controller
         try {
             $facility->delete();    
             return response()->json('Facility deleted successfully.', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function toggleStatus(Facility $facility)
+    {
+        try {
+            $facility->is_active = !$facility->is_active;
+            $facility->save();
+            return response()->json('Facility status toggled successfully.', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
