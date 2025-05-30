@@ -341,7 +341,7 @@
 
        <!-- Approve button -->
        <div class="relative">
-        <button @click="changeStatus(props.transfer.id, 'approved')" v-if="props.transfer.status === 'pending'" 
+        <button @click="changeStatus(props.transfer.id, 'approved')" v-if="props.transfer.status === 'pending' && $page.props.auth.can.transfer_approve" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/approved.png" class="w-8 h-8 mr-2" alt="Process" />
            <span class="text-sm font-bold text-white">Approve</span>

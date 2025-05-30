@@ -38,6 +38,11 @@ class TransferController extends Controller
             }
 
             if($transfer->status == 'pending' && $request->status == 'approved'){
+                // Check if user has permission to approve transfers
+                if (!auth()->user()->can('transfer.approve')) {
+                    return response()->json('You do not have permission to approve transfers', 500);
+                }
+                
                 $transfer->update([
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
