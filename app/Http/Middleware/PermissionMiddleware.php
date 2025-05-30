@@ -17,9 +17,9 @@ class PermissionMiddleware
     {
         if (!$request->user() || !$request->user()->can($permission)) {
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'Unauthorized'], 403);
+                return response()->json('Unauthorized', 500);
             }
-            abort(403, 'Unauthorized');
+            abort(500, 'Unauthorized');
         }
 
         return $next($request);
