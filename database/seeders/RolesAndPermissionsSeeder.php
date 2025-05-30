@@ -230,6 +230,19 @@ class RolesAndPermissionsSeeder extends Seeder
             'settings.audit',
         ];
 
+        $assetPermissions = [
+            'asset.view',
+            'asset.create',
+            'asset.edit',
+            'asset.delete',
+            'asset.import',
+            'asset.export',
+            'asset.approve',
+            'asset.reject',
+            'asset.review',
+            'asset.audit',
+        ];
+
         // Combine all permissions
         $allPermissions = array_merge(
             $userPermissions,
@@ -252,7 +265,8 @@ class RolesAndPermissionsSeeder extends Seeder
             $reportPermissions,
             $approvalPermissions,
             $liquidateDisposalPermissions,
-            $settingsPermissions
+            $settingsPermissions,
+            $assetPermissions
         );
 
         // Create permissions if they don't exist

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Facility;
 use App\Notifications\UserRegistered;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,23 @@ use Throwable;
 
 class UserController extends Controller
 {
+    /**
+     * The permission service instance.
+     *
+     * @var \App\Services\PermissionService
+     */
+    protected $permissionService;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param  \App\Services\PermissionService  $permissionService
+     * @return void
+     */
+    public function __construct(PermissionService $permissionService)
+    {
+        $this->permissionService = $permissionService;
+    }
     /**
      * Display a listing of users.
      */
@@ -124,20 +142,74 @@ class UserController extends Controller
                 $userData
             );
             
+            // Store original permissions and roles for comparison
+            $originalDirectPermissions = $isNewUser ? [] : $user->getDirectPermissions()->pluck('id')->toArray();
+            $originalRoleIds = $isNewUser ? [] : $user->roles()->pluck('id')->toArray();
+            
             // Assign roles if provided
             if ($request->has('role_ids') && is_array($request->role_ids) && count($request->role_ids) > 0) {
                 // Sync roles (this will detach any existing roles not in the array)
                 $user->syncRoles($request->role_ids);
+                
+                // Track role changes for events
+                $addedRoleIds = array_diff($request->role_ids, $originalRoleIds);
+                $removedRoleIds = array_diff($originalRoleIds, $request->role_ids);
+                
+                // Get role names for added roles
+                if (!empty($addedRoleIds)) {
+                    $addedRoles = Role::whereIn('id', $addedRoleIds)->get();
+                    foreach ($addedRoles as $role) {
+                        // Log role addition
+                        \Illuminate\Support\Facades\Log::info("Role added to user", [
+                            'user_id' => $user->id,
+                            'role_id' => $role->id,
+                            'role_name' => $role->name
+                        ]);
+                    }
+                }
+                
+                // Get role names for removed roles
+                if (!empty($removedRoleIds)) {
+                    $removedRoles = Role::whereIn('id', $removedRoleIds)->get();
+                    foreach ($removedRoles as $role) {
+                        // Log role removal
+                        \Illuminate\Support\Facades\Log::info("Role removed from user", [
+                            'user_id' => $user->id,
+                            'role_id' => $role->id,
+                            'role_name' => $role->name
+                        ]);
+                    }
+                }
             }
             
             // Assign direct permissions if provided
-            if ($request->has('direct_permissions') && is_array($request->direct_permissions)) {
-                // Directly sync all permissions from the request
-                // This will save all direct permissions, even if they overlap with role permissions
-                $user->syncPermissions($request->direct_permissions);
-            } else {
-                // If no direct permissions are provided, remove all direct permissions
-                $user->syncPermissions([]);
+            $newDirectPermissions = $request->has('direct_permissions') && is_array($request->direct_permissions) 
+                ? $request->direct_permissions 
+                : [];
+                
+            // Track permission changes for events
+            $addedPermissionIds = array_diff($newDirectPermissions, $originalDirectPermissions);
+            $removedPermissionIds = array_diff($originalDirectPermissions, $newDirectPermissions);
+            
+            // Sync permissions
+            $user->syncPermissions($newDirectPermissions);
+            
+            // Process added permissions
+            if (!empty($addedPermissionIds)) {
+                $addedPermissions = Permission::whereIn('id', $addedPermissionIds)->get();
+                foreach ($addedPermissions as $permission) {
+                    // Dispatch event for each added permission
+                    $this->permissionService->givePermissionTo($user, $permission->name);
+                }
+            }
+            
+            // Process removed permissions
+            if (!empty($removedPermissionIds)) {
+                $removedPermissions = Permission::whereIn('id', $removedPermissionIds)->get();
+                foreach ($removedPermissions as $permission) {
+                    // Dispatch event for each removed permission
+                    $this->permissionService->revokePermissionTo($user, $permission->name);
+                }
             }
             
             // Reload the user with relationships for the email
