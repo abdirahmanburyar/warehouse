@@ -290,16 +290,11 @@ const setupPermissionChangeListener = () => {
     const channel = window.Echo.private(`user.${currentUserId}`);
     
     // Listen for permission change events
-    channel.listen('permissions-changed', (event) => {
+    channel.listen('.permissions-changed', (event) => {
         console.log('🔔 Permission changed event received:', event);
         handlePermissionEvent(event);
     });
 
-    // Also listen for the class name format
-    channel.listen('GlobalPermissionChanged', (event) => {
-        console.log('🔔 Permission changed event received (GlobalPermissionChanged):', event);
-        handlePermissionEvent(event);
-    });
 };
 
 // Function to handle the permission event

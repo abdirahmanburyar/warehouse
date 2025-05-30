@@ -20,26 +20,6 @@ use Throwable;
 
 class UserController extends Controller
 {
-    /**
-     * The permission service instance.
-     *
-     * @var \App\Services\PermissionService
-     */
-    protected $permissionService;
-
-    /**
-     * Create a new controller instance.
-     *
-     * @param  \App\Services\PermissionService  $permissionService
-     * @return void
-     */
-    public function __construct(PermissionService $permissionService)
-    {
-        $this->permissionService = $permissionService;
-    }
-    /**
-     * Display a listing of users.
-     */
     public function index(Request $request)
     {
         $query = User::with(['roles', 'warehouse', 'facility'])->latest();

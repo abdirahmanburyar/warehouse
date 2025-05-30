@@ -37,7 +37,7 @@ class GlobalPermissionChanged implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        // Use a private channel with the user ID to ensure only the specific user receives the event
+        logger()->info("buryar {$this->user->id}");        // Use a private channel with the user ID to ensure only the specific user receives the event
         return new PrivateChannel('user.' . $this->user->id);
     }
 
