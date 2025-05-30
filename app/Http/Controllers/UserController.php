@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Facility;
+use App\Notifications\UserRegistered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -92,9 +93,15 @@ class UserController extends Controller
                 'facility_id' => $request->facility_id,
             ];
 
+            // Store the original password for email notification
+            $originalPassword = null;
             if ($request->filled('password')) {
+                $originalPassword = $request->password;
                 $userData['password'] = Hash::make($request->password);
             }
+            
+            // Check if this is a new user or an update
+            $isNewUser = !$request->id;
             
             // Create or update the user
             $user = User::updateOrCreate(
@@ -110,12 +117,21 @@ class UserController extends Controller
             
             // Assign direct permissions if provided
             if ($request->has('direct_permissions') && is_array($request->direct_permissions)) {
-                // Get the permissions that aren't already granted by the role
-                $rolePermissions = $user->getPermissionsViaRoles()->pluck('id')->toArray();
-                $directPermissions = array_diff($request->direct_permissions, $rolePermissions);
-                
-                // Sync the direct permissions (this will remove any existing direct permissions not in the array)
-                $user->syncPermissions($directPermissions);
+                // Directly sync all permissions from the request
+                // This will save all direct permissions, even if they overlap with role permissions
+                $user->syncPermissions($request->direct_permissions);
+            } else {
+                // If no direct permissions are provided, remove all direct permissions
+                $user->syncPermissions([]);
+            }
+            
+            // Reload the user with relationships for the email
+            $user->load(['roles', 'warehouse', 'facility']);
+            
+            // Send email notification for new users asynchronously
+            if ($isNewUser) {
+                // Queue the notification to prevent timeout issues
+                $user->notifyNow(new UserRegistered($user, $originalPassword));
             }
             
             DB::commit();
