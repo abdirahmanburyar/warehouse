@@ -24,6 +24,7 @@ class AvarageMonthlyconsumption extends Model
     protected $fillable = [
         'facility_id',
         'product_id',
+        'amc',
         'month_year',
         'quantity'
     ];

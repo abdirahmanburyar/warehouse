@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('facility_id')->constrained('facilities')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('month_year');
+            $table->integer('amc')->default(0);
             $table->integer('quantity')->default(0)->comment('Actual consumption quantity for this month');
             $table->timestamps();
             

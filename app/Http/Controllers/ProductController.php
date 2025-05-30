@@ -79,7 +79,7 @@ class ProductController extends Controller
 
         $query->with('dosage','category');
 
-        $products = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $products = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $products->setPath(url()->current()); // Force Laravel to use full URLs
 

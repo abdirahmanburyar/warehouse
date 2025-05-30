@@ -14,14 +14,17 @@ return new class extends Migration
         Schema::create('transfers', function (Blueprint $table) {
             $table->id();
             $table->string('transferID')->unique()->nullable();            
-            $table->foreignId('from_warehouse_id')->constrained('warehouses')->onDelete('cascade');
+            $table->foreignId('from_warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->foreignId('to_warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->foreignId('from_facility_id')->nullable()->constrained('facilities')->onDelete('cascade');
             $table->foreignId('to_facility_id')->nullable()->constrained('facilities')->onDelete('cascade');
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('cascade');
+            $table->timestamp('approved_at')->nullable();
             $table->foreignId('dispatched_by')->nullable()->constrained('users')->onDelete('cascade');
+            $table->timestamp('dispatched_at')->nullable();
             $table->foreignId('rejected_by')->nullable()->constrained('users')->onDelete('cascade');
+            $table->timestamp('rejected_at')->nullable();
             $table->integer('quantity');
             $table->date('transfer_date');
             $table->string('status')->default('pending'); // pending, in_process, dispatched, approved, rejected, transfered

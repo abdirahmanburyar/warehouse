@@ -206,7 +206,7 @@ class TransferController extends Controller
     public function index(Request $request)
     {
         // Start building the query
-        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility', 'toFacility', 'items');
+        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items');
         
         // Apply filters
         // Filter by tab/status
@@ -428,10 +428,10 @@ class TransferController extends Controller
     public function show($id){
         $transfer = Transfer::where('id', $id)->with([
             'items.product', 
-            'fromWarehouse:id,name', 
-            'toWarehouse:id,name', 
-            'fromFacility:id,name', 
-            'toFacility:id,name'
+            'fromWarehouse', 
+            'toWarehouse', 
+            'fromFacility', 
+            'toFacility'
         ])->first();
         return inertia('Transfer/Show', [
             'transfer' => $transfer
