@@ -331,6 +331,7 @@ const submit = async () => {
             });
         })
         .catch((error) => {
+            console.error(error.response);
             loading.value = false;
             toast.error(error.response?.data || 'Failed to create transfer');
             Swal.fire({

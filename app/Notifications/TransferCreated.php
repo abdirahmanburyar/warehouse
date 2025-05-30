@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
+use Carbon\Carbon;
 
 class TransferCreated extends Notification implements ShouldQueue
 {
@@ -69,7 +70,7 @@ class TransferCreated extends Notification implements ShouldQueue
             ->line(new HtmlString('<strong>To:</strong> ' . $destinationType . ' - ' . $destinationName))
             ->line(new HtmlString('<strong>Total Quantity:</strong> ' . $this->transfer->quantity))
             ->line(new HtmlString('<strong>Status:</strong> ' . ucfirst($this->transfer->status)))
-            ->line(new HtmlString('<strong>Created Date:</strong> ' . $this->transfer->transfer_date->format('Y-m-d')))
+            ->line(new HtmlString('<strong>Created Date:</strong> ' . Carbon::parse($this->transfer->transfer_date)->format('d/m/Y')))
             ->line(new HtmlString('<strong>Items:</strong>'))
             ->line(new HtmlString($itemsTable))
             ->action('View Transfer Details', $transferUrl)

@@ -65,7 +65,6 @@ class TransferController extends Controller
             return response()->json("Transfer status changed successfully", 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            logger()->error($e->getMessage());
             return response()->json($e->getMessage(), 500);
         }
     }
@@ -362,13 +361,8 @@ class TransferController extends Controller
             $transferItem->delete();
             
             return response()->json('Transfer item deleted successfully');
-        } catch (\Exception $e) {
-            logger()->error('Error deleting transfer item: ' . $e->getMessage(), [
-                'item_id' => $id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json($e->getMessage(), 500);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
         }
     }
     
@@ -464,16 +458,10 @@ class TransferController extends Controller
             
             // Log the count of items found
             $count = $result->count();
-            logger()->info("Found {$count} inventory items for {$request->source_type} ID: {$request->source_id}");
             
             return response()->json($result, 200);
-        } catch (\Exception $e) {
-            logger()->error('Error in getInventories: ' . $e->getMessage(), [
-                'source_type' => $request->source_type,
-                'source_id' => $request->source_id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json(['error' => $e->getMessage()], 500);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 
@@ -676,7 +664,6 @@ class TransferController extends Controller
             // Check if all items.quantity and items.received_quantity are equal
             foreach ($request->items as $item) {
                 $areEqual = (int) $item['quantity'] == array_sum(array_column($item['backorders'], 'quantity')) + (int) $item['received_quantity'];
-                logger()->info('Item ID: ' . $item['id'] . ', Equal check: ' . ($areEqual ? 'true' : 'false'));
                 if(!$areEqual) {
                     return response()->json([
                         'id' => $item['id'],

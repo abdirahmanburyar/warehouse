@@ -21,7 +21,7 @@ class FacilityController extends Controller
                 });
         }
         
-        $facilities = $facilities->with(['user'])->paginate($request->per_page ?? 1, ['*'], 'page', $request->get('page', 1));
+        $facilities = $facilities->with(['user'])->paginate($request->per_page ?? 10, ['*'], 'page', $request->get('page', 1));
 
         $facilities->setPath(url()->current());
 
