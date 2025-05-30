@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Events\TransferStatusChanged;
+use App\Listeners\TransferStatusChangedListener;
 use App\Listeners\StoreUserLoginTime;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
@@ -22,6 +24,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         Login::class => [
             StoreUserLoginTime::class,
+        ],
+        TransferStatusChanged::class => [
+            TransferStatusChangedListener::class,
         ],
     ];
 

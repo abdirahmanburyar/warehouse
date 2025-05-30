@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TransferCreated;
+use App\Events\TransferStatusChanged;
 use Illuminate\Support\Facades\Log;
 
 class TransferController extends Controller
@@ -36,8 +37,12 @@ class TransferController extends Controller
             if(!$transfer){
                 return response()->json("Not Found or you are authorized to take this action", 500);
             }
+            
+            // Store the old status before making any changes
+            $oldStatus = $transfer->status;
+            $newStatus = $request->status;
 
-            if($transfer->status == 'pending' && $request->status == 'approved'){
+            if($oldStatus == 'pending' && $newStatus == 'approved'){
                 // Check if user has permission to approve transfers
                 if (!auth()->user()->can('transfer.approve')) {
                     return response()->json('You do not have permission to approve transfers', 500);
@@ -48,20 +53,29 @@ class TransferController extends Controller
                     'approved_by' => auth()->id(),
                     'approved_at' => now()
                 ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
-            if($transfer->status == 'approved' && $request->status == 'in_process' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
+            if($oldStatus == 'approved' && $newStatus == 'in_process' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
                 $transfer->update([
                     'status' => 'in_process',
                 ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
 
-            if($transfer->status == 'in_process' && $request->status == 'dispatched' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
+            if($oldStatus == 'in_process' && $newStatus == 'dispatched' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
                 $transfer->update([
                     'status' => 'dispatched',
                     'dispatched_by' => auth()->id(),    
                     'dispatched_at' => now()
                 ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             DB::commit();

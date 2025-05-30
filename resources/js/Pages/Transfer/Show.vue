@@ -745,7 +745,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -1242,4 +1242,35 @@ const statusClasses = {
 };
 
 const statusProgress = computed(() => getStatusProgress(props.transfer.status));
+
+// Listen for transfer status changes via Echo
+onMounted(() => {
+  // Only set up the listener if Echo is available
+  if (window.Echo) {
+    window.Echo.private(`transfer.${props.transfer.id}`)
+      .listen('.TransferStatusChanged', (e) => {
+        console.log('Transfer status changed event received:', e);
+        
+        // Show a toast notification
+        toast.info(`Transfer status changed from ${e.oldStatus} to ${e.newStatus}`);
+        
+        // Update the transfer status in the UI
+        if (props.transfer.status !== e.newStatus) {
+          props.transfer.status = e.newStatus;
+          
+          // Reload the page to get the latest data
+          setTimeout(() => {
+            router.reload();
+          }, 2000);
+        }
+      });
+  }
+});
+
+// Clean up the listener when component is unmounted
+onUnmounted(() => {
+  if (window.Echo) {
+    window.Echo.leave(`transfer.${props.transfer.id}`);
+  }
+});
 </script>
