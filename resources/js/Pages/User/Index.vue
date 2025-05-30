@@ -35,27 +35,7 @@
             </div>
         </div>
 
-        <!-- Bulk Actions -->
-        <div v-show="selectedItems.length > 0" 
-            class="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
-            <span class="text-sm text-gray-700">
-                {{ selectedItems.length }} user(s) selected
-            </span>
-            <div class="flex items-center gap-3">
-                <button 
-                    @click="toggleSelectedStatus(true)"
-                    class="px-3 py-1 text-sm text-green-700 hover:text-green-800 hover:bg-green-50 rounded"
-                >
-                    Activate
-                </button>
-                <button 
-                    @click="toggleSelectedStatus(false)"
-                    class="px-3 py-1 text-sm text-red-700 hover:text-red-800 hover:bg-red-50 rounded"
-                >
-                    Deactivate
-                </button>
-            </div>
-        </div>
+        <!-- No bulk actions needed -->
 
         <!-- Users Table -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -63,16 +43,6 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left">
-                                <label class="inline-flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        :checked="isAllSelected"
-                                        @change="toggleAll"
-                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                    />
-                                </label>
-                            </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Name
                             </th>
@@ -86,7 +56,7 @@
                                 Warehouse
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
+                                Facility
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
@@ -94,17 +64,7 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="user in users.data" :key="user.id" :class="{ 'bg-blue-50': selectedItems.includes(user.id) }">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <label class="inline-flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        v-model="selectedItems"
-                                        :value="user.id"
-                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                    />
-                                </label>
-                            </td>
+                        <tr v-for="user in users.data" :key="user.id">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
                             </td>
@@ -122,26 +82,25 @@
                                 <div class="text-sm text-gray-500">{{ user.warehouse?.name }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span :class="{
-                                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full': true,
-                                    'bg-green-100 text-green-800': user.is_active,
-                                    'bg-red-100 text-red-800': !user.is_active
-                                }">
-                                    {{ user.is_active ? 'Active' : 'Inactive' }}
-                                </span>
+                                <div class="text-sm text-gray-500">{{ user.facility?.name }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-4">
                                 <Link 
                                     :href="route('settings.users.edit', user.id)"
-                                    class="text-blue-600 hover:text-blue-900 mr-4"
+                                    class="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                                    title="Edit User"
                                 >
-                                    Edit
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
                                 </Link>
-                                <button 
-                                    @click="confirmDelete(user)"
-                                    class="text-red-600 hover:text-red-900"
-                                >
-                                    Delete
+                                
+                                <button @click="confirmToggleStatus(user)" class="relative inline-flex items-center cursor-pointer" :title="user.is_active ? 'Deactivate User' : 'Activate User'">
+                                    <div class="w-10 h-5 rounded-full after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all" 
+                                        :class="{ 
+                                            'bg-green-500 after:translate-x-full after:border-white': user.is_active, 
+                                            'bg-red-500': !user.is_active 
+                                        }"></div>
                                 </button>
                             </td>
                         </tr>
@@ -154,31 +113,6 @@
                 <Pagination :links="users.links" />
             </div>
         </div>
-
-        <!-- Delete Confirmation Modal -->
-        <Modal :show="showDeleteModal" @close="closeDeleteModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Delete User
-                </h2>
-
-                <p class="mt-1 text-sm text-gray-600">
-                    Are you sure you want to delete this user? This action cannot be undone.
-                </p>
-
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="closeDeleteModal" class="mr-3">
-                        Cancel
-                    </SecondaryButton>
-                    <DangerButton 
-                        @click="deleteUser"
-                        :disabled="processing"
-                    >
-                        Delete User
-                    </DangerButton>
-                </div>
-            </div>
-        </Modal>
     </UserAuthTab>
 </template>
 
@@ -186,8 +120,9 @@
 import { ref, computed, watch } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 import UserAuthTab from '@/Layouts/UserAuthTab.vue';
-import Modal from '@/Components/Modal.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
@@ -200,24 +135,7 @@ const props = defineProps({
 
 const toast = useToast();
 const search = ref(props.filters?.search || '');
-const selectedItems = ref([]);
-const showDeleteModal = ref(false);
-const userToDelete = ref(null);
 const processing = ref(false);
-
-// Computed property to check if all items are selected
-const isAllSelected = computed(() => {
-    return selectedItems.value.length === props.users.data.length;
-});
-
-// Toggle all selections
-const toggleAll = () => {
-    if (isAllSelected.value) {
-        selectedItems.value = [];
-    } else {
-        selectedItems.value = props.users.data.map(user => user.id);
-    }
-};
 
 // Debounced search
 let searchTimeout;
@@ -232,45 +150,59 @@ watch(search, (value) => {
     }, 300);
 });
 
-// Bulk status toggle
-const toggleSelectedStatus = async (status) => {
-    if (!selectedItems.value.length) return;
+// No bulk toggle functionality needed
 
+// Confirm toggle user status with SweetAlert
+const confirmToggleStatus = (user) => {
+    const newStatus = !user.is_active;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    Swal.fire({
+        title: `${action.charAt(0).toUpperCase() + action.slice(1)} User?`,
+        text: `Are you sure you want to ${action} ${user.name}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: newStatus ? '#10B981' : '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: `Yes, ${action} user!`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            toggleUserStatus(user, newStatus);
+        }
+    });
+};
+
+// Toggle individual user status
+const toggleUserStatus = async (user, newStatus) => {
     try {
-        await axios.post(route('users.bulk-status'), {
-            user_ids: selectedItems.value,
-            is_active: status
+        processing.value = true;
+        
+        const response = await axios.post(route('users.toggle-status'), {
+            user_id: user.id,
+            is_active: newStatus
         });
-
-        router.reload({ only: ['users'] });
-        selectedItems.value = [];
-        toast.success(`Successfully ${status ? 'activated' : 'deactivated'} selected users`);
+        
+        if (response.data.success) {
+            // Update the user status locally to avoid a full page reload
+            user.is_active = newStatus;
+            
+            Swal.fire({
+                title: 'Success!',
+                text: response.data.message,
+                icon: 'success',
+                confirmButtonColor: '#10B981'
+            });
+        } else {
+            throw new Error(response.data.message || 'Failed to update user status');
+        }
     } catch (error) {
-        toast.error('Failed to update user status');
-    }
-};
-
-// Delete user functions
-const confirmDelete = (user) => {
-    userToDelete.value = user;
-    showDeleteModal.value = true;
-};
-
-const closeDeleteModal = () => {
-    showDeleteModal.value = false;
-    userToDelete.value = null;
-};
-
-const deleteUser = async () => {
-    if (!userToDelete.value) return;
-
-    processing.value = true;
-    try {
-        await router.delete(route('users.destroy', userToDelete.value.id));
-        closeDeleteModal();
-        toast.success('User deleted successfully');
-    } catch (error) {
-        toast.error('Failed to delete user');
+        Swal.fire({
+            title: 'Error!',
+            text: error.message || 'Failed to update user status',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+        console.error(error);
     } finally {
         processing.value = false;
     }

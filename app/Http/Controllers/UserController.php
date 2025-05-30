@@ -269,4 +269,69 @@ class UserController extends Controller
 
         return back()->with('success', 'Roles assigned successfully');
     }
+    
+    /**
+     * Toggle a user's active status.
+     */
+    public function toggleStatus(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'is_active' => 'required|boolean',
+        ]);
+        
+        try {
+            $user = User::findOrFail($request->user_id);
+            $user->is_active = $request->is_active;
+            $user->save();
+            
+            $statusText = $request->is_active ? 'activated' : 'deactivated';
+            
+            return response()->json([
+                'success' => true,
+                'message' => "User {$statusText} successfully",
+                'user' => $user
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Toggle status for multiple users.
+     */
+    public function bulkToggleStatus(Request $request)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+            'is_active' => 'required|boolean',
+        ]);
+        
+        try {
+            DB::beginTransaction();
+            
+            $count = User::whereIn('id', $request->user_ids)
+                ->update(['is_active' => $request->is_active]);
+            
+            DB::commit();
+            
+            $statusText = $request->is_active ? 'activated' : 'deactivated';
+            
+            return response()->json([
+                'success' => true,
+                'message' => "{$count} users {$statusText} successfully"
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -92,6 +92,15 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::delete('/users/{user}', [UserController::class, 'destroy'])
             ->middleware(PermissionMiddleware::class . ':user.delete')
             ->name('users.destroy');
+            
+        // User status routes
+        Route::post('/users/toggle-status', [UserController::class, 'toggleStatus'])
+            ->middleware(PermissionMiddleware::class . ':user.edit')
+            ->name('users.toggle-status');
+            
+        Route::post('/users/bulk-status', [UserController::class, 'bulkToggleStatus'])
+            ->middleware(PermissionMiddleware::class . ':user.edit')
+            ->name('users.bulk-status');
     });
 
     // Role Management Routes
