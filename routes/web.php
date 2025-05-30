@@ -73,6 +73,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::get('/unauthorized', function () {
         return Inertia::render('Unauthorized');
     })->name('unauthorized');
+    
+    // Test route for permission events
+    Route::get('/test-permission-event', [\App\Http\Controllers\TestController::class, 'testPermissionEvent'])
+        ->name('test.permission-event');
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

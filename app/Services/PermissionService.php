@@ -40,6 +40,10 @@ class PermissionService
                 'changed_by' => Auth::user() ? Auth::user()->name : 'System'
             ]);
             
+            // Update the permission_updated_at timestamp
+            $user->permission_updated_at = now();
+            $user->save();
+            
             event($event);
         }
     }
@@ -74,6 +78,10 @@ class PermissionService
                 'action' => 'removed',
                 'changed_by' => Auth::user() ? Auth::user()->name : 'System'
             ]);
+            
+            // Update the permission_updated_at timestamp
+            $user->permission_updated_at = now();
+            $user->save();
             
             event($event);
         }

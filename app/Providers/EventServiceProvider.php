@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Events\UserPermissionChanged;
-use App\Listeners\HandleUserPermissionChange;
 use App\Listeners\StoreUserLoginTime;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
@@ -22,9 +20,6 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        UserPermissionChanged::class => [
-            HandleUserPermissionChange::class,
-        ],
         Login::class => [
             StoreUserLoginTime::class,
         ],
@@ -35,7 +30,8 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register observers
+        \App\Models\User::observe(\App\Observers\UserObserver::class);
     }
 
     /**

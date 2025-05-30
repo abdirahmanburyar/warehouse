@@ -1,7 +1,6 @@
 <template>
     <div class="app-container">
-        <!-- Permission change listener with debug mode enabled -->
-        <PermissionListener v-if="$page.props.auth.user" :userId="$page.props.auth.user.id" :debug="true" />
+        <!-- Permission changes are now handled globally in app.js -->
         <!-- Sidebar -->
         <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" >
             <div class="white-box" style="border-color: white;">
@@ -242,7 +241,6 @@
 import { ref, onMounted, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import PermissionListener from '@/Components/PermissionListener.vue';
 
 const props = defineProps({
     title: {

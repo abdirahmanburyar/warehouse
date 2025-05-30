@@ -48,9 +48,9 @@ class HandleInertiaRequests extends Middleware
     }
     
     /**
-     * Get user permissions as a flattened object for easier checking in Vue components
-     * 
-     * @param Request $request
+     * Get the user permissions.
+     *
+     * @param  \Illuminate\Http\Request  $request
      * @return array
      */
     protected function getUserPermissions(Request $request): array
@@ -58,17 +58,26 @@ class HandleInertiaRequests extends Middleware
         if (!$request->user()) {
             return [];
         }
-        
-        $permissions = $request->user()->getAllPermissions()->pluck('name')->toArray();
-        $formattedPermissions = [];
-        
-        // Convert permissions to a flattened object for easier checking in Vue
-        // e.g., 'order.view' becomes 'order_view' => true
+
+        // Get all permissions for the user
+        $permissions = $request->user()->getAllPermissions()->pluck('name');
+
+        // Add debug log
+        \Illuminate\Support\Facades\Log::debug('User permissions being passed to frontend', [
+            'user_id' => $request->user()->id,
+            'permissions_count' => $permissions->count(),
+            'permissions' => $permissions->toArray()
+        ]);
+
+        // Convert to a flattened can object for easier checking in Vue
+        // e.g. 'order.view' becomes 'order_view' => true
+        $flattenedPermissions = [];
         foreach ($permissions as $permission) {
+            // Convert dot notation to underscore for Vue compatibility
             $key = str_replace('.', '_', $permission);
-            $formattedPermissions[$key] = true;
+            $flattenedPermissions[$key] = true;
         }
-        
-        return $formattedPermissions;
+
+        return $flattenedPermissions;
     }
 }

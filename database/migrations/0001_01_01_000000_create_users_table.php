@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignIdFor(Facility::class)->nullable()->index();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('permission_updated_at')->nullable();
             $table->string('password');
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
