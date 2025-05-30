@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use App\Models\User;
+use App\Notifications\TransferCreated;
 use App\Notifications\TransferStatusUpdated;
 
 class TransferStatusChangedListener implements ShouldQueue
@@ -39,24 +40,24 @@ class TransferStatusChangedListener implements ShouldQueue
         // Here you can add additional logic based on the status change
         // For example, sending notifications to relevant users
         
-        // Example: You could notify the warehouse manager when a transfer is approved
+        // Notify the warehouse manager when a transfer is approved
         if ($event->oldStatus === 'pending' && $event->newStatus === 'approved') {
             // Notify source warehouse manager
             if ($event->transfer->fromWarehouse && $event->transfer->fromWarehouse->manager_email) {
                 Notification::route('mail', $event->transfer->fromWarehouse->manager_email)
-                    ->notify(new TransferCreated($event->transfer));
+                    ->notify(new TransferStatusUpdated($event->transfer, $event->oldStatus, $event->newStatus, $event->changedBy));
             }
         }
         
-        // Example: You could notify the destination when a transfer is dispatched
+        // Notify the destination when a transfer is dispatched
         if ($event->oldStatus === 'in_process' && $event->newStatus === 'dispatched') {
             // Notify destination
             if ($event->transfer->toWarehouse && $event->transfer->toWarehouse->manager_email) {
                 Notification::route('mail', $event->transfer->toWarehouse->manager_email)
-                    ->notify(new TransferCreated($event->transfer));
+                    ->notify(new TransferStatusUpdated($event->transfer, $event->oldStatus, $event->newStatus, $event->changedBy));
             } elseif ($event->transfer->toFacility && $event->transfer->toFacility->email) {
                 Notification::route('mail', $event->transfer->toFacility->email)
-                    ->notify(new TransferCreated($event->transfer));
+                    ->notify(new TransferStatusUpdated($event->transfer, $event->oldStatus, $event->newStatus, $event->changedBy));
             }
         }
     }

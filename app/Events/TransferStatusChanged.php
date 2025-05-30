@@ -11,7 +11,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class TransferStatusChanged
+class TransferStatusChanged implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -45,5 +45,15 @@ class TransferStatusChanged
     public function broadcastOn()
     {
         return new PrivateChannel('transfer.'.$this->transfer->id);
+    }
+    
+    /**
+     * The event's broadcast name.
+     *
+     * @return string
+     */
+    public function broadcastAs()
+    {
+        return 'TransferStatusChanged';
     }
 }
