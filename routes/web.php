@@ -314,12 +314,20 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // Route to delete a transfer item
         Route::delete('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
         
-        // Bulk Status Change Routes
-        Route::post('/bulk-approve', [TransferController::class, 'bulkApprove'])->name('transfers.bulkApprove');
-        Route::post('/bulk-reject', [TransferController::class, 'bulkReject'])->name('transfers.bulkReject');
-        Route::post('/bulk-in-process', [TransferController::class, 'bulkInProcess'])->name('transfers.bulkInProcess');
-        Route::post('/bulk-dispatch', [TransferController::class, 'bulkDispatch'])->name('transfers.bulkDispatch');
-        Route::post('/bulk-complete', [TransferController::class, 'bulkComplete'])->name('transfers.bulkComplete');
+         
+        // Back order functionality
+        Route::post('/backorder', [TransferController::class, 'backorder'])->name('transfers.backorder');
+        Route::post('/remove-back-order', [TransferController::class, 'removeBackOrder'])->name('transfers.remove-back-order');
+        
+        // Item status change
+        Route::post('/change-item-status', [TransferController::class, 'changeItemStatus'])->name('transfers.changeItemStatus');
+        
+        // receive transfer
+        Route::post('/receive', [TransferController::class, 'receiveTransfer'])->name('transfers.receiveTransfer');
+        Route::get('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
+
+        // update transfer item quantity
+        Route::post('/update-item', [TransferController::class, 'updateItem'])->name('transfers.update-item');
     });
 
     // Purchase Order Management Routes

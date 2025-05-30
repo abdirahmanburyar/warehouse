@@ -13,6 +13,7 @@ import '@/Components/multiselect.css';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import Swal from 'sweetalert2';
+import moment from 'moment';
 
 const toast = useToast();
 
@@ -47,14 +48,14 @@ const form = ref({
     destination_id: null,
     items: [
         {
-            inventory_id: null,
+            id: null,
             product_id: '',
             product: null,
             quantity: 0,
             available_quantity: 0,
             batch_number: '',
             barcode: '',
-            expire_date: null,
+            expiry_date: null,
             uom: ''
         }
     ]
@@ -84,13 +85,13 @@ const handleSourceSelect = async (selected) => {
 
     // Reset the items array to have only one empty item when source changes
     form.value.items = [{
-        inventory_id: null,
+        id: null,
         product_id: null,
         product: null,
         quantity: 0,
         batch_number: '',
         barcode: '',
-        expire_date: null,
+        expiry_date: null,
         uom: '',
         available_quantity: 0
     }];
@@ -150,8 +151,6 @@ const fetchInventories = async () => {
         }
     })
         .then(response => {
-            console.log('[DEBUG] Inventory response:', response.data);
-
             if (!response.data || !Array.isArray(response.data)) {
                 throw new Error('Invalid response format');
             }
@@ -162,7 +161,7 @@ const fetchInventories = async () => {
             });
 
             // Update available inventories
-            console.log(validItems);
+            console.log("validItems",validItems);
 
             availableInventories.value = validItems;
 
@@ -316,15 +315,18 @@ watch(destinationType, (newValue) => {
 });
 
 const submit = async () => {
+    console.log('Form data:', form.value);
 
     loading.value = true;
 
     console.log('Submitting transfer with payload:', form.value);
     await axios.post(route('transfers.store'), form.value)
         .then((response) => {
+            loading.value = false;
             console.log(response.data);            
         })
         .catch((error) => {
+            loading.value = false;
             console.log(error);            
         });
 };
@@ -335,22 +337,26 @@ function handleProductSelect(index, selected) {
     //    console.log(selected);
     item.uom = selected.uom;
     item.batch_number = selected.batch_number;
+    item.product_id = selected.product?.id;
+    item.product = selected.product;
+    item.product_name = selected.product?.name;
     item.barcode = selected.barcode;
-    item.expire_date = selected.expire_date;
+    item.expiry_date = selected.expiry_date;
+    item.id = selected.id;
     item.available_quantity = selected.quantity;
 
 }
 
 function addNewItem() {
     form.value.items.push({
-        inventory_id: null,
+        id: null,
         product_id: null,
         product: null,
         product_name: '',
         quantity: 0,
         batch_number: '',
         barcode: '',
-        expire_date: null,
+        expiry_date: null,
         uom: '',
         available_quantity: 0
     });
@@ -407,7 +413,6 @@ function checkQuantity(index) {
         <div class="mb-5">
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-semibold mb-6">Transfer Item</h2>
-
                 <div class="mb-4">
                     <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
                         <div class="flex">
@@ -539,8 +544,8 @@ function checkQuantity(index) {
                                         <div>{{ item.batch_number }}</div>
                                         <div>Batch Number: {{ item.batch_number }}</div>
                                         <div>Barcode: {{ item.barcode }}</div>
-                                        <div>Expire Date: {{ item.expire_date ?
-                                            moment(item.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                        <div>Expire Date: {{ item.expiry_date ?
+                                            moment(item.expiry_date).format('DD/MM/YYYY') : 'N/A' }}
                                         </div>
                                     </td>
 
