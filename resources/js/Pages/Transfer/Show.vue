@@ -359,7 +359,7 @@
 
        <!-- Process button -->
        <div class="relative">
-         <button @click="changeStatus(props.transfer.id, 'in_process')" v-if="props.transfer.status === 'approved'" 
+         <button @click="changeStatus(props.transfer.id, 'in_process')" v-if="props.transfer.status === 'approved'  && currentUserWarehouse.id == props.transfer?.from_warehouse_id" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/inprocess.png" class="w-8 h-8 mr-2" alt="Process" />
            <span class="text-sm font-bold text-white">Process</span>
@@ -377,7 +377,7 @@
 
        <!-- Dispatch button -->
        <div class="relative">
-         <button @click="changeStatus(props.transfer.id, 'dispatched')" v-if="props.transfer.status === 'in_process'" 
+         <button @click="changeStatus(props.transfer.id, 'dispatched')" v-if="props.transfer.status === 'in_process' && currentUserWarehouse.id == props.transfer?.from_warehouse_id" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/dispatch.png" class="w-8 h-8 mr-2" alt="Dispatch" />
            <span class="text-sm font-bold text-white">Dispatch</span>
