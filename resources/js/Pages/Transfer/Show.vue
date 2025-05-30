@@ -276,7 +276,7 @@
            </td>
            <td class="px-6 py-4 text-sm border border-black">
              <input type="number" v-model="item.quantity" min="1"
-             :disabled="currentUserWarehouse.id != props.transfer.from_warehouse_id || props.transfer.status == 'dispatched'"
+             :disabled="currentUserWarehouse.id != props.transfer.from_warehouse_id || props.transfer.status == 'dispatched' || props.transfer.status == 'received'"
              @keyup.enter="updateTransferItemQuantity(item)"
               required class="w-full rounded-3xl"/>
               <p v-if="isItemUpdating[item.id]" class="text-xs text-gray-500">Updating...</p>
