@@ -1248,7 +1248,7 @@ onMounted(() => {
   // Only set up the listener if Echo is available
   if (window.Echo) {
     window.Echo.private(`transfer.${props.transfer.id}`)
-      .listen('TransferStatusChanged', (e) => {
+      .listen('.TransferStatusChanged', (e) => {
         console.log('Transfer status changed event received:', e);
         
         // Show a toast notification

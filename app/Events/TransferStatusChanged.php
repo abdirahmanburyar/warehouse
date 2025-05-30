@@ -16,25 +16,16 @@ class TransferStatusChanged implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $transfer;
-    public $oldStatus;
-    public $newStatus;
-    public $changedBy;
 
     /**
      * Create a new event instance.
      *
      * @param  Transfer  $transfer
-     * @param  string  $oldStatus
-     * @param  string  $newStatus
-     * @param  int  $changedBy
      * @return void
      */
-    public function __construct(Transfer $transfer, string $oldStatus, string $newStatus, int $changedBy)
+    public function __construct(Transfer $transfer)
     {
         $this->transfer = $transfer;
-        $this->oldStatus = $oldStatus;
-        $this->newStatus = $newStatus;
-        $this->changedBy = $changedBy;
     }
 
     /**
