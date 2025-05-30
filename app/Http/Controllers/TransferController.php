@@ -325,26 +325,20 @@ class TransferController extends Controller
             $transfer = Transfer::findOrFail($transferItem->transfer_id);
             
             if (!in_array($transfer->status, ['pending', 'draft'])) {
-                return response()->json([
-                    'message' => 'Cannot delete items from a transfer that is not in pending or draft status'
-                ], 403);
+                return response()->json('Cannot delete items from a transfer that is not in pending or draft status', 500);
             }
             
             // Delete the transfer item
             $transferItem->delete();
             
-            return response()->json([
-                'message' => 'Transfer item deleted successfully'
-            ]);
+            return response()->json('Transfer item deleted successfully');
         } catch (\Exception $e) {
             logger()->error('Error deleting transfer item: ' . $e->getMessage(), [
                 'item_id' => $id,
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'message' => 'Failed to delete transfer item: ' . $e->getMessage()
-            ], 500);
+            return response()->json($e->getMessage(), 500);
         }
     }
     

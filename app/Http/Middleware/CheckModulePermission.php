@@ -6,9 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
 
 class CheckModulePermission
 {
@@ -27,6 +25,7 @@ class CheckModulePermission
         'facilities.*' => 'facility.view',
         'assets.*' => 'asset.view',
         'settings.*' => 'settings.view',
+        'assets.*' => 'asset.view',
     ];
 
     /**
@@ -51,12 +50,6 @@ class CheckModulePermission
         // Check if the user's permissions have been updated since they logged in
         if ($user->permission_updated_at && $user->permission_updated_at->gt(session('login_time', now()->subYears(10)))) {
             // Log the session invalidation
-            Log::info('User session invalidated due to permission changes', [
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'permission_updated_at' => $user->permission_updated_at,
-                'login_time' => session('login_time')
-            ]);
             
             // Log the user out
             Auth::logout();
@@ -94,14 +87,6 @@ class CheckModulePermission
             $hasPermission = $user->hasPermissionTo($requiredPermission);
             
             if (!$hasPermission) {
-                // Log the unauthorized access attempt
-                Log::warning('Unauthorized access attempt', [
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'route' => $routeName,
-                    'permission_required' => $requiredPermission,
-                    'user_permissions' => $user->getAllPermissions()->pluck('name')->toArray()
-                ]);
                 
                 // Store the attempted route in the session for reference
                 session(['attempted_route' => $routeName]);

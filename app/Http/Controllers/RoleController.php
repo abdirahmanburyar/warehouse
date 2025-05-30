@@ -62,10 +62,7 @@ class RoleController extends Controller
             // Don't allow editing the administrator role name
             if ($role->name === 'administrator' && $request->name !== 'administrator') {
                 if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cannot modify the administrator role name'
-                    ], 403);
+                    return response()->json('Cannot modify the administrator role name', 500);
                 }
                 return redirect()->back()->with('error', 'Cannot modify the administrator role name');
             }
@@ -153,10 +150,7 @@ class RoleController extends Controller
                              (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
             
             if (request()->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete the admin role'
-                ], 403);
+                return response()->json('Cannot delete the admin role', 500);
             }
             
             if ($isFromSettings) {

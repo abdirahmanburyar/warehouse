@@ -769,7 +769,7 @@ class PurchaseOrderController extends Controller
                 if (count($canDelete) > 0) {
                     return response()->json("Deleted " . count($canDelete) . " items. Could not delete " . count($cannotDelete) . " items because quantities have been modified.", 207);
                 } else {
-                    return response()->json("Cannot delete items because quantities have been modified.", 403);
+                    return response()->json("Cannot delete items because quantities have been modified.", 500);
                 }
             }
 

@@ -229,10 +229,7 @@ class UserController extends Controller
                     return redirect()->back()->withErrors(['error' => 'You cannot delete your own account.']);
                 }
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You cannot delete your own account.'
-                ], 403);
+                return response()->json('You cannot delete your own account.', 500);
             }
             
             $user->delete();
