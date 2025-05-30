@@ -145,30 +145,26 @@ const form = ref({
 
 const submitForm = async () => {
     isSubmitting.value = true
-    try {
-        const response = await axios.post(route('facilities.store'), form.value)
-        
-        Swal.fire({
-            title: 'Success!',
-            text: 'Facility created successfully.',
-            icon: 'success',
-            confirmButtonText: 'OK'
-        }).then(() => {
-            router.visit(route('facilities.index'))
+       await axios.post(route('facilities.store'), form.value)
+        .then((response) => {
+            isSubmitting.value = false
+            Swal.fire({
+                title: 'Success!',
+                text: 'Facility created successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                router.visit(route('facilities.index'))
+            })
         })
-    } catch (error) {
-        if (error.response && error.response.data && error.response.data.errors) {
-            errors.value = error.response.data.errors
-        } else {
+        .catch((error) => {
+            isSubmitting.value = false
             Swal.fire({
                 title: 'Error!',
                 text: error.response?.data || 'There was an error creating the facility',
                 icon: 'error',
                 confirmButtonText: 'OK'
             })
-        }
-    } finally {
-        isSubmitting.value = false
-    }
+        })
 }
 </script>

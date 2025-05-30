@@ -15,6 +15,9 @@ use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\TransferCreated;
+use Illuminate\Support\Facades\Log;
 
 class TransferController extends Controller
 {
@@ -190,7 +193,6 @@ class TransferController extends Controller
 
     public function store(Request $request)
     {
-        logger()->info($request->all());
         DB::beginTransaction();
         try {
             $request->validate([
@@ -268,6 +270,44 @@ class TransferController extends Controller
                 
                 // Update inventory quantity
                 $inventory->decrement('quantity', $item['quantity']);
+            }
+            
+            // Load relationships for the notification
+            $transfer->load(['fromWarehouse', 'toWarehouse', 'fromFacility', 'toFacility', 'items.product']);
+            
+            // Send notification to destination warehouse manager or facility
+            try {
+                if ($transfer->to_warehouse_id) {
+                    // Send to warehouse manager
+                    $warehouse = $transfer->toWarehouse;
+                    if ($warehouse && $warehouse->manager_email) {
+                        Notification::route('mail', $warehouse->manager_email)
+                            ->notify(new TransferCreated($transfer));
+                        
+                        Log::info('Transfer notification sent to warehouse manager', [
+                            'transfer_id' => $transfer->id,
+                            'email' => $warehouse->manager_email
+                        ]);
+                    }
+                } else if ($transfer->to_facility_id) {
+                    // Send to facility email
+                    $facility = $transfer->toFacility;
+                    if ($facility && $facility->email) {
+                        Notification::route('mail', $facility->email)
+                            ->notify(new TransferCreated($transfer));
+                        
+                        Log::info('Transfer notification sent to facility', [
+                            'transfer_id' => $transfer->id,
+                            'email' => $facility->email
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the request if notification fails
+                Log::error('Failed to send transfer notification', [
+                    'transfer_id' => $transfer->id,
+                    'error' => $e->getMessage()
+                ]);
             }
             
             DB::commit();
