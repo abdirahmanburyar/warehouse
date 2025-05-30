@@ -236,9 +236,7 @@ class TransferController extends Controller
                         
                     if (!$inventory) {
                         DB::rollBack();
-                        return response()->json([
-                            'message' => 'Inventory item not found with ID: ' . $item['id']
-                        ], 404);
+                        return response()->json('Inventory item not found with ID: ' . $item['id'], 500);
                     }
                 } else {
                     $inventory = FacilityInventory::where('facility_id', $request->source_id)
@@ -247,18 +245,14 @@ class TransferController extends Controller
                         
                     if (!$inventory) {
                         DB::rollBack();
-                        return response()->json([
-                            'message' => 'Insufficient stock hand in the inventory for ID: ' . $item['id']
-                        ], 404);
+                        return response()->json('Insufficient stock hand in the inventory for ID: ' . $item['id'], 500);
                     }
                 }
                 
                 if ($item['quantity'] > $inventory->quantity) {
                     DB::rollBack();
-                    return response()->json([
-                        'message' => 'Transfer quantity cannot exceed available quantity for product: ' . 
-                            ($inventory->product->name ?? 'Unknown')
-                    ], 400);
+                    return response()->json('Transfer quantity cannot exceed available quantity for product: ' . 
+                            ($inventory->product->name ?? 'Unknown'), 500);
                 }
                 
                 // Create transfer item record
@@ -278,14 +272,10 @@ class TransferController extends Controller
             
             DB::commit();
             
-            return response()->json([
-                'message' => 'Transfer created successfully',
-                'transfer_id' => $transfer->transferID,
-                'transfer' => $transfer->load('fromWarehouse', 'toWarehouse', 'fromFacility', 'toFacility')
-            ]);
+            return response()->json('Transfer created successfully', 200);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['message' => 'Failed to create transfer: ' . $e->getMessage()], 500);
+            return response()->json('Failed to create transfer: ' . $e->getMessage(), 500);
         }
     }
 
