@@ -23,38 +23,53 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::query()->with(['roles', 'warehouse', 'facility']);
-        
-        // Search functionality
-        if ($request->has('search')) {
+        $query = User::with(['roles', 'warehouse', 'facility'])->latest();
+
+        // Search filter
+        if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%");
             });
         }
         
-        // Sorting
-        $sortField = $request->input('sort_field', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
+        // Role filter
+        if ($request->has('role_id') && $request->role_id) {
+            $query->whereHas('roles', function ($q) use ($request) {
+                $q->where('roles.id', $request->role_id);
+            });
+        }
         
-        $users = $query->paginate(10)->withQueryString();
+        // Warehouse filter
+        if ($request->has('warehouse_id') && $request->warehouse_id) {
+            $query->where('warehouse_id', $request->warehouse_id);
+        }
         
-        // Get all roles for the roles modal
+        // Facility filter
+        if ($request->has('facility_id') && $request->facility_id) {
+            $query->where('facility_id', $request->facility_id);
+        }
+
+        // Get per_page parameter or default to 10
+        $perPage = $request->input('per_page', 10);
+        
+        $users = $query->paginate($perPage)->withQueryString();
+        
+        // Get all roles for filtering and the roles modal
         $roles = \Spatie\Permission\Models\Role::all();
         
-        // Get all warehouses for the warehouse selection
+        // Get all warehouses for filtering and selection
         $warehouses = Warehouse::get();
 
+        // Get all facilities for filtering and selection
         $facilities = Facility::get();
-        logger()->info($facilities);
+        
         return Inertia::render('User/Index', [
             'users' => UserResource::collection($users),
             'roles' => $roles,
             'warehouses' => $warehouses,
-            'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
+            'filters' => $request->only(['search', 'role_id', 'warehouse_id', 'facility_id', 'per_page']),
             'facilities' => $facilities
         ]);
     }

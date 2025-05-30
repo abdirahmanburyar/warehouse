@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :title="'Settings'" img="Setting.png">
         <h1 class="text-2xl font-semibold text-gray-900 mb-6">Settings</h1>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -105,4 +105,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Link } from "@inertiajs/vue3";
+import { ref, onMounted } from 'vue';
+
 </script>
