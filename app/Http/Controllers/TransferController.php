@@ -33,9 +33,6 @@ class TransferController extends Controller
                 return response()->json("Not Found or you are authorized to take this action", 500);
             }
 
-            logger()->info($transfer);
-            logger()->info($request->all());
-
             if($transfer->status == 'pending' && $request->status == 'approved'){
                 $transfer->update([
                     'status' => 'approved',
@@ -672,6 +669,30 @@ class TransferController extends Controller
             return response()->json(['message' => 'Transfer received successfully'], 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    private function processInventoryChanges(Transfer $transfer, $items)
+    {
+        foreach ($items as $item) {
+            $inventory = FacilityInventory::where([
+                'facility_id' => $transfer['to_facility_id'],
+                'product_id' => $item['product_id'],
+                'batch_number' => $item['batch_number'],
+            ])->first();
+
+            if ($inventory) {
+                $inventory->increment('quantity', $item['received_quantity']);
+            } else {
+                FacilityInventory::create([
+                    'facility_id' => $transfer['to_facility_id'],
+                    'product_id' => $item['product_id'],
+                    'batch_number' => $item['batch_number'],
+                    'quantity' => $item['received_quantity'],
+                    'expiry_date' => $item['expire_date'],
+                    'barcode' => $item['barcode'],
+                ]);
+            }
         }
     }
 }

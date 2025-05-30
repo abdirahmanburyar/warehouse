@@ -276,7 +276,7 @@
            </td>
            <td class="px-6 py-4 text-sm border border-black">
              <input type="number" v-model="item.quantity" min="1"
-             :disabled="currentUserWarehouse.id != props.transfer.from_warehouse_id"
+             :disabled="currentUserWarehouse.id != props.transfer.from_warehouse_id || props.transfer.status == 'dispatched'"
              @keyup.enter="updateTransferItemQuantity(item)"
               required class="w-full rounded-3xl"/>
               <p v-if="isItemUpdating[item.id]" class="text-xs text-gray-500">Updating...</p>
@@ -394,7 +394,7 @@
        </div>
 
        <div class="relative">
-         <button @click="receiveTransfer(props.transfer.id)" v-if="props.transfer.status === 'dispatched' && props.transfer.to_facility_id === currentUserWarehouse.id" 
+         <button @click="receiveTransfer(props.transfer.id)" v-if="props.transfer.status === 'dispatched' && props.transfer.to_warehouse_id === currentUserWarehouse.id" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/dispatch.png" class="w-8 h-8 mr-2" alt="Dispatch" />
            <span class="text-sm font-bold text-white">Received</span>
@@ -406,7 +406,7 @@
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]" disabled>
            <img src="/assets/images/received.png" class="w-8 h-8 mr-2" alt="Dispatch" />
            <span class="text-sm font-bold text-white">
-             {{props.transfer.to_facility_id != currentUserWarehouse.id && props.transfer.status === 'dispatched' ? 'Waiting to be Received' : 'Received'}}
+             {{props.transfer.to_warehouse_id != currentUserWarehouse.id && props.transfer.status === 'dispatched' ? 'Waiting to be Received' : 'Received'}}
            </span>
          </button>
          <div v-if="props.transfer.status === 'dispatched'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -1154,7 +1154,6 @@ const changeStatus = (transferId, newStatus) => {
        confirmButtonText: "Yes, change it!",
    }).then(async (result) => {
        if (result.isConfirmed) {
-           // Set loading state
            isLoading.value = true;
 
            await axios
@@ -1163,7 +1162,6 @@ const changeStatus = (transferId, newStatus) => {
                    status: newStatus,
                })
                .then((response) => {
-                   // Reset loading state
                    isLoading.value = false;
                    console.log(response.data);
                    Swal.fire({
@@ -1178,7 +1176,6 @@ const changeStatus = (transferId, newStatus) => {
                })
                .catch((error) => {
                    console.log(error.response);
-                   // Reset loading state
                    isLoading.value = false;
 
                    Swal.fire({
