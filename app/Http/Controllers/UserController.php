@@ -163,33 +163,11 @@ class UserController extends Controller
                 ? $request->direct_permissions 
                 : [];
                 
-            // Track permission changes for events
-            $addedPermissionIds = array_diff($newDirectPermissions, $originalDirectPermissions);
-            $removedPermissionIds = array_diff($originalDirectPermissions, $newDirectPermissions);
-            
             // Sync permissions
             $user->syncPermissions($newDirectPermissions);
 
             event(new GlobalPermissionChanged($user));
-            
-            // Process added permissions
-            if (!empty($addedPermissionIds)) {
-                $addedPermissions = Permission::whereIn('id', $addedPermissionIds)->get();
-                foreach ($addedPermissions as $permission) {
-                    // Dispatch event for each added permission
-                    $this->permissionService->givePermissionTo($user, $permission->name);
-                }
-            }
-            
-            // Process removed permissions
-            if (!empty($removedPermissionIds)) {
-                $removedPermissions = Permission::whereIn('id', $removedPermissionIds)->get();
-                foreach ($removedPermissions as $permission) {
-                    // Dispatch event for each removed permission
-                    $this->permissionService->revokePermissionTo($user, $permission->name);
-                }
-            }
-            
+                        
             // Reload the user with relationships for the email
             $user->load(['roles', 'warehouse', 'facility']);
             
