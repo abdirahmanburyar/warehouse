@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout title="Optimize Your Transfers" description="Moving Supplies, Bridging needs"
         img="/assets/images/transfer.png">
-        <div class="">
+        <div class="mb-[80px]">
 
             <!-- Header Section -->
             <div class="flex flex-col mb-6 space-y-6">
