@@ -30,6 +30,7 @@ use App\Http\Controllers\ConsumptionUploadController;
 use App\Http\Controllers\ProductUploadController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 use Inertia\Inertia;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -43,9 +44,7 @@ Route::get('/welcome', function () {
 })->name('welcome');
 
 // Broadcast routes
-Route::get('/broadcasting/auth', function () {
-    return \Laravel\Echo\Broadcasting\Auth::check();
-})->middleware('auth')->name('broadcasting.auth');
+Broadcast::routes(['middleware' => ['web', 'auth']]);
 
 // Two-Factor Authentication Routes - These must be accessible without 2FA
 Route::middleware('auth')->group(function () {
