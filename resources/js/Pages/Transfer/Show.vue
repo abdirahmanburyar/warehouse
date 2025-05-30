@@ -284,7 +284,7 @@
              <input 
                type="number" 
                v-model="item.received_quantity" 
-               :disabled="currentUserWarehouse.id != props.transfer.to_warehouse_id && props.transfer.status == 'dispatched'"
+               :disabled="currentUserWarehouse.id != props.transfer.to_warehouse_id || props.transfer.status != 'dispatched'"
                min="0" 
                :max="item.quantity" 
                @input="validateReceivedQuantity(item)" 
