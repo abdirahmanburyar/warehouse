@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Events\UserPermissionChanged;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
+use App\Events\GlobalPermissionChanged;
 
 class PermissionService
 {
@@ -24,27 +24,12 @@ class PermissionService
         if (!$user->hasPermissionTo($permissionName)) {
             $user->givePermissionTo($permissionName);
             
-            // Dispatch event
-            $event = new UserPermissionChanged(
-                $user,
-                $permissionName,
-                'added',
-                Auth::user() // The user who made the change (current authenticated user)
-            );
-            
-            // Log the event dispatch
-            \Illuminate\Support\Facades\Log::info('Dispatching permission added event', [
-                'user_id' => $user->id,
-                'permission' => $permissionName,
-                'action' => 'added',
-                'changed_by' => Auth::user() ? Auth::user()->name : 'System'
-            ]);
-            
             // Update the permission_updated_at timestamp
             $user->permission_updated_at = now();
             $user->save();
             
-            event($event);
+            // Dispatch event using the GlobalPermissionChanged event
+            event(new GlobalPermissionChanged($user));
         }
     }
     
@@ -63,27 +48,12 @@ class PermissionService
         if ($user->hasPermissionTo($permissionName)) {
             $user->revokePermissionTo($permissionName);
             
-            // Dispatch event
-            $event = new UserPermissionChanged(
-                $user,
-                $permissionName,
-                'removed',
-                Auth::user() // The user who made the change (current authenticated user)
-            );
-            
-            // Log the event dispatch
-            \Illuminate\Support\Facades\Log::info('Dispatching permission removed event', [
-                'user_id' => $user->id,
-                'permission' => $permissionName,
-                'action' => 'removed',
-                'changed_by' => Auth::user() ? Auth::user()->name : 'System'
-            ]);
-            
             // Update the permission_updated_at timestamp
             $user->permission_updated_at = now();
             $user->save();
             
-            event($event);
+            // Dispatch event using the GlobalPermissionChanged event
+            event(new GlobalPermissionChanged($user));
         }
     }
     
@@ -108,25 +78,29 @@ class PermissionService
             // Sync the permissions
             $user->syncPermissions($permissions);
             
-            // Dispatch events for added permissions
-            foreach ($permissionsToAdd as $permission) {
-                event(new UserPermissionChanged(
-                    $user,
-                    $permission,
-                    'added',
-                    Auth::user()
-                ));
+            // Log permission changes
+            if (!empty($permissionsToAdd)) {
+                \Illuminate\Support\Facades\Log::info('Permissions added to user', [
+                    'user_id' => $user->id,
+                    'permissions' => $permissionsToAdd,
+                    'changed_by' => Auth::user() ? Auth::user()->name : 'System'
+                ]);
             }
             
-            // Dispatch events for removed permissions
-            foreach ($permissionsToRemove as $permission) {
-                event(new UserPermissionChanged(
-                    $user,
-                    $permission,
-                    'removed',
-                    Auth::user()
-                ));
+            if (!empty($permissionsToRemove)) {
+                \Illuminate\Support\Facades\Log::info('Permissions removed from user', [
+                    'user_id' => $user->id,
+                    'permissions' => $permissionsToRemove,
+                    'changed_by' => Auth::user() ? Auth::user()->name : 'System'
+                ]);
             }
+            
+            // Update the permission_updated_at timestamp
+            $user->permission_updated_at = now();
+            $user->save();
+            
+            // Dispatch a single event for all permission changes
+            event(new GlobalPermissionChanged($user));
         }
     }
 }

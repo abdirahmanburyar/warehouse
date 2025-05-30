@@ -62,12 +62,6 @@ class HandleInertiaRequests extends Middleware
         // Get all permissions for the user
         $permissions = $request->user()->getAllPermissions()->pluck('name');
 
-        // Add debug log
-        \Illuminate\Support\Facades\Log::debug('User permissions being passed to frontend', [
-            'user_id' => $request->user()->id,
-            'permissions_count' => $permissions->count(),
-            'permissions' => $permissions->toArray()
-        ]);
 
         // Convert to a flattened can object for easier checking in Vue
         // e.g. 'order.view' becomes 'order_view' => true

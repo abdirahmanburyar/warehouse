@@ -241,6 +241,9 @@
 import { ref, onMounted, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
     title: {
@@ -261,6 +264,57 @@ const page = usePage();
 const debug = ref(false); // Set to true to see permissions debug info
 const sidebarOpen = ref(true);
 const currentPage = ref('dashboard');
+
+// Setup permission change listener
+onMounted(() => {
+    setupPermissionChangeListener();
+});
+
+// Function to handle permission change events
+const setupPermissionChangeListener = () => {
+    if (!window.Echo) {
+        console.warn('⚠️ Echo not available, permission change listener not set up');
+        return;
+    }
+    
+    // Get the current user ID
+    const currentUserId = page.props.auth?.user?.id;
+    if (!currentUserId) {
+        console.warn('⚠️ User ID not available, permission change listener not set up');
+        return;
+    }
+    
+    console.log('🔄 Setting up permission change listener for user:', currentUserId);
+    
+    // Listen on the private user channel
+    const channel = window.Echo.private(`user.${currentUserId}`);
+    
+    // Listen for permission change events
+    channel.listen('permissions-changed', (event) => {
+        console.log('🔔 Permission changed event received:', event);
+        handlePermissionEvent(event);
+    });
+
+    // Also listen for the class name format
+    channel.listen('GlobalPermissionChanged', (event) => {
+        console.log('🔔 Permission changed event received (GlobalPermissionChanged):', event);
+        handlePermissionEvent(event);
+    });
+};
+
+// Function to handle the permission event
+const handlePermissionEvent = (event) => {
+    console.log('🔄 Permission change detected, reloading page...');
+    
+    toast.info('Your permissions have been updated. The page will reload to apply changes.');
+    
+    // Reload the page after a short delay
+    setTimeout(() => {
+        console.log('🔄 Reloading page now...');
+        window.location.reload();
+    }, 3000);
+};
+
 
 
 const toggleSidebar = () => {

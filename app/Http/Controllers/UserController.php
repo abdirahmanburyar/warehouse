@@ -15,6 +15,7 @@ use Inertia\Inertia;
 use App\Http\Resources\UserResource;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Events\GlobalPermissionChanged;
 use Throwable;
 
 class UserController extends Controller
@@ -155,31 +156,6 @@ class UserController extends Controller
                 $addedRoleIds = array_diff($request->role_ids, $originalRoleIds);
                 $removedRoleIds = array_diff($originalRoleIds, $request->role_ids);
                 
-                // Get role names for added roles
-                if (!empty($addedRoleIds)) {
-                    $addedRoles = Role::whereIn('id', $addedRoleIds)->get();
-                    foreach ($addedRoles as $role) {
-                        // Log role addition
-                        \Illuminate\Support\Facades\Log::info("Role added to user", [
-                            'user_id' => $user->id,
-                            'role_id' => $role->id,
-                            'role_name' => $role->name
-                        ]);
-                    }
-                }
-                
-                // Get role names for removed roles
-                if (!empty($removedRoleIds)) {
-                    $removedRoles = Role::whereIn('id', $removedRoleIds)->get();
-                    foreach ($removedRoles as $role) {
-                        // Log role removal
-                        \Illuminate\Support\Facades\Log::info("Role removed from user", [
-                            'user_id' => $user->id,
-                            'role_id' => $role->id,
-                            'role_name' => $role->name
-                        ]);
-                    }
-                }
             }
             
             // Assign direct permissions if provided
@@ -193,6 +169,8 @@ class UserController extends Controller
             
             // Sync permissions
             $user->syncPermissions($newDirectPermissions);
+
+            event(new GlobalPermissionChanged($user));
             
             // Process added permissions
             if (!empty($addedPermissionIds)) {

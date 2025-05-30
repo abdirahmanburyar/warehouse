@@ -99,11 +99,12 @@ export default {
                     });
                 }
                 
-                // If the page doesn't reload automatically, we'll show a message
+                // The page should reload automatically due to the event listener in AuthenticatedLayout.vue
+                // If it doesn't, we'll show a message
                 setTimeout(() => {
                     if (this.loading) {
                         this.loading = false;
-                        console.warn('⚠️ Page did not reload automatically. Check event handling in app.js');
+                        console.warn('⚠️ Page did not reload automatically. Check event handling in AuthenticatedLayout.vue');
                         
                         // Force a reload as a fallback
                         console.log('🔄 Forcing page reload as fallback...');
