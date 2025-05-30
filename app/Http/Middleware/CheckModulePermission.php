@@ -25,7 +25,7 @@ class CheckModulePermission
         'facilities.*' => 'facility.view',
         'assets.*' => 'asset.view',
         'settings.*' => 'settings.view',
-        'assets.*' => 'asset.view',
+        'assets.*' => 'settings.view',
     ];
 
     /**

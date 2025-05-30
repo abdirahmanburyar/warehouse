@@ -315,19 +315,30 @@ watch(destinationType, (newValue) => {
 });
 
 const submit = async () => {
-    console.log('Form data:', form.value);
-
     loading.value = true;
 
-    console.log('Submitting transfer with payload:', form.value);
     await axios.post(route('transfers.store'), form.value)
         .then((response) => {
             loading.value = false;
-            console.log(response.data);            
+            toast.success(response.data);
+           Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonColor: '#4F46E5',
+            }).then(() => {
+                router.get(route('transfers.index'));
+            });
         })
         .catch((error) => {
             loading.value = false;
-            console.log(error);            
+            toast.error(error.response?.data || 'Failed to create transfer');
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Failed to create transfer',
+                icon: 'error',
+                confirmButtonColor: '#4F46E5',
+            });
         });
 };
 
