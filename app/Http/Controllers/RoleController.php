@@ -39,26 +39,53 @@ class RoleController extends Controller
     }
 
     /**
-     * Store a newly created role.
+     * Store a newly created role or update an existing one.
      */
     public function store(Request $request)
     {
+        // Check if this is an update operation (id is provided)
+        $isUpdate = $request->has('id') && $request->id;
+        $roleId = $isUpdate ? $request->id : null;
+        
+        // Validate the request with conditional unique rule
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
+            'name' => 'required|string|max:255|unique:roles,name' . ($isUpdate ? ',' . $roleId : ''),
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
         ]);
 
-        $role = Role::create(['name' => $request->name]);
+        // Create or update the role
+        if ($isUpdate) {
+            $role = Role::findOrFail($roleId);
+            
+            // Don't allow editing the administrator role name
+            if ($role->name === 'administrator' && $request->name !== 'administrator') {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot modify the administrator role name'
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Cannot modify the administrator role name');
+            }
+            
+            $role->update(['name' => $request->name]);
+            $successMessage = 'Role updated successfully';
+        } else {
+            $role = Role::create(['name' => $request->name]);
+            $successMessage = 'Role created successfully';
+        }
         
+        // Sync permissions
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
         }
 
+        // Return JSON response if requested
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Role created successfully',
+                'message' => $successMessage,
                 'role' => $role->load('permissions')
             ]);
         }
@@ -68,10 +95,10 @@ class RoleController extends Controller
                          ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
         
         if ($isFromSettings) {
-            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role created successfully');
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', $successMessage);
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role created successfully');
+        return redirect()->route('settings.roles.index')->with('success', $successMessage);
     }
 
     /**
@@ -107,7 +134,7 @@ class RoleController extends Controller
             return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role updated successfully');
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role updated successfully');
+        return redirect()->route('settings.roles.index')->with('success', 'Role updated successfully');
     }
 
     /**
@@ -131,7 +158,7 @@ class RoleController extends Controller
                 return redirect()->route('settings.index', ['tab' => 'roles'])->with('error', 'Cannot delete the admin role');
             }
             
-            return redirect()->route('roles.index')->with('error', 'Cannot delete the admin role');
+            return redirect()->route('settings.roles.index')->with('error', 'Cannot delete the admin role');
         }
         
         $role->delete();
@@ -151,7 +178,7 @@ class RoleController extends Controller
             return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role deleted successfully');
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role deleted successfully');
+        return redirect()->route('settings.roles.index')->with('success', 'Role deleted successfully');
     }
     
     /**
