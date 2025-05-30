@@ -300,20 +300,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{transfer}/edit', [TransferController::class, 'edit'])->name('transfers.edit');
         Route::put('/{transfer}', [TransferController::class, 'update'])->name('transfers.update');
         Route::delete('/{transfer}', [TransferController::class, 'destroy'])->name('transfers.destroy');
-        
-        // Transfer Status Change Routes
-        Route::post('/{id}/approve', [TransferController::class, 'approve'])->name('transfers.approve');
-        Route::post('/{id}/reject', [TransferController::class, 'reject'])->name('transfers.reject');
-        Route::post('/{id}/in-process', [TransferController::class, 'inProcess'])->name('transfers.inProcess');
-        Route::post('/{id}/dispatch', [TransferController::class, 'dispatch'])->name('transfers.dispatch');
-        Route::post('/{id}/complete', [TransferController::class, 'completeTransfer'])->name('transfers.completeTransfer');
-        
+                
         // Route to get available inventories for transfer
         Route::get('/get-inventories', [TransferController::class, 'getInventories'])->name('transfers.getInventories');
-        
-        // Route to delete a transfer item
-        Route::delete('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
-        
+               
          
         // Back order functionality
         Route::post('/backorder', [TransferController::class, 'backorder'])->name('transfers.backorder');

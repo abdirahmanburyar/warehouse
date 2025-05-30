@@ -341,11 +341,16 @@
 
        <!-- Approve button -->
        <div class="relative">
-         <button
+        <button @click="changeStatus(props.transfer.id, 'approved')" v-if="props.transfer.status === 'pending'" 
+           class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
+           <img src="/assets/images/approved.png" class="w-8 h-8 mr-2" alt="Process" />
+           <span class="text-sm font-bold text-white">Approve</span>
+         </button>
+         <button v-else
            :class="[
              statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending') ? 'bg-[#55c5ff]' : 'bg-gray-300 cursor-not-allowed'
            ]"
-           class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]" disabled>
+           class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
            <img src="/assets/images/approved.png" class="w-8 h-8 mr-2" alt="Approve" />
            <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending') ? 'Approved' : 'Waiting to be Approved' }}</span>
          </button>
@@ -1161,18 +1166,15 @@ const changeStatus = (transferId, newStatus) => {
                    // Reset loading state
                    isLoading.value = false;
                    console.log(response.data);
-                   // Swal.fire({
-                   //     title: "Updated!",
-                   //     text: response.data?.message || "Transfer status updated successfully",
-                   //     icon: "success",
-                   //     toast: true,
-                   //     position: "top-end",
-                   //     showConfirmButton: false,
-                   //     timer: 3000,
-                   // }).then(() => {
-                   //     // Reload the page to show the updated status
-                   //     router.reload();
-                   // });
+                   Swal.fire({
+                       title: "Updated!",
+                       text: response.data || "Transfer status updated successfully",
+                       icon: "success",
+                       timer: 3000,
+                   }).then(() => {
+                       // Reload the page to show the updated status
+                       router.reload();
+                   });
                })
                .catch((error) => {
                    console.log(error.response);
@@ -1182,12 +1184,9 @@ const changeStatus = (transferId, newStatus) => {
                    Swal.fire({
                        title: "Error!",
                        text:
-                           error.response?.data?.error ||
+                           error.response.data ||
                            "Failed to update transfer status",
                        icon: "error",
-                       toast: true,
-                       position: "top-end",
-                       showConfirmButton: false,
                        timer: 3000,
                    });
                });

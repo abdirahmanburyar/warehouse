@@ -17,189 +17,55 @@ use Illuminate\Support\Facades\Auth;
 
 class TransferController extends Controller
 {
-    public function approve($id)
+
+    public function changeItemStatus(Request $request)
     {
         try {
-            $transfer = Transfer::findOrFail($id);
-            
-            if ($transfer->status !== 'pending') {
-                return redirect()->back()->with('error', 'Transfer must be pending to be approved');
-            }
+            DB::beginTransaction();
 
-            $transfer->update([
-                'status' => 'approved',
-                'approved_by' => Auth::id(),
-                'approved_at' => now()
+            $request->validate([
+                'transfer_id' => 'required|exists:transfers,id',
+                'status' => 'required|in:approved,in_process,dispatched'
             ]);
 
-            return redirect()->route('transfers.show', $id)->with('success', 'Transfer approved successfully');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to approve transfer: ' . $e->getMessage());
-        }
-    }
-
-    public function reject($id)
-    {
-        try {
-            $transfer = Transfer::findOrFail($id);
-            
-            if ($transfer->status !== 'pending') {
-                return redirect()->back()->with('error', 'Transfer must be pending to be rejected');
+            $transfer = Transfer::find($request->transfer_id);
+            if(!$transfer){
+                return response()->json("Not Found or you are authorized to take this action", 500);
             }
 
-            $transfer->update([
-                'status' => 'rejected',
-                'rejected_by' => Auth::id(),
-                'rejected_at' => now()
-            ]);
+            logger()->info($transfer);
+            logger()->info($request->all());
 
-            // Return inventory quantity if applicable
-            if (!empty($transfer->inventory_id)) {
-                $inventory = Inventory::findOrFail($transfer->inventory_id);
-                $inventory->increment('quantity', $transfer->quantity);
-            }
-
-            return redirect()->route('transfers.show', $id)->with('success', 'Transfer rejected successfully');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to reject transfer: ' . $e->getMessage());
-        }
-    }
-
-    public function inProcess($id)
-    {
-        try {
-            $transfer = Transfer::findOrFail($id);
-            
-            if ($transfer->status !== 'approved') {
-                return redirect()->back()->with('error', 'Transfer must be approved to be set in process');
-            }
-
-            $transfer->update([
-                'status' => 'in_process',
-                'process_started_at' => now()
-            ]);
-
-            return redirect()->route('transfers.show', $id)->with('success', 'Transfer marked as in process');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update transfer status: ' . $e->getMessage());
-        }
-    }
-
-    public function dispatch($id)
-    {
-        try {
-            $transfer = Transfer::findOrFail($id);
-            
-            if ($transfer->status !== 'in_process') {
-                return redirect()->back()->with('error', 'Transfer must be in process to be dispatched');
-            }
-
-            $transfer->update([
-                'status' => 'dispatched',
-                'dispatched_by' => Auth::id(),
-                'dispatched_at' => now()
-            ]);
-
-            return redirect()->route('transfers.show', $id)->with('success', 'Transfer has been dispatched');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to dispatch transfer: ' . $e->getMessage());
-        }
-    }
-
-    public function completeTransfer($id)
-    {
-        DB::beginTransaction();
-        try {
-            $transfer = Transfer::with(['toWarehouse', 'toFacility', 'items.product'])->findOrFail($id);
-            
-            if ($transfer->status !== 'dispatched') {
-                return redirect()->back()->with('error', 'Transfer must be dispatched to be completed');
-            }
-
-            // Check if the transfer is to a warehouse or facility
-            if (!$transfer->toWarehouse && !$transfer->toFacility) {
-                throw new \Exception('Invalid transfer destination');
-            }
-
-            // Process each transfer item
-            foreach ($transfer->items as $item) {
-                $inventoryData = [
-                    'product_id' => $item->product_id,
-                    'batch_number' => $item->batch_number,
-                    'quantity' => $transfer->quantity,
-                    'expiry_date' => $item->expire_date,
-                    'uom' => $item->uom ?? 'pcs'
-                ];
-
-                if ($transfer->toWarehouse) {
-                    // Add to warehouse inventory
-                    $inventoryData['warehouse_id'] = $transfer->to_warehouse_id;
-                    Inventory::create($inventoryData);
-                } else {
-                    // Add to facility inventory
-                    $inventoryData['facility_id'] = $transfer->to_facility_id;
-                    FacilityInventory::create($inventoryData);
-                }
-            }
-
-            $transfer->update([
-                'status' => 'received'
-            ]);
-
-            DB::commit();
-            return redirect()->route('transfers.show', $id)->with('success', 'Transfer completed successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->back()->with('error', 'Error completing transfer: ' . $e->getMessage());
-        }
-    }
-
-    public function bulkApprove(Request $request)
-    {
-        try {
-            $transfers = Transfer::whereIn('id', $request->transferIds)
-                                ->where('status', 'pending')
-                                ->get();
-
-            foreach ($transfers as $transfer) {
+            if($transfer->status == 'pending' && $request->status == 'approved'){
                 $transfer->update([
                     'status' => 'approved',
-                    'approved_by' => Auth::id(),
+                    'approved_by' => auth()->id(),
                     'approved_at' => now()
                 ]);
             }
-
-            return response()->json(['message' => count($transfers) . ' transfers approved successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to approve transfers: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function bulkReject(Request $request)
-    {
-        DB::beginTransaction();
-        try {
-            $transfers = Transfer::whereIn('id', $request->transferIds)
-                                ->where('status', 'pending')
-                                ->get();
-
-            foreach ($transfers as $transfer) {
+            
+            if($transfer->status == 'approved' && $request->status == 'in_process' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
                 $transfer->update([
-                    'status' => 'rejected',
-                    'rejected_by' => Auth::id(),
-                    'rejected_at' => now()
+                    'status' => 'in_process',
                 ]);
-
-                // Return inventory quantity
-                $inventory = Inventory::findOrFail($transfer->inventory_id);
-                $inventory->increment('quantity', $transfer->quantity);
             }
 
+            if($transfer->status == 'in_process' && $request->status == 'dispatched' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
+                $transfer->update([
+                    'status' => 'dispatched',
+                    'dispatched_by' => auth()->id(),    
+                    'dispatched_at' => now()
+                ]);
+            }
+            
             DB::commit();
-            return response()->json(['message' => count($transfers) . ' transfers rejected successfully']);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['message' => 'Failed to reject transfers: ' . $e->getMessage()], 500);
+            
+            // Return debug information along with success message
+            return response()->json("Transfer status changed successfully", 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            logger()->error($e->getMessage());
+            return response()->json($e->getMessage(), 500);
         }
     }
 
@@ -438,10 +304,6 @@ class TransferController extends Controller
         ]);
     }
     
-    public function disposal(Request $request){
-        return inertia('Transfer/Disposal');
-    }
-
     public function create(Request $request){
         $warehouses = Warehouse::select('id','name')->get();
         $facilities = Facility::select('id','name')->get();
