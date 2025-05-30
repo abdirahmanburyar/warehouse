@@ -292,7 +292,7 @@
                class="w-full rounded-3xl"
              />
              <button 
-               v-if="currentUserWarehouse.id == props.transfer.to_facility_id && (props.transfer.status === 'dispatched' || props.transfer.status === 'received') && 
+               v-if="currentUserWarehouse.id == props.transfer.to_warehouse_id && (props.transfer.status === 'dispatched' || props.transfer.status === 'received') && 
                      (item.quantity > (item.received_quantity || 0) || (item.backorders && item.backorders.length > 0))" 
                @click="openBackOrderModal(item)" 
                class="mt-2 p-3 bg-yellow-500 text-black rounded-3xl hover:bg-yellow-600 text-sm w-full"
