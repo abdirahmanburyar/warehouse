@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Events\GlobalPermissionChanged;
 
 class RoleController extends Controller
 {
@@ -97,6 +98,10 @@ class RoleController extends Controller
         if ($isFromSettings) {
             return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', $successMessage);
         }
+        // Send a broadcast to every user who has this role
+        User::role($role->name)->get()->each(function ($user) use ($role) {
+            event(new GlobalPermissionChanged($user));
+        });
 
         return redirect()->route('settings.roles.index')->with('success', $successMessage);
     }
