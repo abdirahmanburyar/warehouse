@@ -96,14 +96,14 @@ export default {
                 this.channel = window.Echo.private(`user.${this.userId}`);
                 
                 // Try multiple formats of the event name to ensure we catch it
-                this.channel.listen('.permission.changed', (event) => {
-                    console.log('🔔 Permission changed event received (.permission.changed):', event);
+                this.channel.listen('.permission-changed', (event) => {
+                    console.log('🔔 Permission changed event received (.permission-changed):', event);
                     this.lastEvent = event;
                     this.processPermissionEvent(event);
                 });
                 
-                this.channel.listen('permission.changed', (event) => {
-                    console.log('🔔 Permission changed event received (permission.changed):', event);
+                this.channel.listen('permission-changed', (event) => {
+                    console.log('🔔 Permission changed event received (permission-changed):', event);
                     this.lastEvent = event;
                     this.processPermissionEvent(event);
                 });
@@ -113,6 +113,11 @@ export default {
                     console.log('🔔 Permission changed event received (full class name):', event);
                     this.lastEvent = event;
                     this.processPermissionEvent(event);
+                });
+                
+                // Listen for all events on this channel (catch-all)
+                window.Echo.connector.pusher.bind_global((event, data) => {
+                    console.log('Global event received:', event, data);
                 });
                 
                 // Add a global listener for any event

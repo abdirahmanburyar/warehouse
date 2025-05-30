@@ -77,7 +77,7 @@ class UserPermissionChanged implements ShouldBroadcast
      */
     public function broadcastAs()
     {
-        return 'permission.changed';
+        return 'permission-changed';
     }
     
     /**
