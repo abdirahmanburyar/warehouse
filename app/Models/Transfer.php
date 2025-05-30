@@ -21,25 +21,27 @@ class Transfer extends Model
         'to_facility_id',
         'created_by',
         'approved_by',
+        'approved_at',
         'dispatched_by',
+        'dispatched_at',
         'rejected_by',
+        'rejected_at',
         'quantity',
         'transfer_date',
         'status',
         'note'
     ];
 
-
-    public function fromWarehouse()
-    {
-        return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
-    }
-
     public function toWarehouse()
     {
         return $this->belongsTo(Warehouse::class, 'to_warehouse_id');
     }
 
+     public function fromWarehouse()
+    {
+        return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
+    }
+    
     public function fromFacility()
     {
         return $this->belongsTo(Facility::class, 'from_facility_id');

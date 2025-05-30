@@ -8,6 +8,7 @@ use App\Models\Inventory;
 use App\Models\Warehouse;
 use App\Models\Facility;
 use App\Models\FacilityInventory;
+use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Product;
@@ -693,6 +694,70 @@ class TransferController extends Controller
                     'barcode' => $item['barcode'],
                 ]);
             }
+        }
+    }
+
+        /**
+     * Handle back orders for transfer items
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function backorder(Request $request)
+    {
+        try {
+            // Validate the request
+            $request->validate([
+                'transfer_item_id' => 'required|exists:transfer_items,id',
+                'backorders' => 'required|array',
+                'received_quantity' => 'required|numeric|min:0',
+                'backorders.*.quantity' => 'required|numeric|min:0',
+                'backorders.*.type' => 'required|string',
+                'backorders.*.notes' => 'nullable|string',
+            ]);
+            
+            DB::beginTransaction();
+            
+            // Get the transfer item
+            $transferItem = TransferItem::findOrFail($request->transfer_item_id);
+            
+            // Update the received quantity for the transfer item
+            $transferItem->received_quantity = $request->received_quantity;
+            $transferItem->save();
+            
+            // Process each backorder
+            foreach ($request->backorders as $backorderData) {
+                // Check if this is an existing backorder (has an ID)
+                if (!empty($backorderData['id'])) {
+                    // Update existing backorder
+                    $backorder = FacilityBackorder::findOrFail($backorderData['id']);
+                    $backorder->update([
+                        'quantity' => $backorderData['quantity'],
+                        'type' => $backorderData['type'],
+                        'notes' => $backorderData['notes'] ?? null,
+                        'updated_by' => auth()->id()
+                    ]);
+                } else {
+                    // Create new backorder
+                    FacilityBackorder::create([
+                        'transfer_item_id' => $transferItem->id,
+                        'product_id' => $transferItem->product_id,
+                        'inventory_allocation_id' => $backorderData['inventory_allocation_id'],
+                        'quantity' => $backorderData['quantity'],
+                        'type' => $backorderData['type'],
+                        'notes' => $backorderData['notes'] ?? null,
+                        'status' => 'pending',
+                        'created_by' => auth()->id(),
+                        'updated_by' => auth()->id()
+                    ]);
+                }
+            }
+            
+            DB::commit();
+            return response()->json('Back orders have been recorded successfully', 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json($th->getMessage(), 500);
         }
     }
 }
