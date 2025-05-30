@@ -13,7 +13,7 @@ class TransferItem extends Model
         'barcode',
         'uom',
         'batch_number',
-        'expire_date',
+        'expire_date'
     ];
     
     public function transfer()
@@ -24,6 +24,11 @@ class TransferItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+    
+    public function backorders()
+    {
+        return $this->hasMany(FacilityBackorder::class, 'transfer_item_id');
     }
 
 }

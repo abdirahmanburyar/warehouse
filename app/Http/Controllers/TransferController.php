@@ -292,6 +292,7 @@ class TransferController extends Controller
     public function show($id){
         $transfer = Transfer::where('id', $id)->with([
             'items.product', 
+            'items.backorders', 
             'fromWarehouse', 
             'toWarehouse', 
             'fromFacility', 
@@ -644,7 +645,7 @@ class TransferController extends Controller
                 return response()->json('Transfer must be dispatched to be received', 500);
             }
 
-            if($transfer->to_facility_id != auth()->user()->facility_id) {
+            if($transfer->to_warehouse_id != auth()->user()->warehouse_id) {
                 return response()->json('You are not authorized to receive this transfer', 500);
             }
 
@@ -676,8 +677,8 @@ class TransferController extends Controller
     private function processInventoryChanges(Transfer $transfer, $items)
     {
         foreach ($items as $item) {
-            $inventory = FacilityInventory::where([
-                'facility_id' => $transfer['to_facility_id'],
+            $inventory = Inventory::where([
+                'warehouse_id' => $transfer['to_warehouse_id'],
                 'product_id' => $item['product_id'],
                 'batch_number' => $item['batch_number'],
             ])->first();
@@ -685,8 +686,9 @@ class TransferController extends Controller
             if ($inventory) {
                 $inventory->increment('quantity', $item['received_quantity']);
             } else {
-                FacilityInventory::create([
-                    'facility_id' => $transfer['to_facility_id'],
+                Inventory::create([
+                    'warehouse_id' => $transfer['to_warehouse_id'],
+                    'location_id' => null,
                     'product_id' => $item['product_id'],
                     'batch_number' => $item['batch_number'],
                     'quantity' => $item['received_quantity'],
