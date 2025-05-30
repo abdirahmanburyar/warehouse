@@ -233,10 +233,10 @@ watch([
     () => per_page.value,
     () => props.filters.page
 ], () => {
-    reloadDisposals();
+    reloadLiquidates();
 });
 
-const reloadDisposals = () => {
+const reloadLiquidates = () => {
     const query = {};
     if (search.value) {
         query.search = search.value;
@@ -256,7 +256,7 @@ const reloadDisposals = () => {
 
 function getResults(page = 1) {
     props.filters.page = page;
-    reloadDisposals();
+    reloadLiquidates();
 }
 
 </script>
