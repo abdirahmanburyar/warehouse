@@ -7,9 +7,12 @@ use App\Models\Warehouse;
 use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Http\Resources\UserResource;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Throwable;
 
 class UserController extends Controller
@@ -61,6 +64,8 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
+            DB::beginTransaction();
+            
             $request->validate([
                 'id' => 'nullable|exists:users,id',
                 'name' => 'required|string|max:255',
@@ -73,6 +78,10 @@ class UserController extends Controller
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
                 'facility_id' => 'nullable|exists:facilities,id',
+                'role_ids' => 'nullable|array',
+                'role_ids.*' => 'exists:roles,id',
+                'direct_permissions' => 'nullable|array',
+                'direct_permissions.*' => 'exists:permissions,id',
             ]);
 
             $userData = [
@@ -87,13 +96,32 @@ class UserController extends Controller
                 $userData['password'] = Hash::make($request->password);
             }
             
-            User::updateOrCreate(
+            // Create or update the user
+            $user = User::updateOrCreate(
                 ['id' => $request->id],
                 $userData
             );
             
-            return response()->json($request->id ? 'User updated successfully' : 'User created successfully',200);
+            // Assign roles if provided
+            if ($request->has('role_ids') && is_array($request->role_ids) && count($request->role_ids) > 0) {
+                // Sync roles (this will detach any existing roles not in the array)
+                $user->syncRoles($request->role_ids);
+            }
+            
+            // Assign direct permissions if provided
+            if ($request->has('direct_permissions') && is_array($request->direct_permissions)) {
+                // Get the permissions that aren't already granted by the role
+                $rolePermissions = $user->getPermissionsViaRoles()->pluck('id')->toArray();
+                $directPermissions = array_diff($request->direct_permissions, $rolePermissions);
+                
+                // Sync the direct permissions (this will remove any existing direct permissions not in the array)
+                $user->syncPermissions($directPermissions);
+            }
+            
+            DB::commit();
+            return response()->json($request->id ? 'User updated successfully' : 'User created successfully', 200);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json($th->getMessage(), 500);
         }             
     }
@@ -114,12 +142,36 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
-        $warehouses = \App\Models\Warehouse::all();
-        $roles = \App\Models\Role::all();
+        $warehouses = Warehouse::all();
+        $roles = Role::with('permissions')->get();
+        $permissions = Permission::all();
+        $facilities = Facility::all();
         
         return Inertia::render('User/Create', [
             'warehouses' => $warehouses,
-            'roles' => $roles
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'facilities' => $facilities
+        ]);
+    }
+    
+    /**
+     * Show the form for editing the specified user.
+     */
+    public function edit(User $user)
+    {
+        $user->load(['roles.permissions', 'permissions', 'warehouse', 'facility']);
+        $warehouses = Warehouse::all();
+        $roles = Role::with('permissions')->get();
+        $permissions = Permission::all();
+        $facilities = Facility::all();
+        
+        return Inertia::render('User/Edit', [
+            'user' => $user,
+            'warehouses' => $warehouses,
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'facilities' => $facilities
         ]);
     }
 

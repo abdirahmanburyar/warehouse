@@ -74,21 +74,21 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Permissions API endpoint
+    Route::get('/api/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('api.permissions.index');
+    
     // User Management Routes
     Route::middleware(PermissionMiddleware::class . ':user.view')->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users', [UserController::class, 'index'])->name('settings.users.index');
         Route::get('/users/create', [UserController::class, 'create'])
             ->middleware(PermissionMiddleware::class . ':user.create')
-            ->name('users.create');
+            ->name('settings.users.create');
         Route::post('/users', [UserController::class, 'store'])
             ->middleware(PermissionMiddleware::class . ':user.create')
-            ->name('users.store');
+            ->name('settings.users.store');
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])
             ->middleware(PermissionMiddleware::class . ':user.edit')
-            ->name('users.edit');
-        Route::put('/users/{user}', [UserController::class, 'update'])
-            ->middleware(PermissionMiddleware::class . ':user.edit')
-            ->name('users.update');
+            ->name('settings.users.edit');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])
             ->middleware(PermissionMiddleware::class . ':user.delete')
             ->name('users.destroy');
@@ -96,13 +96,15 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class . ':role.view')->group(function () {
-        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles', [RoleController::class, 'index'])->name('settings.roles.index');
         Route::get('/roles/create', [RoleController::class, 'create'])
             ->middleware(PermissionMiddleware::class . ':role.create')
-            ->name('roles.create');
+            ->name('settings.roles.create');
         Route::post('/roles', [RoleController::class, 'store'])
             ->middleware(PermissionMiddleware::class . ':role.create')
             ->name('roles.store');
+            
+
         Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])
             ->middleware(PermissionMiddleware::class . ':role.edit')
             ->name('roles.edit');
