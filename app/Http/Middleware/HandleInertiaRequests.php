@@ -35,6 +35,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name') : [],
                 'roles' => $request->user() ? $request->user()->roles->pluck('id') : [],
+                'can' => $this->getUserPermissions($request),
             ],
             // show warehouse for the current user
             'warehouse' => $request->user() ? $request->user()->warehouse : null,            
@@ -43,5 +44,30 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
         ];
+    }
+    
+    /**
+     * Get user permissions as a flattened object for easier checking in Vue components
+     * 
+     * @param Request $request
+     * @return array
+     */
+    protected function getUserPermissions(Request $request): array
+    {
+        if (!$request->user()) {
+            return [];
+        }
+        
+        $permissions = $request->user()->getAllPermissions()->pluck('name')->toArray();
+        $formattedPermissions = [];
+        
+        // Convert permissions to a flattened object for easier checking in Vue
+        // e.g., 'order.view' becomes 'order_view' => true
+        foreach ($permissions as $permission) {
+            $key = str_replace('.', '_', $permission);
+            $formattedPermissions[$key] = true;
+        }
+        
+        return $formattedPermissions;
     }
 }

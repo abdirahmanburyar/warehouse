@@ -107,6 +107,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'inventory.edit',
             'inventory.delete',
             'inventory.adjust',
+            'inventory.audit',
         ];
 
         // 12. Supply Chain Management
@@ -129,6 +130,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'purchase-order.approve',
             'purchase-order.reject',
             'purchase-order.review',
+            'purchase-order.audit',
         ];
 
         // 14. Packing List Management
@@ -139,6 +141,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'packing-list.approve',
             'packing-list.reject',
             'packing-list.review',
+            'packing-list.audit',
         ];
 
         // 15. Transfer Management
@@ -147,8 +150,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'transfer.create',
             'transfer.edit',
             'transfer.delete',
+            'transfer.in_process',
+            'transfer.dispatch',
+            'transfer.approve',
+            'transfer.reject',
             'transfer.receive',
-            'transfer.backorder',
+            'transfer.audit',
         ];
 
         // 16. Order Management
@@ -157,8 +164,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'order.create',
             'order.edit',
             'order.delete',
+            'order.in_process',
+            'order.dispatch',
+            'order.approve',
+            'order.reject',
+            'order.receive',
             'order.change-status',
             'order.bulk-change-status',
+            'order.audit',
         ];
 
         // 17. Dispatch Management
@@ -167,6 +180,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'dispatch.create',
             'dispatch.edit',
             'dispatch.delete',
+            'dispatch.in_process',
+            'dispatch.dispatch',
+            'dispatch.approve',
+            'dispatch.reject',
+            'dispatch.receive',
+            'dispatch.audit',
         ];
 
         // 18. Report Management
@@ -175,6 +194,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'report.monthly-consumption',
             'report.stock-level',
             'report.upload-consumption',
+            'report.audit',
         ];
 
         // 19. Approval Management
@@ -182,6 +202,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'approval.view',
             'approval.approve',
             'approval.reject',
+            'approval.audit',
         ];
 
         // 20. Liquidation and Disposal
@@ -191,11 +212,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'liquidate.approve',
             'liquidate.reject',
             'liquidate.review',
+            'liquidate.audit',
             'disposal.view',
             'disposal.create',
             'disposal.approve',
             'disposal.reject',
             'disposal.review',
+            'disposal.audit',
         ];
 
         // 21. Settings Management
@@ -204,6 +227,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'settings.create',
             'settings.edit',
             'settings.delete',
+            'settings.audit',
         ];
 
         // Combine all permissions

@@ -21,8 +21,7 @@
                     <span class="menu-text">Dashboard</span>
                 </div>
                 </Link>
-
-                <Link :href="route('orders.index')" class="menu-item" :class="{ active: route().current('orders.*') }"
+                <Link v-if="$page.props.auth.can.order_view" :href="route('orders.index')" class="menu-item" :class="{ active: route().current('orders.*') }"
                     @click="setCurrentPage('orders')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -34,7 +33,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('transfers.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.transfer_view" :href="route('transfers.index')" class="menu-item"
                     :class="{ active: route().current('transfers.*') }" @click="setCurrentPage('transfers')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -46,7 +45,7 @@
                 </div> 
                 </Link>
 
-                <Link :href="route('products.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.product_view" :href="route('products.index')" class="menu-item"
                     :class="{ active: route().current('products.*') }" @click="setCurrentPage('products')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -59,7 +58,7 @@
                 </Link>
 
 
-                <Link :href="route('inventories.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.inventory_view" :href="route('inventories.index')" class="menu-item"
                     :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -71,20 +70,20 @@
                 </div>
                 </Link>
 
-                <Link :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
+                <Link v-if="$page.props.auth.can.inventory_view" :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
                     @click="setCurrentPage('expired')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expired-icon"
+                        <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expire-icon"
                             style="height: 24px" />
-                        <img v-else src="/assets/images/expire-w.png" class="expired-icon" style="height: 24px" />
+                        <img v-else src="/assets/images/expire-w.png" class="expire-icon" style="height: 24px" />
                     </div>
                     <span class="menu-text">Expires</span>
                 </div>
                 </Link>
 
                 <!-- Liquidate and disposals -->
-                <Link :href="route('liquidate-disposal.liquidates')" class="menu-item"
+                <Link v-if="$page.props.auth.can.liquidate_view" :href="route('liquidate-disposal.liquidates')" class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }" @click="setCurrentPage('liquidate-disposal')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -92,12 +91,12 @@
                             class="liquidate-disposal-icon" style="height: 24px" />
                         <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 24px" />
                     </div>
-                    <span class="menu-text">Liquidate/Disposal</span>
+                    <span class="menu-text">Liquidate & Disposal</span>
                 </div>
                 </Link>
                 
 
-                <Link :href="route('supplies.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.supply_view" :href="route('supplies.index')" class="menu-item"
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -108,7 +107,7 @@
                     <span class="menu-text">Supplies</span>
                 </div>
                 </Link>
-                <Link :href="route('reports.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.report_view" :href="route('reports.index')" class="menu-item"
                     :class="{ active: route().current('reports.*') }" @click="setCurrentPage('reports')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -120,7 +119,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('facilities.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.facility_view" :href="route('facilities.index')" class="menu-item"
                     :class="{ active: route().current('facilities.*') }" @click="setCurrentPage('facilities')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -132,7 +131,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('assets.index')" class="menu-item" :class="{ active: route().current('assets.*') }"
+                <Link v-if="$page.props.auth.can.asset_view" :href="route('assets.index')" class="menu-item" :class="{ active: route().current('assets.*') }"
                     @click="setCurrentPage('assets')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -144,7 +143,7 @@
                 </div>
                 </Link>
 
-                <Link :href="route('settings.index')" class="menu-item"
+                <Link v-if="$page.props.auth.can.settings_view" :href="route('settings.index')" class="menu-item"
                     :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
                 <div class="menu-content">
                     <div class="menu-icon">
@@ -239,8 +238,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     title: {
@@ -257,8 +255,11 @@ const props = defineProps({
     }
 });
 
+const page = usePage();
+const debug = ref(false); // Set to true to see permissions debug info
 const sidebarOpen = ref(true);
 const currentPage = ref('dashboard');
+
 
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
