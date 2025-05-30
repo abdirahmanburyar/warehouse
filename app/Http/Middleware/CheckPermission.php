@@ -17,7 +17,7 @@ class CheckPermission
     {
         if (!$request->user() || !$request->user()->hasPermissionTo($permission)) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Unauthorized. You do not have the required permission.'], 403);
+                return response()->json('Unauthorized. You do not have the required permission.', 500);
             }
             
             return redirect()->route('dashboard')->with('error', 'You do not have permission to access this resource.');
