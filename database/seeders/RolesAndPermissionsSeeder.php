@@ -17,31 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions for warehouses
-        $warehousePermissions = [
-            'warehouse.view',
-            'warehouse.create',
-            'warehouse.edit',
-            'warehouse.delete',
-        ];
-
-        // Create permissions for categories
-        $categoryPermissions = [
-            'category.view',
-            'category.create',
-            'category.edit',
-            'category.delete',
-        ];
-
-        // Create permissions for settings
-        $settingsPermissions = [
-            'settings.view',
-            'settings.create',
-            'settings.edit',
-            'settings.delete',
-        ];
-
-        // Create permissions for users
+        // 1. User Management
         $userPermissions = [
             'user.view',
             'user.create',
@@ -49,22 +25,48 @@ class RolesAndPermissionsSeeder extends Seeder
             'user.delete',
         ];
 
-        // Create permissions for reports
-        $reportPermissions = [
-            'report.view',
-            'report.create',
-            'report.export',
+        // 2. Role Management
+        $rolePermissions = [
+            'role.view',
+            'role.create',
+            'role.edit',
+            'role.delete',
         ];
 
-        // Create permissions for approvals
-        $approvalPermissions = [
-            'approval.view',
-            'approval.create',
-            'approval.edit',
-            'approval.delete',
+        // 3. Category Management
+        $categoryPermissions = [
+            'category.view',
+            'category.create',
+            'category.edit',
+            'category.delete',
         ];
 
-        // Create permissions for dosages
+        // 4. Product Management
+        $productPermissions = [
+            'product.view',
+            'product.create',
+            'product.edit',
+            'product.delete',
+            'product.import',
+        ];
+
+        // 5. Warehouse Management
+        $warehousePermissions = [
+            'warehouse.view',
+            'warehouse.create',
+            'warehouse.edit',
+            'warehouse.delete',
+        ];
+
+        // 6. Location Management
+        $locationPermissions = [
+            'location.view',
+            'location.create',
+            'location.edit',
+            'location.delete',
+        ];
+
+        // 7. Dosage Management
         $dosagePermissions = [
             'dosage.view',
             'dosage.create',
@@ -72,32 +74,160 @@ class RolesAndPermissionsSeeder extends Seeder
             'dosage.delete',
         ];
 
-        // Create permissions for products
-        $productPermissions = [
-            'product.view',
-            'product.create',
-            'product.edit',
-            'product.delete',
+        // 8. Supplier Management
+        $supplierPermissions = [
+            'supplier.view',
+            'supplier.create',
+            'supplier.edit',
+            'supplier.delete',
         ];
 
-        // Create permissions for inventories
+        // 9. Facility Management
+        $facilityPermissions = [
+            'facility.view',
+            'facility.create',
+            'facility.edit',
+            'facility.delete',
+            'facility.inventory',
+            'facility.dispense',
+        ];
+
+        // 10. District Management
+        $districtPermissions = [
+            'district.view',
+            'district.create',
+            'district.edit',
+            'district.delete',
+        ];
+
+        // 11. Inventory Management
         $inventoryPermissions = [
             'inventory.view',
             'inventory.create',
             'inventory.edit',
             'inventory.delete',
+            'inventory.adjust',
+        ];
+
+        // 12. Supply Chain Management
+        $supplyPermissions = [
+            'supply.view',
+            'supply.create',
+            'supply.edit',
+            'supply.delete',
+            'supply.approve',
+            'supply.reject',
+            'supply.review',
+        ];
+
+        // 13. Purchase Order Management
+        $purchaseOrderPermissions = [
+            'purchase-order.view',
+            'purchase-order.create',
+            'purchase-order.edit',
+            'purchase-order.delete',
+            'purchase-order.approve',
+            'purchase-order.reject',
+            'purchase-order.review',
+        ];
+
+        // 14. Packing List Management
+        $packingListPermissions = [
+            'packing-list.view',
+            'packing-list.create',
+            'packing-list.edit',
+            'packing-list.approve',
+            'packing-list.reject',
+            'packing-list.review',
+        ];
+
+        // 15. Transfer Management
+        $transferPermissions = [
+            'transfer.view',
+            'transfer.create',
+            'transfer.edit',
+            'transfer.delete',
+            'transfer.receive',
+            'transfer.backorder',
+        ];
+
+        // 16. Order Management
+        $orderPermissions = [
+            'order.view',
+            'order.create',
+            'order.edit',
+            'order.delete',
+            'order.change-status',
+            'order.bulk-change-status',
+        ];
+
+        // 17. Dispatch Management
+        $dispatchPermissions = [
+            'dispatch.view',
+            'dispatch.create',
+            'dispatch.edit',
+            'dispatch.delete',
+        ];
+
+        // 18. Report Management
+        $reportPermissions = [
+            'report.view',
+            'report.monthly-consumption',
+            'report.stock-level',
+            'report.upload-consumption',
+        ];
+
+        // 19. Approval Management
+        $approvalPermissions = [
+            'approval.view',
+            'approval.approve',
+            'approval.reject',
+        ];
+
+        // 20. Liquidation and Disposal
+        $liquidateDisposalPermissions = [
+            'liquidate.view',
+            'liquidate.create',
+            'liquidate.approve',
+            'liquidate.reject',
+            'liquidate.review',
+            'disposal.view',
+            'disposal.create',
+            'disposal.approve',
+            'disposal.reject',
+            'disposal.review',
+        ];
+
+        // 21. Settings Management
+        $settingsPermissions = [
+            'settings.view',
+            'settings.create',
+            'settings.edit',
+            'settings.delete',
         ];
 
         // Combine all permissions
         $allPermissions = array_merge(
-            $warehousePermissions,
-            $categoryPermissions,
             $userPermissions,
+            $rolePermissions,
+            $categoryPermissions,
+            $productPermissions,
+            $warehousePermissions,
+            $locationPermissions,
+            $dosagePermissions,
+            $supplierPermissions,
+            $facilityPermissions,
+            $districtPermissions,
+            $inventoryPermissions,
+            $supplyPermissions,
+            $purchaseOrderPermissions,
+            $packingListPermissions,
+            $transferPermissions,
+            $orderPermissions,
+            $dispatchPermissions,
             $reportPermissions,
             $approvalPermissions,
-            $dosagePermissions,
-            $productPermissions,
-            $inventoryPermissions,
+            $liquidateDisposalPermissions,
             $settingsPermissions
         );
 
@@ -108,47 +238,91 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create roles and assign permissions
         
-        // Admin role - has all permissions
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        // Administrator role - has all permissions
+        $administratorRole = Role::firstOrCreate(['name' => 'administrator']);
+        $administratorRole->givePermissionTo(Permission::all());
 
-        // Manager role - can manage warehouses and categories but not users
+        // Manager role - can manage operations but not system settings
         $managerRole = Role::firstOrCreate(['name' => 'manager']);
-        $managerRole->givePermissionTo([
-            ...$warehousePermissions,
-            ...$categoryPermissions,
-            ...$productPermissions,
-            ...$dosagePermissions,
-            ...$approvalPermissions,
-            ...$reportPermissions,
-            'user.view',
-        ]);
+        $managerPermissions = array_merge(
+            $userPermissions,
+            $warehousePermissions,
+            $facilityPermissions,
+            $inventoryPermissions,
+            $productPermissions,
+            $categoryPermissions,
+            $supplierPermissions,
+            $orderPermissions,
+            $transferPermissions,
+            $reportPermissions,
+            [
+                // Limited approval permissions
+                'approval.view',
+                'approval.approve',
+                
+                // View-only for roles
+                'role.view',
+            ]
+        );
+        $managerRole->givePermissionTo($managerPermissions);
 
-        // Warehouse operator role - can view and edit warehouses but not delete
+        // Supervisor role - can manage day-to-day operations
+        $supervisorRole = Role::firstOrCreate(['name' => 'supervisor']);
+        $supervisorPermissions = array_merge(
+            // View permissions for most modules
+            ['user.view', 'role.view'],
+            $warehousePermissions,
+            $facilityPermissions,
+            $inventoryPermissions,
+            $productPermissions,
+            $categoryPermissions,
+            $orderPermissions,
+            $transferPermissions,
+            
+            // Review permissions
+            ['supply.review', 'purchase-order.review', 'packing-list.review'],
+            
+            // Report permissions
+            ['report.view', 'report.monthly-consumption', 'report.stock-level']
+        );
+        $supervisorRole->givePermissionTo($supervisorPermissions);
+
+        // Operator role - can perform basic operations
         $operatorRole = Role::firstOrCreate(['name' => 'operator']);
-        $operatorRole->givePermissionTo([
+        $operatorPermissions = [
+            // View permissions
             'warehouse.view',
-            'warehouse.edit',
-            'category.view',
+            'facility.view',
+            'inventory.view',
+            'inventory.adjust',
             'product.view',
-            'dosage.view',
+            'category.view',
+            'order.view',
+            'order.create',
+            'transfer.view',
+            'transfer.create',
             'report.view',
-        ]);
+        ];
+        $operatorRole->givePermissionTo($operatorPermissions);
 
         // Viewer role - can only view data
         $viewerRole = Role::firstOrCreate(['name' => 'viewer']);
-        $viewerRole->givePermissionTo([
+        $viewerPermissions = [
             'warehouse.view',
-            'category.view',
+            'facility.view',
+            'inventory.view',
             'product.view',
-            'dosage.view',
+            'category.view',
+            'order.view',
+            'transfer.view',
             'report.view',
-        ]);
+        ];
+        $viewerRole->givePermissionTo($viewerPermissions);
 
-        // Assign admin role to the first user (assuming it's the admin)
+        // Assign administrator role to the first user (assuming it's the admin)
         $admin = User::first();
         if ($admin) {
-            $admin->assignRole('admin');
+            $admin->assignRole('administrator');
         }
     }
 }
