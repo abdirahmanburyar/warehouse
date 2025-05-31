@@ -332,7 +332,17 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // update transfer item quantity
         Route::post('/update-item', [TransferController::class, 'updateItem'])->name('transfers.update-item');
+
+        // transfer back order
+        Route::get('/back-order', [TransferController::class, 'transferBackOrder'])->name('transfers.back-order');
+
+        // transfer liquidate
+        // Route::get('/liquidate', [TransferController::class, 'transferLiquidate'])->name('transfers.liquidate');
+
+        // // transfer dispose
+        // Route::get('/dispose', [TransferController::class, 'transferDispose'])->name('transfers.dispose');
     });
+
 
     // Purchase Order Management Routes
     Route::prefix('purchase-orders')->group(function () {

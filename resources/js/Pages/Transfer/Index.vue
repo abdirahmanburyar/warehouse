@@ -18,6 +18,18 @@
                         </svg>
                         New Transfer
                     </button>
+                    
+                    <!-- Back Orders -->
+                    <Link :href="route('transfers.back-order')"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Back Orders
+                    </Link>
                 </div>
 
                 <!-- Filters Second -->

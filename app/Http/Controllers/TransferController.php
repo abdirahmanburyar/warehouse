@@ -816,4 +816,15 @@ class TransferController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+
+    public function transferBackOrder(Request $request){
+        $backorders = FacilityBackorder::whereHas('transferItem.transfer', function ($query) use ($request) {
+            $query->whereHas('toWarehouse');
+        })->with(['transferItem.transfer.toWarehouse', 'product'])->get();
+        
+       return inertia('Transfer/BackOrder', [
+           'backorders' => $backorders
+       ]);
+
+    }
 }

@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
   title: string;
-  activeTab: 'liquidate' | 'disposal';
+  activeTab: 'liquidate' | 'disposal' | 'transferBackOrders' | 'transferLiquidates' | 'transferDisposals';
 }>();
 </script>
 
@@ -41,6 +41,39 @@ defineProps<{
           ]"
         >
           Disposals
+        </Link>
+        <Link 
+          href="/transfer-back-orders" 
+          :class="[
+            'px-6 py-3 text-lg font-bold',
+            activeTab === 'transferBackOrders' 
+              ? 'border-b-4 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]"
+        >
+          Transfer Back orders
+        </Link>
+        <Link 
+          href="/transfer-liquidates" 
+          :class="[
+            'px-6 py-3 text-lg font-bold',
+            activeTab === 'transferLiquidates' 
+              ? 'border-b-4 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]"
+        >
+          Transfer Liquidates
+        </Link>
+        <Link 
+          href="/transfer-disposals" 
+          :class="[
+            'px-6 py-3 text-lg font-bold',
+            activeTab === 'transferDisposals' 
+              ? 'border-b-4 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]"
+        >
+          Transfer Disposals
         </Link>
       </div>
 
