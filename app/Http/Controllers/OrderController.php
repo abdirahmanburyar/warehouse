@@ -106,8 +106,6 @@ class OrderController extends Controller
             'rejected' => 0,
             'in_process' => 0,
             'dispatched' => 0,
-            'delivery_pending' => 0,
-            'delivered' => 0,
             'received' => 0
         ];
 
@@ -286,7 +284,7 @@ class OrderController extends Controller
             // Validate request
             $validated = $request->validate([
                 'order_id' => 'required|exists:orders,id',
-                'status' => ['required', Rule::in(['approved', 'in_process', 'dispatched', 'delivered'])]
+                'status' => ['required', Rule::in(['approved', 'in_process', 'dispatched'])]
             ]);
 
             $order = Order::findOrFail($request->order_id);
@@ -296,7 +294,6 @@ class OrderController extends Controller
                 'pending' => ['approved'],
                 'approved' => ['in_process'],
                 'in_process' => ['dispatched'],
-                'dispatched' => ['delivered'],
                 'rejected' => ['approved'] // Allow rejected orders to be approved
             ];
 
@@ -335,11 +332,6 @@ class OrderController extends Controller
                     $updates['dispatched_by'] = $userId;
                     $updates['dispatched_at'] = $now;
                     break;
-                case 'delivered':
-                    $updates['delivered'] = true;
-                    $updates['delivered_at'] = $now;
-                    $updates['delivered_by'] = $userId;
-                    break;
             }
 
             // Update the order
@@ -370,7 +362,7 @@ class OrderController extends Controller
                 ->join('facilities', 'facilities.id', '=', 'orders.facility_id')
                 ->join('products', 'products.id', '=', 'order_items.product_id')
                 ->where('order_items.id', $id)
-                ->whereNotIn('order_items.status', ['pending', 'delivered'])
+                ->whereNotIn('order_items.status', ['pending'])
                 ->select(
                     'products.name as product_name',
                     'facilities.name as facility_name',

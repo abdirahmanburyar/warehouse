@@ -31,7 +31,7 @@ const orderTypes = [
 // Compute total orders
 const totalOrders = computed(() => {
     return props.stats.pending + props.stats.approved + props.stats.in_process +
-        props.stats.dispatched + props.stats.delivered;
+        props.stats.dispatched + props.stats.received;
 });
 
 // Status configuration
@@ -41,9 +41,7 @@ const statusTabs = [
     { value: 'approved', label: 'Approved', color: 'green' },
     { value: 'in_process', label: 'In Process', color: 'blue' },
     { value: 'dispatched', label: 'Dispatched', color: 'purple' },
-    { value: 'delivered', label: 'Delivered', color: 'indigo' },
-    { value: 'received', label: 'Completely Received', color: 'gray' },
-    { value: 'partially_received', label: 'Partially Received With Back Order', color: 'teal' },
+    { value: 'received', label: 'Received', color: 'indigo' },
     { value: 'rejected', label: 'Rejected', color: 'red' }
 ];
 
@@ -180,10 +178,6 @@ const getStatusActions = (order) => {
         case 'in_process':
             actions.push({ label: 'Dispatch', status: 'dispatched', color: 'purple', icon: '/assets/images/dispatch.png' });
             // Reject action removed for in_process orders
-            break;
-        case 'dispatched':
-            actions.push({ label: 'Deliver', status: 'delivered', color: 'indigo', icon: '/assets/images/delivery.png' });
-            // Reject action removed for dispatched orders
             break;
         case 'rejected':
             actions.push({ label: 'Approve', status: 'approved', color: 'green', icon: '/assets/images/approved.png' });
@@ -386,10 +380,10 @@ const formatDate = (date) => {
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-1">
                                                 <!-- Always show pending as it's the initial state -->
-                                                <img src="/assets/images/pending.svg" class="w-12 h-12" alt="pending" />
+                                                <img src="/assets/images/pending.png" class="w-12 h-12" alt="pending" />
 
                                                 <!-- Only show approved if status is approved or further -->
-                                                <img v-if="['approved', 'in_process', 'dispatched', 'delivered', 'received'].includes(order.status)"
+                                                <img v-if="['approved', 'in_process', 'dispatched', 'received'].includes(order.status)"
                                                     src="/assets/images/approved.png" class="w-12 h-12"
                                                     alt="Approved" />
                                                 <!-- Only show rejected if status is rejected -->
@@ -398,19 +392,14 @@ const formatDate = (date) => {
                                                     alt="Rejected" />
 
                                                 <!-- Only show in_process if status is in_process or further -->
-                                                <img v-if="['in_process', 'dispatched', 'delivered', 'received'].includes(order.status)"
+                                                <img v-if="['in_process', 'dispatched', 'received'].includes(order.status)"
                                                     src="/assets/images/inprocess.png" class="w-12 h-12"
                                                     alt="In Process" />
 
                                                 <!-- Only show dispatched if status is dispatched or further -->
-                                                <img v-if="['dispatched', 'delivered', 'received'].includes(order.status)"
+                                                <img v-if="['dispatched', 'received'].includes(order.status)"
                                                     src="/assets/images/dispatch.png" class="w-12 h-12"
                                                     alt="Dispatched" />
-
-                                                <!-- Only show delivered if status is delivered or received -->
-                                                <img v-if="['delivered', 'received'].includes(order.status)"
-                                                    src="/assets/images/delivery.png" class="w-12 h-12"
-                                                    alt="Delivered" />
 
                                                 <!-- Only show received if status is received -->
                                                 <img v-if="order.status === 'received'"
@@ -447,7 +436,7 @@ const formatDate = (date) => {
                                             </button>
                                         </template>
                                         <div class="flex flex-cols items-center text-center">
-                                            <span v-if="order.status == 'delivered'">Waiting to be<br />received by the facility</span>
+                                            <span v-if="order.status == 'dispatched'">Waiting to be<br />received by the facility</span>
                                             <span v-if="order.status == 'received'">successfully received</span>
                                         </div>
                                     </td>
@@ -570,23 +559,23 @@ const formatDate = (date) => {
                         </div>
                     </div>
 
-                    <!-- Delivered -->
+                    <!-- Received -->
                     <div class="relative">
                         <div class="flex items-center mb-2">
                             <div class="w-16 h-16 relative mr-4">
                                 <svg class="w-16 h-16 transform -rotate-90">
                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#6366f1" stroke-width="4"
-                                        :stroke-dasharray="`${(stats.delivered / totalOrders) * 125.6} 125.6`" />
+                                        :stroke-dasharray="`${(stats.received / totalOrders) * 125.6} 125.6`" />
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <span class="text-base font-bold text-indigo-600">{{ totalOrders > 0 ?
-                                        Math.round((stats.delivered / totalOrders) * 100) : 0 }}%</span>
+                                        Math.round((stats.received / totalOrders) * 100) : 0 }}%</span>
                                 </div>
                             </div>
                             <div>
-                                <div class="text-lg font-bold text-gray-900">{{ stats.delivered }}</div>
-                                <div class="text-base text-gray-600">Delivered</div>
+                                <div class="text-lg font-bold text-gray-900">{{ stats.received }}</div>
+                                <div class="text-base text-gray-600">Received</div>
                             </div>
                         </div>
                     </div>
