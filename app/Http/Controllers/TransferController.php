@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TransferCreated;
 use App\Events\TransferStatusChanged;
+use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
 
 class TransferController extends Controller
@@ -766,6 +767,18 @@ class TransferController extends Controller
             ]);
             
             DB::commit();
+            
+            // Dispatch event for real-time inventory updates
+            $inventoryData = [
+                'product_id' => $backorder->product_id,
+                'warehouse_id' => $warehouseId,
+                'quantity' => $inventory->quantity,
+                'batch_number' => $transferItem->batch_number,
+                'expiry_date' => $transferItem->expire_date,
+                'action' => 'received',
+                'source' => 'backorder'
+            ];
+            event(new \App\Events\InventoryUpdated($inventoryData));
             return response()->json([
                 'message' => 'Backorder received successfully'
             ], 200);

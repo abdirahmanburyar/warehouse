@@ -16,10 +16,20 @@ class InventoryUpdated implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * Create a new event instance.
+     * The inventory data
+     *
+     * @var array
      */
-    public function __construct()
-    {
+    public $inventory;
+
+    /**
+     * Create a new event instance.
+     *
+     * @param array $inventory
+     */
+    public function __construct($inventory)
+    {  
+        $this->inventory = $inventory;
     }
 
     /**

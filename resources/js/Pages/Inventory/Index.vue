@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed, reactive, onMounted, onBeforeUnmount } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
+import Echo from 'laravel-echo';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -98,6 +99,32 @@ watch(() => props.inventories, (newInventories) => {
     currentInventories.data = [...newInventories.data];
     currentInventories.meta = { ...newInventories.meta };
 }, { deep: true });
+
+// Set up real-time inventory updates
+let echoChannel = null;
+
+onMounted(() => {
+    // Listen for inventory updates
+    echoChannel = window.Echo.channel('inventory')
+        .listen('.refresh', (data) => {
+            console.log('[PUSHER-DEBUG] Received inventory update:', data);
+            
+            // Show notification about the update
+            toast.info(`Inventory updated: ${data.inventory.quantity} units of product #${data.inventory.product_id} received from backorder`);
+            
+            // If the current warehouse matches the updated inventory's warehouse, refresh the data
+            if (!warehouse.value || warehouse.value == data.inventory.warehouse_id) {
+                applyFilters();
+            }
+        });
+});
+
+onBeforeUnmount(() => {
+    // Clean up Echo listeners when component is unmounted
+    if (echoChannel) {
+        echoChannel.stopListening('.refresh');
+    }
+});
 
 
 // Watch for product changes to update product_id
