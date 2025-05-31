@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\IssuedQuantity;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Facility;
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ReceivedQuantity;
 use App\Models\Warehouse;
@@ -24,6 +25,39 @@ class ReportController extends Controller
     public function stockLevelReport(Request $request){
         return inertia('Report/stockLevelReport');
     } 
+
+    public function physicalCountReport(Request $request){
+        $query = Inventory::query()
+            ->with(['product' => function($query) {
+                $query->with(['dosage', 'category']);
+            }])
+            ->orderBy('expiry_date');
+
+        // Apply filters
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+
+        if ($request->filled('expiry_date')) {
+            $query->whereDate('expiry_date', '<=', $request->expiry_date);
+        }
+
+        $inventories = $query->paginate($request->input('per_page', 100))
+            ->withQueryString();
+        
+        return Inertia::render('Report/PhysicalCount', [
+            'inventories' => $inventories,
+            'products' => Product::orderBy('name')->get(),
+            'categories' => DB::table('categories')->orderBy('name')->get(),
+            'filters' => $request->only(['product_id', 'category_id', 'expiry_date', 'per_page']),
+        ]);
+    }
 
 
     public function issuedQuantity(Request $request){

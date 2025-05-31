@@ -424,6 +424,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.monthlyConsumption');
         Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.stockLevelReport');
         Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.receivedQuantities');
+        Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
         
         // Excel Upload Route
         Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.upload-consumption');
