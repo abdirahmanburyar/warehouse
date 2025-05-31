@@ -12,6 +12,7 @@ use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Product;
+use App\Models\BackOrderHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -687,6 +688,94 @@ class TransferController extends Controller
     }
 
 
+    public function receiveBackOrder(Request $request){
+        try {
+            DB::beginTransaction();
+            
+            $request->validate([
+                'backorder' => 'required',
+                'quantity' => 'required|numeric|min:1',
+            ]);
+            
+            $backorderData = $request->backorder;
+            $receivedQuantity = $request->quantity;
+            
+            // Find the backorder record
+            $backorder = FacilityBackorder::findOrFail($backorderData['id']);
+            
+            // Find the transfer item
+            $transferItem = TransferItem::findOrFail($backorder->transfer_item_id);
+            
+            // Update the received quantity of the transfer item
+            $transferItem->received_quantity += $receivedQuantity;
+            $transferItem->save();
+            
+            // Deduct the received quantity from the backorder
+            $backorder->quantity -= $receivedQuantity;
+            
+            // If quantity becomes zero, delete the backorder
+            if ($backorder->quantity <= 0) {
+                $backorder->delete();
+            } else {
+                // Otherwise, save the updated quantity
+                $backorder->save();
+            }
+            
+            // Get the warehouse ID from the transfer
+            $transfer = Transfer::with('toWarehouse')->findOrFail($transferItem->transfer_id);
+            $warehouseId = $transfer->to_warehouse_id;
+            
+            if (!$warehouseId) {
+                throw new \Exception('No destination warehouse found for this transfer');
+            }
+            
+            // Check if inventory exists for this product in the warehouse
+            $inventory = Inventory::where('warehouse_id', $warehouseId)
+                ->where('product_id', $backorder->product_id)
+                ->where('batch_number', $transferItem->batch_number)
+                ->where('expiry_date', $transferItem->expire_date)
+                ->first();
+            
+            if ($inventory) {
+                // Update existing inventory
+                $inventory->quantity += $receivedQuantity;
+                $inventory->save();
+            } else {
+                // Create new inventory record
+                $inventory = Inventory::create([
+                    'warehouse_id' => $warehouseId,
+                    'product_id' => $backorder->product_id,
+                    'batch_number' => $transferItem->batch_number,
+                    'expiry_date' => $transferItem->expire_date,
+                    'barcode' => $transferItem->barcode,
+                    'quantity' => $receivedQuantity,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
+            }
+            
+            // Create backorder history record
+            BackOrderHistory::create([
+                'packing_list_id' => null, // No packing list for transfer backorders
+                'transfer_id' => $transfer->id,
+                'product_id' => $backorder->product_id,
+                'quantity' => $receivedQuantity,
+                'status' => "Received", // 'Missing' or 'Damaged'
+                'note' => 'Backorder received and added to inventory',
+                'performed_by' => auth()->id()
+            ]);
+            
+            DB::commit();
+            return response()->json([
+                'message' => 'Backorder received successfully'
+            ], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+
     public function receiveTransfer(Request $request)
     {
         try {
@@ -820,7 +909,7 @@ class TransferController extends Controller
     public function transferBackOrder(Request $request){
         $backorders = FacilityBackorder::whereHas('transferItem.transfer', function ($query) use ($request) {
             $query->whereHas('toWarehouse');
-        })->with(['transferItem.transfer.toWarehouse', 'product'])->get();
+        })->with(['transferItem.transfer.toWarehouse', 'product','inventoryAllocation.product'])->get();
         
        return inertia('Transfer/BackOrder', [
            'backorders' => $backorders

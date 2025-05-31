@@ -328,6 +328,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
         // receive transfer
         Route::post('/receive', [TransferController::class, 'receiveTransfer'])->name('transfers.receiveTransfer');
+        
+        // receive back order
+        Route::post('/receive-back-order', [TransferController::class, 'receiveBackOrder'])->name('transfers.receiveBackOrder');
+        
+        // delete transfer item
         Route::get('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
 
         // update transfer item quantity

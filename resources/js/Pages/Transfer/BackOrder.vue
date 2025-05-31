@@ -91,14 +91,23 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-black">
-                                    <button @click="viewBackorder(backorder.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">
-                                        View
+                                    <button @click="receiveBackorder(backorder)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mr-2">
+                                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Receive
                                     </button>
-                                    <button @click="approveBackorder(backorder.id)" v-if="backorder.status === 'pending'" class="text-green-600 hover:text-green-900 mr-2">
-                                        Approve
+                                    <button v-if="backorder.type === 'Missing'" @click="liquidateBackorder(backorder.id)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2">
+                                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        Liquidate
                                     </button>
-                                    <button @click="rejectBackorder(backorder.id)" v-if="backorder.status === 'pending'" class="text-red-600 hover:text-red-900">
-                                        Reject
+                                    <button v-if="backorder.type === 'Damaged'" @click="disposeBackorder(backorder.id)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Dispose
                                     </button>
                                 </td>
                             </tr>
@@ -144,10 +153,70 @@ const Toast = Swal.mixin({
     }
 });
 
-// Function to view backorder details
-const viewBackorder = (id) => {
-    // Find the backorder in the array
-    const backorder = backorders.value.find(b => b.id === id);
+// Function to liquidate backorder (for Missing type)
+const liquidateBackorder = (id) => {
+    Swal.fire({
+        title: 'Liquidate Backorder',
+        text: 'Are you sure you want to liquidate this backorder?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, liquidate it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Call API to liquidate backorder
+            axios.post(route('transfers.liquidate', id))
+                .then(response => {
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Backorder has been sent for liquidation'
+                    });
+                    router.reload();
+                })
+                .catch(error => {
+                    Toast.fire({
+                        icon: 'error',
+                        title: error.response?.data?.message || 'Failed to liquidate backorder'
+                    });
+                });
+        }
+    });
+};
+
+// Function to dispose backorder (for Damaged type)
+const disposeBackorder = (id) => {
+    Swal.fire({
+        title: 'Dispose Backorder',
+        text: 'Are you sure you want to dispose this damaged item?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, dispose it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Call API to dispose backorder
+            axios.post(route('transfers.dispose', id))
+                .then(response => {
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Backorder has been sent for disposal'
+                    });
+                    router.reload();
+                })
+                .catch(error => {
+                    Toast.fire({
+                        icon: 'error',
+                        title: error.response?.data?.message || 'Failed to dispose backorder'
+                    });
+                });
+        }
+    });
+};
+
+// Function to receive backorder (for both types)
+const receiveBackorder = (backorder) => {
     
     if (!backorder) {
         Toast.fire({
@@ -157,83 +226,96 @@ const viewBackorder = (id) => {
         return;
     }
     
-    // Show backorder details in a modal
+    // Show modal with quantity input
     Swal.fire({
-        title: 'Backorder Details',
+        title: 'Receive Backorder',
         html: `
-            <div class="text-left">
-                <p><strong>ID:</strong> ${backorder.id}</p>
-                <p><strong>Product:</strong> ${backorder.product?.name || 'N/A'}</p>
-                <p><strong>Quantity:</strong> ${backorder.quantity}</p>
-                <p><strong>Type:</strong> ${backorder.type}</p>
-                <p><strong>Status:</strong> ${backorder.status}</p>
-                <p><strong>Notes:</strong> ${backorder.notes || 'No notes'}</p>
-                <p><strong>Created At:</strong> ${new Date(backorder.created_at).toLocaleString()}</p>
+            <div class="text-left mb-4">
+                <p class="mb-2"><strong>Product:</strong> ${backorder.product?.name || 'N/A'}</p>
+                <p class="mb-2"><strong>Backorder Quantity:</strong> ${backorder.quantity}</p>
+                <div class="mt-4">
+                    <label for="received-quantity" class="block text-sm font-medium text-gray-700 mb-1">Received Quantity:</label>
+                    <input type="number" id="received-quantity" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                        min="1" max="${backorder.quantity}" value="${backorder.quantity}"
+                        oninput="if(this.value > ${backorder.quantity}) this.value = ${backorder.quantity};">
+                </div>
             </div>
         `,
-        icon: 'info',
-        confirmButtonText: 'Close'
-    });
-};
-
-// Function to approve backorder
-const approveBackorder = (id) => {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: 'You are about to approve this backorder',
-        icon: 'warning',
+        icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, approve it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Call API to approve backorder
-            axios.post(route('transfers.backorder.approve', id))
-                .then(response => {
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Backorder approved successfully'
-                    });
-                    router.reload();
-                })
-                .catch(error => {
-                    Toast.fire({
-                        icon: 'error',
-                        title: error.response?.data?.message || 'Failed to approve backorder'
-                    });
-                });
+        confirmButtonText: 'Receive',
+        preConfirm: () => {
+            const receivedQuantity = document.getElementById('received-quantity').value;
+            if (!receivedQuantity || receivedQuantity <= 0) {
+                Swal.showValidationMessage('Please enter a valid quantity');
+                return false;
+            }
+            if (receivedQuantity > backorder.quantity) {
+                Swal.showValidationMessage(`Received quantity cannot exceed backorder quantity (${backorder.quantity})`);
+                return false;
+            }
+            return receivedQuantity;
         }
-    });
-};
-
-// Function to reject backorder
-const rejectBackorder = (id) => {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: 'You are about to reject this backorder',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, reject it!'
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
-            // Call API to reject backorder
-            axios.post(route('transfers.backorder.reject', id))
-                .then(response => {
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Backorder rejected successfully'
-                    });
-                    router.reload();
-                })
-                .catch(error => {
-                    Toast.fire({
-                        icon: 'error',
-                        title: error.response?.data?.message || 'Failed to reject backorder'
-                    });
+            const receivedQuantity = result.value;
+            
+            // Show loading indicator
+            Swal.fire({
+                title: 'Processing...',
+                html: 'Receiving backorder items, please wait.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Call API to receive backorder with quantity
+            try {
+                const response = await axios.post(route('transfers.receiveBackOrder'), {
+                    backorder: backorder,
+                    quantity: receivedQuantity
                 });
+                
+                // Close loading indicator
+                Swal.close();
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: response.data.message || 'Backorder has been received successfully'
+                });
+                
+                // Wait a moment before redirecting to ensure toast is visible
+                setTimeout(() => {
+                    router.get(route('transfers.back-order'));
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error receiving backorder:', error);
+                
+                // Close loading indicator
+                Swal.close();
+                
+                // Handle different error response formats
+                let errorMessage = 'Failed to receive backorder';
+                if (error.response?.data) {
+                    if (typeof error.response.data === 'string') {
+                        errorMessage = error.response.data;
+                    } else if (error.response.data.error) {
+                        errorMessage = error.response.data.error;
+                    } else if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                }
+                
+                Toast.fire({
+                    icon: 'error',
+                    title: errorMessage
+                });
+            }
         }
     });
 };

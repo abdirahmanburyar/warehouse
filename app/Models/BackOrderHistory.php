@@ -15,6 +15,7 @@ class BackOrderHistory extends Model
 
     protected $fillable = [
         'packing_list_id',
+        'transfer_id',
         'product_id',
         'quantity',
         'status',
@@ -26,6 +27,11 @@ class BackOrderHistory extends Model
     public function packingList(): BelongsTo
     {
         return $this->belongsTo(PackingList::class);
+    }
+
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(Transfer::class);
     }
 
     public function product(): BelongsTo

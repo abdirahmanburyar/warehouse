@@ -256,7 +256,7 @@ function getResults(page = 1) {
     <Head title="Inventory Management" />
 
     <AuthenticatedLayout img="/assets/images/inventory.png" title="Management Your Inventory" description="Keeping Essentials Ready, Every Time">
-        <div class="text-gray-900">
+        <div class="mb-[100px]">
             <!-- Navigation Buttons -->
             <div class="flex justify-end items-center mb-4">
                 <div class="flex space-x-4">
