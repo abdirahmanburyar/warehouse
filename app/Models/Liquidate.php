@@ -21,6 +21,7 @@ class Liquidate extends Model
     protected $fillable = [
         'liquidate_id',
         'product_id',
+        'transfer_id',
         'purchase_order_id',
         'packing_list_id',
         'inventory_id',
@@ -49,6 +50,14 @@ class Liquidate extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the transfer that owns the liquidate record
+     */
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(Transfer::class);
     }
 
     /**

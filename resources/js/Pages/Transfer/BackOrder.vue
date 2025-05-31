@@ -97,13 +97,13 @@
                                         </svg>
                                         Receive
                                     </button>
-                                    <button v-if="backorder.type === 'Missing'" @click="liquidateBackorder(backorder.id)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2">
+                                    <button v-if="backorder.type === 'Missing'" @click="liquidateBackorder(backorder)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2">
                                         <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
                                         Liquidate
                                     </button>
-                                    <button v-if="backorder.type === 'Damaged'" @click="disposeBackorder(backorder.id)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    <button v-if="backorder.type === 'Damaged'" @click="disposeBackorder(backorder)" class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                         <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -116,31 +116,230 @@
                 </div>
                 </div>
         </div>
+        
+        <!-- Liquidation Modal -->
+        <Modal :show="showLiquidateModal" max-width="xl" @close="showLiquidateModal = false">
+            <form id="liquidationForm" class="p-6 space-y-4" @submit.prevent="submitLiquidation">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Liquidate Backorder</h2>
+                
+                <!-- Product Info -->
+                <div v-if="selectedBackorder" class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.product?.productID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product Name</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.product?.name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Transfer ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.transfer_item?.transfer?.transferID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Status</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.status }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        v-model="liquidateForm.quantity"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        :min="1"
+                        :max="selectedBackorder?.quantity"
+                        required
+                    >
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label for="note" class="block text-sm font-medium text-gray-700">Note</label>
+                    <textarea 
+                        id="note" 
+                        v-model="liquidateForm.note"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- Attachments -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
+                    <input 
+                        type="file" 
+                        @change="handleLiquidateFileChange"
+                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        multiple
+                        accept=".pdf"
+                        required
+                    >
+                </div>
+
+                <!-- Selected Files Preview -->
+                <div v-if="liquidateForm.attachments.length > 0" class="mt-2">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                    <ul class="space-y-2">
+                        <li v-for="(file, index) in liquidateForm.attachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                            <span>{{ file.name }}</span>
+                            <button 
+                                type="button"
+                                @click="removeLiquidateFile(index)" 
+                                class="text-red-500 hover:text-red-700"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        @click="showLiquidateModal = false"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        :disabled="isSubmitting"
+                    >
+                        {{ isSubmitting ? 'Liquidating...' : 'Liquidate' }}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+
+        <!-- Dispose Modal -->
+        <Modal :show="showDisposeModal" max-width="xl" @close="showDisposeModal = false">
+            <form id="disposeForm" class="p-6 space-y-4" @submit.prevent="submitDisposal">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Dispose Backorder</h2>
+                
+                <!-- Product Info -->
+                <div v-if="selectedBackorder" class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.product?.productID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Product Name</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.product?.name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Transfer ID</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.transfer_item?.transfer?.transferID }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Status</p>
+                            <p class="text-sm text-gray-900">{{ selectedBackorder.status }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        v-model="disposeForm.quantity"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        :min="1"
+                        :max="selectedBackorder?.quantity"
+                        required
+                    >
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label for="note" class="block text-sm font-medium text-gray-700">Note</label>
+                    <textarea 
+                        id="note" 
+                        v-model="disposeForm.note"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- Attachments -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
+                    <input 
+                        type="file" 
+                        @change="handleDisposeFileChange"
+                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        multiple
+                        accept=".pdf"
+                        required
+                    >
+                </div>
+
+                <!-- Selected Files Preview -->
+                <div v-if="disposeForm.attachments.length > 0" class="mt-2">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                    <ul class="space-y-2">
+                        <li v-for="(file, index) in disposeForm.attachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                            <span>{{ file.name }}</span>
+                            <button 
+                                type="button"
+                                @click="removeDisposeFile(index)" 
+                                class="text-red-500 hover:text-red-700"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        @click="showDisposeModal = false"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        :disabled="isSubmitting"
+                    >
+                        {{ isSubmitting ? 'Disposing...' : 'Dispose' }}
+                    </button>
+                </div>
+            </form>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
 import axios from 'axios';
+import { ref } from 'vue';
 import Swal from 'sweetalert2';
+import Modal from '@/Components/Modal.vue';
 import moment from 'moment';
 
 // Define props to receive data from the controller
 const props = defineProps({
-    backorders: {
-        type: Array,
-        default: () => []
-    }
+    backorders: Array
 });
 
-// Create a computed property for backorders to handle possible undefined values
-const backorders = computed(() => {
-    return props.backorders || [];
-});
-
-// Toast notification configuration
+// SweetAlert Toast configuration
 const Toast = Swal.mixin({
     toast: true,
     position: 'top-end',
@@ -148,71 +347,190 @@ const Toast = Swal.mixin({
     timer: 3000,
     timerProgressBar: true,
     didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer)
-        toast.addEventListener('mouseleave', Swal.resumeTimer)
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
     }
 });
 
-// Function to liquidate backorder (for Missing type)
-const liquidateBackorder = (id) => {
-    Swal.fire({
-        title: 'Liquidate Backorder',
-        text: 'Are you sure you want to liquidate this backorder?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, liquidate it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Call API to liquidate backorder
-            axios.post(route('transfers.liquidate', id))
-                .then(response => {
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Backorder has been sent for liquidation'
-                    });
-                    router.reload();
-                })
-                .catch(error => {
-                    Toast.fire({
-                        icon: 'error',
-                        title: error.response?.data?.message || 'Failed to liquidate backorder'
-                    });
-                });
-        }
-    });
+// Reactive state variables
+const isSubmitting = ref(false);
+const selectedBackorder = ref(null);
+const showLiquidateModal = ref(false);
+const showDisposeModal = ref(false);
+
+// Form data for liquidation and disposal
+const liquidateForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
+});
+
+const disposeForm = ref({
+    quantity: 0,
+    note: '',
+    attachments: []
+});
+
+// File handling functions for liquidation
+const handleLiquidateFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    liquidateForm.value.attachments = [...liquidateForm.value.attachments, ...files];
 };
 
-// Function to dispose backorder (for Damaged type)
-const disposeBackorder = (id) => {
-    Swal.fire({
-        title: 'Dispose Backorder',
-        text: 'Are you sure you want to dispose this damaged item?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, dispose it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Call API to dispose backorder
-            axios.post(route('transfers.dispose', id))
-                .then(response => {
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Backorder has been sent for disposal'
-                    });
-                    router.reload();
-                })
-                .catch(error => {
-                    Toast.fire({
-                        icon: 'error',
-                        title: error.response?.data?.message || 'Failed to dispose backorder'
-                    });
-                });
+const removeLiquidateFile = (index) => {
+    liquidateForm.value.attachments.splice(index, 1);
+};
+
+// File handling functions for disposal
+const handleDisposeFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    disposeForm.value.attachments = [...disposeForm.value.attachments, ...files];
+};
+
+const removeDisposeFile = (index) => {
+    disposeForm.value.attachments.splice(index, 1);
+};
+
+
+
+// Function to open liquidation modal
+const liquidateBackorder = (backorder) => {
+    selectedBackorder.value = backorder;
+    liquidateForm.value.quantity = backorder.quantity;
+    liquidateForm.value.note = '';
+    liquidateForm.value.attachments = [];
+    showLiquidateModal.value = true;
+};
+
+// Function to open disposal modal
+const disposeBackorder = (backorder) => {
+    selectedBackorder.value = backorder;
+    disposeForm.value.quantity = backorder.quantity;
+    disposeForm.value.note = '';
+    disposeForm.value.attachments = [];
+    showDisposeModal.value = true;
+};
+
+// Function to submit liquidation
+const submitLiquidation = async () => {
+    try {
+        isSubmitting.value = true;
+        
+        // Create form data for file upload
+        const formData = new FormData();
+        formData.append('backorder', JSON.stringify(selectedBackorder.value));
+        formData.append('quantity', liquidateForm.value.quantity);
+        formData.append('note', liquidateForm.value.note);
+        
+        // Add attachments
+        liquidateForm.value.attachments.forEach((file, index) => {
+            formData.append(`attachments[${index}]`, file);
+        });
+        
+        // Call API to liquidate backorder
+        const response = await axios.post(route('transfers.liquidate'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        Toast.fire({
+            icon: 'success',
+            title: response.data.message || 'Backorder has been sent for liquidation'
+        });
+        
+        // Close modal and reset form
+        showLiquidateModal.value = false;
+        liquidateForm.value = { quantity: 0, note: '', attachments: [] };
+        
+        // Wait a moment before redirecting to ensure toast is visible
+        setTimeout(() => {
+            router.get(route('transfers.back-order'));
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error liquidating backorder:', error);
+        
+        // Handle different error response formats
+        let errorMessage = 'Failed to liquidate backorder';
+        if (error.response?.data) {
+            if (typeof error.response.data === 'string') {
+                errorMessage = error.response.data;
+            } else if (error.response.data.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response.data.message) {
+                errorMessage = error.response.data.message;
+            }
         }
-    });
+        
+        Toast.fire({
+            icon: 'error',
+            title: errorMessage
+        });
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+// Function to submit disposal
+const submitDisposal = async () => {
+    try {
+        isSubmitting.value = true;
+        
+        // Create form data for file upload
+        const formData = new FormData();
+        formData.append('backorder', JSON.stringify(selectedBackorder.value));
+        formData.append('quantity', disposeForm.value.quantity);
+        formData.append('note', disposeForm.value.note);
+        
+        // Add attachments
+        disposeForm.value.attachments.forEach((file, index) => {
+            formData.append(`attachments[${index}]`, file);
+        });
+        
+        // Call API to dispose backorder
+        const response = await axios.post(route('transfers.dispose'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        Toast.fire({
+            icon: 'success',
+            title: response.data.message || 'Backorder has been sent for disposal'
+        });
+        
+        // Close modal and reset form
+        showDisposeModal.value = false;
+        disposeForm.value = { quantity: 0, note: '', attachments: [] };
+        
+        // Wait a moment before redirecting to ensure toast is visible
+        setTimeout(() => {
+            router.get(route('transfers.back-order'));
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error disposing backorder:', error);
+        
+        // Handle different error response formats
+        let errorMessage = 'Failed to dispose backorder';
+        if (error.response?.data) {
+            if (typeof error.response.data === 'string') {
+                errorMessage = error.response.data;
+            } else if (error.response.data.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response.data.message) {
+                errorMessage = error.response.data.message;
+            }
+        }
+        
+        Toast.fire({
+            icon: 'error',
+            title: errorMessage
+        });
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 // Function to receive backorder (for both types)

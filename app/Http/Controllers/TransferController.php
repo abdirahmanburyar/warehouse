@@ -13,6 +13,7 @@ use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Product;
 use App\Models\BackOrderHistory;
+use App\Models\Liquidate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -784,11 +785,212 @@ class TransferController extends Controller
             ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
 
+    // liquidate backorder
+    public function transferLiquidate(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $request->validate([
+                'backorder' => 'required',
+                'quantity' => 'required|numeric|min:1',
+                'note' => 'required|string',
+                'attachments.*' => 'nullable|file|mimes:pdf|max:10240',
+            ]);
+            
+            $backorderData = json_decode($request->backorder, true);
+            
+            // Find the backorder record
+            $backorder = FacilityBackorder::findOrFail($backorderData['id']);
+            
+            // Check if requested quantity is valid
+            if ($request->quantity > $backorder->quantity) {
+                return response()->json([
+                    'error' => 'Requested quantity exceeds available backorder quantity'
+                ], 422);
+            }
+            
+            // Get the transfer item and transfer
+            $transferItem = TransferItem::findOrFail($backorder->transfer_item_id);
+            $transfer = Transfer::findOrFail($transferItem->transfer_id);
+            
+            // Handle file attachments if any
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('attachments/liquidations'), $fileName);
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => '/attachments/liquidations/' . $fileName,
+                        'type' => $file->getClientMimeType(),
+                        'size' => filesize(public_path('attachments/liquidations/' . $fileName)),
+                        'uploaded_at' => now()->toDateTimeString()
+                    ];
+                }
+            }
+            
+            // Create a new liquidation record
+            $liquidate = Liquidate::create([
+                'product_id' => $backorder->product_id,
+                'transfer_id' => $transfer->id,
+                'quantity' => $request->quantity,
+                'status' => 'pending',
+                'batch_number' => $transferItem->batch_number,
+                'expire_date' => $transferItem->expire_date,
+                'barcode' => $transferItem->barcode,
+                'uom' => $transferItem->uom,
+                'note' => $request->note,
+                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+                'liquidated_by' => auth()->id(),
+                'liquidated_at' => now()
+            ]);
+            
+            // Create backorder history record
+            BackOrderHistory::create([
+                'packing_list_id' => null,
+                'transfer_id' => $transfer->id,
+                'product_id' => $backorder->product_id,
+                'quantity' => $request->quantity,
+                'status' => 'Liquidated',
+                'note' => $request->note,
+                'performed_by' => auth()->id()
+            ]);
+            
+            // If all quantity is liquidated, delete the backorder
+            // Otherwise, reduce the quantity
+            if ($request->quantity >= $backorder->quantity) {
+                $backorder->delete();
+            } else {
+                $backorder->quantity -= $request->quantity;
+                $backorder->save();
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Backorder has been sent for liquidation',
+                'liquidate' => $liquidate
+            ], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
 
+    // dispose backorder
+    public function transferDispose(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $request->validate([
+                'backorder' => 'required',
+                'quantity' => 'required|numeric|min:1',
+                'note' => 'required|string',
+                'attachments.*' => 'nullable|file|mimes:pdf|max:10240',
+            ]);
+            
+            $backorderData = json_decode($request->backorder, true);
+            
+            // Find the backorder record
+            $backorder = FacilityBackorder::findOrFail($backorderData['id']);
+            
+            // Verify that this is a damaged backorder
+            if ($backorder->type !== 'Damaged') {
+                return response()->json([
+                    'error' => 'Only damaged backorders can be disposed'
+                ], 422);
+            }
+            
+            // Check if requested quantity is valid
+            if ($request->quantity > $backorder->quantity) {
+                return response()->json([
+                    'error' => 'Requested quantity exceeds available backorder quantity'
+                ], 422);
+            }
+            
+            // Get the transfer item and transfer
+            $transferItem = TransferItem::findOrFail($backorder->transfer_item_id);
+            $transfer = Transfer::findOrFail($transferItem->transfer_id);
+            
+            // Handle file attachments if any
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('attachments/disposals'), $fileName);
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => '/attachments/disposals/' . $fileName,
+                        'type' => $file->getClientMimeType(),
+                        'size' => filesize(public_path('attachments/disposals/' . $fileName)),
+                        'uploaded_at' => now()->toDateTimeString()
+                    ];
+                }
+            }
+            
+            // Create a disposal record
+            $disposal = DB::table('disposals')->insert([
+                'product_id' => $backorder->product_id,
+                'transfer_id' => $transfer->id,
+                'quantity' => $request->quantity,
+                'status' => 'pending',
+                'batch_number' => $transferItem->batch_number,
+                'expire_date' => $transferItem->expire_date,
+                'barcode' => $transferItem->barcode,
+                'uom' => $transferItem->uom,
+                'note' => $request->note,
+                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+                'disposed_by' => auth()->id(),
+                'disposed_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // Create backorder history record
+            BackOrderHistory::create([
+                'packing_list_id' => null,
+                'transfer_id' => $transfer->id,
+                'product_id' => $backorder->product_id,
+                'quantity' => $request->quantity,
+                'status' => 'Disposed',
+                'note' => $request->note,
+                'performed_by' => auth()->id()
+            ]);
+            
+            // If all quantity is disposed, delete the backorder
+            // Otherwise, reduce the quantity
+            if ($request->quantity >= $backorder->quantity) {
+                $backorder->delete();
+            } else {
+                $backorder->quantity -= $request->quantity;
+                $backorder->save();
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Backorder has been sent for disposal',
+                'disposal' => $disposal
+            ], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    // receive transfer
     public function receiveTransfer(Request $request)
     {
         try {

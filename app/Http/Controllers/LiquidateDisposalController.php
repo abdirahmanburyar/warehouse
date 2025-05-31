@@ -16,6 +16,7 @@ class LiquidateDisposalController extends Controller
         $disposals = Disposal::query()->with([
             'product',
             'purchaseOrder',
+            'transfer',
             'packingList.warehouse',
             'packingList.location',
             'inventory.warehouse',

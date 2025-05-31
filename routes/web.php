@@ -342,10 +342,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/back-order', [TransferController::class, 'transferBackOrder'])->name('transfers.back-order');
 
         // transfer liquidate
-        // Route::get('/liquidate', [TransferController::class, 'transferLiquidate'])->name('transfers.liquidate');
+        Route::post('/liquidate', [TransferController::class, 'transferLiquidate'])->name('transfers.liquidate');
 
-        // // transfer dispose
-        // Route::get('/dispose', [TransferController::class, 'transferDispose'])->name('transfers.dispose');
+        // transfer dispose
+        Route::post('/dispose', [TransferController::class, 'transferDispose'])->name('transfers.dispose');
     });
 
 

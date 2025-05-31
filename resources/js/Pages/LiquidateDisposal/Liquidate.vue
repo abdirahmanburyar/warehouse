@@ -247,10 +247,10 @@ const reloadLiquidates = () => {
     if (props.filters.page) {
         query.page = props.filters.page;
     }
-    router.get(route('liquidate-disposal.disposals'), query, {
+    router.get(route('liquidate-disposal.liquidates'), query, {
         preserveState: true,
         preserveScroll: true,
-        only: ['disposals']
+        only: ['liquidates']
     });
 };
 
@@ -278,6 +278,7 @@ function getResults(page = 1) {
             </select>
         </div>
         <!-- Table Section -->
+         {{props.liquidates}}
         <div class="mb-6">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
