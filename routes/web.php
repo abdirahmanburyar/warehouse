@@ -207,6 +207,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{eligibleItem}/edit', [EligibleItemController::class, 'edit'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('products.eligible.edit');
         Route::post('/update', [EligibleItemController::class, 'update'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('products.eligible.update');
         Route::get('/{eligibleItem}', [EligibleItemController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':eligible-item.delete')->name('products.eligible.destroy');
+        Route::post('/import', [EligibleItemController::class, 'import'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('products.eligible.import');
     });
 
     // Supply Management Routes

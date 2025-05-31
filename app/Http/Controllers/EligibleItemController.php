@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Resources\EligibleItemResource;
 use App\Models\EligibleItem;
 use App\Models\Product;
+use App\Models\Facility;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class EligibleItemController extends Controller
@@ -108,6 +110,114 @@ class EligibleItemController extends Controller
             return response()->json('Eligible item deleted successfully.', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Import eligible items from Excel file
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.item_description' => 'required|string',
+                'items.*.facility_type' => 'required|string',
+            ]);
+            
+            $items = $request->input('items');
+            
+            $facilityTypes = ["Regional Hospital", "District Hospital", "Health Centre", "Primary Health Unit"];
+            $successCount = 0;
+            $errorItems = [];
+            
+            DB::beginTransaction();
+            
+            foreach ($items as $item) {
+                // Check if facility type is valid
+                if (!in_array($item['facility_type'], $facilityTypes)) {
+                    $errorItems[] = ["item" => $item['item_description'], "error" => "Invalid facility type: {$item['facility_type']}"];
+                    continue;
+                }
+                
+                // Find product by name (case-insensitive exact match)
+                logger()->info('Looking for product', ['item_description' => $item['item_description']]);
+                $product = Product::whereRaw('LOWER(name) = ?', [strtolower($item['item_description'])])->first();
+                
+                // If not found, try with a more flexible search
+                if (!$product) {
+                    logger()->info('Trying more flexible search');
+                    $product = Product::where('name', 'like', "{$item['item_description']}")->first();
+                }
+                
+                if (!$product) {
+                    // Debug: Log products with similar names to help troubleshoot
+                    $similarProducts = Product::where('name', 'like', "%{$item['item_description']}%")->get();
+                    logger()->warning('Product not found', [
+                        'searched_for' => $item['item_description'],
+                        'similar_products' => $similarProducts->pluck('name')
+                    ]);
+                    
+                    // If strict validation is required, we can break the entire process
+                    DB::rollBack();
+                    return response()->json([
+                        'error' => "Product not found: {$item['item_description']}",
+                        'message' => 'Import failed. Please ensure all products exist in the system.'
+                    ], 422);
+                }
+                
+                logger()->info('Product found', ['product_id' => $product->id, 'product_name' => $product->name]);
+                
+                // Check if eligible item already exists
+                $exists = EligibleItem::where('product_id', $product->id)
+                    ->where('facility_type', $item['facility_type'])
+                    ->exists();
+                
+                logger()->info('Checking if eligible item exists', [
+                    'product_id' => $product->id, 
+                    'facility_type' => $item['facility_type'],
+                    'exists' => $exists
+                ]);
+                    
+                if (!$exists) {
+                    $eligibleItem = EligibleItem::create([
+                        'product_id' => $product->id,
+                        'facility_type' => $item['facility_type']
+                    ]);
+                    logger()->info('Created new eligible item', ['id' => $eligibleItem->id]);
+                    $successCount++;
+                } else {
+                    logger()->info('Eligible item already exists, skipping');
+                }
+            }
+            
+            DB::commit();
+            logger()->info('Import completed successfully', ['success_count' => $successCount, 'error_count' => count($errorItems)]);
+            
+            if (count($errorItems) > 0) {
+                logger()->info('Import completed with errors', ['errors' => $errorItems]);
+                return response()->json([
+                    'message' => "Imported {$successCount} eligible items with " . count($errorItems) . " errors",
+                    'errors' => $errorItems
+                ], 200);
+            }
+            
+            return response()->json([
+                'message' => "Successfully imported {$successCount} eligible items"
+            ], 200);
+            
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            logger()->error('Error during import', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -1,8 +1,22 @@
 <template>
     <AuthenticatedLayout title="Eligible Items" description="Manage product eligibility for facilities">
         <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Eligible Items</h2>
-            <Link
+            <div>
+                <Link :href="route('products.eligible.index')">Back to Product</Link>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Eligible Items</h2>
+            </div>
+            <div class="flex space-x-2">
+                <!-- Import Excel Button -->
+                <label for="excel-upload" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    Import Excel
+                </label>
+                <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" @change="handleExcelUpload" />
+                
+                <!-- Create Button -->
+                <Link
                     :href="route('products.eligible.create')"
                     class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                 >
@@ -11,6 +25,7 @@
                     </svg>
                     Create Eligible Item
                 </Link>
+            </div>
         </div>
         <div class="flex items-center justify-between mt-3">
             <input
@@ -107,6 +122,7 @@ import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
+import * as XLSX from 'xlsx';
 
 const toast = useToast();
 
@@ -158,6 +174,7 @@ watch([
 );
 
 const isDeleteing = ref(false);
+const isImporting = ref(false);
 function destroy(item) {
     Swal.fire({
         title: 'Are you sure?',
@@ -181,5 +198,110 @@ function destroy(item) {
                 });
         }
     });
+}
+
+async function handleExcelUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file type
+    const fileType = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx', 'xls'].includes(fileType)) {
+        toast.error('Please upload a valid Excel file (.xlsx or .xls)');
+        event.target.value = null;
+        return;
+    }
+
+    isImporting.value = true;
+    
+    try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Get the first worksheet
+                const worksheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[worksheetName];
+                
+                // Convert to JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (jsonData.length === 0) {
+                    toast.error('The Excel file is empty');
+                    isImporting.value = false;
+                    event.target.value = null;
+                    return;
+                }
+                
+                // Check if the file has the required columns
+                const firstRow = jsonData[0];
+                const hasItemDescription = 'item description' in firstRow || 'Item Description' in firstRow || 'ITEM DESCRIPTION' in firstRow;
+                const hasFacilityType = 'facility type' in firstRow || 'Facility Type' in firstRow || 'FACILITY TYPE' in firstRow;
+                
+                if (!hasItemDescription || !hasFacilityType) {
+                    toast.error('Excel file must contain "item description" and "facility type" columns');
+                    isImporting.value = false;
+                    event.target.value = null;
+                    return;
+                }
+                
+                // Confirm import
+                const result = await Swal.fire({
+                    title: 'Import Eligible Items',
+                    text: `Are you sure you want to import ${jsonData.length} eligible items?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, import!'
+                });
+                
+                if (result.isConfirmed) {
+                    // Format data for the backend
+                    const formattedData = jsonData.map(row => {
+                        // Handle different possible column names
+                        const itemDescription = row['item description'] || row['Item Description'] || row['ITEM DESCRIPTION'];
+                        const facilityType = row['facility type'] || row['Facility Type'] || row['FACILITY TYPE'];
+                        
+                        return {
+                            item_description: itemDescription,
+                            facility_type: facilityType
+                        };
+                    });
+                    
+                    // Send to backend
+                    await axios.post(route('products.eligible.import'), { items: formattedData })
+                        .then(response => {
+                            toast.success(response.data.message || 'Eligible items imported successfully');
+                            // Refresh the data
+                            updateRoute();
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            if (error.response && error.response.data && error.response.data.error) {
+                                toast.error(error.response.data.error);
+                            } else {
+                                toast.error('Failed to import eligible items');
+                            }
+                        });
+                }
+            } catch (error) {
+                console.error(error);
+                toast.error('Error processing Excel file');
+            } finally {
+                isImporting.value = false;
+                event.target.value = null;
+            }
+        };
+        
+        reader.readAsArrayBuffer(file);
+    } catch (error) {
+        console.error(error);
+        toast.error('Error reading Excel file');
+        isImporting.value = false;
+        event.target.value = null;
+    }
 }
 </script>
