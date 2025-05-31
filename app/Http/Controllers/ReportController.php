@@ -11,9 +11,11 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ReceivedQuantity;
 use App\Models\Warehouse;
+use App\Models\InventoryAdjustment;
 use App\Http\Resources\ReceivedQuantityResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 
@@ -31,31 +33,26 @@ class ReportController extends Controller
             ->with(['product' => function($query) {
                 $query->with(['dosage', 'category']);
             }])
-            ->orderBy('expiry_date');
-
-        // Apply filters
-        if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
-        }
-
-        if ($request->filled('category_id')) {
-            $query->whereHas('product', function($q) use ($request) {
-                $q->where('category_id', $request->category_id);
-            });
-        }
-
-        if ($request->filled('expiry_date')) {
-            $query->whereDate('expiry_date', '<=', $request->expiry_date);
-        }
-
-        $inventories = $query->paginate($request->input('per_page', 100))
-            ->withQueryString();
+            ->orderBy('expiry_date')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'product' => $item->product,
+                    'uom' => $item->uom ?? 'N/A',
+                    'quantity' => $item->quantity,
+                    'product_id' => $item->product_id,
+                    'batch_number' => $item->batch_number,
+                    'barcode' => $item->barcode,
+                    'expiry_date' => $item->expiry_date,
+                    'physical_count' => null,
+                    'difference' => null,
+                    'remarks' => null,
+                ];
+            });      
         
         return Inertia::render('Report/PhysicalCount', [
-            'inventories' => $inventories,
-            'products' => Product::orderBy('name')->get(),
-            'categories' => DB::table('categories')->orderBy('name')->get(),
-            'filters' => $request->only(['product_id', 'category_id', 'expiry_date', 'per_page']),
+            'inventories' => $query,
         ]);
     }
     
@@ -85,7 +82,6 @@ class ReportController extends Controller
                 $inventory = Inventory::findOrFail($data['inventory_id']);
                 
                 // Update or create physical count record
-                // Note: You may need to create a PhysicalCount model if it doesn't exist
                 $inventory->update([
                     'physical_count' => $data['physical_count'],
                     'physical_count_difference' => $data['difference'],
@@ -107,6 +103,204 @@ class ReportController extends Controller
             
             return response()->json([
                 'message' => 'Failed to save physical count data: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Create inventory adjustments from physical count data
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adjustInventory(Request $request)
+    {
+        try {
+            // Validate the request
+            $request->validate([
+                'items' => 'required|array',
+                'items.*.quantity' => 'required|numeric|min:0',
+                'items.*.expiry_date' => 'required|date',
+                'items.*.uom' => 'nullable|string',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.batch_number' => 'required|string',
+                'items.*.barcode' => 'nullable|string',
+                'items.*.physical_count' => 'required|numeric|min:0',
+                'items.*.remarks' => 'nullable|string',
+                'items.*.difference' => 'nullable|numeric'
+            ]);
+            
+            // Begin transaction
+            DB::beginTransaction();
+            
+            $currentUser = Auth::user();
+            
+            // Process each inventory item
+            foreach ($request->items as $item) {
+                if($item['product_id'] == null){
+                    continue;
+                }
+                
+                InventoryAdjustment::create([
+                    'user_id' => $currentUser->id,
+                    'quantity' => $item['quantity'],
+                    'expiry_date' => $item['expiry_date'],
+                    'uom' => $item['uom'],
+                    'product_id' => $item['product_id'],
+                    'batch_number' => $item['batch_number'],
+                    'barcode' => $item['barcode'],
+                    'physical_count' => $item['physical_count'],
+                    'difference' => abs($item['difference']),
+                    'remarks' => $item['remarks'],
+                    'adjustment_date' => Carbon::now(),
+                    'status' => 'pending'
+                ]);
+            }
+            
+            // Commit transaction
+            DB::commit();
+            
+            return response()->json('Inventory adjustment(s) created successfully', 200);
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();            
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Review inventory adjustment
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reviewAdjustment(Request $request, $id)
+    {
+        try {
+            $adjustment = InventoryAdjustment::findOrFail($id);
+            
+            // Check if adjustment is already reviewed or approved
+            if ($adjustment->status !== 'pending') {
+                return response()->json([
+                    'message' => 'This adjustment has already been ' . $adjustment->status,
+                    'status' => 'error'
+                ], 400);
+            }
+            
+            // Update adjustment status
+            $adjustment->update([
+                'status' => 'reviewed',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now()
+            ]);
+            
+            return response()->json([
+                'message' => 'Inventory adjustment reviewed successfully',
+                'status' => 'success',
+                'adjustment' => $adjustment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to review inventory adjustment: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Approve inventory adjustment and update inventory quantity
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function approveAdjustment(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $adjustment = InventoryAdjustment::findOrFail($id);
+            
+            // Check if adjustment is already approved or rejected
+            if ($adjustment->status === 'approved' || $adjustment->status === 'rejected') {
+                return response()->json([
+                    'message' => 'This adjustment has already been ' . $adjustment->status,
+                    'status' => 'error'
+                ], 400);
+            }
+            
+            // Update adjustment status
+            $adjustment->update([
+                'status' => 'approved',
+                'approved_by' => Auth::id(),
+                'approved_at' => now()
+            ]);
+            
+            // Update inventory quantity
+            $inventory = $adjustment->inventory;
+            $inventory->update([
+                'quantity' => $adjustment->new_quantity
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Inventory adjustment approved and quantity updated successfully',
+                'status' => 'success',
+                'adjustment' => $adjustment
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'message' => 'Failed to approve inventory adjustment: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Reject inventory adjustment
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function rejectAdjustment(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string|max:500'
+            ]);
+            
+            $adjustment = InventoryAdjustment::findOrFail($id);
+            
+            // Check if adjustment is already approved or rejected
+            if ($adjustment->status === 'approved' || $adjustment->status === 'rejected') {
+                return response()->json([
+                    'message' => 'This adjustment has already been ' . $adjustment->status,
+                    'status' => 'error'
+                ], 400);
+            }
+            
+            // Update adjustment status
+            $adjustment->update([
+                'status' => 'rejected',
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'rejection_reason' => $request->rejection_reason
+            ]);
+            
+            return response()->json([
+                'message' => 'Inventory adjustment rejected',
+                'status' => 'success',
+                'adjustment' => $adjustment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to reject inventory adjustment: ' . $e->getMessage(),
                 'status' => 'error'
             ], 500);
         }

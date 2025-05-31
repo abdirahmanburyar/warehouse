@@ -427,6 +427,15 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
         Route::post('/savePhysicalCount', [ReportController::class, 'savePhysicalCount'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.savePhysicalCount');
         
+        // adjusting inventory
+        Route::post('/adjustments', [ReportController::class, 'adjustInventory'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.adjustInventory');
+        
+        // Inventory Adjustment Routes
+        Route::post('/createAdjustments', [ReportController::class, 'createAdjustments'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.createAdjustments');
+        Route::post('/adjustments/{id}/review', [ReportController::class, 'reviewAdjustment'])->middleware(PermissionMiddleware::class . ':report.review')->name('reports.reviewAdjustment');
+        Route::post('/adjustments/{id}/approve', [ReportController::class, 'approveAdjustment'])->middleware(PermissionMiddleware::class . ':report.approve')->name('reports.approveAdjustment');
+        Route::post('/adjustments/{id}/reject', [ReportController::class, 'rejectAdjustment'])->middleware(PermissionMiddleware::class . ':report.reject')->name('reports.rejectAdjustment');
+        
         // Excel Upload Route
         Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.upload-consumption');
     });
