@@ -202,11 +202,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Eligible Items Management Routes
     Route::prefix('eligible-items')->group(function () {
         Route::get('/', [EligibleItemController::class, 'index'])->middleware(PermissionMiddleware::class . ':eligible-item.view')->name('products.eligible.index');
-        Route::get('/create', [EligibleItemController::class, 'create'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('eligible-items.create');
-        Route::post('/', [EligibleItemController::class, 'store'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('eligible-items.store');
-        Route::get('/{eligibleItem}/edit', [EligibleItemController::class, 'edit'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('eligible-items.edit');
-        Route::put('/{eligibleItem}', [EligibleItemController::class, 'update'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('eligible-items.update');
-        Route::delete('/{eligibleItem}', [EligibleItemController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':eligible-item.delete')->name('eligible-items.destroy');
+        Route::get('/create', [EligibleItemController::class, 'create'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('products.eligible.create');
+        Route::post('/store', [EligibleItemController::class, 'store'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('products.eligible.store');
+        Route::get('/{eligibleItem}/edit', [EligibleItemController::class, 'edit'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('products.eligible.edit');
+        Route::post('/update', [EligibleItemController::class, 'update'])->middleware(PermissionMiddleware::class . ':eligible-item.edit')->name('products.eligible.update');
+        Route::get('/{eligibleItem}', [EligibleItemController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':eligible-item.delete')->name('products.eligible.destroy');
     });
 
     // Supply Management Routes
@@ -424,8 +424,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.monthlyConsumption');
         Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.stockLevelReport');
         Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.receivedQuantities');
-        Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
+        Route::get('/physicalCount', [ReportController::class, 'physicalCountItems'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
         Route::post('/savePhysicalCount', [ReportController::class, 'savePhysicalCount'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.savePhysicalCount');
+        Route::get('/physicalCountReport', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCountReport');
         
         // adjusting inventory
         Route::post('/adjustments', [ReportController::class, 'adjustInventory'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.adjustInventory');

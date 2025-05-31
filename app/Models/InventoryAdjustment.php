@@ -31,12 +31,11 @@ class InventoryAdjustment extends Model
         'approved_at',
         'rejection_reason'
     ];
-    
-    protected $casts = [
-        'adjustment_date' => 'datetime',
-        'reviewed_at' => 'datetime',
-        'approved_at' => 'datetime',
-    ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
     
     public function inventory()
     {

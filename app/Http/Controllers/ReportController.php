@@ -28,7 +28,7 @@ class ReportController extends Controller
         return inertia('Report/stockLevelReport');
     } 
 
-    public function physicalCountReport(Request $request){
+    public function physicalCountItems(Request $request){
         $query = Inventory::query()
             ->with(['product' => function($query) {
                 $query->with(['dosage', 'category']);
@@ -53,6 +53,20 @@ class ReportController extends Controller
         
         return Inertia::render('Report/PhysicalCount', [
             'inventories' => $query,
+        ]);
+    }
+
+
+    public function physicalCountReport(Request $request){
+        $query = InventoryAdjustment::query()
+        ->with(['product' => function($query) {
+            $query->with(['dosage', 'category']);
+        }])
+        ->orderBy('expiry_date')
+        ->get();
+          
+        return inertia('Report/PhysicalCountReport', [
+            'physicalCountReport' => $query,
         ]);
     }
     

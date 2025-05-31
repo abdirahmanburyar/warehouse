@@ -97,6 +97,7 @@ const form = ref({
 const processing = ref(false);
 
 const submit = () => {
+    console.log(form.value);
     Swal.fire({
         title: 'Update Eligible Item',
         text: 'Are you sure you want to update this item?',
@@ -108,7 +109,7 @@ const submit = () => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             processing.value = true;
-            await axios.post(route('products.eligible.store'), form.value)
+            await axios.post(route('products.eligible.update'), form.value)
                 .then((response) => {
                     processing.value = false;
                     toast.success(response.data);

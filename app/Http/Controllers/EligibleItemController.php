@@ -25,31 +25,13 @@ class EligibleItemController extends Controller
             $type = $request->input('facility_type');
             $query->where('facility_type', 'like', "%{$type}%");
         }
-
-        $sortField = $request->input('sort_field', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
         
-        $query->orderBy($sortField, $sortDirection);
-        
-        $perPage = $request->input('per_page', 10);
-        $eligibleItems = $query->paginate($perPage)->withQueryString();
-
-        $paginatedItems = EligibleItemResource::collection($eligibleItems)->response()->getData(true);
+        $query = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+        $query->setPath(url()->current()); // Force Laravel to use full URLs
 
         return Inertia::render('Product/Eligible/Index', [
-            'eligibleItems' => [
-                'data' => $paginatedItems['data'],
-                'meta' => [
-                    'total' => $eligibleItems->total(),
-                    'per_page' => $eligibleItems->perPage(),
-                    'current_page' => $eligibleItems->currentPage(),
-                    'last_page' => $eligibleItems->lastPage(),
-                    'links' => [
-                        'prev' => $eligibleItems->previousPageUrl(),
-                        'next' => $eligibleItems->nextPageUrl(),
-                    ],
-                ],
-            ],
+            'eligibleItems' => EligibleItemResource::collection($query),
             'filters' => $request->only(['search', 'sort_field', 'sort_direction', 'per_page','facility_type']),
         ]);
     }
@@ -76,9 +58,8 @@ class EligibleItemController extends Controller
                         'product_id' => $product['product_id'],
                         'facility_type' => $type,
                     ]);
-    
                 }
-            }
+            }   
 
             return response()->json("Created eligible items successfully", 200);
 
@@ -87,9 +68,33 @@ class EligibleItemController extends Controller
         }
     }
 
-    public function edit(EligibleItem $eligible)
+    public function update(Request $request)
     {
-        return Inertia::render('Product/Eligible/Edit', [
+        try {
+            $request->validate([
+                'id' => 'required|exists:eligible_items,id',
+                'product_id' => 'required|exists:products,id',
+                'facility_type' => 'required'
+            ]);
+
+            $eligibleItem = EligibleItem::updateOrCreate([
+                'id' => $request->id
+            ],[
+                'product_id' => $request->product_id,
+                'facility_type' => $request->facility_type,
+            ]);
+           
+            return response()->json("Successfully updated eligible item", 200);
+
+        } catch (\Throwable $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    public function edit($eligibleItem)
+    {
+        $eligible = EligibleItem::with('product')->find($eligibleItem);
+        return inertia('Product/Eligible/Edit', [
             'eligible' => $eligible,
             'products' => Product::select('id', 'name')->orderBy('name')->get()
         ]);
