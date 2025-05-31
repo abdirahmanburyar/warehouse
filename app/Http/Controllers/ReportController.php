@@ -58,6 +58,59 @@ class ReportController extends Controller
             'filters' => $request->only(['product_id', 'category_id', 'expiry_date', 'per_page']),
         ]);
     }
+    
+    /**
+     * Save physical count data
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function savePhysicalCount(Request $request)
+    {
+        try {
+            // Validate the request
+            $request->validate([
+                'physical_count_data' => 'required|array',
+                'physical_count_data.*.inventory_id' => 'required|exists:inventories,id',
+                'physical_count_data.*.physical_count' => 'required|numeric|min:0',
+                'physical_count_data.*.difference' => 'required|numeric',
+                'physical_count_data.*.remarks' => 'nullable|string',
+            ]);
+            
+            // Begin transaction
+            DB::beginTransaction();
+            
+            // Process each inventory item
+            foreach ($request->physical_count_data as $data) {
+                $inventory = Inventory::findOrFail($data['inventory_id']);
+                
+                // Update or create physical count record
+                // Note: You may need to create a PhysicalCount model if it doesn't exist
+                $inventory->update([
+                    'physical_count' => $data['physical_count'],
+                    'physical_count_difference' => $data['difference'],
+                    'physical_count_remarks' => $data['remarks'],
+                    'physical_count_date' => now(),
+                ]);
+            }
+            
+            // Commit transaction
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Physical count data saved successfully',
+                'status' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+            
+            return response()->json([
+                'message' => 'Failed to save physical count data: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
 
 
     public function issuedQuantity(Request $request){

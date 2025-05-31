@@ -23,6 +23,10 @@ class Inventory extends Model
         'notes',
         'uom',
         'is_active',
+        'physical_count',
+        'physical_count_difference',
+        'physical_count_remarks',
+        'physical_count_date',
     ];
 
     public function product()

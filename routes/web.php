@@ -425,6 +425,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.stockLevelReport');
         Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.receivedQuantities');
         Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
+        Route::post('/savePhysicalCount', [ReportController::class, 'savePhysicalCount'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.savePhysicalCount');
         
         // Excel Upload Route
         Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.upload-consumption');
