@@ -38,14 +38,10 @@ class ReportController extends Controller
     public function receivedQuantities(Request $request)
     {
         $query = ReceivedQuantity::query()
-            ->with(['product', 'receiver', 'transfer', 'packingList']);
+            ->with(['product.dosage','product.category', 'receiver', 'transfer', 'packingList']);
 
         // Apply filters
-        if ($request->filled('warehouse_id')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('warehouse_id', $request->warehouse_id);
-            });
-        }
+        // Warehouse filter removed as warehouse_id doesn't exist in the product table
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->product_id);
@@ -67,7 +63,7 @@ class ReportController extends Controller
             }
         }
         
-        $receivedQuantities = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $receivedQuantities = $query->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
             $receivedQuantities->setPath(url()->current()); // Force Laravel to use full URLs

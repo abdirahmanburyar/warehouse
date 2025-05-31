@@ -1,7 +1,7 @@
 <template>
     <Head title="Reports" />
     <AuthenticatedLayout title="Review Your Reports" description="Transforming Data into Impact" img="/assets/images/report.png">
-        <div class="px-5">
+        <div class="px-5 mb-[100px]">
             <h1 class="text-2xl font-semibold text-gray-900 mb-6">Reports</h1>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-1">
