@@ -257,8 +257,9 @@ function getResults(page = 1) {
                 <option value="100"> Per Page 100</option>
             </select>
         </div>
+        {{ props.disposals }}
         <!-- Table Section -->
-        <div class="mb-6">
+        <div class="mb-[100px]">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">

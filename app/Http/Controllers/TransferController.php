@@ -12,6 +12,7 @@ use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Product;
+use App\Models\Disposal;
 use App\Models\BackOrderHistory;
 use App\Models\Liquidate;
 use Carbon\Carbon;
@@ -948,7 +949,7 @@ class TransferController extends Controller
             }
             
             // Create a disposal record
-            $disposal = DB::table('disposals')->insert([
+            $disposal = Disposal::create([
                 'product_id' => $backorder->product_id,
                 'transfer_id' => $transfer->id,
                 'quantity' => $request->quantity,

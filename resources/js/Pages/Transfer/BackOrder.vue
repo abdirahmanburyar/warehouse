@@ -411,9 +411,30 @@ const disposeBackorder = (backorder) => {
     showDisposeModal.value = true;
 };
 
+// Function to validate quantity
+const validateQuantity = (quantity, maxQuantity) => {
+    if (!quantity || quantity <= 0) {
+        return 'Quantity must be greater than zero';
+    }
+    if (quantity > maxQuantity) {
+        return `Quantity cannot exceed ${maxQuantity}`;
+    }
+    return null;
+};
+
 // Function to submit liquidation
 const submitLiquidation = async () => {
     try {
+        // Validate quantity before submission
+        const quantityError = validateQuantity(liquidateForm.value.quantity, selectedBackorder.value.quantity);
+        if (quantityError) {
+            Toast.fire({
+                icon: 'error',
+                title: quantityError
+            });
+            return;
+        }
+        
         isSubmitting.value = true;
         
         // Create form data for file upload
@@ -475,6 +496,16 @@ const submitLiquidation = async () => {
 // Function to submit disposal
 const submitDisposal = async () => {
     try {
+        // Validate quantity before submission
+        const quantityError = validateQuantity(disposeForm.value.quantity, selectedBackorder.value.quantity);
+        if (quantityError) {
+            Toast.fire({
+                icon: 'error',
+                title: quantityError
+            });
+            return;
+        }
+        
         isSubmitting.value = true;
         
         // Create form data for file upload
