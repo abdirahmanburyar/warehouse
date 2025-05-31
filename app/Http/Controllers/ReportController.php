@@ -8,6 +8,9 @@ use App\Models\IssuedQuantity;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Facility;
 use App\Models\Product;
+use App\Models\ReceivedQuantity;
+use App\Models\Warehouse;
+use App\Http\Resources\ReceivedQuantityResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -31,6 +34,52 @@ class ReportController extends Controller
     }  
     
     // mnthly consumption by facilities [AMC]
+
+    public function receivedQuantities(Request $request)
+    {
+        $query = ReceivedQuantity::query()
+            ->with(['product', 'receiver', 'transfer', 'packingList']);
+
+        // Apply filters
+        if ($request->filled('warehouse_id')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('warehouse_id', $request->warehouse_id);
+            });
+        }
+
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('received_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('received_at', '<=', $request->end_date);
+        }
+
+        if ($request->filled('source')) {
+            if ($request->source === 'transfer') {
+                $query->whereNotNull('transfer_id')->whereNull('packing_list_id');
+            } elseif ($request->source === 'packing_list') {
+                $query->whereNotNull('packing_list_id')->whereNull('transfer_id');
+            }
+        }
+        
+        $receivedQuantities = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+            $receivedQuantities->setPath(url()->current()); // Force Laravel to use full URLs
+        
+
+        return Inertia::render('Report/ReceivedQuantities', [
+            'receivedQuantities' => ReceivedQuantityResource::collection($receivedQuantities),
+            'warehouses' => Warehouse::orderBy('name')->get(),
+            'products' => Product::orderBy('name')->get(),
+            'filters' => $request->only(['warehouse_id', 'product_id', 'start_date', 'end_date', 'source', 'per_page']),
+        ]);
+    }
 
     public function monthlyConsumption(Request $request)
     {
@@ -135,4 +184,6 @@ class ReportController extends Controller
             ]
         ]);
     }
+
+
 }

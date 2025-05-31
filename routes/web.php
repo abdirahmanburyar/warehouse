@@ -420,12 +420,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Report Routes
     Route::prefix('reports')->group(function () {
-        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->name('reports.monthlyConsumption');
-        Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->name('reports.stockLevelReport');
+        Route::get('/', [ReportController::class, 'index'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.index');
+        Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.monthlyConsumption');
+        Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.stockLevelReport');
+        Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.receivedQuantities');
         
         // Excel Upload Route
-        Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->name('reports.upload-consumption');
+        Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.upload-consumption');
     });
     
     // Order Management Routes

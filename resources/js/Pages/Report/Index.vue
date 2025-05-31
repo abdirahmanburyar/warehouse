@@ -24,6 +24,9 @@
                             <li>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Inventory Valuation</a>
                             </li>
+                            <li>
+                                <Link :href="route('reports.receivedQuantities')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">QTY Received Report</Link>
+                            </li>
                         </ul>
                     </div>
                 </div>
