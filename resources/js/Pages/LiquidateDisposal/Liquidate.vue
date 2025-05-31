@@ -243,7 +243,7 @@ const reloadLiquidates = () => {
     }
     if (per_page.value) {
         query.per_page = per_page.value;
-        props.filters.page = 1;
+        query.page = 1;
     }
     if (props.filters.page) {
         query.page = props.filters.page;
