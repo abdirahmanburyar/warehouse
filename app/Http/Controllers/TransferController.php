@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Disposal;
 use App\Models\BackOrderHistory;
 use App\Models\Liquidate;
+use App\Models\ReceivedQuantity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -743,6 +744,17 @@ class TransferController extends Controller
                 // Update existing inventory
                 $inventory->quantity += $receivedQuantity;
                 $inventory->save();
+                ReceivedQuantity::create([
+                    'quantity' => $receivedQuantity,
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'product_id' => $backorder->product_id,
+                    'transfer_id' => $transfer->id,
+                    'expiry_date' => $transferItem->expire_date,
+                    'uom' => $transferItem->uom,
+                    'barcode' => $transferItem->barcode,
+                    'batch_number' => $transferItem->batch_number,
+                ]);
             } else {
                 // Create new inventory record
                 $inventory = Inventory::create([
@@ -754,6 +766,17 @@ class TransferController extends Controller
                     'quantity' => $receivedQuantity,
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
+                ]);
+                ReceivedQuantity::create([
+                    'transfer_id' => $transfer->id,
+                    'quantity' => $receivedQuantity,
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'product_id' => $backorder->product_id,
+                    'expiry_date' => $transferItem->expire_date,
+                    'uom' => $transferItem->uom,
+                    'barcode' => $transferItem->barcode,
+                    'batch_number' => $transferItem->batch_number,
                 ]);
             }
             
@@ -1060,6 +1083,17 @@ class TransferController extends Controller
 
             if ($inventory) {
                 $inventory->increment('quantity', $item['received_quantity']);
+                ReceivedQuantity::create([
+                    'quantity' => $item['received_quantity'],
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'product_id' => $item['product_id'],
+                    'transfer_id' => $transfer->id,
+                    'expiry_date' => $item['expire_date'],
+                    'uom' => $item['uom'],
+                    'barcode' => $item['barcode'],
+                    'batch_number' => $item['batch_number'],
+                ]);
             } else {
                 Inventory::create([
                     'warehouse_id' => $transfer['to_warehouse_id'],
@@ -1069,6 +1103,17 @@ class TransferController extends Controller
                     'quantity' => $item['received_quantity'],
                     'expiry_date' => $item['expire_date'],
                     'barcode' => $item['barcode'],
+                ]);
+                ReceivedQuantity::create([
+                    'quantity' => $item['received_quantity'],
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'product_id' => $item['product_id'],
+                    'transfer_id' => $transfer->id,
+                    'expiry_date' => $item['expire_date'],
+                    'uom' => $item['uom'],
+                    'barcode' => $item['barcode'],
+                    'batch_number' => $item['batch_number'],
                 ]);
             }
         }

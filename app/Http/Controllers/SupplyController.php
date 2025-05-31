@@ -696,18 +696,6 @@ class SupplyController extends Controller
                         'confirmed_at' => Carbon::now(),
                     ]);
 
-                    ReceivedQuantity::create([
-                        'quantity' => $item['received_quantity'],
-                        'received_by' => auth()->id(),
-                        'received_at' => now(),
-                        'product_id' => $item['product_id'],
-                        'packing_list_id' => $packingList->id,
-                        'expiry_date' => $item['expire_date'],
-                        'uom' => $item['uom'],
-                        'barcode' => $item['barcode'],
-                        'batch_number' => $item['batch_number'],
-                    ]);
-
                     // Clear existing differences if array is empty
                     if (empty($item['differences'])) {
                         $packingList->differences()->delete();
