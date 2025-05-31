@@ -19,6 +19,7 @@ use App\Models\BackOrderHistory;
 use App\Models\SupplyItem;
 use App\Models\BackOrder;
 use App\Models\IssuedQuantity;
+use App\Models\ReceivedQuantity;
 use App\Models\Liquidate;
 use App\Models\PackingListDifference;
 use App\Models\Location;
