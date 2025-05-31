@@ -932,6 +932,13 @@ class TransferController extends Controller
             $transferItem = TransferItem::findOrFail($backorder->transfer_item_id);
             $transfer = Transfer::findOrFail($transferItem->transfer_id);
             
+            // Generate a formatted note that includes transfer ID, backorder type, and user note
+            $transferNumber = $transfer->transferID ?? ('ID: ' . $transfer->id);
+            $formattedNote = "Transfer ($transferNumber) - {$backorder->type}";
+            if ($request->note) {
+                $formattedNote .= " - {$request->note}";
+            }
+            
             // Handle file attachments if any
             $attachments = [];
             if ($request->hasFile('attachments')) {
@@ -942,7 +949,7 @@ class TransferController extends Controller
                         'name' => $file->getClientOriginalName(),
                         'path' => '/attachments/disposals/' . $fileName,
                         'type' => $file->getClientMimeType(),
-                        'size' => filesize(public_path('attachments/disposals/' . $fileName)),
+                        'size' => filesize(public_path('attachments/liquidations/' . $fileName)),
                         'uploaded_at' => now()->toDateTimeString()
                     ];
                 }
@@ -958,20 +965,13 @@ class TransferController extends Controller
                 'expire_date' => $transferItem->expire_date,
                 'barcode' => $transferItem->barcode,
                 'uom' => $transferItem->uom,
-                'note' => $request->note,
+                'note' => $formattedNote,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
-            
-            // Generate a formatted note for history record
-            $transferNumber = $transfer->transferID ?? ('ID: ' . $transfer->id);
-            $historyNote = "Transfer ($transferNumber) - Disposed";
-            if ($request->note) {
-                $historyNote .= " - {$request->note}";
-            }
             
             // Create backorder history record
             BackOrderHistory::create([
@@ -980,7 +980,7 @@ class TransferController extends Controller
                 'product_id' => $backorder->product_id,
                 'quantity' => $request->quantity,
                 'status' => 'Disposed',
-                'note' => $historyNote,
+                'note' => $formattedNote,
                 'performed_by' => auth()->id()
             ]);
             

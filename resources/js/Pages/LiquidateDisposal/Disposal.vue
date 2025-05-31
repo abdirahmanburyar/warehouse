@@ -20,7 +20,7 @@ const props = defineProps({
 });
 
 const search = ref(props.filters?.search || "");
-const per_page = ref(props.filters?.per_page || 2);
+const per_page = ref(props.filters?.per_page || 10);
 
 watch([
     () => search.value,
@@ -37,6 +37,7 @@ const reloadDisposals = () => {
     }
     if (per_page.value) {
         query.per_page = per_page.value;
+        query.page = 1;
     }
     if (props.filters.page) {
         query.page = props.filters.page;
@@ -236,7 +237,6 @@ const parseAttachments = (attachments) => {
 
 function getResults(page = 1) {
     props.filters.page = page;
-    reloadDisposals();
 }
 
 </script>
@@ -257,7 +257,6 @@ function getResults(page = 1) {
                 <option value="100"> Per Page 100</option>
             </select>
         </div>
-        {{ props.disposals }}
         <!-- Table Section -->
         <div class="mb-[100px]">
             <table class="min-w-full border border-collapse border-gray-300">
