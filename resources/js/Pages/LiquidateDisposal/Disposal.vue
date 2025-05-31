@@ -237,6 +237,7 @@ const parseAttachments = (attachments) => {
 
 function getResults(page = 1) {
     props.filters.page = page;
+    reloadDisposals();
 }
 
 </script>
