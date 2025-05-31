@@ -21,7 +21,7 @@ defineProps<{
       <!-- Tabs Navigation -->
       <div class="flex border-b border-gray-200 bg-white sticky top-0 z-10">
         <Link 
-          href="/liquidates" 
+          :href="route('liquidate-disposal.liquidates')" 
           :class="[
             'px-6 py-3 text-lg font-bold',
             activeTab === 'liquidate' 
@@ -32,7 +32,7 @@ defineProps<{
           Liquidates
         </Link>
         <Link 
-          href="/disposals" 
+          :href="route('liquidate-disposal.disposals')" 
           :class="[
             'px-6 py-3 text-lg font-bold',
             activeTab === 'disposal' 
@@ -41,39 +41,6 @@ defineProps<{
           ]"
         >
           Disposals
-        </Link>
-        <Link 
-          href="/transfer-back-orders" 
-          :class="[
-            'px-6 py-3 text-lg font-bold',
-            activeTab === 'transferBackOrders' 
-              ? 'border-b-4 border-blue-500 text-blue-600' 
-              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          ]"
-        >
-          Transfer Back orders
-        </Link>
-        <Link 
-          href="/transfer-liquidates" 
-          :class="[
-            'px-6 py-3 text-lg font-bold',
-            activeTab === 'transferLiquidates' 
-              ? 'border-b-4 border-blue-500 text-blue-600' 
-              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          ]"
-        >
-          Transfer Liquidates
-        </Link>
-        <Link 
-          href="/transfer-disposals" 
-          :class="[
-            'px-6 py-3 text-lg font-bold',
-            activeTab === 'transferDisposals' 
-              ? 'border-b-4 border-blue-500 text-blue-600' 
-              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          ]"
-        >
-          Transfer Disposals
         </Link>
       </div>
 

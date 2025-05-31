@@ -413,12 +413,36 @@ class SupplyController extends Controller
             if ($inventory) {
                 $inventory->increment('quantity', $receivedQuantity);
                 $inventory->save();
+                ReceivedQuantity::create([
+                    'quantity' => $receivedQuantity,
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'transfer_id' => null,
+                    'product_id' => $inventory->product_id,
+                    'packing_list_id' => $request->packing_list_id,
+                    'uom' => $inventory->uom,
+                    'barcode' => $inventory->barcode,
+                    'batch_number' => $inventory->batch_number,
+                    'expiry_date' => $inventory->expire_date,
+                ]);
             } else {
                 // Create a new inventory record if it doesn't exist
-                Inventory::create([
+                $inventory = Inventory::create([
                     'product_id' => $request->product_id,
                     'quantity' => $receivedQuantity,
                     'status' => 'active'
+                ]);
+                ReceivedQuantity::create([
+                    'quantity' => $receivedQuantity,
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                    'transfer_id' => null,
+                    'product_id' => $inventory->product_id,
+                    'packing_list_id' => $request->packing_list_id,
+                    'uom' => $inventory->uom,
+                    'barcode' => $inventory->barcode,
+                    'batch_number' => $inventory->batch_number,
+                    'expiry_date' => $inventory->expire_date,
                 ]);
             }
             
@@ -1763,6 +1787,17 @@ class SupplyController extends Controller
                                     'unit_cost' => $packingListItem->unit_cost,
                                     'updated_at' => now()
                                 ]);
+                                ReceivedQuantity::create([
+                                    'quantity' => $receivedQuantity,
+                                    'received_by' => auth()->id(),
+                                    'received_at' => now(),
+                                    'product_id' => $inventory->product_id,
+                                    'packing_list_id' => $packingListItem->packing_list_id,
+                                    'expiry_date' => $packingListItem->expire_date,
+                                    'uom' => $inventory->uom,
+                                    'barcode' => $inventory->barcode,
+                                    'batch_number' => $inventory->batch_number,
+                                ]);
                         } else {
                             // Create new inventory record
                             DB::table('inventories')->insert([
@@ -1779,19 +1814,18 @@ class SupplyController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now()
                             ]);
+                            ReceivedQuantity::create([
+                                'quantity' => $receivedQuantity,
+                                'received_by' => auth()->id(),
+                                'received_at' => now(),
+                                'product_id' => $packingListItem->product_id,
+                                'packing_list_id' => $packingListItem->packing_list_id,
+                                'expiry_date' => $packingListItem->expire_date,
+                                'uom' => $packingListItem->uom,
+                                'barcode' => $packingListItem->barcode,
+                                'batch_number' => $packingListItem->batch_number,
+                            ]);
                         }
-
-                        // Record the issued quantity
-                        DB::table('issued_quantities')->insert([
-                            'product_id' => $packingListItem->product_id,
-                            // 'barcode' => $packingListItem->barcode,
-                            'quantity' => $receivedQuantity,
-                            'unit_cost' => $packingListItem->unit_cost,
-                            'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
-                            'warehouse_id' => $packingListItem->warehouse_id,
-                            'issued_date' => now()->toDateString(),
-                            'issued_by' => auth()->user()->id,
-                        ]);
                     }
 
                 // Only create a difference record if there's actually a difference in quantity
