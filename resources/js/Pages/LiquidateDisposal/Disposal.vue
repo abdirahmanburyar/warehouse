@@ -267,7 +267,7 @@ function getResults(page = 1) {
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
                         <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposed At</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Note</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Actions</th>
@@ -294,7 +294,22 @@ function getResults(page = 1) {
                             {{ disposal.disposed_at ? new Date(disposal.disposed_at).toLocaleDateString() : 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            {{ disposal.note || 'N/A' }}
+                            <div class="flex flex-col">
+                                <div v-if="disposal.transfer" class="mb-1 bg-blue-50 px-2 py-1 rounded text-sm">
+                                    <span class="font-semibold">From Transfer:</span> 
+                                    <span>{{ disposal.transfer.transferID || 'ID: ' + disposal.transfer.id }}</span>
+                                    <span class="ml-2">{{ disposal.quantity }} {{ disposal.uom }}</span>
+                                </div>
+                                <div v-else-if="disposal.inventory" class="mb-1 bg-green-50 px-2 py-1 rounded text-sm">
+                                    <span class="font-semibold">From Inventory:</span> 
+                                    <span>ID: {{ disposal.inventory.id }}</span>
+                                </div>
+                                <div v-else-if="disposal.packing_list" class="mb-1 bg-yellow-50 px-2 py-1 rounded text-sm">
+                                    <span class="font-semibold">From Packing List:</span> 
+                                    <span>{{ disposal.packing_list.packing_list_number }}</span>
+                                </div>
+                                <div>{{ disposal.note || 'N/A' }}</div>
+                            </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div v-if="parseAttachments(disposal.attachments).length > 0" class="relative attachments-dropdown">
