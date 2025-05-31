@@ -279,7 +279,6 @@ function getResults(page = 1) {
             </select>
         </div>
         <!-- Table Section -->
-         {{props.liquidates}}
         <div class="mb-6">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
@@ -309,14 +308,24 @@ function getResults(page = 1) {
                             <span>Batch Number: {{ liquidate.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ liquidate.barcode || 'N/A' }}</span>
                             <span>Expiry Date: {{ liquidate.expire_date ? moment(liquidate.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
-                            <span>Warehouse: {{ liquidate.packing_list?.warehouse?.name || 'N/A' }}</span>
-                            <span>Location: {{ liquidate.packing_list?.location?.location || 'N/A' }}</span>
+                            <span>Quantity: {{ liquidate.quantity || 'N/A' }}</span>
+                            <span>UOM: {{ liquidate.uom || 'N/A' }}</span>
+                            <span v-if="liquidate.packing_list">Warehouse: {{ liquidate.packing_list?.warehouse?.name || 'N/A' }}</span>
+                            <span v-if="liquidate.packing_list">Location: {{ liquidate.packing_list?.location?.location || 'N/A' }}</span>
+                            <span v-if="liquidate.transfer_id" class="text-blue-600 font-semibold">From Transfer</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ liquidate.liquidated_at ? new Date(liquidate.liquidated_at).toLocaleDateString() : 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            {{ liquidate.note || 'N/A' }}
+                            <div class="flex flex-col">
+                                <div v-if="liquidate.transfer_id" class="mb-1">
+                                    <span class="font-semibold text-blue-600">Transfer ID:</span> {{ liquidate.transfer?.transferID || liquidate.transfer_id }}
+                                </div>
+                                <div>
+                                    <span class="font-semibold">Note:</span> {{ liquidate.note || 'N/A' }}
+                                </div>
+                            </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div v-if="parseAttachments(liquidate.attachments).length > 0" class="relative attachments-dropdown">

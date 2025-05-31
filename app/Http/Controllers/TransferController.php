@@ -819,6 +819,14 @@ class TransferController extends Controller
             // Get the transfer item and transfer
             $transferItem = TransferItem::findOrFail($backorder->transfer_item_id);
             $transfer = Transfer::findOrFail($transferItem->transfer_id);
+
+            // Generate a formatted note for history record
+            $transferNumber = $transfer->transferID ?? ('ID: ' . $transfer->id);
+            $historyNote = "Transfer ($transferNumber) - Liquidated";
+            if ($request->note) {
+                $historyNote .= " - {$request->note}";
+            }
+            
             
             // Handle file attachments if any
             $attachments = [];
@@ -846,11 +854,12 @@ class TransferController extends Controller
                 'expire_date' => $transferItem->expire_date,
                 'barcode' => $transferItem->barcode,
                 'uom' => $transferItem->uom,
-                'note' => $request->note,
+                'note' => $historyNote,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
                 'liquidated_by' => auth()->id(),
                 'liquidated_at' => now()
             ]);
+            
             
             // Create backorder history record
             BackOrderHistory::create([
@@ -859,7 +868,7 @@ class TransferController extends Controller
                 'product_id' => $backorder->product_id,
                 'quantity' => $request->quantity,
                 'status' => 'Liquidated',
-                'note' => $request->note,
+                'note' => $historyNote,
                 'performed_by' => auth()->id()
             ]);
             
@@ -956,6 +965,13 @@ class TransferController extends Controller
                 'updated_at' => now()
             ]);
             
+            // Generate a formatted note for history record
+            $transferNumber = $transfer->transferID ?? ('ID: ' . $transfer->id);
+            $historyNote = "Transfer ($transferNumber) - Disposed";
+            if ($request->note) {
+                $historyNote .= " - {$request->note}";
+            }
+            
             // Create backorder history record
             BackOrderHistory::create([
                 'packing_list_id' => null,
@@ -963,7 +979,7 @@ class TransferController extends Controller
                 'product_id' => $backorder->product_id,
                 'quantity' => $request->quantity,
                 'status' => 'Disposed',
-                'note' => $request->note,
+                'note' => $historyNote,
                 'performed_by' => auth()->id()
             ]);
             
