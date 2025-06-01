@@ -13,6 +13,7 @@ class IssuedQuantity extends Model
         'unit_cost',
         'total_cost',
         'issued_date',
+        'barcode',
         'issued_by'
     ];
 }

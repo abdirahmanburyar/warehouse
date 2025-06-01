@@ -31,6 +31,14 @@ class Kernel extends ConsoleKernel
             ->monthlyOn(1, '01:00')
             ->appendOutputTo(storage_path('logs/monthly-reports.log'))
             ->emailOutputOnFailure(config('mail.admin_address'));
+            
+        // Generate monthly issued quantities report on the 1st day of each month at 01:30 AM
+        // This runs after the received quantities report to ensure all data is processed sequentially
+        // It will automatically generate the report for the previous month
+        $schedule->command('report:issue-quantities')
+            ->monthlyOn(1, '01:30')
+            ->appendOutputTo(storage_path('logs/monthly-reports.log'))
+            ->emailOutputOnFailure(config('mail.admin_address'));
     }
 
     /**
