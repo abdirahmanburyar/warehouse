@@ -219,20 +219,9 @@ class ConsumptionImport implements ToCollection
             }
         }
         
-        // Insert or update records in a single batch
+        // Insert or update remaining records
         if (!empty($this->records)) {
-            foreach ($this->records as $record) {
-                AvarageMonthlyconsumption::updateOrCreate(
-                    [
-                        'facility_id' => $record['facility_id'],
-                        'product_id' => $record['product_id'],
-                        'month_year' => $record['month_year']
-                    ],
-                    [
-                        'quantity' => $record['quantity']
-                    ]
-                );
-            }
+            $this->saveRecords();
         }
     }
     
@@ -257,13 +246,30 @@ class ConsumptionImport implements ToCollection
         }
         
         try {
-            // Insert records in chunks to avoid memory issues
-            $chunks = array_chunk($validRecords, 100);
-            foreach ($chunks as $chunk) {
-                AvarageMonthlyconsumption::insert($chunk);
+            // Use create instead of insert to ensure model events are triggered
+            foreach ($validRecords as $record) {
+                // Double-check that product_id is not null before creating the record
+                if (!empty($record['product_id'])) {
+                    try {
+                        AvarageMonthlyconsumption::updateOrCreate(
+                            [
+                                'facility_id' => $record['facility_id'],
+                                'product_id' => $record['product_id'],
+                                'month_year' => $record['month_year']
+                            ],
+                            [
+                                'quantity' => $record['quantity']
+                            ]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error("Error saving consumption record for product ID {$record['product_id']}: " . $e->getMessage());
+                    }
+                } else {
+                    Log::warning("Skipped record with null product_id for month {$record['month_year']}");
+                }
             }
             
-            Log::info("Saved " . count($validRecords) . " consumption records");
+            Log::info("Processed " . count($validRecords) . " consumption records");
         } catch (\Exception $e) {
             Log::error("Error saving consumption records: " . $e->getMessage());
         }

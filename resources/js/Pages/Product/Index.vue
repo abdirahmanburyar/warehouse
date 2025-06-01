@@ -199,39 +199,27 @@
                 </div>
                 <table
                     v-else
-                    class="min-w-full divide-y divide-black border border-black"
+                    class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-3xl overflow-hidden"
                 >
-                    <thead class="bg-gray-50">
+                    <thead style="background-color: #EEF1F8">
                         <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
-                            >
-                                Name
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Item Name
                             </th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
-                            >
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Batch Number
+                            </th>
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Category
                             </th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
-                            >
-                                Dosage Form
+                            <th style="color: #495FA7;" class="p-5 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Quantity on Hand
                             </th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
-                            >
-                                Reorder Level
-                            </th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 border-r border-black"
-                            >
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th
-                                class="px-6 py-3 text-right text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black"
-                            >
-                                Actions
+                            <th style="color: #495FA7;" class="p-5 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Action
                             </th>
                         </tr>
                     </thead>
@@ -239,75 +227,67 @@
                         <tr
                             v-for="product in products.data"
                             :key="product.id"
-                            class="hover:bg-gray-50 border border-black"
+                            class="hover:bg-gray-50"
                         >
-                            <td
-                                class="px-6 py-4 whitespace-nowrap border border-black"
-                            >
+                            <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ product.name }}
                                 </div>
-                                <div class="text-sm text-gray-500">
-                                    Patern of Product: {{ product.movement }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ product.productID || 'N/A' }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ product.category?.name || 'N/A' }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                                {{ product.reorder_level || '0' }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                        :class="{
+                                            'bg-green-100 text-green-800': product.is_active,
+                                            'bg-red-100 text-red-800': !product.is_active
+                                        }"
+                                    >
+                                        {{ product.is_active ? 'Active' : 'Inactive' }}
+                                    </span>
                                 </div>
                             </td>
-                            <td
-                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border border-black"
-                            >
-                                {{ product.category?.name }}
-                            </td>
-                            <td
-                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border border-black"
-                            >
-                                {{ product.dosage?.name }}
-                            </td>
-                            <td
-                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border border-black"
-                            >
-                                {{ product.reorder_level }}
-                            </td>
-                            <td
-                                class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-black"
-                            >
-                                <span
-                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                                    :class="{
-                                        'bg-green-100 text-green-800': product.is_active,
-                                        'bg-red-100 text-red-800': !product.is_active
-                                    }"
-                                >
-                                    {{ product.is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium border border-black">
-                                <div class="flex items-center justify-end gap-4">
+                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center space-x-3">
                                     <Link
                                         :href="route('products.edit', product.id)"
-                                        class="text-indigo-600 hover:text-indigo-900"
+                                        class="text-blue-600 hover:text-blue-900"
                                     >
-                                        Edit
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
                                     </Link>
                                     <button
                                         @click="confirmToggleStatus(product)"
-                                        class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                         :class="{
-                                            'bg-red-600': product.is_active,
-                                            'bg-green-600': !product.is_active,
-                                            'opacity-50 cursor-wait': loadingProducts.has(product.id)
+                                            'opacity-50 cursor-wait':
+                                            loadingProducts.has(product.id),
+                                            'bg-gray-200': !product.is_active,
+                                            'bg-green-500': product.is_active,
                                         }"
+                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                         :disabled="loadingProducts.has(product.id)"
-                                    >
-                                        <span 
-                                            class="inline-block h-4 w-4 transform rounded-full transition-transform duration-300"
-                                            :class="{
-                                                'translate-x-6': product.is_active,
-                                                'translate-x-1': !product.is_active,
-                                                'bg-white': !loadingProducts.has(product.id),
-                                                'bg-gray-200 animate-pulse': loadingProducts.has(product.id)
-                                            }"
-                                        />
-                                    </button>
-                                    
+                                >
+                                    <span
+                                        :class="{
+                                            'translate-x-5': product.is_active,
+                                            'translate-x-0': !product.is_active,
+                                            'bg-gray-400 animate-pulse':
+                                                loadingProducts.has(product.id),
+                                        }"
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                    ></span>
+                                </button>
+                                   
                                 </div>
                             </td>
                         </tr>
@@ -599,6 +579,17 @@ const handleFileUpload = (event) => {
         selectedFile.value = null;
         return;
     }
+    
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        toast.error(
+            "File is too large. Maximum file size is 5MB."
+        );
+        event.target.value = null;
+        selectedFile.value = null;
+        return;
+    }
 
     selectedFile.value = file;
 };
@@ -615,6 +606,13 @@ const uploadFile = async () => {
         toast.error("Please select a file to upload");
         return;
     }
+    
+    // Show loading toast
+    const loadingToast = toast.info("Preparing to upload file...", {
+        timeout: false,
+        closeOnClick: false,
+        draggable: false
+    });
 
     isUploading.value = true;
     const formData = new FormData();
@@ -636,22 +634,52 @@ const uploadFile = async () => {
             closeUploadModal();
 
             // Show detailed results if there are errors or skipped items
-            if (response.data.errors && response.data.errors.length > 0) {
-                let errorList = response.data.errors.join("\n");
+            if ((response.data.errors && response.data.errors.length > 0) || response.data.skipped > 0) {
+                let errorList = response.data.errors ? response.data.errors.join("\n") : "";
+                
+                // Create a more detailed and user-friendly results dialog
                 Swal.fire({
                     title: "Import Results",
-                    html: `<div class="text-left"><p><strong>Imported:</strong> ${
-                        response.data.imported
-                    } products</p>
-                           <p><strong>Skipped:</strong> ${
-                               response.data.skipped
-                           } products</p>
-                           ${
-                               errorList
-                                   ? `<p><strong>Errors:</strong></p><pre class="text-xs mt-2 bg-gray-100 p-2 rounded overflow-auto max-h-40">${errorList}</pre>`
-                                   : ""
-                           }</div>`,
-                    icon: "info",
+                    html: `<div class="text-left">
+                        <div class="flex items-center mb-2">
+                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <p><strong>Imported:</strong> ${response.data.imported} products</p>
+                        </div>
+                        
+                        ${response.data.skipped > 0 ? `
+                        <div class="flex items-center mb-2">
+                            <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <p><strong>Skipped:</strong> ${response.data.skipped} products (already exist)</p>
+                        </div>` : ''}
+                        
+                        ${errorList ? `
+                        <div class="flex items-start mb-2">
+                            <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-2 mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p><strong>Errors:</strong></p>
+                                <pre class="text-xs mt-2 bg-gray-100 p-2 rounded overflow-auto max-h-40 border border-gray-200">${errorList}</pre>
+                            </div>
+                        </div>` : ""}
+                        
+                        <div class="mt-4 text-sm text-gray-600">
+                            <p>If you have errors, please check that your Excel file has the correct format and column names.</p>
+                        </div>
+                    </div>`,
+                    icon: response.data.errors && response.data.errors.length > 0 ? "warning" : "success",
+                    confirmButtonText: "OK",
+                    width: '600px',
                 });
             }
 
@@ -662,8 +690,26 @@ const uploadFile = async () => {
         }
     } catch (error) {
         console.error("Upload error:", error);
-        toast.error(error.response?.data?.message || "Error uploading file");
+        
+        // Provide more detailed error messages
+        if (error.response?.status === 422) {
+            // Validation error
+            const errors = error.response.data.errors;
+            if (errors) {
+                const errorMessages = Object.values(errors).flat();
+                toast.error(errorMessages.join('\n'));
+            } else {
+                toast.error(error.response.data.message || "Validation failed. Please check your file format.");
+            }
+        } else if (error.response?.status === 413) {
+            toast.error("File is too large. Please upload a smaller file.");
+        } else {
+            toast.error(error.response?.data?.message || "Error uploading file. Please try again.");
+        }
     } finally {
+        // Dismiss the loading toast
+        toast.dismiss(loadingToast);
+        
         isUploading.value = false;
         selectedFile.value = null;
         if (fileInput.value) {

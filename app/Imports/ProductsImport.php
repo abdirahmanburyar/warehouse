@@ -117,36 +117,33 @@ class ProductsImport implements ToCollection
                     }
                 }
 
-                // Add to batch records
-                $records[] = [
-                    'name' => $itemName,
-                    'category_id' => $categoryId,
-                    'dosage_id' => $dosageId,
-                    'reorder_level' => 0, // Default value
-                    'is_active' => true, // Default value
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                $this->importedCount++;
-                
-                // Process in batches to avoid memory issues
-                if (count($records) >= $this->batchSize) {
-                    Product::insert($records);
-                    $records = []; // Clear the batch
+                // Create product record using the model to trigger the boot method
+                try {
+                    Product::create([
+                        'name' => $itemName,
+                        'category_id' => $categoryId,
+                        'dosage_id' => $dosageId,
+                        'movement' => 'Slow Moving', // Default movement value
+                        'reorder_level' => 0, // Default value
+                        'is_active' => true, // Default value
+                    ]);
                     
-                    // Log progress for large imports
-                    if ($this->importedCount % 500 === 0) {
-                        Log::info("Processed {$this->importedCount} products so far");
-                    }
+                    // Increment imported count only if creation is successful
+                    $this->importedCount++;
+                } catch (\Exception $e) {
+                    $this->errors[] = "Failed to create product '{$itemName}': {$e->getMessage()}";
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                // Log progress for large imports
+                if ($this->importedCount % 500 === 0) {
+                    Log::info("Processed {$this->importedCount} products so far");
                 }
             }
             
-            // Insert any remaining records
-            if (!empty($records)) {
-                Product::insert($records);
-                Log::info("Processed final batch, total: {$this->importedCount} products");
-            }
+            // Log final processing count
+            Log::info("Processed final batch, total: {$this->importedCount} products");
             
             DB::commit();
         } catch (\Exception $e) {

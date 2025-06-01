@@ -16,6 +16,8 @@ use App\Events\InventoryEvent;
 use Illuminate\Support\Facades\Event;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\InventoryImport;
 
 class InventoryController extends Controller
 {
@@ -69,7 +71,7 @@ class InventoryController extends Controller
             }); 
         }
 
-        $inventories = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $inventories = $query->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         // Get products for dropdown
@@ -195,6 +197,51 @@ class InventoryController extends Controller
             return response()->json($locations, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Import inventory items from Excel file
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max file size
+            ]);
+            
+            // Process the import
+            $import = new InventoryImport();
+            Excel::import($import, $request->file('file'));
+            
+            // Get import statistics
+            $importedCount = $import->getImportedCount();
+            $skippedCount = $import->getSkippedCount();
+            $errors = $import->getErrors();
+            
+            // Dispatch event to notify other users of the update
+            // Pass a dummy inventory object with import summary data
+            $dummyInventory = [
+                'product_id' => 0,
+                'quantity' => $importedCount,
+                'type' => 'bulk_import',
+                'message' => "Bulk import: {$importedCount} items imported"
+            ];
+            event(new InventoryUpdated($dummyInventory));
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Import completed: {$importedCount} items imported, {$skippedCount} items skipped",
+                'imported' => $importedCount,
+                'skipped' => $skippedCount,
+                'errors' => $errors
+            ]);
+        } catch (\Throwable $th) {
+            Log::error('Inventory import error: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $th->getMessage()
+            ], 500);
         }
     }
 }

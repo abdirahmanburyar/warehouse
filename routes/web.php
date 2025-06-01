@@ -417,6 +417,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
 
         Route::post('/get-locations', [InventoryController::class, 'getLocations'])->name('invetnories.getLocations');
+        Route::post('/import', [InventoryController::class, 'import'])->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.import');
     });
 
     // Report Routes

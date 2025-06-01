@@ -19,6 +19,7 @@ class Inventory extends Model
         'manufacturing_date',
         'expiry_date',
         'batch_number',
+        'barcode',
         'location_id',
         'notes',
         'uom',
