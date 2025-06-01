@@ -420,6 +420,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/import', [InventoryController::class, 'import'])->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.import');
     });
 
+    // API Routes
+    Route::prefix('api')->group(function () {
+        // Issue Quantity Reports Export Routes
+        Route::get('/reports/issueQuantityReports/export', [ReportController::class, 'exportIssueQuantityReports'])->middleware(PermissionMiddleware::class . ':report.view');
+        // Removed the individual report items export endpoint as it's now handled client-side
+    });
+
     // Report Routes
     Route::prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.index');
@@ -441,6 +448,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
         // Excel Upload Route
         Route::post('/upload-consumption', [ConsumptionUploadController::class, 'upload'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.upload-consumption');
+
+        // Issue Quantity Routes
+        Route::get('/issueQuantityReports', [ReportController::class, 'issueQuantityReports'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.issueQuantityReports');
+        
     });
     
     // Order Management Routes

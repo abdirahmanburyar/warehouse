@@ -28,6 +28,9 @@
                                 <Link :href="route('reports.receivedQuantities')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">QTY Received Report</Link>
                             </li>
                             <li>
+                                <Link :href="route('reports.issueQuantityReports')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">QTY Issued Report</Link>
+                            </li>
+                            <li>
                                 <Link :href="route('reports.physicalCount')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Generate Physical Count Items</Link>
                                 <Link :href="route('reports.physicalCountReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Physical Count Report</Link>
                             </li>
