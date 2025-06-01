@@ -18,90 +18,133 @@
                 <!-- Search Bar -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text" v-model="search" placeholder="Name, code, manager..."
-                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-4 pl-10" />
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" v-model="search" placeholder="Name, code, manager..."
+                            class="w-full border-black rounded-full focus:border-indigo-500 focus:ring-indigo-500 shadow-sm py-2 px-4 pl-10" />
+                    </div>
                 </div>
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select v-model="status"
-                        class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
-                        <option value="">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                        <option value="Maintenance">Maintenance</option>
-                    </select>   
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <select v-model="status"
+                            class="w-full appearance-none border-black rounded-full focus:border-indigo-500 focus:ring-indigo-500 shadow-sm py-2 px-4 pl-10 pr-8">
+                            <option value="">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- State Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <Multiselect
-                        v-model="selectedState"
-                        :options="props.states || []"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select state"
-                        label="name"
-                        track-by="id"
-                        @update:modelValue="handleStateChange"
-                        class="multiselect-blue"
-                    >
-                        <template #noResult>No states found</template>
-                    </Multiselect>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                        </svg>
+                        <Multiselect
+                            v-model="selectedState"
+                            :options="props.states || []"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select state"
+                            label="name"
+                            track-by="id"
+                            @update:modelValue="handleStateChange"
+                            class="multiselect--with-icon multiselect--rounded"
+                        >
+                            <template #noResult>No states found</template>
+                        </Multiselect>
+                    </div>
                 </div>
                 
                 <!-- District Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">District</label>
-                    <Multiselect
-                        v-model="selectedDistrict"
-                        :options="props.districts || []"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select district"
-                        label="name"
-                        track-by="id"
-                        @update:modelValue="handleDistrictChange"
-                        :disabled="!selectedState"
-                        class="multiselect-blue"
-                    >
-                        <template #noResult>No districts found</template>
-                    </Multiselect>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <Multiselect
+                            v-model="selectedDistrict"
+                            :options="props.districts || []"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select district"
+                            label="name"
+                            track-by="id"
+                            :allow-empty="true"
+                            @update:modelValue="handleDistrictChange"
+                            :disabled="!selectedState"
+                            class="multiselect--with-icon multiselect--rounded"
+                        >
+                            <template #noResult>No districts found</template>
+                        </Multiselect>
+                    </div>
                 </div>
                 
                 <!-- City Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <Multiselect
-                        v-model="selectedCity"
-                        :options="props.cities || []"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select city"
-                        label="name"
-                        track-by="id"
-                        :disabled="!selectedDistrict"
-                        class="multiselect-blue"
-                    >
-                        <template #noResult>No cities found</template>
-                    </Multiselect>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <Multiselect
+                            v-model="selectedCity"
+                            :options="props.cities || []"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            placeholder="Select city"
+                            label="name"
+                            track-by="id"
+                            :allow-empty="true"
+                            :disabled="!selectedDistrict"
+                            class="multiselect--with-icon multiselect--rounded"
+                        >
+                            <template #noResult>No cities found</template>
+                        </Multiselect>
+                    </div>
                 </div>
                 
                 <!-- Per Page Selector -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
-                    <select v-model="perPage"
-                        class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm text-sm">
-                        <option value="10">10 per page</option>
-                        <option value="25">25 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                        <option value="500">500 per page</option>
-                    </select>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        <select v-model="perPage"
+                            class="w-full appearance-none border-black rounded-full focus:border-indigo-500 focus:ring-indigo-500 shadow-sm py-2 px-4 pl-10 pr-8">
+                            <option value="10">10 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
+                            <option value="500">500 per page</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 
 
@@ -110,106 +153,105 @@
 
         <div class="mt-4">
             <div class="bg-white mx-auto overflow-hidden">
-                <div class="text-gray-900 overflow-hidden">
-                    <div
-                        class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-lg">
-                        <table class="w-full divide-y divide-black border-collapse table-auto border-2 border-black">
-                            <thead class="bg-gray-50 sticky top-0 z-10">
-                                <tr>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-2 border-black">
-                                        Name
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
-                                        Location
-                                    </th>
+                <table class="min-w-full border border-gray-200 divide-y divide-gray-200 rounded-xl overflow-hidden">
+                    <thead style="background-color: #eef1f8" class="rounded-t-xl overflow-hidden sticky top-0 z-10">
+                        <tr>
+                            <th scope="col"
+                                class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider" style="color: #636db4 sticky left-0 bg-gray-50 z-20 border-2 border-black">
+                                Name
+                            </th>
+                            <th scope="col"
+                                class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider" style="color: #636db4 border-2 border-black">
+                                Location
+                            </th>
 
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
-                                        Manager
-                                    </th>
+                            <th scope="col"
+                                class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider" style="color: #636db4 border-2 border-black">
+                                Manager
+                            </th>
 
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
-                                        Status
-                                    </th>
+                            <th scope="col"
+                                class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider" style="color: #636db4 border-2 border-black">
+                                Status
+                            </th>
 
-                                    <th scope="col"
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id"
-                                    class="bg-white hover:bg-gray-50">
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 border-2 border-black">
-                                        {{ warehouse.name }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
-                                        {{ warehouse.code }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 border-2 border-black">
-                                        <div class="flex flex-col">
-                                            <span class="font-semibold">State:</span> {{ warehouse.state ? warehouse.state.name : 'N/A' }}
-                                            <span class="font-semibold">District:</span> {{ warehouse.district ? warehouse.district.name : 'N/A' }}
-                                            <span class="font-semibold">City:</span> {{ warehouse.city ? warehouse.city.name : 'N/A' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ warehouse.manager_name || 'N/A' }}
-                                        </div>
-                                        <div v-if="warehouse.manager_email" class="text-xs text-gray-500">
-                                            <span class="inline-flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                </svg>
-                                                {{ warehouse.manager_email }}
-                                            </span>
-                                        </div>
-                                        <div v-if="warehouse.manager_phone" class="text-xs text-gray-500">
-                                            <span class="inline-flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                                </svg>
-                                                {{ warehouse.manager_phone }}
-                                            </span>
-                                        </div>
-                                    </td>
+                            <th scope="col"
+                                class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider" style="color: #636db4 border-2 border-black">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="warehouse in props.warehouses.data" :key="warehouse.id" class="hover:bg-gray-50 border-b">
+                            <td
+                                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 border-2 border-black">
+                                {{ warehouse.name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
+                                {{ warehouse.code }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 border-2 border-black">
+                                <div class="flex flex-col">
+                                    <span class="font-semibold">State:</span> {{ warehouse.state ? warehouse.state.name : 'N/A' }}
+                                    <span class="font-semibold">District:</span> {{ warehouse.district ? warehouse.district.name : 'N/A' }}
+                                    <span class="font-semibold">City:</span> {{ warehouse.city ? warehouse.city.name : 'N/A' }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-2 border-black">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ warehouse.manager_name || 'N/A' }}
+                                </div>
+                                <div v-if="warehouse.manager_email" class="text-xs text-gray-500">
+                                    <span class="inline-flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        {{ warehouse.manager_email }}
+                                    </span>
+                                </div>
+                                <div v-if="warehouse.manager_phone" class="text-xs text-gray-500">
+                                    <span class="inline-flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        {{ warehouse.manager_phone }}
+                                    </span>
+                                </div>
+                            </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                                            :class="warehouse.status_badge">
-                                            {{ warehouse.status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium border-2 border-black">
-                                        <div class="flex space-x-3 justify-center">
-                                            <Link :href="route('inventories.warehouses.edit', warehouse.id)"
-                                                class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100">
-                                                <i class="fas fa-edit"></i>
-                                            </Link>
-                                            <button @click="confirmDelete(warehouse)"
-                                                class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="props.warehouses.data.length === 0">
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 border-2 border-black">
-                                        No warehouses found
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
+                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                                    :class="warehouse.status_badge">
+                                    {{ warehouse.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium border-2 border-black">
+                                <div class="flex space-x-3 justify-center">
+                                    <Link :href="route('inventories.warehouses.edit', warehouse.id)"
+                                        class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100">
+                                        <i class="fas fa-edit"></i>
+                                    </Link>
+                                    <button @click="confirmDelete(warehouse)"
+                                        class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="props.warehouses.data.length === 0" class="hover:bg-gray-50 border-b">
+                            <td colspan="8" class="px-6 py-8 text-center">
+                                <div class="flex flex-col items-center justify-center space-y-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    <p class="text-lg font-medium text-gray-700">No warehouses found</p>
+                                    <p class="text-sm text-gray-500">No data matches your current filter criteria. Try adjusting your filters or create a new warehouse.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -635,7 +677,7 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style>
 .aspect-w-16 {
     position: relative;
     padding-bottom: 56.25%;
@@ -659,5 +701,111 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+
+/* Make all filter inputs have border radius of 50% with black borders */
+.multiselect__tags {
+    border-radius: 9999px !important;
+    border: 1px solid black !important;
+}
+
+/* Style the text input to match the rounded filter style */
+input[type="text"] {
+    border-radius: 9999px !important;
+    border: 1px solid black !important;
+    padding-left: 40px !important;
+}
+
+/* Style the dropdown menu to match */
+.multiselect__content-wrapper {
+    border-radius: 1rem !important;
+    border: 1px solid black !important;
+    margin-top: 5px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Add padding for icons in search input */
+.search-with-icon {
+    position: relative;
+}
+
+.search-with-icon input {
+    padding-left: 40px !important;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #6b7280;
+}
+
+/* Style for filter icons */
+.filter-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #6b7280;
+}
+
+.multiselect--with-icon .multiselect__tags {
+    padding-left: 40px !important;
+}
+
+.multiselect--rounded .multiselect__tags {
+    border-radius: 9999px !important;
+    border: 1px solid black !important;
+}
+
+.multiselect--rounded .multiselect__content-wrapper {
+    border-radius: 1rem !important;
+    border: 1px solid black !important;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+/* Improve multiselect styling */
+.multiselect {
+    min-height: 40px;
+}
+
+.multiselect__tags {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 8px 40px 8px 8px;
+}
+
+.multiselect__placeholder {
+    padding-top: 0;
+    margin-bottom: 0;
+    color: #6b7280;
+}
+
+.multiselect__single {
+    padding-top: 0;
+    margin-bottom: 0;
+}
+
+.multiselect__input {
+    margin-bottom: 0;
+    padding: 0;
+}
+
+.multiselect__select {
+    height: 38px;
+}
+
+.multiselect__option--highlight {
+    background: #4f46e5;
+}
+
+.multiselect__option--selected.multiselect__option--highlight {
+    background: #dc2626;
 }
 </style>

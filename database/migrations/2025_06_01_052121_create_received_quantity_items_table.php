@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('received_quantities', function (Blueprint $table) {
+        Schema::create('received_quantity_items', function (Blueprint $table) {
             $table->id();
             $table->integer('quantity');
+            $table->foreignId('parent_id')->nullable()->constrained('monthly_quantity_receiveds');
             $table->foreignId('received_by')->nullable()->constrained('users');
             $table->timestamp('received_at')->nullable();
             $table->foreignId('transfer_id')->nullable()->constrained('transfers')->onDelete('cascade');
@@ -32,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('received_quantities');
+        Schema::dropIfExists('received_quantity_items');
     }
 };

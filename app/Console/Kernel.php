@@ -23,6 +23,14 @@ class Kernel extends ConsoleKernel
             ->quarterly()
             ->lastDayOfQuarter()
             ->at('23:00');
+            
+        // Generate monthly received quantities report on the 1st day of each month at 01:00 AM
+        // This runs after the AMC generation to ensure all data is available
+        // It will automatically generate the report for the previous month
+        $schedule->command('report:monthly-received-quantities')
+            ->monthlyOn(1, '01:00')
+            ->appendOutputTo(storage_path('logs/monthly-reports.log'))
+            ->emailOutputOnFailure(config('mail.admin_address'));
     }
 
     /**

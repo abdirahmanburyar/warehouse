@@ -578,7 +578,7 @@ function getResults(page = 1) {
                                 placeholder="Select a category"
                                 :allow-empty="true"
                                 @input="applyFilters"
-                                class="multiselect--with-icon"
+                                class="multiselect--with-icon multiselect--rounded"
                             >
                             </Multiselect>
                         </div>
@@ -611,7 +611,7 @@ function getResults(page = 1) {
                                 :show-labels="false"
                                 placeholder="Select a dosage form"
                                 :allow-empty="true"
-                                class="multiselect--with-icon"
+                                class="multiselect--with-icon multiselect--rounded"
                             >
                             </Multiselect>
                         </div>
@@ -644,7 +644,7 @@ function getResults(page = 1) {
                                 :show-labels="false"
                                 placeholder="Select a warehouse"
                                 :allow-empty="true"
-                                class="multiselect--with-icon"
+                                class="multiselect--with-icon multiselect--rounded"
                             >
                             </Multiselect>
                         </div>
@@ -684,7 +684,7 @@ function getResults(page = 1) {
                                 placeholder="Select a S. Location"
                                 :allow-empty="true"
                                 :disabled="warehouse == null"
-                                class="multiselect--with-icon"
+                                class="multiselect--with-icon multiselect--rounded"
                             >
                             </Multiselect>
                         </div>
@@ -1319,5 +1319,17 @@ input[type="text"] {
 
 .multiselect--with-icon .multiselect__tags {
     padding-left: 40px !important;
+}
+
+.multiselect--rounded .multiselect__tags {
+    border-radius: 9999px !important;
+    border: 1px solid black !important;
+}
+
+.multiselect--rounded .multiselect__content-wrapper {
+    border-radius: 1rem !important;
+    border: 1px solid black !important;
+    margin-top: 5px;
+    overflow: hidden;
 }
 </style>
