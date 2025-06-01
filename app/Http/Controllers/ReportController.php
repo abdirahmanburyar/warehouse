@@ -9,7 +9,7 @@ use App\Models\AvarageMonthlyconsumption;
 use App\Models\Facility;
 use App\Models\Inventory;
 use App\Models\Product;
-use App\Models\ReceivedQuantity;
+use App\Models\MonthlyQuantityReceived;
 use App\Models\Warehouse;
 use App\Models\InventoryAdjustment;
 use App\Http\Resources\ReceivedQuantityResource;
@@ -332,22 +332,30 @@ class ReportController extends Controller
 
     public function receivedQuantities(Request $request)
     {
-        $query = ReceivedQuantity::query()
-            ->with(['product.dosage','product.category', 'receiver', 'transfer', 'packingList']);
+        $query = MonthlyQuantityReceived::query()
+            ->with(['items.product.dosage','items.product.category', 'items.receiver', 'items.transfer', 'items.packingList']);
 
         // Apply filters
         // Warehouse filter removed as warehouse_id doesn't exist in the product table
 
-        if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
-        }
-
-        if ($request->filled('start_date')) {
-            $query->whereDate('received_at', '>=', $request->start_date);
-        }
-
-        if ($request->filled('end_date')) {
-            $query->whereDate('received_at', '<=', $request->end_date);
+        // Handle multiple date filters (year and month combinations)
+        if ($request->filled('date_filters') && is_array($request->date_filters)) {
+            $query->where(function($q) use ($request) {
+                foreach ($request->date_filters as $dateFilter) {
+                    // If it's a full year-month format (YYYY-MM)
+                    if (strlen($dateFilter) === 7) {
+                        $q->orWhere('month_year', 'like', $dateFilter . '%');
+                    } 
+                    // If it's just a year (YYYY)
+                    else if (strlen($dateFilter) === 4) {
+                        $q->orWhere('month_year', 'like', $dateFilter . '%');
+                    }
+                }
+            });
+        } 
+        // Backward compatibility for old filter format
+        else if ($request->filled('month')) {
+            $query->where('month_year', 'like', $request->month . '%');
         }
 
         if ($request->filled('source')) {
@@ -368,7 +376,7 @@ class ReportController extends Controller
             'receivedQuantities' => ReceivedQuantityResource::collection($receivedQuantities),
             'warehouses' => Warehouse::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
-            'filters' => $request->only(['warehouse_id', 'product_id', 'start_date', 'end_date', 'source', 'per_page']),
+            'filters' => $request->only(['month', 'per_page']),
         ]);
     }
 
