@@ -409,7 +409,7 @@ class ReportController extends Controller
 
         $issueQuantityReports->setPath(url()->current()); // Force Laravel to use full URLs
 
-        return Inertia::render('Report/IssueQuantityReports', [
+        return inertia('Report/IssueQuantityReports', [
             'issueQuantityReports' => $issueQuantityReports,
             'warehouses' => Warehouse::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
@@ -525,7 +525,7 @@ class ReportController extends Controller
             $receivedQuantities->setPath(url()->current()); // Force Laravel to use full URLs
         
 
-        return Inertia::render('Report/ReceivedQuantities', [
+        return inertia('Report/ReceivedQuantities', [
             'receivedQuantities' => ReceivedQuantityResource::collection($receivedQuantities),
             'warehouses' => Warehouse::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
@@ -623,7 +623,7 @@ class ReportController extends Controller
             }
         }
         
-        return Inertia::render('Report/MonthlyConsumption', [
+        return inertia('Report/MonthlyConsumption', [
             'pivotData' => $pivotData,
             'months' => $monthsQuery,
             'facilities' => Facility::select('id', 'name', 'facility_type')->get(),
