@@ -305,6 +305,7 @@ class TransferController extends Controller
                         'total_cost' => $item['quantity'] * $inventory->unit_cost,
                         'issued_date' => now(),
                         'barcode' => $item['barcode'] ?? '',
+                        'uom' => $item['uom'] ?? '',
                         'batch_number' => $item['batch_number'],
                         'expiry_date' => $item['expiry_date'] ?? null,
                         'issued_by' => auth()->user()->id,
