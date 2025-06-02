@@ -207,13 +207,10 @@
                                 Item Name
                             </th>
                             <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                                Batch Number
-                            </th>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Category
                             </th>
                             <th style="color: #495FA7;" class="p-5 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">
-                                Quantity on Hand
+                               Dosage Form
                             </th>
                             <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Status
@@ -235,10 +232,10 @@
                                 </div>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ product.productID || 'N/A' }}
+                                {{ product.category?.name || 'N/A' }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ product.category?.name || 'N/A' }}
+                                {{ product.dosage?.name || 'N/A' }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                                 {{ product.reorder_level || '0' }}
