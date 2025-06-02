@@ -209,13 +209,13 @@
                             <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Category
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                Dosage Form
                             </th>
                             <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Action
                             </th>
                         </tr>
