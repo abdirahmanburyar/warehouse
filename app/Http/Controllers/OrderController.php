@@ -302,7 +302,7 @@ class OrderController extends Controller
                 !isset($allowedTransitions[$order->status]) ||
                 !in_array($request->status, $allowedTransitions[$order->status])
             ) {
-                return response()->json("Status transition not allowed", 422);
+                return response()->json("Status transition not allowed", 500);
             }
 
             $userId = auth()->id();
@@ -322,6 +322,19 @@ class OrderController extends Controller
                         $updates['rejected_by'] = null;
                         $updates['rejected_at'] = null;
                     }
+                    // issued quantity - history
+                //    foreach($order->items as $item){
+                //     // IssuedQuantity::create([
+                //     //     'product_id' => $item['product_id'],
+                //     //     'quantity' => $item['quantity'],
+                //     //     'batch_number' => $item['batch_number'],
+                //     //     'barcode' => $item['barcode'],
+                //     //     'uom' => $item['uom'],
+                //     //     'expiry_date' => $item['expiry_date'],
+                //     //     'issued_by' => $userId,
+                //     //     'issued_at' => $now,
+                //     // ]);
+                //    }
                     break;
                 case 'in_process':
                     $updates['in_process'] = true;
@@ -346,10 +359,6 @@ class OrderController extends Controller
             return response()->json('Order status updated successfully.', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Order status change failed', [
-                'error' => $e->getMessage(),
-                'order_id' => $request->order_id ?? null
-            ]);
             return response()->json('Failed to update order status: ' . $e->getMessage(), 500);
         }
     }

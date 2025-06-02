@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PhysicalCountSubmitted;
-use App\Models\IssuedQuantity;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Location;
 use App\Models\Product;
@@ -33,269 +32,6 @@ class ReportController extends Controller
     public function index(Request $request){
         return inertia('Report/Index');
     } 
-
-    public function inventoryReport(Request $request){
-        // Get month parameter or default to current month
-        $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
-        $prevMonthYear = Carbon::createFromFormat('Y-m', $monthYear)->subMonth()->format('Y-m');
-        $warehouseId = $request->input('warehouse_id');
-        
-        // Get all warehouses for the filter dropdown
-        $warehouses = Warehouse::orderBy('name')->get(['id', 'name']);
-        
-        // Get inventory report data
-        $reportData = $this->getInventoryReportData($monthYear, $prevMonthYear, $warehouseId);
-        
-        return inertia('Report/InventoryReport', [
-            'reportData' => $reportData,
-            'warehouses' => $warehouses,
-            'filters' => [
-                'month_year' => $monthYear,
-                'warehouse_id' => $warehouseId,
-            ],
-        ]);
-    }
-    
-    /**
-     * Get inventory report data for a specific month and optional warehouse
-     * 
-     * @param string $monthYear Format: YYYY-MM
-     * @param string $prevMonthYear Format: YYYY-MM
-     * @param int|null $warehouseId
-     * @return array
-     */
-    private function getInventoryReportData($monthYear, $prevMonthYear, $warehouseId = null)
-    {
-        // Check if we have stored reports for this month
-        $storedReport = MonthlyInventoryReport::where('month_year', $monthYear)->first();
-            
-        // If we have a stored report, use it
-        if ($storedReport) {
-            // Since we no longer store product-specific data, we'll need to get products separately
-            $products = DB::table('products')
-                ->join('inventories', 'products.id', '=', 'inventories.product_id')
-                ->when($warehouseId, function ($query) use ($warehouseId) {
-                    return $query->where('inventories.warehouse_id', $warehouseId);
-                })
-                ->select(
-                    'products.id as product_id',
-                    'products.name as product_name',
-                    'inventories.uom',
-                    'inventories.unit_cost'
-                )
-                ->distinct()
-                ->get();
-                
-            $result = [];
-            
-            foreach ($products as $product) {
-                $result[] = [
-                    'product_id' => $product->product_id,
-                    'product_name' => $product->product_name,
-                    'beginning_balance' => $storedReport->beginning_balance,
-                    'stock_received' => $storedReport->stock_received,
-                    'stock_issued' => $storedReport->stock_issued,
-                    'negative_adjustment' => $storedReport->negative_adjustment,
-                    'positive_adjustment' => $storedReport->positive_adjustment,
-                    'closing_balance' => $storedReport->closing_balance,
-                    'uom' => $product->uom ?? 'N/A',
-                    'unit_cost' => $product->unit_cost ?? 0,
-                    'total_value' => ($storedReport->closing_balance * ($product->unit_cost ?? 0))
-                ];
-            }
-            
-            return $result;
-        }
-        
-        // If no stored reports, calculate dynamically
-        // Get start and end dates for the selected month
-        $startDate = $monthYear . '-01';
-        $endDate = date('Y-m-t', strtotime($startDate));
-        
-        // Build query for products with inventory
-        $query = DB::table('products')
-            ->select(
-                'products.id as product_id',
-                'products.name as product_name',
-                DB::raw('COALESCE(inventories.uom, "N/A") as uom'),
-                DB::raw('COALESCE(AVG(inventories.unit_cost), 0) as unit_cost')
-            )
-            ->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
-            ->groupBy('products.id', 'products.name', 'inventories.uom');
-        
-        // Apply warehouse filter if provided
-        if ($warehouseId) {
-            $query->where('inventories.warehouse_id', $warehouseId);
-        }
-        
-        $products = $query->get();
-        
-        // Prepare result array
-        $result = [];
-        
-        foreach ($products as $product) {
-            // Get previous month closing balance as beginning balance
-            $beginningBalance = DB::table('inventories')
-                ->where('product_id', $product->product_id)
-                ->when($warehouseId, function ($query) use ($warehouseId) {
-                    return $query->where('warehouse_id', $warehouseId);
-                })
-                ->where('created_at', '<', $startDate)
-                ->sum('quantity');
-            
-            // Get stock received this month
-            $stockReceivedQuery = DB::table('received_quantity_items')
-                ->where('received_quantity_items.product_id', $product->product_id)
-                ->whereBetween('received_quantity_items.received_at', [$startDate, $endDate]);
-                
-            // Apply warehouse filter if provided - warehouse_id might be in the transfer table
-            if ($warehouseId) {
-                $stockReceivedQuery->join('transfers', 'received_quantity_items.transfer_id', '=', 'transfers.id')
-                    ->where('transfers.destination_id', $warehouseId);
-            }
-            
-            $stockReceived = $stockReceivedQuery->sum('received_quantity_items.quantity');
-            
-            // Get stock issued this month
-            $stockIssued = DB::table('issue_quantity_items')
-                ->join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
-                ->where('issue_quantity_items.product_id', $product->product_id)
-                ->when($warehouseId, function ($query) use ($warehouseId) {
-                    return $query->where('issue_quantity_items.warehouse_id', $warehouseId);
-                })
-                ->where('issue_quantity_reports.month_year', $monthYear)
-                ->sum('issue_quantity_items.quantity');
-            
-            // Get negative adjustments this month (where difference < 0)
-            // Note: inventory_adjustments doesn't have a warehouse_id field directly
-            // We'll need to join with inventories to filter by warehouse
-            $negativeAdjustmentQuery = DB::table('inventory_adjustments')
-                ->where('inventory_adjustments.product_id', $product->product_id)
-                ->whereBetween('inventory_adjustments.adjustment_date', [$startDate, $endDate])
-                ->where('inventory_adjustments.difference', '<', 0)
-                ->where('inventory_adjustments.status', 'approved');
-                
-            // Apply warehouse filter if provided
-            if ($warehouseId) {
-                // We need to join with inventories to filter by warehouse
-                // Using the batch_number as a common identifier
-                $negativeAdjustmentQuery->join('inventories', function($join) use ($warehouseId) {
-                    $join->on('inventory_adjustments.product_id', '=', 'inventories.product_id')
-                         ->on('inventory_adjustments.batch_number', '=', 'inventories.batch_number')
-                         ->where('inventories.warehouse_id', '=', $warehouseId);
-                });
-            }
-            
-            $negativeAdjustment = $negativeAdjustmentQuery->sum(DB::raw('ABS(inventory_adjustments.difference)'));
-            
-            // Get positive adjustments this month (where difference > 0)
-            $positiveAdjustmentQuery = DB::table('inventory_adjustments')
-                ->where('inventory_adjustments.product_id', $product->product_id)
-                ->whereBetween('inventory_adjustments.adjustment_date', [$startDate, $endDate])
-                ->where('inventory_adjustments.difference', '>', 0)
-                ->where('inventory_adjustments.status', 'approved');
-                
-            // Apply warehouse filter if provided
-            if ($warehouseId) {
-                // We need to join with inventories to filter by warehouse
-                // Using the batch_number as a common identifier
-                $positiveAdjustmentQuery->join('inventories', function($join) use ($warehouseId) {
-                    $join->on('inventory_adjustments.product_id', '=', 'inventories.product_id')
-                         ->on('inventory_adjustments.batch_number', '=', 'inventories.batch_number')
-                         ->where('inventories.warehouse_id', '=', $warehouseId);
-                });
-            }
-            
-            $positiveAdjustment = $positiveAdjustmentQuery->sum('inventory_adjustments.difference');
-            
-            // Calculate closing balance
-            $closingBalance = $beginningBalance + $stockReceived - $stockIssued - $negativeAdjustment + $positiveAdjustment;
-            
-            // Calculate total value
-            $totalValue = $closingBalance * $product->unit_cost;
-            
-            // Add to result array
-            $result[] = [
-                'product_id' => $product->product_id,
-                'product_name' => $product->product_name,
-                'beginning_balance' => $beginningBalance,
-                'stock_received' => $stockReceived,
-                'stock_issued' => $stockIssued,
-                'negative_adjustment' => $negativeAdjustment,
-                'positive_adjustment' => $positiveAdjustment,
-                'closing_balance' => $closingBalance,
-                'uom' => $product->uom,
-                'unit_cost' => $product->unit_cost,
-                'total_value' => $totalValue
-            ];
-        }
-        
-        return $result;
-    }
-    
-    /**
-     * API endpoint to get inventory report data
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function inventoryReportData(Request $request)
-    {
-        // Validate request
-        $request->validate([
-            'month_year' => 'required|string', // Format: YYYY-MM
-            'prev_month_year' => 'required|string', // Format: YYYY-MM
-            'warehouse_id' => 'nullable|exists:warehouses,id',
-        ]);
-
-        // Get parameters
-        $monthYear = $request->input('month_year');
-        $prevMonthYear = $request->input('prev_month_year');
-        $warehouseId = $request->input('warehouse_id');
-        
-        // Get inventory report data
-        $result = $this->getInventoryReportData($monthYear, $prevMonthYear, $warehouseId);
-        
-        return response()->json($result);
-    }
-    
-    /**
-     * Manually generate inventory report for a specific month
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function generateInventoryReport(Request $request)
-    {
-        // Validate request
-        $request->validate([
-            'month_year' => 'required|string|date_format:Y-m',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
-        ]);
-        
-        $monthYear = $request->input('month_year');
-        $warehouseId = $request->input('warehouse_id');
-        
-        // Use Artisan to call the command
-        $command = 'report:generate-inventory ' . $monthYear;
-        
-        if ($warehouseId) {
-            $command .= ' --warehouse_id=' . $warehouseId;
-        }
-        
-        try {
-            \Illuminate\Support\Facades\Artisan::call($command);
-            $output = \Illuminate\Support\Facades\Artisan::output();
-            
-            // Log the output
-            \Illuminate\Support\Facades\Log::info('Manual inventory report generation: ' . $output);
-            
-            return redirect()->back()->with('success', 'Inventory report generated successfully for ' . $monthYear);
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error generating inventory report: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error generating inventory report: ' . $e->getMessage());
-        }
-    }
 
     public function updatePhysicalCountReport(Request $request){
         try {
@@ -338,6 +74,12 @@ class ReportController extends Controller
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
+    }
+
+    public function inventoryReport(Request $request){
+        $query = InventoryReport::query();
+
+        $query->with(['items.product.dosage', 'items.product.category', 'items.warehouse', 'approver', 'rejecter', 'reviewer']);
     }
     
     public function physicalCountReport(Request $request){
@@ -382,7 +124,7 @@ class ReportController extends Controller
     public function issueQuantityReports(Request $request)
     {
         $query = IssueQuantityReport::query()
-            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse']);
+            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse','items.issuer']);
 
         // Handle multiple date filters (year and month combinations)
         if ($request->filled('date_filters') && is_array($request->date_filters)) {

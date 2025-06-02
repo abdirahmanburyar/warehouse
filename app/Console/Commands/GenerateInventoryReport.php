@@ -17,7 +17,7 @@ class GenerateInventoryReport extends Command
      *
      * @var string
      */
-    protected $signature = 'inventory:generate-report {--month= : The month to generate report for (YYYY-MM format)}';
+    protected $signature = 'inventory:generate-report {month? : The month to generate report for (YYYY-MM format)}';
 
     /**
      * The console command description.
@@ -34,11 +34,12 @@ class GenerateInventoryReport extends Command
         try {
             DB::beginTransaction();
 
-            // Get the target month or use current month
-            $targetMonth = $this->option('month') 
-                ? Carbon::createFromFormat('Y-m', $this->option('month'))->startOfMonth()
-                : Carbon::now()->startOfMonth();
-            
+            // Get target month from argument or use current month
+            $monthInput = $this->argument('month');
+            $targetMonth = $monthInput 
+                ? Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth()
+                : now()->startOfMonth();
+
             $monthYear = $targetMonth->format('Y-m');
 
             // Check if report already exists
@@ -110,9 +111,11 @@ class GenerateInventoryReport extends Command
                     'total_cost' => $closingBalance * ($inventory->unit_cost ?? 0)
                 ];
 
-                $this->info($data, true);
-
-                // $bar->advance();
+                // Save the record and show summary
+                $reportItem = InventoryReportItem::create($data);
+                
+                $this->info("\nSaved: {$product->name} (Batch: {$data['batch_number']}) - Closing Balance: {$data['closing_balance']}");
+                $bar->advance();
             }
 
             $bar->finish();
@@ -131,13 +134,33 @@ class GenerateInventoryReport extends Command
 
     private function calculateBeginningBalance($product, $targetMonth, $batchNumber = null)
     {
-        // TODO: Implement actual beginning balance calculation
-        // This should be the closing balance of the previous month
-        return $product->inventories()
-            ->when($batchNumber, function($query) use ($batchNumber) {
-                return $query->where('batch_number', $batchNumber);
-            })
-            ->value('quantity') ?? 0;
+        // Get the previous month's report
+        $previousMonth = (clone $targetMonth)->subMonth();
+        $previousMonthYear = $previousMonth->format('Y-m');
+
+        // Debug info
+        $this->info("\nDEBUG - Beginning Balance Calculation:");
+        $this->info("Looking for previous month report: {$previousMonthYear}");
+        
+        // Find the previous month's report and get the closing balance
+        $previousReport = InventoryReport::where('month_year', $previousMonthYear)
+            ->first();
+
+        if ($previousReport) {
+            $previousBalance = InventoryReportItem::where('inventory_report_id', $previousReport->id)
+                ->where('product_id', $product->id)
+                ->where('batch_number', $batchNumber)
+                ->value('closing_balance');
+
+            if ($previousBalance !== null) {
+                $this->info("Found previous month closing balance: {$previousBalance}");
+                return $previousBalance;
+            }
+        }
+
+        // If no previous report found, return 0
+        $this->info("No previous report found, using 0 as beginning balance");
+        return 0;
     }
 
     private function calculateReceivedQuantity($product, $targetMonth, $batchNumber = null)
@@ -150,14 +173,30 @@ class GenerateInventoryReport extends Command
     private function calculateIssuedQuantity($product, $targetMonth, $batchNumber = null)
     {
         // Sum all issued quantities for the target month from issue_quantity_items table
-        return DB::table('issue_quantity_items')
+        $query = DB::table('issue_quantity_items')
             ->where('product_id', $product->id)
             ->when($batchNumber, function($query) use ($batchNumber) {
                 return $query->where('batch_number', $batchNumber);
             })
             ->whereYear('issued_date', $targetMonth->year)
-            ->whereMonth('issued_date', $targetMonth->month)
-            ->sum('quantity');
+            ->whereMonth('issued_date', $targetMonth->month);
+
+        // Debug information
+        $this->info("\nDEBUG - Issued Quantity Calculation:");
+        $this->info("Target Month: {$targetMonth->format('Y-m')}");
+        $this->info("Product ID: {$product->id}");
+        $this->info("Batch Number: {$batchNumber}");
+        $this->info("SQL: " . $query->toSql());
+        $this->info("Bindings: " . json_encode($query->getBindings()));
+
+        // Get matching records for detailed review
+        $records = $query->get();
+        $this->info("Matching Records: " . $records->count());
+        foreach ($records as $record) {
+            $this->info("  - Date: {$record->issued_date}, Quantity: {$record->quantity}");
+        }
+
+        return $query->sum('quantity');
     }
     private function calculateOtherQuantityOut($product, $targetMonth, $batchNumber = null)
     {

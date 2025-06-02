@@ -141,7 +141,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])
         ->group(function () {
             Route::get('/categories', [CategoryController::class, 'index'])->name('products.categories.index');
-            Route::post('/categories/store', [CategoryController::class, 'store'])->name('categories.store');
+            Route::post('/categories/store', [CategoryController::class, 'store'])->name('products.categories.store');
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('products.categories.create');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])
                 ->name('products.categories.edit');
@@ -455,7 +455,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // Inventory Routes
         Route::get('/inventory-report', [ReportController::class, 'inventoryReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.inventoryReport');
-        Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.generateInventoryReport');
+        // Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.generateInventoryReport');
 
         // Physical count report routes
         Route::post('/physical-count/generate', [ReportController::class, 'generatePhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.physicalCountReport');

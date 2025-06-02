@@ -19,4 +19,17 @@ class IssuedQuantity extends Model
         'expiry_date',
         'issued_by'
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+    public function issuer()
+    {
+        return $this->belongsTo(User::class, 'issued_by');
+    }
 }

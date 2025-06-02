@@ -15,6 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('month_year')->unique();
             $table->string('generated_by');
+            $table->string('status')->default('pending');
+            $table->foreignId('submitted_by')->nullable()->constrained('users');
+            $table->datetime('submitted_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->datetime('approved_at')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users');
+            $table->datetime('reviewed_at')->nullable();
             $table->timestamp('generated_at');
             $table->timestamps();
             

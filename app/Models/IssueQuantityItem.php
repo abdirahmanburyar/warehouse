@@ -43,4 +43,12 @@ class IssueQuantityItem extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    /**
+     * Get the issuer for this item.
+     */
+    public function issuer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'issued_by');
+    }
 }

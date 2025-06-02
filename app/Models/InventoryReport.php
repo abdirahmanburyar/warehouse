@@ -10,18 +10,17 @@ class InventoryReport extends Model
     protected $fillable = [
         'month_year',
         'generated_by',
-        'generated_at'
+        'generated_at',
+        'status'
     ];
 
     protected $casts = [
         'generated_at' => 'datetime'
     ];
 
-    /**
-     * Get all items in this inventory report
-     */
     public function items(): HasMany
     {
         return $this->hasMany(InventoryReportItem::class);
     }
+
 }
