@@ -115,6 +115,7 @@ class GenerateIssueQuantityReport extends Command
                 $item->batch_number = $issuedQuantity->batch_number;
                 $item->expiry_date = $issuedQuantity->expiry_date;
                 $item->barcode = $issuedQuantity->barcode;
+                $item->uom = $issuedQuantity->uom;
                 $item->issued_by = $issuedQuantity->issued_by;
                 $item->save();
                 

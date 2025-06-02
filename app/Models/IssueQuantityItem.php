@@ -16,6 +16,7 @@ class IssueQuantityItem extends Model
         'total_cost',
         'issued_date',
         'barcode',
+        'uom',
         'issued_by'
     ];
 

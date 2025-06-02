@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id');
             $table->integer('quantity');
             $table->string('batch_number');
+            $table->string('uom')->nullable();
             $table->date('expiry_date');
             $table->double('unit_cost');
             $table->double('total_cost');
