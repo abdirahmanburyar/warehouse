@@ -3,11 +3,63 @@
         <!-- Page Header -->
         <div class="p-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-gray-900">Facilities</h1>
-            <Link :href="route('facilities.create')"
-                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <i class="fas fa-plus mr-2"></i> Add Facility
-            </Link>
+            <div class="flex space-x-4">
+                <!-- Excel Upload Button -->
+                <label class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 cursor-pointer">
+                    <i class="fas fa-file-excel mr-2"></i> Upload Excel
+                    <input type="file" class="hidden" @change="handleFileUpload" accept=".xlsx,.xls"/>
+                </label>
+                
+                <!-- Add Facility Button -->
+                <Link :href="route('facilities.create')"
+                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <i class="fas fa-plus mr-2"></i> Add Facility
+                </Link>
+            </div>
         </div>
+
+        <!-- Excel Upload Modal -->
+        <Modal :show="showUploadModal" @close="closeUploadModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Upload Facilities</h2>
+                
+                <div class="mt-4">
+                    <div v-if="uploadErrors.length > 0" class="mb-4 bg-red-50 p-4 rounded-md">
+                        <h4 class="text-red-800 font-medium">Please fix the following errors:</h4>
+                        <ul class="mt-2 text-red-700 list-disc list-inside">
+                            <li v-for="error in uploadErrors" :key="error">{{ error }}</li>
+                        </ul>
+                    </div>
+
+                    <div v-if="selectedFile" class="mb-4 p-4 bg-gray-50 rounded-md">
+                        <p class="text-sm text-gray-600">Selected file: {{ selectedFile.name }}</p>
+                    </div>
+
+                    <div class="mt-4 bg-yellow-50 p-4 rounded-md">
+                        <h4 class="text-yellow-800 font-medium">Required Excel Columns:</h4>
+                        <ul class="mt-2 text-yellow-700 list-disc list-inside">
+                            <li>facility name</li>
+                            <li>facility type</li>
+                            <li>district</li>
+                            <li>email</li>
+                            <li>phone</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" @click="closeUploadModal"
+                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                        Cancel
+                    </button>
+                    <button type="button" @click="uploadFile" :disabled="!selectedFile || isUploading"
+                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                        <i v-if="isUploading" class="fas fa-spinner fa-spin mr-2"></i>
+                        <span>{{ isUploading ? 'Uploading...' : 'Upload' }}</span>
+                    </button>
+                </div>
+            </div>
+        </Modal>
         
         <!-- Filters Section -->
         <div class="p-6">
@@ -195,6 +247,72 @@ import { TailwindPagination } from "laravel-vue-pagination";
 
 
 const toast = useToast()
+
+// File upload state
+const showUploadModal = ref(false)
+const selectedFile = ref(null)
+const isUploading = ref(false)
+const uploadErrors = ref([])
+
+// Handle file selection
+const handleFileUpload = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+            file.type === 'application/vnd.ms-excel') {
+            selectedFile.value = file
+            showUploadModal.value = true
+            uploadErrors.value = []
+        } else {
+            toast.error('Please select a valid Excel file (.xlsx or .xls)')
+        }
+    }
+}
+
+// Upload the file
+const uploadFile = async () => {
+    if (!selectedFile.value) return
+
+    isUploading.value = true
+    uploadErrors.value = []
+
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+
+    try {
+        const response = await axios.post(route('facilities.import'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+
+        toast.success(response.data.message)
+        closeUploadModal()
+        
+        // Show processing notification
+        toast.info('Processing facilities in the background. The page will refresh in 10 seconds.')
+        
+        // Wait 10 seconds before reloading to allow some processing time
+        setTimeout(() => {
+            router.reload()
+        }, 10000)
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            uploadErrors.value = Object.values(error.response.data.errors).flat()
+        } else {
+            uploadErrors.value = [error.response?.data?.message || 'Failed to import facilities']
+        }
+    } finally {
+        isUploading.value = false
+    }
+}
+
+// Close upload modal
+const closeUploadModal = () => {
+    showUploadModal.value = false
+    selectedFile.value = null
+    uploadErrors.value = []
+}
 
 const props = defineProps({
     facilities: {

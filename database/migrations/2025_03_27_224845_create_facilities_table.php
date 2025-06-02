@@ -18,11 +18,11 @@ return new class extends Migration
         Schema::create('facilities', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->foreignIdFor(User::class)->cascadeOnDelete();
+            $table->string('email')->nullable()->unique();
+            $table->foreignIdFor(User::class)->nullable()->cascadeOnDelete();
             $table->string('district');
-            $table->string('phone');
-            $table->string('address');
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
             $table->string('facility_type');
             $table->boolean('has_cold_storage')->default(false);
             $table->boolean('is_active')->default(true);

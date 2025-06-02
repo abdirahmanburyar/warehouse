@@ -7,9 +7,36 @@ use App\Models\User;
 use App\Models\District;
 use Illuminate\Http\Request;
 use App\Http\Resources\FacilityResource;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+use App\Jobs\ImportFacilitiesJob;
 
 class FacilityController extends Controller
 {
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            
+            // Store file in storage/app/temp
+            $path = $file->store('temp');
+            $fullPath = storage_path('app/' . $path);
+            
+            // Dispatch job to process the file
+            ImportFacilitiesJob::dispatch($fullPath);
+
+            return response()->json([
+                'message' => 'File uploaded successfully. Facilities will be imported in the background.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
     public function index(Request $request)
     {
         $facilities = Facility::query();

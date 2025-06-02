@@ -379,6 +379,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/', [FacilityController::class, 'index'])->name('facilities.index');
         Route::get('/{id}/show', [FacilityController::class, 'show'])->name('facilities.show');
         Route::get('/create', [FacilityController::class, 'create'])->name('facilities.create');
+        Route::post('/import', [FacilityController::class, 'import'])->name('facilities.import');
         Route::post('/store', [FacilityController::class, 'store'])->name('facilities.store');
         Route::get('/{facility}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
         Route::delete('/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
