@@ -15,6 +15,7 @@ class IssuedQuantity extends Model
         'issued_date',
         'barcode',
         'batch_number',
+        'uom',
         'expiry_date',
         'issued_by'
     ];

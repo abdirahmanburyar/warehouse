@@ -425,6 +425,7 @@ class TransferController extends Controller
                         'i.product_id',
                         'p.name',
                         'i.batch_number',
+                        'i.uom',
                         'i.quantity',
                         'i.expiry_date',
                         'i.warehouse_id',
@@ -446,6 +447,7 @@ class TransferController extends Controller
                         $item->warehouse_name = $item->warehouse_name ?? 'Unknown';
                         $item->expiry_date = $item->expiry_date ?? 'Unknown';
                         $item->uom = $item->uom ?? 'Unknown';
+                        // logger()->info($item);
                         
                         return $item;
                     });
@@ -462,6 +464,7 @@ class TransferController extends Controller
                         'fi.product_id',
                         'p.name',
                         'fi.batch_number',
+                        'fi.uom',
                         'fi.quantity',
                         'fi.expiry_date',
                         'fi.facility_id',
@@ -476,8 +479,8 @@ class TransferController extends Controller
                         unset($item->product_json);
                         
                         // Add missing fields with default values
-                        $item->uom = 'N/A'; // Default UoM since column doesn't exist
-                        $item->barcode = ''; // Default barcode since column doesn't exist
+                        $item->uom = $item->uom ?? 'N/A'; // Default UoM since column doesn't exist
+                        $item->barcode = $item->barcode ?? ''; // Default barcode since column doesn't exist
                         $item->batch_number = $item->batch_number ?? '';
                         $item->facility_name = $item->facility_name ?? 'Unknown';
                         $item->product_id = $item->product_id ?? 'Unknown';
@@ -485,7 +488,6 @@ class TransferController extends Controller
                         $item->quantity = $item->quantity ?? 'Unknown';
                         $item->available_quantity = $item->available_quantity ?? 'Unknown';
                         $item->expire_date = $item->expire_date ?? 'Unknown';
-                        $item->uom = $item->uom ?? 'Unknown';
                         $item->id = $item->id ?? 'Unknown';
                         return $item;
                     });

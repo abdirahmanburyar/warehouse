@@ -346,7 +346,7 @@ const submit = async () => {
 function handleProductSelect(index, selected) {
     const item = form.value.items[index];
 
-    //    console.log(selected);
+       console.log(selected);
     item.uom = selected.uom;
     item.batch_number = selected.batch_number;
     item.product_id = selected.product?.id;
@@ -553,7 +553,6 @@ function checkQuantity(index) {
                                         {{ item.uom }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
-                                        <div>{{ item.batch_number }}</div>
                                         <div>Batch Number: {{ item.batch_number }}</div>
                                         <div>Barcode: {{ item.barcode }}</div>
                                         <div>Expire Date: {{ item.expiry_date ?
