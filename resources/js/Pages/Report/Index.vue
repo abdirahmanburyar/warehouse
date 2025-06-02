@@ -16,7 +16,10 @@
                     <div v-show="openSection === 'inventory'" class="px-4 py-3 bg-gray-50 border-t border-black">
                         <ul class="space-y-2">
                             <li>
-                                <Link :href="route('reports.stockLevelReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Stock Level Report</Link>
+                                <Link :href="route('reports.inventoryReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventory Report</Link>
+                            </li>
+                            <li>
+                                <Link href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Stock Level Report</Link>
                             </li>
                             <li>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Movement History</a>
@@ -30,9 +33,8 @@
                             <li>
                                 <Link :href="route('reports.issueQuantityReports')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">QTY Issued Report</Link>
                             </li>
-                            <li>
-                                <Link :href="route('reports.physicalCount')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Generate Physical Count Items</Link>
-                                <Link :href="route('reports.physicalCountReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Physical Count Report</Link>
+                            <li v-if="$page.props.auth.can.report_physical_count_view">
+                                <Link :href="route('reports.physicalCount')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Physical Count Report</Link>
                             </li>
                         </ul>
                     </div>

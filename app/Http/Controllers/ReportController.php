@@ -2,333 +2,375 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
+use App\Mail\PhysicalCountSubmitted;
 use App\Models\IssuedQuantity;
 use App\Models\AvarageMonthlyconsumption;
-use App\Models\Facility;
-use App\Models\Inventory;
+use App\Models\Location;
 use App\Models\Product;
-use App\Models\IssueQuantityReport;
 use App\Models\MonthlyQuantityReceived;
 use App\Models\Warehouse;
+use App\Models\User;
+use App\Models\Inventory;
 use App\Models\InventoryAdjustment;
-use App\Http\Resources\ReceivedQuantityResource;
+use App\Models\InventoryAdjustmentItem;
+use App\Models\IssueQuantityReport;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ReportController extends Controller
 {
     public function index(Request $request){
         return inertia('Report/Index');
     } 
-    public function stockLevelReport(Request $request){
-        return inertia('Report/stockLevelReport');
-    } 
 
-    public function physicalCountItems(Request $request){
-        $query = Inventory::query()
-            ->with(['product' => function($query) {
-                $query->with(['dosage', 'category']);
-            }])
-            ->orderBy('expiry_date')
-            ->get()
-            ->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'product' => $item->product,
-                    'uom' => $item->uom ?? 'N/A',
-                    'quantity' => $item->quantity,
-                    'product_id' => $item->product_id,
-                    'batch_number' => $item->batch_number,
-                    'barcode' => $item->barcode,
-                    'expiry_date' => $item->expiry_date,
-                    'physical_count' => null,
-                    'difference' => null,
-                    'remarks' => null,
-                ];
-            });      
+    public function inventoryReport(Request $request){
+        // Get month parameter or default to current month
+        $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
+        $prevMonthYear = Carbon::createFromFormat('Y-m', $monthYear)->subMonth()->format('Y-m');
+        $warehouseId = $request->input('warehouse_id');
         
-        return Inertia::render('Report/PhysicalCount', [
-            'inventories' => $query,
-        ]);
-    }
-
-
-    public function physicalCountReport(Request $request){
-        $query = InventoryAdjustment::query()
-        ->with(['product' => function($query) {
-            $query->with(['dosage', 'category']);
-        }])
-        ->orderBy('expiry_date')
-        ->get();
-          
-        return inertia('Report/PhysicalCountReport', [
-            'physicalCountReport' => $query,
+        // Get all warehouses for the filter dropdown
+        $warehouses = Warehouse::orderBy('name')->get(['id', 'name']);
+        
+        // Get inventory report data
+        $reportData = $this->getInventoryReportData($monthYear, $prevMonthYear, $warehouseId);
+        
+        return inertia('Report/InventoryReport', [
+            'reportData' => $reportData,
+            'warehouses' => $warehouses,
+            'filters' => [
+                'month_year' => $monthYear,
+                'warehouse_id' => $warehouseId,
+            ],
         ]);
     }
     
     /**
-     * Save physical count data
+     * Get inventory report data for a specific month and optional warehouse
      * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $monthYear Format: YYYY-MM
+     * @param string $prevMonthYear Format: YYYY-MM
+     * @param int|null $warehouseId
+     * @return array
      */
-    public function savePhysicalCount(Request $request)
+    private function getInventoryReportData($monthYear, $prevMonthYear, $warehouseId = null)
     {
-        try {
-            // Validate the request
-            $request->validate([
-                'physical_count_data' => 'required|array',
-                'physical_count_data.*.inventory_id' => 'required|exists:inventories,id',
-                'physical_count_data.*.physical_count' => 'required|numeric|min:0',
-                'physical_count_data.*.difference' => 'required|numeric',
-                'physical_count_data.*.remarks' => 'nullable|string',
-            ]);
+        // Check if we have stored reports for this month
+        $storedReport = MonthlyInventoryReport::where('month_year', $monthYear)->first();
             
-            // Begin transaction
-            DB::beginTransaction();
-            
-            // Process each inventory item
-            foreach ($request->physical_count_data as $data) {
-                $inventory = Inventory::findOrFail($data['inventory_id']);
+        // If we have a stored report, use it
+        if ($storedReport) {
+            // Since we no longer store product-specific data, we'll need to get products separately
+            $products = DB::table('products')
+                ->join('inventories', 'products.id', '=', 'inventories.product_id')
+                ->when($warehouseId, function ($query) use ($warehouseId) {
+                    return $query->where('inventories.warehouse_id', $warehouseId);
+                })
+                ->select(
+                    'products.id as product_id',
+                    'products.name as product_name',
+                    'inventories.uom',
+                    'inventories.unit_cost'
+                )
+                ->distinct()
+                ->get();
                 
-                // Update or create physical count record
-                $inventory->update([
-                    'physical_count' => $data['physical_count'],
-                    'physical_count_difference' => $data['difference'],
-                    'physical_count_remarks' => $data['remarks'],
-                    'physical_count_date' => now(),
-                ]);
+            $result = [];
+            
+            foreach ($products as $product) {
+                $result[] = [
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->product_name,
+                    'beginning_balance' => $storedReport->beginning_balance,
+                    'stock_received' => $storedReport->stock_received,
+                    'stock_issued' => $storedReport->stock_issued,
+                    'negative_adjustment' => $storedReport->negative_adjustment,
+                    'positive_adjustment' => $storedReport->positive_adjustment,
+                    'closing_balance' => $storedReport->closing_balance,
+                    'uom' => $product->uom ?? 'N/A',
+                    'unit_cost' => $product->unit_cost ?? 0,
+                    'total_value' => ($storedReport->closing_balance * ($product->unit_cost ?? 0))
+                ];
             }
             
-            // Commit transaction
-            DB::commit();
-            
-            return response()->json([
-                'message' => 'Physical count data saved successfully',
-                'status' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            // Rollback transaction on error
-            DB::rollBack();
-            
-            return response()->json([
-                'message' => 'Failed to save physical count data: ' . $e->getMessage(),
-                'status' => 'error'
-            ], 500);
+            return $result;
         }
+        
+        // If no stored reports, calculate dynamically
+        // Get start and end dates for the selected month
+        $startDate = $monthYear . '-01';
+        $endDate = date('Y-m-t', strtotime($startDate));
+        
+        // Build query for products with inventory
+        $query = DB::table('products')
+            ->select(
+                'products.id as product_id',
+                'products.name as product_name',
+                DB::raw('COALESCE(inventories.uom, "N/A") as uom'),
+                DB::raw('COALESCE(AVG(inventories.unit_cost), 0) as unit_cost')
+            )
+            ->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
+            ->groupBy('products.id', 'products.name', 'inventories.uom');
+        
+        // Apply warehouse filter if provided
+        if ($warehouseId) {
+            $query->where('inventories.warehouse_id', $warehouseId);
+        }
+        
+        $products = $query->get();
+        
+        // Prepare result array
+        $result = [];
+        
+        foreach ($products as $product) {
+            // Get previous month closing balance as beginning balance
+            $beginningBalance = DB::table('inventories')
+                ->where('product_id', $product->product_id)
+                ->when($warehouseId, function ($query) use ($warehouseId) {
+                    return $query->where('warehouse_id', $warehouseId);
+                })
+                ->where('created_at', '<', $startDate)
+                ->sum('quantity');
+            
+            // Get stock received this month
+            $stockReceivedQuery = DB::table('received_quantity_items')
+                ->where('received_quantity_items.product_id', $product->product_id)
+                ->whereBetween('received_quantity_items.received_at', [$startDate, $endDate]);
+                
+            // Apply warehouse filter if provided - warehouse_id might be in the transfer table
+            if ($warehouseId) {
+                $stockReceivedQuery->join('transfers', 'received_quantity_items.transfer_id', '=', 'transfers.id')
+                    ->where('transfers.destination_id', $warehouseId);
+            }
+            
+            $stockReceived = $stockReceivedQuery->sum('received_quantity_items.quantity');
+            
+            // Get stock issued this month
+            $stockIssued = DB::table('issue_quantity_items')
+                ->join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
+                ->where('issue_quantity_items.product_id', $product->product_id)
+                ->when($warehouseId, function ($query) use ($warehouseId) {
+                    return $query->where('issue_quantity_items.warehouse_id', $warehouseId);
+                })
+                ->where('issue_quantity_reports.month_year', $monthYear)
+                ->sum('issue_quantity_items.quantity');
+            
+            // Get negative adjustments this month (where difference < 0)
+            // Note: inventory_adjustments doesn't have a warehouse_id field directly
+            // We'll need to join with inventories to filter by warehouse
+            $negativeAdjustmentQuery = DB::table('inventory_adjustments')
+                ->where('inventory_adjustments.product_id', $product->product_id)
+                ->whereBetween('inventory_adjustments.adjustment_date', [$startDate, $endDate])
+                ->where('inventory_adjustments.difference', '<', 0)
+                ->where('inventory_adjustments.status', 'approved');
+                
+            // Apply warehouse filter if provided
+            if ($warehouseId) {
+                // We need to join with inventories to filter by warehouse
+                // Using the batch_number as a common identifier
+                $negativeAdjustmentQuery->join('inventories', function($join) use ($warehouseId) {
+                    $join->on('inventory_adjustments.product_id', '=', 'inventories.product_id')
+                         ->on('inventory_adjustments.batch_number', '=', 'inventories.batch_number')
+                         ->where('inventories.warehouse_id', '=', $warehouseId);
+                });
+            }
+            
+            $negativeAdjustment = $negativeAdjustmentQuery->sum(DB::raw('ABS(inventory_adjustments.difference)'));
+            
+            // Get positive adjustments this month (where difference > 0)
+            $positiveAdjustmentQuery = DB::table('inventory_adjustments')
+                ->where('inventory_adjustments.product_id', $product->product_id)
+                ->whereBetween('inventory_adjustments.adjustment_date', [$startDate, $endDate])
+                ->where('inventory_adjustments.difference', '>', 0)
+                ->where('inventory_adjustments.status', 'approved');
+                
+            // Apply warehouse filter if provided
+            if ($warehouseId) {
+                // We need to join with inventories to filter by warehouse
+                // Using the batch_number as a common identifier
+                $positiveAdjustmentQuery->join('inventories', function($join) use ($warehouseId) {
+                    $join->on('inventory_adjustments.product_id', '=', 'inventories.product_id')
+                         ->on('inventory_adjustments.batch_number', '=', 'inventories.batch_number')
+                         ->where('inventories.warehouse_id', '=', $warehouseId);
+                });
+            }
+            
+            $positiveAdjustment = $positiveAdjustmentQuery->sum('inventory_adjustments.difference');
+            
+            // Calculate closing balance
+            $closingBalance = $beginningBalance + $stockReceived - $stockIssued - $negativeAdjustment + $positiveAdjustment;
+            
+            // Calculate total value
+            $totalValue = $closingBalance * $product->unit_cost;
+            
+            // Add to result array
+            $result[] = [
+                'product_id' => $product->product_id,
+                'product_name' => $product->product_name,
+                'beginning_balance' => $beginningBalance,
+                'stock_received' => $stockReceived,
+                'stock_issued' => $stockIssued,
+                'negative_adjustment' => $negativeAdjustment,
+                'positive_adjustment' => $positiveAdjustment,
+                'closing_balance' => $closingBalance,
+                'uom' => $product->uom,
+                'unit_cost' => $product->unit_cost,
+                'total_value' => $totalValue
+            ];
+        }
+        
+        return $result;
     }
     
     /**
-     * Create inventory adjustments from physical count data
+     * API endpoint to get inventory report data
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function adjustInventory(Request $request)
+    public function inventoryReportData(Request $request)
     {
+        // Validate request
+        $request->validate([
+            'month_year' => 'required|string', // Format: YYYY-MM
+            'prev_month_year' => 'required|string', // Format: YYYY-MM
+            'warehouse_id' => 'nullable|exists:warehouses,id',
+        ]);
+
+        // Get parameters
+        $monthYear = $request->input('month_year');
+        $prevMonthYear = $request->input('prev_month_year');
+        $warehouseId = $request->input('warehouse_id');
+        
+        // Get inventory report data
+        $result = $this->getInventoryReportData($monthYear, $prevMonthYear, $warehouseId);
+        
+        return response()->json($result);
+    }
+    
+    /**
+     * Manually generate inventory report for a specific month
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function generateInventoryReport(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'month_year' => 'required|string|date_format:Y-m',
+            'warehouse_id' => 'nullable|exists:warehouses,id',
+        ]);
+        
+        $monthYear = $request->input('month_year');
+        $warehouseId = $request->input('warehouse_id');
+        
+        // Use Artisan to call the command
+        $command = 'report:generate-inventory ' . $monthYear;
+        
+        if ($warehouseId) {
+            $command .= ' --warehouse_id=' . $warehouseId;
+        }
+        
         try {
-            // Validate the request
+            \Illuminate\Support\Facades\Artisan::call($command);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            
+            // Log the output
+            \Illuminate\Support\Facades\Log::info('Manual inventory report generation: ' . $output);
+            
+            return redirect()->back()->with('success', 'Inventory report generated successfully for ' . $monthYear);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error generating inventory report: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error generating inventory report: ' . $e->getMessage());
+        }
+    }
+
+    public function updatePhysicalCountReport(Request $request){
+        try {
             $request->validate([
+                'id' => 'required|exists:inventory_adjustments,id',
                 'items' => 'required|array',
-                'items.*.quantity' => 'required|numeric|min:0',
-                'items.*.expiry_date' => 'required|date',
-                'items.*.uom' => 'nullable|string',
-                'items.*.product_id' => 'required|exists:products,id',
-                'items.*.batch_number' => 'required|string',
-                'items.*.barcode' => 'nullable|string',
-                'items.*.physical_count' => 'required|numeric|min:0',
-                'items.*.remarks' => 'nullable|string',
-                'items.*.difference' => 'nullable|numeric'
+                'items.*.id' => 'required|exists:inventory_adjustment_items,id',
+                'items.*.physical_count' => 'required|numeric',
+                'items.*.difference' => 'required',
+                'items.*.remarks' => 'nullable',
             ]);
             
-            // Begin transaction
-            DB::beginTransaction();
-            
-            $currentUser = Auth::user();
-            
-            // Process each inventory item
-            foreach ($request->items as $item) {
-                if($item['product_id'] == null){
-                    continue;
+            return DB::transaction(function () use ($request) {
+                $adjustment = InventoryAdjustment::findOrFail($request->id);
+                foreach ($request->items as $item) {
+                    $adjustmentItem = InventoryAdjustmentItem::findOrFail($item['id']);
+                    $adjustmentItem->update([
+                        'physical_count' => $item['physical_count'],
+                        'difference' => $item['difference'],
+                        'remarks' => $item['remarks']
+                    ]);
                 }
                 
-                InventoryAdjustment::create([
-                    'user_id' => $currentUser->id,
-                    'quantity' => $item['quantity'],
-                    'expiry_date' => $item['expiry_date'],
-                    'uom' => $item['uom'],
-                    'product_id' => $item['product_id'],
-                    'batch_number' => $item['batch_number'],
-                    'barcode' => $item['barcode'],
-                    'physical_count' => $item['physical_count'],
-                    'difference' => abs($item['difference']),
-                    'remarks' => $item['remarks'],
-                    'adjustment_date' => Carbon::now(),
-                    'status' => 'pending'
+                $adjustment->update([
+                    'status' => 'submitted'
                 ]);
-            }
-            
-            // Commit transaction
-            DB::commit();
-            
-            return response()->json('Inventory adjustment(s) created successfully', 200);
-        } catch (\Exception $e) {
-            // Rollback transaction on error
-            DB::rollBack();            
-            return response()->json($e->getMessage(), 500);
-        }
-    }
-    
-    /**
-     * Review inventory adjustment
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function reviewAdjustment(Request $request, $id)
-    {
-        try {
-            $adjustment = InventoryAdjustment::findOrFail($id);
-            
-            // Check if adjustment is already reviewed or approved
-            if ($adjustment->status !== 'pending') {
-                return response()->json([
-                    'message' => 'This adjustment has already been ' . $adjustment->status,
-                    'status' => 'error'
-                ], 400);
-            }
-            
-            // Update adjustment status
-            $adjustment->update([
-                'status' => 'reviewed',
-                'reviewed_by' => Auth::id(),
-                'reviewed_at' => now()
-            ]);
-            
-            return response()->json([
-                'message' => 'Inventory adjustment reviewed successfully',
-                'status' => 'success',
-                'adjustment' => $adjustment
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to review inventory adjustment: ' . $e->getMessage(),
-                'status' => 'error'
-            ], 500);
-        }
-    }
-    
-    /**
-     * Approve inventory adjustment and update inventory quantity
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function approveAdjustment(Request $request, $id)
-    {
-        try {
-            DB::beginTransaction();
-            
-            $adjustment = InventoryAdjustment::findOrFail($id);
-            
-            // Check if adjustment is already approved or rejected
-            if ($adjustment->status === 'approved' || $adjustment->status === 'rejected') {
-                return response()->json([
-                    'message' => 'This adjustment has already been ' . $adjustment->status,
-                    'status' => 'error'
-                ], 400);
-            }
-            
-            // Update adjustment status
-            $adjustment->update([
-                'status' => 'approved',
-                'approved_by' => Auth::id(),
-                'approved_at' => now()
-            ]);
-            
-            // Update inventory quantity
-            $inventory = $adjustment->inventory;
-            $inventory->update([
-                'quantity' => $adjustment->new_quantity
-            ]);
-            
-            DB::commit();
-            
-            return response()->json([
-                'message' => 'Inventory adjustment approved and quantity updated successfully',
-                'status' => 'success',
-                'adjustment' => $adjustment
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return response()->json([
-                'message' => 'Failed to approve inventory adjustment: ' . $e->getMessage(),
-                'status' => 'error'
-            ], 500);
-        }
-    }
-    
-    /**
-     * Reject inventory adjustment
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function rejectAdjustment(Request $request, $id)
-    {
-        try {
-            $request->validate([
-                'rejection_reason' => 'required|string|max:500'
-            ]);
-            
-            $adjustment = InventoryAdjustment::findOrFail($id);
-            
-            // Check if adjustment is already approved or rejected
-            if ($adjustment->status === 'approved' || $adjustment->status === 'rejected') {
-                return response()->json([
-                    'message' => 'This adjustment has already been ' . $adjustment->status,
-                    'status' => 'error'
-                ], 400);
-            }
-            
-            // Update adjustment status
-            $adjustment->update([
-                'status' => 'rejected',
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-                'rejection_reason' => $request->rejection_reason
-            ]);
-            
-            return response()->json([
-                'message' => 'Inventory adjustment rejected',
-                'status' => 'success',
-                'adjustment' => $adjustment
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to reject inventory adjustment: ' . $e->getMessage(),
-                'status' => 'error'
-            ], 500);
-        }
-    }
 
+                // Send email notification to users with report.physical-count-review permission
+                $users = User::permission('report.physical-count-review')->get();
+                $approvalLink = route('reports.physicalCount', ['month_year' => $adjustment->month_year]);
+                $submittedBy = Auth::user();
 
-    public function issuedQuantity(Request $request){
-        $issuedQuantities = IssuedQuantity::get();
-        return inertia('Report/IssuedQuantity', [
-            'quantiteis' => $issuedQuantities
+                foreach ($users as $user) {
+                    Mail::to($user->email)
+                        ->queue(new PhysicalCountSubmitted($adjustment, $approvalLink, $submittedBy));
+                }
+
+                return response()->json("Physical count submitted successfully", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+    
+    public function physicalCountReport(Request $request){
+        $monthYear = $request->input('month_year', date('Y-m'));
+        
+        // Check if there's an existing adjustment for this month
+        $adjustment = InventoryAdjustment::where('month_year', $monthYear)
+            ->with(['reviewer:id,name', 'approver:id,name', 'rejecter:id,name'])
+            ->whereIn('status', ['pending', 'reviewed','submitted'])
+            ->first();
+        
+        $adjustmentData = [];
+        
+        if ($adjustment) {
+            // Get all adjustment items with their related product information
+            $items = $adjustment->items()
+                ->with([
+                    'product' => function($query) {
+                        $query->select('id', 'name');
+                    },
+                    'product',
+                    'warehouse:id,name',
+                    'location:id,location',
+                ])
+                ->get();
+                
+            $adjustmentData = [
+                'id' => $adjustment->id,
+                'month_year' => $adjustment->month_year,
+                'adjustment_date' => $adjustment->adjustment_date,
+                'status' => $adjustment->status,
+                'items' => $items
+            ];
+        }
+        
+        return inertia('Report/PhysicalCountReport', [
+            'physicalCountReport' => $adjustmentData,
+            'currentMonthYear' => $monthYear,
         ]);
     }
-    
+
     public function issueQuantityReports(Request $request)
     {
         $query = IssueQuantityReport::query()
@@ -587,5 +629,168 @@ class ReportController extends Controller
         ]);
     }
 
+    public function generatePhysicalCountReport(Request $request)
+    {
+        try {
+            // Check if there's already a pending or reviewed adjustment
+            $existingAdjustment = InventoryAdjustment::whereIn('status', ['pending', 'reviewed'])
+                ->first();
+            
+            if ($existingAdjustment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot generate new physical count adjustment. There is already a ' . $existingAdjustment->status . ' adjustment from ' . Carbon::parse($existingAdjustment->adjustment_date)->format('M d, Y') . ' that needs to be processed or rejected first.'
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            // Create parent adjustment record
+            $adjustment = new InventoryAdjustment();
+            $adjustment->month_year = date('Y-m');
+            $adjustment->adjustment_date = Carbon::now();
+            $adjustment->status = 'pending';
+            $adjustment->save();
+            
+            // Get all active inventory items
+            $inventories = Inventory::where('is_active', true)->get();
+            
+            // Create adjustment items for each inventory item
+            foreach ($inventories as $inventory) {
+                $item = new InventoryAdjustmentItem();
+                $item->parent_id = $adjustment->id;
+                $item->user_id = auth()->id();
+                $item->product_id = $inventory->product_id;
+                $item->location_id = $inventory->location_id;
+                $item->warehouse_id = $inventory->warehouse_id;
+                $item->quantity = $inventory->quantity;
+                $item->physical_count = 0; // Default to 0, will be updated during physical count
+                $item->batch_number = $inventory->batch_number;
+                $item->barcode = $inventory->barcode;
+                $item->expiry_date = $inventory->expiry_date;
+                $item->uom = $inventory->uom;
+                $item->save();
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Physical count adjustment has been successfully generated.'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while generating the physical count adjustment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
+    public function updatePhysicalCountStatus(Request $request){
+        try {
+            $request->validate([
+                'id' => 'required|exists:inventory_adjustments,id',
+                'status' => 'required|in:reviewed,approved'
+            ]);
+            return DB::transaction(function () use ($request) {
+                $adjustment = InventoryAdjustment::findOrFail($request->id);
+                $adjustment->update([
+                    'status' => $request->status,
+                    'reviewed_by' => Auth::id(),
+                    'reviewed_at' => now()
+                ]);
+                return response()->json("Physical count status updated successfully", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function approvePhysicalCountReport(Request $request){
+        try {
+            $request->validate([
+                'id' => 'required|exists:inventory_adjustments,id',
+                'status' => 'required|in:approved'
+            ]);
+            return DB::transaction(function () use ($request) {
+                $adjustment = InventoryAdjustment::findOrFail($request->id);
+                if($adjustment->status !== 'reviewed') {
+                    return response()->json("Physical count status must be reviewed before approval", 500);
+                }
+                // update inventory
+                $inventoryItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->get();
+                foreach ($inventoryItems as $item) {
+                    $inventory = Inventory::where('product_id', $item->product_id)
+                        ->where('batch_number', $item->batch_number)
+                        ->where('expiry_date', $item->expiry_date)
+                        ->first();
+                    if ($inventory) {
+                        $inventory->update([
+                            'quantity' => $item->physical_count
+                        ]);
+                    }
+                }
+                $adjustment->update([
+                    'status' => $request->status,
+                    'approved_by' => Auth::id(),
+                    'approved_at' => now()
+                ]);
+                return response()->json("Physical count approved successfully", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function rejectPhysicalCountReport(Request $request){
+        try {
+            $request->validate([
+                'id' => 'required|exists:inventory_adjustments,id',
+                'status' => 'required|in:rejected',
+                'rejection_reason' => 'required'
+            ]);
+            return DB::transaction(function () use ($request) {
+                $adjustment = InventoryAdjustment::findOrFail($request->id);
+                if($adjustment->status !== 'reviewed') {
+                    return response()->json("Physical count status must be reviewed before rejection", 500);
+                }
+                $adjustment->update([
+                    'status' => $request->status,
+                    'rejected_by' => Auth::id(),
+                    'rejected_at' => now(),
+                    'rejection_reason' => $request->rejection_reason
+                ]);
+                return response()->json("Physical count marked as rejected.", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function rollBackRejectPhysicalCountReport(Request $request){
+        try {
+            $request->validate([
+                'id' => 'required|exists:inventory_adjustments,id',
+                'status' => 'required|in:pending'
+            ]);
+            return DB::transaction(function () use ($request) {
+                $adjustment = InventoryAdjustment::findOrFail($request->id);
+                if($adjustment->status !== 'rejected') {
+                    return response()->json("Physical count status must be rejected before rollback", 500);
+                }
+                $adjustment->update([
+                    'status' => $request->status,
+                    'rejected_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null
+                ]);
+                return response()->json("Physical count marked as pending.", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }   
 }

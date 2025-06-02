@@ -68,7 +68,7 @@ class HandleInertiaRequests extends Middleware
         $flattenedPermissions = [];
         foreach ($permissions as $permission) {
             // Convert dot notation to underscore for Vue compatibility
-            $key = str_replace('.', '_', $permission);
+            $key = str_replace(['.', '-'], '_', $permission);
             $flattenedPermissions[$key] = true;
         }
 

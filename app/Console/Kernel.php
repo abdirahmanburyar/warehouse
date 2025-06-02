@@ -39,6 +39,12 @@ class Kernel extends ConsoleKernel
             ->monthlyOn(1, '01:30')
             ->appendOutputTo(storage_path('logs/monthly-reports.log'))
             ->emailOutputOnFailure(config('mail.admin_address'));
+            
+        // Generate monthly inventory reports on the 28th day of each month at 23:55 PM
+        // This ensures the report captures almost all the month's data while still being available before month-end
+        $schedule->command('report:generate-inventory')
+            ->monthlyOn(28, '23:55')
+            ->appendOutputTo(storage_path('logs/monthly-inventory-report.log'));
     }
 
     /**

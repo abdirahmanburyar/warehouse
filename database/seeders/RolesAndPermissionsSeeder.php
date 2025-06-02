@@ -195,6 +195,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'report.stock-level',
             'report.upload-consumption',
             'report.audit',
+            'report.physical-count-review',
+            'report.physical-count-approve',
+            'report.physical-count-generate',
+            'report.physical-count-view',
+            'report.physical-count-submit',
+            'report.physical-count-rollback',
         ];
 
         // 19. Approval Management

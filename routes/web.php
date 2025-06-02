@@ -425,20 +425,17 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // Issue Quantity Reports Export Routes
         Route::get('/reports/issueQuantityReports/export', [ReportController::class, 'exportIssueQuantityReports'])->middleware(PermissionMiddleware::class . ':report.view');
         // Removed the individual report items export endpoint as it's now handled client-side
+        Route::get('/reports/inventory-report/data', [ReportController::class, 'inventoryReportData'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.inventoryReport.data');
+        // Warehouse API endpoint for dropdowns
+        Route::get('/warehouses', [\App\Http\Controllers\WarehouseController::class, 'getWarehouses'])->name('api.warehouses');
     });
 
     // Report Routes
     Route::prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.index');
         Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.monthlyConsumption');
-        Route::get('/stockLevelReport', [ReportController::class, 'stockLevelReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.stockLevelReport');
         Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.receivedQuantities');
-        Route::get('/physicalCount', [ReportController::class, 'physicalCountItems'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
-        Route::post('/savePhysicalCount', [ReportController::class, 'savePhysicalCount'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.savePhysicalCount');
-        Route::get('/physicalCountReport', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCountReport');
-        
-        // adjusting inventory
-        Route::post('/adjustments', [ReportController::class, 'adjustInventory'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.adjustInventory');
+        Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.physicalCount');
         
         // Inventory Adjustment Routes
         Route::post('/createAdjustments', [ReportController::class, 'createAdjustments'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.createAdjustments');
@@ -451,7 +448,24 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // Issue Quantity Routes
         Route::get('/issueQuantityReports', [ReportController::class, 'issueQuantityReports'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.issueQuantityReports');
-        
+
+        // Inventory Routes
+        Route::get('/inventory-report', [ReportController::class, 'inventoryReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.inventoryReport');
+        Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.generateInventoryReport');
+
+        // Physical count report routes
+        Route::post('/physical-count/generate', [ReportController::class, 'generatePhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.physicalCountReport');
+
+        // reports.physical-count.update
+        Route::post('/physical-count/update', [ReportController::class, 'updatePhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.physical-count.update');
+        // reports.physical-count.status
+        Route::post('/physical-count/status', [ReportController::class, 'updatePhysicalCountStatus'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.physical-count.status');
+        // reports.physical-count.approve
+        Route::post('/physical-count/approve', [ReportController::class, 'approvePhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.approve')->name('reports.physical-count.approve');
+        // reports.physical-count.reject
+        Route::post('/physical-count/reject', [ReportController::class, 'rejectPhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.reject')->name('reports.physical-count.reject');
+        // reports.physical-count.rollback
+        Route::post('/physical-count/rollback', [ReportController::class, 'rollBackRejectPhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.physical-count.rollback');
     });
     
     // Order Management Routes

@@ -288,5 +288,30 @@ class WarehouseController extends Controller
             'cities' => $cities
         ]);
     }
+    
+    /**
+     * Get all warehouses for API use (dropdowns, etc.)
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getWarehouses()
+    {
+        try {
+            $warehouses = Warehouse::where('status', 'active')
+                ->orderBy('name')
+                ->get()
+                ->map(function($warehouse) {
+                    return [
+                        'id' => $warehouse->id,
+                        'name' => $warehouse->name,
+                        'code' => $warehouse->code
+                    ];
+                });
+                
+            return response()->json($warehouses);
+        } catch (Throwable $e) {
+            return response()->json(['error' => 'Failed to fetch warehouses'], 500);
+        }
+    }
 
 }
