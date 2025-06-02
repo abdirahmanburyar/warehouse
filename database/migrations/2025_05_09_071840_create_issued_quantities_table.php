@@ -18,6 +18,8 @@ return new class extends Migration
             $table->integer('quantity');
             $table->double('unit_cost');
             $table->double('total_cost');
+            $table->string('batch_number');
+            $table->date('expiry_date');
             $table->date('issued_date');
             $table->string('barcode');
             $table->foreignId('issued_by');

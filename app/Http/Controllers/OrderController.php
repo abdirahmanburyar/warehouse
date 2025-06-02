@@ -1071,4 +1071,5 @@ class OrderController extends Controller
             'filters' => $request->only('search', 'page')
         ]);
     }
+    
 }

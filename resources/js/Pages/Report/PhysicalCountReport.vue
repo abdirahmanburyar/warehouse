@@ -5,14 +5,22 @@
             <div class="flex items-center">
                 <h2 class="text-xl font-semibold">{{ monthYearFormatted }}</h2>
             </div>
-            <button 
-                type="button" 
-                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
-                @click="handleButtonClick"
-                v-if="$page.props.auth.can.report_physical_count_generate"
-            >
-                Generate
-            </button>
+            <div v-if="$page.props.auth.can.report_physical_count_generate">
+                <Link 
+                    :href="route('reports.physicalCountShow')"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+                    v-if="$page.props.auth.can.report_physical_count_view"
+                >
+                    Old Reports
+                </Link>
+                <button 
+                    type="button" 
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+                    @click="handleButtonClick"
+                >
+                    Generate
+                </button>
+            </div>
         </div>
         
         <div v-if="hasAdjustment" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">

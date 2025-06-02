@@ -1453,15 +1453,17 @@ class SupplyController extends Controller
                         'updated_at' => now()
                     ]);
                 }
-                IssuedQuantity::create([
-                    'product_id' => $packingListItem['product_id'],
-                    'quantity' => $request->quantity,
-                    'unit_cost' => $packingListItem['unit_cost'],
-                    'warehouse_id' => $packingListItem['warehouse_id'],
-                    'total_cost' => (double) $packingListItem['unit_cost'] * (double) $request->quantity,
-                    'issued_date' => Carbon::now()->toDateString(),
-                    'issued_by' => auth()->user()->id,
-                ]);
+                // IssuedQuantity::create([
+                //     'product_id' => $packingListItem['product_id'],
+                //     'quantity' => $request->quantity,
+                //     'unit_cost' => $packingListItem['unit_cost'],
+                //     'batch_number' => $packingListItem['batch_number'],
+                //     'barcode' => $packingListItem['barcode'],
+                //     'warehouse_id' => $packingListItem['warehouse_id'],
+                //     'total_cost' => (double) $packingListItem['unit_cost'] * (double) $request->quantity,
+                //     'issued_date' => Carbon::now()->toDateString(),
+                //     'issued_by' => auth()->user()->id,
+                // ]);
 
             }else{
                 Disposal::create([

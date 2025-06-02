@@ -14,6 +14,8 @@ class IssuedQuantity extends Model
         'total_cost',
         'issued_date',
         'barcode',
+        'batch_number',
+        'expiry_date',
         'issued_by'
     ];
 }

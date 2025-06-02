@@ -10,10 +10,18 @@ use App\Models\Product;
 use App\Models\MonthlyQuantityReceived;
 use App\Models\Warehouse;
 use App\Models\User;
+use App\Models\Order;
+use App\Models\Facility;
 use App\Models\Inventory;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
 use App\Models\IssueQuantityReport;
+use App\Http\Resources\PhysicalCountReportResource;
+use App\Models\Disposal;
+use App\Models\Liquidation;
+use App\Models\Supply;
+use App\Models\Transfer;
+use App\Http\Resources\DisposalResource;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -793,4 +801,44 @@ class ReportController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }   
+
+    public function physicalCountShow(Request $request){
+        $physicalCountReport = InventoryAdjustment::query()
+            ->when($request->filled('month'), function($query) use ($request) {
+                $query->where('month_year', $request->month);
+            })
+            ->whereIn('status', ['approved', 'rejected'])
+            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse', 'approver', 'rejecter', 'reviewer'])
+            ->paginate($request->input('per_page', 100), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+            
+        $physicalCountReport->setPath(url()->current());
+        
+        return inertia('Report/PhysicalCountShow', [
+            'physicalCountReport' => PhysicalCountReportResource::collection($physicalCountReport),
+            'filters' => $request->only(['month', 'per_page', 'page']),
+        ]);
+    }
+    
+    public function disposals(Request $request){
+        logger()->info($request->all());
+        $disposals = Disposal::query()
+            ->when($request->filled('month'), function($query) use ($request) {
+                $date = Carbon::createFromFormat('Y-m', $request->month);
+                $query->whereYear('disposed_at', $date->year)
+                      ->whereMonth('disposed_at', $date->month);
+            })
+            ->whereIn('status', ['approved', 'rejected'])
+            ->with(['product.dosage', 'product.category', 'approvedBy', 'rejectedBy', 'reviewedBy','disposedBy'])
+            ->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        
+        $disposals->setPath(url()->current());
+        
+        return inertia('Report/Disposals', [
+            'disposals' => DisposalResource::collection($disposals),
+            'filters' => $request->only(['month', 'per_page', 'page']),
+        ]);
+    }
+    
 }

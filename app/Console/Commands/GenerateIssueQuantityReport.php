@@ -112,6 +112,8 @@ class GenerateIssueQuantityReport extends Command
                 $item->unit_cost = $issuedQuantity->unit_cost;
                 $item->total_cost = $issuedQuantity->total_cost;
                 $item->issued_date = $issuedQuantity->issued_date;
+                $item->batch_number = $issuedQuantity->batch_number;
+                $item->expiry_date = $issuedQuantity->expiry_date;
                 $item->barcode = $issuedQuantity->barcode;
                 $item->issued_by = $issuedQuantity->issued_by;
                 $item->save();

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('issue_quantity_reports');            
             $table->foreignId('warehouse_id');
             $table->integer('quantity');
+            $table->string('batch_number');
+            $table->date('expiry_date');
             $table->double('unit_cost');
             $table->double('total_cost');
             $table->date('issued_date');

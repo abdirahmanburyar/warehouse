@@ -129,7 +129,7 @@
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Expired Products</a>
                             </li>
                             <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Disposal Reports</a>
+                                <Link :href="route('reports.disposals')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Disposal Reports</Link>
                             </li>
                         </ul>
                     </div>

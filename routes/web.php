@@ -243,6 +243,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->name('supplies.edit');
         Route::put('/{supply}', [SupplyController::class, 'update'])->name('supplies.update');
         Route::delete('/{supply}', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.destroy');
+
+        // supplies.packing-list.update
+        Route::post('/packing-list/update', [SupplyController::class, 'updatePK'])->name('supplies.packing-list.update');
+
     });
 
     Route::controller(LiquidateDisposalController::class)
@@ -466,6 +470,12 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/physical-count/reject', [ReportController::class, 'rejectPhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.reject')->name('reports.physical-count.reject');
         // reports.physical-count.rollback
         Route::post('/physical-count/rollback', [ReportController::class, 'rollBackRejectPhysicalCountReport'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.physical-count.rollback');
+
+        // reports.physicalCountShow
+        Route::get('/physical-count-show', [ReportController::class, 'physicalCountShow'])->name('reports.physicalCountShow');
+
+        // reports.disposals
+        Route::get('/disposals', [ReportController::class, 'disposals'])->name('reports.disposals');
     });
     
     // Order Management Routes
