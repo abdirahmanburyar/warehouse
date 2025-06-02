@@ -237,9 +237,9 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ product.dosage?.name || 'N/A' }}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                            <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                                 {{ product.reorder_level || '0' }}
-                            </td>
+                            </td> -->
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <span
