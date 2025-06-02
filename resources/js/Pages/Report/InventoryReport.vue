@@ -197,7 +197,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
 import axios from 'axios';
-import { toast } from 'vue-toastification';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 // Data
 const warehouses = ref([]);
