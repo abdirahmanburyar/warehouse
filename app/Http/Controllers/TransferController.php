@@ -12,6 +12,7 @@ use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Product;
+use App\Models\IssuedQuantity;
 use App\Models\Disposal;
 use App\Models\BackOrderHistory;
 use App\Models\Liquidate;
@@ -293,6 +294,23 @@ class TransferController extends Controller
                 
                 // Update inventory quantity
                 $inventory->decrement('quantity', $item['quantity']);
+
+                // create issue quantity record using 
+                if ($request->source_type === 'warehouse') {
+                    IssuedQuantity::create([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $request->source_id,
+                        'quantity' => $item['quantity'],
+                        'unit_cost' => $inventory->unit_cost,
+                        'total_cost' => $item['quantity'] * $inventory->unit_cost,
+                        'issued_date' => now(),
+                        'barcode' => $item['barcode'] ?? '',
+                        'batch_number' => $item['batch_number'],
+                        'expiry_date' => $item['expiry_date'] ?? null,
+                        'issued_by' => auth()->user()->id,
+                    ]);
+                }
+
             }
             
             // Load relationships for the notification
@@ -303,50 +321,18 @@ class TransferController extends Controller
                 if ($transfer->to_warehouse_id) {
                     // Send to warehouse manager
                     $warehouse = $transfer->toWarehouse;
-                    Log::info('Warehouse details for notification', [
-                        'warehouse_id' => $transfer->to_warehouse_id,
-                        'warehouse_name' => $warehouse ? $warehouse->name : 'Not found',
-                        'has_manager_email' => $warehouse && !empty($warehouse->manager_email) ? 'Yes' : 'No',
-                        'manager_email' => $warehouse ? $warehouse->manager_email : 'None'
-                    ]);
                     
                     if ($warehouse && !empty($warehouse->manager_email)) {
                         Notification::route('mail', $warehouse->manager_email)
                             ->notify(new TransferCreated($transfer));
-                        
-                        Log::info('Transfer notification sent to warehouse manager', [
-                            'transfer_id' => $transfer->id,
-                            'email' => $warehouse->manager_email
-                        ]);
-                    } else {
-                        Log::warning('Could not send warehouse notification - missing or empty manager email', [
-                            'transfer_id' => $transfer->id,
-                            'warehouse_id' => $transfer->to_warehouse_id
-                        ]);
                     }
                 } else if ($transfer->to_facility_id) {
                     // Send to facility email
                     $facility = $transfer->toFacility;
-                    Log::info('Facility details for notification', [
-                        'facility_id' => $transfer->to_facility_id,
-                        'facility_name' => $facility ? $facility->name : 'Not found',
-                        'has_email' => $facility && !empty($facility->email) ? 'Yes' : 'No',
-                        'email' => $facility ? $facility->email : 'None'
-                    ]);
                     
                     if ($facility && !empty($facility->email)) {
                         Notification::route('mail', $facility->email)
                             ->notify(new TransferCreated($transfer));
-                        
-                        Log::info('Transfer notification sent to facility', [
-                            'transfer_id' => $transfer->id,
-                            'email' => $facility->email
-                        ]);
-                    } else {
-                        Log::warning('Could not send facility notification - missing or empty email', [
-                            'transfer_id' => $transfer->id,
-                            'facility_id' => $transfer->to_facility_id
-                        ]);
                     }
                 }
             } catch (\Exception $e) {
