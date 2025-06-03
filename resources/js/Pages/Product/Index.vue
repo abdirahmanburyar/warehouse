@@ -164,6 +164,7 @@
                 <select
                     v-model="perPage"
                     class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md text-sm"
+                    @change="props.filters.page = 1"
                 >
                     <option value="10">10 per page</option>
                     <option value="25">25 per page</option>
@@ -175,16 +176,8 @@
 
         <div class="py-6 mb-5">
             <div class="overflow-x-auto">
-                <!-- Loading State -->
-                <div v-if="isLoading" class="flex flex-col items-center justify-center py-12">
-                    <svg class="animate-spin h-12 w-12 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="text-lg font-medium text-gray-900">Loading products...</p>
-                </div>
                 <!-- Empty State -->
-                <div v-else-if="!products.data.length" class="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+                <div v-if="!products.data.length" class="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
@@ -294,6 +287,7 @@
             <div class="mt-3 flex justify-end items-center">
                 <TailwindPagination
                     :data="props.products"
+                    :limit="2"
                     @pagination-change-page="getResults"
                 />
             </div>
@@ -502,7 +496,6 @@ const search = ref(props.filters.search || "");
 const category = ref(props.filters.category || "");
 const dosage = ref(props.filters.dosage || "");
 const perPage = ref(props.filters.per_page || "10");
-const isLoading = ref(false);
 const fileInput = ref(null);
 const showUploadModal = ref(false);
 const loadingProducts = ref(new Set());
@@ -510,20 +503,18 @@ const selectedFile = ref(null);
 const isUploading = ref(false);
 
 function updateRoute() {
-    isLoading.value = true;
     const query = {};
     if (search.value) query.search = search.value;
     if (category.value) query.category = category.value;
     if (dosage.value) query.dosage = dosage.value;
     if (perPage.value) query.per_page = perPage.value;
+    if(props.filters.page) query.page = props.filters.page;
 
     router.get(route('products.index'), query, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
-        onFinish: () => {
-            isLoading.value = false;
-        }
+        only: ['products'],
     });
 }
 
