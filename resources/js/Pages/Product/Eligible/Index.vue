@@ -1,5 +1,30 @@
 <template>
     <AuthenticatedLayout title="Eligible Items" description="Manage product eligibility for facilities">
+        <!-- Import Section -->
+        <div class="mb-4 p-4 bg-white shadow rounded-lg">
+            <h3 class="text-lg font-medium mb-2">Import Eligible Items</h3>
+            <div class="flex items-center space-x-4">
+                <input
+                    type="file"
+                    id="importFile"
+                    accept=".xlsx,.xls"
+                    @change="handleFileUpload"
+                    class="border rounded px-2 py-1"
+                />
+                <button
+                    @click="submitImport"
+                    :disabled="importing || !selectedFile"
+                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                    {{ importing ? 'Importing...' : 'Import' }}
+                </button>
+            </div>
+            <div v-if="importError" class="mt-2 text-red-500">{{ importError }}</div>
+            <div v-if="importSuccess" class="mt-2 text-green-500">{{ importSuccess }}</div>
+            <div class="mt-2 text-sm text-gray-600">
+                Upload an Excel file (.xlsx/.xls) with columns: item_description, facility_type
+            </div>
+        </div>
         <div class="flex justify-between items-center">
             <div>
                 <Link :href="route('products.eligible.index')">Back to Product</Link>
@@ -105,7 +130,9 @@
                     </tr>
                 </tbody>
             </table>
-            <TailwindPagination :data="eligibleItems" @pagination-change-page="getResults" />
+            <div class="mt-3 flex justify-end">
+                <TailwindPagination :data="eligibleItems" @pagination-change-page="getResults" />
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -114,11 +141,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import axios from 'axios';
 import { debounce } from 'lodash';
 import { useToast } from 'vue-toastification';
 import { TailwindPagination } from "laravel-vue-pagination";
 import Swal from 'sweetalert2';
-import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
@@ -126,10 +153,67 @@ import * as XLSX from 'xlsx';
 
 const toast = useToast();
 
+// Import form handling
+const selectedFile = ref(null);
+const importing = ref(false);
+const importError = ref('');
+const importSuccess = ref('');
+
 const props = defineProps({
     eligibleItems: Object,
     filters: Object
 });
+
+const handleFileUpload = (e) => {
+    selectedFile.value = e.target.files[0];
+};
+
+const submitImport = async () => {
+    const maxFileSize = 50 * 1024 * 1024; // 50MB
+    if (!selectedFile.value) {
+        importError.value = 'Please select a file to import';
+        return;
+    }
+
+    if (selectedFile.value.size > maxFileSize) {
+        importError.value = 'File size must be less than 50MB';
+        return;
+    }
+
+    // Validate file type
+    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(selectedFile.value.type)) {
+        importError.value = 'Please select a file to import';
+        return;
+    }
+
+    importing.value = true;
+    importError.value = '';
+    importSuccess.value = '';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', selectedFile.value);
+
+        const response = await axios.post(route('products.eligible.import'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        importSuccess.value = response.data.message;
+        selectedFile.value = null;
+        // Reset file input
+        document.getElementById('importFile').value = '';
+        toast.success('Import started successfully');
+toast.info('Processing in background. This may take a few minutes for large files.');
+    } catch (error) {
+        console.error('Import error:', error);        
+        importError.value = error.response?.data?.message || 'Import failed';
+        toast.error(importError.value);
+    } finally {
+        importing.value = false;
+    }
+};
 
 const facilityTypes = ["Regional Hospital", "District Hospital", "Health Centre", "Primary Health Unit"]
 
@@ -201,107 +285,68 @@ function destroy(item) {
 }
 
 async function handleExcelUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Check file type
-    const fileType = file.name.split('.').pop().toLowerCase();
-    if (!['xlsx', 'xls'].includes(fileType)) {
-        toast.error('Please upload a valid Excel file (.xlsx or .xls)');
-        event.target.value = null;
-        return;
-    }
-
-    isImporting.value = true;
-    
     try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                // Get the first worksheet
-                const worksheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[worksheetName];
-                
-                // Convert to JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                if (jsonData.length === 0) {
-                    toast.error('The Excel file is empty');
-                    isImporting.value = false;
-                    event.target.value = null;
-                    return;
-                }
-                
-                // Check if the file has the required columns
-                const firstRow = jsonData[0];
-                const hasItemDescription = 'item description' in firstRow || 'Item Description' in firstRow || 'ITEM DESCRIPTION' in firstRow;
-                const hasFacilityType = 'facility type' in firstRow || 'Facility Type' in firstRow || 'FACILITY TYPE' in firstRow;
-                
-                if (!hasItemDescription || !hasFacilityType) {
-                    toast.error('Excel file must contain "item description" and "facility type" columns');
-                    isImporting.value = false;
-                    event.target.value = null;
-                    return;
-                }
-                
-                // Confirm import
-                const result = await Swal.fire({
-                    title: 'Import Eligible Items',
-                    text: `Are you sure you want to import ${jsonData.length} eligible items?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, import!'
-                });
-                
-                if (result.isConfirmed) {
-                    // Format data for the backend
-                    const formattedData = jsonData.map(row => {
-                        // Handle different possible column names
-                        const itemDescription = row['item description'] || row['Item Description'] || row['ITEM DESCRIPTION'];
-                        const facilityType = row['facility type'] || row['Facility Type'] || row['FACILITY TYPE'];
-                        
-                        return {
-                            item_description: itemDescription,
-                            facility_type: facilityType
-                        };
-                    });
-                    
-                    // Send to backend
-                    await axios.post(route('products.eligible.import'), { items: formattedData })
-                        .then(response => {
-                            toast.success(response.data.message || 'Eligible items imported successfully');
-                            // Refresh the data
-                            updateRoute();
-                        })
-                        .catch(error => {
-                            console.error(error);
-                            if (error.response && error.response.data && error.response.data.error) {
-                                toast.error(error.response.data.error);
-                            } else {
-                                toast.error('Failed to import eligible items');
-                            }
-                        });
-                }
-            } catch (error) {
-                console.error(error);
-                toast.error('Error processing Excel file');
-            } finally {
-                isImporting.value = false;
-                event.target.value = null;
-            }
-        };
+        isImporting.value = true;
+        const file = event.target.files[0];
         
-        reader.readAsArrayBuffer(file);
+        if (!file) {
+            toast.error('Please select a file');
+            isImporting.value = false;
+            return;
+        }
+
+        // Check file type
+        const fileType = file.name.split('.').pop().toLowerCase();
+        if (!['xlsx', 'xls'].includes(fileType)) {
+            toast.error('Please upload a valid Excel file (.xlsx or .xls)');
+            isImporting.value = false;
+            event.target.value = null;
+            return;
+        }
+
+        // Confirm import
+        const result = await Swal.fire({
+            title: 'Import Eligible Items',
+            text: 'Are you sure you want to import this file?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, import!'
+        });
+
+        if (!result.isConfirmed) {
+            isImporting.value = false;
+            event.target.value = null;
+            return;
+        }
+
+        // Create FormData and append file
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Send to backend
+        const response = await axios.post(route('products.eligible.import'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        toast.success(response.data.message);
+        toast.info('Processing in background. Page will refresh in 10 seconds.');
+        
+        setTimeout(() => {
+            updateRoute();
+        }, 10000);
+
     } catch (error) {
-        console.error(error);
-        toast.error('Error reading Excel file');
+        console.error('Import error:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to import eligible items';
+        toast.error(errorMessage);
+    } finally {
         isImporting.value = false;
         event.target.value = null;
     }
+
 }
 </script>
