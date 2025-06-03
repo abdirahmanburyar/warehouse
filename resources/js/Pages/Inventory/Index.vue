@@ -174,17 +174,7 @@ const applyFilters = () => {
     
     // Always include per_page in query if it exists
     if (per_page.value) query.per_page = per_page.value;
-    
-    // Handle page parameter - reset to 1 when filters change but not when paginating
-    const isFilterChange = router.page?.url !== window.location.pathname + window.location.search;
-    
-    // If we're changing filters (not just paginating), reset to page 1
-    if (isFilterChange) {
-        query.page = 1;
-    } else if (props.filters.page) {
-        // Otherwise keep the current page
-        query.page = props.filters.page;
-    }
+    if(props.filters.page) query.page = props.filters.page;
     
     console.log("Applying filters with query:", query);
     
@@ -395,35 +385,7 @@ function editInventory(inventory) {
 }
 
 function getResults(page = 1) {
-    // Initialize query object safely without depending on router.page.props
-    const query = {};
-    
-    // Set the page parameter
-    query.page = page;
-    
-    // Add all current filter values
-    if (search.value) query.search = search.value;
-    if (location.value) query.location = location.value;
-    if (warehouse.value) query.warehouse = warehouse.value;
-    if (dosage.value) query.dosage = dosage.value;
-    if (category.value) query.category = category.value;
-    if (per_page.value) query.per_page = per_page.value;
-    
-    // Navigate to the new page with all filters preserved
-    router.get(route("inventories.index"), query, {
-        preserveState: true,
-        preserveScroll: true,
-        only: [
-            "inventories",
-            "products",
-            "warehouses",
-            "filters",
-            "inventoryStatusCounts",
-            "locations",
-            "dosage",
-            "category",
-        ],
-    });
+    props.filters.page = page;
 }
 </script>
 
@@ -577,7 +539,6 @@ function getResults(page = 1) {
                                 :show-labels="false"
                                 placeholder="Select a category"
                                 :allow-empty="true"
-                                @input="applyFilters"
                                 class="multiselect--with-icon multiselect--rounded"
                             >
                             </Multiselect>
@@ -695,6 +656,7 @@ function getResults(page = 1) {
                 <select
                     v-model="per_page"
                     class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3"
+                    @change="props.filters.page = 1"
                 >
                     <option :value="6">6 per page</option>
                     <option :value="25">25 per page</option>
@@ -990,63 +952,8 @@ function getResults(page = 1) {
                         <TailwindPagination
                             :data="props.inventories"
                             @pagination-change-page="getResults"
-                            :limit="5"
-                            class="flex items-center space-x-3 text-sm"
+                            :limit="2"
                         >
-                            <template #prev-nav>
-                                <span
-                                    class="flex items-center justify-center w-8 h-8 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4 text-gray-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M15 19l-7-7 7-7"
-                                        />
-                                    </svg>
-                                </span>
-                            </template>
-                            <template #next-nav>
-                                <span
-                                    class="flex items-center justify-center w-8 h-8 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4 text-gray-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M9 5l7 7-7 7"
-                                        />
-                                    </svg>
-                                </span>
-                            </template>
-                            <template #default="{ page, url, isActive }">
-                                <a
-                                    :href="url"
-                                    @click.prevent="getResults(page)"
-                                    class="flex items-center justify-center w-8 h-8 border text-sm font-medium rounded-full cursor-pointer"
-                                    :class="{
-                                        'bg-indigo-600 border-indigo-600 text-white': isActive,
-                                        'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': !isActive,
-                                    }"
-                                >
-                                    {{ page }}
-                                </a>
-                            </template>
-                        </TailwindPagination>
                     </div>
                 </div>
                 <div class="sticky top-0 z-10 shadow-sm p-2">
