@@ -62,6 +62,9 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                                <i class="fas fa-building mr-2"></i>SN
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
                                 <i class="fas fa-building mr-2"></i>Name
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
@@ -82,8 +85,9 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="facility in props.facilities.data" :key="facility.id" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                        <tr v-for="(facility, index) in props.facilities.data" :key="facility.id" class="hover:bg-gray-50">
+                            <td class="w-[50px] px-6 py-4 whitespace-nowrap border-2 border-black">{{index + 1}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
                                 <div class="flex items-center">
                                     <Link :href="route('facilities.show', facility.id)">
                                         {{ facility.name }}

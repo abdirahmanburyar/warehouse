@@ -39,21 +39,17 @@ class FacilityController extends Controller
     }
     public function index(Request $request)
     {
-        $facilities = Facility::query();
+        $facilities = Facility::query()
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('name', 'like', "%{$request->search}%");
+            })
+            ->when($request->filled('district'), function ($query) use ($request) {
+                $query->where('district', 'like', "%{$request->district}%");
+            })
+            ->with(['user'])
+            ->paginate($request->per_page ?? 10, ['*'], 'page', $request->page ?? 1);
 
-        if($request->has('search')) {
-            $facilities->where('name', 'like', "%{$request->search}%")
-                ->orWhere('address', 'like', "%{$request->search}%")
-                ->orWhere('email', 'like', "%{$request->search}%");
-        }
-
-        if($request->has('district')) {
-            $facilities->where('district', 'like', "%{$request->district}%");
-        }
-        
-        $facilities = $facilities->with(['user'])->paginate($request->per_page ?? 10, ['*'], 'page', $request->get('page', 1));
-
-        $facilities->setPath(url()->current());
+        $facilities = $facilities->setPath(url()->current());
 
         return inertia('Facility/Index', [
             'facilities' => FacilityResource::collection($facilities),
@@ -62,6 +58,7 @@ class FacilityController extends Controller
             'districts' => District::pluck('name')->toArray(),
         ]);
     }
+
 
     public function show(Request $request, $id){
         $facility = Facility::find($id);
