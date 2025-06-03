@@ -176,8 +176,6 @@ const applyFilters = () => {
     if (per_page.value) query.per_page = per_page.value;
     if(props.filters.page) query.page = props.filters.page;
     
-    console.log("Applying filters with query:", query);
-    
     router.get(route("inventories.index"), query, {
         preserveState: true,
         preserveScroll: true,
@@ -948,12 +946,12 @@ function getResults(page = 1) {
                         </tbody>
                     </table>
                     <!-- Pagination - Only show if we have data -->
-                    <div class="mt-6 px-4 py-3 flex items-center justify-end border-t border-gray-200 sm:px-6 bg-white rounded-b-xl">
+                    <div class="mt-6 px-4 py-3 flex items-center justify-end mb-[100px]">
                         <TailwindPagination
                             :data="props.inventories"
                             @pagination-change-page="getResults"
                             :limit="2"
-                        >
+                        />
                     </div>
                 </div>
                 <div class="sticky top-0 z-10 shadow-sm p-2">
