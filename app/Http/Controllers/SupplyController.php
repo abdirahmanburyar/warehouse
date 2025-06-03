@@ -4,31 +4,29 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\Events\InventoryUpdated;
-use App\Models\Product;
-use App\Models\Supply;
-use Illuminate\Support\Facades\DB;
-use App\Models\Supplier;
+use App\Models\BackOrderHistory;
+use App\Models\Disposal;
+use App\Models\Inventory;
+use App\Models\IssuedQuantity;
+use App\Models\Location;
 use App\Models\PackingList;
+use App\Models\PackingListDifference;
+use App\Models\PoDocument;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
-use App\Models\User;
-use App\Models\Warehouse;
-use App\Models\Inventory;
-use App\Models\BackOrderHistory;
+use App\Models\Supply;
 use App\Models\SupplyItem;
+use App\Models\Supplier;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\PackingListItem;
 
 use App\Models\BackOrder;
-use App\Models\IssuedQuantity;
 use App\Models\ReceivedQuantity;
 use App\Models\Liquidate;
-use App\Models\PackingListDifference;
-use App\Models\Location;
-use App\Models\Disposal;
 use App\Http\Resources\SupplierResource;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class SupplyController extends Controller
 {
@@ -170,6 +168,26 @@ class SupplyController extends Controller
         }
     }
     
+    public function deleteDocument(Request $request, $id)
+    {
+        try {
+            $document = PoDocument::findOrFail($id);
+            
+            // Delete the physical file
+            if (Storage::disk('public')->exists($document->file_path)) {
+                Storage::disk('public')->delete($document->file_path);
+            }
+            
+            // Delete the database record
+            $document->delete();
+            
+            return response()->json(['message' => 'Document deleted successfully']);
+            
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting document: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function liquidate(Request $request)
     {
         try {
@@ -798,6 +816,13 @@ class SupplyController extends Controller
     {
         try {
             return DB::transaction(function () use ($request) {
+                // Decode items JSON string from FormData
+                $items = json_decode($request->items, true);
+                if (!is_array($items)) {
+                    throw new \Exception('The items field must be a valid JSON array');
+                }
+                $request->merge(['items' => $items]);
+
                 $validated = $request->validate([
                     'id' => 'nullable|integer',
                     'supplier_id' => 'required|exists:suppliers,id',

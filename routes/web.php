@@ -240,6 +240,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
                
     
         Route::post('/store', [SupplyController::class, 'store'])->name('supplies.store');
+        Route::post('/supplies/storePO', [SupplyController::class, 'storePO'])->name('supplies.storePO');
+        Route::delete('/supplies/documents/{document}', [SupplyController::class, 'deleteDocument'])->name('supplies.deleteDocument');
         Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->name('supplies.edit');
         Route::put('/{supply}', [SupplyController::class, 'update'])->name('supplies.update');
         Route::delete('/{supply}', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.destroy');

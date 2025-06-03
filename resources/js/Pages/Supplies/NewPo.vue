@@ -482,7 +482,7 @@ async function submitForm() {
             isSubmitting.value = true;
 
             // Submit the form
-            axios.post(route('purchase-orders.store'), formData, {
+            axios.post(route('supplies.storePO'), formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
