@@ -76,8 +76,9 @@
                 <div v-else>
                     <span>No P.O Data found</span>
                 </div>
-                <!-- Items List -->
-                <table class="table-fixed w-full" style="min-width: 1200px; position: relative; overflow-y: visible;"
+              <!-- halkaan ku past karee -->
+                 <!-- Items List -->
+                 <table class="table-fixed w-full" style="min-width: 1200px; position: relative; overflow-y: visible;"
                     v-if="!isLoading && form">
                     <thead class="bg-gray-50 border border-blck">
                         <tr>
@@ -239,7 +240,7 @@
                     </tbody>
                 </table>
                 <!-- Footer -->
-                <div class="border-t border-gray-200 px-3 py-4">
+                <!-- <div class="border-t border-gray-200 px-3 py-4">
                     <div class="flex justify-end items-center">
                         <div class="w-72">
                             <div class="text-right">
@@ -251,7 +252,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Back Order Modal -->
                 <Modal :show="showBackOrderModal" @close="attemptCloseModal" maxWidth="2xl">
@@ -352,7 +353,7 @@
             </div>
         </div>
         <!-- New Location Modal -->
-        <Modal :show="showLocationModal" @close="showLocationModal = false">
+        <!-- <Modal :show="showLocationModal" @close="showLocationModal = false">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900">Add New Location</h2>
                 <div class="mt-6">
@@ -373,7 +374,7 @@
                         "Create new location" }}</PrimaryButton>
                 </div>
             </div>
-        </Modal>
+        </Modal> -->
     </AuthenticatedLayout>
 </template>
 <script setup>
@@ -555,13 +556,13 @@ async function handlePOSelect(selected) {
     isLoading.value = true;
     await axios.get(route('supplies.get-purchaseOrder', selected.id), {
         params: {
-            po_id: selected.id
+            po_item_id: selected.id
         }
     })
         .then((response) => {
             isLoading.value = false;
+            console.log(response.data);
             form.value = response.data;
-            form.value['purchase_order_id'] = selected.id;
         })
         .catch((error) => {
             isLoading.value = false;
@@ -650,10 +651,8 @@ async function submit() {
         toast.error('No items to submit');
         return;
     }
-
-    if (!validateForm()) {
-        return;
-    }
+    console.log(form.value);
+    
 
     // Check for incomplete back orders
     const incompleteItems = form.value.items.filter(hasIncompleteBackOrder);
@@ -680,35 +679,28 @@ async function submit() {
     });
 
     if (confirm.isConfirmed) {
-        try {
-            isSubmitting.value = true;
+        isSubmitting.value = true;
 
-            // // Filter out invalid items
-            // form.value.items = form.value.items.filter(item =>
-            //     item.warehouse_id &&
-            //     item.location_id &&
-            //     item.batch_number &&
-            //     item.expire_date &&
-            //     item.uom &&
-            //     item.received_quantity >= 0
-            // );
-
-            await axios.post(route('supplies.storePK'), form.value);
-
-            await Swal.fire({
-                title: 'Success!',
-                text: "Packing list created successfully",
-                icon: 'success',
-                confirmButtonColor: '#10B981',
-            });
-
-            router.visit(route('supplies.packing-list.showPK'));
-        } catch (error) {
-            console.error('Submit error:', error);
-            toast.error(error.response?.data || 'Error submitting packing list');
-        } finally {
-            isSubmitting.value = false;
-        }
+        await axios.post(route('supplies.storePK'), form.value)
+            .then((response) => {
+                console.log(response.data);
+                isSubmitting.value = false;
+                Swal.fire({
+                    title: 'Success!',
+                    text: "Packing list created successfully",
+                    icon: 'success',
+                    confirmButtonColor: '#10B981',
+                })
+                .then(() => {
+                    router.visit(route('supplies.packing-list.showPK'));
+                });
+            })
+            .catch((error) => {
+                isSubmitting.value = false;
+                console.log(error);
+                console.error('Submit error:', error);
+                toast.error(error.response?.data || 'Error submitting packing list');
+            })
     }
 
 }

@@ -69,7 +69,8 @@ class OrderController extends Controller
     {
         $facility = $request->facility;
         $facilityLocation = $request->facilityLocation;
-        $query = Order::with(['facility', 'user'])
+        $query = Order::query()
+            ->with(['facility', 'user'])
             ->when($request->dateFrom && $request->dateTo, function ($query) use ($request) {
                 $query->whereBetween('order_date', [$request->dateFrom, $request->dateTo]);
             })
@@ -86,8 +87,9 @@ class OrderController extends Controller
                 $query->whereHas('facility', function($q) use ($facilityLocation) {
                     $q->where('district', $facilityLocation);
                 });
-            })
-            ->latest();
+            })            
+            ->latest()
+            ->paginate($request->per_page ?? 10, ['*'], 'page', $request->page ?? 1);
 
         // Get order statistics from orders table
         $stats = DB::table('orders')
@@ -111,14 +113,14 @@ class OrderController extends Controller
 
         $stats = array_merge($defaultStats, $stats);
 
-        $orders = $query->paginate(500);
+        $orders = $query->setPath(url()->current());
 
         $facilities = Facility::select('id','name')->get();
         $facilityLocations = District::select('id','name')->pluck('name')->toArray();
         
         return Inertia::render('Order/Index', [
             'orders' => OrderResource::collection($orders),
-            'filters' => $request->only('search', 'page', 'currentStatus', 'facility', 'orderType', 'facilityLocation', 'dateFrom', 'dateTo'),
+            'filters' => $request->only('search', 'page', 'currentStatus', 'facility', 'orderType', 'facilityLocation', 'dateFrom', 'dateTo','per_page'),
             'stats' => $stats,
             'facilities' => $facilities,
             'facilityLocations' => $facilityLocations

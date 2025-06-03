@@ -11,29 +11,52 @@ class PackingListItem extends Model
 
     protected $fillable = [
         'packing_list_id',
-        'purchase_order_item_id',
-        'brand_name',
-        'generic_name',
-        'expiry_date',
+        'uom',
+        'barcode',
+        'product_id',
+        'warehouse_id',
+        'expire_date',
         'batch_number',
-        'unit_cost',
+        'po_item_id',
+        'location_id',
         'quantity',
-        'total_cost'
+        'unit_cost',
+        'total_cost',
     ];
 
-    protected $casts = [
-        'expiry_date' => 'date',
-        'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2'
-    ];
+    public function differences(){
+        return $this->hasMany(PackingListDifference::class, 'packing_listitem_id');
+    }
 
     public function packingList()
     {
-        return $this->belongsTo(PackingList::class);
+        return $this->belongsTo(PackingList::class, 'packing_list_id');
     }
 
     public function purchaseOrderItem()
     {
-        return $this->belongsTo(PurchaseOrderItem::class);
+        return $this->belongsTo(PurchaseOrderItem::class, 'po_item_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($packingListItem) {
+            $packingListItem->total_cost = $packingListItem->unit_cost * $packingListItem->quantity;
+        });
     }
 }

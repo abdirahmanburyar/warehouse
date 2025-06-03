@@ -8,6 +8,7 @@ import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
+import { TailwindPagination } from "laravel-vue-pagination";
 
 // No longer using bulk actions
 
@@ -53,6 +54,7 @@ const orderType = ref(props.filters?.orderType || null);
 const facilityLocation = ref(props.filters?.facilityLocation || null);
 const dateFrom = ref(props.filters?.dateFrom || null);
 const dateTo = ref(props.filters?.dateTo || null);
+const per_page = ref(props.filters.per_page)
 
 const changeStatus = (orderId, newStatus) => {
     Swal.fire({
@@ -120,10 +122,6 @@ const changeStatus = (orderId, newStatus) => {
         }
     });
 };
-
-// Bulk status change functionality removed
-
-// Bulk selection functionality removed
 
 // Initialize selected values with objects from the props arrays
 const selectedFacility = ref(props.filters?.facility ?
@@ -195,6 +193,8 @@ function reloadOrder() {
     if (facility.value) query.facility = facility.value;
     if (currentStatus.value) query.currentStatus = currentStatus.value;
     if (orderType.value) query.orderType = orderType.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (props.filters.page) query.page = props.filters.page;
     if (facilityLocation.value) query.facilityLocation = facilityLocation.value;
     if (dateFrom.value) query.dateFrom = dateFrom.value;
     if (dateTo.value) query.dateTo = dateTo.value;
@@ -216,17 +216,19 @@ watch([
     () => orderType.value,
     () => facilityLocation.value,
     () => dateFrom.value,
-    () => dateTo.value
+    () => dateTo.value,
+    () => per_page.value,
+    () => props.filters.page
 ], () => {
     reloadOrder();
 });
 
+function getResult(page = 1){
+    props.filters.page = page;
+}
+
 const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
+    return moment(date).format('DD/MM/YYYY');
 };
 </script>
 
@@ -289,6 +291,14 @@ const formatDate = (date) => {
                         <label class="absolute -top-5 left-0 text-xs text-gray-500">To Date</label>
                     </div>
                 </div>
+                <div class="flex justify-end mt-3 mb-2 w-[200px]">
+                    <select v-model="per_page" @change="props.filters.page = 1" class="w-full border border-black rounded-3xl">
+                        <option value="10">10 Per page</option>
+                        <option value="25">25 Per page</option>
+                        <option value="50">50 Per page</option>
+                        <option value="100">100 Per page</option>
+                    </select>
+                </div>
 
             </div>
             <!-- Status Tabs -->
@@ -308,6 +318,7 @@ const formatDate = (date) => {
                         </span>
                     </button>
                 </nav>
+                
             </div>
         </div>
 
@@ -444,6 +455,7 @@ const formatDate = (date) => {
                             </tbody>
                         </table>
                     </div>
+                    <TailwindPagination :data="props.orders" :limit="2" @pagination-change-page="getResult" />
                 </div>
             </div>
             <!-- Status Statistics -->

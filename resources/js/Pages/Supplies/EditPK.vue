@@ -15,20 +15,20 @@
                 <div v-if="form" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Supplier Details</h3>
-                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.name }}</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.contact_person }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.purchase_order?.supplier?.name }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.purchase_order?.supplier?.contact_person }}</p>
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Contact Information</h3>
-                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.email }}</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.phone }}</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ form.supplier?.address }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.purchase_order?.supplier?.email }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.purchase_order?.supplier?.phone }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ form.purchase_order?.supplier?.address }}</p>
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">More Info</h3>
-                        <p class="mt-1 text-sm text-gray-900">PL Number #: {{ form.items[0]?.packing_list_number }}</p>
-                        <p class="mt-1 text-sm text-gray-900">Ref. No #: <input type="text" :value="form.items[0]?.ref_no"/> </p>
-                        <p class="mt-1 text-sm text-gray-900">PL Date. #: <input type="date" :value="form.items[0]?.pk_date"/> </p>
+                        <p class="mt-1 text-sm text-gray-900">PL Number #: {{ form.packing_list_number }}</p>
+                        <p class="mt-1 text-sm text-gray-900">Ref. No #: <input type="text" :value="form.ref_no"/> </p>
+                        <p class="mt-1 text-sm text-gray-900">PL Date. #: <input type="date" :value="form.pk_date"/></p>
                     </div>
                 </div>
 
@@ -73,20 +73,20 @@
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
                                 <div class="flex flex-col">
                                     {{ item.product?.name }}
-                                <span>UoM: <input type="text" v-model="item.uom" class="border-0" /></span>
+                                    <span>UoM: <input type="text" v-model="item.uom" class="border-0" /></span>
                                 </div>
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <div class="flex flex-col">
                                     <div>
-                                        <input type="number" v-model="item.quantity" readonly
+                                        <input type="number" v-model="item.purchase_order_item.quantity" readonly
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                     <div>
-                                        <label for="received_quantity" class="text-xs">Received Quantity</label>
-                                        <input type="number" v-model="item.received_quantity"
+                                        <label for="quantity" class="text-xs">Received Quantity</label>
+                                        <input type="number" v-model="item.quantity"
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
                                             @input="handleReceivedQuantityChange(index)">
@@ -97,7 +97,7 @@
                                             :disabled="item.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
-                                    <button v-if="calculateFulfillmentRate(item) < 100"
+                                    <button v-if="calculateFulfillmentRate(item) != 100"
                                             @click="openBackOrderModal(index)"
                                             class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
                                             Back Order
@@ -339,13 +339,16 @@
 
                 <div class="mb-4 bg-gray-50 p-3 rounded">
                     <p class="text-sm font-medium text-gray-600">Product: {{ selectedItem?.product?.name }}</p>
-                    <p class="text-sm font-medium text-gray-600">Expected Quantity: {{ selectedItem?.quantity }}</p>
-                    <p class="text-sm font-medium text-gray-600">Received Quantity: {{ selectedItem?.received_quantity || 0 }}</p>
+                    <p class="text-sm font-medium text-gray-600">Expected Quantity: {{ selectedItem?.purchase_order_item?.quantity }}</p>
+                    <p class="text-sm font-medium text-gray-600">Received Quantity: {{ selectedItem?.quantity || 0 }}</p>
                     <p class="text-sm font-medium text-gray-600">Back Orders: {{ totalExistingDifferences }}</p>
                     <p class="text-sm font-medium text-yellow-800">Actual Mismatches: {{ actualMismatches }}</p>
                 </div>
 
                 <div class="overflow-x-auto">
+                    <div v-if="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded">
+                        {{ error }}
+                    </div>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -359,7 +362,7 @@
                                 <td class="px-3 py-2">
                                     <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                        min="0" @input="validateBackOrderQuantities">
+                                        min="1" @input="validateBackOrderQuantities">
                                 </td>
                                 <td class="px-3 py-2">
                                     <select v-model="row.status"
@@ -397,7 +400,7 @@
                             <span :class="{'text-green-600': isValidForSave, 'text-red-600': !isValidForSave}">
                                 {{ totalBackOrderQuantity }}
                             </span>
-                            <span class="text-gray-600"> / {{ selectedItem?.quantity - (selectedItem?.received_quantity || 0) }} items recorded</span>
+                            <span class="text-gray-600"> / {{ selectedItem?.quantity - (selectedItem?.quantity || 0) }} items recorded</span>
                         </div>
                     </div>
 
@@ -407,7 +410,6 @@
                 </div>
             </div>
         </Modal>
-
     </AuthenticatedLayout>
 </template>
 <script setup>
@@ -451,10 +453,11 @@ const isSubmitting = ref(false);
 const showLocationModal = ref(false);
 const isLoading = ref(false);
 const selectedItemIndex = ref(null);
+const error = ref("");
 
 const hasIncompleteBackOrder = (item) => {
-    if (!item?.received_quantity || item.received_quantity === item?.quantity) return false;
-    const mismatches = item.quantity - item.received_quantity;
+    if (!item?.quantity || item.quantity === item?.purchase_order_item?.quantity) return false;
+    const mismatches = item.purchase_order_item.quantity - item.quantity;
     const totalDifferences = (item.differences || []).reduce(
         (total, diff) => total + (parseInt(diff?.quantity) || 0), 0
     );
@@ -490,12 +493,12 @@ const totalExistingDifferences = computed(() => {
 
 const actualMismatches = computed(() => {
     if (!selectedItem.value) return 0;
-    return selectedItem.value.quantity - (selectedItem.value.received_quantity || 0);
+    return selectedItem.value.quantity - (selectedItem.value.quantity || 0);
 });
 
 const missingQuantity = computed(() => {
     if (!selectedItem.value) return 0;
-    return selectedItem.value.quantity - (selectedItem.value.received_quantity || 0);
+    return selectedItem.value.purchase_order_item.quantity - (selectedItem.value.quantity || 0);
 });
 
 const allocatedQuantity = computed(() => {
@@ -504,7 +507,7 @@ const allocatedQuantity = computed(() => {
 
 const remainingToAllocate = computed(() => {
     if (!selectedItem.value) return 0;
-    const total = selectedItem.value.quantity - (selectedItem.value.received_quantity || 0);
+    const total = selectedItem.value.purchase_order_item.quantity - (selectedItem.value.quantity || 0);
     return total - allocatedQuantity.value;
 });
 
@@ -514,7 +517,7 @@ const totalBackOrderQuantity = computed(() => {
 
 const isValidForSave = computed(() => {
     if (!selectedItem.value) return false;
-    const missingQty = selectedItem.value.quantity - (selectedItem.value.received_quantity || 0);
+    const missingQty = selectedItem.value.quantity - (selectedItem.value.quantity || 0);
     return totalBackOrderQuantity.value <= missingQty;
 });
 
@@ -535,46 +538,9 @@ const hasReviewedItems = computed(() => {
 });
 
 onMounted(() => {
-    // Initialize form with packing list data
-    const { packing_lists, ...poData } = props.packing_list;
-
     // First create a reactive form object
-    form.value = {
-        ...poData,
-        items: []
-    };
-
-
-    // Then set the items
-    if (packing_lists?.length > 0) {
-
-        form.value.items = packing_lists.map(item => ({
-            id: item.id,
-            product_id: item.product_id,
-            product: item.product,
-            warehouse_id: item.warehouse_id,
-            warehouse: item.warehouse,
-            location_id: item.location_id,
-            location: item.location,
-            quantity: item.po_item?.quantity,
-            received_quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.total_cost,
-            batch_number: item.batch_number || '',
-            expire_date: item.expire_date || '',
-            barcode: item.barcode || '',
-            uom: item.uom || '',
-            packing_list_number: item.packing_list_number,
-            ref_no: item.ref_no,
-            pk_date: item.pk_date,
-            status: item.status || 'pending',
-            created_at: item.created_at,
-            differences: item.differences
-        }));
-        
-    }
-    // Remove the packing_lists array to avoid duplication
-    delete form.value.packing_lists;
+    form.value = props.packing_list;
+    form.value.pk_date = moment(form.value.pk_date).format('YYYY-MM-DD');
 });
 
 function handleWarehouseSelect(index, selected) {
@@ -649,25 +615,25 @@ async function createLocation() {
 function handleReceivedQuantityChange(index) {
     const item = form.value.items[index];
     // Ensure received quantity doesn't exceed total quantity
-    if (item.received_quantity > item.quantity) {
-        item.received_quantity = item.quantity;
+    if (item.quantity > item.purchase_order_item?.quantity) {
+        item.quantity = item.purchase_order_item?.quantity;
     }
     calculateTotal(index);
 }
 
 function calculateTotal(index) {
     const item = form.value.items[index];
-    item.total_cost = item.received_quantity * item.unit_cost;
+    item.total_cost = item.quantity * item.unit_cost;
 }
 
 function calculateMismatches(item) {
-    if (!item.quantity || !item.received_quantity) return 0;
-    return item.quantity - item.received_quantity;
+    if (!item.purchase_order_item?.quantity || !item.quantity) return 0;
+    return item.purchase_order_item?.quantity - item.quantity;
 }
 
 function calculateFulfillmentRate(item) {
-    if (!item.quantity || !item.received_quantity) return 0;
-    const rate = (item.received_quantity / item.quantity) * 100;
+    if (!item.purchase_order_item?.quantity || !item.quantity) return 0;
+    const rate = (item.quantity / item.purchase_order_item?.quantity) * 100;
     return rate.toFixed(2);
 }
 
@@ -714,64 +680,252 @@ const syncBackOrdersWithDifferences = () => {
 };
 
 const validateBackOrderQuantities = () => {
-    let remaining = missingQuantity.value;
+    error.value = "";
 
-    // First pass: validate and adjust quantities
-    backOrderRows.value.forEach((row, index) => {
-        let qty = parseInt(row.quantity);
-        if (isNaN(qty) || qty < 0) {
-            qty = 0;
-        } else if (qty > remaining) {
-            qty = remaining;
-        }
-        remaining -= qty;
-        row.quantity = qty;
+    // First pass: validate all quantities
+    const invalidRow = backOrderRows.value.find(row => {
+        const qty = parseFloat(row.quantity);
+        return qty !== null && (qty <= 0 || isNaN(qty));
     });
 
-    // Second pass: clean up empty rows except the last one
-    const newRows = backOrderRows.value.filter((row, index) => {
-        if (index === backOrderRows.value.length - 1) return true; // Always keep last row
-        return parseInt(row.quantity) > 0; // Remove other empty rows
-    });
-
-    // Update the array if rows were removed
-    if (newRows.length !== backOrderRows.value.length) {
-        backOrderRows.value = newRows;
+    if (invalidRow) {
+        error.value = "Back order quantities must be greater than zero";
+        return false;
     }
 
-    // Ensure at least one row exists
-    if (backOrderRows.value.length === 0 && remaining > 0) {
-        addBackOrderRow();
+    // Check if first row has a valid quantity
+    if (!backOrderRows.value[0]?.quantity || parseFloat(backOrderRows.value[0].quantity) <= 0) {
+        error.value = "The first back order row must have a valid quantity";
+        return false;
     }
+
+    // Calculate total differences and validate against mismatches
+    const totalDifferences = backOrderRows.value.reduce(
+        (total, row) => total + (parseFloat(row.quantity) || 0),
+        0
+    );
+
+    if (totalDifferences > actualMismatches.value) {
+        error.value = `Total back order quantities (${totalDifferences}) cannot exceed the actual mismatches (${actualMismatches.value})`;
+        return false;
+    }
+
+    return true;
+
+    // // Second pass: clean up empty rows except the last one
+    // const newRows = backOrderRows.value.filter((row, index) => {
+    //     if (index === backOrderRows.value.length - 1) return true; // Always keep last row
+    //     return parseInt(row.quantity) > 0; // Remove other empty rows
+    // });
+
+    // // Update the array if rows were removed
+    // if (newRows.length !== backOrderRows.value.length) {
+    //     backOrderRows.value = newRows;
+    // }
+
+    // // Ensure at least one row exists
+    // if (backOrderRows.value.length === 0 && remaining > 0) {
+    //     addBackOrderRow();
+    // }
 
     // After validation, sync with differences array
     syncBackOrdersWithDifferences();
 };
 
-const closeBackOrderModal = () => {
-    showBackOrderModal.value = false;
-    selectedItem.value = null;
-    backOrderRows.value = [];
-};
 
 const attemptCloseModal = () => {
     if (!selectedItem.value) {
+        error.value = "";
         closeBackOrderModal();
         return;
     }
 
-    const totalDifferences = backOrderRows.value.reduce((total, row) => total + (parseInt(row.quantity) || 0), 0);
-    const expectedMismatches = selectedItem.value.quantity - (selectedItem.value.received_quantity || 0);
+    // Check for any zero or invalid quantities
+    const invalidRow = backOrderRows.value.find(row => {
+        const qty = parseFloat(row.quantity);
+        return qty !== null && (qty <= 0 || isNaN(qty));
+    });
 
-    if (totalDifferences !== expectedMismatches) {
-        showIncompleteBackOrderModal.value = true;
-        toast.error('Please record all mismatched quantities before closing');
+    if (invalidRow) {
+        error.value = "All back order quantities must be greater than zero";
         return;
     }
 
+    // Check if first row has a valid quantity
+    const firstRow = backOrderRows.value[0];
+    if (!firstRow || !firstRow.quantity || parseFloat(firstRow.quantity) <= 0) {
+        error.value = 'Please enter a valid quantity for the first back order item';
+        return;
+    }
+
+    const totalDifferences = backOrderRows.value.reduce((total, row) => total + (parseFloat(row.quantity) || 0), 0);
+    const expectedMismatches = selectedItem.value.purchase_order_item?.quantity - (selectedItem.value.quantity || 0);
+
+    if (totalDifferences !== expectedMismatches) {
+        showIncompleteBackOrderModal.value = true;
+        error.value = 'Please record all mismatched quantities before closing';
+        return;
+    }
+
+    // Sync differences before closing
+    syncBackOrdersWithDifferences();
     toast.success('All mismatches have been recorded');
     closeBackOrderModal();
 };
+
+const closeBackOrderModal = () => {
+    showBackOrderModal.value = false;
+    
+    // If we have a selected item and it has differences, remove it from pending items
+    if (selectedItem.value?.differences?.length > 0) {
+        const itemIndex = pendingIncompleteItems.value.findIndex(i => i.id === selectedItem.value.id);
+        if (itemIndex !== -1) {
+            pendingIncompleteItems.value.splice(itemIndex, 1);
+            // If there are more pending items, show the dialog again after a short delay
+            if (pendingIncompleteItems.value.length > 0) {
+                setTimeout(() => {
+                    checkAndHandleIncompleteItems();
+                }, 500);
+            }
+        }
+    }
+    
+    selectedItem.value = null;
+    backOrderRows.value = [];
+}
+
+const onBackOrderSaved = (item) => {
+    // Remove the item from pending incomplete items if it now has differences
+    if (item.differences && item.differences.length > 0) {
+        const itemIndex = pendingIncompleteItems.value.findIndex(i => i.id === item.id);
+        if (itemIndex !== -1) {
+            pendingIncompleteItems.value.splice(itemIndex, 1);
+        }
+    }
+
+    // If there are more pending items, show the dialog again
+    if (pendingIncompleteItems.value.length > 0) {
+        checkAndHandleIncompleteItems();
+    }
+};
+
+// Track incomplete items that need back orders
+const pendingIncompleteItems = ref([]);
+
+const checkAndHandleIncompleteItems = async () => {
+    // Check for incomplete items (received quantity less than expected)
+    const incompleteItems = form.value.items.filter(item => {
+        if (!item.quantity || item.quantity == item.purchase_order_item.quantity) return false;
+        const mismatches = item.purchase_order_item.quantity - item.quantity;
+        const totalDifferences = (item.differences || []).reduce(
+            (total, diff) => total + (parseInt(diff.quantity) || 0), 0
+        );
+        return totalDifferences !== mismatches;
+    });
+
+    if (incompleteItems.length > 0) {
+        // Initialize pending items if not already set
+        if (pendingIncompleteItems.value.length === 0) {
+            pendingIncompleteItems.value = [...incompleteItems];
+        }
+
+        const itemsList = pendingIncompleteItems.value.map(item => 
+            `${item.product.name} (Expected: ${item.purchase_order_item.quantity}, Received: ${item.quantity})`
+        ).join('\n');
+
+        const result = await Swal.fire({
+            title: 'Incomplete Back Orders',
+            html: `The following items still need back orders:<br><br><pre>${itemsList}</pre><br>Please record back orders for these items before proceeding.`,
+            icon: 'warning',
+            confirmButtonText: 'Continue Recording',
+            showCancelButton: true,
+            cancelButtonText: 'Cancel'
+        });
+
+        if (result.isConfirmed) {
+            // Find the next incomplete item that hasn't been handled
+            const nextIncompleteIndex = form.value.items.findIndex(item => 
+                pendingIncompleteItems.value.includes(item)
+            );
+            if (nextIncompleteIndex !== -1) {
+                showIncompleteBackOrderModal.value = true;
+                openBackOrderModal(nextIncompleteIndex);
+            }
+        }
+        return false;
+    }
+    return true;
+};
+
+function formatDateForInput(date){
+    return moment(date).format("YYYY-MM-DD");
+}
+const submit = async () => {
+    if (!form.value?.items?.length) {
+        toast.error('No items to submit');
+        return;
+    }
+
+    // Check for incomplete items first
+    const canProceed = await checkAndHandleIncompleteItems();
+    if (!canProceed) return;
+
+    // Reset pending items since we can proceed
+    pendingIncompleteItems.value = [];
+
+    // Show confirmation dialog
+    const confirm = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You want to update this packing list?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, update it!'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    isSubmitting.value = true;
+
+    // Validate required fields
+    const invalidItems = form.value.items.filter(item => 
+        !item.warehouse_id || 
+        !item.location_id || 
+        !item.batch_number || 
+        !item.expire_date || 
+        item.quantity === null || 
+        item.quantity < 0
+    );
+
+    if (invalidItems.length > 0) {
+        toast.error('Please fill in all required fields for each item');
+        return;
+    }
+            
+
+    console.log(form.value);
+
+    await axios.post(route('supplies.packing-list.update'), form.value)
+        .then((response) => {
+            isSubmitting.value = false;
+            console.log(response.data);
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            })
+            .then(() => {
+                router.visit(route('supplies.packing-list.edit', form.value.id));
+            });
+        })
+        .catch((error) => {
+            isSubmitting.value = false;
+            console.error('Failed to update packing list:', error);
+            toast.error(error.response?.data || 'Failed to update packing list');
+        });
+}
 
 const addBackOrderRow = () => {
     backOrderRows.value.push({
@@ -877,8 +1031,8 @@ async function approvePackingList() {
             items: form.value.items.filter(item => item.status === 'reviewed').map(item => ({
                 id: item.id,
                 status: 'approved',
+                quantity: item.purchase_order_item.quantity,
                 quantity: item.quantity,
-                received_quantity: item.received_quantity,
                 product_id: item.product_id,
             }))
         })
@@ -900,112 +1054,4 @@ async function approvePackingList() {
             });
     }
 }
-
-
-
-// Format date to YYYY-MM-DD for HTML date inputs
-function formatDateForInput(dateString) {
-    if (!dateString) return '';
-    
-    // If it's already in YYYY-MM-DD format, return as is
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-        return dateString;
-    }
-    
-    // Parse the date and format it as YYYY-MM-DD
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return ''; // Invalid date
-    
-    return date.toISOString().split('T')[0];
-}
-
-async function submit() {
-    if (!form.value?.items?.length) {
-        toast.error('No items to submit');
-        return;
-    }
-
-    // Check for incomplete back orders
-    const incompleteItems = form.value.items.filter(item => {
-        if (!item.received_quantity || item.received_quantity === item.quantity) return false;
-        const mismatches = item.quantity - item.received_quantity;
-        const totalDifferences = (item.differences || []).reduce(
-            (total, diff) => total + (parseInt(diff.quantity) || 0), 0
-        );
-        return totalDifferences !== mismatches;
-    });
-
-    if (incompleteItems.length > 0) {
-        // Find the index of the first incomplete item
-        const incompleteIndex = form.value.items.findIndex(item => 
-            incompleteItems.includes(item)
-        );
-        
-        // Open the back order modal for the first incomplete item
-        if (incompleteIndex !== -1) {
-            showIncompleteBackOrderModal.value = true;
-            openBackOrderModal(incompleteIndex);
-            return;
-        }
-    }
-
-    const confirm = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You want to update this packing list?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, update it!'
-    });
-
-    if (confirm.isConfirmed) {
-        isSubmitting.value = true;
-
-        // Validate required fields
-        const invalidItems = form.value.items.filter(item => 
-            !item.warehouse_id || 
-            !item.location_id || 
-            !item.batch_number || 
-            !item.expire_date || 
-            item.received_quantity === null || 
-            item.received_quantity < 0
-        );
-
-        if (invalidItems.length > 0) {
-            isSubmitting.value = false;
-            toast.error('Please fill in all required fields for each item');
-            return;
-        }
-        
-        // Format dates properly for all items before submission
-        form.value.items.forEach(item => {
-            if (item.expire_date) {
-                item.expire_date = formatDateForInput(item.expire_date);
-            }
-            // Format any other date fields if needed
-            if (item.pk_date) {
-                item.pk_date = formatDateForInput(item.pk_date);
-            }
-        });
-
-        try {
-            const response = await axios.post(route('supplies.packing-list.update'), form.value);
-            await Swal.fire({
-                title: 'Success!',
-                text: response.data,
-                icon: 'success',
-                confirmButtonColor: '#10B981',
-            });
-            // The route parameter for supplies.packing-list.edit is 'pk', not 'id' or 'packing_list_number'
-            router.visit(route('supplies.packing-list.edit', { pk: props.packing_list?.packing_lists[0]?.packing_list_number }));
-        } catch (error) {
-            console.error('Update error:', error);
-            toast.error(error.response?.data || 'An error occurred while updating the packing list');
-        } finally {
-            isSubmitting.value = false;
-        }
-    }
-}
-
 </script>

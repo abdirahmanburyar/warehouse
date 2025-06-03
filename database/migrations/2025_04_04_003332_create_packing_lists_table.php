@@ -11,42 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::create('packing_lists', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('packing_list_number');
-        //     $table->foreignId('purchase_order_id')->constrained();
-        //     $table->foreignIdFor(PurchaseOrderItem::class, 'po_id')->constrained();
-        //     $table->foreignId('product_id')->constrained();
-        //     $table->foreignId('warehouse_id')->constrained();
-        //     $table->string('barcode')->nullable();
-        //     $table->date('expire_date')->nullable();
-        //     $table->string('batch_number')->nullable();
-        //     $table->string('ref_no')->nullable();
-        //     $table->timestamp('pk_date')->default(now());
-        //     $table->foreignId('location_id')->nullable();
-        //     $table->integer('quantity');
-        //     $table->string('uom');
-        //     $table->double('unit_cost');
-        //     $table->double('total_cost');
-        //     $table->string('status')->default('pending');
-        //     $table->foreignId('confirmed_by')->nullable()->constrained('users');
-        //     $table->timestamp('confirmed_at')->nullable()->constrained('users');
-        //     $table->foreignId('reviewed_by')->nullable()->constrained('users');
-        //     $table->timestamp('reviewed_at')->nullable();
-        //     $table->foreignId('approved_by')->nullable()->constrained('users');
-        //     $table->timestamp('approved_at')->nullable();
-        //     $table->timestamps();
-        // });
-
-        Schema::create('packing_list_differences', function (Blueprint $table) {
+        Schema::create('packing_lists', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('packing_list_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity');
-            $table->string('finalized')->nullable();
-            $table->enum('status', ['Expired', 'Damaged','Missing','Low quality','Lost']);
+            $table->string('packing_list_number');
+            $table->foreignId('purchase_order_id')->constrained();
+            $table->string('status')->default('pending');            
+            $table->string('ref_no')->nullable();
+            $table->timestamp('pk_date')->default(now());
+            $table->foreignId('confirmed_by')->nullable()->constrained('users');
+            $table->timestamp('confirmed_at')->nullable()->constrained('users');
+            $table->foreignId('reviewed_by')->nullable()->constrained('users');
+            $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
+
+        
     }
 
     /**
@@ -55,6 +36,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('packing_list_differences');
-        // Schema::dropIfExists('packing_lists');
+
     }
 };

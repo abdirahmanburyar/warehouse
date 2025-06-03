@@ -216,7 +216,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/create', [SupplyController::class, 'create'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.create');
         Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.po-show');
         Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.get-purchaseOrder');
-        Route::get('/packing-list/{pk}/edit', [SupplyController::class, 'editPK'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.packing-list.edit');
+        Route::get('/packing-list/{id}/edit', [SupplyController::class, 'editPK'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.packing-list.edit');
         Route::get('/packing-list/show', [SupplyController::class, 'showPK'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.packing-list.showPK');
         Route::get('/packing-list', [SupplyController::class, 'newPackingList'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.packing-list');
         Route::get('/back-orders', [SupplyController::class, 'showBackOrder'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.showBackOrder');

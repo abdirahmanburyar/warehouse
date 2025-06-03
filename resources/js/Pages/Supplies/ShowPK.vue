@@ -22,12 +22,12 @@
                     <tbody class="bg-white divide-y divide-black">
                         <tr v-for="(group, packing_list_number) in props.packing_list" :key="packing_list_number">
                             <td class="px-6 py-4 border border-black">
-                                <Link :href="route('supplies.packing-list.edit', packing_list_number)" class="text-indigo-600 hover:text-indigo-900">
+                                <Link :href="route('supplies.packing-list.edit', group.id)" class="text-indigo-600 hover:text-indigo-900">
                                     {{ group.packing_list_number }}
                                 </Link>
                             </td>
                             <td class="px-6 py-4 border border-black">{{ group.supplier?.name || 'N/A' }}</td>
-                            <td class="px-6 py-4 border border-black">{{ moment(group.receiving_date).format('DD/MM/YYYY hh:mm') }}</td>
+                            <td class="px-6 py-4 border border-black">{{ moment(group.receiving_date).format('DD/MM/YYYY') }}</td>
                             <td class="px-6 py-4 border border-black">${{ Number(group.total_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
                             <td class="px-6 py-4 border border-black">{{ group.avg_lead_time }}</td>
                             <td class="px-6 py-4 border border-black">{{ group.fulfillment_rate }}</td>

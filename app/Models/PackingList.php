@@ -12,29 +12,19 @@ class PackingList extends Model
     protected $fillable = [
         'packing_list_number',
         'purchase_order_id',
-        'po_id',
-        'barcode',
         'status',
-        'product_id',
-        'warehouse_id',
         'ref_no',
-        'uom',
         'pk_date',
-        'expire_date',
-        'batch_number',
-        'location_id',
-        'quantity',
-        'unit_cost',
-        'total_cost',
         'confirmed_at',
         'confirmed_by',
         'reviewed_at',
         'reviewed_by',
         'approved_at',
         'approved_by',
-
     ];
-
+    public function items(){
+        return $this->hasMany(PackingListItem::class, 'packing_list_id');
+    }
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
@@ -45,20 +35,7 @@ class PackingList extends Model
         return $this->belongsTo(PurchaseOrderItem::class, 'po_id');
     }
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
 
-    public function location()
-    {
-        return $this->belongsTo(Location::class);
-    }
-
-    public function warehouse()
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
 
     public function differences()
     {
@@ -75,10 +52,5 @@ class PackingList extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    protected static function booted()
-    {
-        static::saving(function ($packingList) {
-            $packingList->total_cost = $packingList->unit_cost * $packingList->quantity;
-        });
-    }
+
 }
