@@ -43,9 +43,12 @@ class FacilityController extends Controller
 
         if($request->has('search')) {
             $facilities->where('name', 'like', "%{$request->search}%")
-                ->orWhereHas('district', function($q) use ($request) {
-                    $q->where('name', 'like', "%{$request->search}%");
-                });
+                ->orWhere('address', 'like', "%{$request->search}%")
+                ->orWhere('email', 'like', "%{$request->search}%");
+        }
+
+        if($request->has('district')) {
+            $facilities->where('district', 'like', "%{$request->district}%");
         }
         
         $facilities = $facilities->with(['user'])->paginate($request->per_page ?? 10, ['*'], 'page', $request->get('page', 1));

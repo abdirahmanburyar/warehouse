@@ -17,49 +17,6 @@
                 </Link>
             </div>
         </div>
-
-        <!-- Excel Upload Modal -->
-        <Modal :show="showUploadModal" @close="closeUploadModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Upload Facilities</h2>
-                
-                <div class="mt-4">
-                    <div v-if="uploadErrors.length > 0" class="mb-4 bg-red-50 p-4 rounded-md">
-                        <h4 class="text-red-800 font-medium">Please fix the following errors:</h4>
-                        <ul class="mt-2 text-red-700 list-disc list-inside">
-                            <li v-for="error in uploadErrors" :key="error">{{ error }}</li>
-                        </ul>
-                    </div>
-
-                    <div v-if="selectedFile" class="mb-4 p-4 bg-gray-50 rounded-md">
-                        <p class="text-sm text-gray-600">Selected file: {{ selectedFile.name }}</p>
-                    </div>
-
-                    <div class="mt-4 bg-yellow-50 p-4 rounded-md">
-                        <h4 class="text-yellow-800 font-medium">Required Excel Columns:</h4>
-                        <ul class="mt-2 text-yellow-700 list-disc list-inside">
-                            <li>facility name</li>
-                            <li>facility type</li>
-                            <li>district</li>
-                            <li>email</li>
-                            <li>phone</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button type="button" @click="closeUploadModal"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                        Cancel
-                    </button>
-                    <button type="button" @click="uploadFile" :disabled="!selectedFile || isUploading"
-                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                        <i v-if="isUploading" class="fas fa-spinner fa-spin mr-2"></i>
-                        <span>{{ isUploading ? 'Uploading...' : 'Upload' }}</span>
-                    </button>
-                </div>
-            </div>
-        </Modal>
         
         <!-- Filters Section -->
         <div class="p-6">
@@ -88,6 +45,7 @@
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Items Per Page</label>
                     <select v-model="per_page"
+                        @change="props.filters.page = 1"
                         class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
                         <option value="10">10 per page</option>
                         <option value="25">25 per page</option>
@@ -225,7 +183,7 @@
                 </div>
             </div>
             <div class="flex items-center justify-end mt-3 mb-6">
-                <TailwindPagination :data="props.facilities" @pagination-change-page="getResults" />
+                <TailwindPagination :data="props.facilities" :limit="2" class="flex items-center space-x-3 text-sm" @pagination-change-page="getResults" />
             </div>
         </div>
 
@@ -248,8 +206,6 @@ import { TailwindPagination } from "laravel-vue-pagination";
 
 const toast = useToast()
 
-// File upload state
-const showUploadModal = ref(false)
 const selectedFile = ref(null)
 const isUploading = ref(false)
 const uploadErrors = ref([])
@@ -261,7 +217,6 @@ const handleFileUpload = (event) => {
         if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
             file.type === 'application/vnd.ms-excel') {
             selectedFile.value = file
-            showUploadModal.value = true
             uploadErrors.value = []
         } else {
             toast.error('Please select a valid Excel file (.xlsx or .xls)')
@@ -307,13 +262,6 @@ const uploadFile = async () => {
     }
 }
 
-// Close upload modal
-const closeUploadModal = () => {
-    showUploadModal.value = false
-    selectedFile.value = null
-    uploadErrors.value = []
-}
-
 const props = defineProps({
     facilities: {
         type: Object,
@@ -355,6 +303,8 @@ const reloadFacility = () => {
     if (props.filters.page) query.page = props.filters.page
     if (search.value) query.search = search.value
     if (district.value) query.district = district.value
+
+    console.log(query)
     router.get(route('facilities.index'), query, {
         preserveScroll: true,
         preserveState: true,
