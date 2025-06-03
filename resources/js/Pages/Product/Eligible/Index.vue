@@ -130,8 +130,12 @@
                     </tr>
                 </tbody>
             </table>
-            <div class="mt-3 flex justify-end">
-                <TailwindPagination :data="eligibleItems" @pagination-change-page="getResults" />
+            <div class="mt-3 flex justify-end mb-[100px]">
+                <TailwindPagination 
+                    :data="eligibleItems" 
+                    :limit="2"
+                    @pagination-change-page="getResults" 
+                />
             </div>
         </div>
     </AuthenticatedLayout>
