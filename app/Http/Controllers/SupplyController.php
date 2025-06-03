@@ -13,6 +13,7 @@ use App\Models\PackingList;
 use App\Models\PackingListDifference;
 use App\Models\PoDocument;
 use App\Models\PurchaseOrder;
+use App\Models\Product;
 use App\Models\PurchaseOrderItem;
 use App\Models\Supply;
 use App\Models\SupplyItem;
@@ -133,7 +134,7 @@ class SupplyController extends Controller
     }
 
     public function showPO(Request $request, $id){
-        $po = PurchaseOrder::where('id', $id)->with('items.product','supplier')->first();
+        $po = PurchaseOrder::with('items.product','supplier','documents','approvedBy','rejectedBy','reviewedBy')->find($id);
         return inertia("Supplies/PurchaseO/Show", [
             'po' => $po
         ]);
@@ -798,17 +799,17 @@ class SupplyController extends Controller
         try {
             $products = Product::get();
             $suppliers = Supplier::get();
-            $po = PurchaseOrder::with('supplier','items.product:id,name','items.edited:id,name')->findOrFail($id);
-            
+            $po = PurchaseOrder::with('supplier','items.product:id,name','items.edited:id,name')->find($id);
+            logger()->info($po);
             return inertia('Supplies/EditPo', [
                 'products' => $products,
                 'suppliers' => $suppliers,
                 'po' => $po
             ]);
-        } catch (ModelNotFoundException $e) {
-            return redirect()->route('supplies.index')->with('error', 'Purchase order not found.');
         } catch (\Throwable $th) {
-            return redirect()->route('supplies.index')->with('error', $th->getMessage());
+            return inertia('Supplies/EditPo', [
+                'error' => $th->getMessage()
+            ]);
         }
     }
 
@@ -816,69 +817,38 @@ class SupplyController extends Controller
     {
         try {
             return DB::transaction(function () use ($request) {
-                // Decode items JSON string from FormData
-                $items = json_decode($request->items, true);
-                if (!is_array($items)) {
-                    throw new \Exception('The items field must be a valid JSON array');
-                }
-                $request->merge(['items' => $items]);
-
                 $validated = $request->validate([
                     'id' => 'nullable|integer',
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_number' => 'required|unique:purchase_orders,po_number,' . $request->id,
                     'po_date' => 'required|date',
                     'original_po_no' => 'nullable',
+                    'notes' => 'nullable',
                     'items' => 'required|array|min:1',
                     'items.*.id' => 'nullable|integer',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.unit_cost' => 'required|numeric|min:0',
                     'items.*.uom' => 'nullable',
                     'items.*.quantity' => 'required|integer|min:1',
-                    'items.*.total_cost' => 'required|numeric|min:0',
-                    'documents' => 'nullable|array',
-                    'documents.*.file' => 'required|file|mimes:pdf|max:10240', // 10MB max
-                    'documents.*.document_type' => 'required|in:Invoice,Delivery Note,Certificate,Other',
+                    'items.*.total_cost' => 'required|numeric|min:0'
                 ]);
-
-                // Check if this is a new purchase order or an update
-                $isNew = !$request->id;
                 
                 $po = PurchaseOrder::updateOrCreate([
                     'id' => $request->id
                 ], [
                     'po_number' => $validated['po_number'],
+                    'notes' => $validated['notes'],
                     'original_po_no' => $validated['original_po_no'],
-                    'supplier_id' => $validated['supplier_id'],
                     'po_date' => $validated['po_date'],
+                    'supplier_id' => $validated['supplier_id'],
                     'created_by' => auth()->id()
                 ]);
 
-                // Handle document uploads
-                if ($request->hasFile('documents')) {
-                    foreach ($request->file('documents') as $index => $file) {
-                        $path = $file->store('po-documents', 'public');
-                        
-                        $po->documents()->create([
-                            'document_type' => $request->input("documents.{$index}.document_type"),
-                            'file_name' => $file->getClientOriginalName(),
-                            'file_path' => $path,
-                            'mime_type' => $file->getMimeType(),
-                            'file_size' => $file->getSize(),
-                            'uploaded_by' => auth()->id()
-                        ]);
-                    }
-                }
 
                 // Process each item individually
                 foreach ($validated['items'] as $item) {
-                    // If this is an update (not a new PO) and the item exists, get the existing item to check for quantity changes
-                    $existingItem = null;
-                    if (!$isNew && isset($item['id'])) {
-                        $existingItem = PurchaseOrderItem::find($item['id']);
-                    }
-                    
                     // Prepare the data for update or create
+                    if($item['product_id'] == null) continue;
                     $itemData = [
                         'purchase_order_id' => $po->id,
                         'product_id' => $item['product_id'],
@@ -889,7 +859,8 @@ class SupplyController extends Controller
                     ];
                     
                     // Only track original quantity when editing an existing item
-                    if (!$isNew && isset($item['id'])) {
+                    if (isset($item['id'])) {
+                        $existingItem = PurchaseOrderItem::find($item['id']);
                         // If this is an existing item and the quantity has changed, keep the original quantity
                         if ($existingItem && $existingItem->quantity != $item['quantity']) {
                             // If original_quantity is not set yet, use the existing quantity as the original

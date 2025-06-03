@@ -30,6 +30,18 @@ class PurchaseOrder extends Model
         'updated_by',
     ];
 
+    public function approvedBy(){
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy(){
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function reviewedBy(){
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
     public function documents()
     {
         return $this->hasMany(PoDocument::class);

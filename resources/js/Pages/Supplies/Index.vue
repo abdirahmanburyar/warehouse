@@ -321,6 +321,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium space-x-2 border border-black">
+                                        <Link :href="route('supplies.po-show', po.id)">View</Link>
                                         <button @click="router.visit(route('supplies.editPO', po.id))"
                                             class="text-indigo-600 hover:text-indigo-900">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

@@ -67,44 +67,6 @@
                                         class="border-0"
                                     />
                                 </div>
-                                <!-- Document Upload Section -->
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="text-sm font-medium text-gray-500">Documents</h3>
-                                    <div class="flex items-center gap-2" v-for="(doc, index) in form.documents" :key="index">
-                                        <input
-                                            type="file"
-                                            accept=".pdf"
-                                            @change="handleDocumentChange($event, index)"
-                                            class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        />
-                                        <select v-model="doc.document_type" class="text-sm border-gray-300 rounded-md">
-                                            <option value="">Select Type</option>
-                                            <option value="Invoice">Invoice</option>
-                                            <option value="Delivery Note">Delivery Note</option>
-                                            <option value="Certificate">Certificate</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                        <button 
-                                            @click="removeDocument(index)"
-                                            type="button"
-                                            class="text-red-500 hover:text-red-700"
-                                        >
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <button 
-                                        type="button" 
-                                        @click="addDocument"
-                                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Document
-                                    </button>
-                                </div>
                                 <div class="flex items-center gap-2">
                                     <input
                                         type="file"
@@ -135,7 +97,16 @@
                 </div>
             </div>
 
+            <!-- notes -->
+            <div class="mt-8 flex-1 flex flex-col">
+                <label for="notes" class="text-sm font-medium text-gray-500">Memo</label>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <textarea v-model="form.notes" class="w-full p-3 border-none resize-none" placeholder="Enter memo"></textarea>
+                </div>
+            </div>
+
             <!-- Items List -->
+           <form @submit.prevent="submitForm">
             <div class="mt-8 flex-1 flex flex-col">
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <table class="w-full">
@@ -161,22 +132,22 @@
                                 <td class="px-3 py-2">
                                     <Multiselect v-model="item.product" :value="item.product_id"
                                         :options="props.products"
-                                        :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :searchable="true" :close-on-select="true" :show-labels="false" required
                                         :allow-empty="true" placeholder="Select item" track-by="id" label="name"
                                             @select="hadleProductSelect(index, $event)">
                                     </Multiselect>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <input type="number" v-model="item.quantity" @input="calculateTotal(index)"
+                                    <input type="number" v-model="item.quantity" @input="calculateTotal(index)" required
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm"
                                         min="1">
                                 </td>
                                 <td class="px-3 py-2">
-                                    <input type="text" v-model="item.uom"
+                                    <input type="text" v-model="item.uom" required
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                 </td>                                
                                 <td class="px-3 py-2">
-                                    <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)"
+                                    <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)" required
                                         class="block w-full text-left text-black focus:ring-0 sm:text-sm"
                                         step="0.01" min="0">
                                 </td>
@@ -187,7 +158,7 @@
                                 <td class="px-3 py-2 text-center">
                                     <button type="button" @click="removeItem(index)"
                                         class="text-gray-400 hover:text-red-600">
-                                        <TrashIcon class="h-4 w-4" />
+                                        <TrashIcon class="h-6 w-6 text-red-600 " />
                                     </button>
                                 </td>
                             </tr>
@@ -229,11 +200,12 @@
                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Exit
                 </button>
-                <button @click="submitForm" type="button" :disabled="isSubmitting"
+                <button type="submit" :disabled="isSubmitting"
                     class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     {{  isSubmitting ? "Saving..." : "Save and Exit" }}
                 </button>
             </div>
+           </form>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -267,10 +239,10 @@ const form = ref({
     supplier_id: "",
     supplier: null,
     original_po_no: "",
+    notes: "",
     po_number: props.po_number,
     po_date: new Date().toISOString().split('T')[0],
-    items: [],
-    documents: []
+    items: []
 });
 
 const fileInput = ref(null);
@@ -387,30 +359,6 @@ const subtotal = computed(() => {
 
 const isSubmitting = ref(false);
 
-function addDocument() {
-    form.value.documents.push({
-        file: null,
-        document_type: '',
-        file_name: ''
-    });
-}
-
-function removeDocument(index) {
-    form.value.documents.splice(index, 1);
-}
-
-function handleDocumentChange(event, index) {
-    const file = event.target.files[0];
-    if (file) {
-        if (file.type !== 'application/pdf') {
-            toast.error('Only PDF files are allowed');
-            event.target.value = '';
-            return;
-        }
-        form.value.documents[index].file = file;
-        form.value.documents[index].file_name = file.name;
-    }
-}
 
 async function submitForm() {    
     if (!form.value.supplier_id) {
@@ -418,55 +366,7 @@ async function submitForm() {
         return;
     }
 
-    // Ensure po_date is properly formatted
-    const formData = new FormData();
-    let hasInvalidItems = false;
 
-    formData.append('po_date', form.value.po_date);
-    formData.append('supplier_id', form.value.supplier_id);
-    formData.append('po_number', form.value.po_number);
-    formData.append('original_po_no', form.value.original_po_no || '');
-
-    // Filter out items with no product_id and validate remaining items
-    const validItems = form.value.items.filter((item, index) => {
-        if (!item.product_id) return false;
-
-        // Check if required fields are empty
-        const isValid = item.quantity > 0 && 
-                        item.unit_cost > 0 && 
-                        item.total_cost > 0;
-
-        if (!isValid) {
-            const tr = document.querySelector(`tr[data-item-index="${index}"]`);
-            if (tr) tr.classList.add('bg-red-50');
-            hasInvalidItems = true;
-        }
-
-        return isValid;
-    });
-
-    if (hasInvalidItems) {
-        toast.error('Please fix the highlighted items');
-        return;
-    }
-
-    if (validItems.length === 0) {
-        toast.error('At least one item is required');
-        return;
-    }
-
-    // Append items to formData
-    formData.append('items', JSON.stringify(validItems));
-
-    // Add documents if present
-    if (form.value.documents && form.value.documents.length > 0) {
-        form.value.documents.forEach((doc, index) => {
-            if (doc.file) {
-                formData.append(`documents[${index}][file]`, doc.file);
-                formData.append(`documents[${index}][document_type]`, doc.document_type);
-            }
-        });
-    }
 
     // Show confirmation dialog
     Swal.fire({
@@ -482,7 +382,7 @@ async function submitForm() {
             isSubmitting.value = true;
 
             // Submit the form
-            axios.post(route('supplies.storePO'), formData, {
+            axios.post(route('supplies.storePO'), form.value, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

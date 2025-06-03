@@ -4,6 +4,8 @@
         title="Purchase Orders"
         description="Manage your purchase orders"
     >
+    <div v-if="props.error">{{props.error}}</div>
+    <div v-else>
         <Link
             :href="route('supplies.index')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer"
@@ -161,71 +163,12 @@
                 </div>
             </div>
 
-            <!-- Documents Section -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Documents</h2>
-                <div class="space-y-4">
-                    <!-- Existing Documents -->
-                    <div v-if="props.po?.documents?.length > 0" class="mb-4">
-                        <h3 class="text-sm font-medium text-gray-700 mb-2">Attached Documents</h3>
-                        <ul class="space-y-2">
-                            <li v-for="doc in props.po.documents" :key="doc.id" 
-                                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ doc.file_name }}</p>
-                                        <p class="text-xs text-gray-500">{{ doc.document_type }}</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <a :href="`/storage/${doc.file_path}`" target="_blank"
-                                        class="text-sm text-blue-600 hover:text-blue-800">
-                                        View
-                                    </a>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- New Document Upload -->
-                    <div v-if="!form.approved_at">
-                        <h3 class="text-sm font-medium text-gray-700 mb-2">Add New Documents</h3>
-                        <div class="space-y-4">
-                            <div v-for="(doc, index) in form.documents" :key="index" class="flex items-start space-x-4">
-                                <div class="flex-1">
-                                    <select v-model="doc.document_type" 
-                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                        <option value="">Select Document Type</option>
-                                        <option value="Invoice">Invoice</option>
-                                        <option value="Delivery Note">Delivery Note</option>
-                                        <option value="Certificate">Certificate</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="flex-1">
-                                    <input type="file" @change="handleFileUpload($event, index)" accept=".pdf"
-                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                                </div>
-                                <button @click="removeDocument(index)" type="button"
-                                    class="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <button @click="addDocument" type="button"
-                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <svg class="-ml-0.5 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                </svg>
-                                Add Document
-                            </button>
-                        </div>
-                    </div>
+             <!-- notes -->
+            <!-- notes -->
+            <div class="mt-8 flex-1 flex flex-col">
+                <label for="notes" class="text-sm font-medium text-gray-500">Memo</label>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <textarea v-model="form.notes" class="w-full p-3 border-none resize-none" placeholder="Enter memo"></textarea>
                 </div>
             </div>
 
@@ -699,7 +642,7 @@
                             class="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="isSubmitting"
                         >
-                            {{ isSubmitting ? "Saving..." : "Save Changes" }}
+                            {{ isSubmitting ? "Updating..." : "Update Changes" }}
                         </button>
                     </div>
                 </div>
@@ -778,6 +721,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </AuthenticatedLayout>
 </template>
 
@@ -802,6 +746,7 @@ const props = defineProps({
     suppliers: Array,
     po: Object,
     users: Array,
+    error: String
 });
 
 const selectedSupplier = ref(props.po?.supplier || null);
@@ -823,34 +768,7 @@ const defaultForm = {
     documents: [],
 };
 
-const form = ref(props.po ? {
-    id: props.po.id,
-    supplier_id: props.po.supplier_id,
-    supplier: props.po.supplier,
-    po_number: props.po.po_number,
-    original_po_no: props.po.original_po_no,
-    po_date: props.po.po_date || new Date().toISOString().split('T')[0],
-    status: props.po.status,
-    reviewed_by: props.po.reviewed_by,
-    reviewed_at: props.po.reviewed_at,
-    approved_by: props.po.approved_by,
-    approved_at: props.po.approved_at,
-    rejected_by: props.po.rejected_by,
-    rejected_at: props.po.rejected_at,
-    items: props.po.items?.map((item) => ({
-        id: item.id || null,
-        product_id: item.product_id || null,
-        product: item.product || null,
-        quantity: item.quantity || 0,
-        original_quantity: item.original_quantity || 0,
-        uom: item.uom || '',
-        original_uom: item.original_uom || '',
-        edited: item.edited || false,
-        unit_cost: item.unit_cost || 0,
-        total_cost: item.total_cost || 0,
-    })) || [],
-    documents: props.po.documents || [],
-} : defaultForm);
+const form = ref(props.po);
 
 function addDocument() {
     if (!form.value.documents) {
@@ -982,44 +900,8 @@ async function submitForm() {
         if (result.isConfirmed) {
             isSubmitting.value = true;
 
-            // Create FormData
-            const formData = new FormData();
-            
-            // Append basic fields
-            formData.append('id', form.value.id);
-            formData.append('supplier_id', form.value.supplier_id);
-            formData.append('po_number', form.value.po_number);
-            formData.append('po_date', form.value.po_date);
-            formData.append('original_po_no', form.value.original_po_no || '');
-            
-            // Clean up items data before sending
-            const cleanItems = form.value.items.map(item => ({
-                id: item.id || null,
-                product_id: item.product_id,
-                quantity: item.quantity,
-                unit_cost: item.unit_cost,
-                total_cost: item.total_cost,
-                uom: item.uom || '',
-                original_quantity: item.original_quantity || null,
-                original_uom: item.original_uom || null,
-                edited: item.edited || false
-            }));
-            
-            // Append items as JSON string
-            formData.append('items', JSON.stringify(cleanItems));
-
-            // Append documents if present
-            if (form.value.documents && form.value.documents.length > 0) {
-                form.value.documents.forEach((doc, index) => {
-                    if (doc.file) {
-                        formData.append(`documents[${index}][file]`, doc.file);
-                        formData.append(`documents[${index}][document_type]`, doc.document_type);
-                    }
-                });
-            }
-
             // Submit the form
-            axios.post(route("supplies.storePO"), formData, {
+            axios.post(route("supplies.storePO"), form.value, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -1038,21 +920,12 @@ async function submitForm() {
                     });
                 });
             })
-            .catch((error) => {
-                let errorMessage = "Failed to update purchase order";
-                
-                if (error.response?.data) {
-                    // Handle validation errors
-                    if (typeof error.response.data === 'object' && error.response.data.errors) {
-                        errorMessage = Object.values(error.response.data.errors)
-                            .flat()
-                            .join('\n');
-                    } else {
-                        errorMessage = error.response.data;
-                    }
-                }
-                
-                toast.error(errorMessage);
+            .catch((error) => {                
+                Swal.fire({
+                    title: "Failed!",
+                    text: error.response.data,
+                    icon: "error",
+                });
                 isSubmitting.value = false;
             });
         }
