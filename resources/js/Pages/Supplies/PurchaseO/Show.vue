@@ -242,8 +242,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { ArrowLeftIcon, DocumentArrowDownIcon, DocumentIcon, EyeIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -286,70 +286,161 @@ const formatNumber = (number) => {
     }).format(number);
 };
 
-const downloadPdf = () => {
-    const doc = new jsPDF();
+const downloadPdf = async () => {
+    // Initialize jsPDF
+    const doc = new jsPDF('p', 'pt', 'a4');
     const pageWidth = doc.internal.pageSize.width;
     
     // Header
-    doc.setFontSize(20);
-    doc.text('Purchase Order', pageWidth / 2, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`PO Number: ${props.po.po_number}`, pageWidth / 2, 30, { align: 'center' });
-    
-    // Supplier Info
-    doc.setFontSize(14);
-    doc.text('Supplier Information', 14, 45);
+    doc.setFontSize(18);
+    doc.text('Purchase Order', pageWidth / 2, 40, { align: 'center' });
     doc.setFontSize(10);
+    doc.text(`PO Number: ${props.po.po_number}`, pageWidth / 2, 60, { align: 'center' });
+    
+    // Two columns: Supplier and Order Info
+    const leftCol = 40;
+    const rightCol = pageWidth - 250;
+    let yPos = 100;
+    
+    // Supplier Information
+    doc.setFontSize(12);
+    doc.text('Supplier Information', leftCol, yPos);
+    yPos += 25;
+    doc.setFontSize(9);
     doc.text([
         `Name: ${props.po.supplier.name}`,
         `Contact: ${props.po.supplier.contact_person}`,
         `Email: ${props.po.supplier.email}`,
         `Phone: ${props.po.supplier.phone}`
-    ], 14, 55);
+    ], leftCol, yPos);
     
-    // PO Info
-    doc.setFontSize(14);
-    doc.text('Order Information', pageWidth - 90, 45);
-    doc.setFontSize(10);
+    // Order Information (right column)
+    doc.setFontSize(12);
+    doc.text('Order Information', rightCol, 100);
+    doc.setFontSize(9);
     doc.text([
         `Date: ${formatDate(props.po.po_date)}`,
         `Status: ${props.po.status.toUpperCase()}`,
         `Original PO: ${props.po.original_po_no || 'N/A'}`
-    ], pageWidth - 90, 55);
+    ], rightCol, 125);
     
     // Items Table
-    doc.autoTable({
-        startY: 85,
-        columns: [
-            { header: 'Product', dataKey: 'product' },
-            { header: 'Quantity', dataKey: 'quantity' },
-            { header: 'Unit Cost', dataKey: 'unitCost' },
-            { header: 'Total', dataKey: 'total' }
+    await autoTable(doc, {
+        startY: 180,
+        theme: 'plain',
+        styles: {
+            fontSize: 9,
+            cellPadding: 4,
+            lineColor: [211, 211, 211],
+            lineWidth: 0.5
+        },
+        headStyles: {
+            fillColor: [68, 114, 196],  // Navy blue color from screenshot
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold',
+            valign: 'middle',
+            cellPadding: { top: 4, right: 4, bottom: 4, left: 4 },
+            minCellHeight: 30
+        },
+        head: [
+            [
+                { content: 'Item Description', styles: { halign: 'left' } },
+                { content: 'Quantity', styles: { halign: 'center' } },
+                { content: 'Unit Cost', styles: { halign: 'center' } },
+                { content: 'Total Cost', styles: { halign: 'right' } }
+            ]
         ],
-        body: props.po.items.map(item => ({
-            product: item.product.name,
-            quantity: `${item.quantity} ${item.uom}`,
-            unitCost: `$${formatNumber(item.unit_cost)}`,
-            total: `$${formatNumber(item.total_cost)}`
-        })),
+        columns: [
+            { dataKey: 'product' },
+            { dataKey: 'quantity' },
+            { dataKey: 'unitCost' },
+            { dataKey: 'total' }
+        ],
+        columnStyles: {
+            product: { cellWidth: 'auto' },
+            quantity: { cellWidth: 40, halign: 'center' },
+            unitCost: { cellWidth: 60, halign: 'right' },
+            total: { cellWidth: 60, halign: 'right' }
+        },
+        // Generate table data with empty rows
+        body: [
+            // Real data row
+            {
+                product: props.po.items[0]?.product.name || '',
+                quantity: props.po.items[0]?.quantity || '',
+                unitCost: formatNumber(props.po.items[0]?.unit_cost || 0),
+                total: formatNumber(props.po.items[0]?.total_cost || 0)
+            },
+            // Empty rows
+            ...[...Array(9)].map(() => ({
+                product: '',
+                quantity: '',
+                unitCost: '',
+                total: ''
+            }))
+        ],
+        tableLineWidth: 0.5,
+        tableLineColor: [211, 211, 211], // Light gray for grid lines
+        styles: {
+            lineColor: [211, 211, 211],
+            lineWidth: 0.5
+        },
         foot: [[
-            'Total Amount',
-            '',
-            '',
-            `$${formatNumber(calculateTotal())}`
+            { content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+            { content: formatNumber(calculateTotal()), styles: { halign: 'right', fontStyle: 'bold' } }
         ]],
-        footStyles: { fontStyle: 'bold' }
+        footStyles: { 
+            fontSize: 9,
+            cellPadding: 4,
+            fontStyle: 'bold'
+        }
     });
     
-    // Notes if present
+    // Notes section
+    const finalY = doc.lastAutoTable.finalY || 180;
+    let currentY = finalY + 40;
+
     if (props.po.notes) {
-        const finalY = doc.previousAutoTable.finalY || 85;
-        doc.setFontSize(14);
-        doc.text('Notes', 14, finalY + 15);
-        doc.setFontSize(10);
-        doc.text(props.po.notes, 14, finalY + 25);
+        doc.setFontSize(12);
+        doc.text('Notes', 40, currentY);
+        doc.setFontSize(9);
+        const splitNotes = doc.splitTextToSize(props.po.notes, pageWidth - 80);
+        doc.text(splitNotes, 40, currentY + 20);
+        currentY += splitNotes.length * 12 + 40;
+    }
+
+    // Approval section
+    doc.setFontSize(12);
+    doc.text('Approvals', 40, currentY);
+    doc.setFontSize(9);
+    
+    // Draw approval boxes
+    const boxWidth = 200;
+    const boxHeight = 60;
+    const padding = 20;
+    
+    // Reviewed by
+    if (props.po.reviewed_by) {
+        currentY += 20;
+        doc.rect(40, currentY, boxWidth, boxHeight);
+        doc.text('Reviewed by:', 50, currentY + 15);
+        doc.text(props.po.reviewed_by.name, 50, currentY + 35);
+        doc.text(formatDate(props.po.reviewed_at), 50, currentY + 50);
+    }
+
+    // Approved by
+    if (props.po.approved_by) {
+        const approvalX = props.po.reviewed_by ? 40 + boxWidth + padding : 40;
+        const approvalY = props.po.reviewed_by ? currentY : currentY + 20;
+        doc.rect(approvalX, approvalY, boxWidth, boxHeight);
+        doc.text('Approved by:', approvalX + 10, approvalY + 15);
+        doc.text(props.po.approved_by.name, approvalX + 10, approvalY + 35);
+        doc.text(formatDate(props.po.approved_at), approvalX + 10, approvalY + 50);
     }
     
-    doc.save(`purchase_order_${props.po.po_number}.pdf`);
+    // Save the PDF
+    const filename = `purchase_order_${props.po.po_number.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    doc.save(filename);
 };
 </script>
