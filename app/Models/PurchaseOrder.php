@@ -30,6 +30,11 @@ class PurchaseOrder extends Model
         'updated_by',
     ];
 
+    public function documents()
+    {
+        return $this->hasMany(PoDocument::class);
+    }
+
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);

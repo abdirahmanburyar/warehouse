@@ -811,6 +811,9 @@ class SupplyController extends Controller
                     'items.*.uom' => 'nullable',
                     'items.*.quantity' => 'required|integer|min:1',
                     'items.*.total_cost' => 'required|numeric|min:0',
+                    'documents' => 'nullable|array',
+                    'documents.*.file' => 'required|file|mimes:pdf|max:10240', // 10MB max
+                    'documents.*.document_type' => 'required|in:Invoice,Delivery Note,Certificate,Other',
                 ]);
 
                 // Check if this is a new purchase order or an update
@@ -825,6 +828,22 @@ class SupplyController extends Controller
                     'po_date' => $validated['po_date'],
                     'created_by' => auth()->id()
                 ]);
+
+                // Handle document uploads
+                if ($request->hasFile('documents')) {
+                    foreach ($request->file('documents') as $index => $file) {
+                        $path = $file->store('po-documents', 'public');
+                        
+                        $po->documents()->create([
+                            'document_type' => $request->input("documents.{$index}.document_type"),
+                            'file_name' => $file->getClientOriginalName(),
+                            'file_path' => $path,
+                            'mime_type' => $file->getMimeType(),
+                            'file_size' => $file->getSize(),
+                            'uploaded_by' => auth()->id()
+                        ]);
+                    }
+                }
 
                 // Process each item individually
                 foreach ($validated['items'] as $item) {

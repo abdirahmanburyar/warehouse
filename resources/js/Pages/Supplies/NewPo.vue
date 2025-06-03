@@ -67,6 +67,44 @@
                                         class="border-0"
                                     />
                                 </div>
+                                <!-- Document Upload Section -->
+                                <div class="flex flex-col gap-2">
+                                    <h3 class="text-sm font-medium text-gray-500">Documents</h3>
+                                    <div class="flex items-center gap-2" v-for="(doc, index) in form.documents" :key="index">
+                                        <input
+                                            type="file"
+                                            accept=".pdf"
+                                            @change="handleDocumentChange($event, index)"
+                                            class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                        />
+                                        <select v-model="doc.document_type" class="text-sm border-gray-300 rounded-md">
+                                            <option value="">Select Type</option>
+                                            <option value="Invoice">Invoice</option>
+                                            <option value="Delivery Note">Delivery Note</option>
+                                            <option value="Certificate">Certificate</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <button 
+                                            @click="removeDocument(index)"
+                                            type="button"
+                                            class="text-red-500 hover:text-red-700"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        @click="addDocument"
+                                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Document
+                                    </button>
+                                </div>
                                 <div class="flex items-center gap-2">
                                     <input
                                         type="file"
@@ -220,7 +258,7 @@ const toast = useToast();
 const props = defineProps({
     products: Array,
     suppliers: Array,
-    po_number: Number
+    po_number: [String, Number]
 });
 
 const selectedSupplier = ref(null);
@@ -231,7 +269,8 @@ const form = ref({
     original_po_no: "",
     po_number: props.po_number,
     po_date: moment().format('YYYY-MM-DD'),
-    items: []
+    items: [],
+    documents: []
 });
 
 const fileInput = ref(null);
@@ -348,6 +387,31 @@ const subtotal = computed(() => {
 
 const isSubmitting = ref(false);
 
+function addDocument() {
+    form.value.documents.push({
+        file: null,
+        document_type: '',
+        file_name: ''
+    });
+}
+
+function removeDocument(index) {
+    form.value.documents.splice(index, 1);
+}
+
+function handleDocumentChange(event, index) {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.type !== 'application/pdf') {
+            toast.error('Only PDF files are allowed');
+            event.target.value = '';
+            return;
+        }
+        form.value.documents[index].file = file;
+        form.value.documents[index].file_name = file.name;
+    }
+}
+
 async function submitForm() {    
     if (!form.value.supplier_id) {
         toast.warning('Please select a supplier');
@@ -407,7 +471,31 @@ async function submitForm() {
             console.log(form.value);    
             isSubmitting.value = true;      
             
-            await axios.post(route('supplies.storePO'), form.value)
+            const formData = new FormData();
+            
+            // Append basic form data
+            formData.append('supplier_id', form.value.supplier_id);
+            formData.append('po_number', form.value.po_number);
+            formData.append('original_po_no', form.value.original_po_no);
+            formData.append('date', form.value.date);
+            formData.append('total_amount', form.value.total_amount);
+            
+            // Append items
+            formData.append('items', JSON.stringify(form.value.items));
+            
+            // Append documents
+            form.value.documents.forEach((doc, index) => {
+                if (doc.file && doc.document_type) {
+                    formData.append(`documents[${index}][file]`, doc.file);
+                    formData.append(`documents[${index}][document_type]`, doc.document_type);
+                }
+            });
+
+            await axios.post(route('supplies.storePO'), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
             .then((response) => {
                     isSubmitting.value = false;
                     Swal.fire({
