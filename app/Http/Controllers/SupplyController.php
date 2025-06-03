@@ -802,7 +802,7 @@ class SupplyController extends Controller
                     'id' => 'nullable|integer',
                     'supplier_id' => 'required|exists:suppliers,id',
                     'po_number' => 'required|unique:purchase_orders,po_number,' . $request->id,
-                    'po_date' => 'required',
+                    'po_date' => 'required|date',
                     'original_po_no' => 'nullable',
                     'items' => 'required|array|min:1',
                     'items.*.id' => 'nullable|integer',

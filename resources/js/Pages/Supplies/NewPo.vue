@@ -63,7 +63,7 @@
                                 <div class="flex items-center">
                                     Data: <input 
                                         type="date" 
-                                        v-model="form.date"
+                                        v-model="form.po_date"
                                         class="border-0"
                                     />
                                 </div>
@@ -268,7 +268,7 @@ const form = ref({
     supplier: null,
     original_po_no: "",
     po_number: props.po_number,
-    po_date: moment().format('YYYY-MM-DD'),
+    po_date: new Date().toISOString().split('T')[0],
     items: [],
     documents: []
 });
@@ -418,46 +418,57 @@ async function submitForm() {
         return;
     }
 
-    // Reset any existing danger classes
-    document.querySelectorAll('tr.bg-red-50').forEach(tr => {
-        tr.classList.remove('bg-red-50');
-    });
-
+    // Ensure po_date is properly formatted
+    const formData = new FormData();
     let hasInvalidItems = false;
 
+    formData.append('po_date', form.value.po_date);
+    formData.append('supplier_id', form.value.supplier_id);
+    formData.append('po_number', form.value.po_number);
+    formData.append('original_po_no', form.value.original_po_no || '');
+
     // Filter out items with no product_id and validate remaining items
-    form.value.items = form.value.items.filter(item => {
+    const validItems = form.value.items.filter((item, index) => {
         if (!item.product_id) return false;
 
         // Check if required fields are empty
         const isValid = item.quantity > 0 && 
-                       item.unit_cost > 0 && 
-                       item.uom && 
-                       item.total_cost > 0;
+                        item.unit_cost > 0 && 
+                        item.total_cost > 0;
 
         if (!isValid) {
-            // Find the TR element for this item and add danger class
-            const index = form.value.items.indexOf(item);
             const tr = document.querySelector(`tr[data-item-index="${index}"]`);
-            if (tr) {
-                tr.classList.add('bg-red-50');
-                hasInvalidItems = true;
-            }
+            if (tr) tr.classList.add('bg-red-50');
+            hasInvalidItems = true;
         }
 
-        return true;
+        return isValid;
     });
 
     if (hasInvalidItems) {
-        toast.error('Please fill in all required fields for highlighted items');
+        toast.error('Please fix the highlighted items');
         return;
     }
 
-    if (form.value.items.length === 0) {
-        toast.error('No valid items to submit');
+    if (validItems.length === 0) {
+        toast.error('At least one item is required');
         return;
     }
 
+    // Append items to formData
+    formData.append('items', JSON.stringify(validItems));
+
+    // Add documents if present
+    if (form.value.documents && form.value.documents.length > 0) {
+        form.value.documents.forEach((doc, index) => {
+            if (doc.file) {
+                formData.append(`documents[${index}][file]`, doc.file);
+                formData.append(`documents[${index}][document_type]`, doc.document_type);
+            }
+        });
+    }
+
+    // Show confirmation dialog
     Swal.fire({
         title: "Confirm Creation",
         text: "Are you sure you want to create this purchase order?",
@@ -466,53 +477,31 @@ async function submitForm() {
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, create it!"
-    }).then(async (result) => {
+    }).then((result) => {
         if (result.isConfirmed) {
-            console.log(form.value);    
-            isSubmitting.value = true;      
-            
-            const formData = new FormData();
-            
-            // Append basic form data
-            formData.append('supplier_id', form.value.supplier_id);
-            formData.append('po_number', form.value.po_number);
-            formData.append('original_po_no', form.value.original_po_no);
-            formData.append('date', form.value.date);
-            formData.append('total_amount', form.value.total_amount);
-            
-            // Append items
-            formData.append('items', JSON.stringify(form.value.items));
-            
-            // Append documents
-            form.value.documents.forEach((doc, index) => {
-                if (doc.file && doc.document_type) {
-                    formData.append(`documents[${index}][file]`, doc.file);
-                    formData.append(`documents[${index}][document_type]`, doc.document_type);
-                }
-            });
+            isSubmitting.value = true;
 
-            await axios.post(route('supplies.storePO'), formData, {
+            // Submit the form
+            axios.post(route('purchase-orders.store'), formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             })
             .then((response) => {
-                    isSubmitting.value = false;
-                    Swal.fire({
-                        title: "Success!",
-                        text: response.data,
-                        icon: "success"
-                    }).then(() => {
-                        router.visit(route('supplies.index'));
-                    });
-
-                })
-                .catch((error) => {
-                    console.log(error);
-                    
-                    toast.error(error.response?.data || 'Failed to create purchase order');
-                    isSubmitting.value = false;
+                isSubmitting.value = false;
+                Swal.fire({
+                    title: "Success!",
+                    text: response.data,
+                    icon: "success"
+                }).then(() => {
+                    router.visit(route('supplies.index'));
                 });
+            })
+            .catch((error) => {
+                console.log(error);
+                toast.error(error.response?.data || 'Failed to create purchase order');
+                isSubmitting.value = false;
+            });
         }
     });
 }
