@@ -43,35 +43,6 @@
                 </h2>
             </div>
             <div class="flex space-x-2">
-                <!-- Import Excel Button -->
-                <label
-                    for="excel-upload"
-                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 cursor-pointer"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 mr-2"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                        />
-                    </svg>
-                    Import Excel
-                </label>
-                <input
-                    type="file"
-                    id="excel-upload"
-                    accept=".xlsx, .xls"
-                    class="hidden"
-                    @change="handleExcelUpload"
-                />
-
                 <!-- Create Button -->
                 <Link
                     :href="route('products.eligible.create')"
