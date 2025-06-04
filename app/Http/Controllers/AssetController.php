@@ -194,10 +194,11 @@ class AssetController extends Controller
     public function store(Request $request)
     {
         try {
-            // Validate the request
-            $validated = $request->validate([
-                'asset_tag' => 'required|string|max:255',
-                'asset_category_id' => 'required',
+            return DB::transaction(function() use ($request){
+                // Validate the request
+                $validated = $request->validate([
+                    'asset_tag' => 'required|string|max:255',
+                    'asset_category_id' => 'required',
                 'region_id' => 'required',
                 'fund_source_id' => 'required',
                 'asset_location_id' => 'required',
@@ -279,6 +280,7 @@ class AssetController extends Controller
                 'message' => $request->id ? 'Asset updated successfully' : 'Asset created successfully',
                 'asset' => $asset
             ], 200);
+        });
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
