@@ -8,7 +8,7 @@ use App\Models\AssetLocation;
 use App\Models\Region;
 use App\Models\AssetCategory;
 use App\Models\CustodyHistory;
-use App\Models\fundSource;
+use App\Models\FundSource;
 use App\Http\Resources\AssetResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,7 +57,7 @@ class AssetController extends Controller
             'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id'),
             'assetsCount' => $count,
             'regions' => Region::get(),
-            'fundSources' => fundSource::get(),
+            'fundSources' => FundSource::get(),
         ]);
     }
 
