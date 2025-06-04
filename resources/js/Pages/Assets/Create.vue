@@ -636,133 +636,79 @@ function handleDocumentUpload(index, event) {
                 <form @submit.prevent="submit" class="space-y-6">
                     <!-- Region, Location, SubLocation Filters -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Region -->
                         <div>
-                            <InputLabel for="region" value="Region" />
-                            <Multiselect
-                                id="region"
-                                v-model="form.region"
-                                :options="regionOptions"
-                                label="name"
-                                track-by="id"
-                                placeholder="Select Region"
-                                :close-on-select="true"
-                                :clear-on-select="false"
-                                :allow-empty="true"
-                                class="mt-1"
+                            <InputLabel for="asset_tag" value="Asset Tag" />
+                            <TextInput
+                                id="asset_tag"
+                                type="text"
+                                class="mt-1 block w-full"
+                                v-model="form.asset_tag"
+                                required
                             />
                         </div>
-                        <!-- Location -->
-                        <div>
-                            <InputLabel for="asset_location" value="Location" />
-                            <Multiselect
-                                id="asset_location"
-                                v-model="form.asset_location"
-                                :options="locationOptions"
-                                label="name"
-                                track-by="id"
-                                placeholder="Select Location"
-                                :close-on-select="true"
-                                :clear-on-select="false"
-                                :allow-empty="true"
-                                class="mt-1"
-                                @input="onLocationChange"
-                            />
-                        </div>
-                        <!-- SubLocation -->
+
                         <div>
                             <InputLabel
-                                for="sub_location"
-                                value="Sub-Location"
+                                for="asset_category"
+                                value="Asset Category"
                             />
-                            <Multiselect
-                                id="sub_location"
-                                v-model="form.sub_location"
-                                :options="filteredSubLocations"
-                                label="name"
-                                track-by="id"
-                                placeholder="Select Sub-Location"
-                                :close-on-select="true"
-                                :clear-on-select="false"
-                                :allow-empty="true"
-                                class="mt-1"
-                                :disabled="!form.asset_location"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <InputLabel for="asset_tag" value="Asset Tag" />
-                        <TextInput
-                            id="asset_tag"
-                            type="text"
-                            class="mt-1 block w-full"
-                            v-model="form.asset_tag"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <InputLabel
-                            for="asset_category"
-                            value="Asset Category"
-                        />
-                        <div class="w-full">
-                            <Multiselect
-                                v-model="form.asset_category"
-                                :options="categoryOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                placeholder="Select Category"
-                                track-by="id"
-                                label="name"
-                                @select="handleCategorySelect"
-                            >
-                                <template v-slot:option="{ option }">
-                                    <div
-                                        :class="{
-                                            'add-new-option': option.isAddNew,
-                                        }"
-                                    >
-                                        <span
-                                            v-if="option.isAddNew"
-                                            class="text-indigo-600 font-medium"
-                                            >+ Add New Category</span
+                            <div class="w-full">
+                                <Multiselect
+                                    v-model="form.asset_category"
+                                    :options="categoryOptions"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Category"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleCategorySelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div
+                                            :class="{
+                                                'add-new-option': option.isAddNew,
+                                            }"
                                         >
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
+                                            <span
+                                                v-if="option.isAddNew"
+                                                class="text-indigo-600 font-medium"
+                                                >+ Add New Category</span
+                                            >
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
+                        </div>
+
+                        <div>
+                            <InputLabel for="serial_number" value="Serial Number" />
+                            <TextInput
+                                id="serial_number"
+                                type="text"
+                                class="mt-1 block w-full"
+                                v-model="form.serial_number"
+                                required
+                            />
                         </div>
                     </div>
-
-                    <div>
-                        <InputLabel for="serial_number" value="Serial Number" />
-                        <TextInput
-                            id="serial_number"
-                            type="text"
-                            class="mt-1 block w-full"
-                            v-model="form.serial_number"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <InputLabel
-                            for="item_description"
-                            value="Description"
-                        />
-                        <TextInput
-                            id="item_description"
-                            type="text"
-                            class="mt-1 block w-full"
-                            v-model="form.item_description"
-                            required
-                        />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <InputLabel
+                                for="item_description"
+                                value="Description"
+                            />
+                            <TextInput
+                                id="item_description"
+                                type="text"
+                                class="mt-1 block w-full"
+                                v-model="form.item_description"
+                                required
+                            />
+                        </div>
                         <div>
                             <InputLabel
                                 for="person_assigned"
@@ -776,6 +722,19 @@ function handleDocumentUpload(index, event) {
                                 required
                             />
                         </div>
+                        <div>
+                            <InputLabel for="acquisition_date" value="Acquisition Date" />
+                            <TextInput
+                                id="acquisition_date"
+                                type="date"
+                                class="mt-1 block w-full"
+                                v-model="form.acquisition_date"
+                                required
+                            />
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
                         <div>
                             <InputLabel for="region" value="Region" />
                             <Multiselect
@@ -807,9 +766,6 @@ function handleDocumentUpload(index, event) {
                             </Multiselect>
                             <div class="w-full"></div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
                         <div>
                             <InputLabel for="location" value="Location" />
                             <div class="w-full">
@@ -826,31 +782,16 @@ function handleDocumentUpload(index, event) {
                                     @select="handleLocationSelect"
                                 >
                                     <template v-slot:option="{ option }">
-                                        <div
-                                            :class="{
-                                                'add-new-option':
-                                                    option.isAddNew,
-                                            }"
-                                        >
-                                            <span
-                                                v-if="option.isAddNew"
-                                                class="text-indigo-600 font-medium"
-                                                >+ Add New Location</span
-                                            >
-                                            <span v-else>{{
-                                                option.name
-                                            }}</span>
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                            <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
                                 </Multiselect>
                             </div>
                         </div>
-
                         <div>
-                            <InputLabel
-                                for="sub_location"
-                                value="Sub Location"
-                            />
+                            <InputLabel for="sub_location" value="Sub Location" />
                             <div class="w-full">
                                 <Multiselect
                                     v-model="form.sub_location"
@@ -873,20 +814,9 @@ function handleDocumentUpload(index, event) {
                                     @select="handleSubLocationSelect"
                                 >
                                     <template v-slot:option="{ option }">
-                                        <div
-                                            :class="{
-                                                'add-new-option':
-                                                    option.isAddNew,
-                                            }"
-                                        >
-                                            <span
-                                                v-if="option.isAddNew"
-                                                class="text-indigo-600 font-medium"
-                                                >+ Add New Sub-location</span
-                                            >
-                                            <span v-else>{{
-                                                option.name
-                                            }}</span>
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
+                                            <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
                                 </Multiselect>
@@ -894,60 +824,35 @@ function handleDocumentUpload(index, event) {
                         </div>
                     </div>
 
-                    <div>
-                        <InputLabel
-                            for="acquisition_date"
-                            value="Acquisition Date"
-                        />
-                        <TextInput
-                            id="acquisition_date"
-                            type="date"
-                            class="mt-1 block w-full"
-                            v-model="form.acquisition_date"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <InputLabel for="status" value="Status" />
-                        <select
-                            id="status"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            v-model="form.status"
-                            required
-                        >
-                            <option
-                                v-for="status in statuses"
-                                :key="status.value"
-                                :value="status.value"
-                            >
-                                {{ status.label }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <InputLabel
-                            for="original_value"
-                            value="Original Value"
-                        />
-                        <TextInput
-                            id="original_value"
-                            type="number"
-                            step="0.01"
-                            class="mt-1 block w-full"
-                            v-model="form.original_value"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <InputLabel for="fund_source_id" value="Fund Source" />
-                        <div class="w-full">
+                    <!-- Acquisition Date, Status, Original Value, and Fund Source -->
+                    <div class="grid grid-cols-3 gap-3 mt-4">
+                        
+                        <div>
+                            <InputLabel for="status" value="Status" />
+                            <TextInput
+                                id="status"
+                                type="text"
+                                class="mt-1 block w-full"
+                                v-model="form.status"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <InputLabel for="original_value" value="Original Value" />
+                            <TextInput
+                                id="original_value"
+                                type="number"
+                                class="mt-1 block w-full"
+                                v-model="form.original_value"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <InputLabel for="fund_source" value="Fund Source" />
                             <Multiselect
+                                id="fund_source"
                                 v-model="form.fund_source"
-                                :options="fundSourceOptions"
-                                :searchable="true"
+                                :options="props.fundSources"
                                 :close-on-select="true"
                                 :show-labels="false"
                                 :allow-empty="true"
