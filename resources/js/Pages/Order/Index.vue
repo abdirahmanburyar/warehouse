@@ -279,7 +279,7 @@ const formatDate = (date) => {
                     <div class="relative">
                         <input type="date" v-model="dateFrom"
                             class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <label class="absolute -top-5 left-0 text-xs text-gray-500">From Date</label>
+                        <label class="absolute -top-5 left-0 text-xs text-black">From Date</label>
                     </div>
                 </div>
 
@@ -288,7 +288,7 @@ const formatDate = (date) => {
                     <div class="relative">
                         <input type="date" v-model="dateTo"
                             class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <label class="absolute -top-5 left-0 text-xs text-gray-500">To Date</label>
+                        <label class="absolute -top-5 left-0 text-xs text-black">To Date</label>
                     </div>
                 </div>
                 <div class="flex justify-end mt-3 mb-2 w-[200px]">
@@ -308,7 +308,7 @@ const formatDate = (date) => {
                         class="whitespace-nowrap py-4 px-1 border-b-4 font-bold text-lg" :class="[
                             currentStatus === tab.value ?
                                 `border-${tab.color}-500 text-${tab.color}-600` :
-                                'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
                         ]">
                         {{ tab.label }}
                         <span v-if="props.orders.meta?.counts && props.orders.meta.counts[tab.value || 'all']"
@@ -325,31 +325,33 @@ const formatDate = (date) => {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Orders Table -->
             <div class="lg:col-span-10">
-                <div class="bg-white overflow-auto">
-                    <div class="shadow overflow-x-auto border border-black">
-                        <table class="min-w-full divide-y divide-black border-collapse">
-
-                            <thead class="bg-gray-50 border-b border-black">
+                <div>
+                    <div class="overflow-auto">
+                        <table class="w-full">
+                            <thead 
+                            style="background-color: #eef1f8"
+                            class="rounded-t-xl"
+                            >
                                 <tr>
                                     <!-- Checkbox column removed -->
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                         Order Number
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                         Facility
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                         Order Type
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                         Date
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                         Status
                                     </th>
                                     <th
@@ -358,35 +360,35 @@ const formatDate = (date) => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-black">
+                            <tbody class="bg-white">
                                 <tr v-if="orders.data?.length === 0">
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-black">
                                         No orders found
                                     </td>
                                 </tr>
                                 <tr v-for="order in orders.data" :key="order.id" :class="{
                                     'hover:bg-gray-50': true,
-                                    'text-red-500 border-2 border-red-500': order.status === 'rejected'
+                                    'text-red-500': order.status === 'rejected'
                                 }">
                                     <!-- Checkbox cell removed -->
-                                    <td class="px-6 py-4 whitespace-nowrap border-r border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">
                                             <Link :href="route('orders.show', order.id)">{{ order.order_number }}</Link>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border-r border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">{{ order.facility?.name }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                                         {{ order.order_type }}
                                     </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                                         <div class="text-sm text-gray-900">{{ formatDate(order.created_at) }}</div>
-                                        <div class="text-xs text-gray-500">Expected: {{ formatDate(order.expected_date)
+                                        <div class="text-xs text-black">Expected: {{ formatDate(order.expected_date)
                                             }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border-r border-black">
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-1">

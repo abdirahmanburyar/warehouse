@@ -404,14 +404,25 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     });
 
     // Asset Management Routes
-    Route::prefix('assets')->group(function () {
-        Route::get('/', [AssetController::class, 'index'])->middleware(PermissionMiddleware::class . ':asset.view')->name('assets.index');
-        Route::get('/create', [AssetController::class, 'create'])->middleware(PermissionMiddleware::class . ':asset.create')->name('assets.create');
-        Route::post('/', [AssetController::class, 'store'])->middleware(PermissionMiddleware::class . ':asset.create')->name('assets.store');
-        Route::get('/{asset}/edit', [AssetController::class, 'edit'])->middleware(PermissionMiddleware::class . ':asset.edit')->name('assets.edit');
-        Route::put('/{asset}', [AssetController::class, 'update'])->middleware(PermissionMiddleware::class . ':asset.edit')->name('assets.update');
-        Route::delete('/{asset}', [AssetController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':asset.delete')->name('assets.destroy');
-    });
+    Route::controller(AssetController::class)
+        ->prefix('assets-management')
+        ->group(function () {
+            Route::get('/', 'index')->name('assets.index');
+            Route::get('/{id}/show', 'show')->name('assets.show');
+            Route::get('/get-assets', 'getAssets')->name('assets.get');
+            Route::get('/create', 'create')->name('assets.create');
+            Route::post('/', 'store')->name('assets.store');
+            Route::get('/{asset}/edit', 'edit')->name('assets.edit');
+            Route::put('/{asset}', 'update')->name('assets.update');
+            Route::delete('/{asset}', 'destroy')->name('assets.destroy');
+            Route::post('/store-source-fund', 'storeSourceFund')->name('assets.fundsource.store');
+            Route::post('/store-region', 'storeRegion')->name('assets.regions.store');
+            // Asset locations routes
+            Route::get('/locations', 'locationIndex')->name('assets.locations.index');
+            Route::get('/sub-locations', 'subLocationIndex')->name('assets.sub-locations.index');
+            Route::get('/locations/{location}/sub-locations', 'getSubLocations')->name('assets.locations.sub-locations');
+            Route::post('/locations/sub-locations', 'storeSubLocation')->name('assets.locations.sub-locations.store');
+        });
 
     // Inventory Management Routes
     Route::prefix('inventory')->group(function () {

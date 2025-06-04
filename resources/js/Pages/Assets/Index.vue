@@ -1,339 +1,359 @@
 <template>
     <AuthenticatedLayout title="Assets" description="Manage your assets" img="/assets/images/asset.png">
-        <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
-            <!-- Sidebar -->
-            <aside class="w-[300px] bg-white shadow-md flex-shrink-0 flex flex-col h-full">
-                <div class="p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-                    <h2 class="text-lg font-semibold">Filter by Location</h2>
-                    <Link :href="route('assets.create')"
-                        class="bg-indigo-500 text-white hover:bg-indigo-700 rounded-full w-8 h-8 flex items-center justify-center">
-                    +
-                    </Link>
-                </div>
-                <div class="overflow-y-auto flex-1 p-4">
-                    <div v-for="location in props.locations" :key="location.id" class="pl-2">
-                        <div class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer"
-                            @click="toggleLocation(location.id)">
-                            <div class="flex items-center flex-1">
-                                <input type="checkbox" :checked="selectedLocations.includes(location.id)" @click.stop
-                                    @change="toggleLocation(location.id)"
-                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                <span class="ml-2">{{ location.name }}</span>
-                            </div>
-                            <button @click.stop="toggleCollapse(location.id)"
-                                class="ml-2 p-1 hover:bg-gray-200 rounded">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform"
-                                    :class="{ 'rotate-90': !collapsedLocations.includes(location.id) }"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        <!-- Sub-locations -->
-                        <div v-if="location.sub_locations?.length && !collapsedLocations.includes(location.id)"
-                            class="pl-8 space-y-1 mt-1">
-                            <div v-for="sub in location.sub_locations" :key="sub.id"
-                                class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
-                                <input type="checkbox" :checked="selectedSubLocations.includes(sub.id)"
-                                    @change="toggleSubLocation(sub.id, location.id)"
-                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                <span class="ml-2 text-sm">{{ sub.name }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
-                <div class="p-6 flex-1 overflow-auto space-y-6">
-                    <div class="flex justify-end space-x-2">
-                        <Link :href="route('assets.locations.index')"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            Locations
-                        </Link>
-                        <Link :href="route('assets.sub-locations.index')"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            Sub-Locations
-                        </Link>
-                    </div>
-                    <!-- Loading State -->
-                    <div v-if="loading" class="flex justify-center items-center h-32">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    </div>
-
-                    <!-- No Filter Message -->
-                    <div v-else-if="!selectedLocations.length && !selectedSubLocations.length"
-                        class="flex flex-col items-center justify-center h-32 text-gray-500 bg-white rounded-lg shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        <div class="">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Assets</h1>
+                <div class="flex gap-2">
+                    <button
+                        @click="exportToExcel"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
-                        <p class="text-lg">Please select a location to view assets</p>
+                        Export to Excel
+                    </button>
+
+                    <Link 
+                    :href="route('assets.create')"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Asset
+                </Link>
+                </div>
+            </div>
+            <!-- Filters Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-1">
+                <!-- Search Filter -->
+                <input 
+                    type="text" 
+                    v-model="search" 
+                    placeholder="Search assets by tag, serial number, or description" 
+                    class="w-full"
+                >
+                <!-- Region Filter -->
+                <div class="">
+                    <Multiselect
+                        v-model="regionFilter"
+                        :options="regionOptions"
+                        label="name"
+                        track-by="id"
+                        placeholder="Region"
+                        :close-on-select="true"
+                        :clear-on-select="false"
+                        :allow-empty="true"
+                        class=""
+                        @input="onRegionChange"
+                    />
+                </div>
+                <!-- Fund Source Filter -->
+                <div>
+                    <Multiselect
+                        v-model="fundSourceFilter"
+                        :options="props.fundSources"
+                        label="name"
+                        track-by="id"
+                        placeholder="Fund Source"
+                        :close-on-select="true"
+                        :clear-on-select="false"
+                        :allow-empty="true"
+                        class=""
+                    />
+                </div>
+                <!-- Location Filter -->
+                <div class="">
+                    <Multiselect
+                        v-model="locationFilter"
+                        :options="locationOptions"
+                        label="name"
+                        track-by="id"
+                        placeholder="Location"
+                        :close-on-select="true"
+                        :clear-on-select="false"
+                        :allow-empty="true"
+                        class=""
+                        @input="onLocationChange"
+                    />
+                </div>
+                <!-- SubLocation Filter -->
+                <div class="">
+                    <Multiselect
+                        v-model="selectedSubLocations"
+                        :options="filteredSubLocations"
+                        label="name"
+                        track-by="id"
+                        placeholder="Sub Location(s)"
+                        :multiple="true"
+                        :show-labels="false"
+                        :allow-empty="true"
+                        class="text-xs"
+                    />
+                </div>
+            </div>
+            <!-- Create Asset Button -->
+            <!-- Per Page Row -->
+            <div class="flex justify-end mt-2">
+                <div class="flex items-center gap-2">
+                    <select 
+                        v-model="per_page" 
+                        @change="props.filters.page = 1"
+                        class="border border-gray-300 rounded-lg py-2 pl-3 pr-8 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="1">1 per page</option>
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Main content area -->
+            <div class="flex-grow overflow-auto p-4">
+                <!-- Asset cards will go here -->
+                <!-- Dashboard Summary -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                        <span class="text-3xl font-bold text-indigo-600">{{ props.assets.data.length }}</span>
+                        <span class="text-xs text-gray-500 mt-1">Total Assets</span>
                     </div>
-
-                    <!-- Stats -->
-                    <div v-else class="grid grid-cols-3 gap-3">
-                        <!-- Total Assets Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h3 class="text-lg font-semibold mb-2">Total Assets</h3>
-                            <div class="flex items-center justify-between">
-                                <span class="text-3xl font-bold">{{ assets.length }}</span>
-                                <div class="p-3 bg-blue-100 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Active Assets Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h3 class="text-lg font-semibold mb-2">Active Assets</h3>
-                            <div class="flex items-center justify-between">
-                                <span class="text-3xl font-bold">{{ activeAssets }}</span>
-                                <div class="p-3 bg-green-100 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Maintenance Assets Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h3 class="text-lg font-semibold mb-2">In Maintenance</h3>
-                            <div class="flex items-center justify-between">
-                                <span class="text-3xl font-bold">{{ maintenanceAssets }}</span>
-                                <div class="p-3 bg-yellow-100 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                        <span class="text-3xl font-bold text-green-600">{{ props.assets.data.filter(a => a.status === 'in_use').length }}</span>
+                        <span class="text-xs text-gray-500 mt-1">In Use</span>
                     </div>
-
-                    <!-- Assets Table -->
-                    <div class="bg-white rounded-lg shadow overflow-hidden" v-if="filteredAssets">
-                        <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-                            <div class="flex justify-between items-center">
-                                <h2 class="text-lg font-semibold">Asset List</h2>
-                                <button @click="exportToExcel" 
-                                    class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                    Export to Excel
-                                </button>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            ID</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Asset Tag</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Category</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Serial Number</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Description</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Assigned To</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Location</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Sub Location</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Acquisition Date</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Status</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Original Value</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Source Agency</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap">
-                                            Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="(asset, i) in filteredAssets" :key="asset.id" class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ i + 1 }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.asset_tag }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.category.name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.serial_number }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.item_description }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.person_assigned }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.location.name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.sub_location?.name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.acquisition_date }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span :class="{
-                                                'px-2 py-1 rounded-full text-xs font-medium': true,
-                                                'bg-green-100 text-green-800': asset.status === 'active',
-                                                'bg-yellow-100 text-yellow-800': asset.status === 'maintenance',
-                                                'bg-blue-100 text-blue-800': asset.status === 'in_use',
-                                                'bg-red-100 text-red-800': asset.status === 'retired' || asset.status === 'disposed'
-                                            }">
-                                                {{ asset.status }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ formatMoney(asset.original_value) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ asset.source_agency }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                            <button @click="openHistoryModal(asset)"
-                                                class="text-blue-600 hover:text-blue-900 mr-3 text-sm font-medium">
-                                                History
-                                            </button>
-                                            <Link :href="route('assets.edit', asset.id)"
-                                                class="text-indigo-600 hover:text-indigo-900 mr-3 text-sm font-medium">
-                                            Edit
-                                            </Link>
-
-                                            <!-- History Modal -->
-                                            <TransitionRoot appear :show="isHistoryModalOpen" as="template">
-                                                <Dialog as="div" @close="closeHistoryModal" class="relative z-50">
-                                                    <TransitionChild as="template" enter="duration-300 ease-out"
-                                                        enter-from="opacity-0" enter-to="opacity-100"
-                                                        leave="duration-200 ease-in" leave-from="opacity-100"
-                                                        leave-to="opacity-0">
-                                                        <div class="fixed inset-0 bg-black/25" />
-                                                    </TransitionChild>
-
-                                                    <div class="fixed inset-0 overflow-y-auto">
-                                                        <div class="flex min-h-full items-center justify-center p-4">
-                                                            <TransitionChild as="template" enter="duration-300 ease-out"
-                                                                enter-from="opacity-0 scale-95"
-                                                                enter-to="opacity-100 scale-100"
-                                                                leave="duration-200 ease-in"
-                                                                leave-from="opacity-100 scale-100"
-                                                                leave-to="opacity-0 scale-95">
-                                                                <DialogPanel
-                                                                    class="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white p-6 shadow-xl transition-all">
-                                                                    <div class="flex items-center justify-between mb-4">
-                                                                        <DialogTitle as="h3"
-                                                                            class="text-lg font-medium text-gray-900">
-                                                                            Asset History
-                                                                        </DialogTitle>
-                                                                        <button @click="closeHistoryModal"
-                                                                            class="text-gray-400 hover:text-gray-500">
-                                                                            <XMarkIcon class="h-6 w-6" />
-                                                                        </button>
-                                                                    </div>
-
-                                                                    <div class="overflow-hidden">
-                                                                        <div class="max-h-[60vh] overflow-auto">
-                                                                            <table
-                                                                                class="min-w-full divide-y divide-gray-200 relative">
-                                                                                <thead
-                                                                                    class="bg-gray-50 sticky top-0 z-10">
-                                                                                    <tr>
-                                                                                        <th scope="col"
-                                                                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                            Status</th>
-                                                                                        <th scope="col"
-                                                                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                            Custodian</th>
-                                                                                        <th scope="col"
-                                                                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                            Date</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody
-                                                                                    class="bg-white divide-y divide-gray-200">
-                                                                                    <tr v-for="(record, index) in selectedAssetHistory"
-                                                                                        :key="index"
-                                                                                        class="hover:bg-gray-50">
-                                                                                        <td
-                                                                                            class="px-6 py-4 whitespace-nowrap">
-                                                                                            <span :class="{
-                                                                                                'px-2 py-1 rounded-full text-xs font-medium': true,
-                                                                                                'bg-green-100 text-green-800': record.status === 'active',
-                                                                                                'bg-yellow-100 text-yellow-800': record.status === 'maintenance',
-                                                                                                'bg-blue-100 text-blue-800': record.status === 'in_use',
-                                                                                                'bg-red-100 text-red-800': record.status === 'retired' || record.status === 'disposed'
-                                                                                            }">
-                                                                                                {{ record.status }}
-                                                                                            </span>
-                                                                                        </td>
-                                                                                        <td
-                                                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                                                            {{ record.custodian }}
-                                                                                        </td>
-                                                                                        <td
-                                                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                                            {{
-                                                                                            formatDate(record.created_at)
-                                                                                            }}
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-                                                                    </div>
-                                                                </DialogPanel>
-                                                            </TransitionChild>
-                                                        </div>
-                                                    </div>
-                                                </Dialog>
-                                            </TransitionRoot>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                        <span class="text-3xl font-bold text-orange-500">{{ props.assets.data.filter(a => a.status === 'maintenance').length }}</span>
+                        <span class="text-xs text-gray-500 mt-1">Maintenance</span>
                     </div>
                 </div>
-            </main>
+                <!-- Asset Table -->
+                <div class="overflow-auto rounded-xl">
+                  <table class="min-w-full text-left">
+                    <thead class="p-6 text-black" style="background-color:rgb(167, 204, 240)">
+                      <tr>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Tag</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Category</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Serial</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Description</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Assigned</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Location</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Sub-Location</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Status</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Acquired</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Value</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Fund Source</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">Attachments</th>
+                        <th class="px-4 py-2 text-xs font-bold text-gray-600">History</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr v-for="asset in props.assets.data" :key="asset.id" class="hover:bg-gray-50">
+                        <td class="px-4 py-2 whitespace-nowrap font-semibold">{{ asset.asset_tag }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.category?.name }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.serial_number }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap max-w-xs truncate" :title="asset.item_description">{{ asset.item_description }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.person_assigned }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.location?.name }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.sub_location?.name }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                          <span :class="{
+                            'bg-green-100 text-green-700': asset.status === 'in_use',
+                            'bg-orange-100 text-orange-700': asset.status === 'maintenance',
+                            'bg-gray-100 text-gray-600': asset.status !== 'in_use' && asset.status !== 'maintenance'
+                          }" class="px-2 py-1 rounded-full text-xs font-bold">
+                            {{ asset.status.replace('_', ' ').toUpperCase() }}
+                          </span>
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-xs">{{ formatDate(asset.acquisition_date) }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-right font-semibold text-indigo-600">${{ parseFloat(asset.original_value).toLocaleString() }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-right font-semibold text-indigo-600">{{ asset.fund_source?.name || 'N/A' }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-center">
+                          <button v-if="asset.attachments && asset.attachments.length" @click="openAttachmentsModal(asset.attachments)" class="text-green-600 hover:underline text-xs">
+                            {{ asset.attachments.length }} file(s)
+                          </button>
+                          <span v-else class="text-gray-400 text-xs">None</span>
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-center">
+                          <button v-if="asset.history && asset.history.length" @click="openHistoryModal(asset)" class="text-indigo-600 hover:underline text-xs">
+                            {{ asset.history.length }} entr{{ asset.history.length === 1 ? 'y' : 'ies' }}
+                          </button>
+                          <span v-else class="text-gray-400 text-xs">None</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+            
+            <!-- Pagination footer -->
+            <div class="flex justify-end mb-5 mt-3">
+                <TailwindPagination
+                    :data="props.assets"
+                    @pagination-change-page="getResults"
+                    :limit="2"
+                />
+            </div>
         </div>
+        <!-- Attachments Modal -->
+        <TransitionRoot as="template" :show="isAttachmentsModalOpen">
+          <Dialog as="div" class="fixed z-[99] inset-0 overflow-y-auto" @close="closeAttachmentsModal">
+            <div class="flex items-center justify-center min-h-screen p-4 text-center">
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
+                leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0"
+              >
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" />
+              </TransitionChild>
+              <!-- Modal panel -->
+              <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <DialogPanel class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                  <div class="flex justify-between items-center mb-4">
+                    <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">Asset Attachments</DialogTitle>
+                    <button @click="closeAttachmentsModal" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div v-if="selectedAttachments.length">
+                    <ul class="divide-y divide-gray-200">
+                      <li v-for="file in selectedAttachments" :key="file.id" class="py-2 flex items-center justify-between">
+                        <span class="truncate max-w-xs" :title="file.file">{{ file.type || 'Attachment' }}</span>
+                        <a :href="'/' + file.file" target="_blank" class="ml-4 px-3 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold">View</a>
+                      </li>
+                    </ul>
+                  </div>
+                  <div v-else class="text-gray-400 text-sm">No attachments found.</div>
+                </DialogPanel>
+              </TransitionChild>
+            </div>
+          </Dialog>
+        </TransitionRoot>
+        <!-- History Modal -->
+        <TransitionRoot as="template" :show="isHistoryModalOpen">
+          <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="closeHistoryModal">
+            <div class="flex items-center justify-center min-h-screen px-0">
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300"
+                enter-from="opacity-0"
+                enter-to="opacity-100"
+                leave="ease-in duration-200"
+                leave-from="opacity-100"
+                leave-to="opacity-0"
+              >
+                <DialogOverlay class="fixed inset-0 bg-black bg-opacity-40 transition-opacity" />
+              </TransitionChild>
+
+              <span class="inline-block align-middle h-screen" aria-hidden="true">&#8203;</span>
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300"
+                enter-from="opacity-0 scale-95"
+                enter-to="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leave-from="opacity-100 scale-100"
+                leave-to="opacity-0 scale-95"
+              >
+                <div
+                  class="fixed inset-0 w-screen h-screen p-0 m-0 bg-white shadow-xl z-50 flex flex-col rounded-none"
+                  style="max-width:100vw;max-height:100vh;"
+                >
+                  <div class="flex justify-between items-center mb-4">
+                    <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">Asset History</DialogTitle>
+                    <button @click="closeHistoryModal" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div v-if="selectedAssetHistory.length">
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full text-left text-xs border border-black">
+                        <thead>
+                          <tr>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Date</th>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Custodian</th>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Status</th>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Assigned At</th>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Returned At</th>
+                            <th class="px-2 py-1 border border-black font-bold text-left">Status Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="entry in selectedAssetHistory" :key="entry.id">
+                            <td class="px-2 py-1 border border-black text-left">{{ formatDate(entry.created_at) }}</td>
+                            <td class="px-2 py-1 border border-black text-left">{{ entry.custodian }}</td>
+                            <td class="px-2 py-1 border border-black text-left">
+                              <span :class="{
+                                'bg-green-100 text-green-700': entry.status === 'in_use',
+                                'bg-orange-100 text-orange-700': entry.status === 'maintenance',
+                                'bg-gray-100 text-gray-600': entry.status !== 'in_use' && entry.status !== 'maintenance'
+                              }" class="px-2 py-1 rounded-full text-xs font-bold">
+                                {{ entry.status.replace('_', ' ').toUpperCase() }}
+                              </span>
+                            </td>
+                            <td class="px-2 py-1 border border-black text-left">{{ entry.assigned_at ? moment(entry.assigned_at).format('DD/MM/YYYY HH:mm') : '-' }}</td>
+                            <td class="px-2 py-1 border border-black text-left">{{ entry.returned_at || '-' }}</td>
+                            <td class="px-2 py-1 border border-black text-left">{{ entry.status_notes }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div v-else class="text-gray-400 text-sm">No history found.</div>
+                </div>
+              </TransitionChild>
+            </div>
+          </Dialog>
+        </TransitionRoot>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
+
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { TailwindPagination } from "laravel-vue-pagination";
 import { Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted } from 'vue';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import moment from 'moment';
 
 const props = defineProps({
     locations: {
         type: Array,
         required: true
+    },
+    assets: {
+        type: Object,
+        required: true
+    },
+    filters: {
+        type: Object
+    },
+    regions: {
+        type: Array,
+        required: true
+    },
+    fundSources: {
+        type: Array,
+        required: true
     }
 });
+
+function formatDate(date){
+    return moment(date).format('DD/MM/YYYY');
+}
 
 const assets = ref([]);
 const loading = ref(false);
@@ -343,33 +363,135 @@ const collapsedLocations = ref([]);
 const isHistoryModalOpen = ref(false);
 const selectedAssetHistory = ref([]);
 
-// Computed property for filtered assets
-const filteredAssets = computed(() => assets.value);
+function openHistoryModal(asset) {
+    selectedAssetHistory.value = [...asset.history].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    isHistoryModalOpen.value = true;
+}
+function closeHistoryModal() {
+    isHistoryModalOpen.value = false;
+    selectedAssetHistory.value = [];
+}
+const isAttachmentsModalOpen = ref(false);
+const selectedAttachments = ref([]);
 
-// Function to fetch assets
-const fetchAssets = async () => {
-    // Only fetch if filters are selected
-    if (!selectedLocations.value.length && !selectedSubLocations.value.length) {
-        assets.value = [];
-        return;
-    }
+function openAttachmentsModal(attachments) {
+    selectedAttachments.value = attachments;
+    isAttachmentsModalOpen.value = true;
+}
+function closeAttachmentsModal() {
+    isAttachmentsModalOpen.value = false;
+    selectedAttachments.value = [];
+}
 
+const search = ref(props.filters.search);
+const per_page = ref(props.filters.per_page);
+
+// Region, Location, SubLocation filter state
+const regionFilter = ref(null);
+const locationFilter = ref(null);
+const subLocationFilter = ref(null);
+const subLocationOptions = ref([]);
+const fundSourceFilter = ref(null);
+
+const regionOptions = computed(() => props.regions || []);
+const locationOptions = computed(() => props.locations || []);
+// subLocationOptions is now a ref, loaded dynamically
+
+const filteredSubLocations = computed(() => subLocationOptions.value);
+
+function onRegionChange(selected) {
+    locationFilter.value = null;
+    subLocationFilter.value = null;
+    subLocationOptions.value = [];
+}
+
+async function onLocationChange(selected) {
+    subLocationFilter.value = null;
+    subLocationOptions.value = [];
+    if (!selected) return;
+    const locationId = selected.id || selected;
     try {
-        loading.value = true;
-        const params = {
-            locations: selectedLocations.value,
-            sub_locations: selectedSubLocations.value
-        };
-
-        const response = await axios.get(route('assets.get'), { params });
-        assets.value = response.data;
+        const response = await axios.get(route('assets.locations.sub-locations', { location: locationId }));
+        subLocationOptions.value = response.data;
     } catch (error) {
-        console.error('Error fetching assets:', error);
-        assets.value = [];
-    } finally {
-        loading.value = false;
+        subLocationOptions.value = [];
     }
-};
+}
+
+// Computed property for filtered assets
+const filteredAssets = computed(() => {
+    return assets.value.filter(asset => {
+        const regionMatch = !regionFilter.value || asset.region_id === regionFilter.value.id;
+        const locationMatch = !locationFilter.value || asset.asset_location_id === locationFilter.value.id;
+        const subLocationMatch = !subLocationFilter.value || asset.sub_location_id === subLocationFilter.value.id;
+        const searchMatch = !search.value || [asset.asset_tag, asset.serial_number, asset.item_description].some(
+            field => field && field.toLowerCase().includes(search.value.toLowerCase())
+        );
+        return regionMatch && locationMatch && subLocationMatch && searchMatch;
+    });
+});
+
+function getResults(page = 1){
+    props.filters.page = page;
+}
+
+// Watch for location change to load sub-locations
+watch(
+  () => locationFilter.value,
+  async (newLocation) => {
+    if (newLocation && newLocation.id) {
+      // Fetch sub-locations for the selected location
+      try {
+        const response = await axios.get(route('assets.locations.sub-locations', newLocation.id));
+        subLocationOptions.value = response.data;
+      } catch (e) {
+        subLocationOptions.value = [];
+      }
+    } else {
+      subLocationOptions.value = [];
+      subLocationFilter.value = null;
+    }
+  },
+  { immediate: true }
+);
+
+watch([
+    () => props.filters.page,
+    () => search.value,
+    () => per_page.value,
+    () => regionFilter.value ? regionFilter.value.id : null,
+    () => locationFilter.value ? locationFilter.value.id : null,
+    () => fundSourceFilter.value ? fundSourceFilter.value.id : null
+], () => {
+    reloadAssets();
+})
+
+// Watch for changes in selectedSubLocations and reload assets
+watch(
+  selectedSubLocations,
+  () => {
+    reloadAssets();
+  },
+  { deep: true }
+);
+
+function reloadAssets(){
+    const query = {};
+    if(props.filters.page) query.page = props.filters.page;
+    if (search.value) query.search = search.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (regionFilter.value && regionFilter.value.id) query.region_id = regionFilter.value.id;
+    if (locationFilter.value && locationFilter.value.id) query.location_id = locationFilter.value.id;
+    if (selectedSubLocations.value && selectedSubLocations.value.length) {
+        query['sub_location_ids'] = selectedSubLocations.value.map(x => x.id);
+    }
+    if (fundSourceFilter.value && fundSourceFilter.value.id) query.fund_source_id = fundSourceFilter.value.id;
+    router.get(route('assets.index'), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['assets', 'locations']
+    });
+}
 
 // Toggle location selection
 const toggleLocation = (locationId) => {
@@ -451,36 +573,16 @@ const totalAssets = computed(() => assets.value.length);
 const activeAssets = computed(() => assets.value.filter(asset => asset.status === 'in_use').length);
 const maintenanceAssets = computed(() => assets.value.filter(asset => asset.status === 'maintenance').length);
 
-// Modal functions
-const openHistoryModal = (asset) => {
-    selectedAssetHistory.value = [...asset.history].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    isHistoryModalOpen.value = true;
-};
-
-const closeHistoryModal = () => {
-    isHistoryModalOpen.value = false;
-    selectedAssetHistory.value = [];
-};
-
-const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-    }).format(date);
-};
-
 // Excel export function
 const exportToExcel = () => {
     // Prepare the data
-    const exportData = assets.value.map(asset => ({
+    const exportData = props.assets.data.map(asset => ({
         'Asset Tag': asset.asset_tag,
         'Category': asset.category.name,
         'Serial Number': asset.serial_number,
         'Description': asset.item_description,
         'Assigned To': asset.person_assigned,
+        'Region': asset.region?.name,
         'Location': asset.location.name,
         'Sub Location': asset.sub_location?.name || '',
         'Acquisition Date': formatDate(asset.acquisition_date),
@@ -502,12 +604,4 @@ const exportToExcel = () => {
     XLSX.writeFile(workbook, fileName);
 };
 
-// Watch for changes in location and sub-location selections
-const debouncedFilter = debounce(() => {
-    fetchAssets();
-}, 300);
-
-watch([selectedLocations, selectedSubLocations], debouncedFilter, { deep: true });
-
-// No initial fetch since we want to wait for filter selection
 </script>

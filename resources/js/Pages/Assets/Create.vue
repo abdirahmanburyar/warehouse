@@ -14,8 +14,11 @@ import { ref, onMounted, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import moment from 'moment';
 
 const toast = useToast();
+const processing = ref(false);
+const isSubmitting = ref(false);
 
 const props = defineProps({
     locations: {
@@ -26,11 +29,23 @@ const props = defineProps({
         type: Array,
         required: true,
         default: () => []
+    },
+    fundSources: {
+        type: Array,
+        required: true,
+        default: () => []
+    },
+    regions: {
+        type: Array,
+        required: true,
+        default: () => []
     }
 });
 
 const locationOptions = ref([]);
 const categoryOptions = ref([]);
+const fundSourceOptions = ref([]);
+const regionOptions = ref([]);
 
 watch(() => props.categories, (newCategories) => {
     categoryOptions.value = [{ id: 'new', name: '+ Add New Category', isAddNew: true }, ...newCategories];
@@ -40,22 +55,56 @@ watch(() => props.locations, (newLocations) => {
     locationOptions.value = [{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...newLocations];
 }, { immediate: true, deep: true });
 
+watch(() => props.fundSources, (newFundSources) => {
+    fundSourceOptions.value = [{ id: 'new', name: '+ Add New Fund Source', isAddNew: true }, ...newFundSources];
+}, { immediate: true, deep: true });
+
+watch(() => props.regions, (newRegions) => {
+    regionOptions.value = [{ id: 'new', name: '+ Add New Region', isAddNew: true }, ...newRegions];
+}, { immediate: true, deep: true });
+
+
 
 const form = ref({
     asset_tag: '',
     asset_category_id: null,
+    asset_category: null,
     serial_number: '',
     item_description: '',
     person_assigned: '',
     asset_location_id: '',
+    asset_location: null,
     sub_location_id: '',
+    sub_location: null,
     acquisition_date: '',
+    has_warranty: false,
+    asset_warranty_start: '',
+    asset_warranty_end: '',
+    has_documents: false,
     status: 'active',
     original_value: '',
-    source_agency: ''
+    fund_source_id: '',
+    region_id: '',
+    region: null,
+    fund_source: null,
+    documents: [{ type: '', file: '' }]
 });
 
 const subLocations = ref([]);
+
+const filteredSubLocations = computed(() => {
+    if (!form.value.asset_location) return [];
+    // If asset_location is a Multiselect object, use its id
+    const locId = form.value.asset_location.id || form.value.asset_location;
+    return subLocations.value.filter(sub => sub.location_id === locId);
+});
+
+function onLocationChange(selected) {
+    // Clear sub-location if location changes
+    form.value.sub_location = null;
+    // If you want to trigger loading sublocations via API, uncomment next line:
+    // loadSubLocations(selected ? selected.id : null);
+}
 
 const loadSubLocations = async (locationId) => {
     if (!locationId) {
@@ -64,11 +113,11 @@ const loadSubLocations = async (locationId) => {
         return;
     }
     try {
-        const response = await axios.get(route('assets.locations.sub-locations', locationId));
+        const response = await axios.get(route('assets.locations.sub-locations', { location: locationId }));
         subLocations.value = response.data;
     } catch (error) {
         console.log(error);
-        toast.error(error.response.data);
+        toast.error('Error loading sub-locations');
     }
 };
 
@@ -84,15 +133,21 @@ const statuses = ref([
     { value: 'disposed', label: 'Disposed' }
 ]);
 
-const processing = ref(false);
 const showLocationModal = ref(false);
 const showSubLocationModal = ref(false);
 const newLocation = ref('');
 const newSubLocation = ref('');
 const newCategory = ref('');
+const newRegion = ref('');
+const newFundSource = ref('');
 const showCategoryModal = ref(false);
+const showFundSourceModal = ref(false);
+const showRegionModal = ref(false);
+const isNewRegion = ref(false);
 const isNewCategory = ref(false);
+const isNewFundSource = ref(false);
 const selectedLocationForSub = ref(null);
+const warrantyDateError = ref('');
 
 const handleLocationSelect = (selected) => {
     if (!selected) {
@@ -100,39 +155,48 @@ const handleLocationSelect = (selected) => {
         form.value.asset_location_id = null;
         selectedLocationForSub.value = null;
         form.value.sub_location_id = null;
+        form.value.sub_location = null;
         subLocations.value = [];
         return;
     }
 
     if (selected.isAddNew) {
         // Show the modal and keep the previous selection
-        const currentSelection = form.value.asset_location_id;
+        const currentSelection = form.value.asset_location;
         showLocationModal.value = true;
-        form.value.asset_location_id = currentSelection;
+        form.value.asset_location = currentSelection;
+        form.value.asset_location_id = currentSelection.id;
         return;
     }
 
     // Handle normal selection
-    form.value.asset_location_id = selected;
+    form.value.asset_location_id = selected.id;
+    form.value.asset_location = selected;
     selectedLocationForSub.value = selected.id;
     loadSubLocations(selected.id);
     form.value.sub_location_id = null;
+    form.value.sub_location = null;
 };
 
 const handleSubLocationSelect = (selected) => {
     if (!selected) {
         form.value.sub_location_id = null;
+        form.value.sub_location = null;
         return;
     }
 
     if (selected.isAddNew) {
-        selectedLocationForSub.value = form.value.asset_location_id.id;
+        const currentSelection = form.value.asset_location;
         showSubLocationModal.value = true;
+        form.value.asset_location = currentSelection;
+        form.value.asset_location_id = currentSelection.id;
         return;
     }
 
-    form.value.sub_location_id = selected;
+    form.value.sub_location_id = selected.id;
+    form.value.sub_location = selected;
 };
+
 const isNewLocation = ref(false);
 const createLocation = async () => {
     if (!newLocation.value) return;
@@ -164,20 +228,96 @@ const createLocation = async () => {
     }
 };
 
+const createRegion = async () => {
+    if (!newRegion.value) {
+        toast.error('Please enter a region name');
+        return;
+    }
+
+    isNewRegion.value = true;
+
+    try {
+        const response = await axios.post(route('assets.regions.store'), {
+            name: newRegion.value
+        });
+
+        isNewRegion.value = false;
+
+        const newRegionData = response.data;
+        
+        // Add the new region to regionOptions
+        regionOptions.value = [...regionOptions.value.filter(reg => !reg.isAddNew), newRegionData, { id: 'new', name: '+ Add New Region', isAddNew: true }];
+        
+        // Update the form with the new region
+        form.value.region_id = newRegionData;
+
+        // Clear modal data
+        newRegion.value = '';
+        showRegionModal.value = false;
+
+        toast.success('Region created successfully');
+    } catch (error) {
+        isNewRegion.value = false;
+        console.error('Error creating region:', error);
+        toast.error(error.response?.data || 'Error creating region');
+    } finally {
+        isNewRegion.value = false;
+    }
+};
+
 const handleCategorySelect = (selected) => {
     if (!selected) {
         form.value.asset_category_id = null;
+        form.value.asset_category = null;
+        return;
+    }
+    
+    if (selected.isAddNew) {
+        const currentSelection = form.value.asset_category;
+        showCategoryModal.value = true;
+        form.value.asset_category_id = currentSelection.id;
+        form.value.asset_category = currentSelection;
+        return;
+    }
+
+    form.value.asset_category_id = selected.id;
+    form.value.asset_category = selected;
+};
+
+const handleRegionSelect = (selected) => {
+    if (!selected) {
+        form.value.region_id = null;
+        form.value.region = null;
         return;
     }
 
     if (selected.isAddNew) {
-        const currentSelection = form.value.asset_category_id;
-        showCategoryModal.value = true;
-        form.value.asset_category_id = currentSelection;
+        const currentSelection = form.value.region;
+        showRegionModal.value = true;
+        form.value.region_id = currentSelection.id;
         return;
     }
 
-    form.value.asset_category_id = selected;
+    form.value.region_id = selected.id;
+    form.value.region = selected;
+};
+
+const handleFundSourceSelect = (selected) => {
+    if (!selected) {
+        form.value.fund_source_id = null;
+        form.value.fund_source = null;
+        return;
+    }
+
+    if (selected.isAddNew) {
+        const currentSelection = form.value.fund_source;
+        showFundSourceModal.value = true;
+        form.value.fund_source_id = currentSelection.id;
+        return;
+    }
+
+    form.value.fund_source_id = selected.id;
+    form.value.fund_source = selected;
 };
 
 const createCategory = async () => {
@@ -210,6 +350,62 @@ const createCategory = async () => {
         toast.error(error.response?.data || 'Error creating category');
     } finally {
         isNewCategory.value = false;
+    }
+};
+
+const validateWarrantyDates = () => {
+    warrantyDateError.value = '';
+    
+    if (form.value.has_warranty && form.value.asset_warranty_start && form.value.asset_warranty_end) {
+        const startDate = moment(form.value.asset_warranty_start);
+        const endDate = moment(form.value.asset_warranty_end);
+        
+        if (!startDate.isValid() || !endDate.isValid()) {
+            warrantyDateError.value = 'Invalid date format';
+            return false;
+        }
+        
+        if (endDate.isBefore(startDate)) {
+            warrantyDateError.value = 'Warranty end date must be equal to or after start date';
+            return false;
+        }
+    }
+    return true;
+};
+
+const createFundSource = async () => {
+    if (!newFundSource.value) {
+        toast.error('Please enter a fund source name');
+        return;
+    }
+
+    isNewFundSource.value = true;
+    try {
+        const response = await axios.post(route('assets.fund-sources.store'), {
+            name: newFundSource.value
+        });
+
+        isNewFundSource.value = false;
+
+        const newFundSourceData = response.data;
+
+        // Add the new fund source to fundSourceOptions
+        fundSourceOptions.value = [...fundSourceOptions.value.filter(fs => !fs.isAddNew), newFundSourceData, { id: 'new', name: '+ Add New Fund Source', isAddNew: true }];
+
+        // Update the form with the new fund source
+        form.value.fund_source_id = newFundSourceData;
+
+        // Clear modal data
+        newFundSource.value = '';
+        showFundSourceModal.value = false;
+
+        toast.success('Fund Source created successfully');
+    } catch (error) {
+        isNewFundSource.value = false;
+        console.error('Error creating fund source:', error);
+        toast.error(error.response?.data || 'Error creating fund source');
+    } finally {
+        isNewFundSource.value = false;
     }
 };
 
@@ -251,28 +447,119 @@ const createSubLocation = async () => {
 };
 
 const submit = async () => {
+    isSubmitting.value = true;
+    
+    // Debug location values
+    console.log('Location values before submit:', {
+        asset_location_id: form.value.asset_location_id,
+        asset_location: form.value.asset_location,
+        sub_location_id: form.value.sub_location_id,
+        sub_location: form.value.sub_location
+    });
+    
+    // Validate warranty dates if has_warranty is checked
+    if (form.value.has_warranty) {
+        if (!validateWarrantyDates()) {
+            isSubmitting.value = false;
+            toast.error('Please fix the warranty date issues before submitting');
+            return;
+        }
+    }
     processing.value = true;
-    form.value.asset_category_id = form.value.asset_category_id?.id;
-    form.value.asset_location_id = form.value.asset_location_id?.id;
-    form.value.sub_location_id = form.value.sub_location_id?.id;
-    await axios.post(route('assets.store'), form.value)
-        .then((response) => {
-            processing.value = false;
-            Swal.fire({
-                title: 'Success!',
-                text: 'Asset created successfully',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                router.get(route('assets.index'));
-            });
+    
+    // Create a FormData object to handle file uploads
+    const formData = new FormData();
+    
+    // Add all form fields to FormData
+    Object.keys(form.value).forEach(key => {
+        // Skip documents as we'll handle them separately
+        if (key !== 'documents') {
+            // Handle nested objects (like asset_category, region, etc.)
+            if (typeof form.value[key] === 'object' && form.value[key] !== null) {
+                formData.append(key, form.value[key].id);
+            } else if (typeof form.value[key] === 'boolean') {
+                // Convert boolean to 1/0 for PHP
+                formData.append(key, form.value[key] ? '1' : '0');
+            } else {
+                formData.append(key, form.value[key]);
+            }
+        }
+    });
+    
+    // Handle documents if has_documents is true
+    if (form.value.has_documents) {
+        form.value.documents.forEach((doc, index) => {
+            if (doc.type) {
+                formData.append(`documents[${index}][type]`, doc.type);
+            }
+            if (doc.file instanceof File) {
+                formData.append(`documents[${index}][file]`, doc.file);
+            }
+        });
+    }
 
-        })
-        .catch((error) => {
-            processing.value = false;
-            toast.error(error.response?.data || 'Error creating asset');
-        })
+    formData.append('asset_tag', form.value.asset_tag);
+    formData.append('asset_category_id', form.value.asset_category_id);
+    formData.append('serial_number', form.value.serial_number);
+    formData.append('item_description', form.value.item_description);
+    formData.append('region_id', form.value.region_id);
+    formData.append('fund_source_id', form.value.fund_source_id);
+    
+    // Ensure location ID is properly set (use the ID from the object if available)
+    const locationId = form.value.asset_location_id || (form.value.asset_location ? form.value.asset_location.id : '');
+    formData.append('asset_location_id', locationId);
+    
+    // Ensure sub-location ID is properly set
+    const subLocationId = form.value.sub_location_id || (form.value.sub_location ? form.value.sub_location.id : '');
+    formData.append('sub_location_id', subLocationId);
+    formData.append('person_assigned', form.value.person_assigned);
+    formData.append('acquisition_date', form.value.acquisition_date);
+    formData.append('status', form.value.status);
+    formData.append('original_value', form.value.original_value);
+    // Convert boolean values to 0/1 format for Laravel
+    formData.append('has_warranty', form.value.has_warranty ? '1' : '0');
+    formData.append('has_documents', form.value.has_documents ? '1' : '0');
+    formData.append('asset_warranty_start', form.value.asset_warranty_start);
+    formData.append('asset_warranty_end', form.value.asset_warranty_end);
+
+    
+    try {
+        const response = await axios.post(route('assets.store'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        processing.value = false;
+        isSubmitting.value = false;
+        Swal.fire({
+            title: 'Success!',
+            text: 'Asset created successfully',
+            icon: 'success',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            router.get(route('assets.index'));
+        });
+
+    } catch (error) {
+        processing.value = false;
+        isSubmitting.value = false;
+        console.error('Error creating asset:', error);
+        toast.error(error.response?.data?.message || 'Error creating asset');
+    }
 };
+
+function addDocument() {
+    form.value.documents.push({ type: '', file: '' });
+}
+
+function removeDocument(index) {
+    form.value.documents.splice(index, 1);
+}
+
+function handleDocumentUpload(index, event) {
+    form.value.documents[index].file = event.target.files[0];
+}
 </script>
 
 <template>
@@ -284,7 +571,59 @@ const submit = async () => {
                 <h2 class="text-2xl font-semibold mb-6">Create New Asset</h2>
 
                 <form @submit.prevent="submit" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Region, Location, SubLocation Filters -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Region -->
+                        <div>
+                            <InputLabel for="region" value="Region" />
+                            <Multiselect
+                                id="region"
+                                v-model="form.region"
+                                :options="regionOptions"
+                                label="name"
+                                track-by="id"
+                                placeholder="Select Region"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                                class="mt-1"
+                            />
+                        </div>
+                        <!-- Location -->
+                        <div>
+                            <InputLabel for="asset_location" value="Location" />
+                            <Multiselect
+                                id="asset_location"
+                                v-model="form.asset_location"
+                                :options="locationOptions"
+                                label="name"
+                                track-by="id"
+                                placeholder="Select Location"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                                class="mt-1"
+                                @input="onLocationChange"
+                            />
+                        </div>
+                        <!-- SubLocation -->
+                        <div>
+                            <InputLabel for="sub_location" value="Sub-Location" />
+                            <Multiselect
+                                id="sub_location"
+                                v-model="form.sub_location"
+                                :options="filteredSubLocations"
+                                label="name"
+                                track-by="id"
+                                placeholder="Select Sub-Location"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                                class="mt-1"
+                                :disabled="!form.asset_location"
+                            />
+                        </div>
+                    </div>
                         <div>
                             <InputLabel for="asset_tag" value="Asset Tag" />
                             <TextInput id="asset_tag" type="text" class="mt-1 block w-full" v-model="form.asset_tag"
@@ -294,7 +633,7 @@ const submit = async () => {
                         <div>
                             <InputLabel for="asset_category" value="Asset Category" />
                             <div class="w-full">
-                                <Multiselect v-model="form.asset_category_id" :value="form.asset_category_id"
+                                <Multiselect v-model="form.asset_category"
                                     :options="categoryOptions" :searchable="true" :close-on-select="true"
                                     :show-labels="false" :allow-empty="true" placeholder="Select Category" track-by="id"
                                     label="name" @select="handleCategorySelect">
@@ -321,17 +660,36 @@ const submit = async () => {
                                 v-model="form.item_description" required />
                         </div>
 
-                        <div>
-                            <InputLabel for="person_assigned" value="Person Assigned" />
-                            <TextInput id="person_assigned" type="text" class="mt-1 block w-full"
-                                v-model="form.person_assigned" required />
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <InputLabel for="person_assigned" value="Person Assigned" />
+                                <TextInput id="person_assigned" type="text" class="mt-1 w-full"
+                                    v-model="form.person_assigned" required />
+                            </div>
+                            <div>
+                                <InputLabel for="region" value="Region" />
+                                <Multiselect v-model="form.region"
+                                    :options="regionOptions" :searchable="true" :close-on-select="true"
+                                    :show-labels="false" :allow-empty="true" placeholder="Select Region" track-by="id"
+                                    label="name" @select="handleRegionSelect">
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                                New Region</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                                <div class="w-full">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <InputLabel for="location" value="Location" />
                                 <div class="w-full">
-                                    <Multiselect v-model="form.asset_location_id" :value="form.asset_location_id"
+                                    <Multiselect v-model="form.asset_location"
                                         :options="locationOptions" :searchable="true" :close-on-select="true"
                                         :show-labels="false" :allow-empty="true" placeholder="Select Location"
                                         track-by="id" label="name" @select="handleLocationSelect">
@@ -349,7 +707,7 @@ const submit = async () => {
                             <div>
                                 <InputLabel for="sub_location" value="Sub Location" />
                                 <div class="w-full">
-                                    <Multiselect v-model="form.sub_location_id"
+                                    <Multiselect v-model="form.sub_location"
                                         :options="[...subLocations, { id: 'new', name: '+ Add New Sub-location', isAddNew: true }]"
                                         :searchable="true" :close-on-select="true" :show-labels="false"
                                         :allow-empty="true" placeholder="Select Sub-location" track-by="id" label="name"
@@ -390,12 +748,57 @@ const submit = async () => {
                         </div>
 
                         <div>
-                            <InputLabel for="source_agency" value="Source Agency" />
-                            <TextInput id="source_agency" type="text" class="mt-1 block w-full"
-                                v-model="form.source_agency" required />
+                            <InputLabel for="fund_source_id" value="Fund Source" />
+                            <div class="w-full">
+                                <Multiselect v-model="form.fund_source" :options="fundSourceOptions" :searchable="true" :close-on-select="true"
+                                    :show-labels="false" :allow-empty="true" placeholder="Select Fund Source" track-by="id"
+                                    label="name" @select="handleFundSourceSelect">
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                                New Fund Source</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
                         </div>
                     </div>
-
+                    <div>
+                        <input type="checkbox" v-model="form.has_warranty" id="has_warranty" class="mt-1" />
+                        <InputLabel for="has_warranty" value="Has Warrantee" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4" v-if="form.has_warranty">
+                        <div>
+                            <InputLabel for="asset_warranty_start" value="Start Date" />
+                            <input type="date" v-model="form.asset_warranty_start" id="asset_warranty_start" class="mt-1 w-full" @change="validateWarrantyDates" />
+                        </div>
+                        <div>
+                            <InputLabel for="asset_warranty_end" value="End Date" />
+                            <input type="date" v-model="form.asset_warranty_end" id="asset_warranty_end" class="mt-1 w-full" @change="validateWarrantyDates" />
+                            <div v-if="warrantyDateError" class="text-red-500 text-sm mt-1">{{ warrantyDateError }}</div>
+                        </div>
+                    </div>
+                    <div>   
+                        <input type="checkbox" v-model="form.has_documents" id="has_documents" class="mt-1" />
+                        <InputLabel for="has_documents" value="Has Documents" />
+                    </div>
+                    <div class="grid grid-cols-3 gap-4" v-if="form.has_documents" v-for="(document, index) in form.documents">
+                        <div>
+                            <InputLabel for="type" value="Document Type" />
+                            <input type="text" v-model="document.type" id="type" class="mt-1 w-full"
+                            placeholder="Document Type, e.g. Warranty, Receipt"
+                             />
+                        </div>
+                        <div>
+                            <InputLabel for="file" value="Document Date" />
+                            <input type="file" accept=".pdf" @change="(e) => handleDocumentUpload(index, e)" id="file" class="mt-1 w-full"  />
+                        </div>
+                        <div>
+                            <button @click.prevent="removeDocument(index)" class="mt-4">Remove document</button>
+                        </div>
+                    </div>
+                    <button @click.prevent="addDocument" class="mt-4">Add document</button>
                     <div class="flex items-center justify-end mt-6">
                         <Link :href="route('assets.index')" :disabled="processing">Exit</Link>
                         <PrimaryButton class="ml-4" :disabled="processing">
@@ -405,6 +808,7 @@ const submit = async () => {
                 </form>
             </div>
         </div>
+
         <!-- New Location Modal -->
         <Modal :show="showLocationModal" @close="showLocationModal = false">
             <div class="p-6">
@@ -457,5 +861,41 @@ const submit = async () => {
                 </div>
             </div>
         </Modal>
+
+
+         <!-- New Category Modal -->
+         <Modal :show="showRegionModal" @close="showRegionModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Region</h2>
+                <div class="mt-6">
+                    <InputLabel for="new_region" value="Region Name" />
+                    <TextInput id="new_region" type="text" class="mt-1 block w-full" v-model="newRegion" required />
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showRegionModal = false" :disabled="isNewRegion">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewRegion" @click="createRegion">{{ isNewRegion ? "Waiting..." :
+                        "Create Region" }}</PrimaryButton>
+                </div>
+            </div>
+        </Modal>
+
+         <!-- New Category Modal -->
+         <Modal :show="showFundSourceModal" @close="showFundSourceModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Fund Source</h2>
+                <div class="mt-6">
+                    <InputLabel for="new_fund_source" value="Fund Source Name" />
+                    <TextInput id="new_fund_source" type="text" class="mt-1 block w-full" v-model="newFundSource" required />
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showFundSourceModal = false" :disabled="isNewFundSource ">Exit
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewFundSource " @click="createFundSource">{{ isNewFundSource  ? "Waiting..." :
+                        "Create Fund Source" }}</PrimaryButton>
+                </div>
+            </div>
+        </Modal>
+
     </AuthenticatedLayout>
 </template>
