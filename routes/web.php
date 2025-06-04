@@ -411,7 +411,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::get('/{id}/show', 'show')->name('assets.show');
             Route::get('/get-assets', 'getAssets')->name('assets.get');
             Route::get('/create', 'create')->name('assets.create');
-            Route::post('/', 'store')->name('assets.store');
+            Route::post('/store', 'store')->name('assets.store');
             Route::get('/{asset}/edit', 'edit')->name('assets.edit');
             Route::put('/{asset}', 'update')->name('assets.update');
             Route::delete('/{asset}', 'destroy')->name('assets.destroy');

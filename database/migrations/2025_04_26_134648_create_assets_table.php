@@ -28,6 +28,7 @@ return new class extends Migration
             $table->foreignId('region_id');
             $table->string('sub_location')->nullable();
             $table->date('acquisition_date');
+            $table->date('transfer_date')->nullable();
             $table->enum('status', ['active', 'in_use', 'maintenance', 'retired', 'disposed'])->default('active');
             $table->decimal('original_value', 10, 2)->nullable();
             $table->timestamps();

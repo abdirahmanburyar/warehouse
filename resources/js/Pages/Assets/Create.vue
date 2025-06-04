@@ -614,7 +614,7 @@ const submit = async () => {
         processing.value = false;
         isSubmitting.value = false;
         console.error("Error creating asset:", error);
-        toast.error(error.response?.data?.message || "Error creating asset");
+        toast.error(error.response?.data || "Error creating asset");
     }
 };
 

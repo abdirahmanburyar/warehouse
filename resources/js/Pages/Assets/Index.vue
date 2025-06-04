@@ -154,7 +154,12 @@
                         <td class="px-4 py-2 whitespace-nowrap">{{ asset.category?.name }}</td>
                         <td class="px-4 py-2 whitespace-nowrap">{{ asset.serial_number }}</td>
                         <td class="px-4 py-2 whitespace-nowrap max-w-xs truncate" :title="asset.item_description">{{ asset.item_description }}</td>
-                        <td class="px-4 py-2 whitespace-nowrap">{{ asset.person_assigned }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap flex items-center gap-2">
+                          <span>{{ asset.person_assigned }}</span>
+                          <button @click="openTransferModal(asset)" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                            Transfer
+                          </button>
+                        </td>
                         <td class="px-4 py-2 whitespace-nowrap">{{ asset.location?.name }}</td>
                         <td class="px-4 py-2 whitespace-nowrap">{{ asset.sub_location?.name }}</td>
                         <td class="px-4 py-2 whitespace-nowrap">
@@ -312,14 +317,39 @@
           </Dialog>
         </TransitionRoot>
     </AuthenticatedLayout>
+  <!-- Transfer Modal -->
+  <TransitionRoot as="template" :show="isTransferModalOpen">
+    <Dialog as="div" class="fixed z-[100] inset-0 overflow-y-auto" @close="closeTransferModal">
+      <div class="flex items-center justify-center min-h-screen px-4">
+        <DialogOverlay class="fixed inset-0 bg-black opacity-30" />
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto z-50 p-6 relative">
+          <DialogTitle class="text-lg font-bold mb-2">Transfer Asset</DialogTitle>
+          <form @submit.prevent="submitTransfer">
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1">New Custodian</label>
+              <input v-model="transferForm.custodian" type="text" class="w-full border rounded px-2 py-1" required />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1">Transfer Date</label>
+              <input v-model="transferForm.transfer_date" type="date" class="w-full border rounded px-2 py-1" required />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1">Notes</label>
+              <textarea v-model="transferForm.assignment_notes" class="w-full border rounded px-2 py-1" rows="2"></textarea>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" @click="closeTransferModal" class="px-3 py-1 rounded bg-gray-200">Cancel</button>
+              <button type="submit" :disabled="isTransferring" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">
+                {{ isTransferring ? 'Transferring...' : 'Transfer' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Dialog>
+  </TransitionRoot>
 </template>
-
 <script setup>
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
-import '@/Components/multiselect.css';
-
-import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import { Link, router } from '@inertiajs/vue3';
@@ -328,6 +358,14 @@ import { debounce } from 'lodash';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
+import { useToast } from 'vue-toastification';
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+import { reactive } from 'vue';
+import { Dialog, DialogOverlay, DialogTitle, TransitionRoot, DialogPanel, TransitionChild } from '@headlessui/vue';
+
+const toast = useToast();
 
 const props = defineProps({
     locations: {
@@ -350,6 +388,58 @@ const props = defineProps({
         required: true
     }
 });
+
+const isTransferModalOpen = ref(false);
+const isTransferring = ref(false);
+const selectedAsset = ref(null);
+const transferForm = reactive({
+  asset_id: null,
+  custodian: '',
+  transfer_date: '',
+  assignment_notes: ''
+});
+
+function openTransferModal(asset) {
+  selectedAsset.value = asset;
+  transferForm.asset_id = asset.id;
+  transferForm.custodian = asset.person_assigned || '';
+  transferForm.transfer_date = '';
+  transferForm.assignment_notes = '';
+  isTransferModalOpen.value = true;
+}
+
+function closeTransferModal() {
+  isTransferModalOpen.value = false;
+}
+
+async function submitTransfer() {
+  if (!transferForm.custodian || !transferForm.transfer_date) {
+    toast.error('Custodian and transfer date are required.');
+    return;
+  }
+  isTransferring.value = true;
+  try {
+    const response = await axios.post(route('assets.transfer', { asset: transferForm.asset_id }), {
+      asset_id: transferForm.asset_id,
+      custodian: transferForm.custodian,
+      transfer_date: transferForm.transfer_date,
+      assignment_notes: transferForm.assignment_notes
+    });
+    // Update asset in table (if local state, update; else reload page/data)
+    if (selectedAsset.value) {
+      selectedAsset.value.person_assigned = transferForm.custodian;
+      selectedAsset.value.transfer_date = transferForm.transfer_date;
+    }
+    toast.success('Asset transferred successfully!');
+    closeTransferModal();
+    // Optionally, refresh asset list here if needed
+    // location.reload();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Transfer failed.');
+  } finally {
+    isTransferring.value = false;
+  }
+}
 
 function formatDate(date){
     return moment(date).format('DD/MM/YYYY');

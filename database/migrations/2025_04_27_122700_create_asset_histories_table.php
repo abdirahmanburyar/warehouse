@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('field_name'); // custody, status, transfer_date, quantity
             $table->string('old_value')->nullable();
             $table->string('new_value');
+            $table->date('transfer_date');
             $table->foreignId('changed_by')->constrained('users');
             $table->text('notes')->nullable();
             $table->timestamps();
