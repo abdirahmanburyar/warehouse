@@ -412,35 +412,6 @@ function closeTransferModal() {
   isTransferModalOpen.value = false;
 }
 
-async function submitTransfer() {
-  if (!transferForm.custodian || !transferForm.transfer_date) {
-    toast.error('Custodian and transfer date are required.');
-    return;
-  }
-  isTransferring.value = true;
-  try {
-    const response = await axios.post(route('assets.transfer', { asset: transferForm.asset_id }), {
-      asset_id: transferForm.asset_id,
-      custodian: transferForm.custodian,
-      transfer_date: transferForm.transfer_date,
-      assignment_notes: transferForm.assignment_notes
-    });
-    // Update asset in table (if local state, update; else reload page/data)
-    if (selectedAsset.value) {
-      selectedAsset.value.person_assigned = transferForm.custodian;
-      selectedAsset.value.transfer_date = transferForm.transfer_date;
-    }
-    toast.success('Asset transferred successfully!');
-    closeTransferModal();
-    // Optionally, refresh asset list here if needed
-    // location.reload();
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Transfer failed.');
-  } finally {
-    isTransferring.value = false;
-  }
-}
-
 function formatDate(date){
     return moment(date).format('DD/MM/YYYY');
 }
@@ -506,6 +477,33 @@ async function onLocationChange(selected) {
     } catch (error) {
         subLocationOptions.value = [];
     }
+}
+
+// Asset transfer
+async function submitTransfer() {
+  if (!transferForm.custodian || !transferForm.transfer_date) {
+    toast.error('Custodian and transfer date are required.');
+    return;
+  }
+  isTransferring.value = true;
+  try {
+    const response = await axios.post(route('assets.transfer', { asset: transferForm.asset_id }), {
+      asset_id: transferForm.asset_id,
+      custodian: transferForm.custodian,
+      transfer_date: transferForm.transfer_date,
+      assignment_notes: transferForm.assignment_notes
+    });
+    if (selectedAsset.value) {
+      selectedAsset.value.person_assigned = transferForm.custodian;
+      selectedAsset.value.transfer_date = transferForm.transfer_date;
+    }
+    toast.success('Asset transferred successfully!');
+    closeTransferModal();
+  } catch (error) {
+    toast.error(error.response?.data || 'Transfer failed.');
+  } finally {
+    isTransferring.value = false;
+  }
 }
 
 // Computed property for filtered assets

@@ -425,6 +425,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::post('/categories/store', 'storeCategory')->name('assets.categories.store');
             Route::post('/locations/store', 'storeAssetLocation')->name('assets.locations.store');
             Route::post('/fund-sources/store', 'storeFundSource')->name('assets.fund-sources.store');
+
+            // asset transfer submission
+            Route::post('/assets/{asset}/transfer', 'transferAsset')->name('assets.transfer');
         });
 
     // Inventory Management Routes

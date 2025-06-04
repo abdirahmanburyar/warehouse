@@ -326,7 +326,7 @@ class AssetController extends Controller
     public function destroy(Asset $asset)
     {
         $asset->delete();
-        return redirect()->route('assets.index');
+        return response()->json('Deleted', 200);
     }
     
     /**
@@ -358,7 +358,47 @@ class AssetController extends Controller
         $subLocations = SubLocation::where('asset_location_id', $locationId)->get();
         return response()->json($subLocations);
     }
+
+    // transfer submittion
     
+    public function transferAsset(Request $request)
+{
+    try {
+        return DB::transaction(function() use($request) {
+            $validated = $request->validate([
+                'asset_id' => 'required|exists:assets,id',
+                'custodian' => 'required|string|max:255',
+                'transfer_date' => 'required|date',
+                'assignment_notes' => 'nullable|string',
+            ]);
+
+            $asset = Asset::findOrFail($validated['asset_id']);
+            $oldCustodian = $asset->person_assigned;
+            $asset->person_assigned = $validated['custodian'];
+            $asset->transfer_date = $validated['transfer_date'];
+        $asset->save();
+
+        $custodyHistory = \App\Models\CustodyHistory::create([
+            'asset_id' => $asset->id,
+            'custodian' => $validated['custodian'],
+            'assigned_by' => auth()->id(),
+            'assigned_at' => now(),
+            'assignment_notes' => $validated['assignment_notes'] ?? null,
+            'status' => 'assigned',
+            'status_notes' => 'Transferred from ' . $oldCustodian . ' to ' . $validated['custodian'],
+        ]);
+
+        return response()->json([
+            'message' => 'Asset transferred successfully',
+            'asset' => $asset,
+            'custody_history' => $custodyHistory,
+        ], 200);
+
+        });
+    } catch (\Throwable $th) {
+        return response()->json($th->getMessage(), 500);
+    }
+}
     /**
      * Store a new sub-location.
      *
