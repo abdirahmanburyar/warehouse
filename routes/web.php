@@ -422,6 +422,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::get('/sub-locations', 'subLocationIndex')->name('assets.sub-locations.index');
             Route::get('/locations/{location}/sub-locations', 'getSubLocations')->name('assets.locations.sub-locations');
             Route::post('/locations/sub-locations', 'storeSubLocation')->name('assets.locations.sub-locations.store');
+            Route::post('/categories/store', 'storeCategory')->name('assets.categories.store');
+            Route::post('/locations/store', 'storeAssetLocation')->name('assets.locations.store');
+            Route::post('/fund-sources/store', 'storeFundSource')->name('assets.fund-sources.store');
         });
 
     // Inventory Management Routes

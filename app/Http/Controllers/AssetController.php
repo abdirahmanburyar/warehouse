@@ -101,6 +101,50 @@ class AssetController extends Controller
         ]);
     }
 
+    public function storeCategory(Request $request){
+        try {
+            $request->validate([
+                'name' => 'required',
+            ]);
+            
+            $category = AssetCategory::create([
+                'name' => $request->name
+            ]);
+            
+            return response()->json($category, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function storeAssetLocation(Request $request){
+        try {
+            $request->validate([
+                'name' => 'required',
+            ]);
+            $location = AssetLocation::create([
+                'name' => $request->name
+            ]);
+            return response()->json($location, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function storeFundSource(Request $request){
+        try {
+            $request->validate([
+                'name' => 'required',
+            ]);
+            $fundSource = FundSource::create([
+                'name' => $request->name
+            ]);
+            return response()->json($fundSource, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
     public function storeRegion(Request $request){
         try {
             $request->validate([

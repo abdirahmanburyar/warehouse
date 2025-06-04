@@ -239,20 +239,21 @@ const createLocation = async () => {
         });
         const newLocationData = response.data;
 
-        // Update the form with the new location
-        form.value.asset_location_id = newLocationData;
-        selectedLocationForSub.value = newLocationData.id;
-
-        // Clear modal data
-        newLocation.value = "";
-        showLocationModal.value = false;
-
         // Add the new location to locationOptions
         locationOptions.value = [
             ...locationOptions.value.filter((loc) => !loc.isAddNew),
             newLocationData,
             { id: "new", name: "+ Add New Location", isAddNew: true },
         ];
+
+        // Select the new location in the multiselect
+        form.value.asset_location = newLocationData;
+        form.value.asset_location_id = newLocationData.id;
+        selectedLocationForSub.value = newLocationData.id;
+
+        // Clear modal data
+        newLocation.value = "";
+        showLocationModal.value = false;
 
         // Load sub-locations for the new location
         await loadSubLocations(newLocationData.id);
@@ -290,8 +291,9 @@ const createRegion = async () => {
             { id: "new", name: "+ Add New Region", isAddNew: true },
         ];
 
-        // Update the form with the new region
-        form.value.region_id = newRegionData;
+        // Select the new region in the multiselect
+        form.value.region = newRegionData;
+        form.value.region_id = newRegionData.id;
 
         // Clear modal data
         newRegion.value = "";
@@ -370,7 +372,7 @@ const createCategory = async () => {
 
     isNewCategory.value = true;
     try {
-        const response = await axios.post(route("assets.categories.store"), {
+        const response = await axios.post(route('assets.categories.store'), {
             name: newCategory.value,
         });
 
@@ -383,9 +385,10 @@ const createCategory = async () => {
             { id: "new", name: "+ Add New Category", isAddNew: true },
         ];
 
-        // Update the form with the new category
-        form.value.asset_category_id = newCategoryData;
-
+        // Select the new category in the multiselect
+        form.value.asset_category = newCategoryData;
+        form.value.asset_category_id = newCategoryData.id;
+        
         // Clear modal data
         newCategory.value = "";
         showCategoryModal.value = false;
@@ -447,8 +450,9 @@ const createFundSource = async () => {
             { id: "new", name: "+ Add New Fund Source", isAddNew: true },
         ];
 
-        // Update the form with the new fund source
-        form.value.fund_source_id = newFundSourceData;
+        // Select the new fund source in the multiselect
+        form.value.fund_source = newFundSourceData;
+        form.value.fund_source_id = newFundSourceData.id;
 
         // Clear modal data
         newFundSource.value = "";
@@ -488,8 +492,9 @@ const createSubLocation = async () => {
         // Add the new sub-location to the list
         subLocations.value = [...subLocations.value, newSubLocationData];
 
-        // Set it as the selected sub-location
-        form.value.sub_location_id = newSubLocationData;
+        // Select the new sub-location in the multiselect
+        form.value.sub_location = newSubLocationData;
+        form.value.sub_location_id = newSubLocationData.id;
 
         // Clear the form and close modal
         newSubLocation.value = "";
@@ -829,13 +834,16 @@ function handleDocumentUpload(index, event) {
                         
                         <div>
                             <InputLabel for="status" value="Status" />
-                            <TextInput
+                            <select
                                 id="status"
-                                type="text"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded border-gray-300"
                                 v-model="form.status"
                                 required
-                            />
+                            >
+                                <option v-for="option in statuses" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
                         </div>
                         <div>
                             <InputLabel for="original_value" value="Original Value" />
@@ -852,7 +860,7 @@ function handleDocumentUpload(index, event) {
                             <Multiselect
                                 id="fund_source"
                                 v-model="form.fund_source"
-                                :options="props.fundSources"
+                                :options="fundSourceOptions"
                                 :close-on-select="true"
                                 :show-labels="false"
                                 :allow-empty="true"
