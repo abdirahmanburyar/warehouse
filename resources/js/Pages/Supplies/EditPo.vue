@@ -28,7 +28,7 @@
         </Link>
         <div class="">
             <!-- Supplier Selection -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="bg-white shadow p-6 mb-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">
                     Edit Purchase Order
                     {{ props.po?.po_number ? "#" + props.po.po_number : "" }}
@@ -63,48 +63,48 @@
                     <!-- Supplier Details Card -->
                     <div
                         v-if="isLoading"
-                        class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4"
+                        class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4"
                     >
                         <div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-24 mb-3"
+                                class="h-4 bg-gray-200 animate-pulse w-24 mb-3"
                             ></div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-32 mb-2"
+                                class="h-4 bg-gray-200 animate-pulse w-32 mb-2"
                             ></div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-28"
-                            ></div>
-                        </div>
-                        <div>
-                            <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-32 mb-3"
-                            ></div>
-                            <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-40 mb-2"
-                            ></div>
-                            <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-36 mb-2"
-                            ></div>
-                            <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-44"
+                                class="h-4 bg-gray-200 animate-pulse w-28"
                             ></div>
                         </div>
                         <div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-36 mb-3"
+                                class="h-4 bg-gray-200 animate-pulse w-32 mb-3"
                             ></div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-28 mb-2"
+                                class="h-4 bg-gray-200 animate-pulse w-40 mb-2"
                             ></div>
                             <div
-                                class="h-4 bg-gray-200 rounded animate-pulse w-32"
+                                class="h-4 bg-gray-200 animate-pulse w-36 mb-2"
+                            ></div>
+                            <div
+                                class="h-4 bg-gray-200 animate-pulse w-44"
+                            ></div>
+                        </div>
+                        <div>
+                            <div
+                                class="h-4 bg-gray-200 animate-pulse w-36 mb-3"
+                            ></div>
+                            <div
+                                class="h-4 bg-gray-200 animate-pulse w-28 mb-2"
+                            ></div>
+                            <div
+                                class="h-4 bg-gray-200 animate-pulse w-32"
                             ></div>
                         </div>
                     </div>
                     <div
                         v-else-if="form.supplier"
-                        class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4"
+                        class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4"
                     >
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">
@@ -167,7 +167,7 @@
             <!-- notes -->
             <div class="mt-8 flex-1 flex flex-col">
                 <label for="notes" class="text-sm font-medium text-gray-500">Memo</label>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="bg-white shadow-sm border border-gray-200">
                     <textarea v-model="form.notes" class="w-full p-3 border-none resize-none" placeholder="Enter memo"></textarea>
                 </div>
             </div>
@@ -175,7 +175,7 @@
             <!-- Items List -->
             <div class="mt-8 flex-1 flex flex-col">
                 <div
-                    class="bg-white rounded-lg shadow-sm border border-gray-200"
+                    class="bg-white shadow-sm border border-gray-200"
                 >
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
@@ -331,7 +331,7 @@
                                     v-if="!form.approved_at"
                                     type="button"
                                     @click="addItem"
-                                    class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                 >
                                     Add Item
                                 </button>
@@ -361,7 +361,7 @@
                             type="button"
                             @click="reviewPO"
                             :class="[
-                                'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                                'inline-flex items-center gap-x-2 px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                                 form.reviewed_at
                                     ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                                     : isProcessing.review
@@ -444,7 +444,7 @@
                             type="button"
                             @click="approvePO"
                             :class="[
-                                'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                                'inline-flex items-center gap-x-2 px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                                 form.approved_at
                                     ? 'bg-green-50 text-green-700 border border-green-200'
                                     : !form.reviewed_at
@@ -538,7 +538,7 @@
                             type="button"
                             @click="rejectPO"
                             :class="[
-                                'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                                'inline-flex items-center gap-x-2 px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                                 form.rejected_at
                                     ? 'bg-red-50 text-red-700 border border-red-200'
                                     : !form.reviewed_at
@@ -631,7 +631,7 @@
                             type="button"
                             @click="router.visit(route('supplies.index'))"
                             :disabled="isSubmitting"
-                            class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out"
+                            class="inline-flex items-center gap-x-2 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out"
                         >
                             Back
                         </button>
@@ -639,7 +639,7 @@
                             v-if="!form.approved_at"
                             type="button"
                             @click="submitForm"
-                            class="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="isSubmitting"
                         >
                             {{ isSubmitting ? "Updating..." : "Update Changes" }}
