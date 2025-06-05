@@ -71,8 +71,34 @@ class AssetController extends Controller
                 'documents.*.type' => 'required',
                 'documents.*.asset_id' => 'required',
             ]);
+
+            foreach ($request->documents as $document) {
+                $asset = Asset::findOrFail($document['asset_id']);
+                if (!empty($document['type']) && !empty($document['file'])) {
+                    // Handle file upload
+                    if (is_object($document['file']) && method_exists($document['file'], 'getClientOriginalName')) {
+                        $fileName = time() . '_' . $document['file']->getClientOriginalName();
+                        
+                        // Create documents directory if it doesn't exist
+                        $documentPath = public_path('documents');
+                        if (!file_exists($documentPath)) {
+                            mkdir($documentPath, 0755, true);
+                        }
+                        
+                        // Move the file to the public directory
+                        $document['file']->move($documentPath, $fileName);
+                        $filePath = 'documents/' . $fileName;
+                        
+                        // Create attachment record
+                        $asset->attachments()->create([
+                            'type' => $document['type'],
+                            'file' => $filePath
+                        ]);
+                    }
+                }
+            }
            
-            return response()->json($request->documents, 200);
+            return response()->json("Successfully uploaded", 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
