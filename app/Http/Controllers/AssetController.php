@@ -370,12 +370,18 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
+        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'region')
+            ->findOrFail($asset->id);
         $locations = AssetLocation::all();
         $categories = AssetCategory::all();
+        $fundSources = fundSource::get();
+        $regions = Region::get();
         return Inertia::render('Assets/Edit', [
             'asset' => $asset,
             'locations' => $locations,
-            'categories' => $categories
+            'categories' => $categories,
+            'fundSources' => $fundSources,
+            'regions' => $regions
         ]);
     }
 
@@ -389,12 +395,12 @@ class AssetController extends Controller
                 'item_description' => 'required|string',
                 'person_assigned' => 'required',
                 'asset_location_id' => 'required',
-                'sub_location_id' => 'nullable',
+                'sub_location_id' => 'required',
+                'region_id' => 'required',
                 'fund_source_id' => 'required',
                 'acquisition_date' => 'required|date',
                 'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
-                'original_value' => 'required|numeric|min:0',
-                'source_agency' => 'required|string|max:255'
+                'original_value' => 'required|numeric|min:0'
             ]);
     
             $asset->update($validated);

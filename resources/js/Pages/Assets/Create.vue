@@ -632,7 +632,7 @@ function handleDocumentUpload(index, event) {
 </script>
 
 <template>
-    <AuthenticatedLayout title="Assets management">
+    <AuthenticatedLayout title="Assets management" description="Create new asset" img="/assets/images/asset-header.png">
         <Head title="Create Asset" />
         <div class="mb-[80px]">
             <div class="p-6 text-gray-900">

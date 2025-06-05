@@ -31,6 +31,10 @@ class Asset extends Model
         'asset_warranty_end'
     ];
 
+    public function region(){
+        return $this->belongsTo(Region::class);
+    }
+    
     public function fundSource()
     {
         return $this->belongsTo(FundSource::class, 'fund_source_id');
