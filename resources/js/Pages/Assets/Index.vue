@@ -126,7 +126,7 @@
                 <!-- Dashboard Summary -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div
-                        class="bg-white rounded-xl shadow p-4 flex flex-col items-center"
+                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
                     >
                         <span class="text-3xl font-bold text-indigo-600">{{
                             props.assets.data.length
@@ -136,7 +136,7 @@
                         >
                     </div>
                     <div
-                        class="bg-white rounded-xl shadow p-4 flex flex-col items-center"
+                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
                     >
                         <span class="text-3xl font-bold text-green-600">{{
                             props.assets.data.filter(
@@ -146,7 +146,7 @@
                         <span class="text-xs text-gray-500 mt-1">In Use</span>
                     </div>
                     <div
-                        class="bg-white rounded-xl shadow p-4 flex flex-col items-center"
+                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
                     >
                         <span class="text-3xl font-bold text-orange-500">{{
                             props.assets.data.filter(
@@ -160,74 +160,74 @@
                 </div>
                 <!-- Asset Table -->
                 <div class="overflow-auto rounded-xl">
-                    <table class="min-w-full text-left">
+                    <table class="min-w-full text-left text-black">
                         <thead
                             class="p-6 text-black"
                             style="background-color: rgb(167, 204, 240)"
                         >
                             <tr>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Asset Tag
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Category
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Serial Number
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Description
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Assigned To
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Location
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Sub-Location
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Status
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Acquisition Date
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Original Value
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Funded Source
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     Attachments
                                 </th>
                                 <th
-                                    class="px-4 py-2 text-xs font-bold text-gray-600"
+                                    class="px-4 py-2 text-xs font-bold"
                                 >
                                     History
                                 </th>
@@ -280,7 +280,7 @@
                                                 asset.status === 'in_use',
                                             'bg-orange-100 text-orange-700':
                                                 asset.status === 'maintenance',
-                                            'bg-gray-100 text-gray-600':
+                                            'bg-gray-100':
                                                 asset.status !== 'in_use' &&
                                                 asset.status !== 'maintenance',
                                         }"
@@ -417,7 +417,7 @@
                                 >
                                 <button
                                     @click="closeAttachmentsModal"
-                                    class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    class="text-gray-400 hover focus:outline-none"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -514,7 +514,7 @@
                                 >
                                 <button
                                     @click="closeHistoryModal"
-                                    class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    class="text-gray-400 hover focus:outline-none"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -601,7 +601,7 @@
                                                             'bg-orange-100 text-orange-700':
                                                                 entry.status ===
                                                                 'maintenance',
-                                                            'bg-gray-100 text-gray-600':
+                                                            'bg-gray-100':
                                                                 entry.status !==
                                                                     'in_use' &&
                                                                 entry.status !==

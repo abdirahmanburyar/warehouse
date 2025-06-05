@@ -31,6 +31,9 @@
                                     {{ asset.asset_tag || "Asset Details" }}
                                 </h1>
                                 <p class="text-blue-100 text-sm mt-1">
+                                    <p>
+                                        {{ asset.serial_number }}
+                                    </p>
                                     <span
                                         :class="[
                                             'px-2 py-0.5 rounded-full text-xs font-semibold',
@@ -39,10 +42,11 @@
                                                 : 'bg-yellow-100 text-yellow-800',
                                         ]"
                                     >
-                                        {{
-                                            formatStatus(asset.status) || "N/A"
-                                        }}
+                                    {{
+                                        formatStatus(asset.status) || "N/A"
+                                    }}
                                     </span>
+                                    
                                 </p>
                             </div>
                         </div>
@@ -364,7 +368,7 @@
             </div>
 
             <!-- Warranty Section -->
-            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row md:items-center gap-6">
+            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row md:items-center gap-6" v-if="asset.has_warranty">
                 <div class="flex items-center gap-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 1A9 9 0 11 3 12a9 9 0 0118 0z" />
@@ -431,36 +435,27 @@
                         :key="attachment.id"
                         class="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 hover:border-teal-300 flex flex-col gap-2"
                     >
-                        <div class="flex items-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                class="w-6 h-6 text-teal-500"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M12 4.5v15m7.5-7.5h-15"
-                                />
-                            </svg>
-                            <span class="font-medium text-gray-800">{{
-                                attachment.type
-                            }}</span>
-                        </div>
-                        <a
-                            :href="`/${attachment.file}`"
-                            target="_blank"
-                            class="text-sm text-teal-700 hover:underline break-all"
-                        >
-                            {{ attachment.file.split("/").pop() }}
-                        </a>
-                        <span class="text-xs text-gray-400"
-                            >Uploaded:
-                            {{ formatDate(attachment.created_at) }}</span
-                        >
+                        <div class="flex items-center justify-between">
+    <a
+        :href="`/${attachment.file}`"
+        target="_blank"
+        class="text-sm text-teal-700 hover:underline break-all"
+    >
+        {{ attachment.type }}
+    </a>
+    <button
+        class="ml-2 text-red-500 hover:text-red-700 focus:outline-none"
+        @click="confirmDeleteAttachment(attachment.id)"
+        title="Delete attachment"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+</div>
+<span class="text-xs text-gray-400">
+    Uploaded: {{ formatDate(attachment.created_at) }}
+</span>
                     </div>
                 </div>
                 <div v-else class="py-6 text-center">
@@ -670,6 +665,7 @@
 </template>
 
 <script setup>
+
 import { ref } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Link, router } from "@inertiajs/vue3";
@@ -695,6 +691,39 @@ function removeDocumentRow(idx) {
     newDocuments.value.splice(idx, 1);
     if (newDocuments.value.length === 0) addDocumentRow();
 }
+
+
+
+function confirmDeleteAttachment(id) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will permanently delete the attachment.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    }).then(async(result) => {
+        if (result.isConfirmed) {
+            await axios.get(route('assets.document.delete', id))
+                .then((response) => {
+                    Swal.fire('Deleted!', 'Attachment has been deleted.', 'success');
+                    router.reload();
+                })
+                .catch((error) => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: error.response?.data || 'Failed to delete attachment',
+                        showConfirmButton: false,
+                        timer: 1500,
+                    });
+                })
+        }
+    });
+}
+
+
 function onFileChange(e, idx) {
     const file = e.target.files[0];
     if (file && file.type !== "application/pdf") {

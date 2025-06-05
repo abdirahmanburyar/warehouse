@@ -434,6 +434,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
             // Asset Document Upload Route
             Route::post('/assets/documents/store', 'storeDocument')->name('assets.documents.store');
+
+            // Asset Document Delete Route
+            Route::get('/documents/{document}', 'deleteDocument')->name('assets.document.delete');
         });
 
     // Inventory Management Routes

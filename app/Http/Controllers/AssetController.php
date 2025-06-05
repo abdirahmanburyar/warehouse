@@ -9,6 +9,7 @@ use App\Models\Region;
 use App\Models\AssetCategory;
 use App\Models\CustodyHistory;
 use App\Models\FundSource;
+use App\Models\AssetAttachment;
 use App\Http\Resources\AssetResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +100,27 @@ class AssetController extends Controller
             }
            
             return response()->json("Successfully uploaded", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function deleteDocument(Request $request, $id)
+    {
+        try {
+            $document = AssetAttachment::findOrFail($id);
+
+            // Delete the physical file first (if it exists)
+            if ($document->file) {
+                if (file_exists(public_path($document->file))) {
+                    @unlink($document->file);
+                }
+            }
+
+            // Delete the database record
+            $document->delete();
+
+            return response()->json('Document deleted successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
