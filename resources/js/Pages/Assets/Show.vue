@@ -1,6 +1,6 @@
 <template>
     <AuthenticatedLayout
-        :title="`Asset: ${asset.asset_tag}`"
+        :title="`Asset: ${props.asset.asset_tag}`"
         description="Detailed asset information"
         img="/assets/images/asset-header.png"
     >
@@ -363,6 +363,49 @@
                 </div>
             </div>
 
+            <!-- Warranty Section -->
+            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row md:items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 1A9 9 0 11 3 12a9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <div class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            Warranty
+                            <span v-if="asset.asset_warranty_start && asset.asset_warranty_end"
+                                  :class="isWarrantyActive(asset.asset_warranty_start, asset.asset_warranty_end) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                  class="ml-2 px-2 py-0.5 rounded text-xs font-semibold">
+                                {{ isWarrantyActive(asset.asset_warranty_start, asset.asset_warranty_end) ? 'Active' : 'Expired' }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-1">
+                            <div class="flex items-center gap-1 text-sm text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Start:
+                                <span class="ml-1 font-medium">{{ formatDate(asset.asset_warranty_start) || '—' }}</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-sm text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7" />
+                                </svg>
+                                End:
+                                <span class="ml-1 font-medium">{{ formatDate(asset.asset_warranty_end) || '—' }}</span>
+                            </div>
+                        </div>
+                        <!-- warranty notification before one month -->
+                        <div v-if="isWarrantyExpiringInOneMonth(asset.asset_warranty_end)" class="mt-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Warranty will expire in {{ daysLeft(asset.asset_warranty_end) }} days
+                        </div>
+                        <!-- warrenty notification before one week -->
+                        <div v-if="isWarrantyExpiringSoon(asset.asset_warranty_end)" class="mt-2 text-sm text-yellow-600">
+                            Warranty expires in {{ daysLeft(asset.asset_warranty_end) }} days
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Attachments Section -->
             <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
                 <h2
@@ -742,4 +785,34 @@ function formatStatus(status) {
     };
     return map[status] || status;
 }
+function isWarrantyActive(start, end) {
+  if (!start || !end) return false;
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  return now >= startDate && now <= endDate;
+}
+
+function daysLeft(end) {
+  if (!end) return 0;
+  const now = new Date();
+  const endDate = new Date(end);
+  const diff = endDate - now;
+  return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0;
+}
+function isWarrantyExpired(end) {
+  if (!end) return false;
+  const now = new Date();
+  const endDate = new Date(end);
+  return now > endDate;
+}
+function isWarrantyExpiringSoon(end) {
+  const dl = daysLeft(end);
+  return dl > 0 && dl <= 7;
+}
+function isWarrantyExpiringInOneMonth(end) {
+  const dl = daysLeft(end);
+  return dl > 7 && dl <= 30;
+}
+
 </script>

@@ -26,13 +26,13 @@
                         Import Excel
                     </button>
 
-                    <button
+                    <Link
                         v-if="$page.props.auth.can.asset_import"
-                        @click="route('assets.create')"
+                        :href="route('assets.create')"
                         class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
                     >
                         Add Asset
-                    </button>
+                    </Link>
                 </div>
             </div>
             <!-- Filters Row -->

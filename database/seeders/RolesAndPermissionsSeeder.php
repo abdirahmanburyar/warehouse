@@ -247,6 +247,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'asset.reject',
             'asset.review',
             'asset.audit',
+            'asset.manager',
         ];
 
         // Combine all permissions
