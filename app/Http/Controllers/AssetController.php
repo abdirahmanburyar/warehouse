@@ -12,6 +12,8 @@ use App\Models\FundSource;
 use App\Http\Resources\AssetResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\AssetsImport;
 use Inertia\Inertia;
 
 class AssetController extends Controller
@@ -43,7 +45,7 @@ class AssetController extends Controller
         }
 
         $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource')
-            ->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+            ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $assets->setPath(url()->current()); // Force Laravel to use full URLs
@@ -61,12 +63,28 @@ class AssetController extends Controller
         ]);
     }
 
+    public function storeDocument(Request $request)
+    {
+        try {
+            $request->validate([
+                'documents' => 'array',
+                'documents.*.type' => 'required',
+                'documents.*.asset_id' => 'required',
+            ]);
+           
+            return response()->json($request->documents, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
     public function show(Request $request, $id)
     {
-        $assets = Asset::find($id)->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments');
+        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource')
+            ->findOrFail($id);
 
         return inertia('Assets/Show', [
-            'assets' => $assets,
+            'asset' => $asset,
         ]);
     }
 
@@ -189,6 +207,22 @@ class AssetController extends Controller
             'fundSources' => $fundSources,
             'regions' => $regions
         ]);
+    }
+
+        /**
+     * Import assets from an uploaded Excel file.
+     */
+    public function import(Request $request)
+    {        
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls'
+            ]);
+            Excel::import(new AssetsImport, $request->file('file'));
+            return response()->json('Import started. You will be notified when complete.');
+        } catch (\Throwable $e) {
+            return response($e->getMessage(), 500);
+        }
     }
 
     public function store(Request $request)

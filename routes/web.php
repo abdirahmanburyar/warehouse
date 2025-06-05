@@ -428,6 +428,12 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
             // asset transfer submission
             Route::post('/assets/{asset}/transfer', 'transferAsset')->name('assets.transfer');
+
+            // upload assets excel file 
+            Route::post('/assets/import', 'import')->name('assets.import');
+
+            // Asset Document Upload Route
+            Route::post('/assets/documents/store', 'storeDocument')->name('assets.documents.store');
         });
 
     // Inventory Management Routes

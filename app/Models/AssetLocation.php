@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AssetLocation extends Model
 {
+    // Explicitly set the table to avoid Eloquent defaulting to 'locations'
+    protected $table = 'asset_locations';
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
