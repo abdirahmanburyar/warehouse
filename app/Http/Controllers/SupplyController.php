@@ -16,6 +16,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Warehouse;
 use App\Models\Product;
 use App\Models\PurchaseOrderItem;
+use App\Http\Resources\PurchaseOrderResource;
 use App\Models\Supply;
 use App\Models\SupplyItem;
 use App\Models\Supplier;
@@ -23,7 +24,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\PackingListItem;
-
 use App\Models\BackOrder;
 use App\Models\ReceivedQuantity;
 use App\Models\Liquidate;
@@ -37,7 +37,7 @@ class SupplyController extends Controller
      */
     public function index(Request $request)
     {
-        $purchaseOrders = PurchaseOrder::with(['supplier', 'items.product'])
+        $purchaseOrders = PurchaseOrder::with(['supplier'])
             ->where('status', '!=', 'completed')
             ->when($request->filled('search'), function($query) use ($request) {
                 $search = $request->search;
@@ -55,9 +55,7 @@ class SupplyController extends Controller
                 $query->where('status', $request->status);
             })
             ->orderBy('po_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->input('per_page', 10))
-            ->withQueryString();
+            ->orderBy('created_at', 'desc');
 
         // Calculate lead times as difference between packing list confirm_at and PO po_date
         // Only for non-completed purchase orders
@@ -87,43 +85,14 @@ class SupplyController extends Controller
             'back_orders' => PackingListDifference::count(), // Count the number of back orders instead of summing quantities
         ];
 
+        $purchaseOrders = $purchaseOrders->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        $purchaseOrders->setPath(url()->current()); // Force Laravel to use full URLs
+
+
         return Inertia::render('Supplies/Index', [
-            'purchaseOrders' => [
-                'data' => collect($purchaseOrders->items())->map(function($po) {
-                    return [
-                        'id' => $po->id,
-                        'po_number' => $po->po_number,
-                        'po_date' => $po->po_date,
-                        'supplier' => $po->supplier ? [
-                            'id' => $po->supplier->id,
-                            'name' => $po->supplier->name
-                        ] : null,
-                        'items' => $po->items->map(function($item) {
-                            return [
-                                'id' => $item->id,
-                                'product_name' => "kk",
-                                'quantity' => $item->quantity,
-                                'unit_cost' => $item->unit_cost,
-                                'total_cost' => $item->quantity * $item->unit_cost,
-                                'purchase_order_id' => $item->purchase_order_id
-                            ];
-                        }),
-                        'status' => $po->status ?? 'pending',
-                        'created_at' => $po->created_at->format('Y-m-d'),
-                        'purchase_order_id' => $po->id,
-                    ];
-                }),
-                'meta' => [
-                    'current_page' => $purchaseOrders->currentPage(),
-                    'from' => $purchaseOrders->firstItem(),
-                    'last_page' => $purchaseOrders->lastPage(),
-                    'links' => $purchaseOrders->linkCollection()->toArray(),
-                    'path' => $purchaseOrders->path(),
-                    'per_page' => $purchaseOrders->perPage(),
-                    'to' => $purchaseOrders->lastItem(),
-                    'total' => $purchaseOrders->total(),
-                ]
-            ],
+            'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
             'filters' => $request->only('search', 'page','per_page', 'supplier','status'),
             'suppliers' => Supplier::get(),
             'stats' => $stats

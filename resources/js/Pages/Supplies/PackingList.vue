@@ -78,7 +78,7 @@
                 </div>
               <!-- halkaan ku past karee -->
                  <!-- Items List -->
-                 <table class="table-fixed w-full" style="min-width: 1200px; position: relative; overflow-y: visible;"
+                 <table class="w-full"
                     v-if="!isLoading && form">
                     <thead class="bg-gray-50 border border-blck">
                         <tr>

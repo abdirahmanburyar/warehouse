@@ -32,9 +32,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 use Inertia\Inertia;
+use App\Http\Controllers\DashboardController;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
 // Welcome route - accessible without authentication
+
 
 Route::get('/welcome', function () {
     if (auth()->check()) {
@@ -53,21 +55,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/two-factor/resend', [TwoFactorController::class, 'resend'])->name('two-factor.resend');
 });
 
-// Default route - redirect to login or dashboard
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    return redirect()->route('login');
-});
 
 // All routes that require authentication and 2FA
 Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(function () {
-    // Dashboard
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
     
+    // Default route - redirect to login or dashboard
+    Route::controller(DashboardController::class)
+        ->group(function () {
+            Route::get('/dashboard', 'index')->name('dashboard');
+        });
     // Unauthorized access page
     Route::get('/unauthorized', function () {
         return Inertia::render('Unauthorized');

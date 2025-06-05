@@ -12,7 +12,7 @@
             </div>
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 75px;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 90px;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png"
