@@ -301,7 +301,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm border border-black">
                                         <div class="flex items-center space-x-4">
                                             <!-- Always show Pending Icon (all statuses start as pending) -->
-                                            <img src="/assets/images/pending.svg" class="w-12 h-12" alt="Pending" />
+                                            <img src="/assets/images/pending.png" class="w-12 h-12" alt="Pending" />
                                             
                                             <!-- Show Reviewed Icon if status is reviewed, approved, or rejected -->
                                             <svg v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'" 
