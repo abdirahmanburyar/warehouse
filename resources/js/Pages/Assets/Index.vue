@@ -121,7 +121,7 @@
                 </div>
             </div>
             <!-- Main content area -->
-            <div class="flex-grow overflow-auto p-4">
+            <div class="flex-grow p-4">
                 <!-- Asset cards will go here -->
                 <!-- Dashboard Summary -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
