@@ -610,9 +610,12 @@
                                                         class="px-2 py-1 rounded-full text-xs font-bold"
                                                     >
                                                         {{
-                                                            typeof entry.status === 'string' && entry.status
-    ? entry.status.replace('_', ' ').toUpperCase()
-    : '-'
+                                                            entry.status
+                                                                .replace(
+                                                                    "_",
+                                                                    " "
+                                                                )
+                                                                .toUpperCase()
                                                         }}
                                                     </span>
                                                 </td>
