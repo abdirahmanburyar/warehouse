@@ -610,12 +610,9 @@
                                                         class="px-2 py-1 rounded-full text-xs font-bold"
                                                     >
                                                         {{
-                                                            entry.status
-                                                                .replace(
-                                                                    "_",
-                                                                    " "
-                                                                )
-                                                                .toUpperCase()
+                                                            typeof entry.status === 'string' && entry.status
+    ? entry.status.replace('_', ' ').toUpperCase()
+    : '-'
                                                         }}
                                                     </span>
                                                 </td>
@@ -658,49 +655,44 @@
             </Dialog>
         </TransitionRoot>
     </AuthenticatedLayout>
-    <TransitionRoot as="template" :show="showImportModal">
-        <Dialog
-            as="div"
-            class="fixed z-50 inset-0 overflow-y-auto"
-            @close="showImportModal = false"
+    <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+  <div class="absolute inset-0" @click="showImportModal = false"></div>
+  <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto z-50 p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">Import Assets from Excel</h3>
+      <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <form @submit.prevent="uploadExcel">
+      <input
+        type="file"
+        ref="importFile"
+        accept=".xlsx,.xls,.csv"
+        required
+        class="block w-full mb-4"
+      />
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          @click="showImportModal = false"
+          class="px-3 py-1 rounded bg-gray-200"
         >
-            <div class="flex items-center justify-center min-h-screen px-4">
-                <DialogOverlay class="fixed inset-0 bg-black opacity-30" />
-                <div
-                    class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto z-50 p-6 relative"
-                >
-                    <DialogTitle class="text-lg font-bold mb-2"
-                        >Import Assets from Excel</DialogTitle
-                    >
-                    <form @submit.prevent="uploadExcel">
-                        <input
-                            type="file"
-                            ref="importFile"
-                            accept=".xlsx,.xls,.csv"
-                            required
-                            class="block w-full mb-4"
-                        />
-                        <div class="flex justify-end gap-2">
-                            <button
-                                type="button"
-                                @click="showImportModal = false"
-                                class="px-3 py-1 rounded bg-gray-200"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="isUploading"
-                                class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                                {{ isUploading ? "Uploading..." : "Import" }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </Dialog>
-    </TransitionRoot>
+          Cancel
+        </button>
+        <button
+          type="submit"
+          :disabled="isUploading"
+          class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+        >
+          {{ isUploading ? "Uploading..." : "Import" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
     <!-- Transfer Modal -->
     <TransitionRoot as="template" :show="isTransferModalOpen">
         <Dialog
