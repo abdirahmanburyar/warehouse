@@ -382,11 +382,13 @@
                                     </table>
                                 </div>
                             </div>
-                            <TailwindPagination
+                            <div class="flex justify-end mt-3 mb-6">
+                                <TailwindPagination
                                 :data="props.purchaseOrders"
                                 @pagination-change-page="getResults"
                                 :limit="2"
                             />
+                            </div>
                         </div>
 
                         <!-- Statistics Column (2/12) -->
