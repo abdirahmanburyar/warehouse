@@ -36,7 +36,7 @@
                     <span>No P.O Data found</span>
                 </div>
                 <!-- Items List -->
-                <table class="table-fixed w-full" style="min-width: 1200px; position: relative; overflow-y: visible;"
+                <table class="table w-full"
                     v-if="!isLoading && form">
                     <thead class="bg-gray-50 border border-blck">
                         <tr>
