@@ -669,6 +669,7 @@ function getResults(page = 1) {
             <div class="flex justify-between">
                 <!-- Inventory Table -->
                 <div class="overflow-auto w-full">
+                    {{ props.inventories }}
                     <table
                         class="min-w-full border border-gray-200 divide-y divide-gray-200 rounded-xl overflow-hidden"
                     >

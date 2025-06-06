@@ -30,7 +30,7 @@ class InventoryController extends Controller
 
         $user = auth()->user();
         
-        $query = $query->with(['product.dosage', 'warehouse']);
+        $query = $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse','location:id,location']);
 
         // Apply filters
         if ($request->has('search')) {

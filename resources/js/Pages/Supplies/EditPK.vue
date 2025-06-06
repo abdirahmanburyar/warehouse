@@ -2,11 +2,11 @@
     <AuthenticatedLayout title="Edit Packing List" descript="Edit Packing List">
         <Link :href="route('supplies.packing-list.showPK')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
-            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-            Back to Supplies
+        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to Supplies
         </Link>
         <!-- Supplier Selection -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -27,8 +27,9 @@
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">More Info</h3>
                         <p class="mt-1 text-sm text-gray-900">PL Number #: {{ form.packing_list_number }}</p>
-                        <p class="mt-1 text-sm text-gray-900">Ref. No #: <input type="text" :value="form.ref_no"/> </p>
-                        <p class="mt-1 text-sm text-gray-900">PL Date. #: <input type="date" :value="form.pk_date"/></p>
+                        <p class="mt-1 text-sm text-gray-900">Ref. No #: <input type="text" :value="form.ref_no" /> </p>
+                        <p class="mt-1 text-sm text-gray-900">PL Date. #: <input type="date" :value="form.pk_date" />
+                        </p>
                     </div>
                 </div>
 
@@ -36,8 +37,7 @@
                     <span>No P.O Data found</span>
                 </div>
                 <!-- Items List -->
-                <table class="table w-full"
-                    v-if="!isLoading && form">
+                <table class="table w-full" v-if="!isLoading && form">
                     <thead class="bg-gray-50 border border-blck">
                         <tr>
                             <th
@@ -67,62 +67,62 @@
                             { 'bg-red-50': hasIncompleteBackOrder(item) }
                         ]">
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">
                                 {{ index + 1 }}</td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
                                 <div class="flex flex-col">
                                     {{ item.product?.name }}
                                     <span>UoM: <input type="text" v-model="item.uom" class="border-0" /></span>
                                 </div>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <div class="flex flex-col">
                                     <div>
                                         <input type="number" v-model="item.purchase_order_item.quantity" readonly
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                     <div>
                                         <label for="quantity" class="text-xs">Received Quantity</label>
                                         <input type="number" v-model="item.quantity"
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
                                             @input="handleReceivedQuantityChange(index)">
                                     </div>
                                     <div>
                                         <label for="mismatches" class="text-xs">Mismatches</label>
                                         <input type="text" :value="calculateMismatches(item)" readonly
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                     <button v-if="calculateFulfillmentRate(item) != 100"
-                                            @click="openBackOrderModal(index)"
-                                            class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                                            Back Order
-                                        </button>
+                                        @click="openBackOrderModal(index)"
+                                        class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                        Back Order
+                                    </button>
 
-                                        <!-- Add tooltip for incomplete back orders -->
-                                        <div v-if="hasIncompleteBackOrder(item)"
-                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                            Please record the mismatch
-                                        </div>
+                                    <!-- Add tooltip for incomplete back orders -->
+                                    <div v-if="hasIncompleteBackOrder(item)"
+                                        class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                        Please record the mismatch
+                                    </div>
                                 </div>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <Multiselect v-model="item.warehouse" :value="item.warehouse_id"
                                     :options="props.warehouses" :searchable="true" :close-on-select="true"
                                     :show-labels="false" :allow-empty="true" placeholder="Select Warehouse"
-                                    track-by="id" :disabled="item.status === 'approved'" :append-to-body="true"
-                                    label="name" @select="hadleWarehouseSelect(index, $event)">
+                                    track-by="id" :disabled="props.packing_list.status === 'approved'"
+                                    :append-to-body="true" label="name" @select="hadleWarehouseSelect(index, $event)">
                                 </Multiselect>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <Multiselect v-model="item.location" :value="item.location_id"
-                                    :disabled="item.status === 'approved' || !item.warehouse_id"
+                                    :disabled="props.packing_list.status === 'approved' || !item.warehouse_id"
                                     :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...getFilteredLocations(item.warehouse_id)]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                     placeholder="Select Location" track-by="id" label="location"
@@ -137,31 +137,31 @@
                                 </Multiselect>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
                                 <div class="flex flex-col">
                                     <div>
                                         <label for="batch_number" class="text-xs">Batch Number</label>
                                         <input type="text" v-model="item.batch_number"
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                     <div>
                                         <label for="expire_date" class="text-xs">Expire Date</label>
                                         <input type="date" v-model="item.expire_date"
                                             :min="moment().add(6, 'months').format('YYYY-MM-DD')"
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                     <div>
                                         <label for="barcode" class="text-xs">Barcode</label>
                                         <input type="text" v-model="item.barcode"
-                                            :disabled="item.status === 'approved'"
+                                            :disabled="props.packing_list.status === 'approved'"
                                             class="block w-full text-left text-black focus:ring-0 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500">
                                     </div>
                                 </div>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
                                 <div class="flex flex-col justify-center items-center">
                                     <div class="flex flex-col">
                                         <label class="text-xs">Unit Cost</label>
@@ -179,11 +179,11 @@
                                 </div>
                             </td>
                             <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-left']">
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status == 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-left']">
                                 <div class="space-y-2">
                                     <div class="flex items-center flex-col">
                                         <span>{{ calculateFulfillmentRate(item) }}%</span>
-                                        
+
                                     </div>
                                 </div>
                             </td>
@@ -211,83 +211,68 @@
                 </div>
 
                 <!-- Action Buttons -->
-            <div class="flex flex-col items-end mb-[100px]">
-                <div class="flex justify-end space-x-3 mb-[80px]">
-                    <div class="mt-6 flex justify-end gap-x-4">
-                        <button type="button" @click="reviewPackingList" :class="[
-                            'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
-                            hasReviewedItems || hasAllApproved
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
-                        ]" :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review">
-                            <svg v-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                </path>
-                            </svg>
-                            {{ isReviewing && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems || hasAllApproved) ? 'Reviewed' : 'Review') }}
-                        </button>
-                        <button type="button" @click="approvePackingList" :class="[
-                            'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
-                            hasAllApproved
-                                ? 'bg-green-50 text-green-700 border border-green-200'
-                                : !hasReviewedItems
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-                        ]" :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve">
-                            <svg v-if="hasAllApproved " class="w-5 h-5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <svg v-else-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4"></path>
-                            </svg>
-                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
-                                </path>
-                            </svg>
-                            {{ isApproving && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved' : 'Approve') }}
-                        </button>
-                        <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
-                            class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
-                            Back
-                        </button>
-                        <button v-if="!hasAllApproved" type="button" @click="submit"
-                            class="flex justify-center items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                            :disabled="isSubmitting || isApproving || isReviewing">
-                            {{ isSubmitting ? "Updating..." : "Update Changes" }}
-                        </button>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">Status Information</h3>
-                    <div class="mt-2 space-y-2 text-sm">
-                        <div v-if="form?.value?.reviewed_by" class="flex items-center gap-x-2 text-amber-700">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Reviewed on {{ formatDate(form.reviewed_at) }}</span>
-                        </div>
-                        <div v-if="form?.value?.approved_by" class="flex items-center gap-x-2 text-green-700">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Approved on {{ formatDate(form.approved_at) }}</span>
+                <div class="flex flex-col items-center mb-[100px]">
+                    <div class="flex justify-end space-x-3">
+                        <div class="mt-6 flex justify-end gap-x-4">
+                            <button type="button" @click="reviewPackingList" :class="[
+                                'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                                hasReviewedItems || hasAllApproved
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                    : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
+                            ]" :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review">
+                                <svg v-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg>
+                                {{ isReviewing && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems ||
+                                    hasAllApproved) ? 'Reviewed on ' + formatDate(props.packing_list.reviewed_at) : 'Review') }}
+                            </button>
+                            <button type="button" @click="approvePackingList" :class="[
+                                'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
+                                hasAllApproved
+                                    ? 'bg-green-50 text-green-700 border border-green-200'
+                                    : !hasReviewedItems
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                            ]" :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve">
+                                <svg v-if="hasAllApproved" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <svg v-else-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4"></path>
+                                </svg>
+                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7">
+                                    </path>
+                                </svg>
+                                {{ isApproving && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved on ' +
+                                    formatDate(props.packing_list.approved_at) : 'Approve') }}
+                            </button>
+                            <button type="button" @click="router.visit(route('supplies.index'))"
+                                :disabled="isSubmitting"
+                                class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
+                                Back
+                            </button>
+                            <button v-if="!hasAllApproved" type="button" @click="submit"
+                                class="flex justify-center items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                                :disabled="isSubmitting || isApproving || isReviewing">
+                                {{ isSubmitting ? "Updating..." : "Update Changes" }}
+                            </button>
                         </div>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -301,15 +286,17 @@
                 </div>
                 <div class="mt-6">
                     <InputLabel for="warehouse_id" value="Warehouse" />
-                    <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true" 
-                        :close-on-select="true" :show-labels="false" :allow-empty="false"
-                        placeholder="Select Warehouse" track-by="id" label="name" required>
+                    <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true"
+                        :close-on-select="true" :show-labels="false" :allow-empty="false" placeholder="Select Warehouse"
+                        track-by="id" label="name" required>
                     </Multiselect>
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
                     </SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">{{ isNewLocation ? "Waiting..." :
+                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">{{
+                        isNewLocation ?
+                            "Waiting..." :
                         "Create new location" }}</PrimaryButton>
                 </div>
             </div>
@@ -322,7 +309,8 @@
                     <div class="flex items-center mb-4">
                         <div class="rounded-full bg-yellow-100 p-3 mr-3">
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
                         <h2 class="text-lg font-medium text-gray-900">Incomplete Back Orders</h2>
@@ -331,7 +319,8 @@
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg">
                         <p class="text-sm font-medium text-gray-600 mb-2">Item: {{ selectedItem?.product?.name }}</p>
                         <p class="text-sm font-medium text-gray-600 mb-2">Missing Quantity: {{ missingQuantity }}</p>
-                        <p class="text-sm font-medium text-gray-600">Remaining to Allocate: {{ remainingToAllocate }}</p>
+                        <p class="text-sm font-medium text-gray-600">Remaining to Allocate: {{ remainingToAllocate }}
+                        </p>
                     </div>
                 </div>
 
@@ -339,8 +328,10 @@
 
                 <div class="mb-4 bg-gray-50 p-3 rounded">
                     <p class="text-sm font-medium text-gray-600">Product: {{ selectedItem?.product?.name }}</p>
-                    <p class="text-sm font-medium text-gray-600">Expected Quantity: {{ selectedItem?.purchase_order_item?.quantity }}</p>
-                    <p class="text-sm font-medium text-gray-600">Received Quantity: {{ selectedItem?.quantity || 0 }}</p>
+                    <p class="text-sm font-medium text-gray-600">Expected Quantity: {{
+                        selectedItem?.purchase_order_item?.quantity }}</p>
+                    <p class="text-sm font-medium text-gray-600">Received Quantity: {{ selectedItem?.quantity || 0 }}
+                    </p>
                     <p class="text-sm font-medium text-gray-600">Back Orders: {{ totalExistingDifferences }}</p>
                     <p class="text-sm font-medium text-yellow-800">Actual Mismatches: {{ actualMismatches }}</p>
                 </div>
@@ -352,7 +343,8 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity
+                                </th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
@@ -367,9 +359,8 @@
                                 <td class="px-3 py-2">
                                     <select v-model="row.status"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                        <option v-for="status in ['Missing', 'Damaged', 'Expired', 'Lost']" 
-                                                :key="status" 
-                                                :value="status">
+                                        <option v-for="status in ['Missing', 'Damaged', 'Expired', 'Lost']"
+                                            :key="status" :value="status">
                                             {{ status }}
                                         </option>
                                     </select>
@@ -397,10 +388,12 @@
                             Add Row
                         </button>
                         <div class="text-sm">
-                            <span :class="{'text-green-600': isValidForSave, 'text-red-600': !isValidForSave}">
+                            <span :class="{ 'text-green-600': isValidForSave, 'text-red-600': !isValidForSave }">
                                 {{ totalBackOrderQuantity }}
                             </span>
-                            <span class="text-gray-600"> / {{ selectedItem?.quantity - (selectedItem?.quantity || 0) }} items recorded</span>
+                            <span class="text-gray-600"> / {{ selectedItem?.quantity - (selectedItem?.quantity || 0) }}
+                                items
+                                recorded</span>
                         </div>
                     </div>
 
@@ -560,7 +553,7 @@ function hadleLocationSelect(index, selected) {
             toast.error('Please select a warehouse first');
             return;
         }
-        
+
         selectedItemIndex.value = index;
         // Pre-select the warehouse in the modal based on the item's warehouse
         selectedWarehouse.value = form.value.items[index].warehouse;
@@ -582,12 +575,12 @@ async function createLocation() {
         toast.error('Please enter a location name');
         return;
     }
-    
+
     if (!selectedWarehouse.value) {
         toast.error('Please select a warehouse');
         return;
     }
-    
+
     isNewLocation.value = true;
 
     await axios.post(route('supplies.store-location'), {
@@ -657,10 +650,10 @@ function openBackOrderModal(index) {
 
 const syncBackOrdersWithDifferences = () => {
     if (!selectedItem.value) return;
-    
+
     // Filter out rows with zero quantity
     const validRows = backOrderRows.value.filter(row => parseInt(row.quantity) > 0);
-    
+
     // Update the differences array
     selectedItem.value.differences = validRows.map(row => ({
         id: row.id,
@@ -775,7 +768,7 @@ const attemptCloseModal = () => {
 
 const closeBackOrderModal = () => {
     showBackOrderModal.value = false;
-    
+
     // If we have a selected item and it has differences, remove it from pending items
     if (selectedItem.value?.differences?.length > 0) {
         const itemIndex = pendingIncompleteItems.value.findIndex(i => i.id === selectedItem.value.id);
@@ -789,7 +782,7 @@ const closeBackOrderModal = () => {
             }
         }
     }
-    
+
     selectedItem.value = null;
     backOrderRows.value = [];
 }
@@ -829,7 +822,7 @@ const checkAndHandleIncompleteItems = async () => {
             pendingIncompleteItems.value = [...incompleteItems];
         }
 
-        const itemsList = pendingIncompleteItems.value.map(item => 
+        const itemsList = pendingIncompleteItems.value.map(item =>
             `${item.product.name} (Expected: ${item.purchase_order_item.quantity}, Received: ${item.quantity})`
         ).join('\n');
 
@@ -844,7 +837,7 @@ const checkAndHandleIncompleteItems = async () => {
 
         if (result.isConfirmed) {
             // Find the next incomplete item that hasn't been handled
-            const nextIncompleteIndex = form.value.items.findIndex(item => 
+            const nextIncompleteIndex = form.value.items.findIndex(item =>
                 pendingIncompleteItems.value.includes(item)
             );
             if (nextIncompleteIndex !== -1) {
@@ -857,8 +850,8 @@ const checkAndHandleIncompleteItems = async () => {
     return true;
 };
 
-function formatDateForInput(date){
-    return moment(date).format("YYYY-MM-DD");
+function formatDate(date) {
+    return moment(date).format("DD/MM/YYYY");
 }
 const submit = async () => {
     if (!form.value?.items?.length) {
@@ -889,12 +882,12 @@ const submit = async () => {
     isSubmitting.value = true;
 
     // Validate required fields
-    const invalidItems = form.value.items.filter(item => 
-        !item.warehouse_id || 
-        !item.location_id || 
-        !item.batch_number || 
-        !item.expire_date || 
-        item.quantity === null || 
+    const invalidItems = form.value.items.filter(item =>
+        !item.warehouse_id ||
+        !item.location_id ||
+        !item.batch_number ||
+        !item.expire_date ||
+        item.quantity === null ||
         item.quantity < 0
     );
 
@@ -902,7 +895,7 @@ const submit = async () => {
         toast.error('Please fill in all required fields for each item');
         return;
     }
-            
+
 
     console.log(form.value);
 
@@ -916,9 +909,9 @@ const submit = async () => {
                 icon: 'success',
                 confirmButtonColor: '#10B981',
             })
-            .then(() => {
-                router.visit(route('supplies.packing-list.edit', form.value.id));
-            });
+                .then(() => {
+                    router.visit(route('supplies.packing-list.edit', form.value.id));
+                });
         })
         .catch((error) => {
             isSubmitting.value = false;
@@ -951,11 +944,11 @@ const removeBackOrderRow = async (index, item) => {
             newRows.splice(index, 1);
             backOrderRows.value = newRows;
         }
-        
+
         // After successful removal, sync the differences
         await nextTick();
         syncBackOrdersWithDifferences();
-        
+
         // Check if we need to add a new row
         await nextTick();
         const remaining = remainingToAllocate.value;
@@ -994,7 +987,7 @@ async function reviewPackingList() {
         try {
             await axios.post(route('supplies.reviewPK'), {
                 id: form.value.id,
-                status: 'reviewed' 
+                status: 'reviewed'
             });
 
             await Swal.fire({
@@ -1003,9 +996,9 @@ async function reviewPackingList() {
                 icon: 'success',
                 confirmButtonColor: '#10B981',
             })
-            .then(() => {
-                router.visit(route('supplies.packing-list.showPK'));
-            });
+                .then(() => {
+                    router.visit(route('supplies.packing-list.showPK'));
+                });
 
         } catch (error) {
             toast.error(error.response?.data || 'An error occurred while reviewing the items');
@@ -1032,7 +1025,8 @@ async function approvePackingList() {
         isApproving.value = true;
         await axios.post(route('supplies.approvePK'), {
             id: form.value.id,
-            status: 'approved'
+            status: 'approved',
+            items: form.value.items
         })
             .then((response) => {
                 isApproving.value = false;

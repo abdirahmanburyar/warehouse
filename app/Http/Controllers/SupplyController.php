@@ -1769,13 +1769,15 @@ class SupplyController extends Controller
         try {
             $request->validate([
                 'id' => 'required|exists:packing_lists,id',
-                'status' => 'required|in:approved'
+                'status' => 'required|in:approved',
+                'items' => 'array'
             ]);
             DB::beginTransaction();
 
             $packingList = PackingList::with('items')->find($request->id);
+            logger()->info($request->items);
 
-            foreach ($packingList->items as $item) {
+            foreach ($request->items as $item) {
                 // Get the full packing list item data
                 $packingListItem = DB::table('packing_list_items')
                     ->where('id', $item['id'])
@@ -1789,7 +1791,7 @@ class SupplyController extends Controller
                         ->where('batch_number', $packingListItem->batch_number)
                         ->first();
 
-                    $receivedQuantity = (int) $item['received_quantity'];
+                    $receivedQuantity = (int) $item['quantity'];
                     if ($receivedQuantity > 0) {
                         if ($inventory) {
                             // Update existing inventory
@@ -1808,7 +1810,7 @@ class SupplyController extends Controller
                                     'received_by' => auth()->id(),
                                     'received_at' => now(),
                                     'product_id' => $inventory->product_id,
-                                    'packing_list_id' => $packingListItem->id,
+                                    'packing_list_id' => $packingListItem->packing_list_id,
                                     'expiry_date' => $packingListItem->expire_date,
                                     'uom' => $inventory->uom,
                                     'barcode' => $inventory->barcode,
@@ -1835,7 +1837,7 @@ class SupplyController extends Controller
                                 'received_by' => auth()->id(),
                                 'received_at' => now(),
                                 'product_id' => $packingListItem->product_id,
-                                'packing_list_id' => $packingListItem->id,
+                                'packing_list_id' => $packingListItem->packing_list_id,
                                 'expiry_date' => $packingListItem->expire_date,
                                 'uom' => $packingListItem->uom,
                                 'barcode' => $packingListItem->barcode,
@@ -1845,7 +1847,7 @@ class SupplyController extends Controller
                     }
 
                 // Only create a difference record if there's actually a difference in quantity
-                $difference = (int) $packingListItem->quantity - (int) $item['received_quantity'];
+                $difference = (int) $packingListItem->quantity - (int) $item['purchase_order_item']['quantity'];
                 if ($difference > 0) {
                     // Check if a difference record already exists
                     $existingDiff = DB::table('packing_list_differences')
@@ -1865,6 +1867,7 @@ class SupplyController extends Controller
                     }
                 }
             }
+        }
 
             $packingList->update([
                 'status' => $request->status,
@@ -1895,7 +1898,7 @@ class SupplyController extends Controller
                     $purchaseOrder->update(['status' => 'completed']);
                 }
             }
-        }
+        
 
             DB::commit();
             return response()->json('Packing list items have been approved and inventory has been updated');
