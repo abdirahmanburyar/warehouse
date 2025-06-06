@@ -124,7 +124,6 @@ class ProductsImport implements ToCollection
                         'category_id' => $categoryId,
                         'dosage_id' => $dosageId,
                         'movement' => 'Slow Moving', // Default movement value
-                        'reorder_level' => 0, // Default value
                         'is_active' => true, // Default value
                     ]);
                     

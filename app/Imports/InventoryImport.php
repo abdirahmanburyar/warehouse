@@ -131,7 +131,6 @@ class InventoryImport implements ToCollection
                             'name' => $itemName,
                             'category_id' => $defaultCategory->id,
                             'dosage_id' => $defaultDosage->id,
-                            'reorder_level' => 10, // Default reorder level
                             'is_active' => true,
                         ]);
                         
@@ -206,7 +205,6 @@ class InventoryImport implements ToCollection
                             'barcode' => $barcode,
                             'expiry_date' => $expiryDate,
                             'uom' => $uom,
-                            'reorder_level' => 10, // Default value
                             'is_active' => true,
                         ]);
                     }

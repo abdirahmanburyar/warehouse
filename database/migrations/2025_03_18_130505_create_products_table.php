@@ -29,7 +29,6 @@ return new class extends Migration
             $table->string('name');
             $table->foreignIdFor(Category::class)->nullable()->constrained()->nullOnDelete();
             $table->unsignedBigInteger('dosage_id')->nullable();
-            $table->double('reorder_level')->default(0);
             $table->string('movement');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

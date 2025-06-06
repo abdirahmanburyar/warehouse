@@ -48,12 +48,7 @@ class TransferController extends Controller
             $oldStatus = $transfer->status;
             $newStatus = $request->status;
 
-            if($oldStatus == 'pending' && $newStatus == 'approved'){
-                // Check if user has permission to approve transfers
-                if (!auth()->user()->can('transfer.approve')) {
-                    return response()->json('You do not have permission to approve transfers', 500);
-                }
-                
+            if($oldStatus == 'pending' && $newStatus == 'approved' && auth()->user()->can('transfer.approve')){                
                 $transfer->update([
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
@@ -64,7 +59,7 @@ class TransferController extends Controller
                 event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
-            if($oldStatus == 'approved' && $newStatus == 'in_process' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
+            if($oldStatus == 'approved' && $newStatus == 'in_process' && auth()->user()->can('transfer.in_process')){
                 $transfer->update([
                     'status' => 'in_process',
                 ]);
@@ -73,7 +68,7 @@ class TransferController extends Controller
                 event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
 
-            if($oldStatus == 'in_process' && $newStatus == 'dispatched' && $transfer->from_warehouse_id == auth()->user()->warehouse_id){
+            if($oldStatus == 'in_process' && $newStatus == 'dispatched' && auth()->user()->can('transfer.dispatch')){
                 $transfer->update([
                     'status' => 'dispatched',
                     'dispatched_by' => auth()->id(),    

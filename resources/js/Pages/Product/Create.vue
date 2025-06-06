@@ -64,17 +64,6 @@
                             </Multiselect>
                         </div>
 
-                        <!-- Reorder Level -->
-                        <div>
-                            <InputLabel for="reorder_level" value="Reorder Level" />
-                            <TextInput
-                                id="reorder_level"
-                                type="number"
-                                class="mt-1 block w-full"
-                                v-model="form.reorder_level"
-                            />
-                        </div>
-
                         <!-- Movement -->
                         <div>
                             <InputLabel for="movement" value="Pattern of Product" />
@@ -252,7 +241,6 @@ const form = ref({
     movement: '',
     category_id: '',
     dosage_id: '',
-    reorder_level: 0,
     category: null,
     dosage: null,
     facility_types: [],

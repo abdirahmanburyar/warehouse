@@ -85,7 +85,6 @@ class ComprehensiveProductsSeeder extends Seeder
                 'category_id' => $categoryId,
                 'type' => $item['type'],
                 'pack_size' => $item['pack_size'],
-                'reorder_level' => rand(5, 30),
                 'is_active' => true,
             ]);
             $countCreated++;

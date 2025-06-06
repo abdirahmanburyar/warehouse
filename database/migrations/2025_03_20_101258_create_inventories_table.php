@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('warehouse_id')->constrained()->onDelete('cascade');
             $table->integer('quantity')->default(0);
-            $table->integer('reorder_level')->default(10);
             $table->date('manufacturing_date')->nullable();
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();

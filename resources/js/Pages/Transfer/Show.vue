@@ -359,7 +359,7 @@
 
        <!-- Process button -->
        <div class="relative">
-         <button @click="changeStatus(props.transfer.id, 'in_process')" v-if="props.transfer.status === 'approved'  && currentUserWarehouse.id == props.transfer?.from_warehouse_id" 
+         <button @click="changeStatus(props.transfer.id, 'in_process')" v-if="props.transfer.status === 'approved'  && $page.props.auth.can.transfer_in_process" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/inprocess.png" class="w-8 h-8 mr-2" alt="Process" />
            <span class="text-sm font-bold text-white">Process</span>
@@ -368,7 +368,7 @@
            :class="[
              statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('approved') ? 'bg-[#55c5ff]' : 'bg-gray-300 cursor-not-allowed'
            ]"
-           class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]" disabled>
+           class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
            <img src="/assets/images/inprocess.png" class="w-8 h-8 mr-2" alt="Process" />
            <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('approved') ? 'Processed' : 'Process' }}</span>
          </button>
@@ -377,7 +377,7 @@
 
        <!-- Dispatch button -->
        <div class="relative">
-         <button @click="changeStatus(props.transfer.id, 'dispatched')" v-if="props.transfer.status === 'in_process' && currentUserWarehouse.id == props.transfer?.from_warehouse_id" 
+         <button @click="changeStatus(props.transfer.id, 'dispatched')" v-if="props.transfer.status === 'in_process' && $page.props.auth.can.transfer_dispatch" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/dispatch.png" class="w-8 h-8 mr-2" alt="Dispatch" />
            <span class="text-sm font-bold text-white">Dispatch</span>
@@ -394,7 +394,7 @@
        </div>
 
        <div class="relative">
-         <button @click="receiveTransfer(props.transfer.id)" v-if="props.transfer.status === 'dispatched' && props.transfer.to_warehouse_id === currentUserWarehouse.id" 
+         <button @click="receiveTransfer(props.transfer.id)" v-if="props.transfer.status === 'dispatched' && (currentUserWarehouse.id != null && $page.props.auth.can.transfer_receive)" 
            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-[#f59e0b] hover:bg-[#d97706] min-w-[160px]">
            <img src="/assets/images/dispatch.png" class="w-8 h-8 mr-2" alt="Dispatch" />
            <span class="text-sm font-bold text-white">Received</span>
@@ -1144,6 +1144,8 @@ const receiveTransfer = (transferId) => {
 
 // Function to change transfer status
 const changeStatus = (transferId, newStatus) => {
+  console.log(transferId, newStatus);
+  
    Swal.fire({
        title: "Are you sure?",
        text: `Do you want to change the transfer status to ${newStatus}?`,
