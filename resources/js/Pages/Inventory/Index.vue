@@ -481,7 +481,7 @@ function getResults(page = 1) {
                 </div>
             </div>
             <!-- Search and Filters -->
-            <div class="mb-1 flex flex-wrap items-center gap-4">
+            <div class="mb-1 flex justify-between flex-wrap items-center gap-4">
                 <div class="flex-grow relative search-with-icon">
                     <label>Search</label>
                     <div class="relative">
@@ -502,7 +502,7 @@ function getResults(page = 1) {
                         <TextInput
                             v-model="search"
                             type="text"
-                            class="w-full"
+                            class="w-[400px]"
                             placeholder="Search by item name, barcode"
                         />
                     </div>

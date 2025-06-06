@@ -38,7 +38,7 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 // Welcome route - accessible without authentication
 
 
-Route::get('/welcome', function () {
+Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
