@@ -1,31 +1,31 @@
 <template>
     <Head title="Welcome - Warehouse Management System" />
-    <div class="min-h-screen bg-gradient-to-br from-green-500 via-teal-400 to-blue-500">
-        <div class="container mx-auto">
+    <div class="min-h-screen bg-gradient-to-br from-green-500 via-teal-400 to-blue-500 p-0 flex flex-col justify-center">
+        <div class="container mx-auto px-2">
             <!-- Main Content -->
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
                 <!-- Left Content -->
                 <div class="flex-1 text-white">
                     <!-- Logos -->
-                    <div class="flex items-center gap-8 mb-12">
-                        <img src="/assets/images/vista.png" alt="Vista Logo" class="h-[100px]" />
-                        <img src="/assets/images/moh.png" alt="MOH Logo" class="h-[100px] rounded-full" />
-                        <img src="/assets/images/psi.jpg" alt="PSI Logo" class="h-[100px] rounded" />
+                    <div class="flex gap-4 mb-6">
+                        <img src="/assets/images/vista.png" alt="Vista Logo" class="h-[90px]" />
+                        <img src="/assets/images/moh.png" alt="MOH Logo" class="h-[90px] rounded-full" />
+                        <img src="/assets/images/psi.jpg" alt="PSI Logo" class="h-[90px] rounded" />
                     </div>
 
                     <!-- Main Text -->
-                    <h1 class="text-6xl font-bold mb-6 leading-tight">
+                    <h1 class="text-2xl font-bold mb-4 leading-tight">
                         Ensuring Every<br />
                         Essential Medicines<br />
                         are Within Reach
                     </h1>
 
-                    <p class="text-xl mb-12 max-w-2xl">
+                    <p class="text-sm mb-6 max-w-md">
                         Step into the future of inventory management where every supply is tracked, every need met, and reliability is just a click away.
                     </p>
 
                     <!-- Action Buttons -->
-                    <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-4">
                         <Link :href="route('login')" class="flex items-center gap-2 bg-gradient-to-r from-[#032B44] to-[#009E54] text-white px-8 py-4 rounded-full font-semibold hover:from-[#021331] hover:to-[#007A3F] transition-all shadow-lg">
                             <span>Sign in</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -36,16 +36,16 @@
                 </div>
 
                 <!-- Right Content -->
-                <div class="flex-1">
+                <div class="flex-1 flex items-center justify-center">
                     <div class="relative">
-                        <img src="/assets/images/10873037.webp" alt="Inventory Boxes" class="w-full max-w-2xl mx-auto drop-shadow-2xl" />
+                        <img src="/assets/images/10873037.webp" alt="Inventory Boxes" class="w-full max-w-xl mx-auto drop-shadow-2xl" />
                     </div>
                 </div>
             </div>
 
         </div>
         <!-- Navigation Icons -->
-        <div class="mt-2 relative overflow-hidden">
+        <div class="mt-2 relative overflow-hidden pb-2">
             <div class="flex whitespace-nowrap animate-scroll">
                 <!-- First set of items -->
                 <div class="flex gap-6">
