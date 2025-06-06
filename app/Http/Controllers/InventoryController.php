@@ -82,11 +82,11 @@ class InventoryController extends Controller
     
 
         // Get inventory status counts
-        $inStockCount = Inventory::whereRaw('quantity > (products.reorder_level * 5)')
+        $inStockCount = Inventory::whereRaw('quantity > (products.id * 5)')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->count();
 
-        $lowStockCount = Inventory::whereRaw('quantity <= (products.reorder_level * 5)')
+        $lowStockCount = Inventory::whereRaw('quantity <= (products.id * 5)')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->count();
 
@@ -134,7 +134,6 @@ class InventoryController extends Controller
             'product_id' => 'required|exists:products,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'quantity' => 'required|numeric|min:0',
-            'reorder_level' => 'required|numeric|min:0',
             'manufacturing_date' => 'nullable|date',
             'expiry_date' => 'nullable|date|after:manufacturing_date',
             'batch_number' => 'nullable|string',

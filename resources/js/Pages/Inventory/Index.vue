@@ -80,7 +80,6 @@ const form = ref({
     product: null,
     warehouse: "",
     quantity: 0,
-    reorder_level: 10,
     manufacturing_date: "",
     expiry_date: "",
     batch_number: "",
@@ -301,7 +300,8 @@ const formatDate = (date) => {
 // Check if inventory is low
 const isLowStock = (inventory) => {
     return (
-        inventory.quantity > 0 && inventory.quantity <= inventory.reorder_level
+        inventory.quantity > 0 && inventory.quantity <= 200
+        // inventory.quantity > 0 && inventory.quantity <= inventory.reorder_level
     );
 };
 
@@ -370,7 +370,6 @@ function editInventory(inventory) {
         product_id: inventory.product_id,
         warehouse_id: inventory.warehouse_id,
         quantity: inventory.quantity,
-        reorder_level: inventory.reorder_level,
         manufacturing_date: inventory.manufacturing_date,
         expiry_date: inventory.expiry_date,
         batch_number: inventory.batch_number,
