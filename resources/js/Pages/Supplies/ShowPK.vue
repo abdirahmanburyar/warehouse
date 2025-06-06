@@ -16,6 +16,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border border-black">Received Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border border-black">Total Cost</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border border-black">Avg Lead Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border border-black">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border border-black">Fullfillment Rate</th>
                         </tr>
                     </thead>
@@ -30,6 +31,7 @@
                             <td class="px-6 py-4 border border-black">{{ moment(group.receiving_date).format('DD/MM/YYYY') }}</td>
                             <td class="px-6 py-4 border border-black">${{ Number(group.total_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
                             <td class="px-6 py-4 border border-black">{{ group.avg_lead_time }}</td>
+                            <td class="px-6 py-4 border border-black capitalize">{{ group.status }}</td>
                             <td class="px-6 py-4 border border-black">{{ group.fulfillment_rate }}</td>
                         </tr>
                     </tbody>

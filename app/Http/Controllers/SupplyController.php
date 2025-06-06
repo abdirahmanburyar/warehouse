@@ -1654,12 +1654,13 @@ class SupplyController extends Controller
     {
         try {
             return DB::transaction(function() use ($request){
+                logger()->info($request->all());
                 $request->validate([
                     'id' => 'required',
                     'pk_date' => 'required|date',
                     'packing_list_number' => 'required',
                     'purchase_order_id' => 'required|exists:purchase_orders,id',
-                    'ref_no' => 'required',
+                    'ref_no' => 'nullable',
                     'items' => 'required|array',
                     'items.*.id' => 'required|exists:packing_list_items,id',
                     'items.*.product_id' => 'required|exists:products,id',
@@ -1746,21 +1747,17 @@ class SupplyController extends Controller
         try {
             $request->validate([
                 'id' => 'required',
-                'items' => 'required|array',
-                'items.*.id' => 'required',
-                'items.*.status' => 'required|in:reviewed'
+                'status' => 'required|in:reviewed'
             ]);
 
-            foreach($request->items as $item) {
-                PackingList::where('id', $item['id'])
-                    ->update([
-                        'status' => $item['status'],
-                        'reviewed_by' => auth()->user()->id,
-                        'reviewed_at' => now()
-                    ]);
-            }
+            PackingList::where('id', $request->id)
+                ->update([
+                    'status' => $request->status,
+                    'reviewed_by' => auth()->user()->id,
+                    'reviewed_at' => now()
+                ]);
 
-            return response()->json('Items have been reviewed successfully');
+            return response()->json('Items have been reviewed successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -1768,34 +1765,23 @@ class SupplyController extends Controller
 
     public function approvePK(Request $request)
     {
-        $request->validate([
-            'id' => 'required',
-            'items' => 'required|array',
-            'items.*.id' => 'required',
-            'items.*.status' => 'required|string',
-            'items.*.received_quantity' => 'required',
-            'items.*.product_id' => 'required',
-        ]);
-
+        
         try {
+            $request->validate([
+                'id' => 'required|exists:packing_lists,id',
+                'status' => 'required|in:approved'
+            ]);
             DB::beginTransaction();
 
-            foreach ($request->items as $item) {
+            $packingList = PackingList::with('items')->find($request->id);
+
+            foreach ($packingList->items as $item) {
                 // Get the full packing list item data
-                $packingListItem = DB::table('packing_lists')
+                $packingListItem = DB::table('packing_list_items')
                     ->where('id', $item['id'])
                     ->first();
 
                 if ($packingListItem) {
-                    // Update packing list status
-                    DB::table('packing_lists')
-                        ->where('id', $item['id'])
-                        ->update([
-                            'status' => $item['status'],
-                            'approved_at' => now(),
-                            'approved_by' => auth()->user()->id
-                        ]);
-
                     // Check if inventory exists for this product in this warehouse
                     $inventory = DB::table('inventories')
                         ->where('product_id', $packingListItem->product_id)
@@ -1863,14 +1849,14 @@ class SupplyController extends Controller
                 if ($difference > 0) {
                     // Check if a difference record already exists
                     $existingDiff = DB::table('packing_list_differences')
-                        ->where('packing_list_id', $item['id'])
+                        ->where('packing_listitem_id', $item['id'])
                         ->where('status', 'Missing')
                         ->first();
                     
                     if (!$existingDiff) {
                         DB::table('packing_list_differences')->insert([
                             'product_id' => $packingListItem->product_id,
-                            'packing_list_id' => $item['id'],
+                            'packing_listitem_id' => $item['id'],
                             'quantity' => $difference,
                             'status' => 'Missing',
                             'created_at' => now(),
@@ -1879,6 +1865,12 @@ class SupplyController extends Controller
                     }
                 }
             }
+
+            $packingList->update([
+                'status' => $request->status,
+                'approved_by' => auth()->user()->id,
+                'approved_at' => now()
+            ]);
 
             // Check if PO should be marked as completed
             $purchaseOrder = PurchaseOrder::with(['items', 'packingLists' => function($query) {

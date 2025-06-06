@@ -219,8 +219,8 @@
                             hasReviewedItems || hasAllApproved
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
-                        ]" :disabled="isSubmitting || hasReviewedItems || !hasPendingItems || hasAllApproved">
-                            <svg v-if="hasReviewedItems || hasAllApproved" class="w-5 h-5" fill="none" stroke="currentColor"
+                        ]" :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review">
+                            <svg v-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -232,7 +232,7 @@
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
                                 </path>
                             </svg>
-                            {{ isSubmitting && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems || hasAllApproved) ? 'Reviewed' : 'Review') }}
+                            {{ isReviewing && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems || hasAllApproved) ? 'Reviewed' : 'Review') }}
                         </button>
                         <button type="button" @click="approvePackingList" :class="[
                             'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
@@ -241,8 +241,8 @@
                                 : !hasReviewedItems
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-                        ]" :disabled="isSubmitting || !hasReviewedItems || hasAllApproved">
-                            <svg v-if="hasAllApproved" class="w-5 h-5" fill="none" stroke="currentColor"
+                        ]" :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve">
+                            <svg v-if="hasAllApproved " class="w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -256,7 +256,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
                                 </path>
                             </svg>
-                            {{ isSubmitting && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved' : 'Approve') }}
+                            {{ isApproving && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved' : 'Approve') }}
                         </button>
                         <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
                             class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
@@ -264,8 +264,8 @@
                         </button>
                         <button v-if="!hasAllApproved" type="button" @click="submit"
                             class="flex justify-center items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                            :disabled="isSubmitting">
-                            {{ isSubmitting ? "Saving..." : "Save Changes" }}
+                            :disabled="isSubmitting || isApproving || isReviewing">
+                            {{ isSubmitting ? "Updating..." : "Update Changes" }}
                         </button>
                     </div>
                 </div>
@@ -277,14 +277,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Reviewed on {{ formatDate(form.value.reviewed_at) }}</span>
+                            <span>Reviewed on {{ formatDate(form.reviewed_at) }}</span>
                         </div>
                         <div v-if="form?.value?.approved_by" class="flex items-center gap-x-2 text-green-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Approved on {{ formatDate(form.value.approved_at) }}</span>
+                            <span>Approved on {{ formatDate(form.approved_at) }}</span>
                         </div>
                     </div>
                 </div>
@@ -447,7 +447,7 @@ const props = defineProps({
     }
 })
 
-const form = ref(null);
+const form = ref(props.packing_list || {});
 const processing = ref(false);
 const isSubmitting = ref(false);
 const showLocationModal = ref(false);
@@ -526,15 +526,15 @@ const canAddMoreRows = computed(() => {
 });
 
 const hasAllApproved = computed(() => {
-    return form.value?.items?.every(item => item.status === 'approved');
+    return props.packing_list?.status == 'approved';
 });
 
 const hasPendingItems = computed(() => {
-    return form.value?.items?.some(item => item.status == 'pending');
+    return props.packing_list?.status == 'pending';
 });
 
 const hasReviewedItems = computed(() => {
-    return form.value?.items?.every(item => item.status == 'reviewed');
+    return props.packing_list?.status == 'reviewed';
 });
 
 onMounted(() => {
@@ -975,6 +975,9 @@ const availableStatuses = computed(() => {
     return allStatuses.filter(status => !usedStatuses.has(status));
 });
 
+
+const isReviewing = ref(false);
+
 async function reviewPackingList() {
     const confirm = await Swal.fire({
         title: 'Review Packing List',
@@ -987,14 +990,11 @@ async function reviewPackingList() {
     });
 
     if (confirm.isConfirmed) {
-        isSubmitting.value = true;
+        isReviewing.value = true;
         try {
             await axios.post(route('supplies.reviewPK'), {
                 id: form.value.id,
-                items: form.value.items.filter(item => item.status === 'pending').map(item => ({
-                    id: item.id,
-                    status: 'reviewed'
-                }))
+                status: 'reviewed' 
             });
 
             await Swal.fire({
@@ -1002,16 +1002,20 @@ async function reviewPackingList() {
                 text: 'Items have been reviewed',
                 icon: 'success',
                 confirmButtonColor: '#10B981',
+            })
+            .then(() => {
+                router.visit(route('supplies.packing-list.showPK'));
             });
 
-            router.visit(route('supplies.packing-list.showPK'));
         } catch (error) {
             toast.error(error.response?.data || 'An error occurred while reviewing the items');
         } finally {
-            isSubmitting.value = false;
+            isReviewing.value = false;
         }
     }
 }
+
+const isApproving = ref(false);
 
 async function approvePackingList() {
     const confirm = await Swal.fire({
@@ -1025,19 +1029,13 @@ async function approvePackingList() {
     });
 
     if (confirm.isConfirmed) {
-        isSubmitting.value = true;
+        isApproving.value = true;
         await axios.post(route('supplies.approvePK'), {
             id: form.value.id,
-            items: form.value.items.filter(item => item.status === 'reviewed').map(item => ({
-                id: item.id,
-                status: 'approved',
-                quantity: item.purchase_order_item.quantity,
-                quantity: item.quantity,
-                product_id: item.product_id,
-            }))
+            status: 'approved'
         })
             .then((response) => {
-                isSubmitting.value = false;
+                isApproving.value = false;
                 Swal.fire({
                     title: 'Success!',
                     text: 'Items have been approved',
@@ -1049,7 +1047,7 @@ async function approvePackingList() {
             })
             .catch((error) => {
                 console.log(error);
-                isSubmitting.value = false;
+                isApproving.value = false;
                 toast.error(error.response?.data || 'An error occurred while approving the items');
             });
     }
