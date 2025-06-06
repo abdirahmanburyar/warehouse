@@ -669,7 +669,6 @@ function getResults(page = 1) {
             <div class="flex justify-between">
                 <!-- Inventory Table -->
                 <div class="overflow-auto w-full">
-                    {{ props.inventories }}
                     <table
                         class="min-w-full border border-gray-200 divide-y divide-gray-200 rounded-xl overflow-hidden"
                     >
@@ -688,7 +687,7 @@ function getResults(page = 1) {
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
                                     style="color: #636db4"
                                 >
-                                    Batch Number
+                                    Item Info
                                 </th>
                                 <th
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
@@ -700,19 +699,19 @@ function getResults(page = 1) {
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
                                     style="color: #636db4"
                                 >
-                                    Quantity on Hand Per Unit
+                                    Quantity
                                 </th>
                                 <th
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
                                     style="color: #636db4"
                                 >
-                                    Expiration Date
+                                    Expiry Date
                                 </th>
                                 <th
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
                                     style="color: #636db4"
                                 >
-                                    Location
+                                    Storage Location
                                 </th>
                                 <th
                                     class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
@@ -780,9 +779,17 @@ function getResults(page = 1) {
                                     </div>
                                 </td>
                                 <td
-                                    class="px-3 py-4 whitespace-nowrap text-sm text-gray-500"
+                                    class="px-3 py-4 whitespace-nowrap text-sm text-black"
                                 >
-                                    {{ inventory.batch_number }}
+                                    <div>
+                                        Batch Number: {{ inventory.batch_number }}
+                                    </div>
+                                    <div>
+                                        Barcode: {{ inventory.barcode }}
+                                    </div>
+                                    <div>
+                                        UoM: {{ inventory.uom }}
+                                    </div>
                                 </td>
                                 <td class="px-3 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
@@ -831,7 +838,12 @@ function getResults(page = 1) {
                                 <td
                                     class="px-3 py-4 whitespace-nowrap text-sm text-gray-500"
                                 >
-                                    {{ inventory.location?.location }}
+                                    <div>
+                                        WH: {{ inventory.warehouse?.name }}
+                                    </div>
+                                    <div>
+                                        Location: {{ inventory.location?.location }}
+                                    </div>
                                 </td>
                                 <td class="px-3 py-4 whitespace-nowrap">
                                     <div class="flex items-center space-x-2">
