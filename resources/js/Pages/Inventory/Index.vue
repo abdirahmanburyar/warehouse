@@ -481,173 +481,72 @@ function getResults(page = 1) {
                 </div>
             </div>
             <!-- Search and Filters -->
-            <div class="mb-1 flex justify-between flex-wrap items-center gap-4">
-                <div class="flex-grow relative search-with-icon">
-                    <label>Search</label>
-                    <div class="relative">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="search-icon h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                        </svg>
-                        <TextInput
-                            v-model="search"
-                            type="text"
-                            class="w-[400px]"
-                            placeholder="Search by item name, barcode"
-                        />
-                    </div>
+            <div class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="col-span-1 md:col-span-2 min-w-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <TextInput
+                        v-model="search"
+                        type="text"
+                        class="w-full"
+                        placeholder="Search by item name, barcode"
+                    />
                 </div>
-
-                <div class="flex flex-wrap items-center gap-4">
-                    <div class="w-[300px] relative">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Category</label
-                        >
-                        <div class="relative">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="filter-icon h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                                />
-                            </svg>
-                            <Multiselect
-                                v-model="category"
-                                :options="props.category"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a category"
-                                :allow-empty="true"
-                                class="multiselect--with-icon multiselect--rounded"
-                            >
-                            </Multiselect>
-                        </div>
-                    </div>
-                    <div class="w-[300px] relative">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Dosage Form</label
-                        >
-                        <div class="relative">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="filter-icon h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                                />
-                            </svg>
-                            <Multiselect
-                                v-model="dosage"
-                                :options="props.dosage"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a dosage form"
-                                :allow-empty="true"
-                                class="multiselect--with-icon multiselect--rounded"
-                            >
-                            </Multiselect>
-                        </div>
-                    </div>
-                    <div class="w-[300px] relative">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Warehouse</label
-                        >
-                        <div class="relative">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="filter-icon h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                />
-                            </svg>
-                            <Multiselect
-                                v-model="warehouse"
-                                :options="props.warehouses"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a warehouse"
-                                :allow-empty="true"
-                                class="multiselect--with-icon multiselect--rounded"
-                            >
-                            </Multiselect>
-                        </div>
-                    </div>
-                    <div class="w-[300px] relative">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Storage Location</label
-                        >
-                        <div class="relative">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="filter-icon h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                />
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                            </svg>
-                            <Multiselect
-                                v-model="location"
-                                :options="loadedLocation"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a S. Location"
-                                :allow-empty="true"
-                                :disabled="warehouse == null"
-                                class="multiselect--with-icon multiselect--rounded"
-                            >
-                            </Multiselect>
-                        </div>
-                    </div>
+                <div class="col-span-1 min-w-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <Multiselect
+                        v-model="category"
+                        :options="props.category"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select a category"
+                        :allow-empty="true"
+                        class="multiselect--with-icon w-full"
+                    >
+                    </Multiselect>
+                </div>
+                <div class="col-span-1 min-w-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Form</label>
+                    <Multiselect
+                        v-model="dosage"
+                        :options="props.dosage"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select a dosage form"
+                        :allow-empty="true"
+                        class="multiselect--with-icon w-full"
+                    >
+                    </Multiselect>
+                </div>
+                <div class="col-span-1 min-w-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                    <Multiselect
+                        v-model="warehouse"
+                        :options="props.warehouses"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select a warehouse"
+                        :allow-empty="true"
+                        class="multiselect--with-icon multiselect--rounded w-full"
+                    >
+                    </Multiselect>
+                </div>
+                <div class="col-span-1 min-w-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                    <Multiselect
+                        v-model="location"
+                        :options="loadedLocation"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="Select a S. Location"
+                        :allow-empty="true"
+                        :disabled="warehouse == null"
+                        class="multiselect--with-icon multiselect--rounded w-full"
+                    >
+                    </Multiselect>
                 </div>
             </div>
             <div class="flex justify-end mt-3">
@@ -1185,69 +1084,3 @@ function getResults(page = 1) {
         </Modal>
     </AuthenticatedLayout>
 </template>
-
-<style>
-/* Make all filter inputs have border radius of 50% with black borders */
-.multiselect__tags {
-    border-radius: 50px !important;
-    border: 1px solid black !important;
-}
-
-/* Style the text input to match the rounded filter style */
-input[type="text"] {
-    border-radius: 50px !important;
-    border: 1px solid black !important;
-}
-
-/* Style the dropdown menu to match */
-.multiselect__content-wrapper {
-    border-radius: 20px !important;
-    border: 1px solid black !important;
-    margin-top: 5px;
-    overflow: hidden;
-}
-
-/* Add padding for icons in search input */
-.search-with-icon {
-    position: relative;
-}
-
-.search-with-icon input {
-    padding-left: 40px !important;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    color: #6b7280;
-}
-
-/* Style for filter icons */
-.filter-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    color: #6b7280;
-}
-
-.multiselect--with-icon .multiselect__tags {
-    padding-left: 40px !important;
-}
-
-.multiselect--rounded .multiselect__tags {
-    border-radius: 9999px !important;
-    border: 1px solid black !important;
-}
-
-.multiselect--rounded .multiselect__content-wrapper {
-    border-radius: 1rem !important;
-    border: 1px solid black !important;
-    margin-top: 5px;
-    overflow: hidden;
-}
-</style>
