@@ -35,11 +35,11 @@ class InventoryController extends Controller
         // Apply filters
         if ($request->has('search')) {
             $search = $request->search;
-            $query->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhere('batch_number', 'like', "%{$search}%");
-            });
+            $query->where('barcode', 'like', "%{$search}%")
+                ->orWhere('batch_number', 'like', "%{$search}%")
+                ->orWhereHas('product', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
         }
         
         if ($request->has('product_id') && $request->product_id) {
