@@ -11,7 +11,7 @@
                 <div class="mb-6 flex flex-wrap items-end gap-4">
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
-                        <Multiselect v-model="filters.facility_id"
+                        <Multiselect v-model="props.filters.facility_id"
                             :options="[{ id: null, name: 'All Facilities' }, ...facilities]" :searchable="true"
                             :close-on-select="true" :show-labels="false" :allow-empty="true"
                             placeholder="Select Facility" track-by="id" label="name" class="mt-1">
@@ -25,13 +25,13 @@
 
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
-                        <input type="month" v-model="filters.start_month"
+                        <input type="month" v-model="props.filters.start_month"
                             class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                     </div>
 
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
-                        <input type="month" v-model="filters.end_month"
+                        <input type="month" v-model="props.filters.end_month"
                             class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                     </div>
 
@@ -121,7 +121,7 @@
                     </div>
 
                     <div class="text-center text-sm text-gray-600">
-                        <p>Report Period: {{ formatMonth(filters.start_month) }} to {{ formatMonth(filters.end_month) }}
+                        <p>Report Period: {{ formatMonth(props.filters.start_month) }} to {{ formatMonth(props.filters.end_month) }}
                         </p>
                     </div>
                 </div>
@@ -325,6 +325,7 @@ const props = defineProps({
     facilities: Array,
     products: Array,
     yearMonths: Array,
+    filters: Object
 });
 
 // For product search filtering
