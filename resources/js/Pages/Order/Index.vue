@@ -54,7 +54,7 @@ const orderType = ref(props.filters?.orderType || null);
 const facilityLocation = ref(props.filters?.facilityLocation || null);
 const dateFrom = ref(props.filters?.dateFrom || null);
 const dateTo = ref(props.filters?.dateTo || null);
-const per_page = ref(props.filters.per_page)
+const per_page = ref(props.filters.per_page || 25);
 
 const changeStatus = (orderId, newStatus) => {
     Swal.fire({
@@ -238,9 +238,9 @@ const formatDate = (date) => {
     <AuthenticatedLayout title="All Orders" img="/assets/images/orders.png">
         <!-- Filters Section -->
         <div class="bg-white mb-6 p-4 text-xs">
-            <div class="flex flex-wrap gap-4 items-center mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-5">
                 <!-- Search -->
-                <div class="relative w-full sm:w-auto flex-grow min-w-[250px]">
+                <div class="relative w-full">
                     <input type="text" v-model="search" placeholder="Search orders..."
                         class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
@@ -251,7 +251,7 @@ const formatDate = (date) => {
                 </div>
 
                 <!-- Facility Filter -->
-                <div class="w-full sm:w-auto flex-none min-w-[200px] w-[220px]">
+                <div class="w-full">
                     <Multiselect v-model="selectedFacility" :options="props.facilities" :searchable="true"
                         :close-on-select="true" :show-labels="false" :allow-empty="true" placeholder="Select Facility"
                         track-by="id" label="name" @select="handleSelect" @remove="handleRemove('facility')">
@@ -259,7 +259,7 @@ const formatDate = (date) => {
                 </div>
 
                 <!-- Order Type Filter -->
-                <div class="w-full sm:w-auto flex-none min-w-[200px] w-[220px]">
+                <div class="w-full">
                     <Multiselect v-model="selectedOrderType" :options="orderTypes" :searchable="true"
                         :close-on-select="true" :show-labels="false" :allow-empty="true" placeholder="Select Order Type"
                         track-by="id" label="name" @select="handleOrderTypeSelect" @remove="handleRemove('orderType')">
@@ -267,7 +267,7 @@ const formatDate = (date) => {
                 </div>
 
                 <!-- District Filter -->
-                <div class="w-full sm:w-auto flex-none min-w-[200px] w-[220px]">
+                <div class="w-full">
                     <Multiselect v-model="facilityLocation" :options="props.facilityLocations"
                         :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                         placeholder="Select District">
@@ -275,7 +275,7 @@ const formatDate = (date) => {
                 </div>
 
                 <!-- Date From -->
-                <div class="w-full sm:w-auto flex-none min-w-[150px] w-[180px]">
+                <div class="w-full">
                     <div class="relative">
                         <input type="date" v-model="dateFrom"
                             class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -284,28 +284,27 @@ const formatDate = (date) => {
                 </div>
 
                 <!-- Date To -->
-                <div class="w-full sm:w-auto flex-none min-w-[150px] w-[180px]">
+                <div class="w-full">
                     <div class="relative">
                         <input type="date" v-model="dateTo"
                             class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <label class="absolute -top-5 left-0 text-xs text-black">To Date</label>
                     </div>
                 </div>
-                <div class="flex justify-end mt-3 mb-2 w-[200px]">
-                    <select v-model="per_page" @change="props.filters.page = 1" class="w-full border border-black rounded-3xl">
-                        <option value="10">10 Per page</option>
-                        <option value="25">25 Per page</option>
-                        <option value="50">50 Per page</option>
-                        <option value="100">100 Per page</option>
-                    </select>
-                </div>
-
+            </div>
+            <div class="flex justify-end items-center ">
+                <select v-model="per_page" @change="props.filters.page = 1" class=" md:w-[200px] sm:w-[150px] xs:w-full border border-black rounded-3xl">
+                    <option value="10">10 Per page</option>
+                    <option value="25">25 Per page</option>
+                    <option value="50">50 Per page</option>
+                    <option value="100">100 Per page</option>
+                </select>
             </div>
             <!-- Status Tabs -->
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8">
                     <button v-for="tab in statusTabs" :key="tab.value" @click="currentStatus = tab.value"
-                        class="whitespace-nowrap py-4 px-1 border-b-4 font-bold text-lg" :class="[
+                        class="whitespace-nowrap py-4 px-1 border-b-4 font-bold text-xs" :class="[
                             currentStatus === tab.value ?
                                 `border-${tab.color}-500 text-${tab.color}-600` :
                                 'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
@@ -324,10 +323,10 @@ const formatDate = (date) => {
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Orders Table -->
-            <div class="lg:col-span-10">
+            <div class="lg:col-span-10 text-xs">
                 <div>
                     <div class="overflow-auto">
-                        <table class="w-full">
+                        <table class="w-full table-sm">
                             <thead 
                             style="background-color: #eef1f8"
                             class="rounded-t-xl"
@@ -372,19 +371,19 @@ const formatDate = (date) => {
                                 }">
                                     <!-- Checkbox cell removed -->
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
+                                        <div class="text-xs text-gray-900">
                                             <Link :href="route('orders.show', order.id)">{{ order.order_number }}</Link>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ order.facility?.name }}</div>
+                                        <div class="text-xs text-gray-900">{{ order.facility?.name }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
                                         {{ order.order_type }}
                                     </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                        <div class="text-sm text-gray-900">{{ formatDate(order.created_at) }}</div>
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
+                                        <div class="text-xs text-gray-900">{{ formatDate(order.created_at) }}</div>
                                         <div class="text-xs text-black">Expected: {{ formatDate(order.expected_date)
                                             }}</div>
                                     </td>
@@ -421,7 +420,7 @@ const formatDate = (date) => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-xs font-medium space-x-2">
                                         <template v-for="action in getStatusActions(order)" :key="action.status">
                                             <button @click="changeStatus(order.id, action.status)"
                                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150 relative"
@@ -462,8 +461,7 @@ const formatDate = (date) => {
             </div>
             <!-- Status Statistics -->
             <div class="lg:col-span-1">
-                <div class="sticky top-4 sticky:mt-5">
-                    <h3 class="text-sm font-bold text-gray-900 mb-6">Order Statistics</h3>
+                <div class="sticky text-xs top-4 sticky:mt-5">
                     <div class="space-y-8">
                         <!-- Pending -->
                         <div class="relative">
@@ -593,6 +591,7 @@ const formatDate = (date) => {
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

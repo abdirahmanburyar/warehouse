@@ -23,7 +23,7 @@ class Liquidate extends Model
         'product_id',
         'transfer_id',
         'purchase_order_id',
-        'packing_list_id',
+        'packing_listitem_id',
         'inventory_id',
         'liquidated_by',
         'liquidated_at',
@@ -69,11 +69,11 @@ class Liquidate extends Model
     }
 
     /**
-     * Get the packing list that owns the liquidate record
+     * Get the packing list item that owns the liquidate record
      */
-    public function packingList(): BelongsTo
+    public function packingListItem(): BelongsTo
     {
-        return $this->belongsTo(PackingList::class);
+        return $this->belongsTo(PackingListItem::class);
     }
 
     /**

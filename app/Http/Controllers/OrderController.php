@@ -89,7 +89,7 @@ class OrderController extends Controller
                 });
             })            
             ->latest()
-            ->paginate($request->per_page ?? 10, ['*'], 'page', $request->page ?? 1);
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1));
 
         // Get order statistics from orders table
         $stats = DB::table('orders')

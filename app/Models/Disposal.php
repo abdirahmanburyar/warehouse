@@ -23,7 +23,7 @@ class Disposal extends Model
         'product_id',
         'transfer_id',
         'purchase_order_id',
-        'packing_list_id',
+        'packing_listitem_id',
         'inventory_id',
         'disposed_by',
         'disposed_at',
@@ -69,11 +69,11 @@ class Disposal extends Model
     }
 
     /**
-     * Get the packing list that owns the disposal record
+     * Get the packing list item that owns the disposal record
      */
-    public function packingList(): BelongsTo
+    public function packingListItem(): BelongsTo
     {
-        return $this->belongsTo(PackingList::class);
+        return $this->belongsTo(PackingListItem::class);
     }
 
     /**

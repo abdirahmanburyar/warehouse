@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('liquidate_id')->unique();
             $table->foreignId('product_id')->nullable()->nullOnDelete();
             $table->foreignId('purchase_order_id')->nullable()->nullOnDelete();
-            $table->foreignId('packing_list_id')->nullable()->nullOnDelete();
+            $table->foreignId('packing_listitem_id')->nullable()->nullOnDelete();
             $table->foreignId('inventory_id')->nullable()->nullOnDelete();
             $table->foreignId('liquidated_by')->nullable()->nullOnDelete();
             $table->string('barcode')->nullable();
