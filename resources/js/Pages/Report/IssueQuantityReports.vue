@@ -131,6 +131,11 @@
                     Apply Filter
                 </button>
 
+                <!-- Upload Excel Button -->
+                <button class="ml-2 px-4 py-2 bg-green-600 text-white rounded" @click="showUploadModal = true">
+                  Upload Excel
+                </button>
+
                 <!-- Export Button (Only visible with export permission) -->
                 <button
                     v-if="$page.props.auth.can.report_view"
@@ -440,6 +445,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Upload Excel Modal (TailwindCSS Dialog) -->
+<div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold">Upload Issue Quantity Excel</h3>
+      <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <form @submit.prevent="submitUpload">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Month/Year</label>
+        <input v-model="uploadMonthYear" type="month" required class="border rounded px-2 py-1 w-full" name="month_year" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Excel File</label>
+        <input ref="excelFile" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
+      </div>
+      <div class="flex justify-end">
+        <button type="button" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
+        <button type="submit" class="px-3 py-1 rounded bg-indigo-600 text-white">Upload</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+        
     </AuthenticatedLayout>
 </template>
 
@@ -452,6 +483,9 @@ import { router, usePage } from '@inertiajs/vue3';
 import { TailwindPagination } from 'laravel-vue-pagination';
 import moment from 'moment';
 import * as XLSX from 'xlsx';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 // Props from controller
 const props = defineProps({
@@ -468,6 +502,35 @@ const showModal = ref(false);
 const currentReport = ref(null);
 const currentReportItems = ref([]);
 const dataFetched = ref(false);
+const showUploadModal = ref(false);
+const uploadMonthYear = ref('');
+const excelFile = ref(null);
+
+// Methods
+const isUploading = ref(false);
+const submitUpload = async () => {
+    console.log(excelFile.value.files[0]);
+    const formData = new FormData();
+    formData.append('month_year', uploadMonthYear.value);
+    formData.append('file', excelFile.value.files[0]);
+    isUploading.value = true;
+    await axios.post(route('reports.issue-quantity.upload'), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then(response => {
+        isUploading.value = false;
+        console.log(response);
+        showUploadModal.value = false;
+        // toast.success('Excel uploaded successfully');
+    })
+    .catch(error => {
+        isUploading.value = false;
+        console.log(error);
+        toast.error('Failed to upload Excel');
+    });
+};
 
 // Date filter variables
 const months = [

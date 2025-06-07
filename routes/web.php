@@ -69,6 +69,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         return Inertia::render('Unauthorized');
     })->name('unauthorized');
     
+    Route::get('/test-import', function() {
+        $import = new IssueQuantityItemsImport('2025-06', 1); // Use a real user ID
+        logger()->info('TEST ROUTE CALLED');
+        Excel::import($import, storage_path('app/test.xlsx'));
+        return 'done';
+    });
+
     // Test route for permission events
     Route::get('/test-permission-event', [\App\Http\Controllers\TestController::class, 'testPermissionEvent'])
         ->name('test.permission-event');
@@ -501,6 +508,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // reports.disposals
         Route::get('/disposals', [ReportController::class, 'disposals'])->name('reports.disposals');
+
+        // reports.issue-quantity
+        Route::post('/issue-quantity/upload', [ReportController::class, 'importIssueQuantity'])->name('reports.issue-quantity.upload');
     });
     
     // Order Management Routes

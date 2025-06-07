@@ -38,6 +38,25 @@ const props = defineProps({
 
 const toast = useToast();
 
+// DEBUG: On component mount, log all props and filter values
+onMounted(() => {
+    console.log('[DEBUG] Inventory Page Mounted');
+    console.log('[DEBUG] Props:', props);
+    console.log('[DEBUG] Initial Filters:', props.filters);
+    if (props.inventories) {
+        console.log('[DEBUG] Inventories (raw):', props.inventories);
+        if (props.inventories.data) {
+            console.log('[DEBUG] Inventories Data Array:', props.inventories.data);
+            props.inventories.data.forEach((item, idx) => {
+                console.log(`[DEBUG] Inventory Row #${idx + 1}:`, item);
+                if ('amc' in item && 'reorder_level' in item) {
+                    console.log(`  [DEBUG] AMC: ${item.amc}, Reorder Level: ${item.reorder_level}`);
+                }
+            });
+        }
+    }
+});
+
 // Search and filter states
 const search = ref(props.filters.search || "");
 const location = ref(props.filters.location || "");
@@ -565,6 +584,7 @@ function getResults(page = 1) {
             <!-- Add Button -->
 
             <div class="flex justify-between">
+                {{ props.inventories.data }}
                 <!-- Inventory Table -->
                 <div class="overflow-auto w-full">
                     <table

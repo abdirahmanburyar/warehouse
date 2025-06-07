@@ -18,6 +18,7 @@ use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\InventoryImport;
+use App\Services\InventoryAnalyticsService;
 
 class InventoryController extends Controller
 {
@@ -26,7 +27,63 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Inventory::query();
+        // Join AMC subquery for each inventory row (amc as integer, reorder_level = amc * 5)
+        $fiveMonthsAgo = now()->subMonths(5)->startOfMonth();
+        $leadTime = 5;
+        $now = now();
+        $months = [];
+        // Get last 5 completed months (excluding current month)
+        for ($i = 1; $i <= 5; $i++) {
+            $monthStart = $now->copy()->subMonths($i)->startOfMonth()->format('Y-m-01');
+            $monthEnd = $now->copy()->subMonths($i)->endOfMonth()->format('Y-m-t');
+            $months[] = [
+                'start' => $monthStart,
+                'end' => $monthEnd,
+                'label' => $now->copy()->subMonths($i)->format('Y-m')
+            ];
+        }
+
+        // Build a union of 5 subqueries, one per month, to ensure missing months are counted as 0
+        $union = null;
+        foreach ($months as $idx => $m) {
+            $sub = DB::table('issue_quantity_items')
+                ->select(
+                    'product_id',
+                    'batch_number',
+                    DB::raw($idx . ' as month_idx'),
+                    DB::raw('SUM(quantity) as month_qty')
+                )
+                ->whereBetween('issued_date', [$m['start'], $m['end']])
+                ->groupBy('product_id', 'batch_number');
+            if ($union === null) {
+                $union = $sub;
+            } else {
+                $union = $union->unionAll($sub);
+            }
+        }
+
+        // Now sum the 5 months per product/batch, filling missing months with 0
+        $amcSubquery = DB::query()->fromSub(function($q) use ($union) {
+            $q->fromSub($union, 'monthly')
+                ->select('product_id', 'batch_number', DB::raw('SUM(month_qty) as total_qty'))
+                ->groupBy('product_id', 'batch_number');
+        }, 'amc_base')
+            ->select(
+                'product_id',
+                'batch_number',
+                DB::raw('FLOOR(COALESCE(total_qty, 0) / 5) as amc'),
+                DB::raw('FLOOR(COALESCE(total_qty, 0) / 5 * ' . $leadTime . ') as reorder_level')
+            );
+
+        $query = Inventory::query()
+            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
+                $join->on('inventories.product_id', '=', 'amc_data.product_id')
+                     ->on('inventories.batch_number', '=', 'amc_data.batch_number');
+            })
+            ->addSelect('inventories.*')
+            ->addSelect(DB::raw('COALESCE(amc_data.amc, 0) as amc'))
+            ->addSelect(DB::raw('COALESCE(amc_data.reorder_level, 0) as reorder_level'));
+
 
         $user = auth()->user();
         
@@ -79,25 +136,58 @@ class InventoryController extends Controller
 
         // Get warehouses for dropdown
         $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->pluck('name')->toArray();
-    
-
+        
         // Get inventory status counts
-        $inStockCount = Inventory::whereRaw('quantity > (products.id * 5)')
-            ->join('products', 'inventories.product_id', '=', 'products.id')
+       // Define AMC subquery
+        $fiveMonthsAgo = now()->subMonths(5)->startOfMonth();
+        $amcSubquery = DB::table('issued_quantities')
+            ->select(
+                'product_id',
+                'batch_number',
+                DB::raw('COALESCE(SUM(quantity), 0) / 5 as amc')
+            )
+            ->where('issued_date', '>=', $fiveMonthsAgo)
+            ->groupBy('product_id', 'batch_number');
+
+        // Format AMC as integer for logging
+        $amcResults = $amcSubquery->get()->map(function($row) {
+            $row->amc = (int) round($row->amc);
+            return $row;
+        });
+        logger()->info($amcResults);
+        // in stock: quantity > reorder_level
+        $inStockCount = DB::table('inventories')
+            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
+                $join->on('inventories.product_id', '=', 'amc_data.product_id')
+                    ->on('inventories.batch_number', '=', 'amc_data.batch_number');
+            })
+            ->whereRaw('inventories.quantity > (COALESCE(amc_data.amc, 0) * 5)')
             ->count();
 
-        $lowStockCount = Inventory::whereRaw('quantity <= (products.id * 5)')
-            ->join('products', 'inventories.product_id', '=', 'products.id')
+        // low stock: 0 < quantity <= reorder_level
+        $lowStockCount = DB::table('inventories')
+            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
+                $join->on('inventories.product_id', '=', 'amc_data.product_id')
+                    ->on('inventories.batch_number', '=', 'amc_data.batch_number');
+            })
+            ->where('inventories.quantity', '>', 0)
+            ->whereRaw('inventories.quantity <= (COALESCE(amc_data.amc, 0) * 6)')
             ->count();
 
-        $outOfStockCount = Inventory::where('quantity', 0)
+        // out of stock: quantity = 0
+        $outOfStockCount = DB::table('inventories')
+            ->where('inventories.quantity', 0)
             ->count();
 
-        $soonExpiringCount = Inventory::where('expiry_date', '>', now())
-            ->where('expiry_date', '<=', now()->addDays(30))
+        // soon expiring: expiry_date > today and expiry_date <= 30 days from today
+        $soonExpiringCount = DB::table('inventories')
+            ->where('inventories.expiry_date', '>', now())
+            ->where('inventories.expiry_date', '<=', now()->addDays(30))
             ->count();
 
-        $expiredCount = Inventory::where('expiry_date', '<', now())
+        // expired: expiry_date < today
+        $expiredCount = DB::table('inventories')
+            ->where('inventories.expiry_date', '<', now())
             ->count();
         
         $inventoryStatusCounts = [

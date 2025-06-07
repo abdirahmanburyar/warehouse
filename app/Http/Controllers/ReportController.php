@@ -26,9 +26,32 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Jobs\ImportIssueQuantityJob;
+use Illuminate\Support\Facades\Log;
+use App\Imports\IssueQuantitiyImport;
 
 class ReportController extends Controller
 {
+    public function importIssueQuantity(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string',
+                'file' => 'required|file|mimes:xlsx,xls',
+            ]);
+            
+            $userId = Auth::id();
+            
+            Excel::queueImport(new IssueQuantitiyImport($request->month_year, $userId), $request->file('file'));
+
+            return response()->json('Import queued successfully.', 200);
+        } catch (\Throwable $th) {
+            Log::error('Import error', ['error' => $th->getMessage(), 'trace' => $th->getTraceAsString()]);
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
     public function index(Request $request){
         return inertia('Report/Index');
     } 
@@ -158,10 +181,7 @@ class ReportController extends Controller
             'filters' => $request->only(['month', 'per_page']),
         ]);
     }
-    
-    /**
-     * Export all issue quantity reports to Excel
-     */
+
     public function exportIssueQuantityReports(Request $request)
     {
         $query = IssueQuantityReport::query()
