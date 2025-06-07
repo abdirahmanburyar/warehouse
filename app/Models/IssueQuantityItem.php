@@ -12,11 +12,13 @@ class IssueQuantityItem extends Model
         'parent_id',
         'warehouse_id',
         'quantity',
+        'batch_number',
+        'uom',
+        'expiry_date',
         'unit_cost',
         'total_cost',
         'issued_date',
         'barcode',
-        'uom',
         'issued_by'
     ];
 

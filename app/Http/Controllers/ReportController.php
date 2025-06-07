@@ -43,7 +43,7 @@ class ReportController extends Controller
             
             $userId = Auth::id();
             
-            Excel::queueImport(new IssueQuantitiyImport($request->month_year, $userId), $request->file('file'));
+            Excel::import(new IssueQuantitiyImport($request->month_year, $userId), $request->file('file'));
 
             return response()->json('Import queued successfully.', 200);
         } catch (\Throwable $th) {

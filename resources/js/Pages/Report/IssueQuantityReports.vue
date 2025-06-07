@@ -447,29 +447,28 @@
         </div>
 
         <!-- Upload Excel Modal (TailwindCSS Dialog) -->
-<div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">Upload Issue Quantity Excel</h3>
-      <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
-    </div>
-    <form @submit.prevent="submitUpload">
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Month/Year</label>
-        <input v-model="uploadMonthYear" type="month" required class="border rounded px-2 py-1 w-full" name="month_year" />
-      </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Excel File</label>
-        <input ref="excelFile" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
-      </div>
-      <div class="flex justify-end">
-        <button type="button" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
-        <button type="submit" class="px-3 py-1 rounded bg-indigo-600 text-white">Upload</button>
-      </div>
-    </form>
-  </div>
-</div>
-
+        <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Upload Issue Quantity Excel</h3>
+                <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                </div>
+                <form @submit.prevent="submitUpload">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Month/Year</label>
+                    <input v-model="uploadMonthYear" type="month" required class="border rounded px-2 py-1 w-full" name="month_year" />
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Excel File</label>
+                    <input ref="excelFile" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
+                    <button type="submit" class="px-3 py-1 rounded bg-indigo-600 text-white">Upload</button>
+                </div>
+                </form>
+            </div>
+        </div>
         
     </AuthenticatedLayout>
 </template>
@@ -523,12 +522,17 @@ const submitUpload = async () => {
         isUploading.value = false;
         console.log(response);
         showUploadModal.value = false;
-        // toast.success('Excel uploaded successfully');
+        Swal.fire('Success', response.data, 'success')
+            .then(() => {
+                router.reload();
+                uploadMonthYear.value = '';
+                excelFile.value = null;
+            });
     })
     .catch(error => {
         isUploading.value = false;
         console.log(error);
-        toast.error('Failed to upload Excel');
+        toast.error(error.response.data);
     });
 };
 
