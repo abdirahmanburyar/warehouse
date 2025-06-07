@@ -463,8 +463,8 @@
                     <input ref="excelFile" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
                 </div>
                 <div class="flex justify-end">
-                    <button type="button" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
-                    <button type="submit" class="px-3 py-1 rounded bg-indigo-600 text-white">Upload</button>
+                    <button type="button" :disabled="isUploading" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
+                    <button type="submit" :disabled="isUploading" class="px-3 py-1 rounded bg-indigo-600 text-white">{{ isUploading ? 'Uploading...' : 'Upload'}}</button>
                 </div>
                 </form>
             </div>
@@ -483,6 +483,7 @@ import { TailwindPagination } from 'laravel-vue-pagination';
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 import { useToast } from 'vue-toastification';
+import Swal from 'sweetalert2';
 
 const toast = useToast();
 
@@ -508,7 +509,6 @@ const excelFile = ref(null);
 // Methods
 const isUploading = ref(false);
 const submitUpload = async () => {
-    console.log(excelFile.value.files[0]);
     const formData = new FormData();
     formData.append('month_year', uploadMonthYear.value);
     formData.append('file', excelFile.value.files[0]);
@@ -520,7 +520,6 @@ const submitUpload = async () => {
     })
     .then(response => {
         isUploading.value = false;
-        console.log(response);
         showUploadModal.value = false;
         Swal.fire('Success', response.data, 'success')
             .then(() => {
