@@ -14,6 +14,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Events\InventoryEvent;
 use Illuminate\Support\Facades\Event;
+use App\Models\IssueQuantityReport;
+use App\Models\IssueQuantityItem;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -27,80 +29,52 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        // Join AMC subquery for each inventory row (amc as integer, reorder_level = amc * 5)
-        $fiveMonthsAgo = now()->subMonths(5)->startOfMonth();
-        $leadTime = 5;
-        $now = now();
-        $months = [];
-        // Get last 5 completed months (excluding current month)
-        for ($i = 1; $i <= 5; $i++) {
-            $monthStart = $now->copy()->subMonths($i)->startOfMonth()->format('Y-m-01');
-            $monthEnd = $now->copy()->subMonths($i)->endOfMonth()->format('Y-m-t');
-            $months[] = [
-                'start' => $monthStart,
-                'end' => $monthEnd,
-                'label' => $now->copy()->subMonths($i)->format('Y-m')
-            ];
-        }
+        // 1. Determine the last 4 distinct report months
+        $lastFourReportMonths = IssueQuantityReport::select('month_year')
+            ->distinct()
+            ->orderBy('month_year', 'desc')
+            ->limit(4)
+            ->pluck('month_year');
 
-        // Build a union of 5 subqueries, one per month, to ensure missing months are counted as 0
-        $union = null;
-        foreach ($months as $idx => $m) {
-            $sub = DB::table('issue_quantity_items')
-                ->select(
-                    'product_id',
-                    'batch_number',
-                    DB::raw($idx . ' as month_idx'),
-                    DB::raw('SUM(quantity) as month_qty')
-                )
-                ->whereBetween('issued_date', [$m['start'], $m['end']])
-                ->groupBy('product_id', 'batch_number');
-            if ($union === null) {
-                $union = $sub;
-            } else {
-                $union = $union->unionAll($sub);
-            }
-        }
-
-        // Now sum the 5 months per product/batch, filling missing months with 0
-        $amcSubquery = DB::query()->fromSub(function($q) use ($union) {
-            $q->fromSub($union, 'monthly')
-                ->select('product_id', 'batch_number', DB::raw('SUM(month_qty) as total_qty'))
-                ->groupBy('product_id', 'batch_number');
-        }, 'amc_base')
+        // Prepare a subquery for AMC calculation
+        $amcSubqueryBase = IssueQuantityItem::query()
+            ->join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
+            ->whereIn('issue_quantity_reports.month_year', $lastFourReportMonths)
             ->select(
-                'product_id',
-                'batch_number',
-                DB::raw('FLOOR(COALESCE(total_qty, 0) / 5) as amc'),
-                DB::raw('FLOOR(COALESCE(total_qty, 0) / 5 * ' . $leadTime . ') as reorder_level')
-            );
+                'issue_quantity_items.product_id',
+                'issue_quantity_items.batch_number',
+                DB::raw('COALESCE(SUM(issue_quantity_items.quantity) / 4, 0) as amc')
+            )
+            ->groupBy('issue_quantity_items.product_id', 'issue_quantity_items.batch_number');
 
+        // Main inventory query
         $query = Inventory::query()
-            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
+            ->leftJoinSub($amcSubqueryBase, 'amc_data', function ($join) {
                 $join->on('inventories.product_id', '=', 'amc_data.product_id')
                      ->on('inventories.batch_number', '=', 'amc_data.batch_number');
             })
             ->addSelect('inventories.*')
             ->addSelect(DB::raw('COALESCE(amc_data.amc, 0) as amc'))
-            ->addSelect(DB::raw('COALESCE(amc_data.reorder_level, 0) as reorder_level'));
-
+            ->addSelect(DB::raw('ROUND(COALESCE(amc_data.amc, 0) * 6) as reorder_level')); // AMC * 6
 
         $user = auth()->user();
         
         $query = $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse','location:id,location']);
 
         // Apply filters
-        if ($request->has('search')) {
+        if ($request->has('search') && $request->search) { // Ensure search is not empty
             $search = $request->search;
-            $query->where('barcode', 'like', "%{$search}%")
-                ->orWhere('batch_number', 'like', "%{$search}%")
-                ->orWhereHas('product', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('inventories.barcode', 'like', "%{$search}%")
+                  ->orWhere('inventories.batch_number', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($prodQ) use ($search) {
+                      $prodQ->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
         
         if ($request->has('product_id') && $request->product_id) {
-            $query->where('product_id', $request->product_id);
+            $query->where('inventories.product_id', $request->product_id);
         }
 
         if ($request->filled('category')) {
@@ -115,80 +89,72 @@ class InventoryController extends Controller
               });
         }
 
-
         if ($request->filled('warehouse')) {
-            $query->whereHas('warehouse', function($query) use($request){
-                $query->where('name','like', "%{$request->warehouse}%");
+            $query->whereHas('warehouse', function($q_warehouse) use($request){ // Renamed variable
+                $q_warehouse->where('name','like', "%{$request->warehouse}%");
             });
         }
 
         if ($request->has('location') && $request->location) {
-            $query->whereHas('location', function($query) use($request){
-                $query->where('location','like', "%{$request->location}%");
+            $query->whereHas('location', function($q_location) use($request){ // Renamed variable
+                $q_location->where('location','like', "%{$request->location}%");
             }); 
         }
-
-        $inventories = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        
+        $perPage = $request->input('per_page', 25); // Default to 25
+        $inventories = $query->paginate($perPage)
             ->withQueryString();
 
-        // Get products for dropdown
+        // Debug log for AMC and Reorder Level
+        if ($inventories->isNotEmpty()) {
+            Log::debug('Inventory AMC and Reorder Level Calculation Debug:');
+            foreach ($inventories->take(5) as $item) { // Log first 5 items
+                Log::debug(sprintf(
+                    'Product ID: %s, Batch: %s, AMC: %s, Reorder Level: %s, Current Qty: %s',
+                    $item->product_id,
+                    $item->batch_number,
+                    $item->amc,         // This is the calculated AMC from the query
+                    $item->reorder_level, // This is the calculated Reorder Level
+                    $item->quantity
+                ));
+            }
+        }
+
         $products = Product::select('id', 'name')->get();
-
-        // Get warehouses for dropdown
-        $warehouses = \App\Models\Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name', 'code')->pluck('name')->toArray();
         
-        // Get inventory status counts
-       // Define AMC subquery
-        $fiveMonthsAgo = now()->subMonths(5)->startOfMonth();
-        $amcSubquery = DB::table('issued_quantities')
-            ->select(
-                'product_id',
-                'batch_number',
-                DB::raw('COALESCE(SUM(quantity), 0) / 5 as amc')
-            )
-            ->where('issued_date', '>=', $fiveMonthsAgo)
-            ->groupBy('product_id', 'batch_number');
+        $userWarehouses = \App\Models\Warehouse::query();
+        if ($user->warehouse_id) {
+            $userWarehouses->where('id', $user->warehouse_id);
+        }
+        $warehouses = $userWarehouses->pluck('name')->toArray();
+        
+        // Inventory Status Counts
 
-        // Format AMC as integer for logging
-        $amcResults = $amcSubquery->get()->map(function($row) {
-            $row->amc = (int) round($row->amc);
-            return $row;
-        });
-        logger()->info($amcResults);
         // in stock: quantity > reorder_level
-        $inStockCount = DB::table('inventories')
-            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
-                $join->on('inventories.product_id', '=', 'amc_data.product_id')
-                    ->on('inventories.batch_number', '=', 'amc_data.batch_number');
+        $inStockCount = DB::table('inventories as inv')
+            ->leftJoinSub($amcSubqueryBase, 'amc_data', function($join) {
+                $join->on('inv.product_id', '=', 'amc_data.product_id')
+                     ->on('inv.batch_number', '=', 'amc_data.batch_number');
             })
-            ->whereRaw('inventories.quantity > (COALESCE(amc_data.amc, 0) * 5)')
+            ->whereRaw('inv.quantity > ROUND(COALESCE(amc_data.amc, 0) * 6)')
             ->count();
 
         // low stock: 0 < quantity <= reorder_level
-        $lowStockCount = DB::table('inventories')
-            ->leftJoinSub($amcSubquery, 'amc_data', function($join) {
-                $join->on('inventories.product_id', '=', 'amc_data.product_id')
-                    ->on('inventories.batch_number', '=', 'amc_data.batch_number');
+        $lowStockCount = DB::table('inventories as inv')
+            ->leftJoinSub($amcSubqueryBase, 'amc_data', function($join) {
+                $join->on('inv.product_id', '=', 'amc_data.product_id')
+                     ->on('inv.batch_number', '=', 'amc_data.batch_number');
             })
-            ->where('inventories.quantity', '>', 0)
-            ->whereRaw('inventories.quantity <= (COALESCE(amc_data.amc, 0) * 6)')
+            ->where('inv.quantity', '>', 0)
+            ->whereRaw('inv.quantity <= ROUND(COALESCE(amc_data.amc, 0) * 6)')
             ->count();
 
-        // out of stock: quantity = 0
-        $outOfStockCount = DB::table('inventories')
-            ->where('inventories.quantity', 0)
-            ->count();
-
-        // soon expiring: expiry_date > today and expiry_date <= 30 days from today
+        $outOfStockCount = DB::table('inventories')->where('quantity', 0)->count();
         $soonExpiringCount = DB::table('inventories')
-            ->where('inventories.expiry_date', '>', now())
-            ->where('inventories.expiry_date', '<=', now()->addDays(30))
+            ->where('expiry_date', '>', now())
+            ->where('expiry_date', '<=', now()->addDays(160))
             ->count();
-
-        // expired: expiry_date < today
-        $expiredCount = DB::table('inventories')
-            ->where('inventories.expiry_date', '<', now())
-            ->count();
+        $expiredCount = DB::table('inventories')->where('expiry_date', '<', now())->count();
         
         $inventoryStatusCounts = [
             ['status' => 'in_stock', 'count' => $inStockCount],
@@ -197,9 +163,6 @@ class InventoryController extends Controller
             ['status' => 'soon_expiring', 'count' => $soonExpiringCount],
             ['status' => 'expired', 'count' => $expiredCount],
         ];
-
-        $inventories->setPath(url()->current()); // Force Laravel to use full URLs
-
 
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),

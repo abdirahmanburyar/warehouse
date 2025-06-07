@@ -237,7 +237,7 @@ const formatDate = (date) => {
     <Head title="All Orders" />
     <AuthenticatedLayout title="All Orders" img="/assets/images/orders.png">
         <!-- Filters Section -->
-        <div class="bg-white mb-6 p-4">
+        <div class="bg-white mb-6 p-4 text-xs">
             <div class="flex flex-wrap gap-4 items-center mb-5">
                 <!-- Search -->
                 <div class="relative w-full sm:w-auto flex-grow min-w-[250px]">

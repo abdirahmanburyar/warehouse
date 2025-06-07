@@ -584,7 +584,6 @@ function getResults(page = 1) {
             <!-- Add Button -->
 
             <div class="flex justify-between">
-                {{ props.inventories.data }}
                 <!-- Inventory Table -->
                 <div class="overflow-auto w-full">
                     <table
@@ -733,7 +732,12 @@ function getResults(page = 1) {
                                                 !isLowStock(inventory),
                                         }"
                                     >
-                                        {{ inventory.quantity }}
+                                        <div>
+                                            {{ inventory.quantity }}
+                                        </div>
+                                        <div>
+                                            Reorder Level: {{ inventory.reorder_level }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-3 py-4 whitespace-nowrap">
@@ -853,7 +857,9 @@ function getResults(page = 1) {
                                                 />
                                             </svg>
                                         </button>
-                                        <button
+                                        <Link
+                                            :href="route('supplies.purchase_order')"
+                                            v-if="inventory.quantity > inventory.reorder_level"
                                             class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
                                         >
                                             <svg
@@ -870,7 +876,8 @@ function getResults(page = 1) {
                                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                                                 />
                                             </svg>
-                                        </button>
+                                        </Link
+                                            :href="route('inventory.edit', inventory.id)">
                                     </div>
                                 </td>
                             </tr>

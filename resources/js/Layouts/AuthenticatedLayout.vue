@@ -2,24 +2,24 @@
     <div class="app-container">
         <!-- Permission changes are now handled globally in app.js -->
         <!-- Sidebar -->
-        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" >
+        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="p-0" >
             <div class="white-box" style="border-color: white;">
                 <Link :href="route('dashboard')" class="logo-container flex justify-between">
-                <img src="/assets/images/moh.png" class="moh-logo" style="height: 50px" />
-                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 50px" />
+                <img src="/assets/images/moh.png" class="moh-logo" style="height: 30px" />
+                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 30px" />
                 </Link>
 
             </div>
             <div class="sidebar-menu">
                 <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 90px;" @click="setCurrentPage('dashboard')">
+                    style="margin-top: 30px;" @click="setCurrentPage('dashboard')">
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png"
-                            class="dashboard-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/dashboard-w.png" class="dashboard-icon" style="height: 24px" />
+                            class="dashboard-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/dashboard-w.png" class="dashboard-icon" style="height: 15px" />
                     </div>
-                    <span class="menu-text">Dashboard</span>
+                    <span class="menu-text text-xs">Dashboard</span>
                 </div>
                 </Link>
                 <Link v-if="$page.props.auth.can.order_view" :href="route('orders.index')" class="menu-item" :class="{ active: route().current('orders.*') }"
@@ -27,8 +27,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('orders.*')" src="/assets/images/tracking-b.png" class="order-icon"
-                            style="height: 24px" />
-                        <img v-else src="/assets/images/tracking-w.png" class="order-icon" style="height: 24px" />
+                            style="height: 15px" />
+                        <img v-else src="/assets/images/tracking-w.png" class="order-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Orders</span>
                 </div>
@@ -39,8 +39,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('transfers.*')" src="/assets/images/transfer-b.png"
-                            class="transfer-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/transfer-w.png" class="transfer-icon" style="height: 24px" />
+                            class="transfer-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/transfer-w.png" class="transfer-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Transfers</span>
                 </div> 
@@ -51,8 +51,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('products.*')" src="/assets/images/product-b.png"
-                            class="product-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/product-w.png" class="product-icon" style="height: 24px" />
+                            class="product-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/product-w.png" class="product-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Product List</span>
                 </div>
@@ -64,8 +64,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('inventories.*')" src="/assets/images/inventory-b.png"
-                            class="inventory-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/inventory-w.png" class="inventory-icon" style="height: 24px" />
+                            class="inventory-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/inventory-w.png" class="inventory-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Inventory</span>
                 </div>
@@ -76,8 +76,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expire-icon"
-                            style="height: 24px" />
-                        <img v-else src="/assets/images/expire-w.png" class="expire-icon" style="height: 24px" />
+                            style="height: 15px" />
+                        <img v-else src="/assets/images/expire-w.png" class="expire-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Expires</span>
                 </div>
@@ -89,8 +89,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('liquidate-disposal.*')" src="/assets/images/liquidate-disposal-b.png"
-                            class="liquidate-disposal-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 24px" />
+                            class="liquidate-disposal-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Liquidate & Disposal</span>
                 </div>
@@ -102,8 +102,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('supplies.*')" src="/assets/images/supplier-b.png"
-                            class="supplies-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/supplier-w.png" class="supplies-icon" style="height: 24px" />
+                            class="supplies-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/supplier-w.png" class="supplies-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Supplies</span>
                 </div>
@@ -113,8 +113,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('reports.*')" src="/assets/images/facility-b.png"
-                            class="facility-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 24px" />
+                            class="facility-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Reports</span>
                 </div>
@@ -125,8 +125,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('facilities.*')" src="/assets/images/facility-b.png"
-                            class="facility-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 24px" />
+                            class="facility-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Facilities</span>
                 </div>
@@ -137,8 +137,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('assets.*')" src="/assets/images/assets-b.png" class="assets-icon"
-                            style="height: 24px" />
-                        <img v-else src="/assets/images/assets-w.png" class="assets-icon" style="height: 24px" />
+                            style="height: 15px" />
+                        <img v-else src="/assets/images/assets-w.png" class="assets-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Assets</span>
                 </div>
@@ -149,8 +149,8 @@
                 <div class="menu-content">
                     <div class="menu-icon">
                         <img v-if="route().current('settings.*')" src="/assets/images/setting-b.png"
-                            class="setting-icon" style="height: 24px" />
-                        <img v-else src="/assets/images/setting-w.png" class="setting-icon" style="height: 24px" />
+                            class="setting-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/setting-w.png" class="setting-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Settings</span>
                 </div>
@@ -162,9 +162,9 @@
         <!-- Main Content -->
         <div :class="['main-content', { 'main-content-expanded': !sidebarOpen }]">
             <!-- Top Navigation -->
-            <div class="top-nav">
+            <div class="top-nav h-16 text-xs">
                 <div class="inventory-banner">
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-center">
                         <!-- <div class="flex flex-col"> -->
                             <button @click="toggleSidebar" class="back-button">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -181,7 +181,7 @@
                             </div>
                         <!-- </div> -->
                         <div v-if="img">
-                            <img :src="img" alt="Inventory illustration" class="svg-image" heigth="50" />
+                            <img :src="img" alt="Inventory illustration" class="svg-image" height="30" />
                         </div>
                     </div>
                     <div class="user-section">
@@ -345,11 +345,12 @@ const logout = () => {
 }
 
 .sidebar-open {
-    width: 130px;
-    min-width: 130px;
+    width: 100px;
+    min-width: 100px;
     transform: translateX(0);
     opacity: 1;
     visibility: visible;
+    margin-top: 29px;
 }
 
 .white-box {
@@ -435,11 +436,11 @@ const logout = () => {
     text-decoration: none;
     transition: all 0.3s ease;
     position: relative;
-    margin: 0.3rem 0;
+    margin: 0.1rem 0;
     padding: 0;
     z-index: 1;
     width: 100%;
-    height: 50px;
+    height: 33px;
 }
 
 .menu-item:hover {
@@ -457,7 +458,7 @@ const logout = () => {
     margin-right: -25px;
     padding-right: 25px;
     z-index: 5;
-    height: 44px;
+    height: 30px;
     display: flex;
     align-items: center;
     width: 100%;
@@ -499,7 +500,7 @@ const logout = () => {
 }
 
 .menu-content {
-    margin-left: 15px;
+    margin-left: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -508,7 +509,7 @@ const logout = () => {
     padding: 0;
     position: relative;
     z-index: 10;
-    height: 100%;
+    height: 60%;
 }
 
 .menu-icon {
@@ -528,7 +529,7 @@ const logout = () => {
     white-space: nowrap;
     transition: opacity 0.3s ease;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1;
     width: 100%;
@@ -564,7 +565,7 @@ const logout = () => {
     color: white;
     padding: 0.5rem 1.5rem;
     width: 100%;
-    height: 120px;
+    height: 68px;
     position: relative;
     overflow: hidden;
     border-top-left-radius: 40px;
@@ -609,7 +610,7 @@ const logout = () => {
 }
 
 .svg-image {
-    height: 110px;
+    height: 70px;
     margin-left: 30px;
 }
 
@@ -693,8 +694,8 @@ main {
 @media (min-width: 1025px) {
     .sidebar-open {
         transform: translateX(0);
-        width: 130px;
-        min-width: 130px;
+        width: 100px;
+        min-width: 100px;
         opacity: 1;
         visibility: visible;
     }
@@ -711,7 +712,7 @@ main {
 /* When sidebar is open, adjust the main content margin on desktop */
 @media (min-width: 1025px) {
     .sidebar-open+.main-content {
-        margin-left: 130px;
+        margin-left: 100px;
     }
 }
 
@@ -734,19 +735,19 @@ main {
 }
 
 /* Adjust margin for Dashboard menu item specifically */
-.menu-item[href="/"] {
-    margin-top: 2rem;
-}
+/* .menu-item[href="/"] {
+    margin-top: 30px;
+} */
 
 /* Add helper class for SVG icons */
 .menu-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 15px;
+    height: 15px;
     fill: currentColor;
 }
 
 /* When sidebar is open, set appropriate margin */
 .sidebar-open+.main-content {
-    width: calc(100% - 130px);
+    width: calc(100% - 100px);
 }
 </style>

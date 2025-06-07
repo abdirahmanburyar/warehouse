@@ -151,21 +151,29 @@ class IssueQuantitiyImport implements ToCollection, WithHeadingRow, WithChunkRea
                 }
                 
                 // Create issue quantity item
-                IssueQuantityItem::create([
-                    'product_id' => $product->id,
-                    'parent_id' => $report->id,
-                    'warehouse_id' => $warehouse->id,
-                    'location_id' => $location->id,
-                    'quantity' => $quantity,
-                    'batch_number' => $batchNumber,
-                    'uom' => $uom,
-                    'expiry_date' => $expiryDate,
-                    'unit_cost' => $unitCost,
-                    'total_cost' => $totalCost,
-                    'issued_date' => $issuedDate,
-                    'barcode' => $barcode,
-                    'issued_by' => $this->user_id,
-                ]);
+                IssueQuantityItem::updateOrCreate(
+                    [
+                        'product_id' => $product->id,
+                        'parent_id' => $report->id,
+                        'warehouse_id' => $warehouse->id,
+                        'location_id' => $location->id,
+                    ],
+                    [   
+                        'product_id' => $product->id,
+                        'parent_id' => $report->id,
+                        'warehouse_id' => $warehouse->id,
+                        'location_id' => $location->id,
+                        'quantity' => $quantity,
+                        'batch_number' => $batchNumber,
+                        'uom' => $uom,
+                        'expiry_date' => $expiryDate,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                        'issued_date' => $issuedDate,
+                        'barcode' => $barcode,
+                        'issued_by' => $this->user_id,
+                    ]
+                );
                 
                 $chunkTotalQty += $quantity;
                 
