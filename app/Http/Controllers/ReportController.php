@@ -309,7 +309,7 @@ class ReportController extends Controller
         // Only fetch data if the form has been submitted with valid filters
         if ($isSubmitted && $facilityId && $startMonth && $endMonth) {
             $monthlyConsumptionReport = MonthlyConsumptionReport::where('facility_id', $facilityId)
-                ->with('facility','items.product:id,name')
+                ->with('facility','items.product')
                 ->whereBetween('month_year', [$startMonth, $endMonth])
                 ->get();
         }
@@ -321,7 +321,11 @@ class ReportController extends Controller
             'facilities' => Facility::select('id', 'name', 'facility_type')->get(),
             'products' => Product::select('id', 'name')->get(),
             'facilityInfo' => null,
-            'filters' => $request->only('facility_id', 'start_month', 'end_month')
+            'filters' => [
+                'facility_id' => $facilityId,
+                'start_month' => $startMonth,
+                'end_month' => $endMonth
+            ]
         ]);
     }
 

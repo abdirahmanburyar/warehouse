@@ -26,13 +26,13 @@
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
                         <input type="month" v-model="filters.start_month"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                     </div>
 
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
                         <input type="month" v-model="filters.end_month"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                     </div>
 
                     <div class="flex space-x-2">
@@ -129,51 +129,71 @@
                 <!-- Data Table -->
 
                 <div class="overflow-x-auto">
-                    <table v-if="props.pivotData.length > 0" class="min-w-full divide-y divide-gray-200 border">
+                    <table v-if="pivotTableData.length > 0" class="min-w-full divide-y divide-gray-200 border">
                         <thead class="bg-gray-50">
-                            <tr class="border-b border-gray-200">
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     SN
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <div class="flex flex-col">
-                                        <span class="mb-2">Items Description</span>
-                                        <div class="flex">
-                                            <input v-model="productSearch" type="text" placeholder="Filter items..."
-                                                class="block w-full text-sm font-normal rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-                                            <button v-if="productSearch" @click="productSearch = ''"
-                                                class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none">
-                                                ×
-                                            </button>
+                                        <span>Items Description</span>
+                                        <div class="mt-1">
+                                            <div class="flex">
+                                                <input v-model="productSearch" type="text" placeholder="Filter items..."
+                                                    class="block w-full text-xs font-normal rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                                                <button v-if="productSearch" @click="productSearch = ''"
+                                                    class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none">
+                                                    ×
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    UOM
+                                </th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Batch #
+                                </th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Expiry Date
+                                </th>
                                 <!-- Month columns -->
                                 <th v-for="month in sortedMonths" :key="month"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {{ formatMonthShort(month) }}-{{ formatYear(month) }}
                                 </th>
                                 <!-- Average column -->
-                                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
+                                <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                     AMC
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="(row, index) in filteredPivotTableData" :key="index" class="border-b border-gray-200">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 text-center">
+                                <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border-r border-gray-200 text-center">
                                     {{ index + 1 }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
                                     {{ row.product_name }}
+                                </td>
+                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
+                                    {{ row.uom }}
+                                </td>
+                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
+                                    {{ row.batch_number }}
+                                </td>
+                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
+                                    {{ formatExpiryDate(row.expiry_date) }}
                                 </td>
                                 <!-- Month columns with consumption values -->
                                 <td v-for="month in sortedMonths" :key="month"
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 text-center">
+                                    class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200 text-center">
                                     {{ row[month] || 0 }}
                                 </td>
                                 <!-- Average column -->
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
+                                <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-white border-r border-gray-200 text-center bg-sky-500">
                                     {{ calculateAverage(row) }}
                                 </td>
                             </tr>
@@ -304,7 +324,6 @@ const props = defineProps({
     months: Array,
     facilities: Array,
     products: Array,
-    facilityInfo: Object,
     yearMonths: Array,
 });
 
@@ -344,12 +363,18 @@ const pivotTableData = computed(() => {
             const productId = item.product_id;
             const productName = item.product.name;
             const quantity = item.quantity;
+            const uom = item.uom || item.product.uom || 'N/A';
+            const batchNumber = item.batch_number || 'N/A';
+            const expiryDate = item.expiry_date || 'N/A';
             
             // Get or create product entry
             if (!productMap.has(productId)) {
                 productMap.set(productId, {
                     product_id: productId,
-                    product_name: productName
+                    product_name: productName,
+                    uom: uom,
+                    batch_number: batchNumber,
+                    expiry_date: expiryDate
                 });
             }
             
@@ -357,7 +382,7 @@ const pivotTableData = computed(() => {
             const productData = productMap.get(productId);
             productData[monthYear] = quantity;
         });
-    });
+    }); 
     
     // Convert map to array
     return Array.from(productMap.values());
@@ -375,6 +400,15 @@ const filteredPivotTableData = computed(() => {
     }
     
     return pivotTableData.value;
+});
+
+// Extract facility information from the pivot data
+const facilityInfo = computed(() => {
+    if (!props.pivotData || props.pivotData.length === 0) return {};
+    
+    // Get facility from the first report (all reports should have the same facility)
+    const firstReport = props.pivotData[0];
+    return firstReport.facility || {};
 });
 
 // Initialize filters with props values or defaults
@@ -509,16 +543,37 @@ function clearFilters() {
 
 // Format month from YYYY-MM to MMM YYYY (e.g., 2025-05 to May 2025)
 function formatMonth(monthStr) {
+    if (!monthStr) return '';
     const [year, month] = monthStr.split('-');
     const date = new Date(year, parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
-// Format month from YYYY-MM to MMM (e.g., 2025-05 to May)
+// Format month short for display
 function formatMonthShort(monthStr) {
+    if (!monthStr) return '';
     const [year, month] = monthStr.split('-');
     const date = new Date(year, parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'short' });
+    return date.toLocaleDateString('en-GB', { month: 'short' });
+}
+
+// Format year for display
+function formatYear(monthStr) {
+    if (!monthStr) return '';
+    const [year] = monthStr.split('-');
+    return year;
+}
+
+// Format expiry date to DD/MM/YYYY
+function formatExpiryDate(dateStr) {
+    if (!dateStr || dateStr === 'N/A') return 'N/A';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr; // Return original if invalid
+        return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+        return dateStr; // Return original on error
+    }
 }
 
 // Open the upload modal
@@ -638,19 +693,13 @@ async function uploadFile() {
         });
 }
 
-// Format year from YYYY-MM to YYYY (e.g., 2025-05 to 2025)
-function formatYear(monthStr) {
-    const [year] = monthStr.split('-');
-    return year;
-}
-
 // Calculate average monthly consumption for a product
 function calculateAverage(row) {
     // Get all month values (excluding product_id and product_name)
     const monthValues = sortedMonths.value.map(month => row[month] || 0);
     
-    // If no months available, return 0
-    if (monthValues.length === 0) return 0;
+    // If no months available or less than 4 months, don't calculate AMC
+    if (monthValues.length === 0 || monthValues.length < 4) return 'N/A';
     
     // Calculate average using all months, including zeros
     const sum = monthValues.reduce((acc, val) => acc + val, 0);
@@ -725,21 +774,21 @@ function exportToExcel() {
         const totalColumns = headerRow.length;
 
         // Add facility information if available
-        if (props.facilityInfo) {
+        if (facilityInfo.value && Object.keys(facilityInfo.value).length > 0) {
             // Title row
             wsData.push(['Facility Information']);
 
             // Facility details
-            wsData.push(['Name', props.facilityInfo.name]);
-            wsData.push(['Type', props.facilityInfo.facility_type]);
-            wsData.push(['Email', props.facilityInfo.email || 'N/A']);
-            wsData.push(['Phone', props.facilityInfo.phone || 'N/A']);
-            wsData.push(['Address', props.facilityInfo.address || 'N/A']);
+            wsData.push(['Name', facilityInfo.value.name]);
+            wsData.push(['Type', facilityInfo.value.facility_type]);
+            wsData.push(['Email', facilityInfo.value.email || 'N/A']);
+            wsData.push(['Phone', facilityInfo.value.phone || 'N/A']);
+            wsData.push(['Address', facilityInfo.value.address || 'N/A']);
 
             // Manager details
-            if (props.facilityInfo.user) {
-                wsData.push(['Manager', props.facilityInfo.user.name]);
-                wsData.push(['Manager Email', props.facilityInfo.user.email]);
+            if (facilityInfo.value.user) {
+                wsData.push(['Manager', facilityInfo.value.user.name]);
+                wsData.push(['Manager Email', facilityInfo.value.user.email]);
             } else {
                 wsData.push(['Manager', 'Not Assigned']);
             }
