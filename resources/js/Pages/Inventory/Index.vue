@@ -584,7 +584,6 @@ function getResults(page = 1) {
             <!-- Add Button -->
 
             <div class="flex justify-between">
-                {{ props.inventories.data }}
                 <!-- Inventory Table -->
                 <div class="overflow-auto w-full">
                     <table
