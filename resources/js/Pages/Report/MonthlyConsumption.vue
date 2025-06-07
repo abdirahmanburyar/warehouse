@@ -582,27 +582,27 @@ async function uploadFile() {
             uploading.value = false;
             console.log(response);
             // Close modal and reset form
-            // showUploadModal.value = false;
-            // selectedFile.value = null;
+            showUploadModal.value = false;
+            selectedFile.value = null;
 
-            // // Store the facility object before resetting modalFacilityId
-            // const uploadedFacility = modalFacilityId.value;
-            // modalFacilityId.value = null;
-            // month_year.value = null;
+            // Store the facility object before resetting modalFacilityId
+            const uploadedFacility = modalFacilityId.value;
+            modalFacilityId.value = null;
+            month_year.value = null;
 
-            // // Update filters to match the uploaded facility (using the full facility object)
-            // filters.value.facility_id = uploadedFacility;
+            // Update filters to match the uploaded facility (using the full facility object)
+            filters.value.facility_id = uploadedFacility;
 
-            // // Set date range from February to December of current year
-            // const currentYear = new Date().getFullYear();
-            // filters.value.start_month = `${currentYear}-02`; // February
-            // filters.value.end_month = `${currentYear}-12`;   // December
+            // Set date range from February to December of current year
+            const currentYear = new Date().getFullYear();
+            filters.value.start_month = `${currentYear}-02`; // February
+            filters.value.end_month = `${currentYear}-12`;   // December
 
-            // // Log the selected facility for debugging
-            // console.log('Selected facility after upload:', filters.value.facility_id);
+            // Log the selected facility for debugging
+            console.log('Selected facility after upload:', filters.value.facility_id);
 
-            // // Refresh report data with explicit facility_id
-            // applyFilters();
+            // Refresh report data with explicit facility_id
+            applyFilters();
         })
         .catch((error) => {
             uploading.value = false;
@@ -610,7 +610,7 @@ async function uploadFile() {
             // Show error message
             Swal.fire({
                 title: 'Upload Failed',
-                text: 'An error occurred while uploading the file',
+                text: error.response.data?.message,
                 icon: 'error',
                 confirmButtonColor: '#f97316'
             });
