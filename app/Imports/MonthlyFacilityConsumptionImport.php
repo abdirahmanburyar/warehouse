@@ -17,7 +17,7 @@ use App\Models\Warehouse;
 use App\Models\Location;
 use App\Models\User;
 
-class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
+class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, WithChunkReading, ShouldQueue
 {
     protected $facilityId;
     protected $productCache = [];
@@ -78,20 +78,30 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
                         $rowArray = $row->toArray();
                         Log::info("Processing row {$index}: " . json_encode($rowArray));
                         
-                        // Check for required fields with more detailed logging
-                        $hasItemDescription = isset($rowArray['item_description']) && !empty($rowArray['item_description']);
-                        $hasQuantity = isset($rowArray['quantity']) && is_numeric($rowArray['quantity']) && (int)$rowArray['quantity'] > 0;
+                        // Handle column name variations (including typos)
+                        $itemDescriptionKey = $this->findColumnKey($rowArray, ['item_description', 'item descriptoin', 'item_descriptoin', 'item description', 'description', 'item']);
+                        $quantityKey = $this->findColumnKey($rowArray, ['quantity', 'qty', 'amount']);
                         
-                        Log::info("Row {$index} validation - Has item_description: " . ($hasItemDescription ? 'Yes' : 'No') . 
+                        Log::info("Column mapping - Item description key: {$itemDescriptionKey}, Quantity key: {$quantityKey}");
+                        
+                        // Check for required fields with more detailed logging
+                        $hasItemDescription = $itemDescriptionKey && isset($rowArray[$itemDescriptionKey]) && !empty($rowArray[$itemDescriptionKey]);
+                        $hasQuantity = $quantityKey && isset($rowArray[$quantityKey]) && is_numeric($rowArray[$quantityKey]) && (int)$rowArray[$quantityKey] > 0;
+                        
+                        Log::info("Row {$index} validation - Has item description: " . ($hasItemDescription ? 'Yes' : 'No') . 
                                  ", Has valid quantity: " . ($hasQuantity ? 'Yes' : 'No'));
                         
                         // Skip if missing required fields
                         if (!$hasItemDescription || !$hasQuantity) {
-                            $reason = !$hasItemDescription ? 'Missing item_description' : 'Invalid quantity';
+                            $reason = !$hasItemDescription ? 'Missing item description' : 'Invalid quantity';
                             Log::warning("Skipping row {$index} - {$reason}");
                             $skippedRows[] = ["row" => $index + 2, "reason" => $reason, "data" => $rowArray]; // +2 for Excel row number (1-based + header)
                             continue;
                         }
+                        
+                        // Normalize the row data with consistent keys
+                        $rowArray['item_description'] = $rowArray[$itemDescriptionKey];
+                        $rowArray['quantity'] = $rowArray[$quantityKey];
                         
                         // Find product by name with better error handling
                         try {
@@ -128,9 +138,23 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
                     
                     // Second pass - create items for valid rows
                     foreach($validRows as $index => $row) {
+                        // Find column keys for other fields with flexible matching
+                        $batchNumberKey = $this->findColumnKey($row, ['batch_number', 'batch number', 'batch', 'batch no', 'lot number', 'lot']);
+                        $expiryDateKey = $this->findColumnKey($row, ['expiry_date', 'expiry', 'exp date', 'exp', 'expiration date', 'expiration']);
+                        $dispenseDateKey = $this->findColumnKey($row, ['dispense_date', 'dispense date', 'dispense', 'date dispensed', 'date']);
+                        $uomKey = $this->findColumnKey($row, ['uom', 'unit', 'unit of measure', 'unit of measurement']);
+                        $barcodeKey = $this->findColumnKey($row, ['barcode', 'bar code', 'code']);
+                        
+                        Log::info("Additional column mappings - Batch: {$batchNumberKey}, Expiry: {$expiryDateKey}, Dispense: {$dispenseDateKey}, UOM: {$uomKey}, Barcode: {$barcodeKey}");
+                        
+                        // Get values with fallbacks
+                        $batchNumber = $batchNumberKey ? ($row[$batchNumberKey] ?? null) : null;
+                        $uom = $uomKey ? ($row[$uomKey] ?? null) : null;
+                        $barcode = $barcodeKey ? ($row[$barcodeKey] ?? null) : null;
+                        
                         // Format dates with better handling
-                        $dispenseDate = $this->formatDate($row['dispense_date'] ?? null);
-                        $expiryDate = $this->formatDate($row['expiry_date'] ?? null);
+                        $dispenseDate = $dispenseDateKey ? $this->formatDate($row[$dispenseDateKey] ?? null) : null;
+                        $expiryDate = $expiryDateKey ? $this->formatDate($row[$expiryDateKey] ?? null) : null;
                         
                         // Use default dates if needed
                         if (empty($dispenseDate)) {
@@ -142,12 +166,17 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
                         $itemData = [
                             'parent_id' => $this->report->id,
                             'product_id' => $row['product_id'],
-                            'batch_number' => $row['batch_number'] ?? null,
-                            'uom' => $row['uom'] ?? null,
+                            'batch_number' => $batchNumber,
+                            'uom' => $uom,
                             'expiry_date' => $expiryDate, // Can be null
                             'dispense_date' => $dispenseDate,
                             'quantity' => (int)$row['quantity'],
                         ];
+                        
+                        // Add barcode if the field exists in the model
+                        if ($barcode) {
+                            $itemData['barcode'] = $barcode;
+                        }
                         
                         Log::info("Creating item {$index} with data: " . json_encode($itemData));
                         
@@ -265,5 +294,63 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
             Log::warning("Invalid date format: {$dateString} - Error: {$e->getMessage()}");
             return null;
         }
+    }
+    
+    /**
+     * Define chunk size for batch processing
+     */
+    public function chunkSize(): int
+    {
+        return 50;
+    }
+    
+    /**
+     * Define which queue to use
+     */
+    public function queue()
+    {
+        return 'default';
+    }
+    
+    /**
+     * Helper method to find a column key from possible variations
+     * This helps handle typos and different naming conventions in Excel files
+     * 
+     * @param array $row The row data
+     * @param array $possibleKeys Array of possible column names
+     * @return string|null The found key or null if not found
+     */
+    protected function findColumnKey(array $row, array $possibleKeys)
+    {
+        // First try exact matches
+        foreach ($possibleKeys as $key) {
+            if (isset($row[$key])) {
+                return $key;
+            }
+        }
+        
+        // Then try case-insensitive matches
+        $lowercaseKeys = array_map('strtolower', array_keys($row));
+        foreach ($possibleKeys as $key) {
+            $lowercaseKey = strtolower($key);
+            $index = array_search($lowercaseKey, $lowercaseKeys);
+            if ($index !== false) {
+                $actualKey = array_keys($row)[$index];
+                return $actualKey;
+            }
+        }
+        
+        // Finally try partial matches
+        foreach ($possibleKeys as $key) {
+            $lowercaseKey = strtolower($key);
+            foreach ($lowercaseKeys as $index => $rowKey) {
+                if (strpos($rowKey, $lowercaseKey) !== false || strpos($lowercaseKey, $rowKey) !== false) {
+                    $actualKey = array_keys($row)[$index];
+                    return $actualKey;
+                }
+            }
+        }
+        
+        return null;
     }
 }

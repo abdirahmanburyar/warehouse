@@ -33,12 +33,12 @@ class ConsumptionUploadController extends Controller
             $monthYear = $request->input('month_year');
             
             try {
-                // Import without queueing to avoid temporary file issues
-                Excel::import(new MonthlyFacilityConsumptionImport($facilityId, $monthYear), $file);
+                // Queue the import process
+                Excel::queueImport(new MonthlyFacilityConsumptionImport($facilityId, $monthYear), $file);
                 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Monthly consumption data imported successfully'
+                    'message' => 'Monthly consumption data import has been queued and will be processed shortly'
                 ]);
             } catch (\Exception $e) {
                 Log::error('Monthly consumption import failed: ' . $e->getMessage());
