@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\Warehouse;
 use App\Models\Location;
 use App\Models\User;
 
-class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, WithChunkReading, ShouldQueue
+class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow
 {
     protected $facilityId;
     protected $productCache = [];
@@ -31,6 +33,16 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
     public function collection(Collection $collection)
     {
         try {
+            // Log the Excel data structure to understand what we're working with
+            Log::info("Excel import started for facility: {$this->facilityId}, month: {$this->monthYear}");
+            Log::info("Total rows in collection: " . $collection->count());
+            
+            if ($collection->count() > 0) {
+                $firstRow = $collection->first();
+                Log::info("Sample row structure: " . json_encode(array_keys($firstRow->toArray())));
+                Log::info("Sample row data: " . json_encode($firstRow->toArray()));
+            }
+            
             // Use transaction to ensure all operations succeed or fail together
             DB::transaction(function() use ($collection) {
                 // Check if a report already exists for this facility and month
@@ -58,58 +70,86 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
                     
                     $itemCount = 0;
                     $validRows = [];
+                    $skippedRows = [];
                     
                     // First pass - validate all rows and collect valid ones
-                    foreach($collection as $row) {
-                        Log::info("Processing row: " . json_encode($row));
+                    foreach($collection as $index => $row) {
+                        // Convert row to array to ensure we can access all fields
+                        $rowArray = $row->toArray();
+                        Log::info("Processing row {$index}: " . json_encode($rowArray));
                         
-                        // Skip if no item description or quantity
-                        if (empty($row['item_description'])) {
-                            Log::warning("Skipping row - missing item_description");
+                        // Check for required fields with more detailed logging
+                        $hasItemDescription = isset($rowArray['item_description']) && !empty($rowArray['item_description']);
+                        $hasQuantity = isset($rowArray['quantity']) && is_numeric($rowArray['quantity']) && (int)$rowArray['quantity'] > 0;
+                        
+                        Log::info("Row {$index} validation - Has item_description: " . ($hasItemDescription ? 'Yes' : 'No') . 
+                                 ", Has valid quantity: " . ($hasQuantity ? 'Yes' : 'No'));
+                        
+                        // Skip if missing required fields
+                        if (!$hasItemDescription || !$hasQuantity) {
+                            $reason = !$hasItemDescription ? 'Missing item_description' : 'Invalid quantity';
+                            Log::warning("Skipping row {$index} - {$reason}");
+                            $skippedRows[] = ["row" => $index + 2, "reason" => $reason, "data" => $rowArray]; // +2 for Excel row number (1-based + header)
                             continue;
                         }
                         
-                        if (!isset($row['quantity']) || (int)$row['quantity'] <= 0) {
-                            Log::warning("Skipping row - invalid quantity for item: {$row['item_description']}");
+                        // Find product by name with better error handling
+                        try {
+                            $productId = $this->getProductIdByName($rowArray['item_description']);
+                            if (!$productId) {
+                                Log::error("Product not found: {$rowArray['item_description']}");
+                                $skippedRows[] = ["row" => $index + 2, "reason" => "Product not found", "data" => $rowArray];
+                                continue; // Skip this row instead of failing the entire import
+                            }
+                            
+                            // Add to valid rows
+                            $rowArray['product_id'] = $productId;
+                            $validRows[] = $rowArray;
+                        } catch (\Exception $e) {
+                            Log::error("Error finding product: " . $e->getMessage());
+                            $skippedRows[] = ["row" => $index + 2, "reason" => "Error: " . $e->getMessage(), "data" => $rowArray];
                             continue;
                         }
-                        
-                        // Find product by name
-                        $productId = $this->getProductIdByName($row['item_description']);
-                        if (!$productId) {
-                            Log::error("Product not found: {$row['item_description']}");
-                            throw new \Exception("Product not found: {$row['item_description']}");
-                        }
-                        
-                        // Add to valid rows
-                        $row['product_id'] = $productId;
-                        $validRows[] = $row;
+                    }
+                    
+                    // Log skipped rows summary
+                    if (count($skippedRows) > 0) {
+                        Log::warning("Skipped " . count($skippedRows) . " rows during import");
+                        Log::warning("Skipped rows details: " . json_encode($skippedRows));
                     }
                     
                     // Check if we have any valid rows
                     if (count($validRows) === 0) {
                         Log::error("No valid items found in import, rolling back transaction");
-                        throw new \Exception("No valid items found in the import file");
+                        throw new \Exception("No valid items found in the import file. Please check the Excel format and data.");
                     }
                     
+                    Log::info("Found " . count($validRows) . " valid rows for import");
+                    
                     // Second pass - create items for valid rows
-                    foreach($validRows as $row) {
-                        // Format dates
+                    foreach($validRows as $index => $row) {
+                        // Format dates with better handling
                         $dispenseDate = $this->formatDate($row['dispense_date'] ?? null);
                         $expiryDate = $this->formatDate($row['expiry_date'] ?? null);
                         
-                        // Debug the data we're about to insert
+                        // Use default dates if needed
+                        if (empty($dispenseDate)) {
+                            $dispenseDate = now()->toDateString();
+                            Log::info("Using default dispense date: {$dispenseDate}");
+                        }
+                        
+                        // Create item data with careful handling of nulls
                         $itemData = [
                             'parent_id' => $this->report->id,
                             'product_id' => $row['product_id'],
                             'batch_number' => $row['batch_number'] ?? null,
                             'uom' => $row['uom'] ?? null,
-                            'expiry_date' => $expiryDate,
-                            'dispense_date' => $dispenseDate ?? now()->toDateString(),
+                            'expiry_date' => $expiryDate, // Can be null
+                            'dispense_date' => $dispenseDate,
                             'quantity' => (int)$row['quantity'],
                         ];
                         
-                        Log::info("Attempting to create item with data: " . json_encode($itemData));
+                        Log::info("Creating item {$index} with data: " . json_encode($itemData));
                         
                         try {
                             // Create consumption item
@@ -117,7 +157,7 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
                             Log::info("Successfully created item ID: {$item->id}");
                             $itemCount++;
                         } catch (\Exception $e) {
-                            Log::error("Failed to create item: " . $e->getMessage());
+                            Log::error("Failed to create item {$index}: " . $e->getMessage());
                             throw $e;
                         }
                     }
@@ -127,32 +167,58 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
                     // Final check - if no items were created, roll back
                     if ($itemCount === 0) {
                         Log::error("No items were created, rolling back transaction");
-                        throw new \Exception("Failed to create any consumption items");
+                        throw new \Exception("Failed to create any consumption items. Please check the Excel format.");
                     }
                 }
             }, 3); // 3 retries on deadlock
         } catch (\Throwable $th) {
+            Log::error("Import failed with error: " . $th->getMessage());
             Log::error($th);
             throw $th;
         }
     }
     
     /**
-     * Get product ID by name, with caching for performance
+     * Get product ID by name with improved matching
      */
     protected function getProductIdByName($name)
     {
-        if (isset($this->productCache[$name])) {
-            return $this->productCache[$name];
+        if (empty($name)) {
+            Log::warning("Empty product name provided");
+            return null;
         }
         
-        $product = Product::where('name', $name)->first();
+        // Normalize the name
+        $normalizedName = trim($name);
+        
+        // Check cache first
+        if (isset($this->productCache[$normalizedName])) {
+            Log::info("Product found in cache: {$normalizedName} => {$this->productCache[$normalizedName]}");
+            return $this->productCache[$normalizedName];
+        }
+        
+        Log::info("Looking up product: {$normalizedName}");
+        
+        // Try exact match first
+        $product = Product::where('name', $normalizedName)->first();
+        
+        if (!$product) {
+            // Try case-insensitive match
+            $product = Product::whereRaw('LOWER(name) = ?', [strtolower($normalizedName)])->first();
+        }
+        
+        if (!$product) {
+            // Try partial match (contains)
+            $product = Product::where('name', 'like', "%{$normalizedName}%")->first();
+        }
         
         if ($product) {
-            $this->productCache[$name] = $product->id;
+            Log::info("Product found: {$normalizedName} => {$product->id} ({$product->name})");
+            $this->productCache[$normalizedName] = $product->id;
             return $product->id;
         }
         
+        Log::warning("Product not found: {$normalizedName}");
         return null;
     }
     
@@ -199,10 +265,5 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
             Log::warning("Invalid date format: {$dateString} - Error: {$e->getMessage()}");
             return null;
         }
-    }
-
-    public function chunkSize(): int
-    {
-        return 50;
     }
 }
