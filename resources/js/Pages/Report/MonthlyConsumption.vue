@@ -127,88 +127,59 @@
                 </div>
 
                 <!-- Data Table -->
+
                 <div class="overflow-x-auto">
-                    <table v-if="filteredPivotData && filteredPivotData.length > 0"
-                        class="min-w-full divide-y divide-gray-200 border">
+                    <table v-if="props.pivotData.length > 0" class="min-w-full divide-y divide-gray-200 border">
                         <thead class="bg-gray-50">
                             <tr class="border-b border-gray-200">
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     SN
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <div class="flex flex-col">
                                         <span class="mb-2">Items Description</span>
-                                        <div v-if="pivotData && pivotData.length > 0" class="flex">
-                                            <input v-model="localFilters.productSearch" type="text"
-                                                placeholder="Filter items..."
+                                        <div class="flex">
+                                            <input v-model="productSearch" type="text" placeholder="Filter items..."
                                                 class="block w-full text-sm font-normal rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-                                            <button v-if="localFilters.productSearch"
-                                                @click="localFilters.productSearch = ''"
+                                            <button v-if="productSearch" @click="productSearch = ''"
                                                 class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none">
                                                 ×
                                             </button>
                                         </div>
                                     </div>
                                 </th>
-                                <!-- Regular month columns and average columns after every 3 months -->
-                                <template v-for="(month, index) in months" :key="month">
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ formatMonthShort(month) }}-{{ formatYear(month) }}
-                                    </th>
-                                    <!-- Add average column after every 3 months -->
-                                    <th v-if="(index + 1) % 4 === 0 && index > 0"
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
-                                        AMC
-                                    </th>
-                                </template>
-                                <!-- Add final average if months count is not divisible by 4 -->
-                                <th v-if="months.length % 4 !== 0 && months.length > 0"
-                                    class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
+                                <!-- Month columns -->
+                                <th v-for="month in sortedMonths" :key="month"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {{ formatMonthShort(month) }}-{{ formatYear(month) }}
+                                </th>
+                                <!-- Average column -->
+                                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                     AMC
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(row, index) in filteredPivotData" :key="index" class="border-b border-gray-200">
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 text-center">
-                                    {{ row.sn }}
+                            <tr v-for="(row, index) in filteredPivotTableData" :key="index" class="border-b border-gray-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 text-center">
+                                    {{ index + 1 }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                    {{ row.item_name }}
+                                    {{ row.product_name }}
                                 </td>
-
-                                <!-- Regular month columns and average columns after every 3 months -->
-                                <template v-for="(month, index) in months" :key="month">
-                                    <!-- Regular month column -->
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 text-center">
-                                        <span>{{ row[month] || 0 }}</span>
-                                    </td>
-
-                                    <!-- Average column after every 3 months -->
-                                    <td v-if="(index + 1) % 4 === 0 && index > 0"
-                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
-                                        {{ calculateThreeMonthAverage(row, index) }}
-                                    </td>
-                                </template>
-
-                                <!-- Add final average if months count is not divisible by 4 -->
-                                <td v-if="months.length % 4 !== 0 && months.length > 0"
-                                    class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
-                                    {{ calculateRemainingMonthsAverage(row) }}
+                                <!-- Month columns with consumption values -->
+                                <td v-for="month in sortedMonths" :key="month"
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 text-center">
+                                    {{ row[month] || 0 }}
+                                </td>
+                                <!-- Average column -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
+                                    {{ calculateAverage(row) }}
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div v-else-if="pivotData && pivotData.length > 0 && filteredPivotData.length === 0"
-                        class="text-center py-10 text-gray-500">
-                        No products match your search criteria. Clear the search to see all products.
-                    </div>
                     <div v-else-if="loading" class="text-center py-10 text-gray-500">
                         <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-orange-500"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -224,6 +195,7 @@
                         No consumption data found for the selected filters.
                     </div>
                 </div>
+                
             </div>
         </div>
 
@@ -336,21 +308,73 @@ const props = defineProps({
     yearMonths: Array,
 });
 
-// For local filtering after report is loaded
-const localFilters = ref({
-    productSearch: ''
+// For product search filtering
+const productSearch = ref('');
+
+// Extract unique months from the data
+const months = computed(() => {
+    if (!props.pivotData || props.pivotData.length === 0) return [];
+    
+    const uniqueMonths = new Set();
+    props.pivotData.forEach(report => {
+        uniqueMonths.add(report.month_year);
+    });
+    
+    return Array.from(uniqueMonths);
 });
 
-// Filtered data based on text search
-const filteredPivotData = computed(() => {
-    if (!props.pivotData || !localFilters.value.productSearch) {
-        return props.pivotData;
-    }
+// Sort months chronologically
+const sortedMonths = computed(() => {
+    return [...months.value].sort();
+});
 
-    const searchTerm = localFilters.value.productSearch.toLowerCase();
-    return props.pivotData.filter(item =>
-        item.item_name && item.item_name.toLowerCase().includes(searchTerm)
-    );
+// Transform data into pivot table format
+const pivotTableData = computed(() => {
+    if (!props.pivotData || props.pivotData.length === 0) return [];
+    
+    // Create a map of product IDs to their data
+    const productMap = new Map();
+    
+    // Process each report
+    props.pivotData.forEach(report => {
+        const monthYear = report.month_year;
+        
+        // Process each item in the report
+        report.items.forEach(item => {
+            const productId = item.product_id;
+            const productName = item.product.name;
+            const quantity = item.quantity;
+            
+            // Get or create product entry
+            if (!productMap.has(productId)) {
+                productMap.set(productId, {
+                    product_id: productId,
+                    product_name: productName
+                });
+            }
+            
+            // Add month data
+            const productData = productMap.get(productId);
+            productData[monthYear] = quantity;
+        });
+    });
+    
+    // Convert map to array
+    return Array.from(productMap.values());
+});
+
+// Filter pivot table data by product name
+const filteredPivotTableData = computed(() => {
+    if (!pivotTableData.value.length) return [];
+    
+    if (productSearch.value) {
+        const searchTerm = productSearch.value.toLowerCase();
+        return pivotTableData.value.filter(row => {
+            return row.product_name.toLowerCase().includes(searchTerm);
+        });
+    }
+    
+    return pivotTableData.value;
 });
 
 // Initialize filters with props values or defaults
@@ -614,86 +638,29 @@ async function uploadFile() {
         });
 }
 
-// Legacy file upload handler (keeping for backward compatibility)
-async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate facility selection - must be a specific facility with an integer ID
-    if (!Number.isInteger(Number(filters.value.facility_id))) {
-        Swal.fire({
-            title: 'Specific Facility Required',
-            text: 'Please select a specific facility before uploading consumption data. "All Facilities" option cannot be used for uploads.',
-            icon: 'warning',
-            confirmButtonColor: '#f97316'
-        });
-        if (fileInput.value) fileInput.value.value = null;
-        return;
-    }
-
-    uploading.value = true;
-
-    try {
-        // Create form data
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('facility_id', filters.value.facility_id);
-
-        // Upload the file
-        const response = await axios.post(route('reports.upload-consumption'), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-
-        // Show success message
-        Swal.fire({
-            title: 'Upload Successful',
-            text: response.data.message,
-            icon: 'success',
-            confirmButtonColor: '#f97316'
-        });
-
-        // Reload the data
-        applyFilters();
-    } catch (error) {
-        // Show error message
-        Swal.fire({
-            title: 'Upload Failed',
-            text: error.response?.data?.message || 'An error occurred while uploading the file.',
-            icon: 'error',
-            confirmButtonColor: '#f97316'
-        });
-    } finally {
-        uploading.value = false;
-        if (fileInput.value) fileInput.value.value = null; // Reset file input
-    }
-}
-
-// Format year from YYYY-MM to YY (e.g., 2025-05 to 25)
+// Format year from YYYY-MM to YYYY (e.g., 2025-05 to 2025)
 function formatYear(monthStr) {
     const [year] = monthStr.split('-');
-    return year.slice(-2); // Return just the last two digits
+    return year;
+}
+
+// Calculate average monthly consumption for a product
+function calculateAverage(row) {
+    // Get all month values (excluding product_id and product_name)
+    const monthValues = sortedMonths.value.map(month => row[month] || 0);
+    
+    // If no months available, return 0
+    if (monthValues.length === 0) return 0;
+    
+    // Calculate average using all months, including zeros
+    const sum = monthValues.reduce((acc, val) => acc + val, 0);
+    return Math.round((sum / monthValues.length) * 100) / 100;
 }
 
 // Calculate total for a row
 function calculateRowTotal(row) {
     return props.months.reduce((total, month) => {
         return total + (parseInt(row[month]) || 0);
-    }, 0);
-}
-
-// Calculate total for a column
-function calculateColumnTotal(month) {
-    return props.pivotData.reduce((total, row) => {
-        return total + (parseInt(row[month]) || 0);
-    }, 0);
-}
-
-// Calculate grand total
-function calculateGrandTotal() {
-    return props.pivotData.reduce((total, row) => {
-        return total + calculateRowTotal(row);
     }, 0);
 }
 
