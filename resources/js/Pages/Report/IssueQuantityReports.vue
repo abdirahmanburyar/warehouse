@@ -509,6 +509,7 @@ const excelFile = ref(null);
 // Methods
 const isUploading = ref(false);
 const submitUpload = async () => {
+    console.log(excelFile.value.files[0]);
     const formData = new FormData();
     formData.append('month_year', uploadMonthYear.value);
     formData.append('file', excelFile.value.files[0]);
