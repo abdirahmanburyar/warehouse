@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('monthly_consumptions_items', function (Blueprint $table) {
+        Schema::create('monthly_consumption_reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('facility_id')->constrained('facilities')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->string('batch_number')->nullable();
-            $table->string('uom')->nullable();
-            $table->date('expire_date')->nullable();
             $table->string('month_year');
-            $table->integer('quantity')->default(0)->comment('Actual consumption quantity for this month');
+            $table->string('generated_by');
             $table->timestamps();
         });
     }
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('monthly_consumptions');
+        Schema::dropIfExists('monthly_consumption_reports');
     }
 };

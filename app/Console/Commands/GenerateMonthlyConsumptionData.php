@@ -2,7 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AvarageMonthlyconsumption;
+use App\Models\MonthlyConsumptionReport;
+use App\Models\MonthlyConsumptionItem;
 use App\Models\Facility;
 use App\Models\Product;
 use Carbon\Carbon;
@@ -17,124 +18,119 @@ class GenerateMonthlyConsumptionData extends Command
      *
      * @var string
      */
-    protected $signature = 'consumption:generate {--months=5 : Number of past months to generate data for} {--facility= : Specific facility ID to generate data for} {--product= : Specific product ID to generate data for} {--min=5 : Minimum random quantity} {--max=100 : Maximum random quantity}';
+    protected $signature = 'consumption:generate {--facility= : Specific facility ID to generate data for} {--product= : Specific product ID to generate data for} {--force : Force regeneration even if data exists for the month}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate random monthly consumption data for testing purposes';
+    protected $description = 'Generate previous month consumption data from dispences (e.g., when run in June, generates May data)';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $months = $this->option('months');
         $facilityId = $this->option('facility');
         $productId = $this->option('product');
-        $minQuantity = $this->option('min');
-        $maxQuantity = $this->option('max');
-
-        $this->info("Generating random monthly consumption data for the past {$months} months...");
-        $this->info("Quantity range: {$minQuantity} - {$maxQuantity}");
-
-        // Get the current month and year
-        $currentDate = Carbon::now();
+        $force = $this->option('force');
+        $generatedBy = 'Artisan Command';
         
-        // Get facilities to process
-        $facilities = $this->getFacilities($facilityId);
-        $this->info("Processing " . $facilities->count() . " facilities");
-
-        // Get products to process
-        $products = $this->getProducts($productId);
-        $this->info("Processing " . $products->count() . " products");
-
-        // Preload eligibility data to avoid repeated database queries
-        $this->info("Preloading eligibility data...");
-        $eligibilityMap = $this->preloadEligibilityData();
+        // Get previous month date range
+        $previousMonth = now()->subMonth();
+        $monthYear = $previousMonth->format('Y-m');
+        $startOfMonth = $previousMonth->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $previousMonth->copy()->endOfMonth()->toDateString();
         
-        // Generate month-year values for all months we need to process
-        $monthYears = [];
-        for ($i = 0; $i < $months; $i++) {
-            $date = clone $currentDate;
-            $date->subMonths($i);
-            $monthYears[] = $date->format('Y-m');
-        }
+        $this->info("Generating consumption data for {$monthYear} ({$startOfMonth} to {$endOfMonth})...");
         
-        $this->info("Generating consumption records...");
+        $facilities = $facilityId 
+            ? Facility::where('id', $facilityId)->get() 
+            : $this->getFacilities();
         
-        // Calculate total operations for progress bar
-        $totalOperations = count($monthYears) * $facilities->count();
-        $progressBar = $this->output->createProgressBar($totalOperations);
-        $progressBar->start();
+        $processedCount = 0;
+        $skippedCount = 0;
         
-        $totalRecords = 0;
-        $batchSize = 100; // Smaller batch size for better reliability
-        $records = [];
-
-        // Process each facility
         foreach ($facilities as $facility) {
-            // For each month
-            foreach ($monthYears as $monthYear) {
-                // Get eligible products for this facility type
-                $eligibleProductIds = $eligibilityMap[$facility->facility_type] ?? [];
+            // Check if data already exists for this facility and month
+            $existingReport = MonthlyConsumptionReport::where('facility_id', $facility->id)
+                ->where('month_year', $monthYear)
+                ->first();
                 
-                // Generate records for eligible products
-                foreach ($products as $product) {
-                    // Skip if product is not eligible for this facility type
-                    if (!in_array($product->id, $eligibleProductIds)) {
-                        continue;
-                    }
-                    
-                    // Skip if we're filtering by product ID and this isn't the one
-                    if ($productId && $product->id != $productId) {
-                        continue;
-                    }
-                    
-                    // Generate random consumption quantity
-                    $consumption = $this->generateRandomConsumption($minQuantity, $maxQuantity);
-                    
-                    // Simplified AMC calculation - just use the consumption value
-                    $amc = $consumption;
-                    
-                    // Add to batch
-                    $records[] = [
-                        'facility_id' => $facility->id,
-                        'product_id' => $product->id,
-                        'month_year' => $monthYear,
-                        'quantity' => $consumption,
-                        'amc' => $amc,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                    
-                    $totalRecords++;
-                    
-                    // Insert in batches to improve performance
-                    if (count($records) >= $batchSize) {
-                        // Use simple insert instead of the custom method
-                        DB::table('monthly_consumptions')->insertOrIgnore($records);
-                        $records = [];
-                        $this->info("Inserted batch, total records so far: {$totalRecords}");
-                    }
-                }
-                
-                $progressBar->advance();
+            if ($existingReport && !$force) {
+                $this->warn("Skipping facility {$facility->name} (ID: {$facility->id}): Data already exists for {$monthYear}");
+                $skippedCount++;
+                continue;
+            } elseif ($existingReport) {
+                // Delete existing report and its items if force option is used
+                $this->warn("Removing existing data for facility {$facility->name} (ID: {$facility->id}) for {$monthYear}");
+                MonthlyConsumptionItem::where('parent_id', $existingReport->id)->delete();
+                $existingReport->delete();
             }
-        }
-        
-        // Insert any remaining records
-        if (!empty($records)) {
-            DB::table('monthly_consumptions')->insertOrIgnore($records);
-            $this->info("Inserted final batch, total records: {$totalRecords}");
+            
+            // Get all dispences for this facility and month
+            $dispences = DB::table('dispences')
+                ->where('facility_id', $facility->id)
+                ->whereBetween('dispence_date', [$startOfMonth, $endOfMonth])
+                ->pluck('id');
+
+            if ($dispences->isEmpty()) {
+                $this->warn("No dispences found for facility {$facility->name} (ID: {$facility->id}) in {$monthYear}");
+                $skippedCount++;
+                continue;
+            }
+
+            // Aggregate dispence_items for these dispences
+            $items = DB::table('dispence_items')
+                ->whereIn('dispence_id', $dispences)
+                ->when($productId, function ($query) use ($productId) {
+                    $query->where('product_id', $productId);
+                })
+                ->select(
+                    'product_id',
+                    DB::raw('SUM(quantity) as total_quantity'),
+                    DB::raw('MIN(batch_number) as batch_number'),
+                    DB::raw('MIN(uom) as uom'),
+                    DB::raw('MIN(expiry_date) as expiry_date'),
+                    DB::raw('MIN(start_date) as first_dispense_date'),
+                    DB::raw('MAX(expiry_date) as last_expiry_date')
+                )
+                ->groupBy('product_id')
+                ->get();
+
+            if ($items->isEmpty()) {
+                $this->warn("No dispence items found for facility {$facility->name} (ID: {$facility->id}) in {$monthYear}");
+                $skippedCount++;
+                continue;
+            }
+
+            // Create parent report
+            $report = MonthlyConsumptionReport::create([
+                'facility_id' => $facility->id,
+                'month_year' => $monthYear,
+                'generated_by' => $generatedBy,
+            ]);
+
+            $itemCount = 0;
+            foreach ($items as $item) {
+                MonthlyConsumptionItem::create([
+                    'parent_id' => $report->id,
+                    'product_id' => $item->product_id,
+                    'batch_number' => $item->batch_number,
+                    'uom' => $item->uom,
+                    'expiry_date' => $item->expiry_date,
+                    'dispense_date' => $item->first_dispense_date,
+                    'quantity' => $item->total_quantity,
+                ]);
+                $itemCount++;
+            }
+            
+            $this->info("Processed facility {$facility->name} (ID: {$facility->id}): Created report with {$itemCount} items");
+            $processedCount++;
         }
 
-        $progressBar->finish();
-        $this->newLine();
-        $this->info("Generated {$totalRecords} monthly consumption records.");
+        $this->info("Monthly consumption data generation complete!");
+        $this->info("Processed {$processedCount} facilities, skipped {$skippedCount} facilities");
     }
+
 
     /**
      * Get facilities to process.
@@ -209,34 +205,5 @@ class GenerateMonthlyConsumptionData extends Command
         // Use insertOrIgnore to handle potential duplicates
         DB::table('monthly_consumptions')->insertOrIgnore($records);
     }
-
-    /**
-     * Generate a random consumption quantity.
-     *
-     * @param int $min Minimum quantity
-     * @param int $max Maximum quantity
-     * @return int
-     */
-    private function generateRandomConsumption($min, $max)
-    {
-        return rand($min, $max);
-    }
-    
-    /**
-     * Calculate the Average Monthly Consumption (AMC) based on the current consumption.
-     * For simplicity, we're just using the current month's consumption as the AMC.
-     * In a real-world scenario, you would calculate this based on historical data.
-     *
-     * @param int $facilityId The facility ID
-     * @param int $productId The product ID
-     * @param string $currentMonthYear The current month-year (YYYY-MM format)
-     * @param int $currentConsumption The consumption for the current month
-     * @return int The calculated AMC value
-     */
-    private function calculateAMC($facilityId, $productId, $currentMonthYear, $currentConsumption)
-    {
-        // For simplicity, just return the current consumption as the AMC
-        // This prevents the command from getting stuck while still providing a value
-        return $currentConsumption;
-    }
+ 
 }

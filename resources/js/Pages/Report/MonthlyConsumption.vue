@@ -157,13 +157,13 @@
                                         {{ formatMonthShort(month) }}-{{ formatYear(month) }}
                                     </th>
                                     <!-- Add average column after every 3 months -->
-                                    <th v-if="(index + 1) % 3 === 0 && index > 0" 
+                                    <th v-if="(index + 1) % 4 === 0 && index > 0" 
                                         class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                         AMC
                                     </th>
                                 </template>
-                                <!-- Add final average if months count is not divisible by 3 -->
-                                <th v-if="months.length % 3 !== 0 && months.length > 0" 
+                                <!-- Add final average if months count is not divisible by 4 -->
+                                <th v-if="months.length % 4 !== 0 && months.length > 0" 
                                     class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                     AMC
                                 </th>
@@ -187,14 +187,14 @@
                                     </td>
                                     
                                     <!-- Average column after every 3 months -->
-                                    <td v-if="(index + 1) % 3 === 0 && index > 0" 
+                                    <td v-if="(index + 1) % 4 === 0 && index > 0" 
                                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
                                         {{ calculateThreeMonthAverage(row, index) }}
                                     </td>
                                 </template>
                                 
-                                <!-- Add final average if months count is not divisible by 3 -->
-                                <td v-if="months.length % 3 !== 0 && months.length > 0" 
+                                <!-- Add final average if months count is not divisible by 4 -->
+                                <td v-if="months.length % 4 !== 0 && months.length > 0" 
                                     class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
                                     {{ calculateRemainingMonthsAverage(row) }}
                                 </td>
@@ -545,78 +545,49 @@ async function uploadFile() {
     
     // Set uploading state
     uploading.value = true;
-    
-    try {
+   
         // Upload the file
-        const response = await axios.post(route('reports.upload-consumption'), formData, {
+        await axios.post(route('reports.upload-consumption'), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
-        });
-        
-        // Show success message
-        Swal.fire({
-            title: 'Upload Successful',
-            text: 'File uploaded successfully. Previous report data has been cleared.',
-            icon: 'success',
-            confirmButtonColor: '#f97316'
-        });
-        
-        // Close modal and reset form
-        showUploadModal.value = false;
-        selectedFile.value = null;
-        
-        // Store the facility object before resetting modalFacilityId
-        const uploadedFacility = modalFacilityId.value;
-        modalFacilityId.value = null;
-        
-        // Update filters to match the uploaded facility (using the full facility object)
-        filters.value.facility_id = uploadedFacility;
-        
-        // Set date range from February to December of current year
-        const currentYear = new Date().getFullYear();
-        filters.value.start_month = `${currentYear}-02`; // February
-        filters.value.end_month = `${currentYear}-12`;   // December
-        
-        // Log the selected facility for debugging
-        console.log('Selected facility after upload:', filters.value.facility_id);
-        
-        // Refresh report data with explicit facility_id
-        applyFilters();
-    } catch (error) {
-        console.error('Upload error:', error);
-        
-        let errorMessage = 'An error occurred during upload';
-        
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            console.log('Error data:', error.response.data);
-            console.log('Error status:', error.response.status);
+        })
+        .then((response) => {
+            uploading.value = false;
+            console.log(response);
+            // Close modal and reset form
+            // showUploadModal.value = false;
+            // selectedFile.value = null;
             
-            if (error.response.data.errors) {
-                const errors = error.response.data.errors;
-                if (errors.facility_id) {
-                    modalFacilityError.value = errors.facility_id[0];
-                }
-                if (errors.file) {
-                    fileError.value = errors.file[0];
-                }
-                errorMessage = 'Please correct the errors above';
-            } else if (error.response.data.message) {
-                errorMessage = error.response.data.message;
-            }
-        }
-        
-        Swal.fire({
-            title: 'Upload Error',
-            text: errorMessage,
-            icon: 'error',
-            confirmButtonColor: '#f97316'
+            // // Store the facility object before resetting modalFacilityId
+            // const uploadedFacility = modalFacilityId.value;
+            // modalFacilityId.value = null;
+            
+            // // Update filters to match the uploaded facility (using the full facility object)
+            // filters.value.facility_id = uploadedFacility;
+            
+            // // Set date range from February to December of current year
+            // const currentYear = new Date().getFullYear();
+            // filters.value.start_month = `${currentYear}-02`; // February
+            // filters.value.end_month = `${currentYear}-12`;   // December
+            
+            // // Log the selected facility for debugging
+            // console.log('Selected facility after upload:', filters.value.facility_id);
+            
+            // // Refresh report data with explicit facility_id
+            // applyFilters();
+        })
+        .catch((error) => {
+            uploading.value = false;
+            console.log(error);            
+            // Show error message
+            Swal.fire({
+                title: 'Upload Failed',
+                text: 'An error occurred while uploading the file',
+                icon: 'error',
+                confirmButtonColor: '#f97316'
+            });
         });
-    } finally {
-        uploading.value = false;
-    }
 }
 
 // Legacy file upload handler (keeping for backward compatibility)

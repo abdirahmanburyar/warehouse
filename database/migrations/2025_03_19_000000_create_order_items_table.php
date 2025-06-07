@@ -21,7 +21,6 @@ return new class extends Migration
             $table->foreignIdFor(Warehouse::class)->nullable()->cascadeOnDelete();
             $table->integer('quantity'); // This stores the needed quantity
             $table->integer('quantity_on_order')->default(0);
-            $table->integer('qer')->default(0);
             $table->integer('soh')->default(0);
             $table->double('amc')->default(0);
             $table->integer('quantity_to_release')->default(0);

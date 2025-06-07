@@ -384,6 +384,8 @@ class ReportController extends Controller
                 }, $pivotData, array_keys($pivotData));
             }
         }
+
+        logger()->info($pivotData);
         
         return inertia('Report/MonthlyConsumption', [
             'pivotData' => $pivotData,
