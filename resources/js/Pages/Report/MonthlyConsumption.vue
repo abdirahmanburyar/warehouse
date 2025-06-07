@@ -1,5 +1,6 @@
 <template>
-        <AuthenticatedLayout title="Review Your Reports" description="Facilities - Monthly Consumptions" img="/assets/images/report.png">
+    <AuthenticatedLayout title="Review Your Reports" description="Facilities - Monthly Consumptions"
+        img="/assets/images/report.png">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-[100px]">
             <div class="p-6 bg-white border-b border-gray-200">
                 <h1 class="text-2xl font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
@@ -10,17 +11,10 @@
                 <div class="mb-6 flex flex-wrap items-end gap-4">
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
-                        <Multiselect 
-                            v-model="filters.facility_id"
-                            :options="[{id: null, name: 'All Facilities'}, ...facilities]"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :show-labels="false"
-                            :allow-empty="true" 
-                            placeholder="Select Facility" 
-                            track-by="id" 
-                            label="name"
-                            class="mt-1">
+                        <Multiselect v-model="filters.facility_id"
+                            :options="[{ id: null, name: 'All Facilities' }, ...facilities]" :searchable="true"
+                            :close-on-select="true" :show-labels="false" :allow-empty="true"
+                            placeholder="Select Facility" track-by="id" label="name" class="mt-1">
                             <template v-slot:option="{ option }">
                                 <div>
                                     <span>{{ option.name }} {{ option.id ? `(${option.facility_type})` : '' }}</span>
@@ -34,7 +28,7 @@
                         <input type="month" v-model="filters.start_month"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
                     </div>
-                    
+
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
                         <input type="month" v-model="filters.end_month"
@@ -48,25 +42,33 @@
                         </button>
                         <button @click="exportToExcel" v-if="pivotData.length > 0" :disabled="loading"
                             class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Export to Excel
                         </button>
                         <button @click="applyFilters" :disabled="loading"
                             class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
-                            {{ loading ? 'Generating' : 'Generate'  }}
+                            {{ loading ? 'Generating' : 'Generate' }}
                         </button>
-                        
+
                         <!-- Excel Upload Button -->
-                        <button @click="openUploadModal" 
+                        <button @click="openUploadModal"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
                             Upload Excel
                         </button>
@@ -76,7 +78,7 @@
                 <!-- Facility Information -->
                 <div v-if="facilityInfo && !loading" class="mb-6 border-b border-gray-200 pb-4">
                     <h2 class="text-xl font-semibold mb-3 text-center">Facility Information</h2>
-                    
+
                     <div class="flex flex-col md:flex-row justify-between max-w-4xl mx-auto mb-4 text-sm">
                         <div class="flex-1 p-3">
                             <table class="w-full">
@@ -102,7 +104,7 @@
                                 </tr>
                             </table>
                         </div>
-                        
+
                         <div class="flex-1 p-3 border-t md:border-t-0 md:border-l border-gray-200">
                             <table class="w-full" v-if="facilityInfo.user">
                                 <tr>
@@ -117,35 +119,34 @@
                             <p v-else class="text-gray-500 italic py-2">No manager assigned</p>
                         </div>
                     </div>
-                    
+
                     <div class="text-center text-sm text-gray-600">
-                        <p>Report Period: {{ formatMonth(filters.start_month) }} to {{ formatMonth(filters.end_month) }}</p>
+                        <p>Report Period: {{ formatMonth(filters.start_month) }} to {{ formatMonth(filters.end_month) }}
+                        </p>
                     </div>
                 </div>
 
                 <!-- Data Table -->
                 <div class="overflow-x-auto">
-                    <table v-if="filteredPivotData && filteredPivotData.length > 0" class="min-w-full divide-y divide-gray-200 border">
+                    <table v-if="filteredPivotData && filteredPivotData.length > 0"
+                        class="min-w-full divide-y divide-gray-200 border">
                         <thead class="bg-gray-50">
                             <tr class="border-b border-gray-200">
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     SN
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <div class="flex flex-col">
                                         <span class="mb-2">Items Description</span>
                                         <div v-if="pivotData && pivotData.length > 0" class="flex">
-                                            <input 
-                                                v-model="localFilters.productSearch" 
-                                                type="text" 
-                                                placeholder="Filter items..." 
-                                                class="block w-full text-sm font-normal rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                                            >
-                                            <button 
-                                                v-if="localFilters.productSearch" 
-                                                @click="localFilters.productSearch = ''" 
-                                                class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
-                                            >
+                                            <input v-model="localFilters.productSearch" type="text"
+                                                placeholder="Filter items..."
+                                                class="block w-full text-sm font-normal rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                            <button v-if="localFilters.productSearch"
+                                                @click="localFilters.productSearch = ''"
+                                                class="ml-1 px-2 text-xs text-gray-500 hover:text-gray-700 focus:outline-none">
                                                 ×
                                             </button>
                                         </div>
@@ -153,17 +154,18 @@
                                 </th>
                                 <!-- Regular month columns and average columns after every 3 months -->
                                 <template v-for="(month, index) in months" :key="month">
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         {{ formatMonthShort(month) }}-{{ formatYear(month) }}
                                     </th>
                                     <!-- Add average column after every 3 months -->
-                                    <th v-if="(index + 1) % 4 === 0 && index > 0" 
+                                    <th v-if="(index + 1) % 4 === 0 && index > 0"
                                         class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                         AMC
                                     </th>
                                 </template>
                                 <!-- Add final average if months count is not divisible by 4 -->
-                                <th v-if="months.length % 4 !== 0 && months.length > 0" 
+                                <th v-if="months.length % 4 !== 0 && months.length > 0"
                                     class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
                                     AMC
                                 </th>
@@ -178,23 +180,24 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                     {{ row.item_name }}
                                 </td>
-                                
+
                                 <!-- Regular month columns and average columns after every 3 months -->
                                 <template v-for="(month, index) in months" :key="month">
                                     <!-- Regular month column -->
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 text-center">
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 text-center">
                                         <span>{{ row[month] || 0 }}</span>
                                     </td>
-                                    
+
                                     <!-- Average column after every 3 months -->
-                                    <td v-if="(index + 1) % 4 === 0 && index > 0" 
+                                    <td v-if="(index + 1) % 4 === 0 && index > 0"
                                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
                                         {{ calculateThreeMonthAverage(row, index) }}
                                     </td>
                                 </template>
-                                
+
                                 <!-- Add final average if months count is not divisible by 4 -->
-                                <td v-if="months.length % 4 !== 0 && months.length > 0" 
+                                <td v-if="months.length % 4 !== 0 && months.length > 0"
                                     class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white border-r border-gray-200 text-center bg-sky-500">
                                     {{ calculateRemainingMonthsAverage(row) }}
                                 </td>
@@ -202,13 +205,18 @@
                         </tbody>
                     </table>
 
-                    <div v-else-if="pivotData && pivotData.length > 0 && filteredPivotData.length === 0" class="text-center py-10 text-gray-500">
+                    <div v-else-if="pivotData && pivotData.length > 0 && filteredPivotData.length === 0"
+                        class="text-center py-10 text-gray-500">
                         No products match your search criteria. Clear the search to see all products.
                     </div>
                     <div v-else-if="loading" class="text-center py-10 text-gray-500">
-                        <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-orange-500"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         <p>Loading consumption data...</p>
                     </div>
@@ -218,54 +226,63 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Excel Upload Modal -->
         <div v-if="showUploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-[60%] mx-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium">Upload Consumption Data</h3>
                     <button @click="showUploadModal = false" class="text-gray-500 hover:text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Facility</label>
-                    <Multiselect 
-                        v-model="modalFacilityId"
-                        :options="facilities"
-                        :searchable="true" 
-                        :close-on-select="true" 
-                        :show-labels="false"
-                        :allow-empty="false" 
-                        placeholder="Select Facility" 
-                        track-by="id" 
-                        label="name"
-                        class="mt-1">
-                        <template v-slot:option="{ option }">
-                            <div>
-                                <span>{{ option.name }} {{ option.facility_type ? `(${option.facility_type})` : '' }}</span>
-                            </div>
-                        </template>
-                    </Multiselect>
-                    <p v-if="modalFacilityError" class="mt-1 text-sm text-red-600">{{ modalFacilityError }}</p>
+
+                <div class="grid md:grid-cols-2 sm:grid-cols-1 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Facility</label>
+                        <Multiselect v-model="modalFacilityId" :options="facilities" :searchable="true"
+                            :close-on-select="true" :show-labels="false" :allow-empty="false"
+                            placeholder="Select Facility" track-by="id" label="name" class="mt-1">
+                            <template v-slot:option="{ option }">
+                                <div>
+                                    <span>{{ option.name }} {{ option.facility_type ? `(${option.facility_type})` : ''
+                                        }}</span>
+                                </div>
+                            </template>
+                        </Multiselect>
+                        <p v-if="modalFacilityError" class="mt-1 text-sm text-red-600">{{ modalFacilityError }}</p>
+                    </div>
+                    <div>
+                        <label for="month_year" class="block text-sm font-medium text-gray-700 mb-1">Month Year</label>
+                        <input type="month" id="month_year" v-model="month_year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                    </div>
                 </div>
-                
+
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Excel File</label>
                     <div class="flex items-center justify-center w-full">
-                        <label class="flex flex-col w-full h-32 border-2 border-dashed hover:bg-gray-100 hover:border-gray-300 rounded-lg">
+                        <label
+                            class="flex flex-col w-full h-32 border-2 border-dashed hover:bg-gray-100 hover:border-gray-300 rounded-lg">
                             <div class="flex flex-col items-center justify-center pt-7" v-if="!selectedFile">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="w-12 h-12 text-gray-400 group-hover:text-gray-600" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
-                                <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">Select Excel file</p>
+                                <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">Select
+                                    Excel file
+                                </p>
                             </div>
                             <div class="flex flex-col items-center justify-center pt-7" v-else>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-green-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
                                 </svg>
                                 <p class="pt-1 text-sm text-gray-700">{{ selectedFile.name }}</p>
                                 <p class="text-xs text-gray-500">{{ formatFileSize(selectedFile.size) }}</p>
@@ -275,15 +292,21 @@
                     </div>
                     <p v-if="fileError" class="mt-1 text-sm text-red-600">{{ fileError }}</p>
                 </div>
-                
+
                 <div class="flex justify-end space-x-2">
-                    <button @click="showUploadModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <button @click="showUploadModal = false"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         Cancel
                     </button>
-                    <button @click="uploadFile" :disabled="uploading" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <svg v-if="uploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <button @click="uploadFile" :disabled="uploading"
+                        class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <svg v-if="uploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         {{ uploading ? 'Uploading...' : 'Upload' }}
                     </button>
@@ -323,9 +346,9 @@ const filteredPivotData = computed(() => {
     if (!props.pivotData || !localFilters.value.productSearch) {
         return props.pivotData;
     }
-    
+
     const searchTerm = localFilters.value.productSearch.toLowerCase();
-    return props.pivotData.filter(item => 
+    return props.pivotData.filter(item =>
         item.item_name && item.item_name.toLowerCase().includes(searchTerm)
     );
 });
@@ -382,7 +405,7 @@ function applyFilters() {
 
     // Set loading state
     loading.value = true;
-    
+
     // Show loading indicator
     Swal.fire({
         title: 'Generating Report',
@@ -394,7 +417,7 @@ function applyFilters() {
             Swal.showLoading();
         }
     });
-    
+
     // Directly fetch the data with current filters - don't clear filters
     router.get(route('reports.monthlyConsumption'), {
         facility_id: filters.value.facility_id,
@@ -426,7 +449,7 @@ function clearFilters() {
             Swal.showLoading();
         }
     });
-    
+
     // Reset filters to default values
     filters.value = {
         facility_id: null,
@@ -435,11 +458,11 @@ function clearFilters() {
         end_month: new Date().getFullYear() + '-12',   // December of current year
         is_submitted: false
     };
-    
+
     // Remove query parameters from URL and reset the view
     const baseUrl = window.location.pathname;
     window.history.replaceState({}, document.title, baseUrl);
-    
+
     // Always clear the data display completely
     router.visit(route('reports.monthlyConsumption'), {
         method: 'get',
@@ -477,7 +500,7 @@ function formatMonthShort(monthStr) {
 // Open the upload modal
 function openUploadModal() {
     showUploadModal.value = true;
-    
+
     // Set the selected facility in the modal
     if (filters.value.facility_id) {
         // Find the facility object that matches the ID
@@ -486,7 +509,7 @@ function openUploadModal() {
     } else {
         modalFacilityId.value = null;
     }
-    
+
     selectedFile.value = null;
     fileError.value = null;
     modalFacilityError.value = null;
@@ -496,7 +519,7 @@ function openUploadModal() {
 function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     // Validate file type
     const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
     if (!validTypes.includes(file.type)) {
@@ -504,7 +527,7 @@ function handleFileSelect(event) {
         selectedFile.value = null;
         return;
     }
-    
+
     selectedFile.value = file;
     fileError.value = null;
 }
@@ -518,68 +541,72 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+const month_year = ref('');
+
 // Upload file from the modal
 async function uploadFile() {
     // Reset errors
     fileError.value = null;
     modalFacilityError.value = null;
-    
+
     // Validate inputs
     if (!modalFacilityId.value) {
         modalFacilityError.value = 'Please select a facility';
         return;
     }
-    
+
     if (!selectedFile.value) {
         fileError.value = 'Please select an Excel file';
         return;
     }
-    
+
     // Get the facility ID from the selected facility object
     const facilityId = modalFacilityId.value.id;
-    
+
     // Create form data
     const formData = new FormData();
     formData.append('file', selectedFile.value);
     formData.append('facility_id', parseInt(facilityId));
-    
+    formData.append('month_year', month_year.value);
+
     // Set uploading state
     uploading.value = true;
-   
-        // Upload the file
-        await axios.post(route('reports.upload-consumption'), formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
+
+    // Upload the file
+    await axios.post(route('reports.upload-consumption'), formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
         .then((response) => {
             uploading.value = false;
             console.log(response);
             // Close modal and reset form
             // showUploadModal.value = false;
             // selectedFile.value = null;
-            
+
             // // Store the facility object before resetting modalFacilityId
             // const uploadedFacility = modalFacilityId.value;
             // modalFacilityId.value = null;
-            
+            // month_year.value = null;
+
             // // Update filters to match the uploaded facility (using the full facility object)
             // filters.value.facility_id = uploadedFacility;
-            
+
             // // Set date range from February to December of current year
             // const currentYear = new Date().getFullYear();
             // filters.value.start_month = `${currentYear}-02`; // February
             // filters.value.end_month = `${currentYear}-12`;   // December
-            
+
             // // Log the selected facility for debugging
             // console.log('Selected facility after upload:', filters.value.facility_id);
-            
+
             // // Refresh report data with explicit facility_id
             // applyFilters();
         })
         .catch((error) => {
             uploading.value = false;
-            console.log(error);            
+            console.log(error);
             // Show error message
             Swal.fire({
                 title: 'Upload Failed',
@@ -594,7 +621,7 @@ async function uploadFile() {
 async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     // Validate facility selection - must be a specific facility with an integer ID
     if (!Number.isInteger(Number(filters.value.facility_id))) {
         Swal.fire({
@@ -606,22 +633,22 @@ async function handleFileUpload(event) {
         if (fileInput.value) fileInput.value.value = null;
         return;
     }
-    
+
     uploading.value = true;
-    
+
     try {
         // Create form data
         const formData = new FormData();
         formData.append('file', file);
         formData.append('facility_id', filters.value.facility_id);
-        
+
         // Upload the file
         const response = await axios.post(route('reports.upload-consumption'), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        
+
         // Show success message
         Swal.fire({
             title: 'Upload Successful',
@@ -629,7 +656,7 @@ async function handleFileUpload(event) {
             icon: 'success',
             confirmButtonColor: '#f97316'
         });
-        
+
         // Reload the data
         applyFilters();
     } catch (error) {
@@ -678,17 +705,17 @@ function calculateThreeMonthAverage(row, currentIndex) {
     // Get the three months we need to average
     const startIndex = currentIndex - 2;
     const months = props.months.slice(startIndex, currentIndex + 1);
-    
+
     // Calculate the sum of these three months
     let sum = 0;
     let count = 0;
-    
+
     months.forEach(month => {
         const value = parseInt(row[month] || 0);
         sum += value;
         count++;
     });
-    
+
     // Calculate and format the average
     const average = count > 0 ? sum / count : 0;
     return average.toFixed(1);
@@ -698,21 +725,21 @@ function calculateThreeMonthAverage(row, currentIndex) {
 function calculateRemainingMonthsAverage(row) {
     const remainingCount = props.months.length % 3;
     if (remainingCount === 0) return 0;
-    
+
     // Get the remaining months
     const startIndex = props.months.length - remainingCount;
     const months = props.months.slice(startIndex);
-    
+
     // Calculate the sum of these months
     let sum = 0;
     let count = 0;
-    
+
     months.forEach(month => {
         const value = parseInt(row[month] || 0);
         sum += value;
         count++;
     });
-    
+
     // Calculate and format the average
     const average = count > 0 ? sum / count : 0;
     return average.toFixed(1);
@@ -723,7 +750,7 @@ function exportToExcel() {
     try {
         // Create worksheet data
         const wsData = [];
-        
+
         // Prepare header row to calculate total columns
         const headerRow = ['SN', 'Items Description'];
         if (props.months && props.months.length > 0) {
@@ -732,19 +759,19 @@ function exportToExcel() {
             });
         }
         const totalColumns = headerRow.length;
-        
+
         // Add facility information if available
         if (props.facilityInfo) {
             // Title row
             wsData.push(['Facility Information']);
-            
+
             // Facility details
             wsData.push(['Name', props.facilityInfo.name]);
             wsData.push(['Type', props.facilityInfo.facility_type]);
             wsData.push(['Email', props.facilityInfo.email || 'N/A']);
             wsData.push(['Phone', props.facilityInfo.phone || 'N/A']);
             wsData.push(['Address', props.facilityInfo.address || 'N/A']);
-            
+
             // Manager details
             if (props.facilityInfo.user) {
                 wsData.push(['Manager', props.facilityInfo.user.name]);
@@ -752,68 +779,68 @@ function exportToExcel() {
             } else {
                 wsData.push(['Manager', 'Not Assigned']);
             }
-            
+
             // Report period
-            wsData.push(['Report Period', 
+            wsData.push(['Report Period',
                 `${formatMonth(filters.value.start_month)} to ${formatMonth(filters.value.end_month)}`]);
-            
+
             // Empty row as separator
             wsData.push([]);
         }
-        
+
         // Prepare the header row with average columns
         const excelHeaderRow = ['SN', 'Items'];
-        
+
         // Add month headers and average headers
         props.months.forEach((month, index) => {
             // Add regular month header
             excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
-            
+
             // Add average header after every 3 months
             if ((index + 1) % 3 === 0 && index > 0) {
                 excelHeaderRow.push('AMC');
             }
         });
-        
+
         // Add final average header if needed
         if (props.months.length % 3 !== 0 && props.months.length > 0) {
             excelHeaderRow.push('AMC');
         }
-        
+
         // Add the header row to the worksheet
         wsData.push(excelHeaderRow);
-        
+
         // Add data rows with averages
         props.pivotData.forEach(row => {
             const dataRow = [row.sn, row.item_name || 'N/A'];
-            
+
             // Add month values and average values
             props.months.forEach((month, index) => {
                 // Add regular month value
                 dataRow.push(row[month] || 0);
-                
+
                 // Add average value after every 3 months
                 if ((index + 1) % 3 === 0 && index > 0) {
                     dataRow.push(calculateThreeMonthAverage(row, index));
                 }
             });
-            
+
             // Add final average if needed
             if (props.months.length % 3 !== 0 && props.months.length > 0) {
                 dataRow.push(calculateRemainingMonthsAverage(row));
             }
-            
+
             wsData.push(dataRow);
         });
-        
+
         // Create worksheet
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
+
         // Add styling to AMC columns in Excel
         // Track AMC column indices
         const amcColumns = [];
         let colIndex = 2; // Start after SN and Items columns
-        
+
         // Find AMC column indices
         props.months.forEach((month, index) => {
             colIndex++; // Move to next column after each month
@@ -822,20 +849,20 @@ function exportToExcel() {
                 colIndex++; // Move past the AMC column
             }
         });
-        
+
         // Add final AMC column if needed
         if (props.months.length % 3 !== 0 && props.months.length > 0) {
             amcColumns.push(colIndex);
         }
-        
+
         // Apply sky blue color to all cells in AMC columns
         if (!ws['!cols']) ws['!cols'] = [];
-        
+
         // Define the column style for AMC columns
         amcColumns.forEach(col => {
             // Convert column index to letter (e.g., 3 -> D)
             const colLetter = XLSX.utils.encode_col(col);
-            
+
             // Apply background color to all cells in this column
             for (let row = 0; row < wsData.length; row++) {
                 const cellRef = colLetter + (row + 1);
@@ -843,7 +870,7 @@ function exportToExcel() {
                 if (!ws[cellRef].s) ws[cellRef].s = {};
                 ws[cellRef].s.fill = { fgColor: { rgb: "87CEEB" } }; // Sky blue color
                 ws[cellRef].s.font = { color: { rgb: "FFFFFF" } }; // White text
-                
+
                 // Add bold to header row
                 if (row === 0) {
                     if (!ws[cellRef].s.font) ws[cellRef].s.font = {};
@@ -851,17 +878,17 @@ function exportToExcel() {
                 }
             }
         });
-        
+
         // Create workbook
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Monthly Consumption');
-        
+
         // Generate filename
         const facilityName = props.facilityInfo ? props.facilityInfo.name.replace(/\s+/g, '_') : 'All_Facilities';
         const startDate = filters.value.start_month.replace('-', '_');
         const endDate = filters.value.end_month.replace('-', '_');
         const filename = `Monthly_Consumption_${facilityName}_${startDate}_to_${endDate}.xlsx`;
-        
+
         // Export to Excel file
         XLSX.writeFile(wb, filename);
     } catch (error) {

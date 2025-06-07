@@ -22,15 +22,32 @@ class ConsumptionUploadController extends Controller
     public function upload(Request $request)
     {
         try {
-            // Validate request
             $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls',
+                'file' => 'required|mimes:xlsx,xls',
                 'facility_id' => 'required|exists:facilities,id',
+                'month_year' => 'required|date_format:Y-m',
             ]);
 
-            $import = new MonthlyFacilityConsumptionImport($request->facility_id);
-            Excel::queueImport($import, $request->file('file'));
-            return response()->json("Successfully imported", 200);
+            $file = $request->file('file');
+            $facilityId = $request->input('facility_id');
+            $monthYear = $request->input('month_year');
+            
+            try {
+                // Import without queueing to avoid temporary file issues
+                Excel::import(new MonthlyFacilityConsumptionImport($facilityId, $monthYear), $file);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Monthly consumption data imported successfully'
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Monthly consumption import failed: ' . $e->getMessage());
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Import failed: ' . $e->getMessage()
+                ], 422);
+            }
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
