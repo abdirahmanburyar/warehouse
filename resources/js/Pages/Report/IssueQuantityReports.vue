@@ -460,7 +460,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-1">Excel File</label>
-                    <input ref="excelFile" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
+                    <input @change="handleFileChange" type="file" accept=".xlsx,.xls" required class="border rounded px-2 py-1 w-full" />
                 </div>
                 <div class="flex justify-end">
                     <button type="button" :disabled="isUploading" class="mr-2 px-3 py-1 rounded bg-gray-200" @click="showUploadModal = false">Cancel</button>
@@ -508,11 +508,15 @@ const excelFile = ref(null);
 
 // Methods
 const isUploading = ref(false);
+function handleFileChange(e){
+    console.log(e.target.files[0]);
+    excelFile.value = e.target.files[0];
+}
 const submitUpload = async () => {
-    console.log(excelFile.value.files[0]);
+    console.log(excelFile.value);
     const formData = new FormData();
     formData.append('month_year', uploadMonthYear.value);
-    formData.append('file', excelFile.value.files[0]);
+    formData.append('file', excelFile.value);
     isUploading.value = true;
     await axios.post(route('reports.issue-quantity.upload'), formData, {
         headers: {
