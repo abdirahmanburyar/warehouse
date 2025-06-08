@@ -92,7 +92,8 @@ class TransferController extends Controller
     public function index(Request $request)
     {
         // Start building the query
-        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items');
+        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items')
+            ->withCount('items');
         
         // Apply filters
         // Filter by tab/status

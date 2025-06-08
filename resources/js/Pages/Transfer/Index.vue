@@ -1,7 +1,6 @@
 <template>
     <AuthenticatedLayout title="Optimize Your Transfers" description="Moving Supplies, Bridging needs"
         img="/assets/images/transfer.png">
-        <div class="mb-[80px]">
 
             <!-- Header Section -->
             <div class="flex flex-col mb-6 space-y-6">
@@ -122,64 +121,64 @@
             </div>
 
             <!-- Main Content -->
-            <div class="grid grid-cols-12 gap-2">
+            <div class="grid grid-cols-12 gap-1">
                 <!-- Table Section (9 cols) -->
                 <div class="col-span-9">
-                    <div class="max-w-full overflow-hidden rounded-xl border border-gray-200 shadow">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead>
+                    <div class="max-w-full overflow-auto">
+                        <table class="min-w-full">
+                            <thead style="background-color: #EEF1F8; border-top-right-radius: 50px; border-top-left-radius: 3xl;">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         Transfer ID
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         Date
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         From
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         To
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         Items
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#6C75B8] uppercase tracking-wider">
                                         Status
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="">
                                 <tr v-if="props.transfers.length === 0">
                                     <td colspan="7" class="text-center text-gray-500 py-4">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                             </svg>
-                                            <p class="mt-2 text-lg font-medium">No transfer data available</p>
-                                            <p class="mt-1 text-sm">Create a new transfer or adjust your filters to see results</p>
+                                            <p class="mt-2 text-xs font-medium">No transfer data available</p>
+                                            <p class="mt-1 text-xs">Create a new transfer or adjust your filters to see results</p>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-for="transfer in props.transfers" :key="transfer.id" class="hover:bg-gray-50">
+                                <tr v-for="transfer in props.transfers" :key="transfer.id" class="hover:bg-gray-50 border-b border-gray-200">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                         <Link :href="route('transfers.show', transfer.id)" class="hover:underline">
                                         {{ transfer.transferID }}
                                         </Link>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                                         {{ new Date(transfer.transfer_date).toLocaleDateString() }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                                         {{ transfer.from_warehouse?.name || transfer.from_facility?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                                         {{ transfer.to_warehouse?.name || transfer.to_facility?.name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                                         {{ transfer.items_count }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
+                                    <td class="px-6 py-4 text-xs text-gray-500">
                                         <div class="flex items-center gap-2">
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-2">
@@ -248,14 +247,14 @@
                                     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-500"
                                         :style="{ height: props.statistics.pending.percentage + '%' }">
                                         <div
-                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-sm tracking-wide">
+                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-xs tracking-wide">
                                             {{ props.statistics.pending.percentage }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 text-center">
                                     <span class="text-xs font-medium text-gray-900">Pending</span>
-                                    <div class="text-sm font-semibold text-gray-700">{{ props.statistics.pending.count }}</div>
+                                    <div class="text-xs font-semibold text-gray-700">{{ props.statistics.pending.count }}</div>
                                 </div>
                             </div>
 
@@ -268,14 +267,14 @@
                                     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-500"
                                         :style="{ height: props.statistics.approved.percentage + '%' }">
                                         <div
-                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-sm tracking-wide">
+                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-xs tracking-wide">
                                             {{ props.statistics.approved.percentage }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 text-center">
                                     <span class="text-xs font-medium text-gray-900">Approved</span>
-                                    <div class="text-sm font-semibold text-gray-700">{{ props.statistics.approved.count }}</div>
+                                    <div class="text-xs font-semibold text-gray-700">{{ props.statistics.approved.count }}</div>
                                 </div>
                             </div>
 
@@ -288,14 +287,14 @@
                                     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-600 to-slate-400 transition-all duration-500"
                                         :style="{ height: props.statistics.in_process.percentage + '%' }">
                                         <div
-                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-sm tracking-wide">
+                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-xs tracking-wide">
                                             {{ props.statistics.in_process.percentage }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 text-center">
                                     <span class="text-xs font-medium text-gray-900">In Process</span>
-                                    <div class="text-sm font-semibold text-gray-700">{{ props.statistics.in_process.count }}</div>
+                                    <div class="text-xs font-semibold text-gray-700">{{ props.statistics.in_process.count }}</div>
                                 </div>
                             </div>
 
@@ -308,14 +307,14 @@
                                     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-purple-600 to-purple-400 transition-all duration-500"
                                         :style="{ height: (props.statistics.dispatched?.percentage || 0) + '%' }">
                                         <div
-                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-sm tracking-wide">
+                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-xs tracking-wide">
                                             {{ props.statistics.dispatched?.percentage || 0 }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 text-center">
                                     <span class="text-xs font-medium text-gray-900">Dispatched</span>
-                                    <div class="text-sm font-semibold text-gray-700">{{ props.statistics.dispatched?.count || 0 }}</div>
+                                    <div class="text-xs font-semibold text-gray-700">{{ props.statistics.dispatched?.count || 0 }}</div>
                                 </div>
                             </div>
 
@@ -328,21 +327,20 @@
                                     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-500"
                                         :style="{ height: (props.statistics.received?.percentage || 0) + '%' }">
                                         <div
-                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-sm tracking-wide">
+                                            class="absolute bottom-0 left-0 right-0 text-center py-1 text-white font-bold text-xs tracking-wide">
                                             {{ props.statistics.received?.percentage || 0 }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 text-center">
                                     <span class="text-xs font-medium text-gray-900">Received</span>
-                                    <div class="text-sm font-semibold text-gray-700">{{ props.statistics.received?.count || 0 }}</div>
+                                    <div class="text-xs font-semibold text-gray-700">{{ props.statistics.received?.count || 0 }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </AuthenticatedLayout>
 </template>
 
