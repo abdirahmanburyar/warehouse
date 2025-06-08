@@ -2,19 +2,44 @@
     <AuthenticatedLayout title="Review Your Reports" description="Facilities - Monthly Consumptions"
         img="/assets/images/report.png">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-[100px]">
-            <div class="p-6 bg-white border-b border-gray-200">
-                <h1 class="text-2xl font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
+            <div class=" bg-white border-b border-gray-200">
+                <div class="flex justify-between mb-4">
+                    <h1 class="text-sm font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
+                    <div class="flex space-x-2">
+                        <button @click="exportToExcel" v-if="pivotData.length > 0" :disabled="loading"
+                            class="p-2 rounded-3xl bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export to Excel
+                        </button>
+                        
+                        <!-- Excel Upload Button -->
+                        <button @click="openUploadModal"
+                            class="p-2 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            Upload Excel
+                        </button>
+                    </div>
+                </div>
 
                 <!-- We'll move the product filter to the item column header -->
 
                 <!-- Filters in a single row -->
-                <div class="mb-6 flex flex-wrap items-end gap-4">
+                <div class="mb-6 flex flex-wrap items-end gap-2">
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
                         <Multiselect v-model="props.filters.facility_id"
                             :options="[{ id: null, name: 'All Facilities' }, ...facilities]" :searchable="true"
                             :close-on-select="true" :show-labels="false" :allow-empty="true"
-                            placeholder="Select Facility" track-by="id" label="name" class="mt-1">
+                            class="text-xs mt-1"
+                            placeholder="Select Facility" track-by="id" label="name">
                             <template v-slot:option="{ option }">
                                 <div>
                                     <span>{{ option.name }} {{ option.id ? `(${option.facility_type})` : '' }}</span>
@@ -26,55 +51,26 @@
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
                         <input type="month" v-model="props.filters.start_month"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                            class="text-xs mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                     </div>
 
                     <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700 mb-1">End Month</label>
                         <input type="month" v-model="props.filters.end_month"
-                            class="mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <button @click="clearFilters"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                            Clear
-                        </button>
-                        <button @click="exportToExcel" v-if="pivotData.length > 0" :disabled="loading"
-                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Export to Excel
-                        </button>
-                        <button @click="applyFilters" :disabled="loading"
-                            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            {{ loading ? 'Getting Report' : 'Get Report' }}
-                        </button>
-
-                        <!-- Excel Upload Button -->
-                        <button @click="openUploadModal"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            Upload Excel
-                        </button>
-                    </div>
+                            class="text-xs mt-1 block w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                    </div>                    
                 </div>
 
+                <div class="flex justify-end items-center gap-2">
+                    <button @click="clearFilters"
+                        class="p-1 rounded-3xl bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Clear
+                    </button>
+                    <button @click="applyFilters" :disabled="loading"
+                        class="p-1 rounded-3xl bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        {{ loading ? 'Getting Report' : 'Get Report' }}
+                    </button>
+                </div>
                 <!-- Facility Information -->
                 <div v-if="facilityInfo && !loading" class="mb-6 border-b border-gray-200 pb-4">
                     <h2 class="text-xl font-semibold mb-3 text-center">Facility Information</h2>
@@ -319,6 +315,8 @@ import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import axios from 'axios';
 
+const emit = defineEmits(['update:filters']);
+
 const props = defineProps({
     pivotData: Array,
     months: Array,
@@ -366,6 +364,7 @@ const pivotTableData = computed(() => {
             const quantity = item.quantity;
             const uom = item.uom || item.product.uom || 'N/A';
             const batchNumber = item.batch_number || 'N/A';
+            const barcode = item.barcode || item.product.barcode || 'N/A';
             const expiryDate = item.expiry_date || 'N/A';
             
             // Get or create product entry
@@ -375,6 +374,7 @@ const pivotTableData = computed(() => {
                     product_name: productName,
                     uom: uom,
                     batch_number: batchNumber,
+                    barcode: barcode,
                     expiry_date: expiryDate
                 });
             }
@@ -434,7 +434,7 @@ const fileError = ref(null);
 // Apply filters and reload data
 function applyFilters() {
     // Validate required fields
-    if (!filters.value.facility_id) {
+    if (!props.filters.facility_id) {
         Swal.fire({
             title: 'Missing Information',
             text: 'Please select a facility',
@@ -443,7 +443,7 @@ function applyFilters() {
         });
         return;
     }
-    if (!filters.value.start_month) {
+    if (!props.filters.start_month) {
         Swal.fire({
             title: 'Missing Information',
             text: 'Please select a start month',
@@ -452,7 +452,7 @@ function applyFilters() {
         });
         return;
     }
-    if (!filters.value.end_month) {
+    if (!props.filters.end_month) {
         Swal.fire({
             title: 'Missing Information',
             text: 'Please select an end month',
@@ -479,10 +479,10 @@ function applyFilters() {
 
     // Directly fetch the data with current filters - don't clear filters
     router.get(route('reports.monthlyConsumption'), {
-        facility_id: filters.value.facility_id,
-        product_id: filters.value.product_id,
-        start_month: filters.value.start_month,
-        end_month: filters.value.end_month,
+        facility_id: props.filters.facility_id,
+        product_id: props.filters.product_id,
+        start_month: props.filters.start_month,
+        end_month: props.filters.end_month,
         is_submitted: true
     }, {
         preserveState: true,
@@ -509,14 +509,17 @@ function clearFilters() {
         }
     });
 
-    // Reset filters to default values
-    filters.value = {
+    // Create default filter values
+    const defaultFilters = {
         facility_id: null,
         product_id: null,
         start_month: new Date().getFullYear() + '-01', // January of current year
         end_month: new Date().getFullYear() + '-12',   // December of current year
         is_submitted: false
     };
+    
+    // Emit event to update filters in parent component
+    emit('update:filters', defaultFilters);
 
     // Remove query parameters from URL and reset the view
     const baseUrl = window.location.pathname;
@@ -545,24 +548,65 @@ function clearFilters() {
 // Format month from YYYY-MM to MMM YYYY (e.g., 2025-05 to May 2025)
 function formatMonth(monthStr) {
     if (!monthStr) return '';
-    const [year, month] = monthStr.split('-');
-    const date = new Date(year, parseInt(month) - 1);
-    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    try {
+        // Handle both YYYY-MM format and full date format
+        let year, month;
+        if (monthStr.length > 7) {
+            // Full date format (e.g., 2025-05-15)
+            const date = new Date(monthStr);
+            return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        } else {
+            // YYYY-MM format
+            [year, month] = monthStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        }
+    } catch (error) {
+        console.error('Error formatting month:', error, monthStr);
+        return monthStr; // Return original string if formatting fails
+    }
 }
 
 // Format month short for display
 function formatMonthShort(monthStr) {
     if (!monthStr) return '';
-    const [year, month] = monthStr.split('-');
-    const date = new Date(year, parseInt(month) - 1);
-    return date.toLocaleDateString('en-GB', { month: 'short' });
+    try {
+        // Handle both YYYY-MM format and full date format
+        let year, month;
+        if (monthStr.length > 7) {
+            // Full date format (e.g., 2025-05-15)
+            const date = new Date(monthStr);
+            return date.toLocaleDateString('en-GB', { month: 'short' });
+        } else {
+            // YYYY-MM format
+            [year, month] = monthStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleDateString('en-GB', { month: 'short' });
+        }
+    } catch (error) {
+        console.error('Error formatting month short:', error, monthStr);
+        return monthStr; // Return original string if formatting fails
+    }
 }
 
 // Format year for display
 function formatYear(monthStr) {
     if (!monthStr) return '';
-    const [year] = monthStr.split('-');
-    return year;
+    try {
+        // Handle both YYYY-MM format and full date format
+        if (monthStr.length > 7) {
+            // Full date format (e.g., 2025-05-15)
+            const date = new Date(monthStr);
+            return date.getFullYear().toString();
+        } else {
+            // YYYY-MM format
+            const [year] = monthStr.split('-');
+            return year;
+        }
+    } catch (error) {
+        console.error('Error formatting year:', error, monthStr);
+        return ''; // Return empty string if formatting fails
+    }
 }
 
 // Format expiry date to DD/MM/YYYY
@@ -582,9 +626,13 @@ function openUploadModal() {
     showUploadModal.value = true;
 
     // Set the selected facility in the modal
-    if (filters.value.facility_id) {
+    if (props.filters.facility_id) {
         // Find the facility object that matches the ID
-        const selectedFacility = props.facilities.find(f => f.id === filters.value.facility_id);
+        // Handle both cases: when facility_id is an object or when it's just an ID
+        const facilityId = typeof props.filters.facility_id === 'object' ? 
+            props.filters.facility_id.id : props.filters.facility_id;
+            
+        const selectedFacility = props.facilities.find(f => f.id === facilityId);
         modalFacilityId.value = selectedFacility || null;
     } else {
         modalFacilityId.value = null;
@@ -669,15 +717,18 @@ async function uploadFile() {
             const uploadedFacility = modalFacilityId.value;
             modalFacilityId.value = null;
             month_year.value = null;
-
-            // Update filters to match the uploaded facility (using the full facility object)
-            filters.value.facility_id = uploadedFacility;
-
+            
             // Set date range from February to December of current year
             const currentYear = new Date().getFullYear();
-            filters.value.start_month = `${currentYear}-02`; // February
-            filters.value.end_month = `${currentYear}-12`;   // December
-
+            const newFilters = {
+                facility_id: uploadedFacility.id,
+                start_month: `${currentYear}-02`, // February
+                end_month: `${currentYear}-12`    // December
+            };
+            
+            // Emit event to update filters in parent component
+            emit('update:filters', newFilters);
+            
             // Refresh report data with explicit facility_id
             applyFilters();
         })
@@ -796,59 +847,154 @@ function exportToExcel() {
 
             // Report period
             wsData.push(['Report Period',
-                `${formatMonth(filters.value.start_month)} to ${formatMonth(filters.value.end_month)}`]);
+                `${formatMonth(props.filters.start_month)} to ${formatMonth(props.filters.end_month)}`]);
 
             // Empty row as separator
             wsData.push([]);
         }
 
         // Prepare the header row with average columns
-        const excelHeaderRow = ['SN', 'Items'];
+        const excelHeaderRow = ['SN', 'Items', 'UOM', 'Batch Number', 'Barcode'];
 
         // Add month headers and average headers
-        props.months.forEach((month, index) => {
-            // Add regular month header
-            excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
-
-            // Add average header after every 3 months
-            if ((index + 1) % 3 === 0 && index > 0) {
+        const monthsToUse = props.months || [];
+        
+        if (monthsToUse.length === 0) {
+            // If no months data, use the sorted months from computed property
+            sortedMonths.value.forEach((month, index) => {
+                // Add regular month header
+                excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
+                
+                // Add average header after every 3 months
+                if ((index + 1) % 3 === 0 && index > 0) {
+                    excelHeaderRow.push('AMC');
+                }
+            });
+            
+            // Add final average header if needed
+            if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
                 excelHeaderRow.push('AMC');
             }
-        });
-
-        // Add final average header if needed
-        if (props.months.length % 3 !== 0 && props.months.length > 0) {
-            excelHeaderRow.push('AMC');
+        } else {
+            // Use the provided months
+            monthsToUse.forEach((month, index) => {
+                // Add regular month header
+                excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
+                
+                // Add average header after every 3 months
+                if ((index + 1) % 3 === 0 && index > 0) {
+                    excelHeaderRow.push('AMC');
+                }
+            });
+            
+            // Add final average header if needed
+            if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
+                excelHeaderRow.push('AMC');
+            }
         }
 
         // Add the header row to the worksheet
         wsData.push(excelHeaderRow);
 
         // Add data rows with averages
-        props.pivotData.forEach(row => {
-            const dataRow = [row.sn, row.item_name || 'N/A'];
+        let rowNumber = 1;
+        filteredPivotTableData.value.forEach(row => {
+            const dataRow = [
+                rowNumber++, 
+                row.product_name || 'N/A',
+                row.uom || 'N/A',
+                row.batch_number || 'N/A',
+                row.barcode || 'N/A'
+            ];
 
             // Add month values and average values
-            props.months.forEach((month, index) => {
-                // Add regular month value
-                dataRow.push(row[month] || 0);
-
-                // Add average value after every 3 months
-                if ((index + 1) % 3 === 0 && index > 0) {
-                    dataRow.push(calculateThreeMonthAverage(row, index));
+            if (monthsToUse.length === 0) {
+                // If no months data, use the sorted months from computed property
+                sortedMonths.value.forEach((month, index) => {
+                    // Add regular month value
+                    dataRow.push(row[month] || 0);
+                    
+                    // Add average value after every 3 months
+                    if ((index + 1) % 3 === 0 && index > 0) {
+                        // Calculate average for the last three months
+                        const lastThreeMonths = sortedMonths.value.slice(index - 2, index + 1);
+                        let sum = 0;
+                        let count = 0;
+                        lastThreeMonths.forEach(m => {
+                            sum += parseInt(row[m] || 0);
+                            count++;
+                        });
+                        const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                        dataRow.push(avg);
+                    }
+                });
+                
+                // Add final average if needed
+                if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
+                    // Calculate average for the remaining months
+                    const remainingCount = sortedMonths.value.length % 3;
+                    const startIndex = sortedMonths.value.length - remainingCount;
+                    const remainingMonths = sortedMonths.value.slice(startIndex);
+                    
+                    let sum = 0;
+                    let count = 0;
+                    remainingMonths.forEach(m => {
+                        sum += parseInt(row[m] || 0);
+                        count++;
+                    });
+                    const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                    dataRow.push(avg);
                 }
-            });
-
-            // Add final average if needed
-            if (props.months.length % 3 !== 0 && props.months.length > 0) {
-                dataRow.push(calculateRemainingMonthsAverage(row));
+            } else {
+                // Use the provided months
+                monthsToUse.forEach((month, index) => {
+                    // Add regular month value
+                    dataRow.push(row[month] || 0);
+                    
+                    // Add average value after every 3 months
+                    if ((index + 1) % 3 === 0 && index > 0) {
+                        // Calculate average for the last three months
+                        const lastThreeMonths = monthsToUse.slice(index - 2, index + 1);
+                        let sum = 0;
+                        let count = 0;
+                        lastThreeMonths.forEach(m => {
+                            sum += parseInt(row[m] || 0);
+                            count++;
+                        });
+                        const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                        dataRow.push(avg);
+                    }
+                });
+                
+                // Add final average if needed
+                if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
+                    // Calculate average for the remaining months
+                    const remainingCount = monthsToUse.length % 3;
+                    const startIndex = monthsToUse.length - remainingCount;
+                    const remainingMonths = monthsToUse.slice(startIndex);
+                    
+                    let sum = 0;
+                    let count = 0;
+                    remainingMonths.forEach(m => {
+                        sum += parseInt(row[m] || 0);
+                        count++;
+                    });
+                    const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                    dataRow.push(avg);
+                }
             }
 
             wsData.push(dataRow);
         });
 
-        // Create worksheet
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        // Create worksheet with error handling
+        let ws;
+        try {
+            ws = XLSX.utils.aoa_to_sheet(wsData);
+        } catch (error) {
+            console.error('Error creating worksheet:', error);
+            throw new Error('Failed to create Excel worksheet: ' + error.message);
+        }
 
         // Add styling to AMC columns in Excel
         // Track AMC column indices
@@ -856,17 +1002,34 @@ function exportToExcel() {
         let colIndex = 2; // Start after SN and Items columns
 
         // Find AMC column indices
-        props.months.forEach((month, index) => {
-            colIndex++; // Move to next column after each month
-            if ((index + 1) % 3 === 0 && index > 0) {
+        if (monthsToUse.length === 0) {
+            // If no months data, use the sorted months from computed property
+            sortedMonths.value.forEach((month, index) => {
+                colIndex++; // Move to next column after each month
+                if ((index + 1) % 3 === 0 && index > 0) {
+                    amcColumns.push(colIndex);
+                    colIndex++; // Move past the AMC column
+                }
+            });
+            
+            // Add final AMC column if needed
+            if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
                 amcColumns.push(colIndex);
-                colIndex++; // Move past the AMC column
             }
-        });
-
-        // Add final AMC column if needed
-        if (props.months.length % 3 !== 0 && props.months.length > 0) {
-            amcColumns.push(colIndex);
+        } else {
+            // Use the provided months
+            monthsToUse.forEach((month, index) => {
+                colIndex++; // Move to next column after each month
+                if ((index + 1) % 3 === 0 && index > 0) {
+                    amcColumns.push(colIndex);
+                    colIndex++; // Move past the AMC column
+                }
+            });
+            
+            // Add final AMC column if needed
+            if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
+                amcColumns.push(colIndex);
+            }
         }
 
         // Apply sky blue color to all cells in AMC columns
@@ -898,18 +1061,38 @@ function exportToExcel() {
         XLSX.utils.book_append_sheet(wb, ws, 'Monthly Consumption');
 
         // Generate filename
-        const facilityName = props.facilityInfo ? props.facilityInfo.name.replace(/\s+/g, '_') : 'All_Facilities';
-        const startDate = filters.value.start_month.replace('-', '_');
-        const endDate = filters.value.end_month.replace('-', '_');
+        const facilityName = facilityInfo.value && facilityInfo.value.name ? 
+            facilityInfo.value.name.replace(/\s+/g, '_') : 'All_Facilities';
+        
+        // Handle different date formats safely
+        let startDate = 'Unknown';
+        let endDate = 'Unknown';
+        
+        try {
+            startDate = props.filters.start_month ? props.filters.start_month.replace(/[-:]/g, '_') : 'Unknown';
+            endDate = props.filters.end_month ? props.filters.end_month.replace(/[-:]/g, '_') : 'Unknown';
+        } catch (error) {
+            console.error('Error formatting dates for filename:', error);
+        }
+        
         const filename = `Monthly_Consumption_${facilityName}_${startDate}_to_${endDate}.xlsx`;
 
         // Export to Excel file
         XLSX.writeFile(wb, filename);
     } catch (error) {
         console.error('Error exporting to Excel:', error);
+        
+        // Provide more detailed error message
+        let errorMessage = 'There was an error exporting to Excel.';
+        
+        if (error.message) {
+            errorMessage += ' Details: ' + error.message;
+        }
+        
+        // Show error with more details
         Swal.fire({
             title: 'Export Error',
-            text: 'There was an error exporting to Excel. Please try again.',
+            text: errorMessage,
             icon: 'error',
             confirmButtonColor: '#f97316'
         });

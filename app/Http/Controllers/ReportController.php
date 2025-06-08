@@ -304,8 +304,7 @@ class ReportController extends Controller
         $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
         $isSubmitted = $request->input('is_submitted', false);
         
-        
-        
+        $monthlyConsumptionReport = [];        
         // Only fetch data if the form has been submitted with valid filters
         if ($isSubmitted && $facilityId && $startMonth && $endMonth) {
             $monthlyConsumptionReport = MonthlyConsumptionReport::where('facility_id', $facilityId)
@@ -314,8 +313,6 @@ class ReportController extends Controller
                 ->get();
         }
 
-        logger()->info($monthlyConsumptionReport);
-        
         return inertia('Report/MonthlyConsumption', [
             'pivotData' => $monthlyConsumptionReport,
             'facilities' => Facility::select('id', 'name', 'facility_type')->get(),
