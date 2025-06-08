@@ -7,7 +7,6 @@
             </Link>
 
         <div class=" rounded-lg p-6 mb-6">
-            {{form}}
             <h2 class="text-2xl font-semibold mb-4">Create Supplier</h2>
             <form @submit.prevent="submitForm">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

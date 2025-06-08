@@ -33,8 +33,6 @@ class SupplierController extends Controller
                 'status' => 'string',
             ]);
 
-            logger()->info($validated);
-
         $supplier = Supplier::updateOrCreate(
             ['id' => $request->id],
             $validated
@@ -44,6 +42,10 @@ class SupplierController extends Controller
         } catch (\Throwable $e) {
             return response()->json( $e->getMessage(), 500);
         }
+    }
+
+    public function create(Request $request){
+
     }
 
 

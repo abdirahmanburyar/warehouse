@@ -374,7 +374,6 @@
                                             <tr v-if="!purchaseOrders?.data?.length">
                                                 <td colspan="7"
                                                     class="px-6 py-4 text-center text-gray-500">
-
                                                     No purchase orders found
                                                 </td>
                                             </tr>

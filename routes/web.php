@@ -217,6 +217,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::prefix('supplies')->group(function () {
         Route::get('/', [SupplyController::class, 'index'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.index');
         Route::get('/create', [SupplyController::class, 'create'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.create');
+        Route::get('/show', [SupplyController::class, 'show'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.show');
         Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.po-show');
         Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.get-purchaseOrder');
         Route::get('/packing-list/{id}/edit', [SupplyController::class, 'editPK'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.packing-list.edit');
@@ -271,8 +272,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Supplier Management Routes
     Route::prefix('suppliers')->group(function () {
         Route::get('/', [SupplierController::class, 'index'])->middleware(PermissionMiddleware::class . ':supplier.view')->name('suppliers.index');
-        Route::get('/create', [SupplierController::class, 'create'])->middleware(PermissionMiddleware::class . ':supplier.create')->name('suppliers.create');
-        Route::post('/', [SupplierController::class, 'store'])->middleware(PermissionMiddleware::class . ':supplier.create')->name('suppliers.store');
+        // Route::get('/create', [SupplierController::class, 'create'])->middleware(PermissionMiddleware::class . ':supplier.create')->name('supplies.suppliers.create');
+        Route::get('/{id}/edit', [SupplierController::class, 'edit'])->middleware(PermissionMiddleware::class . ':supplier.edit')->name('supplies.suppliers.edit');
+        Route::post('/', [SupplierController::class, 'store'])->middleware(PermissionMiddleware::class . ':supplier.create')->name('supplies.suppliers.store');
         Route::get('/{supplier}/edit', [SupplierController::class, 'edit'])->middleware(PermissionMiddleware::class . ':supplier.edit')->name('suppliers.edit');
         Route::put('/{supplier}', [SupplierController::class, 'update'])->middleware(PermissionMiddleware::class . ':supplier.edit')->name('suppliers.update');
         Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supplier.delete')->name('suppliers.destroy');
