@@ -367,26 +367,16 @@
               <div v-if="props.order.status === 'in_process'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
 
-            <!-- Receive button -->
+            <!-- Received status indicator -->
             <div class="relative">
-              <button @click="changeStatus(props.order.id, 'received')"
-                :disabled="isLoading || props.order.status !== 'dispatched'"
+              <button 
                 :class="[
                   props.order.status === 'dispatched' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 
                   statusOrder.indexOf(props.order.status) > statusOrder.indexOf('dispatched') ? 'bg-[#55c5ff]' : 'bg-gray-300 cursor-not-allowed'
                 ]"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                <svg v-if="isLoading && props.order.status === 'dispatched'" class="animate-spin h-5 w-5 mr-2"
-                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                  </path>
-                </svg>
-                <template v-else>
-                  <img src="/assets/images/received.png" class="w-5 h-5 mr-2" alt="Receive" />
-                  <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.order.status) > statusOrder.indexOf('delivered') ? 'Received' : 'Receive' }}</span>
-                </template>
+                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]" disabled>
+                <img src="/assets/images/received.png" class="w-5 h-5 mr-2" alt="Received" />
+                <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.order.status) > statusOrder.indexOf('delivered') ? 'Received' : 'Receive' }}</span>
               </button>
               <div v-if="props.order.status === 'dispatched'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
