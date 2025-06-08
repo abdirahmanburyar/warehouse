@@ -30,10 +30,6 @@
                 <img v-else-if="props.order.status === 'dispatched'" src="/assets/images/dispatch.png" class="w-6 h-6"
                   alt="Dispatched" />
 
-                <!-- Delivered Icon -->
-                <img v-else-if="props.order.status === 'delivered'" src="/assets/images/delivery.png" class="w-6 h-6"
-                  alt="Delivered" />
-
                 <!-- Received Icon -->
                 <img v-else-if="props.order.status === 'received'" src="/assets/images/received.png" class="w-6 h-6"
                   alt="Received" />
@@ -154,17 +150,6 @@
               </div>
               <span class="mt-3 text-lg font-bold"
                 :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('dispatched') ? 'text-green-600' : 'text-gray-500'">Dispatch</span>
-            </div>
-
-            <!-- Delivered -->
-            <div class="flex flex-col items-center">
-              <div class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
-                :class="[statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('delivered') ? 'bg-white border-orange-500' : 'bg-white border-gray-200']">
-                <img src="/assets/images/delivery.png" class="w-10 h-10" alt="Delivered"
-                  :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('delivered') ? '' : 'opacity-40'" />
-              </div>
-              <span class="mt-3 text-lg font-bold"
-                :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('delivered') ? 'text-green-600' : 'text-gray-500'">Delivered</span>
             </div>
 
             <!-- Received -->
@@ -382,9 +367,9 @@
               <div v-if="props.order.status === 'in_process'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
 
-            <!-- Deliver button -->
+            <!-- Receive button -->
             <div class="relative">
-              <button @click="changeStatus(props.order.id, 'delivered')"
+              <button @click="changeStatus(props.order.id, 'received')"
                 :disabled="isLoading || props.order.status !== 'dispatched'"
                 :class="[
                   props.order.status === 'dispatched' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 
@@ -399,35 +384,11 @@
                   </path>
                 </svg>
                 <template v-else>
-                  <img src="/assets/images/delivery.png" class="w-5 h-5 mr-2" alt="Deliver" />
-                  <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.order.status) > statusOrder.indexOf('dispatched') ? 'Delivered' : 'Deliver' }}</span>
-                </template>
-              </button>
-              <div v-if="props.order.status === 'dispatched'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-            </div>
-
-            <!-- Receive button -->
-            <div class="relative">
-              <button @click="changeStatus(props.order.id, 'received')"
-                :disabled="isLoading || props.order.status !== 'delivered'"
-                :class="[
-                  props.order.status === 'delivered' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 
-                  statusOrder.indexOf(props.order.status) > statusOrder.indexOf('delivered') ? 'bg-[#55c5ff]' : 'bg-gray-300 cursor-not-allowed'
-                ]"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                <svg v-if="isLoading && props.order.status === 'delivered'" class="animate-spin h-5 w-5 mr-2"
-                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                  </path>
-                </svg>
-                <template v-else>
                   <img src="/assets/images/received.png" class="w-5 h-5 mr-2" alt="Receive" />
                   <span class="text-sm font-bold text-white">{{ statusOrder.indexOf(props.order.status) > statusOrder.indexOf('delivered') ? 'Received' : 'Receive' }}</span>
                 </template>
               </button>
-              <div v-if="props.order.status === 'delivered'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+              <div v-if="props.order.status === 'dispatched'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
 
             <!-- Reject button (only available for pending status) -->
@@ -584,7 +545,6 @@ const statusClasses = {
   approved: 'bg-green-100 text-green-800 rounded-full font-bold',
   'in process': 'bg-blue-100 text-blue-800 rounded-full font-bold',
   dispatched: 'bg-purple-100 text-purple-800 rounded-full font-bold',
-  delivered: 'bg-gray-100 text-gray-800 rounded-full font-bold',
   received: 'bg-green-100 text-green-800 rounded-full font-bold flex items-center',
   'partially_received': 'bg-orange-100 text-orange-800 rounded-full font-bold',
   default: 'bg-gray-100 text-gray-800 rounded-full font-bold'
@@ -614,7 +574,7 @@ const formatDate = (date) => {
   return moment(date).format('DD/MM/YYYY');
 };
 
-const statusOrder = ['pending', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
+const statusOrder = ['pending', 'approved', 'in_process', 'dispatched', 'received'];
 
 // update quantity
 const isUpading = ref(false);
