@@ -465,7 +465,7 @@ class OrderController extends Controller
                 $orderItem->quantity_to_release = $newQuantityToRelease;
                 $orderItem->save();
 
-                event(new InventoryUpdated($inventory));
+                event(new InventoryUpdated());
 
                 DB::commit();
                 return response()->json('Quantity to release updated successfully', 200);

@@ -15,28 +15,6 @@ class InventoryUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * The inventory data
-     *
-     * @var array
-     */
-    public $inventory;
-
-    /**
-     * Create a new event instance.
-     *
-     * @param array $inventory
-     */
-    public function __construct($inventory)
-    {  
-        $this->inventory = $inventory;
-    }
-
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
     public function broadcastOn(): array
     {
         return [
