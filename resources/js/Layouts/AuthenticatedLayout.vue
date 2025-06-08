@@ -437,7 +437,7 @@ const logout = () => {
     transition: all 0.3s ease;
     position: relative;
     margin: 0.1rem 0;
-    padding: 0;
+    padding: 10px;
     z-index: 1;
     width: 100%;
     height: 33px;
@@ -458,7 +458,7 @@ const logout = () => {
     margin-right: -25px;
     padding-right: 25px;
     z-index: 5;
-    height: 30px;
+    height: 46px;
     display: flex;
     align-items: center;
     width: 100%;
