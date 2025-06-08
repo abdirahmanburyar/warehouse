@@ -368,10 +368,7 @@ class OrderController extends Controller
                 $orderItem->save();
                 
                 DB::commit();
-                return response()->json([
-                    'message' => 'Quantity to release updated successfully', 
-                    'item' => $orderItem->load('inventory_allocations')
-                ], 200);
+                return response()->json('Quantity to release updated successfully', 200);
             } 
             // If quantity_to_release is increased, we need to check inventory availability and add allocations
             else if ($newQuantityToRelease > $oldQuantityToRelease) {
@@ -468,18 +465,12 @@ class OrderController extends Controller
                 $orderItem->save();
                 
                 DB::commit();
-                return response()->json([
-                    'message' => 'Quantity to release updated successfully', 
-                    'item' => $orderItem->load('inventory_allocations')
-                ], 200);
+                return response()->json('Quantity to release updated successfully', 200);
             } 
             // If quantity_to_release is the same, just return success
             else {
                 DB::commit();
-                return response()->json([
-                    'message' => 'No change in quantity to release', 
-                    'item' => $orderItem->load('inventory_allocations')
-                ], 200);
+                return response()->json('No change in quantity to release', 200);
             }
         } catch (\Throwable $th) {
             DB::rollBack();

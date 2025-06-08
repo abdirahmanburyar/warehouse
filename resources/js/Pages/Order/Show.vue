@@ -246,7 +246,9 @@
                 <div class="w-[30%]">
                   <input type="number" placeholder="0" v-model="item.quantity_to_release"
                     @keydown.enter="updateQuantity(item)"
+                    :readonly="isUpading || props.order.status != 'pending'"
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
+                    <span v-if="isUpading" class="text-green-500 text-md">Updating...</span>
                 </div>
                 <div class="border rounded-md overflow-hidden text-sm flex-1">
                   <table class="min-w-full divide-y divide-gray-200">
@@ -267,7 +269,7 @@
             </td>
             <td class="px-3 py-3 text-sm text-gray-900 border border-black">
               <div class="w-full flex justify-center">
-                <input type="number" v-model="item.no_of_days"
+                <input type="number" v-model="item.no_of_days" readonly
                   class="w-[70%] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
               </div>
             </td>
@@ -615,17 +617,29 @@ const formatDate = (date) => {
 const statusOrder = ['pending', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
 
 // update quantity
+const isUpading = ref(false);
 async function updateQuantity(item){
-  console.log(item);
+  isUpading.value = true;
   await axios.post(route('orders.update-quantity'), {
     item_id: item.id,
     quantity: item.quantity_to_release
   })
   .then((response) => {
-    console.log(response.data);
+    isUpading.value = false;
+    Swal.fire({
+      title: 'Success!',
+      text: response.data,
+      icon: 'success',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      router.get(route('orders.show', props.order.id));
+    });
+
   })
   .catch((error) => {
+    isUpading.value = false
     console.log(error);
+    toast.error(error.response?.data || 'Failed to update quantity');
   });
 }
 
@@ -662,7 +676,7 @@ const changeStatus = (orderId, newStatus) => {
             timer: 3000
           }).then(() => {
             // Reload the page to show the updated status
-            router.reload();
+            router.get(route('orders.show', props.order.id));
           });
         })
         .catch(error => {
