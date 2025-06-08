@@ -266,7 +266,7 @@ class OrderController extends Controller
             
             $request->validate([
                 'item_id' => 'required|exists:order_items,id',
-                'quantity' => 'required|numeric|min:1'
+                'quantity' => 'required|numeric'
             ]);
             
             // Get the order item
