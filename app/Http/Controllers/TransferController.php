@@ -161,9 +161,10 @@ class TransferController extends Controller
         // Get all transfers for statistics (unfiltered)
         $allTransfers = Transfer::all();
         $total = $allTransfers->count();
-        $approvedCount = $allTransfers->whereIn('status', ['approved', 'in_process', 'dispatched', 'transferred'])->count();
+        $approvedCount = $allTransfers->whereIn('status', ['approved'])->count();
         $inProcessCount = $allTransfers->whereIn('status', ['in_process', 'dispatched'])->count();
-        $transferredCount = $allTransfers->where('status', 'transferred')->count();
+        $dispatchedCount = $allTransfers->where('status', 'dispatched')->count();
+        $receivedCount = $allTransfers->where('status', 'received')->count();
         $rejectedCount = $allTransfers->where('status', 'rejected')->count();
         $pendingCount = $allTransfers->where('status', 'pending')->count();
         
@@ -171,7 +172,7 @@ class TransferController extends Controller
             'approved' => [
                 'count' => $approvedCount,
                 'percentage' => $total > 0 ? round(($approvedCount / $total) * 100) : 0,
-                'stages' => ['approved', 'in_process', 'dispatched', 'transferred']
+                'stages' => ['approved']
             ],
             'pending' => [
                 'count' => $pendingCount,
@@ -181,12 +182,17 @@ class TransferController extends Controller
             'in_process' => [
                 'count' => $inProcessCount,
                 'percentage' => $total > 0 ? round(($inProcessCount / $total) * 100) : 0,
-                'stages' => ['in_process', 'dispatched']
+                'stages' => ['in_process']
             ],
-            'transferred' => [
-                'count' => $transferredCount,
-                'percentage' => $total > 0 ? round(($transferredCount / $total) * 100) : 0,
-                'stages' => ['transferred']
+            'dispatched' => [
+                'count' => $dispatchedCount,
+                'percentage' => $total > 0 ? round(($dispatchedCount / $total) * 100) : 0,
+                'stages' => ['dispatched']
+            ],
+            'received' => [
+                'count' => $receivedCount,
+                'percentage' => $total > 0 ? round(($receivedCount / $total) * 100) : 0,
+                'stages' => ['received']
             ],
             'rejected' => [
                 'count' => $rejectedCount,
