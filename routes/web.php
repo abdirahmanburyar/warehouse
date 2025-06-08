@@ -314,6 +314,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
         Route::put('/{order}', [OrderController::class, 'update'])->name('orders.update');
         Route::delete('/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+
+
+        // 'order.update-quantity
+        Route::post('/update-quantity', [OrderController::class, 'updateQuantity'])->name('orders.update-quantity');
     });
 
     // Transfer Management Routes

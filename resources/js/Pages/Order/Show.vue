@@ -15,7 +15,7 @@
               <!-- Status Icon -->
               <span class="mr-3">
                 <!-- Pending Icon -->
-                <img v-if="props.order.status === 'pending'" src="/assets/images/pending.svg" class="w-6 h-6"
+                <img v-if="props.order.status === 'pending'" src="/assets/images/pending.png" class="w-6 h-6"
                   alt="Pending" />
 
                 <!-- Approved Icon -->
@@ -236,10 +236,6 @@
                   <span class="font-medium w-12">QOO:</span>
                   <span>{{ item.quantity_on_order }}</span>
                 </div>
-                <div class="flex">
-                  <span class="font-medium w-12">QER:</span>
-                  <span>{{ item.qer }}</span>
-                </div>
               </div>
             </td>
             <td class="px-3 py-3 text-sm text-gray-900 border border-black">
@@ -248,7 +244,8 @@
             <td class="px-3 py-3 text-sm text-gray-900 border border-black">
               <div class="flex justify-between items-start gap-2">
                 <div class="w-[30%]">
-                  <input type="text" placeholder="0" v-model="item.quantity_to_release"
+                  <input type="number" placeholder="0" v-model="item.quantity_to_release"
+                    @keydown.enter="updateQuantity(item)"
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
                 </div>
                 <div class="border rounded-md overflow-hidden text-sm flex-1">
@@ -306,7 +303,7 @@
                   statusOrder.indexOf(props.order.status) > statusOrder.indexOf('pending') ? 'bg-[#55c5ff]' : 'bg-gray-300 cursor-not-allowed'
                 ]"
                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]" disabled>
-                <img src="/assets/images/pending.svg" class="w-5 h-5 mr-2" alt="Pending" />
+                <img src="/assets/images/pending.png" class="w-5 h-5 mr-2" alt="Pending" />
                 <span class="text-sm font-bold text-white">Pending</span>
               </button>
               <div v-if="props.order.status === 'pending'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -616,6 +613,21 @@ const formatDate = (date) => {
 };
 
 const statusOrder = ['pending', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
+
+// update quantity
+async function updateQuantity(item){
+  console.log(item);
+  await axios.post(route('orders.update-quantity'), {
+    item_id: item.id,
+    quantity: item.quantity_to_release
+  })
+  .then((response) => {
+    console.log(response.data);
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+}
 
 // Function to change order status
 const changeStatus = (orderId, newStatus) => {
