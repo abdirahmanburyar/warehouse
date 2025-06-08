@@ -161,7 +161,7 @@ const fetchInventories = async () => {
             });
 
             // Update available inventories
-            console.log("validItems",validItems);
+            console.log("validItems", validItems);
 
             availableInventories.value = validItems;
 
@@ -321,7 +321,7 @@ const submit = async () => {
         .then((response) => {
             loading.value = false;
             toast.success(response.data);
-           Swal.fire({
+            Swal.fire({
                 title: 'Success!',
                 text: response.data,
                 icon: 'success',
@@ -346,7 +346,7 @@ const submit = async () => {
 function handleProductSelect(index, selected) {
     const item = form.value.items[index];
 
-       console.log(selected);
+    console.log(selected);
     item.uom = selected.uom;
     item.batch_number = selected.batch_number;
     item.product_id = selected.product?.id;
@@ -500,8 +500,7 @@ function checkQuantity(index) {
                             <Multiselect v-model="selectedDestination" :options="filteredDestinationOptions"
                                 :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 :placeholder="`Select destination ${destinationType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                track-by="id" label="name" @select="handleDestinationSelect"
-                                required
+                                track-by="id" label="name" @select="handleDestinationSelect" required
                                 :class="{ 'border-red-500': errors.destination_id }"
                                 @open="errors.destination_id = null">
                                 <template v-slot:option="{ option }">
@@ -544,8 +543,7 @@ function checkQuantity(index) {
                                     <td
                                         class="px-6 py-4 whitespace-nowrap border border-black text-sm font-medium text-gray-900">
                                         <Multiselect v-model="item.product" :value="item.product_id"
-                                            :options="availableInventories" placeholder="Search for an item..."
-                                            required
+                                            :options="availableInventories" placeholder="Search for an item..." required
                                             track-by="id" label="name" :searchable="true" :allow-empty="true"
                                             @select="handleProductSelect(index, $event)"></Multiselect>
                                     </td>
@@ -586,7 +584,6 @@ function checkQuantity(index) {
                         </table>
                     </div>
 
-
                     <div class="flex items-center justify-between space-x-4 mb-4">
                         <button type="button" @click="addNewItem"
                             class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
@@ -609,7 +606,7 @@ function checkQuantity(index) {
                                     </svg>
                                 </span>
                                 <span :class="{ 'pl-7': loading }">{{ loading ? 'Processing...' : 'Transfer Item'
-                                }}</span>
+                                    }}</span>
                             </PrimaryButton>
                         </div>
                     </div>

@@ -71,4 +71,13 @@ class LocationController extends Controller
         $warehouses = Warehouse::get();
         return inertia("Location/Edit", ['location' => $location, 'warehouses' => $warehouses]);
     }
+
+    public function getLocations(Request $request, $id){
+        try {
+            $locations = Location::where('warehouse_id', $id)->select('id','location','warehouse_id')->get();
+            return response()->json($locations, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 }

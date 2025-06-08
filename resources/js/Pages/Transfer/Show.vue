@@ -232,38 +232,38 @@
 
      <!-- Transfer Items Table -->
      <h2 class="text-lg font-medium text-gray-900">Transfer Items</h2>
-     <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
-       <thead>
+     <table class="min-w-full rounded-3xl">
+      <thead style="background-color: #EEF1F8;">
          <tr class="bg-gray-50">
            <th
-             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  border border-black w-[300px] min-w-[300px] max-w-[300px]">
+             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[300px] min-w-[300px] max-w-[300px]">
              Items</th>
-           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  border border-black w-[100px]">
+           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  w-[100px]">
              UOM</th>
-           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  border border-black w-[150px]">
+           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  w-[150px]">
              Item Information</th>
-           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  border border-black w-[100px]">
+           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  w-[100px]">
              Quantity to release</th>
-           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  border border-black w-[100px]">
+           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase  w-[100px]">
              Action</th>
          </tr>
        </thead>
        <tbody class="bg-white divide-y divide-gray-200">
          <tr v-for="item in props.transfer.items" :key="item.id"
            class="hover:bg-gray-50 transition-colors duration-150">
-           <td class="px-6 py-4 text-sm border border-black">
+           <td class="px-6 py-4 text-sm">
              <div class="flex flex-col">
                <span class="font-medium">{{ item.product?.name || 'Unknown Product' }}</span>
                <span class="text-xs text-gray-500">ID: {{ item.product?.productID }}</span>
              </div>
            </td>
-           <td class="px-6 py-4 text-sm border border-black">
+           <td class="px-6 py-4 text-sm">
              <span
                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                {{ item.uom || 'N/A' }}
              </span>
            </td>
-           <td class="px-6 py-4 text-sm border border-black">
+           <td class="px-6 py-4 text-sm">
              <div class="text-sm bg-gray-50">
                Batch Numner: {{ item.barcode }}
              </div>
@@ -274,7 +274,7 @@
                Expiry Date: {{ formatDate(item.expire_date) }}
              </div>
            </td>
-           <td class="px-6 py-4 text-sm border border-black">
+           <td class="px-6 py-4 text-sm">
              <input type="number" v-model="item.quantity" min="1"
              :disabled="currentUserWarehouse.id != props.transfer.from_warehouse_id || props.transfer.status == 'dispatched' || props.transfer.status == 'received'"
              @keyup.enter="updateTransferItemQuantity(item)"
@@ -291,8 +291,8 @@
                required 
                class="w-full rounded-3xl"
              />
-             <button 
-               v-if="currentUserWarehouse.id == props.transfer.to_warehouse_id && (props.transfer.status === 'dispatched' || props.transfer.status === 'received') && 
+             <button
+             v-if="currentUserWarehouse.id == props.transfer.to_warehouse_id && (props.transfer.status === 'dispatched' || props.transfer.status === 'received') && 
                      (item.quantity > (item.received_quantity || 0) || (item.backorders && item.backorders.length > 0))" 
                @click="openBackOrderModal(item)" 
                class="mt-2 p-3 bg-yellow-500 text-black rounded-3xl hover:bg-yellow-600 text-sm w-full"
@@ -301,7 +301,7 @@
              </button>
              <span v-if="error?.[item.id]" class="text-red-500 text-xs mt-2">{{ error?.[item.id] }}</span>
            </td>
-           <td class="px-6 py-4 text-sm border border-black">
+           <td class="px-6 py-4 text-sm">
             <span v-if="isDeleting[item.id]" class="text-red-500 text-xs mt-2">Deleting...</span>
             <button v-else @click="confirmDelete(item.id)" class="text-red-600 hover:text-red-900">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
@@ -433,8 +433,6 @@
 
      </div>
    </div>
- </AuthenticatedLayout>
-
  <!-- Back Order Modal -->
  <Modal
    :show="showBackOrderModal"
@@ -583,8 +581,8 @@
          <!-- Back order rows -->
          <span v-if="message" class="text-sm text-red-600">{{ message }}</span>
          <div v-if="backOrders.length > 0" class="mt-3">
-           <table class="min-w-full divide-y divide-gray-200 border">
-             <thead class="bg-gray-50">
+          <table class="min-w-full rounded-3xl">
+            <thead style="background-color: #EEF1F8;">
                <tr>
                  <th class="px-2 py-1 text-left text-xs font-medium text-gray-500">
                    Issue Type
@@ -742,6 +740,8 @@
      </div>
    </div>
  </Modal>
+
+ </AuthenticatedLayout>
 </template>
 
 <script setup>

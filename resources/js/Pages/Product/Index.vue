@@ -1,171 +1,91 @@
 <template>
     <AuthenticatedLayout title="Products" description="products">
         <div class="flex justify-between gap-3 items-center">
-           <h1>Products List</h1>
-           <div class="flex gap-2">
-            <button
-                @click="openUploadModal"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                :disabled="isUploading"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
-                        clip-rule="evenodd"
-                    />
-                </svg>
-                <span v-if="isUploading">
-                    <svg
-                        class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        ></circle>
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
+            <h1>Products List</h1>
+            <div class="flex gap-2">
+                <button @click="openUploadModal"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                    :disabled="isUploading">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                            clip-rule="evenodd" />
                     </svg>
-                    Uploading...
-                </span>
-                <span v-else>Upload Excel</span>
-            </button>
+                    <span v-if="isUploading">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        Uploading...
+                    </span>
+                    <span v-else>Upload Excel</span>
+                </button>
 
-            <Link
-                :href="route('products.create')"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        fill-rule="evenodd"
+                <Link :href="route('products.create')"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
                         d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                        clip-rule="evenodd"
-                    />
+                        clip-rule="evenodd" />
                 </svg>
                 Create Product
-            </Link>
-           </div>
+                </Link>
+            </div>
         </div>
         <div class="flex justify-end mt-4 items-center space-x-4">
-            <Link
-                :href="route('products.categories.index')"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5z"
-                    />
-                    <path
-                        d="M11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"
-                    />
-                </svg>
-                Categories List
+            <Link :href="route('products.categories.index')"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                    d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5z" />
+                <path
+                    d="M11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+            </svg>
+            Categories List
             </Link>
-            <Link
-                :href="route('products.dosages.index')"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M17.725 4.275a1.75 1.75 0 00-2.475 0L11 8.525V5a1 1 0 00-2 0v7a1 1 0 001 1h7a1 1 0 000-2h-3.525l4.25-4.25a1.75 1.75 0 000-2.475z"
-                        clip-rule="evenodd"
-                    />
-                    <path
-                        d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a1 1 0 10-2 0v7H5V5h7a1 1 0 100-2H5z"
-                    />
-                </svg>
-                Dosage Forms List
+            <Link :href="route('products.dosages.index')"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M17.725 4.275a1.75 1.75 0 00-2.475 0L11 8.525V5a1 1 0 00-2 0v7a1 1 0 001 1h7a1 1 0 000-2h-3.525l4.25-4.25a1.75 1.75 0 000-2.475z"
+                    clip-rule="evenodd" />
+                <path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a1 1 0 10-2 0v7H5V5h7a1 1 0 100-2H5z" />
+            </svg>
+            Dosage Forms List
             </Link>
-            <Link
-                :href="route('products.eligible.index')"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M10 2a1 1 0 00-1 1v1.323l-3.954 1.582A1 1 0 004 6.82v10.36a1 1 0 001.046.976l4-1.5a1 1 0 01.908 0l4 1.5A1 1 0 0015 17.18V6.82a1 1 0 00-1.046-.976L10 4.323V3a1 1 0 00-1-1zm0 2.618l4 1.6v9.464l-4-1.5V4.618zm-2 0L4 6.218v9.464l4-1.5V4.618z"
-                        clip-rule="evenodd"
-                    />
-                </svg>
-                Eligible List
+            <Link :href="route('products.eligible.index')"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 2a1 1 0 00-1 1v1.323l-3.954 1.582A1 1 0 004 6.82v10.36a1 1 0 001.046.976l4-1.5a1 1 0 01.908 0l4 1.5A1 1 0 0015 17.18V6.82a1 1 0 00-1.046-.976L10 4.323V3a1 1 0 00-1-1zm0 2.618l4 1.6v9.464l-4-1.5V4.618zm-2 0L4 6.218v9.464l4-1.5V4.618z"
+                    clip-rule="evenodd" />
+            </svg>
+            Eligible List
             </Link>
         </div>
         <div class="flex flex-wrap gap-4 items-center mt-3">
-            <div
-                class="flex items-center bg-gray-50 rounded flex-grow md:flex-grow-0 min-w-[600px]"
-            >
-                <input
-                    v-model="search"
-                    type="text"
-                    placeholder="Search by name or barcode..."
-                    class="focus:border-indigo-500 focus:ring-indigo-500 rounded-md w-full"
-                />
+            <div class="flex items-center bg-gray-50 rounded flex-grow md:flex-grow-0 min-w-[600px]">
+                <input v-model="search" type="text" placeholder="Search by name or barcode..."
+                    class="focus:border-indigo-500 focus:ring-indigo-500 rounded-md w-full" />
             </div>
             <div class="w-[300px]">
-                <Multiselect
-                    v-model="category"
-                    :options="props.categories"
-                    :searchable="true"
-                    :close-on-select="true"
-                    :show-labels="false"
-                    :allow-empty="true"
-                    placeholder="Select Category"
-                />
+                <Multiselect v-model="category" :options="props.categories" :searchable="true" :close-on-select="true"
+                    :show-labels="false" :allow-empty="true" placeholder="Select Category" />
             </div>
 
             <div class="w-[300px]">
-                <Multiselect
-                    v-model="dosage"
-                    :options="props.dosages"
-                    :searchable="true"
-                    :close-on-select="true"
-                    :show-labels="false"
-                    :allow-empty="true"
-                    placeholder="Select Dosage Form"
-                />
+                <Multiselect v-model="dosage" :options="props.dosages" :searchable="true" :close-on-select="true"
+                    :show-labels="false" :allow-empty="true" placeholder="Select Dosage Form" />
             </div>
             <div class="w-full md:w-auto">
-                <select
-                    v-model="perPage"
+                <select v-model="perPage"
                     class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md text-sm"
-                    @change="props.filters.page = 1"
-                >
+                    @change="props.filters.page = 1">
                     <option value="10">10 per page</option>
                     <option value="25">25 per page</option>
                     <option value="50">50 per page</option>
@@ -177,48 +97,54 @@
         <div class="py-6 mb-5">
             <div class="overflow-x-auto">
                 <!-- Empty State -->
-                <div v-if="!products.data.length" class="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                <div v-if="!products.data.length"
+                    class="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mb-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                     <h3 class="text-lg font-medium text-gray-900 mb-1">No Products Found</h3>
                     <p class="text-sm text-gray-500 mb-4">There are no products matching your search criteria.</p>
-                    <Link :href="route('products.create')" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        Add New Product
+                    <Link :href="route('products.create')"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Add New Product
                     </Link>
                 </div>
-                <table
-                    v-else
-                    class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-3xl overflow-hidden"
-                >
+                <table v-else
+                    class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-3xl overflow-hidden">
                     <thead style="background-color: #EEF1F8">
                         <tr>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;"
+                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Item Name
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;"
+                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Category
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                               Dosage Form
+                            <th style="color: #495FA7;"
+                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Dosage Form
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;"
+                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th style="color: #495FA7;" class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                            <th style="color: #495FA7;"
+                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                                 Action
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr
-                            v-for="product in products.data"
-                            :key="product.id"
-                            class="hover:bg-gray-50"
-                        >
+                        <tr v-for="product in products.data" :key="product.id" class="hover:bg-gray-50">
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ product.name }}
@@ -235,49 +161,41 @@
                             </td> -->
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                                        :class="{
-                                            'bg-green-100 text-green-800': product.is_active,
-                                            'bg-red-100 text-red-800': !product.is_active
-                                        }"
-                                    >
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="{
+                                        'bg-green-100 text-green-800': product.is_active,
+                                        'bg-red-100 text-red-800': !product.is_active
+                                    }">
                                         {{ product.is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </div>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center space-x-3">
-                                    <Link
-                                        :href="route('products.edit', product.id)"
-                                        class="text-blue-600 hover:text-blue-900"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                    <Link :href="route('products.edit', product.id)"
+                                        class="text-blue-600 hover:text-blue-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
                                     </Link>
-                                    <button
-                                        @click="confirmToggleStatus(product)"
-                                        :class="{
-                                            'opacity-50 cursor-wait':
+                                    <button @click="confirmToggleStatus(product)" :class="{
+                                        'opacity-50 cursor-wait':
                                             loadingProducts.has(product.id),
-                                            'bg-gray-200': !product.is_active,
-                                            'bg-green-500': product.is_active,
-                                        }"
+                                        'bg-gray-200': !product.is_active,
+                                        'bg-green-500': product.is_active,
+                                    }"
                                         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                                        :disabled="loadingProducts.has(product.id)"
-                                >
-                                    <span
-                                        :class="{
+                                        :disabled="loadingProducts.has(product.id)">
+                                        <span :class="{
                                             'translate-x-5': product.is_active,
                                             'translate-x-0': !product.is_active,
                                             'bg-gray-400 animate-pulse':
                                                 loadingProducts.has(product.id),
                                         }"
-                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                    ></span>
-                                </button>
-                                   
+                                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                                    </button>
+
                                 </div>
                             </td>
                         </tr>
@@ -285,40 +203,22 @@
                 </table>
             </div>
             <div class="mt-3 flex justify-end items-center">
-                <TailwindPagination
-                    :data="props.products"
-                    :limit="2"
-                    @pagination-change-page="getResults"
-                />
+                <TailwindPagination :data="props.products" :limit="2" @pagination-change-page="getResults" />
             </div>
 
             <!-- Excel Upload Modal -->
-            <div
-                v-if="showUploadModal"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            >
+            <div v-if="showUploadModal"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-medium">
                             Upload Products Excel File
                         </h3>
-                        <button
-                            @click="closeUploadModal"
-                            class="text-gray-500 hover:text-gray-700"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-6 w-6"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
+                        <button @click="closeUploadModal" class="text-gray-500 hover:text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
@@ -328,38 +228,20 @@
                             Upload an Excel file (.xlsx, .xls) with the
                             following columns:
                         </p>
-                        <ul
-                            class="list-disc list-inside text-sm text-gray-600 ml-2 mb-4"
-                        >
+                        <ul class="list-disc list-inside text-sm text-gray-600 ml-2 mb-4">
                             <li>item description (required)</li>
                             <li>category (optional)</li>
                             <li>dosage form (optional)</li>
                         </ul>
 
-                        <div
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-                            @click="triggerFileInput"
-                        >
-                            <input
-                                type="file"
-                                ref="fileInput"
-                                class="hidden"
-                                @change="handleFileUpload"
-                                accept=".xlsx,.xls"
-                            />
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-10 w-10 mx-auto text-gray-400"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                />
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                            @click="triggerFileInput">
+                            <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload"
+                                accept=".xlsx,.xls" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
                             <p class="mt-2 text-sm text-gray-600">
                                 Click to select or drag and drop file here
@@ -369,83 +251,43 @@
                             </p>
                         </div>
 
-                        <div
-                            v-if="selectedFile"
-                            class="mt-3 flex items-center justify-between bg-blue-50 p-2 rounded"
-                        >
+                        <div v-if="selectedFile" class="mt-3 flex items-center justify-between bg-blue-50 p-2 rounded">
                             <div class="flex items-center">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5 text-blue-500 mr-2"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <span class="text-sm truncate max-w-[200px]">{{
                                     selectedFile.name
-                                }}</span>
+                                    }}</span>
                             </div>
-                            <button
-                                @click.stop="removeSelectedFile"
-                                class="text-red-500 hover:text-red-700"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
+                            <button @click.stop="removeSelectedFile" class="text-red-500 hover:text-red-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
                     </div>
 
                     <div class="flex justify-end space-x-3">
-                        <button
-                            @click="closeUploadModal"
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                        >
+                        <button @click="closeUploadModal"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
                             Cancel
                         </button>
-                        <button
-                            @click="uploadFile"
+                        <button @click="uploadFile"
                             class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            :disabled="!selectedFile || isUploading"
-                        >
+                            :disabled="!selectedFile || isUploading">
                             <span v-if="isUploading">
-                                <svg
-                                    class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        class="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        stroke-width="4"
-                                    ></circle>
-                                    <path
-                                        class="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    ></path>
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
                                 </svg>
                                 Uploading...
                             </span>
@@ -508,7 +350,7 @@ function updateRoute() {
     if (category.value) query.category = category.value;
     if (dosage.value) query.dosage = dosage.value;
     if (perPage.value) query.per_page = perPage.value;
-    if(props.filters.page) query.page = props.filters.page;
+    if (props.filters.page) query.page = props.filters.page;
 
     router.get(route('products.index'), query, {
         preserveState: true,
@@ -567,7 +409,7 @@ const handleFileUpload = (event) => {
         selectedFile.value = null;
         return;
     }
-    
+
     // Check file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
@@ -594,7 +436,7 @@ const uploadFile = async () => {
         toast.error("Please select a file to upload");
         return;
     }
-    
+
     // Show loading toast
     const loadingToast = toast.info("Preparing to upload file...", {
         timeout: false,
@@ -624,7 +466,7 @@ const uploadFile = async () => {
             // Show detailed results if there are errors or skipped items
             if ((response.data.errors && response.data.errors.length > 0) || response.data.skipped > 0) {
                 let errorList = response.data.errors ? response.data.errors.join("\n") : "";
-                
+
                 // Create a more detailed and user-friendly results dialog
                 Swal.fire({
                     title: "Import Results",
@@ -678,7 +520,7 @@ const uploadFile = async () => {
         }
     } catch (error) {
         console.error("Upload error:", error);
-        
+
         // Provide more detailed error messages
         if (error.response?.status === 422) {
             // Validation error
@@ -697,7 +539,7 @@ const uploadFile = async () => {
     } finally {
         // Dismiss the loading toast
         toast.dismiss(loadingToast);
-        
+
         isUploading.value = false;
         selectedFile.value = null;
         if (fileInput.value) {
@@ -708,7 +550,7 @@ const uploadFile = async () => {
 
 const confirmToggleStatus = (product) => {
     const action = product.is_active ? 'deactivate' : 'activate';
-    
+
     Swal.fire({
         title: 'Are you sure?',
         html: `<p>Do you want to ${action} ${product.name}?</p>`,

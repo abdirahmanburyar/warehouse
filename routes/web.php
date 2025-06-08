@@ -178,6 +178,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
          Route::delete('/{id}/delete', 'destroy')->name('inventories.location.destroy');
          Route::get('/{id}/edit', 'edit')->name('inventories.location.edit');
          Route::get('/create', 'create')->name('inventories.location.create');
+
+        // 'warehouse.locations
+        Route::get('/{id}/locations', 'getLocations')->name('warehouse.locations');
      });
 
     // Dosage Management Routes

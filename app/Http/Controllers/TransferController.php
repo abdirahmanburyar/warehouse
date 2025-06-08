@@ -8,6 +8,7 @@ use App\Models\Inventory;
 use App\Models\Warehouse;
 use App\Models\Facility;
 use App\Models\FacilityInventory;
+use App\Http\Resources\TransferResource;
 use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
@@ -122,42 +123,34 @@ class TransferController extends Controller
         }
         
         // Filter by facility (supports multiple selections)
-        if ($request->has('facility_id') && !empty($request->facility_id)) {
-            $facilityIds = explode(',', $request->facility_id);
-            $query->where(function($q) use ($facilityIds) {
-                $q->whereIn('from_facility_id', $facilityIds)
-                  ->orWhereIn('to_facility_id', $facilityIds);
-            });
+        if ($request->has('facility')){
+            $facilityIds = $request->facility;
+            $query->where('from_facility_id', $facilityIds)
+              ->orWhere('to_facility_id', $facilityIds);
         }
         
         // Filter by warehouse (supports multiple selections)
-        if ($request->has('warehouse_id') && !empty($request->warehouse_id)) {
-            $warehouseIds = explode(',', $request->warehouse_id);
+        if ($request->has('warehouse')) {
+            $warehouseIds = $request->warehouse;
             $query->where(function($q) use ($warehouseIds) {
-                $q->whereIn('from_warehouse_id', $warehouseIds)
-                  ->orWhereIn('to_warehouse_id', $warehouseIds);
+                $q->where('from_warehouse_id', $warehouseIds)
+                  ->orWhere('to_warehouse_id', $warehouseIds);
             });
         }
-        
-        // Filter by location (supports multiple selections)
-        if ($request->has('location_id') && !empty($request->location_id)) {
-            $locationIds = explode(',', $request->location_id);
-            $query->whereHas('items', function($q) use ($locationIds) {
-                $q->whereIn('location_id', $locationIds);
-            });
+
+        if($request->filled('date_from') && !$request->filled('date_to')){
+            $query->whereDate('transfer_date', $request->date_from);
         }
         
         // Filter by date range
-        if ($request->has('date_from') && !empty($request->date_from)) {
-            $query->whereDate('transfer_date', '>=', $request->date_from);
-        }
-        
-        if ($request->has('date_to') && !empty($request->date_to)) {
-            $query->whereDate('transfer_date', '<=', $request->date_to);
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
         }
         
         // Execute the query
-        $transfers = $query->get();
+        $transfers = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+    $transfers->setPath(url()->current()); // Force Laravel to use full URLs
         
         // Get all transfers for statistics (unfiltered)
         $allTransfers = Transfer::all();
@@ -208,12 +201,12 @@ class TransferController extends Controller
         $locations = DB::table('locations')->select('id', 'location')->orderBy('location')->get();
 
         return inertia('Transfer/Index', [
-            'transfers' => $transfers,
+            'transfers' => TransferResource::collection($transfers),
             'statistics' => $statistics,
             'facilities' => $facilities,
             'warehouses' => $warehouses,
             'locations' => $locations,
-            'filters' => $request->only(['search', 'facility_id', 'warehouse_id', 'location_id', 'date_from', 'date_to', 'tab'])
+            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae'])
         ]);
     }
 
