@@ -40,9 +40,6 @@ const toast = useToast();
 
 // DEBUG: On component mount, log all props and filter values
 onMounted(() => {
-    console.log('[DEBUG] Inventory Page Mounted');
-    console.log('[DEBUG] Props:', props);
-    console.log('[DEBUG] Initial Filters:', props.filters);
     if (props.inventories) {
         console.log('[DEBUG] Inventories (raw):', props.inventories);
         if (props.inventories.data) {
@@ -55,6 +52,7 @@ onMounted(() => {
             });
         }
     }
+    
 });
 
 // Search and filter states

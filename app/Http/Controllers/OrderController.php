@@ -13,6 +13,7 @@ use App\Models\District;
 // App Events and Resources
 use App\Events\OrderEvent;
 use App\Http\Resources\OrderResource;
+use App\Events\InventoryUpdated;
 
 // Laravel Core
 use Illuminate\Http\Request;
@@ -463,7 +464,9 @@ class OrderController extends Controller
                 // Update the order item quantity_to_release
                 $orderItem->quantity_to_release = $newQuantityToRelease;
                 $orderItem->save();
-                
+
+                event(new InventoryUpdated());
+
                 DB::commit();
                 return response()->json('Quantity to release updated successfully', 200);
             } 
