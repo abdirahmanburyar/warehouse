@@ -9,6 +9,7 @@ import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import { TailwindPagination } from "laravel-vue-pagination";
+import moment from 'moment';
 
 // No longer using bulk actions
 
