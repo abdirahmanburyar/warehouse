@@ -990,34 +990,22 @@ class SupplyController extends Controller
     /**
      * Remove the specified supply from storage.
      */
-    public function destroy(Supply $supply)
+    public function destroy(Request $request, $id)
     {
         DB::beginTransaction();
-
         try {
             // Adjust inventory
-            $inventory = Inventory::where([
-                'product_id' => $supply->product_id,
-                'warehouse_id' => $supply->warehouse_id,
-                'batch_number' => $supply->batch_number,
-            ])->first();
-            
-            if ($inventory) {
-                $inventory->quantity -= $supply->quantity;
-                $inventory->save();
-            }
-            
-            // Delete the supply
-            $supply->delete();
-
+           $po = PurchaseOrder::find($id);
+           if($po->status != 'pending') {
+            return response()->json("This P.O can be not deleted, becouse its ". $po->status, 500);
+           }
+           $po->items()->delete();
+           $po->delete();
             DB::commit();
-
-            return redirect()->route('supplies.index')
-                ->with('success', 'Supply deleted successfully');
-        } catch (\Exception $e) {
+            return response()->json('Supply deleted successfully', 200);
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Failed to delete supply: ' . $e->getMessage());
+            return response()->json($e->getMessage(), 500);
         }
     }
 

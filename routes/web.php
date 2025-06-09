@@ -219,6 +219,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Supply Management Routes
     Route::prefix('supplies')->group(function () {
         Route::get('/', [SupplyController::class, 'index'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.index');
+
+        // supplies.deletePO
+        Route::get('/{id}/delete', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.deletePO');
         Route::get('/create', [SupplyController::class, 'create'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.create');
         Route::get('/show', [SupplyController::class, 'show'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.show');
         Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.po-show');
