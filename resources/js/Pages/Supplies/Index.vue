@@ -263,7 +263,7 @@
                         <!-- Table Column (10/12) -->
                         <div class="col-span-10">
                             <div class="relative">
-                                <div class="overflow-auto max-h-[calc(100vh-300px)]">
+                                <div class="overflow-auto">
                                     <table class="min-w-full text-left border-b border-gray-200">
                                         <thead class="bg-white sticky top-0 z-10">
                                             <tr>
