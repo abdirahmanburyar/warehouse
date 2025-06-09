@@ -29,7 +29,7 @@ class LiquidateDisposalController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-             $liquidates->where('disposal_id', 'like', "%{$search}%")
+             $disposals->where('disposal_id', 'like', "%{$search}%")
                 ->orWhereHas('product', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('barcode', 'like', "%{$search}%")
