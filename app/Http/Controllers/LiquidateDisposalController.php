@@ -29,11 +29,12 @@ class LiquidateDisposalController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $disposals->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhere('batch_number', 'like', "%{$search}%");
-            });
+             $liquidates->where('disposal_id', 'like', "%{$search}%")
+                ->orWhereHas('product', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('barcode', 'like', "%{$search}%")
+                      ->orWhere('batch_number', 'like', "%{$search}%");
+                });
         }
 
         $disposals = $disposals->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
@@ -64,11 +65,12 @@ class LiquidateDisposalController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $liquidates->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhere('batch_number', 'like', "%{$search}%");
-            });
+            $liquidates->where('liquidate_id', 'like', "%{$search}%")
+                ->orWhereHas('product', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('barcode', 'like', "%{$search}%")
+                      ->orWhere('batch_number', 'like', "%{$search}%");
+                });
         }
 
         $liquidates = $liquidates->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))

@@ -266,7 +266,7 @@ function getResults(page = 1) {
         <div class="mb-6 flex flex-wrap gap-4 items-center">
             <h2 class="text-xl font-semibold">Liquidation Records</h2>
         </div>
-        <div class="mb-6 flex justify-between items-center">
+        <div class="mb-2 flex justify-between items-center">
             <input type="text" v-model="search"
                 placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
                 class="w-[600px] form-control">
@@ -404,19 +404,21 @@ function getResults(page = 1) {
                             </div>
 
                             <div v-else class="flex flex-col gap-2">
-                                <button v-if="!liquidate.reviewed_at" @click="reviewLiquidation(liquidate.id)"
+                                <button v-if="!liquidate.reviewed_at && $page.props.auth.can.liquidate_review" @click="reviewLiquidation(liquidate.id)"
                                     :disabled="isReviewing"
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm">
                                     {{ isReviewing ? 'Processing...' : 'Review' }}
+
                                 </button>
                                 <!-- Show approve/reject buttons after review -->
                                 <template v-if="liquidate.reviewed_at && !liquidate.approved_at">
                                     <div class="flex flex-col gap-2">
                                         <button @click="approveLiquidation(liquidate.id)" :disabled="isApproving"
+                                            v-if="$page.props.auth.can.liquidate_approve"
                                             class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm">
                                             {{ isApproving ? 'Processing...' : liquidate.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
                                         </button>
-                                        <button v-if="!liquidate.rejected_at" @click="rejectLiquidation(liquidate.id)"
+                                        <button v-if="!liquidate.rejected_at && $page.props.auth.can.liquidate_approve" @click="rejectLiquidation(liquidate.id)"
                                             :disabled="isRejecting"
                                             class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm">
                                             {{ isRejecting ? 'Processing...' : 'Reject' }}
