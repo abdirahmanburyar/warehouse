@@ -98,7 +98,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">System Qty</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider w-40">Physical Count</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Difference</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Remarks</th>
+                            <th scope="col" class="m-w-[200px] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Remarks</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -141,7 +141,7 @@
                                     type="text" 
                                     v-model="item.difference" 
                                     class="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                                    placeholder="Enter difference"
+                                    placeholder="0"
                                     readonly
                                 />
                             </td>

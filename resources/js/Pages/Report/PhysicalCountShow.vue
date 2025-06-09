@@ -180,12 +180,12 @@
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <tr v-for="item in selectedReport.items" :key="item.id" class="hover:bg-gray-50">
                                             <td class="px-4 py-3 text-sm">
-                                                <div class="font-medium text-gray-900">{{ item.product.name }}</div>
-                                                <div class="text-gray-500 text-xs">ID: {{ item.product.productID }}</div>
+                                                <div class="font-medium text-gray-900">{{ item.product?.name }}</div>
+                                                <div class="text-gray-500 text-xs">ID: {{ item.product?.productID }}</div>
                                             </td>
                                             <td class="px-4 py-3 text-sm">{{ item.uom || 'N/A' }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.product.category.name }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.product.dosage.name }}</td>
+                                            <td class="px-4 py-3 text-sm">{{ item.product?.category?.name }}</td>
+                                            <td class="px-4 py-3 text-sm">{{ item.product?.dosage?.name }}</td>
                                             <td class="px-4 py-3 text-sm">{{ item.barcode || 'N/A' }}</td>
                                             <td class="px-4 py-3 text-sm">{{ item.batch_number }}</td>
                                             <td class="px-4 py-3 text-sm">{{ moment(item.expiry_date).format('DD/MM/YYYY') }}</td>
@@ -360,8 +360,8 @@ const downloadPDF = async () => {
                                     <div style="color: #6b7280; font-size: 11px;">ID: ${item.product.productID}</div>
                                 </td>
                                 <td style="padding: 12px 8px;">${item.uom || 'N/A'}</td>
-                                <td style="padding: 12px 8px;">${item.product.category.name}</td>
-                                <td style="padding: 12px 8px;">${item.product.dosage.name}</td>
+                                <td style="padding: 12px 8px;">${item.product.category?.name}</td>
+                                <td style="padding: 12px 8px;">${item.product.dosage?.name}</td>
                                 <td style="padding: 12px 8px;">${item.barcode || 'N/A'}</td>
                                 <td style="padding: 12px 8px;">${item.batch_number}</td>
                                 <td style="padding: 12px 8px;">${formatDate(item.expiry_date)}</td>
@@ -425,6 +425,7 @@ const formatDateTime = (dateTimeString) => {
 };
 
 const openModal = (report) => {
+    console.log(report);
     selectedReport.value = report;
     isModalOpen.value = true;
 };
