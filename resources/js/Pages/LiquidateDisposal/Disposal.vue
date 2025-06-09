@@ -237,7 +237,6 @@ const parseAttachments = (attachments) => {
 
 function getResults(page = 1) {
     props.filters.page = page;
-    reloadDisposals();
 }
 
 </script>
@@ -251,7 +250,7 @@ function getResults(page = 1) {
             <input type="text" v-model="search"
                 placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
                 class="w-[600px] form-control">
-            <select v-model="per_page" class="w-[200px] form-select">
+            <select v-model="per_page" @change="props.filters.page = 1" class="w-[200px] form-select">
                 <option value="2"> Per Page 2</option>
                 <option value="5"> Per Page 5</option>
                 <option value="10"> Per Page 10</option>
