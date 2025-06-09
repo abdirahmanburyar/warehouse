@@ -263,6 +263,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // supplies.packing-list.update
         Route::post('/packing-list/update', [SupplyController::class, 'updatePK'])->name('supplies.packing-list.update');
 
+
+        // back-order.liquidate
+        Route::post('/liquidate', [SupplyController::class, 'liquidate'])->name('back-order.liquidate');
+
+        // back-order.dispose
+        // Route::get('/dispose', [SupplyController::class, 'dispose'])->name('back-order.dispose');
+
     });
 
     Route::controller(LiquidateDisposalController::class)

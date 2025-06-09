@@ -257,7 +257,6 @@ const reloadLiquidates = () => {
 
 function getResults(page = 1) {
     props.filters.page = page;
-    reloadLiquidates();
 }
 
 </script>
@@ -271,7 +270,7 @@ function getResults(page = 1) {
             <input type="text" v-model="search"
                 placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
                 class="w-[600px] form-control">
-            <select v-model="per_page" class="w-[200px] form-select">
+            <select v-model="per_page" @change="props.filters.page = 1" class="w-[200px] form-select">
                 <option value="2"> Per Page 2</option>
                 <option value="5"> Per Page 5</option>
                 <option value="10"> Per Page 10</option>
@@ -282,18 +281,18 @@ function getResults(page = 1) {
         </div>
         <!-- Table Section -->
         <div class="mb-[100px]">
-            <table class="min-w-full border border-collapse border-gray-300">
+            <table class="min-w-full border border-collapse">
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">SN</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidation ID</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
-                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Liquidated At</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Actions</th>
+                        <th class="text-xs p-2 text-left text-black">SN</th>
+                        <th class="text-xs p-2 text-left text-black">Liquidation ID</th>
+                        <th class="text-xs p-2 text-left text-black">Item</th>
+                        <th class="w-[300px] text-xs p-2 text-left text-black">Item Info</th>
+                        <th class="text-xs p-2 text-left text-black">Liquidated At</th>
+                        <th class="text-xs p-2 text-left text-black">Source and Reason</th>
+                        <th class="text-xs p-2 text-left text-black">Attachments</th>
+                        <th class="text-xs p-2 text-left text-black">Status</th>
+                        <th class="text-xs p-2 text-left text-black">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -301,13 +300,13 @@ function getResults(page = 1) {
                         <td colspan="9" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
                     </tr>
                     <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id"
-                        class="border-b border-gray-300">
-                        <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
-                        <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.liquidate_id }}</td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        >
+                        <td class="px-4 py-2 p-2">{{ index + 1 }}</td>
+                        <td class="px-4 py-2 p-2">{{ liquidate.liquidate_id }}</td>
+                        <td class="px-4 py-2 p-2">
                             {{ liquidate.product ? liquidate.product.name : 'N/A' }}
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300 flex flex-col">
+                        <td class="px-4 py-2 p-2 flex flex-col">
                             <span>Batch Number: {{ liquidate.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ liquidate.barcode || 'N/A' }}</span>
                             <span>Expiry Date: {{ liquidate.expire_date ?
@@ -320,11 +319,11 @@ function getResults(page = 1) {
                                 || 'N/A' }}</span>
                             <span v-if="liquidate.transfer_id" class="text-blue-600 font-semibold">From Transfer</span>
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        <td class="px-4 py-2 p-2">
                             {{ liquidate.liquidated_at ? new Date(liquidate.liquidated_at).toLocaleDateString() : 'N/A'
                             }}
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        <td class="px-4 py-2 p-2">
                             <div class="flex flex-col">
                                 <div v-if="liquidate.transfer_id" class="mb-1">
                                     <span class="font-semibold text-blue-600">Transfer ID:</span> {{
@@ -335,7 +334,7 @@ function getResults(page = 1) {
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        <td class="px-4 py-2 p-2">
                             <div v-if="parseAttachments(liquidate.attachments).length > 0"
                                 class="relative attachments-dropdown">
                                 <button @click="toggleDropdown(liquidate.id)"
@@ -359,7 +358,7 @@ function getResults(page = 1) {
                             </div>
                             <span v-else class="text-gray-500 text-sm">No attachments</span>
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        <td class="px-4 py-2 p-2">
                             <div class="flex flex-col gap-1">
                                 <!-- Always show Pending -->
                                 <span class="text-gray-600 text-sm">Pending</span>
@@ -399,7 +398,7 @@ function getResults(page = 1) {
                                 </template>
                             </div>
                         </td>
-                        <td class="px-4 py-2 border-r border-gray-300">
+                        <td class="px-4 py-2 p-2">
                             <div v-if="liquidate.approved_at" class="text-gray-600 text-sm">
                                 Closed (Approved)
                             </div>
@@ -429,9 +428,9 @@ function getResults(page = 1) {
                     </tr>
                 </tbody>
             </table>
-        </div>
-        <div class="flex justify-end items-center mt-3">
-            <TailwindPagination :data="props.liquidates" @pagination-change-page="getResults" />
+            <div class="flex justify-end items-center mt-3">
+                <TailwindPagination :data="props.liquidates" @pagination-change-page="getResults" />
+            </div>
         </div>
     </Tab>
 </template>

@@ -326,7 +326,8 @@ const groupedItems = computed(() => {
                     quantity: item.quantity,
                     status: item.status,
                     actions: getAvailableActions(item.status)
-                }]
+                }],
+
             });
         } else {
             existingGroup.rows.push({
@@ -348,15 +349,9 @@ const getAvailableActions = (status) => {
 
 const isLoading = ref(false);
 const isSubmitting = ref(false);
-const showReceiveModal = ref(false);
 const showLiquidateModal = ref(false);
 const showDisposeModal = ref(false);
 const selectedItem = ref(null);
-const receiveForm = ref({
-    quantity: 0,
-    note: '',
-    attachments: []
-});
 
 const liquidateForm = ref({
     quantity: 0,
@@ -529,6 +524,7 @@ const liquidateItems = async (item) => {
             try {
                 isLoading.value = true;
                 const formData = new FormData();
+                console.log(item);
                 formData.append('id', item.id);
                 formData.append('product_id', item.product.id);
                 formData.append('packing_list_id', item.packing_list.id);
@@ -587,6 +583,9 @@ const handlePoChange = async (po) => {
 const submitLiquidation = async () => {
     isSubmitting.value = true;
     const formData = new FormData();
+    console.log(selectedItem.value);
+    formData.append('id', selectedItem.value.id);
+    formData.append('product_id', selectedItem.value.product.id);
     formData.append('packing_list_id', selectedItem.value.packing_list.id);
     formData.append('purchase_order_id', selectedPo.value?.id);
     formData.append('quantity', liquidateForm.value.quantity);

@@ -170,10 +170,6 @@ class SupplyController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
                 'note' => 'nullable|string|max:255',
-                'barcode' => 'nullable|string',
-                'expire_date' => 'nullable|date',
-                'batch_number' => 'nullable|string',
-                'uom' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
@@ -206,40 +202,47 @@ class SupplyController extends Controller
                     ];
                 }
             }
+
+            $item = PackingListDifference::where('id', $request->id)->with('packingListItem')->first();
+
+            logger()->info($item);
             
             // Create a new liquidation record
             $liquidate = Liquidate::create([
                 'product_id' => $request->product_id,
-                'packing_list_id' => $request->packing_list_id,
+                'packing_listitem_id' => $item->packing_listitem_id,
                 'liquidated_by' => auth()->id(),
                 'liquidated_at' => Carbon::now(),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
-                'barcode' => $request->barcode,
-                'expire_date' => $request->expire_date,
-                'batch_number' => $request->batch_number,
-                'uom' => $request->uom,
+                'barcode' => $item->packingListItem->barcode,
+                'expire_date' => $item->packingListItem->expire_date,
+                'batch_number' => $item->packingListItem->batch_number,
+                'uom' => $item->packingListItem->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
             ]);
             
             // Find and delete the record from PackingListDifference table
-            $packingListDiff = PackingListDifference::find($request->id);
-            if ($packingListDiff) {
+            if ($item) {
                 // Create a record in BackOrderHistory before deleting
                 BackOrderHistory::create([
-                    'packing_list_id' => $packingListDiff->packing_list_id,
-                    'product_id' => $packingListDiff->product_id,
-                    'quantity' => $packingListDiff->quantity,
+                    'packing_list_id' => $request->packing_list_id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
                     'status' => 'Liquidated',
                     'note' => $request->note ?? 'Liquidated by ' . auth()->user()->name,
                     'performed_by' => auth()->id()
                 ]);
                 
                 // Delete the record
-                $packingListDiff->update([
-                    'finalized' => 'Liquidated'
-                ]);
+                if ($item->quantity == $request->quantity) {
+                    $item->update([
+                        'finalized' => 'Liquidated'
+                    ]);
+                } else {
+                    $item->decrement('quantity', $request->quantity);
+                }
             }
             
             // Commit the transaction
@@ -366,10 +369,9 @@ class SupplyController extends Controller
         try {
             // Validate the request
             $validated = $request->validate([
-                'id' => 'required|exists:packing_list_differences,id',
+                'id' => 'required|exists:packing_list_items,id',
                 'product_id' => 'required|exists:products,id',
                 'packing_list_id' => 'required|exists:packing_lists,id',
-                'purchase_order_id' => 'required|exists:purchase_orders,id',
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
             ]);
@@ -378,7 +380,7 @@ class SupplyController extends Controller
             DB::beginTransaction();
             
             // Find the packing list difference record
-            $packingListDiff = PackingListDifference::find($request->id);
+            $packingListDiff = PackingListDifference::with('packingListItem')->find($request->id);
             
             if (!$packingListDiff) {
                 return response()->json([
@@ -402,7 +404,9 @@ class SupplyController extends Controller
             ]);
             
             // Update inventory with the received items
-            $inventory = Inventory::where('product_id', $request->product_id)->first();
+            $inventory = Inventory::where('product_id', $request->product_id)
+                ->where('batch_number', $packingListDiff->packingListItem->batch_number)
+                ->first();
             
             if ($inventory) {
                 $inventory->increment('quantity', $receivedQuantity);
@@ -417,13 +421,17 @@ class SupplyController extends Controller
                     'uom' => $inventory->uom,
                     'barcode' => $inventory->barcode,
                     'batch_number' => $inventory->batch_number,
-                    'expiry_date' => $inventory->expire_date,
+                    'expiry_date' => $inventory->expire_date
                 ]);
             } else {
                 // Create a new inventory record if it doesn't exist
                 $inventory = Inventory::create([
                     'product_id' => $request->product_id,
                     'quantity' => $receivedQuantity,
+                    'batch_number' => $packingListDiff->packingListItem->batch_number,
+                    'expiry_date' => $packingListDiff->packingListItem->expire_date,
+                    'barcode' => $packingListDiff->packingListItem->barcode,
+                    'uom' => $packingListDiff->packingListItem->uom,
                     'status' => 'active'
                 ]);
                 ReceivedQuantity::create([
@@ -441,7 +449,7 @@ class SupplyController extends Controller
             }
             
             // Update the packing list quantity
-            $packingList = PackingList::find($request->packing_list_id);
+            $packingList = PackingListItem::find($request->id);
             if ($packingList) {
                 // Add the received quantity to the packing list quantity
                 $packingList->quantity += $receivedQuantity;

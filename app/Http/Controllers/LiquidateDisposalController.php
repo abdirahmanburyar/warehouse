@@ -71,7 +71,7 @@ class LiquidateDisposalController extends Controller
             });
         }
 
-        $liquidates = $liquidates->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+        $liquidates = $liquidates->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $liquidates->setPath(url()->current()); // Force Laravel to use full URLs
 
