@@ -1599,7 +1599,7 @@ class SupplyController extends Controller
     }
 
     public function showBackOrder(Request $request){
-        $history = BackOrderHistory::with('packingList')->get();
+        $history = BackOrderHistory::with('packingList', 'product')->get();
         return inertia('Supplies/ShowBackOrder', [
             'history' => $history
         ]);

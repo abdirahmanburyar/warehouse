@@ -32,7 +32,7 @@ defineProps<{
           Liquidates
         </Link>
         <Link 
-          :href="route('liquidate-disposal.disposals')" 
+          :href="route('liquidate-disposal.disposed-items')" 
           :class="[
             'px-6 py-3 text-lg font-bold',
             activeTab === 'disposal' 

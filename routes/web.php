@@ -267,8 +267,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     Route::controller(LiquidateDisposalController::class)
         ->name('liquidate-disposal.')
+        ->prefix('back-order')
         ->group(function(){
-            Route::get('/disposals', 'disposals')->name('disposals');
+            Route::get('/disposals', 'disposals')->name('disposed-items');
             Route::get('/liquidates', 'liquidates')->name('liquidates');
             Route::get('/liquidates/{id}/review', 'reviewLiquidate')->name('liquidates.review');
             Route::get('/liquidates/{id}/approve', 'approveLiquidate')->name('liquidates.approve');
