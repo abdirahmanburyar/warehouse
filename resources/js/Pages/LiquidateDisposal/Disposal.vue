@@ -288,6 +288,7 @@ function getResults(page = 1) {
                             {{ disposal.product ? disposal.product.name : 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300 flex flex-col">
+                            <span>Quantity: {{ disposal.quantity || 'N/A' }}</span>
                             <span>Batch Number: {{ disposal.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ disposal.barcode || 'N/A' }}</span>
                             <span>Expiry Date: {{ disposal.expire_date ?
