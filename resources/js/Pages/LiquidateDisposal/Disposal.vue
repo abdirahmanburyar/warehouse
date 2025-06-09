@@ -41,7 +41,7 @@ const reloadDisposals = () => {
     if (props.filters.page) {
         query.page = props.filters.page;
     }
-    router.get(route('liquidate-disposal.disposals'), query, {
+    router.get(route('liquidate-disposal.disposed-items'), query, {
         preserveState: true,
         preserveScroll: true,
         only: ['disposals']
