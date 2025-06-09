@@ -281,7 +281,7 @@ function getResults(page = 1) {
         </div>
         <!-- Table Section -->
         <div class="mb-[100px]">
-            <table class="min-w-full border border-collapse">
+            <table class="min-w-full">
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="text-xs p-2 text-left text-black">SN</th>
@@ -300,6 +300,7 @@ function getResults(page = 1) {
                         <td colspan="9" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
                     </tr>
                     <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id"
+                        class="border-b border-black"
                         >
                         <td class="px-4 py-2 p-2">{{ index + 1 }}</td>
                         <td class="px-4 py-2 p-2">{{ liquidate.liquidate_id }}</td>
@@ -347,7 +348,7 @@ function getResults(page = 1) {
                                     </svg>
                                 </button>
                                 <div v-show="activeDropdown === liquidate.id"
-                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48">
+                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg py-1 w-48">
                                     <a v-for="attachment in parseAttachments(liquidate.attachments)"
                                         :key="attachment.name" :href="attachment.url" target="_blank"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"

@@ -112,9 +112,9 @@
                     :class="{ active: route().current('reports.*') }" @click="setCurrentPage('reports')">
                 <div class="menu-content">
                     <div class="menu-icon">
-                        <img v-if="route().current('reports.*')" src="/assets/images/facility-b.png"
-                            class="facility-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 15px" />
+                        <img v-if="route().current('reports.*')" src="/assets/images/reports-b.png"
+                            class="reports-icon" style="height: 15px" />
+                        <img v-else src="/assets/images/reports-w.png" class="reports-icon" style="height: 15px" />
                     </div>
                     <span class="menu-text">Reports</span>
                 </div>
