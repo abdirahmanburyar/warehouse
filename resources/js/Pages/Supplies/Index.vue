@@ -28,12 +28,12 @@
                                 class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                                 role="menu" aria-orientation="vertical" aria-labelledby="back-order-menu">
                                 <div class="py-1" role="none">
-                                    <a @click="router.get(route('supplies.back-order'))"
+                                    <a @click="router.visit(route('supplies.back-order'))"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         Back Order
                                     </a>
-                                    <a @click="router.get(route('supplies.showBackOrder'))"
+                                    <a @click="router.visit(route('supplies.showBackOrder'))"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         View Back Order

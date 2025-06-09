@@ -126,10 +126,10 @@ class SupplyController extends Controller
     {
         try {
             // Join packing_list_differences, products, and packing_lists
-            $results = PackingListDifference::whereHas('packingList', function($query) use ($id) {
-                $query->where('purchase_order_id', $id);
+            $results = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
+                $query->where('packing_list_id', $id);
             })
-                ->with('product:id,name,productID','packingList')
+                ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number')
                 ->get();
 
             return response()->json($results, 200);
@@ -478,9 +478,9 @@ class SupplyController extends Controller
     }
 
     public function backOrder(Request $request){
-        $po = PurchaseOrder::select('id','po_number')->get();
+        $packingList = PackingList::whereHas('items.differences')->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
         return inertia("Supplies/BackOrder", [
-            'po' => $po
+            'packingList' => $packingList
         ]);
     }
 

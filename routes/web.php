@@ -233,7 +233,14 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/packing-list/store', [SupplyController::class, 'storePK'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.storePK');
         Route::delete('/purchase_orders/documents/{document}', [SupplyController::class, 'deleteDocument'])->name('supplies.deleteDocument');
 
+        // supplies.back-order
+        Route::get('/back-order', [SupplyController::class, 'backOrder'])->name('supplies.back-order');
 
+        // supplies.get-packingList
+        Route::get('/packing-list/{id}/get-back-order', [SupplyController::class, 'getBackOrder'])->name('supplies.get-back-order');
+
+        // supplies.showBackOrder
+        // Route::get('/showBackOrder', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
         // edit po - actions
         Route::post('/purchase_orders/{id}/review', [SupplyController::class, 'reviewPO'])->middleware(PermissionMiddleware::class . ':supply.review')->name('supplies.reviewPO');
         Route::post('/purchase_orders/{id}/approve', [SupplyController::class, 'approvePO'])->middleware(PermissionMiddleware::class . ':supply.approve')->name('supplies.approvePO');
