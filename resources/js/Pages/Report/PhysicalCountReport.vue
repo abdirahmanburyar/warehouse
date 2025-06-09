@@ -156,28 +156,28 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="flex justify-end mt-3 pr-6 pb-4">
-                    <button v-if="props.physicalCountReport.status === 'pending'" :disabled="isSubmitting" @click="submitPhysicalCount" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                        {{ isSubmitting ? "Submitting..." : "Submit" }}
+            </div>
+            <div class="flex justify-end mt-3 pr-6 pb-4">
+                <button v-if="props.physicalCountReport.status === 'pending'" :disabled="isSubmitting" @click="submitPhysicalCount" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    {{ isSubmitting ? "Submitting..." : "Submit" }}
+                </button>
+                <button v-else-if="props.physicalCountReport.status === 'submitted' && $page.props.auth.can.report_physical_count_review" type="button" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded-lg"
+                @click="reviewPhysicalCount">
+                    Review
+                </button>
+                <div v-else-if="props.physicalCountReport.status == 'reviewed' && $page.props.auth.can.report_physical_count_approve" class="flex gap-3">
+                    <button type="button" class="bg-green-300 hover:bg-green-400 text-black font-bold py-2 px-4 rounded-lg"
+                    @click="approvePhysicalCount"
+                    :disabled="isApproving"
+                    >
+                        {{ isApproving ? "Approving..." : "Approve" }}
                     </button>
-                    <button v-else-if="props.physicalCountReport.status === 'submitted' && $page.props.auth.can.report_physical_count_review" type="button" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded-lg"
-                    @click="reviewPhysicalCount">
-                        Review
+                    <button v-if="$page.props.auth.can.report_physical_count_approve" type="button" class="bg-red-300 hover:bg-red-400 text-black font-bold py-2 px-4 rounded-lg"
+                    @click="rejectPhysicalCount"
+                    :disabled="isRejecting"
+                    >
+                        {{ isRejecting ? "Rejecting..." : "Reject" }}
                     </button>
-                    <div v-else-if="props.physicalCountReport.status == 'reviewed' && $page.props.auth.can.report_physical_count_approve" class="flex gap-3">
-                        <button type="button" class="bg-green-300 hover:bg-green-400 text-black font-bold py-2 px-4 rounded-lg"
-                        @click="approvePhysicalCount"
-                        :disabled="isApproving"
-                        >
-                            {{ isApproving ? "Approving..." : "Approve" }}
-                        </button>
-                        <button v-if="$page.props.auth.can.report_physical_count_approve" type="button" class="bg-red-300 hover:bg-red-400 text-black font-bold py-2 px-4 rounded-lg"
-                        @click="rejectPhysicalCount"
-                        :disabled="isRejecting"
-                        >
-                            {{ isRejecting ? "Rejecting..." : "Reject" }}
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
