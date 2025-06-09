@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import Tab from './Tab.vue';
 import ActionModal from '@/Components/ActionModal.vue';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
@@ -27,7 +27,7 @@ const openLiquidateModal = (item) => {
 
 const isReviewing = ref(false);
 const reviewLiquidation = (id) => {
-    if (!id) return;    
+    if (!id) return;
     isReviewing.value = true;
     Swal.fire({
         title: 'Review Liquidation?',
@@ -51,11 +51,11 @@ const reviewLiquidation = (id) => {
                         reloadLiquidates();
                     });
                 })
-            .catch((error) => {
-                isReviewing.value = false;
-                console.error('Error reviewing liquidation:', error);
-                toast.error('An error occurred while reviewing the liquidation');
-            });
+                .catch((error) => {
+                    isReviewing.value = false;
+                    console.error('Error reviewing liquidation:', error);
+                    toast.error('An error occurred while reviewing the liquidation');
+                });
         } else {
             isReviewing.value = false;
         }
@@ -88,11 +88,11 @@ const approveLiquidation = async (id) => {
                         reloadLiquidates();
                     });
                 })
-            .catch((error) => {
-                isApproving.value = false;
-                console.error('Error approving liquidation:', error);
-                toast.error('An error occurred while approving the liquidation');
-            });
+                .catch((error) => {
+                    isApproving.value = false;
+                    console.error('Error approving liquidation:', error);
+                    toast.error('An error occurred while approving the liquidation');
+                });
         } else {
             isApproving.value = false;
         }
@@ -102,7 +102,7 @@ const approveLiquidation = async (id) => {
 const isRejecting = ref(false);
 const rejectLiquidation = async (id) => {
     if (!id) return;
-    
+
     try {
         const result = await Swal.fire({
             title: 'Reject Liquidation',
@@ -130,7 +130,7 @@ const rejectLiquidation = async (id) => {
             await axios.get(route('liquidate-disposal.liquidates.reject', id), {
                 reason: result.value
             });
-            
+
             await Swal.fire({
                 title: 'Success!',
                 text: 'Liquidation rejected successfully',
@@ -154,7 +154,7 @@ const rejectLiquidation = async (id) => {
 };
 
 // Method to rollback an approved liquidation
-const rollbackLiquidate = async (id: number) => {
+const rollbackLiquidate = async () => {
     if (confirm('Are you sure you want to rollback this liquidation? This will revert it to pending status.')) {
         isLoading.value = true;
         try {
@@ -165,9 +165,9 @@ const rollbackLiquidate = async (id: number) => {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 }
             });
-            
+
             const result = await response.json();
-            
+
             if (response.ok) {
                 toast.success('Liquidation rolled back successfully');
                 // Refresh the page to show updated data
@@ -205,13 +205,13 @@ const toggleDropdown = (id) => {
 const handleClickOutside = (event) => {
     const dropdowns = document.querySelectorAll('.attachments-dropdown');
     let clickedInside = false;
-    
+
     dropdowns.forEach(dropdown => {
         if (dropdown.contains(event.target)) {
             clickedInside = true;
         }
     });
-    
+
     if (!clickedInside) {
         activeDropdown.value = null;
     }
@@ -268,7 +268,9 @@ function getResults(page = 1) {
             <h2 class="text-xl font-semibold">Liquidation Records</h2>
         </div>
         <div class="mb-6 flex justify-between items-center">
-            <input type="text" v-model="search" placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..." class="w-[600px] form-control">
+            <input type="text" v-model="search"
+                placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
+                class="w-[600px] form-control">
             <select v-model="per_page" class="w-[200px] form-select">
                 <option value="2"> Per Page 2</option>
                 <option value="5"> Per Page 5</option>
@@ -298,7 +300,8 @@ function getResults(page = 1) {
                     <tr v-if="props.liquidates.data.length === 0">
                         <td colspan="9" class="px-4 py-8 text-center text-gray-500">No liquidation records found</td>
                     </tr>
-                    <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id" class="border-b border-gray-300">
+                    <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id"
+                        class="border-b border-gray-300">
                         <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">{{ liquidate.liquidate_id }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">
@@ -307,20 +310,25 @@ function getResults(page = 1) {
                         <td class="px-4 py-2 border-r border-gray-300 flex flex-col">
                             <span>Batch Number: {{ liquidate.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ liquidate.barcode || 'N/A' }}</span>
-                            <span>Expiry Date: {{ liquidate.expire_date ? moment(liquidate.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
+                            <span>Expiry Date: {{ liquidate.expire_date ?
+                                moment(liquidate.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
                             <span>Quantity: {{ liquidate.quantity || 'N/A' }}</span>
                             <span>UOM: {{ liquidate.uom || 'N/A' }}</span>
-                            <span v-if="liquidate.packing_list">Warehouse: {{ liquidate.packing_list?.warehouse?.name || 'N/A' }}</span>
-                            <span v-if="liquidate.packing_list">Location: {{ liquidate.packing_list?.location?.location || 'N/A' }}</span>
+                            <span v-if="liquidate.packing_list">Warehouse: {{ liquidate.packing_list?.warehouse?.name ||
+                                'N/A' }}</span>
+                            <span v-if="liquidate.packing_list">Location: {{ liquidate.packing_list?.location?.location
+                                || 'N/A' }}</span>
                             <span v-if="liquidate.transfer_id" class="text-blue-600 font-semibold">From Transfer</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            {{ liquidate.liquidated_at ? new Date(liquidate.liquidated_at).toLocaleDateString() : 'N/A' }}
+                            {{ liquidate.liquidated_at ? new Date(liquidate.liquidated_at).toLocaleDateString() : 'N/A'
+                            }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div class="flex flex-col">
                                 <div v-if="liquidate.transfer_id" class="mb-1">
-                                    <span class="font-semibold text-blue-600">Transfer ID:</span> {{ liquidate.transfer?.transferID || liquidate.transfer_id }}
+                                    <span class="font-semibold text-blue-600">Transfer ID:</span> {{
+                                        liquidate.transfer?.transferID || liquidate.transfer_id }}
                                 </div>
                                 <div>
                                     <span class="font-semibold">Note:</span> {{ liquidate.note || 'N/A' }}
@@ -328,28 +336,23 @@ function getResults(page = 1) {
                             </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            <div v-if="parseAttachments(liquidate.attachments).length > 0" class="relative attachments-dropdown">
-                                <button 
-                                    @click="toggleDropdown(liquidate.id)"
-                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm"
-                                >
+                            <div v-if="parseAttachments(liquidate.attachments).length > 0"
+                                class="relative attachments-dropdown">
+                                <button @click="toggleDropdown(liquidate.id)"
+                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm">
                                     <span>View Files ({{ parseAttachments(liquidate.attachments).length }})</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div 
-                                    v-show="activeDropdown === liquidate.id"
-                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48"
-                                >
-                                    <a 
-                                        v-for="attachment in parseAttachments(liquidate.attachments)" 
-                                        :key="attachment.name"
-                                        :href="attachment.url"
-                                        target="_blank"
+                                <div v-show="activeDropdown === liquidate.id"
+                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48">
+                                    <a v-for="attachment in parseAttachments(liquidate.attachments)"
+                                        :key="attachment.name" :href="attachment.url" target="_blank"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                        @click="activeDropdown = null"
-                                    >
+                                        @click="activeDropdown = null">
                                         {{ attachment.name }}
                                     </a>
                                 </div>
@@ -360,22 +363,26 @@ function getResults(page = 1) {
                             <div class="flex flex-col gap-1">
                                 <!-- Always show Pending -->
                                 <span class="text-gray-600 text-sm">Pending</span>
-                                
+
                                 <!-- Show Reviewed if reviewed -->
                                 <template v-if="liquidate.reviewed_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-blue-600">Reviewed</span>
                                     </span>
                                 </template>
-                                
+
                                 <!-- Show Approved/Rejected if either one is present -->
                                 <template v-if="liquidate.approved_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-green-600">Approved</span>
                                     </span>
@@ -383,7 +390,9 @@ function getResults(page = 1) {
                                 <template v-if="liquidate.rejected_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-red-600">Rejected</span>
                                     </span>
@@ -394,43 +403,35 @@ function getResults(page = 1) {
                             <div v-if="liquidate.approved_at" class="text-gray-600 text-sm">
                                 Closed (Approved)
                             </div>
-                            
+
                             <div v-else class="flex flex-col gap-2">
-                                <button 
-                                    v-if="!liquidate.reviewed_at" 
-                                    @click="reviewLiquidation(liquidate.id)" 
+                                <button v-if="!liquidate.reviewed_at" @click="reviewLiquidation(liquidate.id)"
                                     :disabled="isReviewing"
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm">
-                                    {{isReviewing ? 'Processing...' : 'Review'}}
+                                    {{ isReviewing ? 'Processing...' : 'Review' }}
                                 </button>
                                 <!-- Show approve/reject buttons after review -->
                                 <template v-if="liquidate.reviewed_at && !liquidate.approved_at">
                                     <div class="flex flex-col gap-2">
-                                        <button 
-                                            @click="approveLiquidation(liquidate.id)" 
-                                            :disabled="isApproving"
+                                        <button @click="approveLiquidation(liquidate.id)" :disabled="isApproving"
                                             class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm">
-                                            {{isApproving ? 'Processing...' : liquidate.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
+                                            {{ isApproving ? 'Processing...' : liquidate.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
                                         </button>
-                                        <button 
-                                            v-if="!liquidate.rejected_at"
-                                            @click="rejectLiquidation(liquidate.id)"
+                                        <button v-if="!liquidate.rejected_at" @click="rejectLiquidation(liquidate.id)"
                                             :disabled="isRejecting"
                                             class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm">
-                                            {{isRejecting ? 'Processing...' : 'Reject'}}
+                                            {{ isRejecting ? 'Processing...' : 'Reject' }}
                                         </button>
                                     </div>
                                 </template>
                             </div>
-                        </td>                       
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <div class="flex justify-end items-center mt-3">
-            <TailwindPagination :data="props.liquidates" 
-            @pagination-change-page="getResults"
-        />
+            <TailwindPagination :data="props.liquidates" @pagination-change-page="getResults" />
         </div>
     </Tab>
 </template>

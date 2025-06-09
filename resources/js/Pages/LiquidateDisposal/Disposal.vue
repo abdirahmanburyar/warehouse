@@ -1,6 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import Tab from './Tab.vue';
-import ActionModal from '@/Components/ActionModal.vue';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
@@ -66,7 +65,7 @@ const openDisposalModal = (disposal) => {
 const isReviewing = ref(false);
 const reviewDisposal = (id) => {
     console.log(id);
-    if (!id) return;    
+    if (!id) return;
     isReviewing.value = true;
     Swal.fire({
         title: 'Review Disposal?',
@@ -87,14 +86,14 @@ const reviewDisposal = (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                       reloadDisposals();
+                        reloadDisposals();
                     });
                 })
-            .catch((error) => {
-                isReviewing.value = false;
-                console.error('Error reviewing disposal:', error);
-                toast.error('An error occurred while reviewing the disposal');
-            });
+                .catch((error) => {
+                    isReviewing.value = false;
+                    console.error('Error reviewing disposal:', error);
+                    toast.error('An error occurred while reviewing the disposal');
+                });
         } else {
             isReviewing.value = false;
         }
@@ -124,14 +123,14 @@ const approveDisposal = async (id) => {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                       reloadDisposals();
+                        reloadDisposals();
                     });
                 })
-            .catch((error) => {
-                isApproving.value = false;
-                console.error('Error approving liquidation:', error);
-                toast.error('An error occurred while approving the liquidation');
-            });
+                .catch((error) => {
+                    isApproving.value = false;
+                    console.error('Error approving liquidation:', error);
+                    toast.error('An error occurred while approving the liquidation');
+                });
         } else {
             isApproving.value = false;
         }
@@ -148,13 +147,13 @@ const toggleDropdown = (id) => {
 const handleClickOutside = (event) => {
     const dropdowns = document.querySelectorAll('.attachments-dropdown');
     let clickedInside = false;
-    
+
     dropdowns.forEach(dropdown => {
         if (dropdown.contains(event.target)) {
             clickedInside = true;
         }
     });
-    
+
     if (!clickedInside) {
         activeDropdown.value = null;
     }
@@ -170,7 +169,7 @@ onUnmounted(() => {
 
 const rejectDisposal = async (id) => {
     if (!id) return;
-    
+
     try {
         const result = await Swal.fire({
             title: 'Reject Disposal',
@@ -198,7 +197,7 @@ const rejectDisposal = async (id) => {
             await axios.get(route('liquidate-disposal.disposals.reject', id), {
                 reason: result.value
             });
-            
+
             await Swal.fire({
                 title: 'Success!',
                 text: 'Disposal rejected successfully',
@@ -249,7 +248,9 @@ function getResults(page = 1) {
             <h2 class="text-xl font-semibold">Disposal Records</h2>
         </div>
         <div class="mb-6 flex justify-between items-center">
-            <input type="text" v-model="search" placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..." class="w-[600px] form-control">
+            <input type="text" v-model="search"
+                placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
+                class="w-[600px] form-control">
             <select v-model="per_page" class="w-[200px] form-select">
                 <option value="2"> Per Page 2</option>
                 <option value="5"> Per Page 5</option>
@@ -279,7 +280,8 @@ function getResults(page = 1) {
                     <tr v-if="props.disposals.data.length === 0">
                         <td colspan="9" class="px-4 py-8 text-center text-gray-500">No disposal records found</td>
                     </tr>
-                    <tr v-for="(disposal, index) in props.disposals.data" :key="disposal.id" class="border-b border-gray-300">
+                    <tr v-for="(disposal, index) in props.disposals.data" :key="disposal.id"
+                        class="border-b border-gray-300">
                         <td class="px-4 py-2 border-r border-gray-300">{{ index + 1 }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">{{ disposal.disposal_id }}</td>
                         <td class="px-4 py-2 border-r border-gray-300">
@@ -288,9 +290,12 @@ function getResults(page = 1) {
                         <td class="px-4 py-2 border-r border-gray-300 flex flex-col">
                             <span>Batch Number: {{ disposal.batch_number || 'N/A' }}</span>
                             <span>Barcode: {{ disposal.barcode || 'N/A' }}</span>
-                            <span>Expiry Date: {{ disposal.expire_date ? moment(disposal.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
-                            <span>Warehouse: {{ disposal.packing_list?.warehouse?.name || disposal.inventory?.warehouse?.name || 'N/A' }}</span>
-                            <span>Location: {{ disposal.packing_list?.location?.location || disposal.inventory?.location?.location || 'N/A' }}</span>
+                            <span>Expiry Date: {{ disposal.expire_date ?
+                                moment(disposal.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
+                            <span>Warehouse: {{ disposal.packing_list?.warehouse?.name ||
+                                disposal.inventory?.warehouse?.name || 'N/A' }}</span>
+                            <span>Location: {{ disposal.packing_list?.location?.location ||
+                                disposal.inventory?.location?.location || 'N/A' }}</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ disposal.disposed_at ? new Date(disposal.disposed_at).toLocaleDateString() : 'N/A' }}
@@ -298,44 +303,40 @@ function getResults(page = 1) {
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div class="flex flex-col">
                                 <div v-if="disposal.transfer" class="mb-1 bg-blue-50 px-2 py-1 rounded text-sm">
-                                    <span class="font-semibold">From Transfer:</span> 
+                                    <span class="font-semibold">From Transfer:</span>
                                     <span>{{ disposal.transfer.transferID || 'ID: ' + disposal.transfer.id }}</span>
                                     <span class="ml-2">{{ disposal.quantity }} {{ disposal.uom }}</span>
                                 </div>
                                 <div v-else-if="disposal.inventory" class="mb-1 bg-green-50 px-2 py-1 rounded text-sm">
-                                    <span class="font-semibold">From Inventory:</span> 
+                                    <span class="font-semibold">From Inventory:</span>
                                     <span>ID: {{ disposal.inventory.id }}</span>
                                 </div>
-                                <div v-else-if="disposal.packing_list" class="mb-1 bg-yellow-50 px-2 py-1 rounded text-sm">
-                                    <span class="font-semibold">From Packing List:</span> 
+                                <div v-else-if="disposal.packing_list"
+                                    class="mb-1 bg-yellow-50 px-2 py-1 rounded text-sm">
+                                    <span class="font-semibold">From Packing List:</span>
                                     <span>{{ disposal.packing_list.packing_list_number }}</span>
                                 </div>
                                 <div>{{ disposal.note || 'N/A' }}</div>
                             </div>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
-                            <div v-if="parseAttachments(disposal.attachments).length > 0" class="relative attachments-dropdown">
-                                <button 
-                                    @click="toggleDropdown(disposal.id)"
-                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm"
-                                >
+                            <div v-if="parseAttachments(disposal.attachments).length > 0"
+                                class="relative attachments-dropdown">
+                                <button @click="toggleDropdown(disposal.id)"
+                                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm">
                                     <span>View Files ({{ parseAttachments(disposal.attachments).length }})</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div 
-                                    v-show="activeDropdown === disposal.id"
-                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48"
-                                >
-                                    <a 
-                                        v-for="attachment in parseAttachments(disposal.attachments)" 
-                                        :key="attachment.name"
-                                        :href="attachment.url"
-                                        target="_blank"
+                                <div v-show="activeDropdown === disposal.id"
+                                    class="absolute z-10 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-48">
+                                    <a v-for="attachment in parseAttachments(disposal.attachments)"
+                                        :key="attachment.name" :href="attachment.url" target="_blank"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                        @click="activeDropdown = null"
-                                    >
+                                        @click="activeDropdown = null">
                                         {{ attachment.name }}
                                     </a>
                                 </div>
@@ -346,22 +347,26 @@ function getResults(page = 1) {
                             <div class="flex flex-col gap-1">
                                 <!-- Always show Pending -->
                                 <span class="text-gray-600 text-sm">Pending</span>
-                                
+
                                 <!-- Show Reviewed if reviewed -->
                                 <template v-if="disposal.reviewed_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-blue-600">Reviewed</span>
                                     </span>
                                 </template>
-                                
+
                                 <!-- Show Approved/Rejected if either one is present -->
                                 <template v-if="disposal.approved_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-green-600">Approved</span>
                                     </span>
@@ -369,7 +374,9 @@ function getResults(page = 1) {
                                 <template v-if="disposal.rejected_at">
                                     <span class="flex items-center text-sm">
                                         <svg class="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd"
+                                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                         <span class="text-red-600">Rejected</span>
                                     </span>
@@ -381,41 +388,33 @@ function getResults(page = 1) {
                                 Closed (Approved)
                             </div>
                             <div v-else class="flex flex-col gap-2">
-                                <button 
-                                    v-if="!disposal.reviewed_at" 
-                                    @click="reviewDisposal(disposal.id)" 
+                                <button v-if="!disposal.reviewed_at" @click="reviewDisposal(disposal.id)"
                                     :disabled="isReviewing"
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm">
-                                    {{isReviewing ? 'Processing...' : 'Review'}}
+                                    {{ isReviewing ? 'Processing...' : 'Review' }}
                                 </button>
                                 <!-- Show approve/reject buttons after review -->
                                 <template v-if="disposal.reviewed_at && !disposal.approved_at">
                                     <div class="flex flex-col gap-2">
-                                        <button 
-                                            @click="approveDisposal(disposal.id)" 
-                                            :disabled="isApproving"
+                                        <button @click="approveDisposal(disposal.id)" :disabled="isApproving"
                                             class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm">
-                                            {{isApproving ? 'Processing...' : disposal.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
+                                            {{ isApproving ? 'Processing...' : disposal.rejected_at ? 'Approve (After Revision)' : 'Approve'}}
                                         </button>
-                                        <button 
-                                            v-if="!disposal.rejected_at"
-                                            @click="rejectDisposal(disposal.id)"
+                                        <button v-if="!disposal.rejected_at" @click="rejectDisposal(disposal.id)"
                                             :disabled="isRejecting"
                                             class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm">
-                                            {{isRejecting ? 'Processing...' : 'Reject'}}
+                                            {{ isRejecting ? 'Processing...' : 'Reject' }}
                                         </button>
                                     </div>
                                 </template>
                             </div>
-                        </td>                       
+                        </td>
                     </tr>
                 </tbody>
             </table>
             <div class="flex justify-end items-center mt-3">
-                <TailwindPagination :data="props.disposals" 
-                @pagination-change-page="getResults"
-            />
+                <TailwindPagination :data="props.disposals" @pagination-change-page="getResults" />
             </div>
         </div>
-</Tab>
+    </Tab>
 </template>
