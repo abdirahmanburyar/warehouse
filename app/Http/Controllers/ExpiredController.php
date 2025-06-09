@@ -85,20 +85,19 @@ class ExpiredController extends Controller
         $paginatedInventories->setPath(url()->current());
     
         // Map inventory data for expiry-related flags
-        $paginatedInventories->getCollection()->transform(function($inventory) use ($now) {
-            $expiryDate = Carbon::parse($inventory->expiry_date);
-            $inventory->expired = $expiryDate->lt($now);
-            
+        $paginatedInventories->getCollection()->transform(function($inventory) {
+            $inventory->expiry_date = Carbon::parse($inventory->expiry_date);
+            $now = Carbon::now(); // ✅ keep it as Carbon
+        
+            $inventory->expired = $inventory->expiry_date->lt($now);
+        
             // Days until expiry: negative if expired, positive if in future
-            $inventory->days_until_expiry = $now->diffInDays($expiryDate, true);
-
-            logger()->info($inventory);
-            
+            $inventory->days_until_expiry = intval($now->diffInDays($inventory->expiry_date, false));
+                    
             // Normalize other flags
             $inventory->disposed = (bool) $inventory->disposed;
             $inventory->expiring_soon = !$inventory->expired && $inventory->days_until_expiry <= 180;
             
-    
             return $inventory;
         });
     

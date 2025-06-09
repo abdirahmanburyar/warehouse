@@ -46,23 +46,6 @@ const handleSubmit = async () => {
         return;
     }
 
-    console.log({
-            source_type: 'warehouse',
-            source_id: props.inventory.warehouse_id,
-            destination_type: transferType.value,
-            destination_id: selectedDestination.value.id,
-            items: [{
-                inventory_id: props.inventory.id,
-                product_id: props.inventory.product_id,
-                quantity: parseInt(quantityToTransfer.value),
-                batch_number: props.inventory.batch_number,
-                barcode: props.inventory.barcode || null,
-                expire_date: props.inventory.expiry_date || null,
-                uom: props.inventory.uom || null
-            }],
-            notes: `Transferred ${quantityToTransfer.value} items to ${selectedDestination.value.name}`
-        });
-
     Swal.fire({
         title: 'Confirm Transfer',
         html: `
@@ -132,7 +115,7 @@ const handleSubmit = async () => {
         description="Transfer expired or soon to be expired items to warehouse or facility"
         img="/assets/images/transfer.png">
         <form @submit.prevent="handleSubmit">
-            <div class="p-6 text-gray-900 mb-6">
+            <div class="p-1 text-gray-900 mb-6">
                 <div class="flex flex-col space-y-6">
                     <div class="flex items-start flex-col w-full gap-5 mb-6">
                         <div class="flex items-start gap-5">
@@ -152,36 +135,36 @@ const handleSubmit = async () => {
                         </div>
                     </div>
 
-                    <div class="border border-black overflow-hidden">
-                        <table class="min-w-full border-collapse">
-                            <thead>
-                                <tr class="border-b border-black">
+                    <div class="overflow-auto">
+                        <table class="w-full rounded-xl">
+                            <thead style="background-color: #f9fafb;" class="bg-blue-500">
+                                <tr class="">
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                         Item</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                         UOM</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                         Item Information</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                         Available Quantity</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                                         Quantity to Transfer</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b border-black">
-                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                <tr class="">
+                                    <td class="px-6 py-3 text-sm">
                                         {{ inventory.product.name }}
                                     </td>
-                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                    <td class="px-6 py-3 text-sm">
                                         {{ inventory.uom || 'N/A' }}
                                     </td>
-                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                    <td class="px-6 py-3 text-sm">
                                         <div class="space-y-1">
                                             <p>Batch Number: {{ inventory.batch_number }}</p>
                                             <p>Barcode: {{ inventory.barcode }}</p>
@@ -192,10 +175,10 @@ const handleSubmit = async () => {
 
                                         </div>
                                     </td>
-                                    <td class="px-6 py-3 text-sm font-medium border-r border-black">
+                                    <td class="px-6 py-3 text-sm font-medium">
                                         {{ inventory.quantity }}
                                     </td>
-                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                    <td class="px-6 py-3 text-sm">
                                         <input type="number" v-model="quantityToTransfer"
                                             class="w-full px-2 py-1 border border-gray-300 rounded" min="1"
                                             :max="inventory.quantity" placeholder="0" />

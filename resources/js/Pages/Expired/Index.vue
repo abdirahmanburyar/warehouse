@@ -2,35 +2,35 @@
     <AuthenticatedLayout description="Expired" title="Expired" img="/assets/images/expires.png">
         <div class="p-2 mb-[100px]">
             <div>
-                <div class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                     <div class="col-span-1 md:col-span-2 min-w-0">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <label class="block text-sm font-medium text-gray-700">Search</label>
                         <TextInput v-model="search" type="text" class="w-full"
                             placeholder="Search by item name, barcode" />
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <label class="block text-sm font-medium text-gray-700">Category</label>
                         <Multiselect v-model="category" :options="props.categories" :searchable="true"
                             :close-on-select="true" :show-labels="false" placeholder="Select a category"
                             :allow-empty="true" class="multiselect--with-icon w-full">
                         </Multiselect>
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Form</label>
+                        <label class="block text-sm font-medium text-gray-700">Dosage Form</label>
                         <Multiselect v-model="dosage" :options="props.dosage" :searchable="true" :close-on-select="true"
                             :show-labels="false" placeholder="Select a dosage form" :allow-empty="true"
                             class="multiselect--with-icon w-full">
                         </Multiselect>
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                        <label class="block text-sm font-medium text-gray-700">Warehouse</label>
                         <Multiselect v-model="warehouse" :options="props.warehouses" :searchable="true"
                             :close-on-select="true" :show-labels="false" placeholder="Select a warehouse"
                             :allow-empty="true" class="multiselect--with-icon multiselect--rounded w-full">
                         </Multiselect>
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                        <label class="block text-sm font-medium text-gray-700">Storage Location</label>
                         <Multiselect v-model="location" :options="loadedLocation" :searchable="true"
                             :close-on-select="true" :show-labels="false" placeholder="Select a S. Location"
                             :allow-empty="true" :disabled="warehouse == null"
@@ -38,7 +38,7 @@
                         </Multiselect>
                     </div>
                 </div>
-                <div class="flex justify-end mt-1">
+                <div class="flex justify-end">
                     <select v-model="per_page"
                         class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-1"
                         @change="props.filters.page = 1">
@@ -80,7 +80,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in filteredInventories.data" :key="item.id"
+                            <tr v-for="item in props.inventories.data" :key="item.id"
                                 :class="{ 'bg-yellow-50': item.expiring_soon }">
                                 <td class="p-2 text-xs text-gray-900">{{ item.product?.name }}</td>
                                 <td class="p-2 text-xs text-gray-500">{{ item.quantity }}</td>
@@ -97,26 +97,30 @@
                                 </td>
                                 <td class="p-2">
                                     <span v-if="item.expired"
-                                        class="inline-flex items-center text-xs font-medium bg-red-100 text-red-800">
+                                        class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium bg-red-100 text-red-800">
                                         Expired
                                     </span>
                                     <span v-else-if="item.expiring_soon"
-                                        class="inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800">
                                         Expiring Very Soon
                                     </span>
                                     <span v-else
-                                        class="inline-flex items-center text-xs font-medium bg-blue-100 text-blue-800">
+                                        class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium bg-blue-100 text-blue-800">
                                         Expiring Soon
                                     </span>
                                 </td>
                                 <td class="p-2 whitespace-nowrap text-xs text-gray-500">
-                                    <template v-if="item.is_expired">
+                                    <template v-if="item.expired">
                                         <button class="text-red-600 hover:text-red-900"
-                                            @click="disposeItem(item)">Dispose</button>
+                                            @click="disposeItem(item)">
+                                            <img src="/assets/images/Disposal.png" alt="Dispose" class="w-10">
+                                        </button>
                                     </template>
                                     <template v-else>
                                         <Link class="text-blue-600 hover:text-blue-900"
-                                            :href="route('expired.transfer', item.id)">Transfer</Link>
+                                            :href="route('expired.transfer', item.id)">
+                                            <img src="/assets/images/facility.png" alt="Transfer" class="w-10">
+                                        </Link>
                                     </template>
                                 </td>
                             </tr>
@@ -167,7 +171,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </AuthenticatedLayout>
 
@@ -180,22 +183,12 @@
             <div v-if="selectedItem" class="bg-gray-50 p-4 rounded-lg">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <p class="text-xs font-medium text-gray-500">Product ID</p>
-                        <p class="text-xs text-gray-900">{{ selectedItem.product_id }}</p>
-                    </div>
-                    <div>
                         <p class="text-xs font-medium text-gray-500">Product Name</p>
                         <p class="text-xs text-gray-900">{{ selectedItem.product_name }}</p>
-                    </div>
-                    <div>
                         <p class="text-xs font-medium text-gray-500">Batch Number</p>
                         <p class="text-xs text-gray-900">{{ selectedItem.batch_number }}</p>
-                    </div>
-                    <div>
                         <p class="text-xs font-medium text-gray-500">Barcode</p>
-                        <p class="text-xs text-gray-900">{{ selectedItem.barcode }}</p>
-                    </div>
-                    <div>
+                        <p class="text-xs text-gray-900">{{ selectedItem.barcode || 'N/A' }}</p>
                         <p class="text-xs font-medium text-gray-500">UOM</p>
                         <p class="text-xs text-gray-900">{{ selectedItem.uom }}</p>
                     </div>
@@ -302,14 +295,6 @@ const tabs = [
     { id: 'expired', name: 'Expired' },
 ]
 
-const filteredInventories = computed(() => {
-    if (activeTab.value === 'all') return props.inventories
-    if (activeTab.value === 'year') return props.inventories.data.filter(item => !item.expired && item.days_until_expiry <= 365)
-    if (activeTab.value === 'six_months') return props.inventories.data.filter(item => !item.expired && item.days_until_expiry <= 180)
-    if (activeTab.value === 'expired') return props.inventories.data.filter(item => item.expired)
-    return props.inventories.data;
-})
-
 const now = new Date()
 const sixMonthsFromNow = addMonths(now, 6)
 const oneYearFromNow = addYears(now, 1)
@@ -317,8 +302,6 @@ const oneYearFromNow = addYears(now, 1)
 const formatDate = (date) => {
     return moment(date).format('DD/MM/YYYY');
 }
-
-
 
 const showDisposeModal = ref(false);
 const selectedItem = ref(null);
