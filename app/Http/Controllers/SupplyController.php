@@ -1009,6 +1009,43 @@ class SupplyController extends Controller
         }
     }
 
+    public function uploadDocument(Request $request, $id)
+    {
+        try {
+            $po = PurchaseOrder::find($id);
+            if (!$po) {
+                return response()->json('Purchase order not found', 404);
+            }
+
+            $request->validate([
+                'document' => 'required|file|mimes:pdf'
+            ]);
+
+            $index = $po->documents()->count() + 1;
+            $file = $request->file('document');
+            $fileName = 'purchase_order_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('attachments/purchase_orders'), $fileName);
+
+            $po->documents()->create([
+                'purchase_order_id' => $po->id,
+                'document_type' => 'purchase_order',
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => '/attachments/purchase_orders/' . $fileName,
+                'mime_type' => $file->getClientMimeType(),
+                'file_size' => filesize(public_path('attachments/purchase_orders/' . $fileName)),
+                'uploaded_by' => auth()->id(),
+                'uploaded_at' => now()->toDateTimeString()
+            ]);
+
+            return response()->json('Document uploaded successfully', 200);
+
+        } catch (\Throwable $th) {
+            logger()->error('Upload failed: ' . $th->getMessage());
+            return response()->json('Upload failed: The uploaded file could not be saved.', 500);
+        }
+    }
+
+
     /**
      * Get items for a specific supply
      */

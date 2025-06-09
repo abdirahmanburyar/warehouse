@@ -1,5 +1,8 @@
 <template>
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :title="props.po.po_number" description="Purchase Order Details" img="/assets/images/orders.png">
+        <Head>
+            <title>{{ props.po.po_number }}</title>
+        </Head>
         <div class="flex justify-end space-x-4 mb-4 px-4">
             <Link
                 :href="route('supplies.index')"
@@ -271,6 +274,12 @@
                     <div v-else class="text-sm text-gray-500">
                         No documents attached
                     </div>
+                    <form @submit.prevent="submitForm" class="mt-8">
+                        <input type="file" accept="application/pdf" @change="onFileChange" class="w-full px-3 py-2 border-0 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                        <button type="submit" :disabled="isUploading" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                            {{ isUploading ? 'Uploading...' : 'Upload'}}
+                        </button>
+                    </form>                   
                 </div>
             </div>
         </div>
@@ -279,11 +288,13 @@
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
 import { ref } from "vue";
 import { jsPDF } from "jspdf";
 import moment from "moment";
 import autoTable from "jspdf-autotable";
+import {useToast} from "vue-toastification";
+import axios from "axios";
 import {
     ArrowLeftIcon,
     DocumentArrowDownIcon,
@@ -297,6 +308,8 @@ const props = defineProps({
         type: Object,
     },
 });
+
+const toast = useToast();
 
 const getStatusClass = () => {
     const classes = "px-3 py-1 rounded-full text-sm font-medium";
@@ -326,6 +339,31 @@ const formatNumber = (number) => {
         maximumFractionDigits: 2,
     }).format(number);
 };
+
+const document = ref(null);
+
+function onFileChange(e) {
+    document.value = e.target.files[0];
+}
+
+const isUploading = ref(false);
+
+async function submitForm(){
+    isUploading.value = true;
+    const formData = new FormData();
+    formData.append('document', document.value);
+    await axios.post(route('supplies.uploadDocument', props.po.id), formData)
+        .then(response => {
+            isUploading.value = false;
+            toast.success('Document uploaded successfully');
+            document.value = null;
+            router.reload();
+        })
+        .catch(error => {
+            isUploading.value = false;
+            toast.error(error.response.data);
+        });
+}
 
 const downloadPdf = async () => {
     // Initialize jsPDF

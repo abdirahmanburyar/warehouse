@@ -222,6 +222,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // supplies.deletePO
         Route::get('/{id}/delete', [SupplyController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':supply.delete')->name('supplies.deletePO');
+
+        // supplies.uploadDocument
+        Route::post('/{id}/upload-document', [SupplyController::class, 'uploadDocument'])->name('supplies.uploadDocument');
         Route::get('/create', [SupplyController::class, 'create'])->middleware(PermissionMiddleware::class . ':supply.create')->name('supplies.create');
         Route::get('/show', [SupplyController::class, 'show'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.show');
         Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.po-show');
