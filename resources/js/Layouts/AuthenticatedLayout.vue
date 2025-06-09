@@ -458,7 +458,7 @@ const logout = () => {
     margin-right: -25px;
     padding-right: 25px;
     z-index: 5;
-    height: 46px;
+    height: 32;
     display: flex;
     align-items: center;
     width: 100%;

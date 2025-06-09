@@ -10,7 +10,6 @@ import {
 import { Head, router, Link } from "@inertiajs/vue3";
 import Echo from "laravel-echo";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import Pagination from "@/Components/Pagination.vue";
 import TextInput from "@/Components/TextInput.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";

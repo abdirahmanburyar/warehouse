@@ -166,10 +166,10 @@ class InventoryController extends Controller
 
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),
+            'inventoryStatusCounts' => $inventoryStatusCounts,
             'products' => $products,
             'warehouses' => $warehouses,
             'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page'),
-            'inventoryStatusCounts' => $inventoryStatusCounts,
             'category' => Category::pluck('name')->toArray(),
             'dosage' => Dosage::pluck('name')->toArray(),
         ]);

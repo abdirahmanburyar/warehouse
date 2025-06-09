@@ -9,6 +9,8 @@ use App\Models\Warehouse;
 use App\Models\Disposal;
 use App\Models\Transfer;
 use App\Models\Facility;
+use App\Models\Category;
+use App\Models\Dosage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,42 +23,106 @@ class ExpiredController extends Controller
         $now = Carbon::now();
         $sixMonthsFromNow = $now->copy()->addMonths(6);
         $oneYearFromNow = $now->copy()->addYear();
-
-        $inventories = Inventory::query()
-            ->select('inventories.*', 'products.name as product_name')
-            ->join('products', 'products.id', '=', 'inventories.product_id')
-            ->where('quantity', '>', 0)
-            ->where(function($query) use ($now, $oneYearFromNow) {
-                $query->where('expiry_date', '<=', $oneYearFromNow) // Items expiring within next year
-                      ->orWhere('expiry_date', '<', $now); // Already expired items
-            })
-            ->orderBy('expiry_date', 'asc')
-            ->get()
-            ->map(function($inventory) use ($now) {
-                // Calculate days until expiry
-                $expiryDate = Carbon::parse($inventory->expiry_date);
-                $daysUntilExpiry = ceil($now->floatDiffInDays($expiryDate, false));
-                
-                $inventory->expired = $expiryDate < $now;
-                $inventory->days_until_expiry = $daysUntilExpiry;
-                $inventory->disposed = (bool) $inventory->disposed;
-                
-                // Only mark as expiring soon if not expired and within 6 months
-                $inventory->expiring_soon = !$inventory->expired && $daysUntilExpiry > 0 && $daysUntilExpiry <= 180;
-                return $inventory;
+    
+        $query = Inventory::query();
+    
+        $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse', 'location:id,location']);
+    
+        $query->where('quantity', '>', 0)
+              ->where(function($q) use ($now, $oneYearFromNow) {
+                  $q->where('expiry_date', '<=', $oneYearFromNow)
+                    ->orWhere('expiry_date', '<', $now);
+              });
+    
+        // Filters
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('barcode', 'like', "%{$search}%")
+                  ->orWhere('batch_number', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($prodQ) use ($search) {
+                      $prodQ->where('name', 'like', "%{$search}%");
+                  });
             });
+        }
+    
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+    
+        if ($request->filled('category')) {
+            $query->whereHas('product.category', function ($q) use ($request) {
+                $q->where('name', $request->category);
+            });
+        }
+    
+        if ($request->filled('dosage')) {
+            $query->whereHas('product.dosage', function ($q) use ($request) {
+                $q->where('name', $request->dosage);
+            });
+        }
+    
+        if ($request->filled('warehouse')) {
+            $query->whereHas('warehouse', function($q) use($request){
+                $q->where('name', 'like', "%{$request->warehouse}%");
+            });
+        }
+    
+        if ($request->filled('location')) {
+            $query->whereHas('location', function($q) use($request){
+                $q->where('location', 'like', "%{$request->location}%");
+            });
+        }
+    
+        // ✅ Paginate while still a query builder
+        $paginatedInventories = $query->paginate(
+            $request->input('per_page', 2),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+    
+        $paginatedInventories->setPath(url()->current());
+    
+        // Map inventory data for expiry-related flags
+        $paginatedInventories->getCollection()->transform(function($inventory) use ($now) {
+            $expiryDate = Carbon::parse($inventory->expiry_date);
+            $inventory->expired = $expiryDate->lt($now);
+            
+            // Days until expiry: negative if expired, positive if in future
+            $inventory->days_until_expiry = $now->diffInDays($expiryDate, true);
 
+            logger()->info($inventory);
+            
+            // Normalize other flags
+            $inventory->disposed = (bool) $inventory->disposed;
+            $inventory->expiring_soon = !$inventory->expired && $inventory->days_until_expiry <= 180;
+            
+    
+            return $inventory;
+        });
+    
+        $products = Product::select('id', 'name')->get();
+        $warehouses = Warehouse::pluck('name')->toArray();
+        $category = Category::pluck('name')->toArray();
+        $dosage = Dosage::pluck('name')->toArray();
+    
         return inertia('Expired/Index', [
-            'inventories' => $inventories,
+            'inventories' => ExpiredResource::collection($paginatedInventories),
             'summary' => [
-                'total' => $inventories->count(),
-                'expiring_within_6_months' => $inventories->where('expiring_soon', true)->count(),
-                'expiring_within_1_year' => $inventories->where('expired', false)
-                    ->where('days_until_expiry', '<=', 365)->count(),
-                'expired' => $inventories->where('expired', true)->count()
-            ]
+                'total' => $paginatedInventories->total(),
+                'expiring_within_6_months' => $paginatedInventories->getCollection()->where('expiring_soon', true)->count(),
+                'expiring_within_1_year' => $paginatedInventories->getCollection()->where('expired', false)->where('days_until_expiry', '<=', 365)->count(),
+                'expired' => $paginatedInventories->getCollection()->where('expired', true)->count(),
+            ],
+            'products' => $products,
+            'warehouses' => $warehouses,
+            'categories' => $category,
+            'dosage' => $dosage,
+            'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page'),
         ]);
     }
+    
 
     public function dispose(Request $request)
     {
