@@ -1167,7 +1167,7 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $order = Order::where('orders.id', $id)
-                ->with(['items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location', 'facility', 'user'])
+                ->with(['items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user'])
                 ->first();
 
             // Get items with SOH using subquery

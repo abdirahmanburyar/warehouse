@@ -149,65 +149,50 @@
                   :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('dispatched') ? '' : 'opacity-40'" />
               </div>
               <span class="mt-3 text-lg font-bold"
-                :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('dispatched') ? 'text-green-600' : 'text-gray-500'">Dispatch</span>
+                :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('dispatched') ? 'text-green-600' : 'text-gray-500'">Dispatched</span>
             </div>
 
             <!-- Received -->
             <div class="flex flex-col items-center">
-              <div class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10" :class="[statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ?
-                (props.order.has_back_order ? 'bg-white border-orange-500' : 'bg-green-500 border-green-600') :
-                'bg-white border-gray-200']">
-                <img
-                  v-if="props.order.has_back_order && statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received')"
-                  src="/assets/images/received.png" class="w-10 h-10" alt="Partially Received" />
-                <img v-else-if="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received')"
-                  src="/assets/images/check.svg" class="w-10 h-10" alt="Completed" />
-                <img v-else src="/assets/images/received.png" class="w-10 h-10 opacity-40" alt="Received" />
+              <div class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                :class="[statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ? 'bg-white border-green-500' : 'bg-white border-gray-200']">
+                <img src="/assets/images/received.png" class="w-10 h-10" alt="Received"
+                  :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ? '' : 'opacity-40'" />
               </div>
-              <span class="mt-3 text-lg font-bold" :class="[statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ?
-                (props.order.has_back_order ? 'text-orange-600' : 'text-green-600') :
-                'text-gray-500']">
-                {{ statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ?
-                  (props.order.has_back_order ? 'Partially Received' : 'Completed') : 'Received' }}
-              </span>
-              <button
-                v-if="props.order.has_back_order && statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received')"
-                @click="showBackOrderModal()"
-                class="mt-1 text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer">
-                View Back Order
-              </button>
+              <span class="mt-3 text-lg font-bold"
+                :class="statusOrder.indexOf(props.order.status) >= statusOrder.indexOf('received') ? 'text-green-600' : 'text-gray-500'">Received</span>
             </div>
           </div>
         </div>
       </div>
       <!-- Order Items Table -->
       <h2 class="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
-      <table class="min-w-full border border-black mb-4">
-        <thead>
+      <table class="min-w-full">
+        <thead class="bg-blue-500">
           <tr class="bg-gray-50">
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">Item
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">Item
             </th>
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">
               Facility
               Indicators</th>
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">Ordered
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">Ordered
               Quantity</th>
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">
               Quantity to
               release</th>
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">Days
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">Days
             </th>
-            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase border border-black">Actions</th>
+            <th class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="(item, index) in form" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150">
-            <td class="px-3 py-3 text-sm text-gray-900 border border-black">
+        <tbody>
+          <tr v-for="(item, index) in form" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150 border-b">
+            <td class="px-3 py-3 text-sm text-gray-900">
               <div class="flex flex-col">
                 <span class="font-medium text-sm">{{ item.product?.name }}</span>
               </div>
             </td>
-            <td class="px-3 py-3 text-sm text-gray-900 border border-black">
+            <td class="px-3 py-3 text-sm text-gray-900">
               <div class="flex flex-col space-y-1 text-sm">
                 <div class="flex">
                   <span class="font-medium w-12">SOH:</span>
@@ -223,21 +208,27 @@
                 </div>
               </div>
             </td>
-            <td class="px-3 py-3 text-sm text-gray-900 border border-black">
+            <td class="px-3 py-3 text-sm text-gray-900">
               {{ item.quantity }}
             </td>
-            <td class="px-3 py-3 text-sm text-gray-900 border border-black">
-              <div class="flex justify-between items-start gap-2">
+            <td class="px-3 py-3 text-sm text-gray-900">
+              <div class="flex justify-between items-center gap-2">
                 <div class="w-[30%]">
                   <input type="number" placeholder="0" v-model="item.quantity_to_release"
                     @keydown.enter="updateQuantity(item)"
                     :readonly="isUpading || props.order.status != 'pending'"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
+                    class="w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
+                    <input type="number" placeholder="0" v-model="item.received_quantity"
+                      readonly
+                    class="w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
                     <span v-if="isUpading" class="text-green-500 text-md">Updating...</span>
+                    <button @click="showBackOrderModal(item)" 
+                    v-if="item.inventory_allocations && item.inventory_allocations.some(allocation => allocation.back_order && allocation.back_order.length > 0)"
+                    class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer">Show Back Order</button>
                 </div>
                 <div class="border rounded-md overflow-hidden text-sm flex-1">
-                  <table class="min-w-full divide-y divide-gray-200">
-                    <tbody class="bg-white divide-y divide-gray-200">
+                  <table class="min-w-full">
+                    <tbody class="bg-white">
                       <tr v-for="inv in item.inventory_allocations" :key="inv.id" class="hover:bg-gray-100">
                         <td class="px-2 py-1">
                           <div class="font-medium">QTY: {{ inv.allocated_quantity }}</div>
@@ -252,13 +243,13 @@
                 </div>
               </div>
             </td>
-            <td class="px-3 py-3 text-sm text-gray-900 border border-black">
+            <td class="px-3 py-3 text-sm text-gray-900">
               <div class="w-full flex justify-center">
                 <input type="number" v-model="item.no_of_days" readonly
                   class="w-[70%] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" />
               </div>
             </td>
-            <td class="px-2 py-3 text-sm text-gray-900 w-10 border border-black">
+            <td class="px-2 py-3 text-sm text-gray-900 w-10">
               <div class="flex flex-col space-y-2">
                 <button type="button"
                   class="inline-flex items-center justify-center w-8 h-8 bg-red-100 border border-transparent rounded text-sm text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -410,25 +401,13 @@
               <span class="text-sm font-bold">Rejected</span>
             </div>
 
-            <!-- Status indicator for received status -->
-            <div v-if="props.order.status === 'received'" 
-              :class="[props.order.has_back_order ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800']" 
-              class="inline-flex items-center justify-center px-4 py-2 rounded-lg min-w-[160px]">
-              <svg v-if="!props.order.has_back_order" class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9,16.17 L4.83,12 L3.41,13.41 L9,19 L21,7 L19.59,5.59 L9,16.17 Z" fill="currentColor" />
-              </svg>
-              <span class="text-sm font-bold">{{ props.order.has_back_order ? 'Partially Received' : 'Completed' }}</span>
-              <button v-if="props.order.has_back_order" @click="showBackOrderModal()" class="ml-2 underline hover:text-orange-900 focus:outline-none text-xs">
-                View Back Order
-              </button>
-            </div>
           </div>
         </div>
 
       </div>
     <!-- Back Order Modal -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+      <div class="bg-white rounded-lg shadow-xl w-full h-full overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center">
           <h3 class="text-lg font-medium text-gray-900">Back Order Details</h3>
           <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
@@ -437,40 +416,39 @@
             </svg>
           </button>
         </div>
-        <div class="p-4 overflow-y-auto max-h-[60vh]">
+        <div class="p-4 overflow-y-auto h-full">
           <div class="mb-4">
             <span class="text-sm font-medium text-gray-700">Order #{{ props.order.id }}</span>
             <h2 class="text-xl font-bold text-gray-900">Back Ordered Items</h2>
           </div>
-          <div class="overflow-x-auto">
+          <div class="overflow-auto">
             <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th
-                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Item</th>
-                  <th
-                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Ordered Qty</th>
-                  <th
-                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Received Qty</th>
-                  <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Back Order
-                    Qty
-                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Requested Quantity</th>
+                  <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Back Order</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="item in backOrderItems" :key="item.id" class="hover:bg-gray-50">
-                  <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">{{ item.product?.name }}</td>
-                  <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">{{ item.quantity }}</td>
-                  <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">{{ item.received_quantity || 0 }}
-                  </td>
+                <tr v-for="item in selectedBackOrder" :key="item.id" class="hover:bg-gray-50">
+                  <td class="px-3 py-3 text-sm text-gray-900 border-r border-gray-200">{{ item.allocated_quantity }}</td>
                   <td class="px-3 py-3 text-sm text-gray-900">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      {{ item.quantity - (item.received_quantity || 0) }}
-                    </span>
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white">
+                          <tr v-for="backOrder in item.back_order" :key="backOrder.id">
+                            <td class="px-3 py-3 text-sm text-gray-900">{{ backOrder.quantity }}</td>
+                            <td class="px-3 py-3 text-sm text-gray-900">{{ backOrder.type }}</td>
+                            <td class="px-3 py-3 text-sm text-gray-900">{{ backOrder.notes }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
                   </td>
                 </tr>
               </tbody>
@@ -515,20 +493,14 @@ const props = defineProps({
 });
 
 const showModal = ref(false);
+const selectedBackOrder = ref(null);
 
 // Function to show the back order modal
-const showBackOrderModal = () => {
+const showBackOrderModal = (item) => {
+  selectedBackOrder.value = null;
   showModal.value = true;
+  selectedBackOrder.value = item?.inventory_allocations;
 };
-
-// Computed property to get back order items
-const backOrderItems = computed(() => {
-  if (!props.order.items) return [];
-  return props.order.items.filter(item => {
-    return item.received_quantity !== undefined &&
-      item.received_quantity < item.quantity;
-  });
-});
 
 const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-800 rounded-full font-bold',
