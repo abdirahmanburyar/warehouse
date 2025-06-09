@@ -1019,6 +1019,10 @@ class SupplyController extends Controller
 
             $request->validate([
                 'document' => 'required|file|mimes:pdf'
+            ],[
+                'document.required' => 'Document is required',
+                'document.file' => 'Document must be a file',
+                'document.mimes' => 'Document must be a PDF file'
             ]);
 
             $index = $po->documents()->count() + 1;
