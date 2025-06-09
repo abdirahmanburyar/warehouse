@@ -94,7 +94,8 @@ class TransferController extends Controller
     {
         // Start building the query
         $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items')
-            ->withCount('items');
+            ->withCount('items')
+            ->latest('transfer_date');
         
         // Apply filters
         // Filter by tab/status
