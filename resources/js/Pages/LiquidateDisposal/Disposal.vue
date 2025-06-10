@@ -413,7 +413,7 @@ function getResults(page = 1) {
                 </tbody>
             </table>
             <div class="flex justify-end items-center mt-3">
-                <TailwindPagination :data="props.disposals" @pagination-change-page="getResults" />
+                <TailwindPagination :data="props.disposals" :limit="2" @pagination-change-page="getResults" />
             </div>
         </div>
     </Tab>
