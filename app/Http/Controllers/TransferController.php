@@ -226,7 +226,7 @@ class TransferController extends Controller
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.batch_number' => 'required|string',
                 'items.*.barcode' => 'nullable|string',
-                'items.*.expire_date' => 'nullable|date',
+                'items.*.expiry_date' => 'nullable|date',
                 'items.*.uom' => 'nullable|string',
                 'notes' => 'nullable|string|max:500'
             ]);
@@ -285,7 +285,7 @@ class TransferController extends Controller
                     'uom' => $item['uom'] ?? '',
                     'quantity' => $item['quantity'],
                     'batch_number' => $item['batch_number'],
-                    'expire_date' => $item['expire_date'] ?? null,
+                    'expire_date' => $item['expiry_date'] ?? null,
                 ]);
                 
                 // Update inventory quantity
@@ -303,7 +303,7 @@ class TransferController extends Controller
                         'barcode' => $item['barcode'] ?? '',
                         'uom' => $item['uom'] ?? '',
                         'batch_number' => $item['batch_number'],
-                        'expiry_date' => $item['expire_date'] ?? null,
+                        'expiry_date' => $item['expiry_date'] ?? null,
                         'issued_by' => auth()->user()->id,
                     ]);
                 }
@@ -345,6 +345,7 @@ class TransferController extends Controller
             return response()->json('Transfer created successfully', 200);
         } catch (\Exception $e) {
             DB::rollback();
+            logger()->info($request->all());
             return response()->json('Failed to create transfer: ' . $e->getMessage(), 500);
         }
     }
