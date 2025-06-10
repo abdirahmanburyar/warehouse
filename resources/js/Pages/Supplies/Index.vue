@@ -29,12 +29,12 @@
                                 role="menu" aria-orientation="vertical" aria-labelledby="back-order-menu">
                                 <div class="py-1" role="none">
                                     <a @click="router.visit(route('supplies.back-order'))"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         Back Order
                                     </a>
                                     <a @click="router.visit(route('supplies.showBackOrder'))"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         View Back Order
                                     </a>
@@ -64,12 +64,12 @@
                                 role="menu" aria-orientation="vertical" aria-labelledby="supply-menu">
                                 <div class="py-1" role="none">
                                     <a @click="router.get(route('supplies.packing-list'))"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         Receive New PL
                                     </a>
                                     <a @click="router.get(route('supplies.packing-list.showPK'))"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         View PL Lists
                                     </a>
@@ -110,12 +110,12 @@
                                 role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                                 <div class="py-1" role="none">
                                     <a @click="navigateToCreateSupplier"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                                         role="menuitem">
                                         Create Supplier
                                     </a>
                                     <a href="#" @click="navigateToViewSupplier"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                         role="menuitem">
                                         View Suppliers
                                     </a>
@@ -128,12 +128,12 @@
                 <!-- Search and Filter Row -->
                 <div class="flex flex-wrap justify-between w-full px-2 mb-6">
                     <div class="flex-1 mr-2">
-                        <label for="search" class="text-sm font-medium text-gray-700">Search</label>
+                        <label for="search" class="text-xs font-medium text-gray-700">Search</label>
                         <input type="text" v-model="search" placeholder="Search by PO number, supplier or status..."
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
                     </div>
                     <div class="flex-1 mx-2">
-                        <label for="supplier" class="text-sm font-medium text-gray-700">Supplier</label>
+                        <label for="supplier" class="text-xs font-medium text-gray-700">Supplier</label>
                         <select v-model="supplier"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                             <option value="">Filter by Supplier</option>
@@ -141,7 +141,7 @@
                         </select>
                     </div>
                     <div class="flex-1 ml-2">
-                        <label for="status" class="text-sm font-medium text-gray-700">Status</label>
+                        <label for="status" class="text-xs font-medium text-gray-700">Status</label>
                         <select v-model="status"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                             <option value="">Filter by Status</option>
@@ -151,7 +151,7 @@
                         </select>
                     </div>
                     <div class="flex-1 ml-2 w-[100px]">
-                        <label for="per_page" class="text-sm font-medium text-gray-700">Per Page</label>
+                        <label for="per_page" class="text-xs font-medium text-gray-700">Per Page</label>
                         <select v-model="per_page" @change="props.filters.page = 1"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                             <option value="10">10</option>
@@ -167,11 +167,11 @@
                     <div class="bg-[#F7DC6F] rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-black-600">Supply Received</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ stats.total_items }}</p>
+                                <p class="text-xs font-medium text-black-600">Supply Received</p>
+                                <p class="text-xs font-semibold text-gray-900">{{ stats.total_items }}</p>
                             </div>
                             <div class="p-3 bg-orange-100 rounded-full">
-                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor"
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -183,12 +183,12 @@
                     <div class="bg-green-500 rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Cost of Supplies Received</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ formatCurrency(stats.total_cost) }}
+                                <p class="text-xs font-medium">Cost of Supplies Received</p>
+                                <p class="text-xs font-semibold text-gray-900">{{ formatCurrency(stats.total_cost) }}
                                 </p>
                             </div>
                             <div class="p-3 bg-green-100 rounded-full">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -203,20 +203,20 @@
                                 <div class="flex flex-col w-full">
                                     <div class="flex items-center gap-5">
                                         <p class="text-xs font-bold text-black-600">Max Lead Time</p>
-                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
+                                        <p class="text-xs text-gray-900 text-center">{{ stats.lead_times?.max }}</p>
                                     </div>
                                     <div class="flex items-center gap-5 ">
                                         <p class="text-xs font-bold text-black-600">Avg Lead Time</p>
-                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
+                                        <p class="text-xs text-gray-900 text-center">{{ stats.lead_times?.avg }}</p>
                                     </div>
                                     <div class="flex items-center gap-5">
                                         <p class="text-xs font-bold text-black-600">Low Lead Time</p>
-                                        <p class="text-lg text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
+                                        <p class="text-xs text-gray-900 text-center">{{ stats.lead_times?.low }}</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="p-3 bg-red-100 rounded-full">
-                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -227,11 +227,11 @@
                     <div class="bg-teal-500 rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-black-600">Number of Back Orders</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ stats.back_orders }}</p>
+                                <p class="text-xs font-medium text-black-600">Number of Back Orders</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ stats.back_orders }}</p>
                             </div>
                             <div class="p-3 bg-teal-100 rounded-full">
-                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor"
+                                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -243,11 +243,11 @@
                     <div class="bg-[#9333EA] rounded-lg shadow-sm p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-black-600">Requested Purchase Orders</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ stats.pending_orders }}</p>
+                                <p class="text-xs font-medium text-black-600">Requested Purchase Orders</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ stats.pending_orders }}</p>
                             </div>
                             <div class="p-3 bg-purple-100 rounded-full">
-                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor"
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -267,53 +267,53 @@
                                     <table class="min-w-full text-left border-b border-gray-200">
                                         <thead class="bg-white sticky top-0 z-10">
                                             <tr>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     SN#
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     PO Number
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     Supplier
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     P.O Date
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     Total Amount
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     Status
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-sm text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
                                                     Actions
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="(po, i) in props.purchaseOrders.data" :key="po.id" class="border-b border-gray-100">
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black text-left">{{ i + 1 }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black text-left">
+                                                <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-black text-left">{{ i + 1 }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-black text-left">
                                                     <Link :href="route('supplies.editPO', po.id)"
                                                         class="text-indigo-600 hover:text-indigo-900">
                                                     {{ po.po_number }}
                                                     </Link>
                                                 </td>
                                                 <td
-                                                    class="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                                    class="px-6 py-4 whitespace-nowrap text-xs text-black">
                                                     {{ po.supplier?.name || 'No supplier' }}
                                                 </td>
                                                 <td
-                                                    class="px-6 py-4 whitespace-nowrap text-sm text-black text-left">
+                                                    class="px-6 py-4 whitespace-nowrap text-xs text-black text-left">
                                                     {{ moment(po.po_date).format('DD/MM/YYYY') }}
                                                 </td>
                                                 <td
-                                                    class="px-6 py-4 whitespace-nowrap text-sm text-black text-left">
+                                                    class="px-6 py-4 whitespace-nowrap text-xs text-black text-left">
                                                     {{formatCurrency(po.items?.reduce((sum, item) => sum +
                                                         (item.total_cost || 0),
                                                     0) || 0) }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <td class="px-6 py-4 whitespace-nowrap text-xs">
                                                     <div class="flex items-center space-x-4">
                                                         <!-- Always show Pending Icon (all statuses start as pending) -->
                                                         <img src="/assets/images/pending.png" class="w-12 h-12"
@@ -344,7 +344,7 @@
                                                     </div>
                                                 </td>
                                                 <td
-                                                    class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium space-x-2">
+                                                    class="px-6 py-4 whitespace-nowrap text-left text-xs font-medium space-x-2">
                                                     <button @click="router.visit(route('supplies.po-show', po.id))"
                                                         class="text-gray-600 hover:text-gray-900">
                                                         <EyeIcon class="h-5 w-5" />
@@ -393,7 +393,7 @@
                         <!-- Statistics Column (2/12) -->
                         <div class="col-span-2">
                             <div class="sticky top-4 bg-white p-4 h-full">
-                                <h3 class="text-sm font-bold text-gray-900 mb-6">Order Statistics</h3>
+                                <h3 class="text-xs font-bold text-gray-900 mb-6">Order Statistics</h3>
                                 <div class="space-y-8">
                                     <!-- Pending -->
                                     <div class="relative">
