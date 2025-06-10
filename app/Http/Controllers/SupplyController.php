@@ -484,7 +484,9 @@ class SupplyController extends Controller
     }
 
     public function backOrder(Request $request){
-        $packingList = PackingList::whereHas('items.differences')->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
+        $packingList = PackingList::whereHas('items.differences', function($q){
+            $q->whereNull('finalized');
+        })->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
         return inertia("Supplies/BackOrder", [
             'packingList' => $packingList
         ]);
