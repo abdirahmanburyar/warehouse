@@ -609,6 +609,7 @@ const submitLiquidation = async () => {
     })
         .then((response) => {
             isSubmitting.value = false
+            showLiquidateModal.value = false;
             Swal.fire({
                 icon: 'success',
                 title: response.data.message,
@@ -616,7 +617,6 @@ const submitLiquidation = async () => {
                 timer: 1500
             }).then(() => {
                 handlePoChange(selectedPo.value);
-                showLiquidateModal.value = false;
                 liquidateForm.value = {
                     quantity: 0,
                     note: '',
@@ -693,13 +693,13 @@ const submitDisposal = async () => {
     })
         .then((response) => {
             isSubmitting.value = false
+            showDisposeModal.value = false;
             Swal.fire({
                 icon: 'success',
                 title: response.data.message,
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
-                showDisposeModal.value = false;
                 disposeForm.value = {
                     quantity: 0,
                     note: '',
