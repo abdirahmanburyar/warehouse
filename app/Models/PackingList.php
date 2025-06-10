@@ -35,13 +35,6 @@ class PackingList extends Model
         return $this->belongsTo(PurchaseOrderItem::class, 'po_id');
     }
 
-
-
-    public function differences()
-    {
-        return $this->hasMany(PackingListDifference::class, 'packing_list_id');
-    }
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

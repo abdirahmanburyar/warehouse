@@ -62,7 +62,7 @@
                                                     </td>
                                                     <td class="px-6 py-3 text-sm border-r border-black"
                                                         v-if="index === 0" :rowspan="item.rows.length">
-                                                        {{ item.packing_list.packing_list_number }}
+                                                        {{ item.packing_list?.packing_list_number }}
                                                     </td>
                                                     <td class="px-6 py-3 text-sm border-r border-black"
                                                         v-if="index === 0" :rowspan="item.rows.length">
@@ -138,7 +138,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Packing List</p>
-                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list.packing_list_number }}</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list?.packing_list_number }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Status</p>
@@ -150,7 +150,7 @@
                 <!-- Quantity -->
                 <div>
                     <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="number" id="quantity" v-model="liquidateForm.quantity"
+                    <input type="number" id="quantity" v-model="liquidateForm.quantity" readonly
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         :min="1" :max="selectedItem?.quantity" required>
                 </div>
@@ -220,7 +220,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Packing List</p>
-                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list.packing_list_number }}</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list?.packing_list_number }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Status</p>
@@ -232,7 +232,7 @@
                 <!-- Quantity -->
                 <div>
                     <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="number" id="quantity" v-model="disposeForm.quantity"
+                    <input type="number" id="quantity" v-model="disposeForm.quantity" readonly
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         :min="1" :max="selectedItem?.quantity" required>
                 </div>
@@ -307,12 +307,11 @@ const toast = useToast();
 
 const groupedItems = computed(() => {
     const result = [];
-
     // Group items by product, packing list, and date
     items.value.forEach(item => {
         const existingGroup = result.find(g =>
             g.product.productID === item.product.productID &&
-            g.packing_list.packing_list_number === item.packing_list_item.packing_list.packing_list_number &&
+            g.packing_listitem_id === item.packing_listitem_id &&
             moment(g.created_at).isSame(item.created_at, 'day')
         );
 
@@ -320,12 +319,14 @@ const groupedItems = computed(() => {
             result.push({
                 id: item.id,
                 product: item.product,
+                packing_listitem_id: item.packing_listitem_id,
                 packing_list: item.packing_list_item.packing_list,
                 created_at: item.created_at,
                 rows: [{
                     quantity: item.quantity,
                     status: item.status,
-                    actions: getAvailableActions(item.status)
+                    actions: getAvailableActions(item.status),
+                    finalized: item.finalized
                 }],
 
             });
@@ -524,7 +525,6 @@ const liquidateItems = async (item) => {
             try {
                 isLoading.value = true;
                 const formData = new FormData();
-                console.log(item);
                 formData.append('id', item.id);
                 formData.append('product_id', item.product.id);
                 formData.append('packing_list_id', item.packing_list.id);
@@ -638,6 +638,7 @@ const submitLiquidation = async () => {
 
 
 const handleAction = async (action, item) => {
+    console.log(item);
     selectedItem.value = item;
 
     switch (action) {
@@ -666,20 +667,13 @@ const handleAction = async (action, item) => {
 };
 
 const submitDisposal = async () => {
+    console.log(selectedItem.value);
     isSubmitting.value = true;
     const formData = new FormData();
     formData.append('id', selectedItem.value.id);
-    formData.append('product_id', selectedItem.value.product.id);
-    formData.append('packing_list_id', selectedItem.value.packing_list.id);
-    formData.append('purchase_order_id', selectedPo.value?.id);
-    formData.append('quantity', disposeForm.value.quantity);
-    formData.append('original_quantity', selectedItem.value.quantity);
-    formData.append('barcode', selectedItem.value.packing_list.barcode);
-    formData.append('expire_date', selectedItem.value.packing_list.expire_date);
-    formData.append('batch_number', selectedItem.value.packing_list.batch_number);
-    formData.append('uom', selectedItem.value.packing_list.uom);
-    formData.append('status', selectedItem.value.status);
-    formData.append('note', disposeForm.value.note);
+    formData.append('note', selectedItem.value.note);
+    formData.append('quantity', selectedItem.value.quantity);
+    formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
 
     // Append each attachment
     for (let i = 0; i < disposeForm.value.attachments.length; i++) {

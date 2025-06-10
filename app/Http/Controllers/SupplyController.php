@@ -126,7 +126,7 @@ class SupplyController extends Controller
     {
         try {
             // Join packing_list_differences, products, and packing_lists
-            $results = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
+            $results = PackingListDifference::whereNull('finalized')->whereHas('packingListItem', function($query) use ($id) {
                 $query->where('packing_list_id', $id);
             })
                 ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number')
@@ -233,14 +233,14 @@ class SupplyController extends Controller
                     'performed_by' => auth()->id()
                 ]);
                 
-                // Delete the record
-                if ($item->quantity == $request->quantity) {
-                    $item->update([
-                        'finalized' => 'Liquidated'
-                    ]);
-                } else {
-                    $item->decrement('quantity', $request->quantity);
-                }
+                // // Delete the record
+                // if ($item->quantity == $request->quantity) {
+                // } else {
+                //     $item->decrement('quantity', $request->quantity);
+                // }
+                $item->update([
+                    'finalized' => 'Liquidated'
+                ]);
             }
             
             // Commit the transaction
@@ -267,30 +267,25 @@ class SupplyController extends Controller
             // Validate the request
             $validated = $request->validate([
                 'id' => 'required|exists:packing_list_differences,id',
-                'product_id' => 'required|exists:products,id',
-                'packing_list_id' => 'required|exists:packing_lists,id',
-                'quantity' => 'required|integer|min:1',
-                'status' => 'required|string',
+                'packing_listitem_id' => 'required|exists:packing_list_items,id',                
                 'note' => 'nullable|string|max:255',
-                'barcode' => 'nullable|string',
-                'expire_date' => 'nullable|date',
-                'batch_number' => 'nullable|string',
-                'uom' => 'nullable|string',
+                'quantity' => "required|min:1",
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
+
             
             // Start a database transaction
             DB::beginTransaction();
             
             // Get the packing list to include its number in the note
-            $packingList = PackingList::find($request->packing_list_id);
-            $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
+            $item = PackingListItem::with('packingList')->find($request->packing_listitem_id);
+            $packingListNumber = $item ? $item->packingList->packing_list_number : 'Unknown';
             
             // Generate note based on condition and source
-            $note = "PL ($packingListNumber) - {$request->status}";
+            $note = "PL ($packingListNumber) - {$item->status}";
             if ($request->note) {
-                $note .= " - {$request->note}";
+                $note .= " - {$item->note}";
             }
             
             // Handle file attachments if any
@@ -311,17 +306,17 @@ class SupplyController extends Controller
             
             // Create a new liquidation record
             $disposal = Disposal::create([
-                'product_id' => $request->product_id,
-                'packing_list_id' => $request->packing_list_id,
+                'product_id' => $item->product_id,
+                'packing_listitem_id' => $request->packing_listitem_id,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => Carbon::now(),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
-                'barcode' => $request->barcode,
-                'expire_date' => $request->expire_date,
-                'batch_number' => $request->batch_number,
-                'uom' => $request->uom,
+                'barcode' => $item->barcode,
+                'expire_date' => $item->expire_date,
+                'batch_number' => $item->batch_number,
+                'uom' => $item->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
             ]);
             
@@ -332,7 +327,7 @@ class SupplyController extends Controller
                 BackOrderHistory::create([
                     'packing_list_id' => $packingListDiff->packing_list_id,
                     'product_id' => $packingListDiff->product_id,
-                    'quantity' => $packingListDiff->quantity,
+                    'quantity' => $request->quantity,
                     'status' => 'Disposed',
                     'note' => $request->note ?? 'Disposed by ' . auth()->user()->name,
                     'performed_by' => auth()->id()
@@ -355,6 +350,8 @@ class SupplyController extends Controller
         } catch (\Throwable $th) {
             // Rollback the transaction in case of error
             DB::rollBack();
+            logger()->info($request->all());
+
             
             return response()->json([
                 'message' => $th->getMessage()
@@ -484,9 +481,7 @@ class SupplyController extends Controller
     }
 
     public function backOrder(Request $request){
-        $packingList = PackingList::whereHas('items.differences', function($q){
-            $q->whereNull('finalized');
-        })->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
+        $packingList = PackingList::whereHas('items.differences')->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
         return inertia("Supplies/BackOrder", [
             'packingList' => $packingList
         ]);
@@ -1438,8 +1433,6 @@ class SupplyController extends Controller
                 'status' => 'required',
                 'action' => 'required'
             ]);
-
-           logger()->info($validated);
 
             DB::beginTransaction();
 
