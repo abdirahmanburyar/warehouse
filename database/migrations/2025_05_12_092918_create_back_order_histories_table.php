@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('packing_list_id')->constrained('packing_lists')->onDelete('cascade');
             $table->foreignId('transfer_id')->constrained('transfers')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
             $table->integer('quantity');
             $table->string('status'); // Missing, Damaged, etc.
             $table->text('note')->nullable();

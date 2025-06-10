@@ -15,6 +15,7 @@ class BackOrderHistory extends Model
 
     protected $fillable = [
         'packing_list_id',
+        'order_id',
         'transfer_id',
         'product_id',
         'quantity',

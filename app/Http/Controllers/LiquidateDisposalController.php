@@ -25,7 +25,7 @@ class LiquidateDisposalController extends Controller
             'approvedBy',
             'reviewedBy',
             'rejectedBy'
-        ])->latest('disposed_at');
+        ])->latest('disposed_id');
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -61,7 +61,7 @@ class LiquidateDisposalController extends Controller
             'approvedBy',
             'reviewedBy',
             'rejectedBy'
-        ])->latest('liquidated_at');
+        ])->latest('liquidated_id');
 
         if ($request->has('search')) {
             $search = $request->search;

@@ -204,8 +204,6 @@ class SupplyController extends Controller
             }
 
             $item = PackingListDifference::where('id', $request->id)->with('packingListItem')->first();
-
-            logger()->info($item);
             
             // Create a new liquidation record
             $liquidate = Liquidate::create([
