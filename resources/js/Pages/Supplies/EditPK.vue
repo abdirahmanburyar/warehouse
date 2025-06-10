@@ -352,21 +352,25 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="(row, index) in backOrderRows" :key="index">
                                 <td class="px-3 py-2">
-                                    <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
+                                    <input type="number" v-model="row.quantity"                                    
+                                         :disabled="props.packing_list.status == 'approved'"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                         min="1" @input="validateBackOrderQuantities">
                                 </td>
                                 <td class="px-3 py-2">
                                     <select v-model="row.status"
+                                        :disabled="props.packing_list.status == 'approved'"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                         <option v-for="status in ['Missing', 'Damaged', 'Expired', 'Lost']"
                                             :key="status" :value="status">
                                             {{ status }}
                                         </option>
                                     </select>
+                                    <span>{{ row.finalized }}</span>
                                 </td>
                                 <td class="px-3 py-2">
                                     <button @click="removeBackOrderRow(index, row)" v-if="!row.finalized"
+                                        :disabled="props.packing_list.status == 'approved'"
                                         class="text-red-600 hover:text-red-800">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
@@ -398,7 +402,8 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <PrimaryButton @click="attemptCloseModal">Save and Exit</PrimaryButton>
+                        <PrimaryButton @click="showBackOrderModal = false">Exit</PrimaryButton>
+                        <PrimaryButton :disabled="props.packing_list.status == 'approved'" @click="attemptCloseModal">Save and Exit</PrimaryButton>
                     </div>
                 </div>
             </div>

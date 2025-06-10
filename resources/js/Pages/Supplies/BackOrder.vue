@@ -424,8 +424,7 @@ const receiveItems = async (item) => {
                 await axios.post(route('back-order.receive'), {
                     id: item.id,
                     product_id: item.product.id,
-                    packing_list_id: item.packing_list.id,
-                    purchase_order_id: selectedPo.value?.id,
+                    packing_listitem_id: item.packing_listitem_id,
                     quantity: num,
                     original_quantity: item.quantity
                 })
@@ -455,107 +454,6 @@ const receiveItems = async (item) => {
     });
 };
 
-const liquidateItems = async (item) => {
-    const { value: formValues } = await Swal.fire({
-        title: 'Liquidate Items',
-        html: `
-            <form id="liquidationForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input 
-                        type="number" 
-                        id="quantity" 
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        min="1"
-                        max="${item.quantity}"
-                        value="${item.quantity}"
-                        required
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Note</label>
-                    <textarea 
-                        id="note" 
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        rows="3"
-                        required
-                    ></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Attachments</label>
-                    <input 
-                        type="file" 
-                        id="attachments" 
-                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        required
-                    >
-                </div>
-            </form>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Liquidate',
-        confirmButtonColor: '#EAB308',
-        cancelButtonColor: '#6B7280',
-        showLoaderOnConfirm: true,
-        preConfirm: async () => {
-            const form = document.getElementById('liquidationForm');
-            const quantity = parseInt(form.querySelector('#quantity').value);
-            const note = form.querySelector('#note').value;
-            const attachments = form.querySelector('#attachments').files;
-
-            if (!quantity || quantity < 1) {
-                Swal.showValidationMessage('Please enter a quantity greater than 0');
-                return false;
-            }
-            if (quantity > item.quantity) {
-                Swal.showValidationMessage(`Cannot liquidate more than ${item.quantity} items`);
-                return false;
-            }
-            if (!note.trim()) {
-                Swal.showValidationMessage('Please enter a note');
-                return false;
-            }
-            if (attachments.length === 0) {
-                Swal.showValidationMessage('Please upload at least one attachment');
-                return false;
-            }
-
-            try {
-                isLoading.value = true;
-                const formData = new FormData();
-                formData.append('id', item.id);
-                formData.append('product_id', item.product.id);
-                formData.append('packing_list_id', item.packing_list.id);
-                formData.append('purchase_order_id', selectedPo.value?.id);
-                formData.append('quantity', quantity);
-                formData.append('original_quantity', item.quantity);
-                formData.append('note', note);
-
-                for (let i = 0; i < attachments.length; i++) {
-                    formData.append('attachments[]', attachments[i]);
-                }
-
-                await axios.post(route('back-order.liquidate'), formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-
-                await handlePoChange(selectedPo.value);
-                return true;
-            } catch (error) {
-                console.error('Failed to liquidate items:', error);
-                Swal.showValidationMessage(error.response?.data?.message || 'Failed to liquidate items');
-                return false;
-            } finally {
-                isLoading.value = false;
-            }
-        },
-        allowOutsideClick: () => !Swal.isLoading()
-    });
-};
 
 // Event handlers
 const handlePoChange = async (po) => {

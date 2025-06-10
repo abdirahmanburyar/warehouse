@@ -364,9 +364,9 @@ class SupplyController extends Controller
         try {
             // Validate the request
             $validated = $request->validate([
-                'id' => 'required|exists:packing_list_items,id',
+                'id' => 'required|exists:packing_list_differences,id',
                 'product_id' => 'required|exists:products,id',
-                'packing_list_id' => 'required|exists:packing_lists,id',
+                'packing_listitem_id' => 'required|exists:packing_list_items,id',
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
             ]);
@@ -412,7 +412,7 @@ class SupplyController extends Controller
                     'received_at' => now(),
                     'transfer_id' => null,
                     'product_id' => $inventory->product_id,
-                    'packing_list_id' => $validated['packing_list_id'],
+                    'packing_list_id' => $packingListDiff->packingListItem->packing_list_id,
                     'uom' => $inventory->uom,
                     'barcode' => $inventory->barcode,
                     'batch_number' => $inventory->batch_number,
@@ -444,7 +444,7 @@ class SupplyController extends Controller
             }
             
             // Update the packing list quantity
-            $packingList = PackingListItem::find($request->id);
+            $packingList = PackingListItem::find($request->packing_listitem_id);
             if ($packingList) {
                 // Add the received quantity to the packing list quantity
                 $packingList->quantity += $receivedQuantity;
