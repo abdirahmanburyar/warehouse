@@ -265,7 +265,7 @@
            </td>
            <td class="px-6 py-4 text-sm">
              <div class="text-sm bg-gray-50">
-               Batch Numner: {{ item.barcode }}
+               Batch Numner: {{ item.barch_number }}
              </div>
              <div class="text-sm bg-gray-50">
                Barcode: {{ item.barcode }}
