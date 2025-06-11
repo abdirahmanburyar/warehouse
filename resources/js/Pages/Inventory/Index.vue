@@ -224,7 +224,7 @@ watch(
 );
 
 // Handle Excel file upload
-const handleFileUpload = (event) => {
+const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -259,7 +259,7 @@ const handleFileUpload = (event) => {
     showUploadModal.value = true;
 
     // Upload file
-    axios
+    await axios
         .post(route("inventories.import"), formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
