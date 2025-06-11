@@ -1030,7 +1030,7 @@ class TransferController extends Controller
                 return response()->json('Transfer must be dispatched to be received', 500);
             }
 
-           if($transfer->to_warehouse_id && auth()->user()->can('permission:transfer_approve')) {
+           if(!$transfer->to_warehouse_id && auth()->user()->can('permission:transfer_approve')) {
                 return response()->json('You are not authorized to receive this transfer', 500);
             }
 
