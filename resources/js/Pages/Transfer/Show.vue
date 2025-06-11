@@ -772,7 +772,6 @@ const message = ref('');
 
 // Functions for back order modal
 const openBackOrderModal = (item) => {
-  console.log(item);
  selectedItem.value = item;
  backOrders.value = [];
  showIncompleteBackOrderModal.value = false;
