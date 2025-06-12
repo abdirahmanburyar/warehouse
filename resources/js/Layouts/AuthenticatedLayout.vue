@@ -94,8 +94,7 @@
                     </div>
                     <span class="menu-text">Liquidate & Disposal</span>
                 </div>
-                </Link>
-                
+                </Link>                
 
                 <Link v-if="$page.props.auth.can.supply_view" :href="route('supplies.index')" class="menu-item"
                     :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
