@@ -77,7 +77,7 @@ const handleSubmit = async () => {
                 quantity: parseInt(quantityToTransfer.value),
                 batch_number: props.inventory.batch_number,
                 barcode: props.inventory.barcode || null,
-                expire_date: props.inventory.expiry_date || null,
+                expiry_date: props.inventory.expiry_date || null,
                 uom: props.inventory.uom || null
             }],
             notes: `Transferred ${quantityToTransfer.value} items to ${selectedDestination.value.name}`
