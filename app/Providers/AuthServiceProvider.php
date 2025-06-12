@@ -31,7 +31,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         // Super admin bypass - administrators can do everything
         Gate::before(function (User $user) {
-            if ($user->hasRole('administrator')) {
+            if ($user->hasRole('admin')) {
                 return true;
             }
         });
