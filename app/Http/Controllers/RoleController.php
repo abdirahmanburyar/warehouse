@@ -59,12 +59,12 @@ class RoleController extends Controller
         if ($isUpdate) {
             $role = Role::findOrFail($roleId);
             
-            // Don't allow editing the administrator role name
-            if ($role->name === 'administrator' && $request->name !== 'administrator') {
+            // Don't allow editing the admin role name
+            if ($role->name === 'admin' && $request->name !== 'admin') {
                 if ($request->expectsJson()) {
-                    return response()->json('Cannot modify the administrator role name', 500);
+                    return response()->json('Cannot modify the admin role name', 500);
                 }
-                return redirect()->back()->with('error', 'Cannot modify the administrator role name');
+                return redirect()->back()->with('error', 'Cannot modify the admin role name');
             }
             
             $role->update(['name' => $request->name]);

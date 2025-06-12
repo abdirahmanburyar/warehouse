@@ -17,7 +17,7 @@
                             <h2 class="text-xl font-semibold text-gray-800 mb-4">What can you do?</h2>
                             <ul class="list-disc list-inside space-y-2 text-gray-700">
                                 <li>Return to the <a :href="route('dashboard')" class="text-blue-600 hover:underline">dashboard</a></li>
-                                <li>Contact your system administrator to request access</li>
+                                <li>Contact your system admin to request access</li>
                                 <li>Check if you're logged in with the correct account</li>
                             </ul>
                         </div>

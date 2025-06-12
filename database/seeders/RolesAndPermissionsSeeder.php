@@ -283,9 +283,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create roles and assign permissions
         
-        // Administrator role - has all permissions
-        $administratorRole = Role::firstOrCreate(['name' => 'administrator']);
-        $administratorRole->givePermissionTo(Permission::all());
+        // admin role - has all permissions
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $adminRole->givePermissionTo(Permission::all());
 
         // Manager role - can manage operations but not system settings
         $managerRole = Role::firstOrCreate(['name' => 'manager']);
@@ -364,10 +364,10 @@ class RolesAndPermissionsSeeder extends Seeder
         ];
         $viewerRole->givePermissionTo($viewerPermissions);
 
-        // Assign administrator role to the first user (assuming it's the admin)
+        // Assign admin role to the first user (assuming it's the admin)
         $admin = User::first();
         if ($admin) {
-            $admin->assignRole('administrator');
+            $admin->assignRole('admin');
         }
     }
 }

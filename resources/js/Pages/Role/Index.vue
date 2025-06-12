@@ -76,8 +76,8 @@
                     @click="confirmDelete(role)"
                     class="text-red-600 hover:text-red-900"
                     title="Delete Role"
-                    :disabled="role.name === 'administrator'"
-                    :class="{'opacity-50 cursor-not-allowed': role.name === 'administrator'}"
+                    :disabled="role.name === 'admin'"
+                    :class="{'opacity-50 cursor-not-allowed': role.name === 'admin'}"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -105,7 +105,7 @@
                 v-model="form.name"
                 class="mt-1 block w-full"
                 required
-                :disabled="isEditing && form.original_name === 'administrator'"
+                :disabled="isEditing && form.original_name === 'admin'"
               />
               <InputError :message="form.errors.name" class="mt-2" />
             </div>
@@ -119,8 +119,8 @@
                     type="button" 
                     @click="selectAllPermissions"
                     class="text-sm text-blue-600 hover:text-blue-800"
-                    :disabled="processing || (isEditing && form.original_name === 'administrator')"
-                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'administrator')}"
+                    :disabled="processing || (isEditing && form.original_name === 'admin')"
+                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
                   >
                     Select All
                   </button>
@@ -129,8 +129,8 @@
                     type="button" 
                     @click="deselectAllPermissions"
                     class="text-sm text-blue-600 hover:text-blue-800"
-                    :disabled="processing || (isEditing && form.original_name === 'administrator')"
-                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'administrator')}"
+                    :disabled="processing || (isEditing && form.original_name === 'admin')"
+                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
                   >
                     Deselect All
                   </button>
@@ -147,8 +147,8 @@
                         type="button" 
                         @click="selectModulePermissions(module)"
                         class="text-xs text-blue-600 hover:text-blue-800"
-                        :disabled="processing || (isEditing && form.original_name === 'administrator')"
-                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'administrator')}"
+                        :disabled="processing || (isEditing && form.original_name === 'admin')"
+                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
                       >
                         Select All
                       </button>
@@ -157,8 +157,8 @@
                         type="button" 
                         @click="deselectModulePermissions(module)"
                         class="text-xs text-blue-600 hover:text-blue-800"
-                        :disabled="processing || (isEditing && form.original_name === 'administrator')"
-                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'administrator')}"
+                        :disabled="processing || (isEditing && form.original_name === 'admin')"
+                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
                       >
                         Deselect All
                       </button>
@@ -173,7 +173,7 @@
                           :value="permission.id"
                           v-model="form.permissions"
                           class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          :disabled="isEditing && form.original_name === 'administrator'"
+                          :disabled="isEditing && form.original_name === 'admin'"
                         />
                       </div>
                       <div class="ml-3 text-sm">
@@ -195,7 +195,7 @@
               >
                 Cancel
               </SecondaryButton>
-              <PrimaryButton :disabled="processing || (isEditing && form.original_name === 'administrator')">
+              <PrimaryButton :disabled="processing || (isEditing && form.original_name === 'admin')">
                 {{ processing ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
               </PrimaryButton>
             </div>
@@ -347,8 +347,8 @@ function submitForm() {
 
 // Confirm delete
 function confirmDelete(role) {
-  if (role.name === 'administrator') {
-    toast.error('Cannot delete the administrator role');
+  if (role.name === 'admin') {
+    toast.error('Cannot delete the admin role');
     return;
   }
   

@@ -60,8 +60,8 @@ class CheckModulePermission
                 ->with('error', 'Your permissions have been changed. Please log in again.');
         }
         
-        // Administrator role bypass
-        if ($user->hasRole('administrator')) {
+        // admin role bypass
+        if ($user->hasRole('admin')) {
             return $next($request);
         }
 
