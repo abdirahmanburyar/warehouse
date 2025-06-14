@@ -12,6 +12,7 @@ use App\Models\Inventory;
 use App\Models\District;
 // App Events and Resources
 use App\Events\OrderEvent;
+use App\Models\IssuedQuantity;
 use App\Http\Resources\OrderResource;
 use App\Events\InventoryUpdated;
 
@@ -512,7 +513,7 @@ class OrderController extends Controller
                 'status' => ['required', Rule::in(['approved', 'in_process', 'dispatched'])]
             ]);
 
-            $order = Order::findOrFail($request->order_id);
+            $order = Order::with('items.inventory_allocations')->find($request->order_id);
 
             // Define allowed transitions
             $allowedTransitions = [
@@ -548,18 +549,24 @@ class OrderController extends Controller
                         $updates['rejected_at'] = null;
                     }
                     // issued quantity - history
-                //    foreach($order->items as $item){
-                //     // IssuedQuantity::create([
-                //     //     'product_id' => $item['product_id'],
-                //     //     'quantity' => $item['quantity'],
-                //     //     'batch_number' => $item['batch_number'],
-                //     //     'barcode' => $item['barcode'],
-                //     //     'uom' => $item['uom'],
-                //     //     'expiry_date' => $item['expiry_date'],
-                //     //     'issued_by' => $userId,
-                //     //     'issued_at' => $now,
-                //     // ]);
-                //    }
+                   foreach($order->items as $item){
+                        foreach($item['inventory_allocations'] as $allocation){
+                            logger()->info($allocation);
+                            IssuedQuantity::create([
+                                'product_id' => $item['product_id'],
+                                'warehouse_id' => $item['warehouse_id'],
+                                'quantity' => $item['quantity'],
+                                'batch_number' => $allocation['batch_number'],
+                                'barcode' => $allocation['barcode'],
+                                'uom' => $allocation['uom'],
+                                'expiry_date' => $allocation['expiry_date'],
+                                'issued_by' => $userId,
+                                'issued_at' => $now,
+                                'unit_cost' => $allocation['unit_cost'],
+                                'total_cost' => $allocation['total_cost'],
+                            ]);
+                        }
+                    }
                     break;
                 case 'in_process':
                     $updates['in_process'] = true;
