@@ -23,7 +23,7 @@
                             >Filter by Year & Month</label
                         >
                         <div
-                            class="max-h-80 overflow-y-auto border border-gray-300 rounded-md p-2"
+                            class="max-h-80 overflow-y-auto border border-gray-300 rounded-md p-2 mb-[80px]"
                         >
                             <div
                                 v-for="year in availableYears"
