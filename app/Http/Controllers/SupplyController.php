@@ -416,7 +416,9 @@ class SupplyController extends Controller
                     'uom' => $inventory->uom,
                     'barcode' => $inventory->barcode,
                     'batch_number' => $inventory->batch_number,
-                    'expiry_date' => $inventory->expire_date
+                    'expiry_date' => $inventory->expire_date,
+                    'unit_cost' => $inventory->unit_cost,
+                    'total_cost' => $inventory->unit_cost * $receivedQuantity
                 ]);
             } else {
                 // Create a new inventory record if it doesn't exist
@@ -440,6 +442,8 @@ class SupplyController extends Controller
                     'barcode' => $inventory->barcode,
                     'batch_number' => $inventory->batch_number,
                     'expiry_date' => $inventory->expire_date,
+                    'unit_cost' => $inventory->unit_cost,
+                    'total_cost' => $inventory->unit_cost * $receivedQuantity
                 ]);
             }
             
@@ -1833,6 +1837,7 @@ class SupplyController extends Controller
                                     'expiry_date' => $packingListItem->expire_date,
                                     'barcode' => $packingListItem->barcode,
                                     'unit_cost' => $packingListItem->unit_cost,
+                                    'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
                                     'updated_at' => now()
                                 ]);
                                 ReceivedQuantity::create([
@@ -1845,6 +1850,8 @@ class SupplyController extends Controller
                                     'uom' => $inventory->uom,
                                     'barcode' => $inventory->barcode,
                                     'batch_number' => $inventory->batch_number,
+                                    'unit_cost' => $inventory->unit_cost,
+                                    'total_cost' => $inventory->unit_cost * $receivedQuantity
                                 ]);
                         } else {
                             // Create new inventory record
@@ -1872,6 +1879,8 @@ class SupplyController extends Controller
                                 'uom' => $packingListItem->uom,
                                 'barcode' => $packingListItem->barcode,
                                 'batch_number' => $packingListItem->batch_number,
+                                'unit_cost' => $packingListItem->unit_cost,
+                                'total_cost' => $packingListItem->unit_cost * $receivedQuantity
                             ]);
                         }
                     }

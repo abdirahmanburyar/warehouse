@@ -22,6 +22,8 @@ class Inventory extends Model
         'location_id',
         'notes',
         'uom',
+        'unit_cost',
+        'total_cost',
         'is_active',
         'physical_count',
         'physical_count_difference',

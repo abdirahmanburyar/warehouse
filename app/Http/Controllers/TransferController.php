@@ -740,6 +740,8 @@ class TransferController extends Controller
                     'uom' => $transferItem->uom,
                     'barcode' => $transferItem->barcode,
                     'batch_number' => $transferItem->batch_number,
+                    'unit_cost' => $transferItem->unit_cost,
+                    'total_cost' => $transferItem->total_cost
                 ]);
             } else {
                 // Create new inventory record

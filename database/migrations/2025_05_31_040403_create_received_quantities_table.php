@@ -21,7 +21,9 @@ return new class extends Migration
             $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
             $table->date('expiry_date')->nullable();
             $table->string('uom')->nullable();
-            $table->string('barcode')->nullable();
+            $table->double('barcode');
+            $table->double('unit_cost');
+            $table->string('total_cost')->nullable();
             $table->string('batch_number')->nullable();
             $table->timestamps();
         });

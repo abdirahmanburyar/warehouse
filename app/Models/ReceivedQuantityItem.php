@@ -26,6 +26,8 @@ class ReceivedQuantityItem extends Model
         'uom',
         'barcode',
         'batch_number',
+        'unit_cost',
+        'total_cost',
     ];
     
     /**

@@ -23,6 +23,8 @@ return new class extends Migration
             $table->date('expiry_date')->nullable();
             $table->string('uom')->nullable();
             $table->string('barcode')->nullable();
+            $table->double('unit_cost');
+            $table->double('total_cost');
             $table->string('batch_number')->nullable();
             $table->timestamps();
         });

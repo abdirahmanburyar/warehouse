@@ -26,6 +26,8 @@ class ReceivedQuantity extends Model
         'uom',
         'barcode',
         'batch_number',
+        'unit_cost',
+        'total_cost',
     ];
 
     public function product(): BelongsTo
