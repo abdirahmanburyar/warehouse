@@ -148,15 +148,24 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
         // Only create report item if there's any movement or balance
         if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $positiveAdjustment > 0 || $negativeAdjustment > 0 || $closingBalance > 0) {
             
-            // Calculate average unit cost from recent received items
-            $recentReceivedItems = ReceivedQuantityItem::where('product_id', $product->id)
-                ->where('unit_cost', '>', 0)
-                ->orderBy('received_at', 'desc')
-                ->limit(5)
-                ->get();
+            // Try to calculate average unit cost from recent received items
+            // Handle case where unit_cost column might not exist
+            $unitCost = null;
+            $totalCost = null;
             
-            $unitCost = $recentReceivedItems->isNotEmpty() ? $recentReceivedItems->avg('unit_cost') : 0;
-            $totalCost = $closingBalance * $unitCost;
+            try {
+                $recentReceivedItems = ReceivedQuantityItem::where('product_id', $product->id)
+                    ->where('unit_cost', '>', 0)
+                    ->orderBy('received_at', 'desc')
+                    ->limit(5)
+                    ->get();
+                
+                $unitCost = $recentReceivedItems->isNotEmpty() ? $recentReceivedItems->avg('unit_cost') : null;
+                $totalCost = $unitCost ? ($closingBalance * $unitCost) : null;
+            } catch (\Exception $e) {
+                // If unit_cost column doesn't exist, leave as null
+                Log::info("Unit cost calculation skipped for product {$product->id}: " . $e->getMessage());
+            }
             
             // Calculate months of stock based on issued quantity
             $monthsOfStock = $issuedQuantity > 0 ? ($closingBalance / $issuedQuantity) : 0;
@@ -164,7 +173,7 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
             InventoryReportItem::create([
                 'inventory_report_id' => $report->id,
                 'product_id' => $product->id,
-                'uom' => $product->uom,
+                'uom' => $product->uom ?? null,
                 'batch_number' => null, // Not tracking batches in monthly reports
                 'expiry_date' => null, // Not tracking expiry in monthly reports
                 'beginning_balance' => $beginningBalance,
