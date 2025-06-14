@@ -1486,6 +1486,7 @@ class SupplyController extends Controller
                             'batch_number' => $packingListItem->batch_number,
                             'expiry_date' => $packingListItem->expire_date,
                             'unit_cost' => $packingListItem->unit_cost,
+                            'total_cost' => $packingListItem->unit_cost * $request->quantity,
                             'updated_at' => now()
                         ]);
                 } else {
@@ -1809,7 +1810,6 @@ class SupplyController extends Controller
             DB::beginTransaction();
 
             $packingList = PackingList::with('items')->find($request->id);
-            logger()->info($request->items);
 
             foreach ($request->items as $item) {
                 // Get the full packing list item data
@@ -1864,6 +1864,7 @@ class SupplyController extends Controller
                                 'uom' => $packingListItem->uom,
                                 'expiry_date' => $packingListItem->expire_date,
                                 'unit_cost' => $packingListItem->unit_cost,
+                                'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
                                 'location_id' => $packingListItem->location_id,
                                 'is_active' => true,
                                 'created_at' => now(),
