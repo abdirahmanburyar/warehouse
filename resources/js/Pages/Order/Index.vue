@@ -57,73 +57,6 @@ const dateFrom = ref(props.filters?.dateFrom || null);
 const dateTo = ref(props.filters?.dateTo || null);
 const per_page = ref(props.filters.per_page || 25);
 
-const changeStatus = (orderId, newStatus) => {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: `Do you want to change the order status to ${newStatus}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, change it!'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            // Set loading state for this order
-            loadingActions.value[orderId] = true;
-            
-            try {
-                // For rejection, use a different endpoint or pass different parameters
-                if (newStatus === 'rejected') {
-                    await axios.post('/orders/reject', {
-                        order_id: orderId
-                    })
-                        .then(response => {
-                            Swal.fire(
-                                'Rejected!',
-                                'Order has been rejected.',
-                                'success'
-                            ).then(() => {
-                                reloadOrder();
-                            });
-                        })
-                        .catch(error => {
-                            Swal.fire(
-                                'Error!',
-                                error.response?.data?.message || 'Failed to reject order',
-                                'error'
-                            );
-                        });
-                } else {
-                    // For other status changes, use the existing endpoint
-                    await axios.post(route('orders.change-status'), {
-                        order_id: orderId,
-                        status: newStatus
-                    })
-                        .then(response => {
-                            Swal.fire(
-                                'Updated!',
-                                'Order status has been updated.',
-                                'success'
-                            ).then(() => {
-                                reloadOrder();
-                            });
-                        })
-                        .catch(error => {
-                            Swal.fire(
-                                'Error!',
-                                error.response?.data?.message || 'Failed to update order status',
-                                'error'
-                            );
-                        });
-                }
-            } finally {
-                // Clear loading state
-                loadingActions.value[orderId] = false;
-            }
-        }
-    });
-};
-
 // Initialize selected values with objects from the props arrays
 const selectedFacility = ref(props.filters?.facility ?
     props.facilities.find(f => f.id === parseInt(props.filters.facility)) || null : null);
@@ -161,30 +94,6 @@ function handleRemove(filterType) {
     // Reload with updated filters
     reloadOrder();
 }
-
-const getStatusActions = (order) => {
-    const actions = [];
-
-    switch (order.status) {
-        case 'pending':
-            actions.push({ label: 'Approve', status: 'approved', color: 'green', icon: '/assets/images/approved.png' });
-            actions.push({ label: 'Reject', status: 'rejected', color: 'red', icon: 'svg' });
-            break;
-        case 'approved':
-            actions.push({ label: 'Process', status: 'in_process', color: 'blue', icon: '/assets/images/inprocess.png' });
-            // Reject action removed for approved orders
-            break;
-        case 'in_process':
-            actions.push({ label: 'Dispatch', status: 'dispatched', color: 'purple', icon: '/assets/images/dispatch.png' });
-            // Reject action removed for in_process orders
-            break;
-        case 'rejected':
-            actions.push({ label: 'Approve', status: 'approved', color: 'green', icon: '/assets/images/approved.png' });
-            break;
-    }
-
-    return actions
-};
 
 function reloadOrder() {
     const query = {}

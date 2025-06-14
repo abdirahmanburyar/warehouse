@@ -547,13 +547,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
     });
     
-    // Order Management Routes
-    Route::prefix('orders')->group(function () {
-        Route::post('/change-status', [OrderController::class, 'changeStatus'])->name('orders.change-status');
-        Route::post('/change-item-status', [OrderController::class, 'changeItemStatus'])->name('orders.change-item-status');
-        Route::post('/bulk-change-status', [OrderController::class, 'bulkChangeStatus'])->name('orders.bulk-change-status');
-        Route::post('/bulk-change-item-status', [OrderController::class, 'bulkChangeItemStatus'])->name('orders.bulk-change-item-status');
-    });
     // Approval Routes
     Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->prefix('approvals')->group(function () {
         Route::get('/', [ApprovalController::class, 'index'])->name('approvals.index');
