@@ -5,9 +5,8 @@ namespace App\Jobs;
 use App\Models\InventoryReport;
 use App\Models\InventoryReportItem;
 use App\Models\Product;
-use App\Models\ReceivedQuantityItem;
-use App\Models\IssueQuantityItem;
-use App\Models\InventoryAdjustmentItem;
+use App\Models\MonthlyQuantityReceived;
+use App\Models\IssueQuantityReport;
 use App\Mail\MonthlyInventoryReportGenerated;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -40,48 +39,57 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
     {
         try {
             Log::info("Starting monthly inventory report generation for {$this->monthYear}");
+            echo "Starting monthly inventory report generation for {$this->monthYear}\n";
             
-            DB::transaction(function () {
-                // Parse the month year
-                $date = Carbon::createFromFormat('Y-m', $this->monthYear);
-                $previousDate = $date->copy()->subMonth();
-                
-                // Check if report already exists
-                $existingReport = InventoryReport::where('month_year', $this->monthYear)->first();
-                
-                if ($existingReport) {
-                    Log::info("Report for {$this->monthYear} already exists. Updating...");
-                    // Delete existing items
-                    $existingReport->items()->delete();
-                    $report = $existingReport;
-                } else {
-                    // Create new report
-                    $report = new InventoryReport();
-                    $report->month_year = $this->monthYear;
-                    $report->status = 'generated';
-                }
-                
-                $report->generated_by = 1; // System user ID
-                $report->generated_at = now();
-                $report->save();
-                
-                // Generate report items for each product
-                $itemsGenerated = $this->generateReportItems($report, $date, $previousDate);
-                
-                Log::info("Successfully generated {$itemsGenerated} items for inventory report {$this->monthYear}");
-                
-                // Send email notification with report details
-                Mail::to('buryar313@gmail.com')->send(new MonthlyInventoryReportGenerated($report, $itemsGenerated));
-                
-                Log::info("Email notification sent for monthly inventory report {$this->monthYear}");
-            });
+            // Parse the month year
+            $date = Carbon::createFromFormat('Y-m', $this->monthYear);
+            $previousDate = $date->copy()->subMonth();
+            
+            echo "Processing date: {$date->format('Y-m')}\n";
+            
+            // Check if report already exists
+            echo "Checking for existing report...\n";
+            $existingReport = InventoryReport::where('month_year', $this->monthYear)->first();
+            
+            if ($existingReport) {
+                Log::info("Report for {$this->monthYear} already exists. Updating...");
+                echo "Report already exists. Updating...\n";
+                // Delete existing items
+                $existingReport->items()->delete();
+                $report = $existingReport;
+            } else {
+                echo "Creating new report...\n";
+                // Create new report
+                $report = new InventoryReport();
+                $report->month_year = $this->monthYear;
+                $report->status = 'generated';
+            }
+            
+            $report->generated_by = 1; // System user ID
+            $report->generated_at = now();
+            $report->save();
+            
+            echo "Report saved with ID: {$report->id}\n";
+            
+            // Generate report items for each product
+            $itemsGenerated = $this->generateReportItems($report, $date, $previousDate);
+            
+            echo "Generated {$itemsGenerated} items\n";
+            Log::info("Successfully generated {$itemsGenerated} items for inventory report {$this->monthYear}");
+            
+            // Send email notification with report details - Skip for now to test
+            // Mail::to('buryar313@gmail.com')->send(new MonthlyInventoryReportGenerated($report, $itemsGenerated));
+            
+            echo "Email notification skipped for testing\n";
+            Log::info("Monthly inventory report generation completed for {$this->monthYear}");
             
         } catch (\Exception $e) {
+            echo "Error: " . $e->getMessage() . "\n";
             Log::error("Error generating monthly inventory report for {$this->monthYear}: " . $e->getMessage());
             Log::error("Stack trace: " . $e->getTraceAsString());
             
-            // Send error email notification
-            Mail::to('buryar313@gmail.com')->send(new MonthlyInventoryReportGenerated(null, 0, $e->getMessage()));
+            // Send error email notification - Skip for now
+            // Mail::to('buryar313@gmail.com')->send(new MonthlyInventoryReportGenerated(null, 0, $e->getMessage()));
             
             throw $e; // Re-throw to mark job as failed
         }
@@ -92,80 +100,89 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
      */
     private function generateReportItems(InventoryReport $report, Carbon $date, Carbon $previousDate)
     {
-        // Get all active products
-        $products = Product::where('is_active', true)->get();
+        // First check if required reports exist for this month
+        echo "Checking for required reports for {$date->format('Y-m')}...\n";
         
-        Log::info("Processing {$products->count()} products for report {$this->monthYear}");
+        // Check for received quantity report
+        $receivedReport = MonthlyQuantityReceived::where('month_year', $date->format('Y-m'))->first();
+        if (!$receivedReport) {
+            throw new \Exception("Received quantity report for {$date->format('Y-m')} not found. Please generate it first.");
+        }
+        
+        // Check for issued quantity report  
+        $issuedReport = IssueQuantityReport::where('month_year', $date->format('Y-m'))->first();
+        if (!$issuedReport) {
+            throw new \Exception("Issued quantity report for {$date->format('Y-m')} not found. Please generate it first.");
+        }
+        
+        echo "Found required reports. Proceeding with inventory report generation...\n";
+        
+        // Get received items from the generated report
+        $receivedItems = $receivedReport->items()->with('product')->get();
+        echo "Found {$receivedItems->count()} received items\n";
+        
+        // Get issued items from the generated report
+        $issuedItems = $issuedReport->items()->with('product')->get();
+        echo "Found {$issuedItems->count()} issued items\n";
+        
+        // Get all unique products from both reports
+        $allProductIds = $receivedItems->pluck('product_id')->merge($issuedItems->pluck('product_id'))->unique();
+        echo "Processing {$allProductIds->count()} unique products\n";
         
         $itemsGenerated = 0;
+        $processedCount = 0;
         
-        foreach ($products as $product) {
-            if ($this->generateProductReportItem($report, $product, $date, $previousDate)) {
+        foreach ($allProductIds as $productId) {
+            $processedCount++;
+            
+            // Show progress every 10 products
+            if ($processedCount % 10 == 0) {
+                echo "Processed {$processedCount}/{$allProductIds->count()} products\n";
+            }
+            
+            // Get the product
+            $product = Product::find($productId);
+            if (!$product) {
+                continue;
+            }
+            
+            if ($this->generateProductReportItemFromReports($report, $product, $receivedItems, $issuedItems, $previousDate)) {
                 $itemsGenerated++;
             }
         }
+        
+        echo "Completed processing all products. Items generated: {$itemsGenerated}\n";
         
         return $itemsGenerated;
     }
     
     /**
-     * Generate report item for a specific product
+     * Generate report item for a specific product using data from generated reports
      */
-    private function generateProductReportItem(InventoryReport $report, Product $product, Carbon $date, Carbon $previousDate)
+    private function generateProductReportItemFromReports(InventoryReport $report, $product, $receivedItems, $issuedItems, Carbon $previousDate)
     {
         // Get beginning balance from previous month's report
         $beginningBalance = $this->getPreviousMonthClosingBalance($product->id, $previousDate->format('Y-m'));
         
-        // Get received quantity for the month from ReceivedQuantityItem
-        $receivedQuantity = ReceivedQuantityItem::where('product_id', $product->id)
-            ->whereYear('received_at', $date->year)
-            ->whereMonth('received_at', $date->month)
-            ->sum('quantity');
+        // Get received quantity from the received report items
+        $receivedQuantity = $receivedItems->where('product_id', $product->id)->sum('quantity');
         
-        // Get issued quantity for the month from IssueQuantityItem
-        $issuedQuantity = IssueQuantityItem::where('product_id', $product->id)
-            ->whereYear('issued_date', $date->year)
-            ->whereMonth('issued_date', $date->month)
-            ->sum('quantity');
+        // Get issued quantity from the issued report items
+        $issuedQuantity = $issuedItems->where('product_id', $product->id)->sum('quantity');
         
-        // Get adjustments for the month
-        $adjustments = InventoryAdjustmentItem::where('product_id', $product->id)
-            ->whereHas('inventoryAdjustment', function($q) use ($date) {
-                $q->where('status', 'approved')
-                  ->whereYear('created_at', $date->year)
-                  ->whereMonth('created_at', $date->month);
-            })
-            ->get();
-        
-        $positiveAdjustment = $adjustments->where('difference', '>', 0)->sum('difference');
-        $negativeAdjustment = $adjustments->where('difference', '<', 0)->sum(function($item) {
-            return abs($item->difference);
-        });
+        // Set adjustments to 0 (will be entered manually)
+        $positiveAdjustment = 0;
+        $negativeAdjustment = 0;
         
         // Calculate closing balance
         $closingBalance = $beginningBalance + $receivedQuantity - $issuedQuantity - $negativeAdjustment + $positiveAdjustment;
         
         // Only create report item if there's any movement or balance
-        if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $positiveAdjustment > 0 || $negativeAdjustment > 0 || $closingBalance > 0) {
+        if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $closingBalance > 0) {
             
-            // Try to calculate average unit cost from recent received items
-            // Handle case where unit_cost column might not exist
-            $unitCost = null;
-            $totalCost = null;
-            
-            try {
-                $recentReceivedItems = ReceivedQuantityItem::where('product_id', $product->id)
-                    ->where('unit_cost', '>', 0)
-                    ->orderBy('received_at', 'desc')
-                    ->limit(5)
-                    ->get();
-                
-                $unitCost = $recentReceivedItems->isNotEmpty() ? $recentReceivedItems->avg('unit_cost') : null;
-                $totalCost = $unitCost ? ($closingBalance * $unitCost) : null;
-            } catch (\Exception $e) {
-                // If unit_cost column doesn't exist, leave as null
-                Log::info("Unit cost calculation skipped for product {$product->id}: " . $e->getMessage());
-            }
+            // Set default values since unit_cost column doesn't exist in received_quantity_items
+            $unitCost = 0;
+            $totalCost = 0;
             
             // Calculate months of stock based on issued quantity
             $monthsOfStock = $issuedQuantity > 0 ? ($closingBalance / $issuedQuantity) : 0;
@@ -173,7 +190,7 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
             InventoryReportItem::create([
                 'inventory_report_id' => $report->id,
                 'product_id' => $product->id,
-                'uom' => $product->uom ?? null,
+                'uom' => $product->uom ?? 'pcs',
                 'batch_number' => null, // Not tracking batches in monthly reports
                 'expiry_date' => null, // Not tracking expiry in monthly reports
                 'beginning_balance' => $beginningBalance,

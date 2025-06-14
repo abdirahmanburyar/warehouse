@@ -92,7 +92,7 @@
         </div>
 
         <!-- Report Table -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
             <!-- Table Header -->
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h2 class="text-sm font-semibold text-gray-900">Inventory Movement Report</h2>

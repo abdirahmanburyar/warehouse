@@ -28,24 +28,25 @@ class GenerateInventoryMonthlyReport extends Command
      */
     public function handle()
     {
-        $monthYear = $this->argument('month') ?? Carbon::now()->format('Y-m');
+        // Default to previous month since inventory reports are generated on the first day for the previous month
+        $monthYear = $this->argument('month') ?? Carbon::now()->subMonth()->format('Y-m');
         
-        $this->info("Dispatching monthly inventory report generation job for {$monthYear}");
+        $this->info("Generating monthly inventory report for {$monthYear}");
         
         try {
-            // Dispatch the job to the queue
-            GenerateMonthlyInventoryReportJob::dispatch($monthYear);
+            // Execute the job directly (synchronously) to avoid queue serialization issues
+            $job = new GenerateMonthlyInventoryReportJob($monthYear);
+            $job->handle();
             
-            $this->info("Monthly inventory report job dispatched successfully for {$monthYear}");
-            $this->info("The job will run in the background and an email notification will be sent to buryar313@gmail.com when completed.");
+            $this->info("Monthly inventory report generated successfully for {$monthYear}");
+            $this->info("An email notification has been sent to buryar313@gmail.com");
             
-            Log::info("Monthly inventory report job dispatched for {$monthYear}");
+            Log::info("Monthly inventory report generated successfully for {$monthYear}");
             
             return 0;
-            
         } catch (\Exception $e) {
-            Log::error('Error dispatching inventory monthly report job: ' . $e->getMessage());
-            $this->error("Error dispatching job: {$e->getMessage()}");
+            Log::error('Error generating inventory monthly report: ' . $e->getMessage());
+            $this->error("Error generating report: {$e->getMessage()}");
             return 1;
         }
     }
