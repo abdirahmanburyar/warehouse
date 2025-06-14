@@ -1,205 +1,395 @@
 <template>
     <AuthenticatedLayout title="Physical Count - Report" description="Inventory Verification Tool" img="/assets/images/report.png">
         <Head title="Physical Count Reports" />
-        <div class="flex justify-between items-center mb-6">
-            <Link :href="route('reports.physicalCount')">
-                <div class="flex items-center">
-                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                    </svg>
-                    <h2 class="font-semibold text-xl text-gray-800 leading-tight ml-2">
-                        Physical Count Reports
-                    </h2>
-                </div>
+        
+        <!-- Breadcrumb Navigation -->
+        <div class="mb-6">
+            <Link 
+                :href="route('reports.physicalCount')"
+                class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Physical Count
             </Link>
         </div>
 
-        <div class="flex justify-between items-center mb-6">
-            <input type="month" v-model="month" class="border-black rounded-3xl w-[300px]">
-            <div class="w-[300px]">
-                <label for="per_page" class="block text-sm font-medium text-gray-700">Per Page</label>
-                <select v-model="per_page" class="border-black rounded-3xl w-full">
-                    <option value="100">100 per page</option>
-                    <option value="200">200 per page</option>
-                    <option value="500">500 per page</option>
-                </select>
+        <!-- Header Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold text-gray-900">Physical Count History</h1>
+                    <p class="text-sm text-gray-600">View and manage historical physical count reports</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Month Filter -->
+                <div>
+                    <label for="month" class="block text-sm font-medium text-gray-700 mb-2">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Filter by Month
+                    </label>
+                    <input 
+                        type="month" 
+                        id="month"
+                        v-model="month" 
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                    />
+                </div>
+
+                <!-- Items Per Page -->
+                <div>
+                    <label for="per_page" class="block text-sm font-medium text-gray-700 mb-2">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        Items per Page
+                    </label>
+                    <select 
+                        id="per_page"
+                        v-model="per_page" 
+                        @change="props.filters.page = 1"
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                    >
+                        <option value="100">100 per page</option>
+                        <option value="200">200 per page</option>
+                        <option value="500">500 per page</option>
+                    </select>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="md:col-span-1 lg:col-span-1">
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Reports</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ physicalCountReport.total || 0 }}</p>
+                            </div>
+                            <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Reports List -->
-        <div>
-            <div v-if="physicalCountReport.data.length > 0" class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adjustment Date</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counted Items</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="report in physicalCountReport.data" :key="report.id" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ formatDate(report.month_year) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ formatDateTime(report.adjustment_date) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ report.items.length }} items</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span :class="getStatusClass(report.status)">
-                                    {{ report.status }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+        <div class="mb-[80px]">
+            <div v-if="physicalCountReport.data.length > 0">
+                <!-- Reports Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+                    <div 
+                        v-for="report in physicalCountReport.data" 
+                        :key="report.id" 
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                    >
+                        <div class="p-6">
+                            <!-- Report Header -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-900">{{ formatDate(report.month_year) }}</h3>
+                                        <p class="text-xs text-gray-500">Report ID: {{ report.id }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span :class="getStatusClass(report.status)" class="text-xs font-medium">
+                                        {{ report.status.toUpperCase() }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Report Details -->
+                            <div class="space-y-3 mb-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Adjustment Date
+                                    </span>
+                                    <span class="font-medium text-gray-900">{{ formatDateTime(report.adjustment_date) }}</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                        Items Counted
+                                    </span>
+                                    <span class="font-medium text-gray-900">{{ report.items.length }}</span>
+                                </div>
+
+                                <!-- Status-specific Info -->
+                                <div v-if="report.reviewer" class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        Reviewed by
+                                    </span>
+                                    <span class="font-medium text-gray-900">{{ report.reviewer.name }}</span>
+                                </div>
+
+                                <div v-if="report.approver" class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Approved by
+                                    </span>
+                                    <span class="font-medium text-gray-900">{{ report.approver.name }}</span>
+                                </div>
+
+                                <div v-if="report.rejecter" class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Rejected by
+                                    </span>
+                                    <span class="font-medium text-gray-900">{{ report.rejecter.name }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Action Button -->
+                            <div class="pt-4 border-t border-gray-100">
                                 <button 
                                     @click="openModal(report)"
-                                    class="text-indigo-600 hover:text-indigo-900 font-medium"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-sm"
                                 >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
                                     View Details
                                 </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-               <div class="mt-3 flex justify-end">
-                <TailwindPagination
-                    :data="props.physicalCountReport"
-                    @pagination-change-page="getResult"
-                />
-               </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex justify-end mt-3">
+                    <TailwindPagination
+                        :data="props.physicalCountReport"
+                        :limit="2"
+                        @pagination-change-page="getResult"
+                    />
+                </div>
             </div>
-            <div v-else class="text-center py-12">
-                <p class="text-gray-500 text-lg">No physical count report data available.</p>
+            
+            <!-- Empty State -->
+            <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">No Physical Count Reports</h3>
+                    <p class="text-gray-500 mb-4">No physical count report data available for the selected criteria.</p>
+                    <Link 
+                        :href="route('reports.physicalCount')"
+                        class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-sm"
+                    >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create New Report
+                    </Link>
+                </div>
             </div>
         </div>
 
         <!-- Modal for Report Details -->
-        <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex min-h-full w-full p-4">
-                <div class="w-full bg-white p-6 shadow-xl overflow-auto" id="reportContent">
+        <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" @click="closeModal"></div>
+            
+            <!-- Modal container -->
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden" id="reportContent">
                     <!-- Modal Header -->
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-900">Physical Count Report Details</h2>
-                        <div class="flex gap-2">
-                            <button
-                                @click="downloadPDF"
-                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-                            >
-                                Download PDF
-                            </button>
-                            <button
-                                @click="closeModal"
-                                class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-
-                    <div v-if="selectedReport" class="space-y-6">
-                        <!-- Report Status Information -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <!-- Reviewer Information -->
-                            <div v-if="selectedReport.reviewer" class="bg-blue-50 p-4 rounded-lg">
-                                <h5 class="font-semibold text-blue-800 mb-2">Reviewed By</h5>
-                                <div class="space-y-1">
-                                    <p><span class="text-gray-600">Name:</span> {{ selectedReport.reviewer.name }}</p>
-                                    <p><span class="text-gray-600">Username:</span> {{ selectedReport.reviewer.username }}</p>
-                                    <p><span class="text-gray-600">Date:</span> {{ formatDateTime(selectedReport.reviewed_at) }}</p>
+                    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Physical Count Report Details</h2>
+                                    <p class="text-sm text-gray-600" v-if="selectedReport">{{ formatDate(selectedReport.month_year) }}</p>
                                 </div>
                             </div>
                             
-                            <!-- Approver Information -->
-                            <div v-if="selectedReport.approver" class="bg-green-50 p-4 rounded-lg">
-                                <h5 class="font-semibold text-green-800 mb-2">Approved By</h5>
-                                <div class="space-y-1">
-                                    <p><span class="text-gray-600">Name:</span> {{ selectedReport.approver.name }}</p>
-                                    <p><span class="text-gray-600">Username:</span> {{ selectedReport.approver.username }}</p>
-                                    <p><span class="text-gray-600">Date:</span> {{ formatDateTime(selectedReport.approved_at) }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Rejection Information -->
-                            <div v-if="selectedReport.rejecter" class="bg-red-50 p-4 rounded-lg">
-                                <h5 class="font-semibold text-red-800 mb-2">Rejected By</h5>
-                                <div class="space-y-1">
-                                    <p><span class="text-gray-600">Name:</span> {{ selectedReport.rejecter.name }}</p>
-                                    <p><span class="text-gray-600">Username:</span> {{ selectedReport.rejecter.username }}</p>
-                                    <p><span class="text-gray-600">Date:</span> {{ formatDateTime(selectedReport.rejected_at) }}</p>
-                                    <p><span class="text-gray-600">Reason:</span> {{ selectedReport.rejection_reason || 'No reason provided' }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Report Information -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-md font-semibold mb-3">Report Information</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-600">Month/Year</p>
-                                    <p class="font-medium">{{ formatDate(selectedReport.month_year) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-600">Adjustment Date</p>
-                                    <p class="font-medium">{{ formatDateTime(selectedReport.adjustment_date) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-600">Status</p>
-                                    <span :class="getStatusClass(selectedReport.status)">
-                                        {{ selectedReport.status }}
-                                    </span>
-                                </div>
+                            <div class="flex items-center space-x-3">
+                                <button
+                                    @click="downloadPDF"
+                                    class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-500 border border-transparent rounded-lg hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-sm"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Download PDF
+                                </button>
+                                <button
+                                    @click="closeModal"
+                                    class="inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Items Table -->
-                        <div class="bg-white rounded-lg shadow overflow-hidden">
-                            <h4 class="text-md font-semibold p-4 bg-gray-50">Physical Count Items</h4>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dosage</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Barcode</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch Number</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Physical Count</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Difference</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remark</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <tr v-for="item in selectedReport.items" :key="item.id" class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm">
-                                                <div class="font-medium text-gray-900">{{ item.product?.name }}</div>
-                                                <div class="text-gray-500 text-xs">ID: {{ item.product?.productID }}</div>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm">{{ item.uom || 'N/A' }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.product?.category?.name }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.product?.dosage?.name }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.barcode || 'N/A' }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ item.batch_number }}</td>
-                                            <td class="px-4 py-3 text-sm">{{ moment(item.expiry_date).format('DD/MM/YYYY') }}</td>
-                                            <td class="px-4 py-3 text-sm text-right">{{ item.quantity }}</td>
-                                            <td class="px-4 py-3 text-sm text-right">{{ item.physical_count }}</td>
-                                            <td class="px-4 py-3 text-sm text-right">
-                                                <span :class="getDifferenceClass(item.difference)">
-                                                    {{ item.difference }}
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm">{{ item.remark || '-' }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    <!-- Modal Content -->
+                    <div class="overflow-y-auto max-h-[calc(90vh-80px)]">
+                        <div v-if="selectedReport" class="p-6 space-y-6">
+                            <!-- Report Status Information -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Reviewer Information -->
+                                <div v-if="selectedReport.reviewer" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </div>
+                                        <h5 class="font-semibold text-blue-800">Reviewed By</h5>
+                                    </div>
+                                    <div class="space-y-1 text-sm">
+                                        <p><span class="text-gray-600">Name:</span> <span class="font-medium">{{ selectedReport.reviewer.name }}</span></p>
+                                        <p><span class="text-gray-600">Username:</span> <span class="font-medium">{{ selectedReport.reviewer.username }}</span></p>
+                                        <p><span class="text-gray-600">Date:</span> <span class="font-medium">{{ formatDateTime(selectedReport.reviewed_at) }}</span></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Approver Information -->
+                                <div v-if="selectedReport.approver" class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <h5 class="font-semibold text-green-800">Approved By</h5>
+                                    </div>
+                                    <div class="space-y-1 text-sm">
+                                        <p><span class="text-gray-600">Name:</span> <span class="font-medium">{{ selectedReport.approver.name }}</span></p>
+                                        <p><span class="text-gray-600">Username:</span> <span class="font-medium">{{ selectedReport.approver.username }}</span></p>
+                                        <p><span class="text-gray-600">Date:</span> <span class="font-medium">{{ formatDateTime(selectedReport.approved_at) }}</span></p>
+                                    </div>
+                                </div>
+
+                                <!-- Rejection Information -->
+                                <div v-if="selectedReport.rejecter" class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-red-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </div>
+                                        <h5 class="font-semibold text-red-800">Rejected By</h5>
+                                    </div>
+                                    <div class="space-y-1 text-sm">
+                                        <p><span class="text-gray-600">Name:</span> <span class="font-medium">{{ selectedReport.rejecter.name }}</span></p>
+                                        <p><span class="text-gray-600">Username:</span> <span class="font-medium">{{ selectedReport.rejecter.username }}</span></p>
+                                        <p><span class="text-gray-600">Date:</span> <span class="font-medium">{{ formatDateTime(selectedReport.rejected_at) }}</span></p>
+                                        <p><span class="text-gray-600">Reason:</span> <span class="font-medium">{{ selectedReport.rejection_reason || 'No reason provided' }}</span></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Report Information -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="text-md font-semibold mb-3">Report Information</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Month/Year</p>
+                                        <p class="font-medium">{{ formatDate(selectedReport.month_year) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Adjustment Date</p>
+                                        <p class="font-medium">{{ formatDateTime(selectedReport.adjustment_date) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Status</p>
+                                        <span :class="getStatusClass(selectedReport.status)">
+                                            {{ selectedReport.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Items Table -->
+                            <div class="bg-white rounded-lg shadow overflow-hidden">
+                                <h4 class="text-md font-semibold p-4 bg-gray-50">Physical Count Items</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dosage</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Barcode</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch Number</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+                                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Physical Count</th>
+                                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Difference</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remark</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <tr v-for="item in selectedReport.items" :key="item.id" class="hover:bg-gray-50">
+                                                <td class="px-4 py-3 text-sm">
+                                                    <div class="font-medium text-gray-900">{{ item.product?.name }}</div>
+                                                    <div class="text-gray-500 text-xs">ID: {{ item.product?.productID }}</div>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm">{{ item.uom || 'N/A' }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ item.product?.category?.name }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ item.product?.dosage?.name }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ item.barcode || 'N/A' }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ item.batch_number }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ moment(item.expiry_date).format('DD/MM/YYYY') }}</td>
+                                                <td class="px-4 py-3 text-sm text-right">{{ item.quantity }}</td>
+                                                <td class="px-4 py-3 text-sm text-right">{{ item.physical_count }}</td>
+                                                <td class="px-4 py-3 text-sm text-right">
+                                                    <span :class="getDifferenceClass(item.difference)">
+                                                        {{ item.difference }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm">{{ item.remark || '-' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -227,14 +417,14 @@ const isModalOpen = ref(false);
 const selectedReport = ref(null);
 
 const getStatusClass = (status) => {
-    const baseClasses = 'px-3 py-1 rounded-full text-sm font-medium';
+    const baseClasses = 'px-2.5 py-1 rounded-full text-xs font-medium';
     const statusClasses = {
-        pending: `${baseClasses} bg-yellow-100 text-yellow-800`,
-        reviewed: `${baseClasses} bg-blue-100 text-blue-800`,
-        approved: `${baseClasses} bg-green-100 text-green-800`,
-        rejected: `${baseClasses} bg-red-100 text-red-800`
+        pending: `${baseClasses} bg-yellow-100 text-yellow-800 border border-yellow-200`,
+        reviewed: `${baseClasses} bg-blue-100 text-blue-800 border border-blue-200`,
+        approved: `${baseClasses} bg-green-100 text-green-800 border border-green-200`,
+        rejected: `${baseClasses} bg-red-100 text-red-800 border border-red-200`
     };
-    return statusClasses[status] || `${baseClasses} bg-gray-100 text-gray-800`;
+    return statusClasses[status] || `${baseClasses} bg-gray-100 text-gray-800 border border-gray-200`;
 };
 
 const month = ref(props.filters.month);
@@ -255,11 +445,8 @@ function getResult(page = 1){
 function reloadPage(){
     const query = {}
     if(month.value) query.month = month.value;
-    if(per_page.value) {
-        props.filters.page = 1;
-        query.per_page = per_page.value;
-    };
     if(props.filters.page) query.page = props.filters.page;
+    if(per_page.value) query.per_page = per_page.value;
     
     router.get(route('reports.physicalCountShow'), query, {
         preserveState: true,
@@ -271,13 +458,14 @@ function reloadPage(){
 }
 
 const getDifferenceClass = (difference) => {
-    const baseClasses = 'px-2 py-1 rounded text-sm font-medium';
-    if (difference < 0) {
-        return `${baseClasses} bg-red-100 text-red-800`;
-    } else if (difference > 0) {
+    const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
+    if (difference > 0) {
         return `${baseClasses} bg-green-100 text-green-800`;
+    } else if (difference < 0) {
+        return `${baseClasses} bg-red-100 text-red-800`;
+    } else {
+        return `${baseClasses} bg-gray-100 text-gray-600`;
     }
-    return `${baseClasses} text-gray-600`;
 };
 
 const closeModal = () => {

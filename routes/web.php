@@ -541,6 +541,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // reports.issue-quantity
         Route::post('/issue-quantity/upload', [ReportController::class, 'importIssueQuantity'])->name('reports.issue-quantity.upload');
+        
+        // Warehouse monthly inventory report
+        Route::get('/warehouse-monthly', [ReportController::class, 'warehouseMonthlyReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.warehouseMonthly');
+        
     });
     
     // Order Management Routes

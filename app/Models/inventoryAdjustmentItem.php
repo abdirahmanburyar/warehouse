@@ -44,5 +44,9 @@ class InventoryAdjustmentItem extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    public function inventoryAdjustment()
+    {
+        return $this->belongsTo(InventoryAdjustment::class, 'parent_id');
+    }
 }
-

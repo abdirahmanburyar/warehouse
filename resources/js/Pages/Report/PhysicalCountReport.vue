@@ -1,181 +1,359 @@
 <template>
     <AuthenticatedLayout title="Physical Count Report" description="Inventory Verification Tool" img="/assets/images/report.png">
-       <div class="mb-[100px]">
-        <div class="flex justify-between mb-4">
-            <div class="flex items-center">
-                <h2 class="text-xl font-semibold">{{ monthYearFormatted }}</h2>
-            </div>
-            <div v-if="$page.props.auth.can.report_physical_count_generate">
-                <Link 
-                    :href="route('reports.physicalCountShow')"
-                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
-                    v-if="$page.props.auth.can.report_physical_count_view"
-                >
-                    Old Reports
-                </Link>
-                <button 
-                    type="button" 
-                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
-                    @click="handleButtonClick"
-                >
-                    Generate
-                </button>
+       <div class="mb-16">
+        <!-- Header Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold text-gray-900">Physical Count Report</h1>
+                        <p class="text-sm text-gray-600">{{ monthYearFormatted }}</p>
+                    </div>
+                </div>
+                
+                <div v-if="$page.props.auth.can.report_physical_count_generate" class="flex items-center space-x-3">
+                    <Link 
+                        :href="route('reports.physicalCountShow')"
+                        class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        v-if="$page.props.auth.can.report_physical_count_view"
+                    >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View Reports
+                    </Link>
+                    <button 
+                        type="button" 
+                        class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-sm"
+                        @click="handleButtonClick"
+                    >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Generate Report
+                    </button>
+                </div>
             </div>
         </div>
         
-        <div v-if="hasAdjustment" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-            <div class="px-4 py-5 sm:px-6 bg-gray-50">
-                <h3 class="text-lg leading-6 font-medium text-black">Physical Counting Report</h3>
-                <p class="mt-1 max-w-2xl text-sm text-black">
-                    Created on {{ formatDate(props.physicalCountReport.adjustment_date) }}
-                </p>
+        <!-- Report Information Card -->
+        <div v-if="hasAdjustment" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Physical Count Report</h3>
+                        <p class="text-sm text-gray-600">
+                            Created on {{ formatDate(props.physicalCountReport.adjustment_date) }}
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
-                <dl class="sm:divide-y sm:divide-gray-200">
-                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Status</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            <span :class="getItemStatusClass(props.physicalCountReport.status)">{{ props.physicalCountReport.status.toUpperCase() }}</span>
-                        </dd>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Status Card -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Status</p>
+                                <div class="mt-1">
+                                    <span :class="getItemStatusClass(props.physicalCountReport.status)">
+                                        {{ props.physicalCountReport.status.toUpperCase() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Total Items</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ props.physicalCountReport.items ? props.physicalCountReport.items.length : 0 }}
-                        </dd>
+
+                    <!-- Total Items Card -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Items</p>
+                                <p class="text-xl font-semibold text-blue-900 mt-1">
+                                    {{ props.physicalCountReport.items ? props.physicalCountReport.items.length : 0 }}
+                                </p>
+                            </div>
+                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Adjustment ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ props.physicalCountReport.id }}
-                        </dd>
+
+                    <!-- Adjustment ID Card -->
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Adjustment ID</p>
+                                <p class="text-lg font-semibold text-purple-900 mt-1">
+                                    #{{ props.physicalCountReport.id }}
+                                </p>
+                            </div>
+                            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                            </svg>
+                        </div>
                     </div>
-                    <div v-if="props.physicalCountReport.reviewed_by" class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Reviewed By</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ props.physicalCountReport.reviewer ? props.physicalCountReport.reviewer.name : 'N/A' }}
-                            <span v-if="props.physicalCountReport.reviewed_at" class="text-xs text-gray-500 ml-2">
-                                ({{ formatDate(props.physicalCountReport.reviewed_at) }})
-                            </span>
-                        </dd>
+
+                    <!-- Date Card -->
+                    <div class="bg-amber-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Report Date</p>
+                                <p class="text-sm font-semibold text-amber-900 mt-1">
+                                    {{ formatDate(props.physicalCountReport.adjustment_date) }}
+                                </p>
+                            </div>
+                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
                     </div>
-                    <div v-if="props.physicalCountReport.approved_by" class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Approved By</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ props.physicalCountReport.approver ? props.physicalCountReport.approver.name : 'N/A' }}
-                            <span v-if="props.physicalCountReport.approved_at" class="text-xs text-gray-500 ml-2">
-                                ({{ formatDate(props.physicalCountReport.approved_at) }})
-                            </span>
-                        </dd>
+                </div>
+
+                <!-- Review and Approval Information -->
+                <div v-if="props.physicalCountReport.reviewed_by || props.physicalCountReport.approved_by" class="mt-6 pt-6 border-t border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Reviewed By -->
+                        <div v-if="props.physicalCountReport.reviewed_by" class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                            <div class="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-blue-900">Reviewed By</p>
+                                <p class="text-sm text-blue-700">
+                                    {{ props.physicalCountReport.reviewer ? props.physicalCountReport.reviewer.name : 'N/A' }}
+                                    <span v-if="props.physicalCountReport.reviewed_at" class="text-xs text-blue-600 ml-1">
+                                        • {{ formatDate(props.physicalCountReport.reviewed_at) }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Approved By -->
+                        <div v-if="props.physicalCountReport.approved_by" class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-green-900">Approved By</p>
+                                <p class="text-sm text-green-700">
+                                    {{ props.physicalCountReport.approver ? props.physicalCountReport.approver.name : 'N/A' }}
+                                    <span v-if="props.physicalCountReport.approved_at" class="text-xs text-green-600 ml-1">
+                                        • {{ formatDate(props.physicalCountReport.approved_at) }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </dl>
+                </div>
             </div>
         </div>
 
-        <div v-if="hasAdjustment && props.physicalCountReport.items && props.physicalCountReport.items.length > 0" class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6 bg-gray-50 flex justify-between">
-                <h3 class="text-lg leading-6 font-medium text-black">Inventory Items</h3>
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        v-model="search" 
-                        placeholder="Search items..." 
-                        class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+        <div v-if="hasAdjustment && props.physicalCountReport.items && props.physicalCountReport.items.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <!-- Table Header -->
+            <div class="px-6 py-4 border-b border-gray-100">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-lg">
+                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Inventory Items</h3>
+                            <p class="text-sm text-gray-600">{{ filteredItems.length }} items found</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            v-model="search" 
+                            placeholder="Search items..." 
+                            class="block w-64 pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm placeholder-gray-400"
+                        />
+                    </div>
                 </div>
             </div>
+
+            <!-- Table -->
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-black">
+                <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Item</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">UOM</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Barcode</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Expiry Date</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Batch Number</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Warehouse</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Location</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">System Qty</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider w-40">Physical Count</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Difference</th>
-                            <th scope="col" class="m-w-[200px] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Remarks</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">System Qty</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Physical Count</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difference</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="item in filteredItems" :key="item.id">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-black">{{ item.product ? item.product.name : 'N/A' }}</div>
+                        <tr v-for="item in filteredItems" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150">
+                            <!-- Product Info -->
+                            <td class="px-4 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                                            <span class="text-white text-sm font-medium">{{ item.product?.name?.charAt(0) || 'N' }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ item.product?.name || 'N/A' }}</div>
+                                        <div class="text-xs text-gray-500">ID: {{ item.product?.productID || 'N/A' }}</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.uom || 'N/A' }}
+
+                            <!-- Product Details -->
+                            <td class="px-4 py-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center text-sm">
+                                        <span class="text-gray-500 w-16">UOM:</span>
+                                        <span class="text-gray-900">{{ item.uom || 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex items-center text-sm">
+                                        <span class="text-gray-500 w-16">Batch:</span>
+                                        <span class="text-gray-900">{{ item.batch_number || 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex items-center text-sm">
+                                        <span class="text-gray-500 w-16">Expiry:</span>
+                                        <span class="text-gray-900">{{ formatDate(item.expiry_date) }}</span>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.barcode || 'N/A' }}
+
+                            <!-- Location -->
+                            <td class="px-4 py-4">
+                                <div class="space-y-1">
+                                    <div class="text-sm font-medium text-gray-900">{{ item.warehouse?.name || 'N/A' }}</div>
+                                    <div class="text-xs text-gray-500">{{ item.location?.location || 'N/A' }}</div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ formatDate(item.expiry_date) }}
+
+                            <!-- System Quantity -->
+                            <td class="px-4 py-4">
+                                <div class="text-sm font-semibold text-gray-900">{{ item.quantity }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.batch_number || 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.warehouse ? item.warehouse.name : 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.location ? item.location.location : 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                {{ item.quantity }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
+
+                            <!-- Physical Count Input -->
+                            <td class="px-4 py-4">
                                 <input 
                                     type="number" 
                                     v-model="item.physical_count" 
-                                    class="w-32 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center bg-gray-50 focus:bg-white transition-colors duration-200" 
                                     min="0"
                                     @input="item.difference = calculateDifference(item)"
                                 />
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm" :class="getDifferenceClass(item)">
-                                <input 
-                                    type="text" 
-                                    v-model="item.difference" 
-                                    class="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                                    placeholder="0"
-                                    readonly
-                                />
+
+                            <!-- Difference -->
+                            <td class="px-4 py-4">
+                                <span :class="getDifferenceClass(item)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    {{ calculateDifference(item) }}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
+
+                            <!-- Remarks -->
+                            <td class="px-4 py-4">
                                 <input 
                                     type="text" 
                                     v-model="item.remarks" 
-                                    class="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                                    placeholder="Enter remarks"
+                                    class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-50 focus:bg-white transition-colors duration-200" 
+                                    placeholder="Add remarks"
                                 />
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="flex justify-end mt-3 pr-6 pb-4">
-                <button v-if="props.physicalCountReport.status === 'pending'" :disabled="isSubmitting" @click="submitPhysicalCount" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    {{ isSubmitting ? "Submitting..." : "Submit" }}
+
+            <!-- Action Buttons -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">
+                <button 
+                    v-if="props.physicalCountReport.status === 'pending'" 
+                    :disabled="isSubmitting" 
+                    @click="submitPhysicalCount" 
+                    type="button" 
+                    class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                >
+                    <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                    <svg v-else class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ isSubmitting ? "Submitting..." : "Submit Report" }}
                 </button>
-                <button v-else-if="props.physicalCountReport.status === 'submitted' && $page.props.auth.can.report_physical_count_review" type="button" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded-lg"
-                @click="reviewPhysicalCount">
-                    Review
+
+                <button 
+                    v-else-if="props.physicalCountReport.status === 'submitted' && $page.props.auth.can.report_physical_count_review" 
+                    type="button" 
+                    class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                    @click="reviewPhysicalCount"
+                >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Review Report
                 </button>
-                <div v-else-if="props.physicalCountReport.status == 'reviewed' && $page.props.auth.can.report_physical_count_approve" class="flex gap-3">
-                    <button type="button" class="bg-green-300 hover:bg-green-400 text-black font-bold py-2 px-4 rounded-lg"
-                    @click="approvePhysicalCount"
-                    :disabled="isApproving"
+
+                <div v-else-if="props.physicalCountReport.status == 'reviewed' && $page.props.auth.can.report_physical_count_approve" class="flex space-x-3">
+                    <button 
+                        type="button" 
+                        class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-500 border border-transparent rounded-lg hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        @click="approvePhysicalCount"
+                        :disabled="isApproving"
                     >
+                        <svg v-if="isApproving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                        <svg v-else class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         {{ isApproving ? "Approving..." : "Approve" }}
                     </button>
-                    <button v-if="$page.props.auth.can.report_physical_count_approve" type="button" class="bg-red-300 hover:bg-red-400 text-black font-bold py-2 px-4 rounded-lg"
+                    <button v-if="$page.props.auth.can.report_physical_count_approve" type="button" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-500 border border-transparent rounded-lg hover:from-red-700 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                     @click="rejectPhysicalCount"
                     :disabled="isRejecting"
                     >
+                        <svg v-if="isRejecting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                        <svg v-else class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                         {{ isRejecting ? "Rejecting..." : "Reject" }}
                     </button>
                 </div>
@@ -542,22 +720,22 @@ const calculateDifference = (item) => {
 
 const getDifferenceClass = (item) => {
     const diff = calculateDifference(item);
-    if (diff === 'N/A') return 'text-gray-500';
-    if (diff < 0) return 'text-red-600 font-medium';
-    if (diff > 0) return 'text-green-600 font-medium';
-    return 'text-gray-500';
+    if (diff === 'N/A') return 'bg-gray-100 text-gray-700';
+    if (diff < 0) return 'bg-red-100 text-red-700';
+    if (diff > 0) return 'bg-green-100 text-green-700';
+    return 'bg-gray-100 text-gray-700';
 };
 
 const getItemStatusClass = (status) => {
     const statusClasses = {
-        'pending': 'px-2 py-1 text-lg font-medium rounded-full bg-yellow-100 text-yellow-800',
-        'submitted': 'px-2 py-1 text-lg font-medium rounded-full bg-green-100 text-green-800',
-        'reviewed': 'px-2 py-1 text-lg font-medium rounded-full bg-blue-100 text-blue-800',
-        'approved': 'px-2 py-1 text-lg font-medium rounded-full bg-green-500 text-green-800',
-        'rejected': 'px-2 py-1 text-lg font-medium rounded-full bg-red-100 text-red-800'
+        'pending': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800',
+        'submitted': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800',
+        'reviewed': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800',
+        'approved': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800',
+        'rejected': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800'
     };
     
-    return statusClasses[status] || 'px-2 py-1 text-lg font-medium rounded-full bg-gray-100 text-gray-800';
+    return statusClasses[status] || 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
 };
 
 

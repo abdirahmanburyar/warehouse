@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\Facility;
 use App\Models\Inventory;
+use App\Models\InventoryReport;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
 use App\Models\IssueQuantityReport;
@@ -22,14 +23,16 @@ use App\Models\Liquidation;
 use App\Models\Supply;
 use App\Models\Transfer;
 use App\Http\Resources\DisposalResource;
+use App\Models\IssueQuantityItem;
+use App\Models\ReceivedQuantityItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\ImportIssueQuantityJob;
-use Illuminate\Support\Facades\Log;
 use App\Imports\IssueQuantitiyImport;
 
 class ReportController extends Controller
@@ -530,4 +533,102 @@ class ReportController extends Controller
         ]);
     }
     
+    public function warehouseMonthlyReport(Request $request)
+    {
+        try {
+            $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
+            $perPage = $request->input('per_page', 25);
+            $page = $request->input('page', 1);
+            
+            // Check if we should load data
+            $shouldLoadData = $request->has('load_data');
+            
+            if ($shouldLoadData) {
+                // Load actual data using InventoryReport and InventoryReportItem
+                $reportData = $this->getInventoryReportData($request, $monthYear);
+            } else {
+                // Create empty paginator as default for initial page load
+                $reportData = new \Illuminate\Pagination\LengthAwarePaginator(
+                    [], // empty items
+                    0,  // total
+                    $perPage,
+                    $page,
+                    [
+                        'path' => $request->url(),
+                        'pageName' => 'page',
+                    ]
+                );
+                $reportData->appends($request->all());
+            }
+            
+            return inertia('Report/WarehouseMonthlyReport', [
+                'reportData' => $reportData,
+                'monthYear' => $monthYear,
+                'filters' => $request->only(['month_year', 'per_page', 'page']),
+            ]);
+            
+        } catch (\Throwable $th) {
+            Log::error('Warehouse Monthly Report Error: ' . $th->getMessage());
+            return back()->with('error', 'Failed to load report page. Please try again.');
+        }
+    }
+    
+    public function getInventoryReportData(Request $request, $monthYear = null)
+    {
+        try {
+            $monthYear = $monthYear ?: $request->input('month_year', Carbon::now()->format('Y-m'));
+            
+            // Find the inventory report for the specified month
+            $inventoryReport = InventoryReport::where('month_year', $monthYear)
+                ->with(['items.product.dosage', 'items.product.category'])
+                ->first();
+            
+            $reportData = [];
+            
+            if ($inventoryReport && $inventoryReport->items->isNotEmpty()) {
+                // Transform the data for the frontend
+                foreach ($inventoryReport->items as $item) {
+                    $reportData[] = [
+                        'product' => $item->product,
+                        'beginning_balance' => (float) $item->beginning_balance,
+                        'received_quantity' => (float) $item->received_quantity,
+                        'issued_quantity' => (float) $item->issued_quantity,
+                        'positive_adjustment' => (float) $item->positive_adjustment,
+                        'negative_adjustment' => (float) $item->negative_adjustment,
+                        'closing_balance' => (float) $item->closing_balance,
+                        'batch_number' => $item->batch_number,
+                        'expiry_date' => $item->expiry_date,
+                        'unit_cost' => (float) $item->unit_cost,
+                        'total_cost' => (float) $item->total_cost,
+                        'months_of_stock' => (float) $item->months_of_stock,
+                    ];
+                }
+            }
+            
+            // Paginate the results
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 25);
+            $total = count($reportData);
+            $offset = ($page - 1) * $perPage;
+            $items = array_slice($reportData, $offset, $perPage);
+            
+            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => $request->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            $paginatedData->appends($request->all());
+            
+            return $paginatedData;
+            
+        } catch (\Throwable $th) {
+            Log::error('Get Inventory Report Data Error: ' . $th->getMessage());
+            throw $th;
+        }
+    }
 }

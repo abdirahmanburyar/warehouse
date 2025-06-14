@@ -19,15 +19,6 @@
                                 <Link :href="route('reports.inventoryReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventory Report</Link>
                             </li>
                             <li>
-                                <Link href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Stock Level Report</Link>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Movement History</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventory Valuation</a>
-                            </li>
-                            <li>
                                 <Link :href="route('reports.receivedQuantities')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">QTY Received Report</Link>
                             </li>
                             <li>
@@ -35,6 +26,10 @@
                             </li>
                             <li v-if="$page.props.auth.can.report_physical_count_view">
                                 <Link :href="route('reports.physicalCount')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Physical Count Report</Link>
+                            </li>
+                            <!-- v-if="$page.props.auth.user.permissions?.includes('report.view')" -->
+                            <li >
+                                <Link :href="route('reports.warehouseMonthly')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warehouse Monthly Report</Link>
                             </li>
                         </ul>
                     </div>
