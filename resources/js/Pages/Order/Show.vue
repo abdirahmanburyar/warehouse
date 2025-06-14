@@ -567,6 +567,7 @@ async function updateQuantity(item){
 
 // Function to change order status
 const changeStatus = (orderId, newStatus) => {
+  console.log(orderId, newStatus);
   Swal.fire({
     title: 'Are you sure?',
     text: `Do you want to change the order status to ${newStatus}?`,
