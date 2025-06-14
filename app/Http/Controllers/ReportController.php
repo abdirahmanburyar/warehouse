@@ -7,6 +7,7 @@ use App\Models\AvarageMonthlyconsumption;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\MonthlyQuantityReceived;
+use App\Http\Resources\ReceivedQuantityResource;
 use App\Models\MonthlyConsumptionReport;
 use App\Models\Warehouse;
 use App\Models\User;

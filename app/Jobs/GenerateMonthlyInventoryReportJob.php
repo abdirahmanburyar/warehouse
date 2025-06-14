@@ -161,14 +161,19 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
      */
     private function generateProductReportItemFromReports(InventoryReport $report, $product, $receivedItems, $issuedItems, Carbon $previousDate)
     {
+        echo "Processing product: {$product->productID} - {$product->name}\n";
+        
         // Get beginning balance from previous month's report
         $beginningBalance = $this->getPreviousMonthClosingBalance($product->id, $previousDate->format('Y-m'));
+        echo "  Beginning balance: {$beginningBalance}\n";
         
         // Get received quantity from the received report items
         $receivedQuantity = $receivedItems->where('product_id', $product->id)->sum('quantity');
+        echo "  Received quantity: {$receivedQuantity}\n";
         
         // Get issued quantity from the issued report items
         $issuedQuantity = $issuedItems->where('product_id', $product->id)->sum('quantity');
+        echo "  Issued quantity: {$issuedQuantity}\n";
         
         // Set adjustments to 0 (will be entered manually)
         $positiveAdjustment = 0;
@@ -176,16 +181,54 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
         
         // Calculate closing balance
         $closingBalance = $beginningBalance + $receivedQuantity - $issuedQuantity - $negativeAdjustment + $positiveAdjustment;
+        echo "  Closing balance: {$closingBalance}\n";
         
         // Only create report item if there's any movement or balance
         if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $closingBalance > 0) {
             
-            // Set default values since unit_cost column doesn't exist in received_quantity_items
+            // Calculate unit cost based on received items
+            $productReceivedItems = $receivedItems->where('product_id', $product->id);
+            echo "  Found " . $productReceivedItems->count() . " received items for this product\n";
+            
+            $totalReceivedCost = $productReceivedItems->sum('total_cost');
+            $totalReceivedQuantity = $productReceivedItems->sum('quantity');
+            
+            echo "  Total received cost: {$totalReceivedCost}\n";
+            echo "  Total received quantity: {$totalReceivedQuantity}\n";
+            
+            // Debug: Show individual received items
+            foreach ($productReceivedItems as $item) {
+                echo "    Item - Qty: {$item->quantity}, Unit Cost: {$item->unit_cost}, Total Cost: {$item->total_cost}\n";
+            }
+            
+            // Calculate weighted average unit cost for this month's received items
             $unitCost = 0;
-            $totalCost = 0;
+            if ($totalReceivedQuantity > 0 && $totalReceivedCost > 0) {
+                $unitCost = $totalReceivedCost / $totalReceivedQuantity;
+                echo "  Calculated unit cost from received items: {$unitCost}\n";
+            } else {
+                echo "  No cost data from received items, checking previous month...\n";
+                // If no cost data from received items, try to get from previous month's report
+                $previousReportItem = InventoryReportItem::whereHas('report', function($q) use ($previousDate) {
+                    $q->where('month_year', $previousDate->format('Y-m'));
+                })->where('product_id', $product->id)->first();
+                
+                if ($previousReportItem && $previousReportItem->unit_cost > 0) {
+                    $unitCost = $previousReportItem->unit_cost;
+                    echo "  Using previous month's unit cost: {$unitCost}\n";
+                } else {
+                    echo "  No previous month's cost data found, using 0\n";
+                }
+            }
+            
+            // Calculate total cost based on closing balance and unit cost
+            $totalCost = $closingBalance * $unitCost;
+            echo "  Calculated total cost: {$totalCost} (closing balance: {$closingBalance} × unit cost: {$unitCost})\n";
             
             // Calculate months of stock based on issued quantity
             $monthsOfStock = $issuedQuantity > 0 ? ($closingBalance / $issuedQuantity) : 0;
+            
+            echo "  Final values - Unit Cost: " . round($unitCost, 2) . ", Total Cost: " . round($totalCost, 2) . "\n";
             
             InventoryReportItem::create([
                 'inventory_report_id' => $report->id,
@@ -204,13 +247,15 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
                 'average_monthly_consumption' => $issuedQuantity, // Current month consumption
                 'months_of_stock' => $monthsOfStock,
                 'quantity_in_pipeline' => 0, // Not tracked in this implementation
-                'unit_cost' => $unitCost,
-                'total_cost' => $totalCost,
+                'unit_cost' => round($unitCost, 2),
+                'total_cost' => round($totalCost, 2),
             ]);
             
+            echo "  ✓ Report item created successfully\n\n";
             return true; // Item was created
         }
         
+        echo "  ✗ No report item created (no movement or balance)\n\n";
         return false; // No item created
     }
     
