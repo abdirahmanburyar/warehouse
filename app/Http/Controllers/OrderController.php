@@ -561,9 +561,9 @@ class OrderController extends Controller
                                 'uom' => $allocation['uom'],
                                 'expiry_date' => $allocation['expiry_date'],
                                 'issued_by' => $userId,
-                                'issued_at' => $now,
-                                'unit_cost' => $allocation['unit_cost'],
-                                'total_cost' => $allocation['total_cost'],
+                                'issued_date' => $now,
+                                'unit_cost' => $allocation['unit_cost'] ?? 0,
+                                'total_cost' => $allocation['total_cost'] ?? 0,
                             ]);
                         }
                     }
