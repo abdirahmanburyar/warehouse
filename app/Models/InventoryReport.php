@@ -34,6 +34,31 @@ class InventoryReport extends Model
         return $this->hasMany(InventoryReportItem::class);
     }
 
+    public function generatedBy()
+    {
+        return $this->belongsTo(User::class, 'generated_by');
+    }
+
+    public function submittedBy()
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function reviewedBy()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     /**
      * Get all available status options
      */

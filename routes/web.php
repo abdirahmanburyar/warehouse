@@ -544,11 +544,15 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
         // Warehouse monthly inventory report
         Route::get('/warehouse-monthly', [ReportController::class, 'warehouseMonthlyReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.warehouseMonthly');
-        Route::put('/warehouse-monthly/adjustments', [ReportController::class, 'updateInventoryReportAdjustments'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.warehouseMonthly.updateAdjustments');
+        Route::put('/warehouse-monthly/adjustments', [ReportController::class, 'updateInventoryReportAdjustments'])->name('reports.warehouseMonthly.updateInventoryReportAdjustments');
         Route::put('/warehouse-monthly/submit', [ReportController::class, 'submitInventoryReport'])->middleware(PermissionMiddleware::class . ':report.edit')->name('reports.warehouseMonthly.submit');
         Route::put('/warehouse-monthly/review', [ReportController::class, 'reviewInventoryReport'])->middleware(PermissionMiddleware::class . ':report.review')->name('reports.warehouseMonthly.review');
         Route::put('/warehouse-monthly/approve', [ReportController::class, 'approveInventoryReport'])->middleware(PermissionMiddleware::class . ':report.approve')->name('reports.warehouseMonthly.approve');
         Route::put('/warehouse-monthly/reject', [ReportController::class, 'rejectInventoryReport'])->middleware(PermissionMiddleware::class . ':report.reject')->name('reports.warehouseMonthly.reject');
+        Route::post('/warehouse-monthly/export-to-excel', [ReportController::class, 'exportToExcel'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.warehouseMonthly.exportToExcel');
+    });
+
+    // Approval Routes
         
     });
     
@@ -559,7 +563,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
         Route::post('/{approval}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
     });
-});
 
 
 require __DIR__.'/auth.php';
