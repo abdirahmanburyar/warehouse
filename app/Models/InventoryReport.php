@@ -17,6 +17,15 @@ class InventoryReport extends Model
         'month_year',
         'generated_by',
         'generated_at',
+        'submitted_by',
+        'submitted_at',
+        'reviewed_by',
+        'reviewed_at',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
         'status'
     ];
 

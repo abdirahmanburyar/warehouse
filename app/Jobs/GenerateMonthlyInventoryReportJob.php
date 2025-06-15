@@ -287,9 +287,7 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
             $totalCost = abs($closingBalance) * $unitCost;
             echo "  Calculated total cost: {$totalCost} (closing balance: {$closingBalance} × unit cost: {$unitCost})\n";
             
-            // Calculate months of stock based on issued quantity
-            $monthsOfStock = $issuedQuantity > 0 ? ($closingBalance / $issuedQuantity) : 0;
-            
+                        
             // Determine expiry date priority: received items first, then issued items, then product, then default
             $expiryDate = now()->addYears(5)->format('Y-m-d'); // Default fallback
             
@@ -324,7 +322,7 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
                 'closing_balance' => $closingBalance,
                 'total_closing_balance' => $closingBalance,
                 'average_monthly_consumption' => $issuedQuantity > 0 ? $issuedQuantity : 1,
-                'months_of_stock' => round($monthsOfStock, 2),
+                'months_of_stock' => 'N/A',
                 'quantity_in_pipeline' => 0,
                 'unit_cost' => round($unitCost, 2),
                 'total_cost' => round($totalCost, 2),

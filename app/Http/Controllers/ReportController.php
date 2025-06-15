@@ -539,8 +539,6 @@ class ReportController extends Controller
     {
         try {
             $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
-            $perPage = $request->input('per_page', 25);
-            $page = $request->input('page', 1);
             
             // Check if we should load data
             $shouldLoadData = $request->has('load_data');
@@ -548,23 +546,8 @@ class ReportController extends Controller
             // Get inventory report status
             $inventoryReport = InventoryReport::where('month_year', $monthYear)->first();
             
-            if ($shouldLoadData) {
-                // Load actual data using InventoryReport and InventoryReportItem
-                $reportData = $this->getInventoryReportData($request, $monthYear);
-            } else {
-                // Create empty paginator as default for initial page load
-                $reportData = new \Illuminate\Pagination\LengthAwarePaginator(
-                    [], // empty items
-                    0,  // total
-                    $perPage,
-                    $page,
-                    [
-                        'path' => $request->url(),
-                        'pageName' => 'page',
-                    ]
-                );
-                $reportData->appends($request->all());
-            }
+            // Always load data without pagination
+            $reportData = $this->getInventoryReportData($request, $monthYear);
             
             return inertia('Report/WarehouseMonthlyReport', [
                 'reportData' => $reportData,
@@ -591,6 +574,7 @@ class ReportController extends Controller
                 'adjustments.*.product_id' => 'required|exists:products,id',
                 'adjustments.*.positive_adjustment' => 'required|numeric|min:0',
                 'adjustments.*.negative_adjustment' => 'required|numeric|min:0',
+                'adjustments.*.months_of_stock' => 'nullable|string',
             ]);
 
             return DB::transaction(function () use ($request) {
@@ -610,23 +594,49 @@ class ReportController extends Controller
                         ->first();
 
                     if ($reportItem) {
-                        $reportItem->update([
+                        $closingBalance = $reportItem->beginning_balance 
+                            + $reportItem->received_quantity 
+                            - $reportItem->issued_quantity 
+                            + $adjustment['positive_adjustment'] 
+                            - $adjustment['negative_adjustment'];
+                            
+                        $totalCost = $closingBalance * $reportItem->unit_cost;
+                        
+                        $updateData = [
                             'positive_adjustment' => $adjustment['positive_adjustment'],
                             'negative_adjustment' => $adjustment['negative_adjustment'],
-                            // Recalculate closing balance
-                            'closing_balance' => $reportItem->beginning_balance 
-                                + $reportItem->received_quantity 
-                                - $reportItem->issued_quantity 
-                                + $adjustment['positive_adjustment'] 
-                                - $adjustment['negative_adjustment'],
-                            // Recalculate months of stock
-                            'months_of_stock' => $reportItem->unit_cost > 0 
-                                ? ($reportItem->beginning_balance 
-                                    + $reportItem->received_quantity 
-                                    - $reportItem->issued_quantity 
-                                    + $adjustment['positive_adjustment'] 
-                                    - $adjustment['negative_adjustment']) / $reportItem->unit_cost
-                                : 0
+                            // Update closing balance
+                            'closing_balance' => $closingBalance,
+                            // Update total cost based on new closing balance and unit cost
+                            'total_cost' => $totalCost,
+                        ];
+                        
+                        // Debug: Log current and new months_of_stock values
+                        $oldMonthsOfStock = $reportItem->months_of_stock;
+                        $newMonthsOfStock = $adjustment['months_of_stock'] ?? null;
+                        
+                        Log::debug('Updating months_of_stock', [
+                            'product_id' => $reportItem->product_id,
+                            'old_value' => $oldMonthsOfStock,
+                            'new_value' => $newMonthsOfStock,
+                            'type_old' => gettype($oldMonthsOfStock),
+                            'type_new' => gettype($newMonthsOfStock),
+                            'full_request' => $adjustment
+                        ]);
+                        
+                        // Only update months_of_stock if it's provided in the request
+                        if (isset($adjustment['months_of_stock'])) {
+                            $updateData['months_of_stock'] = $adjustment['months_of_stock'];
+                        }
+                        
+                        $reportItem->update($updateData);
+                        
+                        // Log after update to verify
+                        $updatedItem = $reportItem->fresh();
+                        Log::debug('After update months_of_stock', [
+                            'product_id' => $reportItem->product_id,
+                            'saved_value' => $updatedItem->months_of_stock,
+                            'type_saved' => gettype($updatedItem->months_of_stock)
                         ]);
                     }
                 }
@@ -810,26 +820,8 @@ class ReportController extends Controller
                 }
             }
             
-            // Paginate the results
-            $page = $request->input('page', 1);
-            $perPage = $request->input('per_page', 25);
-            $total = count($reportData);
-            $offset = ($page - 1) * $perPage;
-            $items = array_slice($reportData, $offset, $perPage);
-            
-            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $total,
-                $perPage,
-                $page,
-                [
-                    'path' => $request->url(),
-                    'pageName' => 'page',
-                ]
-            );
-            $paginatedData->appends($request->all());
-            
-            return $paginatedData;
+            // Return all data without pagination
+            return $reportData;
             
         } catch (\Throwable $th) {
             Log::error('Get Inventory Report Data Error: ' . $th->getMessage());

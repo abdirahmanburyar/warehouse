@@ -101,25 +101,7 @@
                     />
                 </div>
 
-                <!-- Items Per Page -->
-                <div class="w-[200px]">
-                    <label for="per_page" class="block text-xs font-medium text-gray-700 mb-2">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                        </svg>
-                        Items per page
-                    </label>
-                    <select 
-                        id="per_page"
-                        v-model="perPage" 
-                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
-                    >
-                        <option value="10">10 items</option>
-                        <option value="25">25 items</option>
-                        <option value="50">50 items</option>
-                        <option value="100">100 items</option>
-                    </select>
-                </div>
+
 
             </div>
 
@@ -150,7 +132,7 @@
                     <p class="text-xs text-gray-600 mt-1">{{ formatMonthYear(monthYear) }}</p>
                 </div>
 
-                <div v-if="reportData?.data?.length > 0" class="overflow-x-auto">
+                <div v-if="reportData?.length > 0" class="overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -193,7 +175,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="item in reportData.data" :key="item.product.id" class="hover:bg-gray-50 transition-colors duration-150">
+                            <tr v-for="item in reportData" :key="item.product.id" class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="p-2">
                                     <div class="flex items-center space-x-3">
                                         <div class="min-w-0 flex-1">
@@ -226,7 +208,7 @@
                                     <input 
                                         v-if="canEdit"
                                         type="number" 
-                                        v-model="currentAdjustments[item.product.id].positive_adjustment" 
+                                        :value="getCurrentAdjustment(item.product.id, 'positive_adjustment')"
                                         @input="updateAdjustment(item.product.id, 'positive_adjustment', $event.target.value)"
                                         @keydown.enter="saveAdjustments"
                                         class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
@@ -238,7 +220,7 @@
                                     <input 
                                         v-if="canEdit"
                                         type="number" 
-                                        v-model="currentAdjustments[item.product.id].negative_adjustment" 
+                                        :value="getCurrentAdjustment(item.product.id, 'negative_adjustment')"
                                         @input="updateAdjustment(item.product.id, 'negative_adjustment', $event.target.value)"
                                         @keydown.enter="saveAdjustments"
                                         class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
@@ -246,7 +228,7 @@
                                     />
                                     <span v-else>{{ formatNumber(item.negative_adjustment) }}</span>
                                 </td>
-                                <td class="p-2 text-right text-xs font-bold" :class="getBalanceColor(item.closing_balance)">
+                                <td class="p-2 text-right text-xs font-bold" :class="item.closing_balance > 0 ? 'text-green-600' : item.closing_balance < 0 ? 'text-red-600' : 'text-gray-600'">
                                     {{ formatNumber(item.closing_balance) }}
                                 </td>
                                 <td class="p-2 text-right text-xs font-medium text-gray-900">
@@ -258,8 +240,8 @@
                                 <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     <input 
                                         v-if="canEdit"
-                                        type="number" 
-                                        v-model="currentAdjustments[item.product.id].months_of_stock" 
+                                        type="text" 
+                                        :value="getCurrentAdjustment(item.product.id, 'months_of_stock')"
                                         @input="updateAdjustment(item.product.id, 'months_of_stock', $event.target.value)"
                                         @keydown.enter="saveAdjustments"
                                         class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
@@ -285,20 +267,6 @@
                     <p class="text-xs text-gray-500 mb-4">No inventory movements found for the selected month.</p>
                 </div>
 
-                <!-- Pagination -->
-                <div v-if="reportData?.data?.length > 0" class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                    <div class="flex items-center justify-between">
-                        <div class="text-xs text-gray-500">
-                            Showing {{ reportData.from || 0 }} to {{ reportData.to || 0 }} of {{ reportData.total || 0 }} results
-                        </div>
-                        <TailwindPagination 
-                            :data="reportData" 
-                            @pagination-change-page="onPageChange"
-                            :limit="2"
-                            class="flex space-x-1"
-                        />
-                    </div>
-                </div>
             </div>
         </div>
         </AuthenticatedLayout>
@@ -308,8 +276,9 @@
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
     import { Head, Link, router } from '@inertiajs/vue3';
     import Swal from 'sweetalert2';
+    import axios from 'axios';
     import { ref, watch, onMounted, computed } from 'vue';
-    import { TailwindPagination } from 'laravel-vue-pagination';
+
     import moment from 'moment';
 
 
@@ -319,7 +288,7 @@
             AuthenticatedLayout,
             Head,
             Link,
-            TailwindPagination,
+
             moment
         },
         props: {
@@ -338,28 +307,44 @@
         },
         setup(props) {
             const monthYear = ref(props.filters.month_year || new Date().toISOString().slice(0, 7));
-            const perPage = ref(props.filters.per_page || 25);
             const saving = ref(false);
             const processing = ref(false);
             const originalAdjustments = ref({});
             const currentAdjustments = ref({});
 
+            // Safe getter for adjustment values
+            const getCurrentAdjustment = (productId, field) => {
+                if (!currentAdjustments.value[productId]) {
+                    return 0; // Return default value if not initialized
+                }
+                return currentAdjustments.value[productId][field] || 0;
+            };
+
             // Initialize adjustments tracking
             const initializeAdjustments = () => {
-                if (props.reportData?.data) {
-                    props.reportData.data.forEach(item => {
+                if (props.reportData && Array.isArray(props.reportData)) {
+                    const newOriginal = {};
+                    const newCurrent = {};
+                    
+                    props.reportData.forEach(item => {
+                        if (!item.product?.id) return; // Skip if no product id
+                        
                         // Initialize with default values if any field is undefined
-                        originalAdjustments.value[item.product.id] = {
+                        newOriginal[item.product.id] = {
                             positive_adjustment: item.positive_adjustment ?? 0,
                             negative_adjustment: item.negative_adjustment ?? 0,
-                            months_of_stock: item.months_of_stock ?? 0
+                            months_of_stock: item.months_of_stock?.toString() ?? '0'  // Convert to string
                         };
-                        currentAdjustments.value[item.product.id] = {
+                        
+                        newCurrent[item.product.id] = {
                             positive_adjustment: item.positive_adjustment ?? 0,
                             negative_adjustment: item.negative_adjustment ?? 0,
-                            months_of_stock: item.months_of_stock ?? 0
+                            months_of_stock: item.months_of_stock?.toString() ?? '0'  // Convert to string
                         };
                     });
+                    
+                    originalAdjustments.value = newOriginal;
+                    currentAdjustments.value = newCurrent;
                 }
             };
 
@@ -400,21 +385,10 @@
             });
 
             // Format month year for display
-            const formatMonthYear = (monthYear) => {
-                if (!monthYear) return '';
-                const date = new Date(monthYear + '-01');
-                return date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long' 
-                });
+            const formatMonthYear = (dateString) => {
+                if (!dateString) return 'Select Month';
+                return moment(dateString).format('MMMM YYYY');
             };
-
-            // Watch for changes in props.reportData and initialize adjustments
-            watch(() => props.reportData, (newData) => {
-                if (newData?.data) {
-                    initializeAdjustments();
-                }
-            }, { immediate: true });
 
             // Format numbers with commas
             const formatNumber = (num) => {
@@ -467,22 +441,39 @@
 
             // Update adjustment value
             const updateAdjustment = (productId, field, value) => {
+                console.log('updateAdjustment called:', { productId, field, value, type: typeof value });
+                
                 // Initialize adjustments if they don't exist
                 if (!currentAdjustments.value[productId]) {
                     currentAdjustments.value[productId] = {
                         positive_adjustment: 0,
                         negative_adjustment: 0,
-                        months_of_stock: 0
+                        months_of_stock: '0'  // Initialize as string
                     };
                 }
                 
-                // Update the specific field
-                currentAdjustments.value[productId][field] = parseFloat(value) || 0;
+                if (field === 'months_of_stock') {
+                    console.log('Updating months_of_stock - before:', {
+                        oldValue: currentAdjustments.value[productId][field],
+                        newValue: value,
+                        type: typeof value
+                    });
+                    // Keep as string for months_of_stock
+                    currentAdjustments.value[productId][field] = value.toString();
+                    console.log('Updating months_of_stock - after:', {
+                        newValue: currentAdjustments.value[productId][field],
+                        type: typeof currentAdjustments.value[productId][field]
+                    });
+                } else {
+                    // Parse as float for numerical fields
+                    currentAdjustments.value[productId][field] = parseFloat(value) || 0;
+                }
             };
 
             // Save adjustments
             const saveAdjustments = async () => {
                 saving.value = true;
+                console.log('Saving adjustments...', JSON.parse(JSON.stringify(currentAdjustments.value)));
                 try {
                     const changedItems = Object.keys(currentAdjustments.value).filter(id => {
                         const current = currentAdjustments.value[id];
@@ -497,12 +488,48 @@
                         months_of_stock: currentAdjustments.value[id].months_of_stock
                     }));
 
-                    const response = await axios.put(route('reports.warehouseMonthly.updateAdjustments'), {
+                    const payload = {
                         month_year: monthYear.value,
                         adjustments: changedItems
-                    });
+                    };
+                    
+                    console.log('Sending payload to server:', JSON.parse(JSON.stringify(payload)));
+                    
+                    const response = await axios.put(route('reports.warehouseMonthly.updateAdjustments'), payload);
+                    
+                    console.log('Server response:', response);
 
                     if (response.status === 200) {
+                        // Update the local reportData with the new values
+                        reportData.value = reportData.value.map(item => {
+                            const adjustment = currentAdjustments.value[item.product.id];
+                            if (adjustment) {
+                                return {
+                                    ...item,
+                                    positive_adjustment: adjustment.positive_adjustment,
+                                    negative_adjustment: adjustment.negative_adjustment,
+                                    months_of_stock: adjustment.months_of_stock,
+                                    // Recalculate closing balance locally
+                                    closing_balance: item.beginning_balance + 
+                                                  item.received_quantity - 
+                                                  item.issued_quantity + 
+                                                  adjustment.positive_adjustment - 
+                                                  adjustment.negative_adjustment,
+                                    // Recalculate total cost locally
+                                    total_cost: (item.beginning_balance + 
+                                               item.received_quantity - 
+                                               item.issued_quantity + 
+                                               adjustment.positive_adjustment - 
+                                               adjustment.negative_adjustment) * 
+                                               item.unit_cost
+                                };
+                            }
+                            return item;
+                        });
+
+                        // Update original adjustments to match current ones
+                        originalAdjustments.value = JSON.parse(JSON.stringify(currentAdjustments.value));
+                        
                         Swal.fire({
                             icon: 'success',
                             title: 'Success',
@@ -510,13 +537,14 @@
                             timer: 2000,
                             showConfirmButton: false
                         });
-                        
-                        // Update original values
-                        initializeAdjustments();
-                        // Reload the page to get fresh data
-                        reloadPage();
                     }
                 } catch (error) {
+                    console.error('Error saving adjustments:', error);
+                    console.error('Error response:', error.response?.data);
+                    
+                    // Close loading indicator
+                    Swal.close();
+                    
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -629,22 +657,7 @@
             const reloadPage = () => {
                 const params = new URLSearchParams();
                 if (monthYear.value) params.set('month_year', monthYear.value);
-                if (perPage.value) params.set('per_page', perPage.value);
                 params.set('load_data', '1'); // Always load data when filters change
-                
-                router.get(route('reports.warehouseMonthly'), Object.fromEntries(params), {
-                    preserveState: true,
-                    preserveScroll: true
-                });
-            };
-
-            // Handle pagination change
-            const onPageChange = (page) => {
-                const params = new URLSearchParams();
-                if (monthYear.value) params.set('month_year', monthYear.value);
-                if (perPage.value) params.set('per_page', perPage.value);
-                params.set('load_data', '1'); // Always load data for pagination
-                params.set('page', page);
                 
                 router.get(route('reports.warehouseMonthly'), Object.fromEntries(params), {
                     preserveState: true,
@@ -659,7 +672,6 @@
                 if (!props.reportData?.data || props.reportData.data.length === 0) {
                     const params = new URLSearchParams();
                     if (monthYear.value) params.set('month_year', monthYear.value);
-                    if (perPage.value) params.set('per_page', perPage.value);
                     params.set('load_data', '1');
                     
                     router.get(route('reports.warehouseMonthly'), Object.fromEntries(params), {
@@ -674,39 +686,40 @@
                 reloadPage();
             });
 
-            watch(perPage, () => {
-                reloadPage();
-            });
+
 
             // Watch for data changes to reinitialize adjustments
-            watch(() => props.reportData?.data, () => {
+            // Load data on mount if we don't have any
+            onMounted(() => {
                 initializeAdjustments();
-            }, { deep: true });
+            });
 
             return {
                 monthYear,
-                perPage,
-                formatMonthYear,
-                formatNumber,
-                getBalanceColor,
-                onPageChange,
-                canEdit,
-                canSubmit,
-                canReview,
-                canApprove,
-                canReject,
                 saving,
                 processing,
-                hasUnsavedChanges,
-                getStatusBadgeClass,
-                getStatusText,
-                updateAdjustment,
                 currentAdjustments,
+                originalAdjustments,
+                initializeAdjustments,
+                updateAdjustment,
                 saveAdjustments,
                 submitReport,
                 reviewReport,
                 approveReport,
                 rejectReport,
+                formatNumber,
+                formatMonthYear,
+                formatDate,
+                getStatusBadgeClass,
+                getStatusText,
+                hasUnsavedChanges,
+                canEdit,
+                canSubmit,
+                canReview,
+                canApprove,
+                canReject,
+                reloadPage,
+                getCurrentAdjustment,
                 formatDate
             };
         }
