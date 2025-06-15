@@ -17,7 +17,7 @@ class GenerateMonthlyReceivedReport extends Command
      *
      * @var string
      */
-    protected $signature = 'report:monthly-received-quantities {month? : The month to generate report for (format: YYYY-MM)} {--force : Force regenerate the report even if it already exists}';
+    protected $signature = 'report:monthly-received-quantities {--month= : The month in YYYY-MM format} {--force : Force regenerate the report even if it already exists}';
 
     /**
      * The console command description.
@@ -34,7 +34,7 @@ class GenerateMonthlyReceivedReport extends Command
         $this->info('Starting monthly received quantities report generation...');
 
         // Get the month to process (either from argument or previous month)
-        $monthArg = $this->argument('month');
+        $monthArg = $this->option('month');
         $force = $this->option('force');
         $today = Carbon::now();
         $isFirstDayOfMonth = $today->day === 1;

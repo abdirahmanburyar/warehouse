@@ -14,7 +14,7 @@ class GenerateInventoryMonthlyReport extends Command
      *
      * @var string
      */
-    protected $signature = 'inventory:generate-monthly-report {month? : The month in YYYY-MM format}';
+    protected $signature = 'inventory:generate-monthly-report {--month= : The month in YYYY-MM format}';
 
     /**
      * The console command description.
@@ -29,7 +29,7 @@ class GenerateInventoryMonthlyReport extends Command
     public function handle()
     {
         // Default to previous month since inventory reports are generated on the first day for the previous month
-        $monthYear = $this->argument('month') ?? Carbon::now()->subMonth()->format('Y-m');
+        $monthYear = $this->option('month') ?? Carbon::now()->subMonth()->format('Y-m');
         
         $this->info("Generating monthly inventory report for {$monthYear}");
         

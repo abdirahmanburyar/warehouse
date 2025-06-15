@@ -544,6 +544,9 @@ class ReportController extends Controller
             // Check if we should load data
             $shouldLoadData = $request->has('load_data');
             
+            // Get inventory report status
+            $inventoryReport = InventoryReport::where('month_year', $monthYear)->first();
+            
             if ($shouldLoadData) {
                 // Load actual data using InventoryReport and InventoryReportItem
                 $reportData = $this->getInventoryReportData($request, $monthYear);
@@ -565,12 +568,203 @@ class ReportController extends Controller
             return inertia('Report/WarehouseMonthlyReport', [
                 'reportData' => $reportData,
                 'monthYear' => $monthYear,
+                'inventoryReport' => $inventoryReport,
                 'filters' => $request->only(['month_year', 'per_page', 'page']),
             ]);
             
         } catch (\Throwable $th) {
             Log::error('Warehouse Monthly Report Error: ' . $th->getMessage());
             return back()->with('error', 'Failed to load report page. Please try again.');
+        }
+    }
+
+    /**
+     * Update inventory report adjustments
+     */
+    public function updateInventoryReportAdjustments(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string',
+                'adjustments' => 'required|array',
+                'adjustments.*.product_id' => 'required|exists:products,id',
+                'adjustments.*.positive_adjustment' => 'required|numeric|min:0',
+                'adjustments.*.negative_adjustment' => 'required|numeric|min:0',
+            ]);
+
+            return DB::transaction(function () use ($request) {
+                $inventoryReport = InventoryReport::where('month_year', $request->month_year)->first();
+                
+                if (!$inventoryReport) {
+                    return response()->json(['message' => 'Inventory report not found for this month.'], 404);
+                }
+
+                if (!$inventoryReport->canBeEdited()) {
+                    return response()->json(['message' => 'This report cannot be edited in its current status.'], 403);
+                }
+
+                foreach ($request->adjustments as $adjustment) {
+                    $reportItem = $inventoryReport->items()
+                        ->where('product_id', $adjustment['product_id'])
+                        ->first();
+
+                    if ($reportItem) {
+                        $reportItem->update([
+                            'positive_adjustment' => $adjustment['positive_adjustment'],
+                            'negative_adjustment' => $adjustment['negative_adjustment'],
+                            // Recalculate closing balance
+                            'closing_balance' => $reportItem->beginning_balance 
+                                + $reportItem->received_quantity 
+                                - $reportItem->issued_quantity 
+                                + $adjustment['positive_adjustment'] 
+                                - $adjustment['negative_adjustment']
+                        ]);
+                    }
+                }
+
+                return response()->json(['message' => 'Adjustments updated successfully.'], 200);
+            });
+
+        } catch (\Throwable $th) {
+            Log::error('Update Inventory Report Adjustments Error: ' . $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Submit inventory report for review
+     */
+    public function submitInventoryReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string'
+            ]);
+
+            return DB::transaction(function () use ($request) {
+                $inventoryReport = InventoryReport::where('month_year', $request->month_year)->first();
+                
+                if (!$inventoryReport) {
+                    return response()->json(['message' => 'Inventory report not found for this month.'], 404);
+                }
+
+                if (!$inventoryReport->canBeSubmitted()) {
+                    return response()->json(['message' => 'This report cannot be submitted in its current status.'], 403);
+                }
+
+                $inventoryReport->update([
+                    'status' => InventoryReport::STATUS_SUBMITTED
+                ]);
+
+                return response()->json(['message' => 'Report submitted successfully for review.'], 200);
+            });
+
+        } catch (\Throwable $th) {
+            Log::error('Submit Inventory Report Error: ' . $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Review inventory report (change status to under review)
+     */
+    public function reviewInventoryReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string'
+            ]);
+
+            return DB::transaction(function () use ($request) {
+                $inventoryReport = InventoryReport::where('month_year', $request->month_year)->first();
+                
+                if (!$inventoryReport) {
+                    return response()->json(['message' => 'Inventory report not found for this month.'], 404);
+                }
+
+                if (!$inventoryReport->canBeReviewed()) {
+                    return response()->json(['message' => 'This report cannot be reviewed in its current status.'], 403);
+                }
+
+                $inventoryReport->update([
+                    'status' => InventoryReport::STATUS_UNDER_REVIEW
+                ]);
+
+                return response()->json(['message' => 'Report is now under review.'], 200);
+            });
+
+        } catch (\Throwable $th) {
+            Log::error('Review Inventory Report Error: ' . $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Approve inventory report
+     */
+    public function approveInventoryReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string'
+            ]);
+
+            return DB::transaction(function () use ($request) {
+                $inventoryReport = InventoryReport::where('month_year', $request->month_year)->first();
+                
+                if (!$inventoryReport) {
+                    return response()->json(['message' => 'Inventory report not found for this month.'], 404);
+                }
+
+                if (!$inventoryReport->canBeReviewed()) {
+                    return response()->json(['message' => 'This report cannot be approved in its current status.'], 403);
+                }
+
+                $inventoryReport->update([
+                    'status' => InventoryReport::STATUS_APPROVED
+                ]);
+
+                return response()->json(['message' => 'Report approved successfully.'], 200);
+            });
+
+        } catch (\Throwable $th) {
+            Log::error('Approve Inventory Report Error: ' . $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject inventory report
+     */
+    public function rejectInventoryReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string',
+                'reason' => 'nullable|string|max:500'
+            ]);
+
+            return DB::transaction(function () use ($request) {
+                $inventoryReport = InventoryReport::where('month_year', $request->month_year)->first();
+                
+                if (!$inventoryReport) {
+                    return response()->json(['message' => 'Inventory report not found for this month.'], 404);
+                }
+
+                if (!$inventoryReport->canBeReviewed()) {
+                    return response()->json(['message' => 'This report cannot be rejected in its current status.'], 403);
+                }
+
+                $inventoryReport->update([
+                    'status' => InventoryReport::STATUS_REJECTED
+                ]);
+
+                return response()->json(['message' => 'Report rejected successfully.'], 200);
+            });
+
+        } catch (\Throwable $th) {
+            Log::error('Reject Inventory Report Error: ' . $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
         }
     }
     
@@ -590,6 +784,7 @@ class ReportController extends Controller
                 // Transform the data for the frontend
                 foreach ($inventoryReport->items as $item) {
                     $reportData[] = [
+                        'id' => $item->id, // Add item ID for updates
                         'product' => $item->product,
                         'beginning_balance' => (float) $item->beginning_balance,
                         'received_quantity' => (float) $item->received_quantity,

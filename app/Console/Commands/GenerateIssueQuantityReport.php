@@ -16,7 +16,7 @@ class GenerateIssueQuantityReport extends Command
      *
      * @var string
      */
-    protected $signature = 'report:issue-quantities {month? : The month to generate report for (format: YYYY-MM)} {--force : Force regenerate the report even if it already exists}';
+    protected $signature = 'report:issue-quantities {--month= : The month in YYYY-MM format} {--force : Force regenerate the report even if it already exists}';
 
     /**
      * The console command description.
@@ -33,7 +33,7 @@ class GenerateIssueQuantityReport extends Command
         $this->info('Starting monthly issued quantities report generation...');
 
         // Get the month to process (either from argument or previous month)
-        $monthArg = $this->argument('month');
+        $monthArg = $this->option('month');
         $force = $this->option('force');
         $today = Carbon::now();
         $isFirstDayOfMonth = $today->day === 1;
