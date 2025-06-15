@@ -16,9 +16,6 @@
                     <div v-show="openSection === 'inventory'" class="px-4 py-3 bg-gray-50 border-t border-black">
                         <ul class="space-y-2">
                             <li>
-                                <Link :href="route('reports.inventoryReport')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventory Report</Link>
-                            </li>
-                            <li>
                                 <Link :href="route('reports.receivedQuantities')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">QTY Received Report</Link>
                             </li>
                             <li>
