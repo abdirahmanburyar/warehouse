@@ -84,9 +84,9 @@
             </div>
 
             <!-- Filters -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="flex justify-between mb-[30px]">
                 <!-- Month Filter -->
-                <div>
+                <div class="w-[200px]">
                     <label for="month" class="block text-xs font-medium text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -102,7 +102,7 @@
                 </div>
 
                 <!-- Items Per Page -->
-                <div>
+                <div class="w-[200px]">
                     <label for="per_page" class="block text-xs font-medium text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -121,20 +121,6 @@
                     </select>
                 </div>
 
-                <!-- Summary Card -->
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Products</p>
-                            <p class="text-lg font-bold text-blue-900">{{ reportData?.data?.length || 0 }}</p>
-                        </div>
-                        <div class="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Success/Error Messages -->
@@ -160,19 +146,22 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
                 <!-- Table Header -->
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-xs font-semibold text-gray-900">Inventory Movement Report</h2>
+                    <h2 class="text-xs font-semibold text-gray-900">Items</h2>
                     <p class="text-xs text-gray-600 mt-1">{{ formatMonthYear(monthYear) }}</p>
                 </div>
 
-                <div v-if="reportData?.data?.length > 0" class="overflow-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                <div v-if="reportData?.data?.length > 0" class="overflow-x-auto">
+                    <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="p-2 text-left text-xs text-black uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-left text-xs text-black capitalize tracking-wider">
                                     Item
                                 </th>
-                                <th scope="col" class="p-2 text-left text-xs text-black uppercase tracking-wider">
-                                    Item Info
+                                <th scope="col" class="p-2 text-left text-xs text-black capitalize tracking-wider">
+                                    UoM
+                                </th>
+                                <th scope="col" class="p-2 text-left text-xs text-black capitalize tracking-wider">
+                                    Expiry Date
                                 </th>
                                 <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Beginning Balance
@@ -219,7 +208,10 @@
                                     </div>
                                 </td>
                                 <td>
-                                    Expiry Date: {{ formatDate(item.expiry_date) }}
+                                   {{ item.uom }}
+                                </td>
+                                <td>
+                                   {{ formatDate(item.expiry_date) }}
                                 </td>
                                 <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     {{ formatNumber(item.beginning_balance) }}
@@ -236,7 +228,9 @@
                                         type="number" 
                                         v-model="currentAdjustments[item.product.id].positive_adjustment" 
                                         @input="updateAdjustment(item.product.id, 'positive_adjustment', $event.target.value)"
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
+                                        @keydown.enter="saveAdjustments"
+                                        class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
+                                        :disabled="!canEdit"
                                     />
                                     <span v-else>{{ formatNumber(item.positive_adjustment) }}</span>
                                 </td>
@@ -246,7 +240,9 @@
                                         type="number" 
                                         v-model="currentAdjustments[item.product.id].negative_adjustment" 
                                         @input="updateAdjustment(item.product.id, 'negative_adjustment', $event.target.value)"
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
+                                        @keydown.enter="saveAdjustments"
+                                        class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
+                                        :disabled="!canEdit"
                                     />
                                     <span v-else>{{ formatNumber(item.negative_adjustment) }}</span>
                                 </td>
@@ -260,7 +256,16 @@
                                     {{ formatNumber(item.total_cost) }}
                                 </td>
                                 <td class="p-2 text-right text-xs font-medium text-gray-900">
-                                    {{ formatNumber(item.months_of_stock) }}
+                                    <input 
+                                        v-if="canEdit"
+                                        type="number" 
+                                        v-model="currentAdjustments[item.product.id].months_of_stock" 
+                                        @input="updateAdjustment(item.product.id, 'months_of_stock', $event.target.value)"
+                                        @keydown.enter="saveAdjustments"
+                                        class="w-[150px] bg-gray-50 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs"
+                                        :disabled="!canEdit"
+                                    />
+                                    <span v-else class="text-xs">{{ formatNumber(item.months_of_stock) }}</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -302,13 +307,11 @@
     <script>
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
     import { Head, Link, router } from '@inertiajs/vue3';
+    import Swal from 'sweetalert2';
     import { ref, watch, onMounted, computed } from 'vue';
     import { TailwindPagination } from 'laravel-vue-pagination';
     import moment from 'moment';
 
-    const formatDate = (date) => {
-        return moment(date).format('DD/MM/YYYY');
-    };
 
     export default {
         name: 'WarehouseMonthlyReport',
@@ -317,7 +320,7 @@
             Head,
             Link,
             TailwindPagination,
-            formatDate
+            moment
         },
         props: {
             reportData: {
@@ -345,25 +348,33 @@
             const initializeAdjustments = () => {
                 if (props.reportData?.data) {
                     props.reportData.data.forEach(item => {
+                        // Initialize with default values if any field is undefined
                         originalAdjustments.value[item.product.id] = {
-                            positive_adjustment: item.positive_adjustment,
-                            negative_adjustment: item.negative_adjustment
+                            positive_adjustment: item.positive_adjustment ?? 0,
+                            negative_adjustment: item.negative_adjustment ?? 0,
+                            months_of_stock: item.months_of_stock ?? 0
                         };
                         currentAdjustments.value[item.product.id] = {
-                            positive_adjustment: item.positive_adjustment,
-                            negative_adjustment: item.negative_adjustment
+                            positive_adjustment: item.positive_adjustment ?? 0,
+                            negative_adjustment: item.negative_adjustment ?? 0,
+                            months_of_stock: item.months_of_stock ?? 0
                         };
                     });
                 }
             };
 
+            // format dates
+            const formatDate = (date) => {
+                return moment(date).format('DD/MM/YYYY');
+            };
+
             // Computed properties
             const canEdit = computed(() => {
-                return props.inventoryReport?.status === 'draft' || props.inventoryReport?.status === 'rejected';
+                return props.inventoryReport?.status === 'generated' || props.inventoryReport?.status === 'rejected';
             });
 
             const canSubmit = computed(() => {
-                return props.inventoryReport?.status === 'draft' || props.inventoryReport?.status === 'rejected';
+                return props.inventoryReport?.status === 'generated' || props.inventoryReport?.status === 'rejected';
             });
 
             const canReview = computed(() => {
@@ -383,7 +394,8 @@
                     const current = currentAdjustments.value[id];
                     const original = originalAdjustments.value[id];
                     return current.positive_adjustment !== original.positive_adjustment ||
-                           current.negative_adjustment !== original.negative_adjustment;
+                           current.negative_adjustment !== original.negative_adjustment ||
+                           current.months_of_stock !== original.months_of_stock;
                 });
             });
 
@@ -396,6 +408,13 @@
                     month: 'long' 
                 });
             };
+
+            // Watch for changes in props.reportData and initialize adjustments
+            watch(() => props.reportData, (newData) => {
+                if (newData?.data) {
+                    initializeAdjustments();
+                }
+            }, { immediate: true });
 
             // Format numbers with commas
             const formatNumber = (num) => {
@@ -413,7 +432,7 @@
             // Get status badge class
             const getStatusBadgeClass = (status) => {
                 switch (status) {
-                    case 'draft':
+                    case 'generated':
                         return 'bg-yellow-100 text-yellow-800';
                     case 'submitted':
                         return 'bg-blue-100 text-blue-800';
@@ -431,7 +450,7 @@
             // Get status text
             const getStatusText = (status) => {
                 switch (status) {
-                    case 'draft':
+                    case 'generated':
                         return 'Draft';
                     case 'submitted':
                         return 'Submitted for Review';
@@ -447,14 +466,18 @@
             };
 
             // Update adjustment value
-            const updateAdjustment = (itemId, field, value) => {
-                if (!currentAdjustments.value[itemId]) {
-                    currentAdjustments.value[itemId] = {
+            const updateAdjustment = (productId, field, value) => {
+                // Initialize adjustments if they don't exist
+                if (!currentAdjustments.value[productId]) {
+                    currentAdjustments.value[productId] = {
                         positive_adjustment: 0,
-                        negative_adjustment: 0
+                        negative_adjustment: 0,
+                        months_of_stock: 0
                     };
                 }
-                currentAdjustments.value[itemId][field] = parseFloat(value) || 0;
+                
+                // Update the specific field
+                currentAdjustments.value[productId][field] = parseFloat(value) || 0;
             };
 
             // Save adjustments
@@ -465,25 +488,41 @@
                         const current = currentAdjustments.value[id];
                         const original = originalAdjustments.value[id];
                         return current.positive_adjustment !== original.positive_adjustment ||
-                               current.negative_adjustment !== original.negative_adjustment;
+                               current.negative_adjustment !== original.negative_adjustment ||
+                               current.months_of_stock !== original.months_of_stock;
                     }).map(id => ({
-                        id: parseInt(id),
+                        product_id: parseInt(id),
                         positive_adjustment: currentAdjustments.value[id].positive_adjustment,
-                        negative_adjustment: currentAdjustments.value[id].negative_adjustment
+                        negative_adjustment: currentAdjustments.value[id].negative_adjustment,
+                        months_of_stock: currentAdjustments.value[id].months_of_stock
                     }));
 
-                    await router.put(route('reports.warehouseMonthly.updateAdjustments'), {
+                    const response = await axios.put(route('reports.warehouseMonthly.updateAdjustments'), {
                         month_year: monthYear.value,
                         adjustments: changedItems
-                    }, {
-                        preserveState: false,
-                        onSuccess: () => {
-                            // Update original values
-                            initializeAdjustments();
-                        }
                     });
+
+                    if (response.status === 200) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Adjustments saved successfully',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        
+                        // Update original values
+                        initializeAdjustments();
+                        // Reload the page to get fresh data
+                        reloadPage();
+                    }
                 } catch (error) {
-                    console.error('Error saving adjustments:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.response?.data?.message || 'Failed to save adjustments',
+                        showConfirmButton: true
+                    });
                 } finally {
                     saving.value = false;
                 }
@@ -543,23 +582,46 @@
 
             // Reject report
             const rejectReport = async () => {
-                const reason = prompt('Please provide a reason for rejection:');
-                if (!reason) {
-                    return;
-                }
-                
-                processing.value = true;
-                try {
-                    await router.put(route('reports.warehouseMonthly.reject'), {
-                        month_year: monthYear.value,
-                        rejection_reason: reason
-                    }, {
-                        preserveState: false
-                    });
-                } catch (error) {
-                    console.error('Error rejecting report:', error);
-                } finally {
-                    processing.value = false;
+                const { value: reason } = await Swal.fire({
+                    title: 'Reject Report',
+                    text: 'Please provide a reason for rejection:',
+                    input: 'textarea',
+                    inputPlaceholder: 'Rejection reason...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Reject',
+                    cancelButtonText: 'Cancel',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Please provide a reason for rejection';
+                        }
+                    }
+                });
+
+                if (reason) {
+                    try {
+                        const response = await axios.put(route('reports.warehouseMonthly.reject'), {
+                            month_year: monthYear.value,
+                            rejection_reason: reason
+                        });
+
+                        if (response.status === 200) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: 'Report rejected successfully',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            reloadPage();
+                        }
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.response?.data?.message || 'Failed to reject report',
+                            showConfirmButton: true
+                        });
+                    }
                 }
             };
 
@@ -644,7 +706,8 @@
                 submitReport,
                 reviewReport,
                 approveReport,
-                rejectReport
+                rejectReport,
+                formatDate
             };
         }
     };

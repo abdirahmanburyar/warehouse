@@ -618,7 +618,15 @@ class ReportController extends Controller
                                 + $reportItem->received_quantity 
                                 - $reportItem->issued_quantity 
                                 + $adjustment['positive_adjustment'] 
-                                - $adjustment['negative_adjustment']
+                                - $adjustment['negative_adjustment'],
+                            // Recalculate months of stock
+                            'months_of_stock' => $reportItem->unit_cost > 0 
+                                ? ($reportItem->beginning_balance 
+                                    + $reportItem->received_quantity 
+                                    - $reportItem->issued_quantity 
+                                    + $adjustment['positive_adjustment'] 
+                                    - $adjustment['negative_adjustment']) / $reportItem->unit_cost
+                                : 0
                         ]);
                     }
                 }
