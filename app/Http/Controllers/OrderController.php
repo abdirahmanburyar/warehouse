@@ -553,9 +553,9 @@ class OrderController extends Controller
                         foreach($item['inventory_allocations'] as $allocation){
                             logger()->info($allocation);
                             IssuedQuantity::create([
-                                'product_id' => $item['product_id'],
-                                'warehouse_id' => $item['warehouse_id'],
-                                'quantity' => $item['quantity'],
+                                'product_id' => $allocation['product_id'],
+                                'warehouse_id' => $allocation['warehouse_id'],
+                                'quantity' => $allocation['allocated_quantity'],
                                 'batch_number' => $allocation['batch_number'],
                                 'barcode' => $allocation['barcode'],
                                 'uom' => $allocation['uom'],
