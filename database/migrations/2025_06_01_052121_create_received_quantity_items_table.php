@@ -26,6 +26,7 @@ return new class extends Migration
             $table->double('unit_cost');
             $table->double('total_cost');
             $table->string('batch_number')->nullable();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->timestamps();
         });
     }

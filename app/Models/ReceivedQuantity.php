@@ -24,6 +24,7 @@ class ReceivedQuantity extends Model
         'packing_list_id',
         'expiry_date',
         'uom',
+        'warehouse_id',
         'barcode',
         'batch_number',
         'unit_cost',

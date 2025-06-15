@@ -19,11 +19,12 @@ return new class extends Migration
             $table->foreignId('transfer_id')->nullable()->constrained('transfers')->onDelete('cascade');
             $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('cascade');
             $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->date('expiry_date')->nullable();
             $table->string('uom')->nullable();
             $table->double('barcode');
             $table->double('unit_cost');
-            $table->string('total_cost')->nullable();
+            $table->double('total_cost');
             $table->string('batch_number')->nullable();
             $table->timestamps();
         });

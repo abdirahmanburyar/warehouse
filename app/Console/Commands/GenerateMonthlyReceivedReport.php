@@ -109,6 +109,9 @@ class GenerateMonthlyReceivedReport extends Command
                 $item->parent_id = $report->id;
                 $item->quantity = $receivedQuantity->quantity;
                 $item->received_by = $receivedQuantity->received_by;
+                $item->warehouse_id = $receivedQuantity->warehouse_id;
+                $item->unit_cost = $receivedQuantity->unit_cost;
+                $item->total_cost = $receivedQuantity->unit_cost * $receivedQuantity->quantity;
                 $item->received_at = $receivedQuantity->received_at;
                 $item->transfer_id = $receivedQuantity->transfer_id;
                 $item->product_id = $receivedQuantity->product_id;

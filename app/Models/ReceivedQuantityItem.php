@@ -28,6 +28,7 @@ class ReceivedQuantityItem extends Model
         'batch_number',
         'unit_cost',
         'total_cost',
+        'warehouse_id',
     ];
     
     /**
