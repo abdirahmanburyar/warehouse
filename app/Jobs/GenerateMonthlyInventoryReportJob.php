@@ -186,29 +186,69 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
         // Only create report item if there's any movement or balance
         if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $closingBalance > 0) {
             
-            // Calculate unit cost based on received items
+            // Get all received and issued items for this product
             $productReceivedItems = $receivedItems->where('product_id', $product->id);
-            echo "  Found " . $productReceivedItems->count() . " received items for this product\n";
+            $productIssuedItems = $issuedItems->where('product_id', $product->id);
             
-            $totalReceivedCost = $productReceivedItems->sum('total_cost');
-            $totalReceivedQuantity = $productReceivedItems->sum('quantity');
+            echo "  Found " . $productReceivedItems->count() . " received items and " . $productIssuedItems->count() . " issued items for this product\n";
             
-            echo "  Total received cost: {$totalReceivedCost}\n";
-            echo "  Total received quantity: {$totalReceivedQuantity}\n";
+            // Determine batch number priority: received items first, then issued items, then fallback
+            $batchNumber = 'N/A';
+            $unitCost = 0;
             
-            // Debug: Show individual received items
-            foreach ($productReceivedItems as $item) {
-                echo "    Item - Qty: {$item->quantity}, Unit Cost: {$item->unit_cost}, Total Cost: {$item->total_cost}\n";
+            // First, try to get batch number from received items (most reliable for cost)
+            if ($productReceivedItems->count() > 0) {
+                // Group received items by batch number
+                $receivedBatches = $productReceivedItems->groupBy('batch_number');
+                
+                echo "  Received batches: " . $receivedBatches->keys()->implode(', ') . "\n";
+                
+                // Calculate weighted average cost from all received items
+                $totalReceivedCost = $productReceivedItems->sum('total_cost');
+                $totalReceivedQuantity = $productReceivedItems->sum('quantity');
+                
+                if ($totalReceivedQuantity > 0 && $totalReceivedCost > 0) {
+                    $unitCost = $totalReceivedCost / $totalReceivedQuantity;
+                    echo "  Calculated weighted average unit cost from received items: {$unitCost}\n";
+                }
+                
+                // Use the first non-null batch number from received items
+                $firstReceivedBatch = $productReceivedItems->where('batch_number', '!=', null)->first();
+                if ($firstReceivedBatch && $firstReceivedBatch->batch_number) {
+                    $batchNumber = $firstReceivedBatch->batch_number;
+                    echo "  Using batch number from received items: {$batchNumber}\n";
+                }
+                
+            } else if ($productIssuedItems->count() > 0) {
+                // If no received items, try issued items for batch number
+                echo "  No received items, checking issued items for batch number...\n";
+                
+                // Group issued items by batch number
+                $issuedBatches = $productIssuedItems->groupBy('batch_number');
+                echo "  Issued batches: " . $issuedBatches->keys()->implode(', ') . "\n";
+                
+                // Use the first non-null batch number from issued items
+                $firstIssuedBatch = $productIssuedItems->where('batch_number', '!=', null)->first();
+                if ($firstIssuedBatch && $firstIssuedBatch->batch_number) {
+                    $batchNumber = $firstIssuedBatch->batch_number;
+                    echo "  Using batch number from issued items: {$batchNumber}\n";
+                    
+                    // If issued items have cost information and we don't have unit cost yet
+                    if ($unitCost == 0) {
+                        $totalIssuedCost = $productIssuedItems->sum('total_cost');
+                        $totalIssuedQuantity = $productIssuedItems->sum('quantity');
+                        
+                        if ($totalIssuedQuantity > 0 && $totalIssuedCost > 0) {
+                            $unitCost = $totalIssuedCost / $totalIssuedQuantity;
+                            echo "  Calculated unit cost from issued items: {$unitCost}\n";
+                        }
+                    }
+                }
             }
             
-            // Calculate weighted average unit cost for this month's received items
-            $unitCost = 0;
-            if ($totalReceivedQuantity > 0 && $totalReceivedCost > 0) {
-                $unitCost = $totalReceivedCost / $totalReceivedQuantity;
-                echo "  Calculated unit cost from received items: {$unitCost}\n";
-            } else {
-                echo "  No cost data from received items, checking previous month...\n";
-                // If no cost data from received items, try to get from previous month's report
+            // If we still don't have a unit cost, try previous month's report
+            if ($unitCost == 0) {
+                echo "  No cost data from current month items, checking previous month...\n";
                 $previousReportItem = InventoryReportItem::whereHas('report', function($q) use ($previousDate) {
                     $q->where('month_year', $previousDate->format('Y-m'));
                 })->where('product_id', $product->id)->first();
@@ -216,37 +256,76 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
                 if ($previousReportItem && $previousReportItem->unit_cost > 0) {
                     $unitCost = $previousReportItem->unit_cost;
                     echo "  Using previous month's unit cost: {$unitCost}\n";
+                    
+                    // Also use previous month's batch number if we don't have one
+                    if ($batchNumber == 'N/A' && $previousReportItem->batch_number) {
+                        $batchNumber = $previousReportItem->batch_number;
+                        echo "  Using previous month's batch number: {$batchNumber}\n";
+                    }
                 } else {
                     echo "  No previous month's cost data found, using 0\n";
                 }
             }
             
+            // Handle common batch numbers between received and issued items
+            if ($productReceivedItems->count() > 0 && $productIssuedItems->count() > 0) {
+                $receivedBatchNumbers = $productReceivedItems->pluck('batch_number')->filter()->unique();
+                $issuedBatchNumbers = $productIssuedItems->pluck('batch_number')->filter()->unique();
+                $commonBatches = $receivedBatchNumbers->intersect($issuedBatchNumbers);
+                
+                if ($commonBatches->count() > 0) {
+                    echo "  Found common batch numbers: " . $commonBatches->implode(', ') . "\n";
+                    echo "  Using cost from received items for matching batches\n";
+                    
+                    // Use the first common batch number
+                    $batchNumber = $commonBatches->first();
+                    echo "  Selected common batch number: {$batchNumber}\n";
+                }
+            }
+            
             // Calculate total cost based on closing balance and unit cost
-            $totalCost = $closingBalance * $unitCost;
+            $totalCost = abs($closingBalance) * $unitCost;
             echo "  Calculated total cost: {$totalCost} (closing balance: {$closingBalance} × unit cost: {$unitCost})\n";
             
             // Calculate months of stock based on issued quantity
             $monthsOfStock = $issuedQuantity > 0 ? ($closingBalance / $issuedQuantity) : 0;
             
-            echo "  Final values - Unit Cost: " . round($unitCost, 2) . ", Total Cost: " . round($totalCost, 2) . "\n";
+            // Determine expiry date priority: received items first, then issued items, then product, then default
+            $expiryDate = now()->addYears(5)->format('Y-m-d'); // Default fallback
+            
+            if ($productReceivedItems->count() > 0) {
+                $firstReceivedWithExpiry = $productReceivedItems->where('expiry_date', '!=', null)->first();
+                if ($firstReceivedWithExpiry && $firstReceivedWithExpiry->expiry_date) {
+                    $expiryDate = $firstReceivedWithExpiry->expiry_date;
+                }
+            } elseif ($productIssuedItems->count() > 0) {
+                $firstIssuedWithExpiry = $productIssuedItems->where('expiry_date', '!=', null)->first();
+                if ($firstIssuedWithExpiry && $firstIssuedWithExpiry->expiry_date) {
+                    $expiryDate = $firstIssuedWithExpiry->expiry_date;
+                }
+            } elseif ($product->expiry_date) {
+                $expiryDate = $product->expiry_date;
+            }
+            
+            echo "  Final values - Batch: {$batchNumber}, Unit Cost: " . round($unitCost, 2) . ", Total Cost: " . round($totalCost, 2) . ", Expiry: {$expiryDate}\n";
             
             InventoryReportItem::create([
                 'inventory_report_id' => $report->id,
                 'product_id' => $product->id,
                 'uom' => $product->uom ?? 'pcs',
-                'batch_number' => null, // Not tracking batches in monthly reports
-                'expiry_date' => null, // Not tracking expiry in monthly reports
+                'batch_number' => $batchNumber,
+                'expiry_date' => $expiryDate,
                 'beginning_balance' => $beginningBalance,
                 'received_quantity' => $receivedQuantity,
                 'issued_quantity' => $issuedQuantity,
-                'other_quantity_out' => 0, // Not used in this implementation
+                'other_quantity_out' => 0,
                 'positive_adjustment' => $positiveAdjustment,
                 'negative_adjustment' => $negativeAdjustment,
                 'closing_balance' => $closingBalance,
                 'total_closing_balance' => $closingBalance,
-                'average_monthly_consumption' => $issuedQuantity, // Current month consumption
-                'months_of_stock' => $monthsOfStock,
-                'quantity_in_pipeline' => 0, // Not tracked in this implementation
+                'average_monthly_consumption' => $issuedQuantity > 0 ? $issuedQuantity : 1,
+                'months_of_stock' => round($monthsOfStock, 2),
+                'quantity_in_pipeline' => 0,
                 'unit_cost' => round($unitCost, 2),
                 'total_cost' => round($totalCost, 2),
             ]);

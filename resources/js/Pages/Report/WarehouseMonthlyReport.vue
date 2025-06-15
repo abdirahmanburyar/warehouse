@@ -12,7 +12,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-semibold text-gray-900">Warehouse Monthly Inventory Report</h1>
-                    <p class="text-sm text-gray-600">Monthly inventory movement summary with balances and transactions</p>
+                    <p class="text-xs text-gray-600">Monthly inventory movement summary with balances and transactions</p>
                 </div>
             </div>
 
@@ -20,7 +20,7 @@
             <div v-if="inventoryReport" class="mb-6 p-4 bg-gray-50 rounded-lg border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-medium text-gray-900 mb-1">Report Status</h3>
+                        <h3 class="text-xs font-medium text-gray-900 mb-1">Report Status</h3>
                         <span :class="getStatusBadgeClass(inventoryReport.status)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
                             {{ getStatusText(inventoryReport.status) }}
                         </span>
@@ -31,7 +31,7 @@
                             v-if="canEdit && hasUnsavedChanges"
                             @click="saveAdjustments"
                             :disabled="saving"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                             <svg v-if="saving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -45,7 +45,7 @@
                             v-if="canSubmit"
                             @click="submitReport"
                             :disabled="processing"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                         >
                             Submit for Review
                         </button>
@@ -55,7 +55,7 @@
                             v-if="canReview && inventoryReport.status === 'submitted'"
                             @click="reviewReport"
                             :disabled="processing"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
                         >
                             Start Review
                         </button>
@@ -65,7 +65,7 @@
                             v-if="canApprove"
                             @click="approveReport"
                             :disabled="processing"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                         >
                             Approve
                         </button>
@@ -75,7 +75,7 @@
                             v-if="canReject"
                             @click="rejectReport"
                             :disabled="processing"
-                            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 text-xs leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                         >
                             Reject
                         </button>
@@ -87,7 +87,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Month Filter -->
                 <div>
-                    <label for="month" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="month" class="block text-xs font-medium text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -97,13 +97,13 @@
                         type="month" 
                         id="month"
                         v-model="monthYear" 
-                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
                     />
                 </div>
 
                 <!-- Items Per Page -->
                 <div>
-                    <label for="per_page" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="per_page" class="block text-xs font-medium text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
@@ -112,7 +112,7 @@
                     <select 
                         id="per_page"
                         v-model="perPage" 
-                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
                     >
                         <option value="10">10 items</option>
                         <option value="25">25 items</option>
@@ -143,7 +143,7 @@
                     <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <p class="text-green-800 text-sm font-medium">{{ $page.props.flash.success }}</p>
+                    <p class="text-green-800 text-xs font-medium">{{ $page.props.flash.success }}</p>
                 </div>
             </div>
 
@@ -152,7 +152,7 @@
                     <svg class="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <p class="text-red-800 text-sm font-medium">{{ $page.props.flash.error }}</p>
+                    <p class="text-red-800 text-xs font-medium">{{ $page.props.flash.error }}</p>
                 </div>
             </div>
 
@@ -160,59 +160,55 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
                 <!-- Table Header -->
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-sm font-semibold text-gray-900">Inventory Movement Report</h2>
+                    <h2 class="text-xs font-semibold text-gray-900">Inventory Movement Report</h2>
                     <p class="text-xs text-gray-600 mt-1">{{ formatMonthYear(monthYear) }}</p>
                 </div>
 
-                <div v-if="reportData?.data?.length > 0" class="overflow-x-auto">
+                <div v-if="reportData?.data?.length > 0" class="overflow-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Product
+                                <th scope="col" class="p-2 text-left text-xs text-black uppercase tracking-wider">
+                                    Item
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-left text-xs text-black uppercase tracking-wider">
+                                    Item Info
+                                </th>
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Beginning Balance
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Stock Received
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Stock Issued
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Positive Adj.
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Negative Adj.
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Closing Balance
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Unit Cost
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Total Cost
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="p-2 text-right text-xs text-black capitalize tracking-wider">
                                     Months of Stock
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="item in reportData.data" :key="item.product.id" class="hover:bg-gray-50 transition-colors duration-150">
-                                <td class="px-4 py-3">
+                                <td class="p-2">
                                     <div class="flex items-center space-x-3">
-                                        <div class="flex-shrink-0 h-8 w-8">
-                                            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
-                                                <span class="text-xs font-medium text-white">
-                                                    {{ item.product.name.charAt(0).toUpperCase() }}
-                                                </span>
-                                            </div>
-                                        </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                            <p class="text-xs font-medium text-gray-900 truncate">
                                                 {{ item.product.name }}
                                             </p>
                                             <p class="text-xs text-gray-500 truncate">
@@ -222,45 +218,48 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                <td>
+                                    Expiry Date: {{ formatDate(item.expiry_date) }}
+                                </td>
+                                <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     {{ formatNumber(item.beginning_balance) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-green-600">
+                                <td class="p-2 text-right text-xs font-medium text-green-600">
                                     {{ formatNumber(item.received_quantity) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-red-600">
+                                <td class="p-2 text-right text-xs font-medium text-red-600">
                                     {{ formatNumber(item.issued_quantity) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-blue-600">
+                                <td class="p-2 text-right text-xs font-medium text-blue-600">
                                     <input 
                                         v-if="canEdit"
                                         type="number" 
                                         v-model="currentAdjustments[item.product.id].positive_adjustment" 
                                         @input="updateAdjustment(item.product.id, 'positive_adjustment', $event.target.value)"
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
                                     />
                                     <span v-else>{{ formatNumber(item.positive_adjustment) }}</span>
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-orange-600">
+                                <td class="p-2 text-right text-xs font-medium text-orange-600">
                                     <input 
                                         v-if="canEdit"
                                         type="number" 
                                         v-model="currentAdjustments[item.product.id].negative_adjustment" 
                                         @input="updateAdjustment(item.product.id, 'negative_adjustment', $event.target.value)"
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-sm"
+                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors duration-200 text-xs"
                                     />
                                     <span v-else>{{ formatNumber(item.negative_adjustment) }}</span>
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-bold" :class="getBalanceColor(item.closing_balance)">
+                                <td class="p-2 text-right text-xs font-bold" :class="getBalanceColor(item.closing_balance)">
                                     {{ formatNumber(item.closing_balance) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     {{ formatNumber(item.unit_cost) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     {{ formatNumber(item.total_cost) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                <td class="p-2 text-right text-xs font-medium text-gray-900">
                                     {{ formatNumber(item.months_of_stock) }}
                                 </td>
                             </tr>
@@ -277,7 +276,7 @@
                             </svg>
                         </div>
                     </div>
-                    <h3 class="text-sm font-medium text-gray-900 mb-2">No data available</h3>
+                    <h3 class="text-xs font-medium text-gray-900 mb-2">No data available</h3>
                     <p class="text-xs text-gray-500 mb-4">No inventory movements found for the selected month.</p>
                 </div>
 
@@ -305,6 +304,11 @@
     import { Head, Link, router } from '@inertiajs/vue3';
     import { ref, watch, onMounted, computed } from 'vue';
     import { TailwindPagination } from 'laravel-vue-pagination';
+    import moment from 'moment';
+
+    const formatDate = (date) => {
+        return moment(date).format('DD/MM/YYYY');
+    };
 
     export default {
         name: 'WarehouseMonthlyReport',
@@ -313,6 +317,7 @@
             Head,
             Link,
             TailwindPagination,
+            formatDate
         },
         props: {
             reportData: {

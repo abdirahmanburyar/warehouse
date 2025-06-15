@@ -168,7 +168,8 @@ class ReportController extends Controller
                     }
                 }
             });
-        } 
+        }
+        
         // Backward compatibility for old filter format
         else if ($request->filled('month')) {
             $query->where('month_year', 'like', $request->month . '%');
