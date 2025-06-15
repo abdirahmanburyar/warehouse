@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->date('expiry_date')->nullable();
             $table->string('uom')->nullable();
-            $table->double('barcode');
+            $table->string('barcode')->nullable();
             $table->double('unit_cost');
             $table->double('total_cost');
             $table->string('batch_number')->nullable();
