@@ -12,6 +12,7 @@ use App\Models\MonthlyConsumptionReport;
 use App\Models\Warehouse;
 use App\Models\User;
 use App\Models\Order;
+use Illuminate\Support\Collection;
 use App\Models\Facility;
 use App\Models\Inventory;
 use App\Models\InventoryReport;
@@ -759,103 +760,112 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Reject inventory report
-     */
-    public function rejectInventoryReport(Request $request)
+
+    public function orders(Request $request)
     {
-        try {
-            $request->validate([
-                'month_year' => 'required|string',
-                'rejection_reason' => 'required|string|min:10',
-            ]);
-
-            $inventoryReport = InventoryReport::where('month_year', $request->month_year)->firstOrFail();
-
-            if (!in_array($inventoryReport->status, ['submitted', 'under_review'])) {
-                return response()->json(['message' => 'Only submitted or under review reports can be rejected.'], 403);
-            }
-
-            $inventoryReport->update([
-                'status' => 'rejected',
-                'rejected_by' => auth()->id(),
-                'rejected_at' => now(),
-                'rejection_reason' => $request->rejection_reason,
-            ]);
-
-            return response()->json([
-                'message' => 'Report rejected successfully.',
-                'status' => 'rejected'
-            ]);
-
-        } catch (\Throwable $th) {
-            Log::error('Reject Report Error: ' . $th->getMessage());
-            return response()->json(['message' => 'Failed to reject report.'], 500);
+        // Get facilities for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+    
+        $query = Order::query();
+    
+        // Eager load nested relationships
+        $query->with([
+            'items.inventory_allocations.back_order',
+            'items.inventory_allocations.product:id,name',
+            'items.inventory_allocations.warehouse',
+            'items.inventory_allocations.location',
+            'facility',
+            'user',
+            'approvedBy',
+            'rejectedBy',
+            'dispatchedBy'
+        ]);
+    
+        // Filters
+        if ($request->filled('facility')) {
+            $query->whereHas('facility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
         }
-    }
-
-    /**
-     * Export report to Excel
-     */
-    public function exportToExcel($monthYear)
-    {
-        try {
-            $report = InventoryReport::where('month_year', $monthYear)->firstOrFail();
-
-            if ($report->status !== 'approved') {
-                return back()->with('error', 'Only approved reports can be exported.');
-            }
-
-            return Excel::download(
-                new InventoryReportExport($monthYear),
-                "inventory_report_{$monthYear}.xlsx"
-            );
-
-        } catch (\Throwable $th) {
-            Log::error('Export to Excel Error: ' . $th->getMessage());
-            return back()->with('error', 'Failed to export report to Excel.');
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
-    }
-
-    public function getInventoryReportData(Request $request, $monthYear = null)
-    {
-        try {
-            $monthYear = $monthYear ?: $request->input('month_year', Carbon::now()->format('Y-m'));
-            
-            // Find the inventory report for the specified month
-            $inventoryReport = InventoryReport::where('month_year', $monthYear)
-                ->with(['items.product.dosage', 'items.product.category'])
-                ->first();
-            
-            $reportData = [];
-            
-            if ($inventoryReport && $inventoryReport->items->isNotEmpty()) {
-                // Transform the data for the frontend
-                foreach ($inventoryReport->items as $item) {
-                    $reportData[] = [
-                        'id' => $item->id, // Add item ID for updates
-                        'product' => $item->product,
-                        'beginning_balance' => (float) $item->beginning_balance,
-                        'received_quantity' => (float) $item->received_quantity,
-                        'issued_quantity' => (float) $item->issued_quantity,
-                        'positive_adjustment' => (float) $item->positive_adjustment,
-                        'negative_adjustment' => (float) $item->negative_adjustment,
-                        'closing_balance' => (float) $item->closing_balance,
-                        'batch_number' => $item->batch_number,
-                        'expiry_date' => $item->expiry_date,
-                        'unit_cost' => (float) $item->unit_cost,
-                        'total_cost' => (float) $item->total_cost,
-                        'months_of_stock' => (float) $item->months_of_stock,
-                    ];
+    
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('order_date', $request->date_from);
+        }
+    
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('order_date', [$request->date_from, $request->date_to]);
+        }
+    
+        $orders = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+    
+        // Transform orders: extract inventory_allocations, remove items
+        $orders->getCollection()->transform(function ($order) {
+            $inventoryAllocations = collect();
+    
+            foreach ($order->items as $item) {
+                foreach ($item->inventory_allocations as $alloc) {
+                    $inventoryAllocations->push($alloc);
                 }
             }
-            
-            // Return all data without pagination
-            return $reportData;
-            
-        } catch (\Throwable $th) {
-            Log::error('Get Inventory Report Data Error: ' . $th->getMessage());
-            throw $th;
-        }
+    
+            // Remove items relation and add top-level inventory_allocations
+            $order->unsetRelation('items');
+            $order->inventory_allocations = $inventoryAllocations;
+    
+            return $order;
+        });
+    
+        // Set full path to keep proper pagination links
+        $orders->setPath(url()->current());
+    
+        return inertia('Report/Orders', [
+            'orders' => $orders,
+            'filters' => $request->only('facility', 'status', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities
+        ]);
     }
+
+    public function export($monthYear, Request $request)
+    {
+        $format = $request->input('format', 'excel');
+        $report = InventoryReport::where('month_year', $monthYear)->firstOrFail();
+        $report->load([
+            'items.inventory_allocations.product.category',
+        ]);
+
+        if ($format === 'pdf') {
+            return PDF::download(
+                new OrderReportPdf($report),
+                'orders_' . $monthYear . '.pdf'
+            );
+        }
+
+        return Excel::download(
+            new OrderReportExport($report),
+            'orders_' . $monthYear . '.xlsx'
+        );
+    }
+
+    /**
+     * Export orders to Excel
+     */
+    public function exportOrdersToExcel(Request $request)
+    {
+        $filters = $request->validate([
+            'month_year' => ['required', 'string', 'regex:/^\d{4}-\d{2}$/'],
+            'status' => ['nullable', 'string', 'in:pending,approved,rejected,delivered,cancelled'],
+        ]);
+
+        return Excel::download(new OrderExport($filters), 'orders_' . $filters['month_year'] . '.xlsx');
+    }
+    
 }

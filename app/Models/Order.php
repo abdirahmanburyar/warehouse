@@ -25,11 +25,9 @@ class Order extends Model
         'notes',
         'order_date',
         'expected_date',
-    ];
-
-    protected $casts = [
-        'order_date' => 'datetime',
-        'expected_date' => 'datetime',
+        'dispatched_by',
+        'approved_by',
+        'rejected_by'
     ];
 
     public function facility()
@@ -46,10 +44,21 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
-
-    public function approvals()
+    
+    public function approvedBy()
     {
-        return $this->hasMany(Approval::class);
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+    
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    
+    public function dispatchedBy()
+    {
+        return $this->belongsTo(User::class, 'dispatched_by');
     }
 
 }

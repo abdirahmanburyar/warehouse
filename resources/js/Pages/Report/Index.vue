@@ -24,7 +24,6 @@
                             <li v-if="$page.props.auth.can.report_physical_count_view">
                                 <Link :href="route('reports.physicalCount')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Physical Count Report</Link>
                             </li>
-                            <!-- v-if="$page.props.auth.user.permissions?.includes('report.view')" -->
                             <li >
                                 <Link :href="route('reports.warehouseMonthly')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warehouse Monthly Report</Link>
                             </li>
@@ -65,18 +64,7 @@
                     <div v-show="openSection === 'orders'" class="px-4 py-3 bg-gray-50 border-t border-black">
                         <ul class="space-y-2">
                             <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Purchase Orders</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Order Status</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Order History</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <Link :href="route('reports.monthlyConsumption')">Monthly Consumption</Link>
-                                </a>
+                                <Link :href="route('reports.orders')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Orders Report</Link>
                             </li>
                         </ul>
                     </div>

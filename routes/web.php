@@ -116,6 +116,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class . ':role.view')->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+        Route::get('/reports/orders', [ReportController::class, 'orders'])->name('reports.orders');
+        Route::post('/reports/orders/exportToExcel', [ReportController::class, 'exportOrdersToExcel'])->name('reports.orders.exportToExcel');
         Route::get('/roles', [RoleController::class, 'index'])->name('settings.roles.index');
         Route::get('/roles/create', [RoleController::class, 'create'])
             ->middleware(PermissionMiddleware::class . ':role.create')
