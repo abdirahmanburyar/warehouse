@@ -257,7 +257,7 @@ const formatDate = (date) => {
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                        Order Date  
+                                        Order Date
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">

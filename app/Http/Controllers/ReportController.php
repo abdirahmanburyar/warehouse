@@ -768,7 +768,6 @@ class ReportController extends Controller
         }
     }
 
-
     public function orders(Request $request)
     {
         // Get facilities for dropdown

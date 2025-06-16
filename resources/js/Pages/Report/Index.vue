@@ -39,6 +39,12 @@
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warehouse Monthly
                                 Report</Link>
                             </li>
+                            <!-- reports.monthly-consumption -->
+                            <li>
+                                <Link :href="route('reports.monthly-consumption')"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Facility Monthly
+                                Consumption Report</Link>
+                            </li>
                         </ul>
                     </div>
                 </div>
