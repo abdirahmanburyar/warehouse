@@ -76,6 +76,9 @@ class OrderController extends Controller
             ->when($request->dateFrom && $request->dateTo, function ($query) use ($request) {
                 $query->whereBetween('order_date', [$request->dateFrom, $request->dateTo]);
             })
+            ->when($request->search, function ($query, $search) {
+                $query->where('order_number', $search);
+            })
             ->when($request->currentStatus, function ($query, $search) {
                 $query->where('status', $search);
             })
