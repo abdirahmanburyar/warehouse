@@ -1002,6 +1002,10 @@ class ReportController extends Controller
         ]);
     }
 
+    public function lmisMonthlyReport(Request $request){
+        return inertia('Report/LMISMonthlyReport');
+    }
+
     public function export($monthYear, Request $request)
     {
         $format = $request->input('format', 'excel');

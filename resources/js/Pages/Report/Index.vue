@@ -103,45 +103,9 @@
                     <div v-show="openSection === 'lmis'" class="px-4 py-3 bg-gray-50 border-t border-black">
                         <ul class="space-y-2">
                             <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Facility
-                                    Reports</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">District
-                                    Reports</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">System
-                                    Status</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Row 3: Expiration Reports -->
-                <div class="border border-black self-start">
-                    <button @click="toggleSection('expiration')"
-                        class="w-full px-4 py-3 flex items-center justify-between bg-white hover:bg-gray-50">
-                        <span class="text-lg font-medium text-gray-900">Expiration Reports</span>
-                        <svg :class="['w-5 h-5 transform transition-transform', openSection === 'expiration' ? 'rotate-90' : '']"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                    <div v-show="openSection === 'expiration'" class="px-4 py-3 bg-gray-50 border-t border-black">
-                        <ul class="space-y-2">
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Expiring
-                                    Products</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Expired
-                                    Products</a>
-                            </li>
-                            <li>
-                                <Link :href="route('reports.disposals')"
-                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Disposal Reports
-                                </Link>
+                                <Link :href="route('reports.lmis-monthly')"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">LMIS
+                                    Monthly Report</Link>
                             </li>
                         </ul>
                     </div>
