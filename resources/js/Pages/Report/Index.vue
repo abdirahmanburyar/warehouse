@@ -83,6 +83,10 @@
                                 <Link :href="route('reports.purchase-orders')"
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Purchase Orders Report</Link>
                             </li>
+                            <li>
+                                <Link :href="route('reports.packing-list')"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Packing List Report</Link>
+                            </li>
                         </ul>
                     </div>
                 </div>

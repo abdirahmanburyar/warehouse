@@ -281,15 +281,27 @@
                         <!-- Modal Header -->
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900">
-                                Purchase Order #{{ selectedPurchaseOrder.po_number }}
+                                Purchase Order #{{
+                                    selectedPurchaseOrder.po_number
+                                }}
                             </h3>
                             <button
                                 @click="selectedPurchaseOrder = null"
                                 class="text-gray-400 hover:text-gray-500"
                                 title="Close"
                             >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
                                 </svg>
                             </button>
                         </div>
@@ -333,27 +345,40 @@
                                     {{
                                         selectedPurchaseOrder.creator?.name ||
                                         "—"
-                                    }}
+                                    }} at {{ formatDate(selectedPurchaseOrder.created_at) }}
                                 </p>
                                 <p>
                                     <strong>Reviewed By:</strong>
                                     {{
                                         selectedPurchaseOrder.reviewed_by
                                             ?.name || "—"
-                                    }}
+                                    }} at {{ formatDate(selectedPurchaseOrder.reviewed_at) }}
                                 </p>
                                 <p>
                                     <strong>Approved By:</strong>
                                     {{
                                         selectedPurchaseOrder.approved_by
                                             ?.name || "—"
+                                    }} at {{ formatDate(selectedPurchaseOrder.approved_at) }}
+                                </p>
+                                <p v-if="selectedPurchaseOrder.rejected_by">
+                                    <strong>Rejected By:</strong>
+                                    {{
+                                        selectedPurchaseOrder.rejected_by
+                                            ?.name || "—"
+                                    }} at {{ formatDate(selectedPurchaseOrder.rejected_at) }}
+                                </p>
+                                <p>
+                                    <strong>Total Cost:</strong> ${{
+                                        selectedPurchaseOrder.total_cost?.toFixed(2) || "0.00"
                                     }}
                                 </p>
                                 <p>
                                     <strong>Total Amount:</strong> ${{
-                                        selectedPurchaseOrder.total_amount?.toFixed(
-                                            2
-                                        ) || "0.00"
+                                        selectedPurchaseOrder.items.reduce(
+                                            (total, item) => total + item.total_cost,
+                                            0
+                                        )?.toFixed(2) || "0.00"
                                     }}
                                 </p>
                             </div>
@@ -597,7 +622,8 @@ function downloadPurchaseOrder() {
     if (!selectedPurchaseOrder) return;
 
     // Ensure we have the correct data structure
-    const supplierName = selectedPurchaseOrder.value.supplier?.name || "Unknown Supplier";
+    const supplierName =
+        selectedPurchaseOrder.value.supplier?.name || "Unknown Supplier";
     const poNumber = selectedPurchaseOrder.value.po_number || "UnknownPO";
 
     // Clean filename
@@ -613,47 +639,109 @@ function downloadPurchaseOrder() {
         format: "a4",
     });
 
-    // Add header section with title and PO number
-    doc.setFontSize(16);
-    doc.text(`Purchase Order Report`, 14, 15);
+    // Add header with PO number
+    doc.setFontSize(20);
+    doc.text(`Purchase Order #${poNumber}`, 14, 15);
+
+    // Create two-column layout
+    const columnWidth = 100;
+    const leftMargin = 14;
+    const rightMargin = leftMargin + columnWidth + 20;
+    const sectionStartY = 30;
+
+    // Left Column - Purchase Order Details
     doc.setFontSize(12);
-    doc.text(`PO Number: ${poNumber}`, 14, 25);
-
-    // Add supplier and PO details
-    const detailsStartY = 35;
+    doc.text("Purchase Order Details", leftMargin, sectionStartY);
     doc.setFontSize(10);
-    doc.text(`Supplier: ${supplierName}`, 14, detailsStartY);
-    doc.text(`PO Date: ${moment(selectedPurchaseOrder.po_date).format("YYYY-MM-DD")}`, 14, detailsStartY + 7);
-    doc.text(`Status: ${selectedPurchaseOrder.status}`, 14, detailsStartY + 14);
-    doc.text(`Created By: ${selectedPurchaseOrder.creator?.name || "—"}`, 14, detailsStartY + 21);
-    doc.text(`Reviewed By: ${selectedPurchaseOrder.reviewed_by?.name || "—"}`, 14, detailsStartY + 28);
-    doc.text(`Approved By: ${selectedPurchaseOrder.approved_by?.name || "—"}`, 14, detailsStartY + 35);
+    doc.text(`PO Number: ${selectedPurchaseOrder.value.po_number}`, leftMargin, sectionStartY + 14);
+    doc.text(`PO Date: ${moment(selectedPurchaseOrder.value.po_date).format("YYYY-MM-DD")}`, leftMargin, sectionStartY + 21);
+    doc.text(`Status: ${selectedPurchaseOrder.value.status.toUpperCase()}`, leftMargin, sectionStartY + 28);
 
-    // Add total amount
-    const totalAmount = selectedPurchaseOrder.total_amount?.toFixed(2) || "0.00";
-    doc.text(`Total Amount: $${totalAmount}`, 14, detailsStartY + 42);
+    // Actions with dates
+    doc.setFontSize(10);
+    doc.text(
+        `Created By: ${selectedPurchaseOrder.value.creator?.name || "—"} at ${moment(selectedPurchaseOrder.value.created_at).format("YYYY-MM-DD HH:mm")}`,
+        leftMargin,
+        sectionStartY + 38
+    );
+    
+    doc.text(
+        `Reviewed By: ${selectedPurchaseOrder.value.reviewed_by?.name || "—"} at ${moment(selectedPurchaseOrder.value.reviewed_at).format("YYYY-MM-DD HH:mm")}`,
+        leftMargin,
+        sectionStartY + 45
+    );
+    
+    doc.text(
+        `Approved By: ${selectedPurchaseOrder.value.approved_by?.name || "—"} at ${moment(selectedPurchaseOrder.value.approved_at).format("YYYY-MM-DD HH:mm")}`,
+        leftMargin,
+        sectionStartY + 52
+    );
+    
+    // Only show rejected if exists
+    if (selectedPurchaseOrder.value.rejected_by) {
+        doc.text(
+            `Rejected By: ${selectedPurchaseOrder.value.rejected_by?.name || "—"} at ${moment(selectedPurchaseOrder.value.rejected_at).format("YYYY-MM-DD HH:mm")}`,
+            leftMargin,
+            sectionStartY + 59
+        );
+    }
+    
+    // Total Cost
+    doc.setFontSize(10);
+    doc.text(`Total Cost: $${selectedPurchaseOrder.value.items.reduce(
+        (total, item) => total + item.total_cost,
+        0
+    )?.toFixed(2) || "0.00"}`, leftMargin, sectionStartY + 72);
 
-    // Add supplier details section
-    const supplierDetailsStartY = detailsStartY + 50;
+    // Right Column - Supplier Details
     doc.setFontSize(12);
-    doc.text("Supplier Details", 14, supplierDetailsStartY);
+    doc.text("Supplier Details", rightMargin, sectionStartY);
     doc.setFontSize(10);
-    doc.text(`Contact Person: ${selectedPurchaseOrder.supplier?.contact_person || "—"}`, 14, supplierDetailsStartY + 7);
-    doc.text(`Email: ${selectedPurchaseOrder.supplier?.email || "—"}`, 14, supplierDetailsStartY + 14);
-    doc.text(`Phone: ${selectedPurchaseOrder.supplier?.phone || "—"}`, 14, supplierDetailsStartY + 21);
-    doc.text(`Address: ${selectedPurchaseOrder.supplier?.address || "—"}`, 14, supplierDetailsStartY + 28);
-    doc.text(`Status: ${selectedPurchaseOrder.supplier?.status || "—"}`, 14, supplierDetailsStartY + 35);
+    doc.text(`Name: ${supplierName}`, rightMargin, sectionStartY + 7);
+    doc.text(
+        `Contact Person: ${
+            selectedPurchaseOrder.value.supplier?.contact_person || "—"
+        }`,
+        rightMargin,
+        sectionStartY + 17
+    );
+    doc.text(
+        `Email: ${selectedPurchaseOrder.value.supplier?.email || "—"}`,
+        rightMargin,
+        sectionStartY + 24
+    );
+    doc.text(
+        `Phone: ${selectedPurchaseOrder.value.supplier?.phone || "—"}`,
+        rightMargin,
+        sectionStartY + 31
+    );
+    doc.text(
+        `Address: ${selectedPurchaseOrder.value.supplier?.address || "—"}`,
+        rightMargin,
+        sectionStartY + 38
+    );
+    doc.text(
+        `Status: ${selectedPurchaseOrder.value.supplier?.status || "—"}`,
+        rightMargin,
+        sectionStartY + 45
+    );
 
-    // Table start position
-    const tableStartY = supplierDetailsStartY + 60;
-
-    const items = Array.isArray(selectedPurchaseOrder.items)
-        ? selectedPurchaseOrder.items
+    // Items table
+    const items = Array.isArray(selectedPurchaseOrder.value.items)
+        ? selectedPurchaseOrder.value.items
         : [];
+
+    const tableStartY = sectionStartY + 85; // Adjusted to avoid overlap
+    const tableMargin = 14; // Same as left margin
+    const tableWidth = 297 - tableMargin * 2; // Full width minus margins
+
+    // Add table header
+    doc.setFontSize(12);
+    doc.text("Items", tableMargin, tableStartY);
 
     // Items table
     autoTable(doc, {
-        startY: tableStartY,
+        startY: tableStartY + 10,
         head: [
             [
                 "Item",
@@ -672,15 +760,21 @@ function downloadPurchaseOrder() {
             item.unit_cost?.toFixed(2) || "0.00",
             item.total_cost?.toFixed(2) || "0.00",
         ]),
-        styles: {
-            fontSize: 8,
-        },
-        headStyles: {
-            fillColor: [240, 240, 240],
-            textColor: 0,
-            fontStyle: "bold",
-        },
+        styles: { fontSize: 8 },
         theme: "grid",
+        margin: { left: 14, right: 14 },
+    });
+
+    // Add notes section
+    const notesStartY = tableStartY + 150; // Position after table
+    doc.setFontSize(12);
+    doc.text("Notes", leftMargin, notesStartY);
+
+    const notes = selectedPurchaseOrder.value.notes || "—";
+    doc.setFontSize(10);
+    doc.text(notes, leftMargin, notesStartY + 10, {
+        align: "left",
+        maxWidth: tableWidth,
     });
 
     // Add footer with page number
@@ -688,7 +782,7 @@ function downloadPurchaseOrder() {
     for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
-        doc.text(`Page ${i} of ${totalPages}`, 14, 280);
+        doc.text(`Page ${i} of ${totalPages}`, leftMargin, 280);
     }
 
     doc.save(fileName);

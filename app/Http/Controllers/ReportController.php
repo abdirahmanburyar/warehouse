@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PhysicalCountSubmitted;
+use Illuminate\Support\Facades\Cache;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\MonthlyQuantityReceived;
 use App\Http\Resources\ReceivedQuantityResource;
 use App\Models\MonthlyConsumptionReport;
+use App\Models\PackingList;
 use App\Models\Warehouse;
+use App\Http\Resources\PackingListResource;
 use App\Models\User;
 use App\Models\Order;
 use Illuminate\Support\Collection;
@@ -948,6 +951,54 @@ class ReportController extends Controller
             'suppliers' => $suppliers,
             'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
             'filters' => $request->only('per_page', 'page', 'supplier', 'date_from', 'date_to', 'status')
+        ]);
+    }
+
+    // packing list
+    public function packingList(Request $request)
+    {
+        $supplier = Supplier::get()->pluck('name')->toArray();
+        $packingLists = PackingList::query();
+
+        if ($request->filled('search')) {
+            $packingLists->whereHas('purchaseOrder', function($query) use ($request) {
+                $query->where('ref_no', $request->search)
+                ->orWhere('po_number', $request->search);
+            })
+            ->orWhere('ref_no', $request->search)
+            ->orWhere('packing_list_number', $request->search);
+        }
+
+        if ($request->filled('supplier')) {
+            $packingLists->whereHas('purchaseOrder.supplier', function($query) use ($request) {
+                $query->where('name', $request->supplier);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $packingLists->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $packingLists->whereDate('pk_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $packingLists->whereBetween('pk_date', [$request->date_from, $request->date_to]);
+        }
+
+        // ✅ Now assign the result of paginate() to a variable
+        $packingLists = $packingLists
+            ->with(['items.product.dosage','items.warehouse','items.location', 'items.product.category', 'purchaseOrder.supplier', 'confirmedBy', 'approvedBy', 'rejectedBy', 'reviewedBy'])
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        $packingLists->setPath(url()->current());
+
+        return inertia('Report/PackingList', [
+            'suppliers' => $supplier,
+            'packingLists' => PackingListResource::collection($packingLists),
+            'filters' => $request->only('search','per_page', 'page', 'supplier', 'date_from', 'date_to', 'status','purchaser_order')
         ]);
     }
 

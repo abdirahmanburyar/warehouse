@@ -30,14 +30,21 @@ class PackingList extends Model
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
-    public function po_item()
+    public function confirmedBy()
     {
-        return $this->belongsTo(PurchaseOrderItem::class, 'po_id');
+        return $this->belongsTo(User::class, 'confirmed_by');
     }
-
-    public function creator()
+    public function reviewedBy()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     public function updater()
