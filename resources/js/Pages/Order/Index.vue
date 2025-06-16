@@ -48,7 +48,7 @@ const statusTabs = [
 ];
 
 // Filter states
-const search = ref('');
+const search = ref(props.filters.search);
 const currentStatus = ref(props.filters.currentStatus || null);
 const facility = ref(props.filters?.facility || null);
 const orderType = ref(props.filters?.orderType || null);
