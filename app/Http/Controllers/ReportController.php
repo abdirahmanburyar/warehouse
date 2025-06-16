@@ -19,10 +19,13 @@ use App\Models\InventoryReport;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
 use App\Models\IssueQuantityReport;
+use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Resources\PhysicalCountReportResource;
 use App\Models\Disposal;
 use App\Models\Liquidation;
 use App\Models\Supply;
+use App\Models\Supplier;
+use App\Models\PurchaseOrder;
 use App\Models\Transfer;
 use App\Http\Resources\DisposalResource;
 use App\Models\IssueQuantityItem;
@@ -903,6 +906,42 @@ class ReportController extends Controller
             'filters' => $request->only('facility','warehouse', 'status', 'per_page', 'page', 'date_from', 'date_to'),
             'facilities' => $facilities,
             'warehouses' => $warehouses
+        ]);
+    }
+
+
+    // purchase orders
+    public function purchaseOrders(Request $request)
+    {
+        $suppliers = Supplier::get()->pluck('name')->toArray();
+        $purchaseOrders = PurchaseOrder::query();
+
+        if($request->filled('supplier')){
+            $purchaseOrders->whereHas('supplier', function($query) use ($request) {
+                $query->where('name', $request->supplier);
+            });
+        }
+
+        if($request->filled('status')){
+            $purchaseOrders->where('status', $request->status);
+        }
+
+        if($request->filled('date_from') && !$request->filled('date_to')){
+            $purchaseOrders->whereDate('po_date', $request->date_from);
+        }
+
+        if($request->filled('date_from') && $request->filled('date_to')){
+            $purchaseOrders->whereBetween('po_date', [$request->date_from, $request->date_to]);
+        }
+
+        $purchaseOrders->with(['items.product.dosage', 'items.product.category', 'creator', 'approvedBy', 'rejectedBy', 'reviewedBy'])
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        
+        return inertia('Report/PurchaseOrder', [
+            'suppliers' => $suppliers,
+            'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
+            'filters' => $request->only('per_page','page','supplier','date_from','date_to','status')
         ]);
     }
 
