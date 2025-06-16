@@ -1,13 +1,508 @@
 <template>
     <Head title="LMIS Monthly Report" />
-    <AuthenticatedLayout title="LMIS Monthly Report" description="LMIS Monthly Report" img="/assets/images/report.png">
-        <div class="px-5 mb-[100px]">
-            <h1 class="text-2xl font-semibold text-gray-900 mb-6">LMIS Monthly Report</h1>
+    <AuthenticatedLayout
+        title="LMIS Monthly Report"
+        description="LMIS Monthly Report"
+        img="/assets/images/report.png"
+    >
+        <div class="flex flex-col lg:flex-row gap-6 p-1 overflow-auto">
+            <!-- Filter Section (300px width) -->
+            <div
+                class="w-full lg:w-[300px] bg-white rounded-lg shadow p-1 h-fit"
+            >
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">Filters</h2>
+                    <button
+                        @click="clearFilters"
+                        class="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                        Clear All
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">
+                            Select Facilities by District
+                        </h3>
+                        <div
+                            v-for="(
+                                facilities, districtName
+                            ) in facilitiesGrouped"
+                            :key="districtName"
+                            class="mb-2"
+                        >
+                            <!-- District header with toggle -->
+                            <button
+                                @click="toggleDistrict(districtName)"
+                                class="w-full text-left px-4 py-3 bg-blue-600 text-white font-bold rounded-t hover:bg-blue-700 flex justify-between items-center"
+                            >
+                                {{ districtName }}
+                                <svg
+                                    :class="{
+                                        'transform rotate-180':
+                                            isOpen(districtName),
+                                    }"
+                                    class="w-5 h-5 transition-transform duration-200"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    viewBox="0 0 24 24"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </button>
+
+                            <transition name="collapse">
+                                <div
+                                    v-show="isOpen(districtName)"
+                                    class="p-2 bg-white rounded-b"
+                                >
+                                    <!-- Search Bar -->
+                                    <div class="relative mb-3">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                                        >
+                                            <svg
+                                                class="h-4 w-4 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            v-model="
+                                                searchQueries[districtName]
+                                            "
+                                            :placeholder="`Search ${districtName} facilities...`"
+                                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+
+                                    <div class="text-xs text-gray-500 mb-2">
+                                        {{
+                                            filteredFacilities(
+                                                facilities,
+                                                districtName
+                                            ).length
+                                        }}
+                                        facilities found
+                                    </div>
+
+                                    <div
+                                        class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-2"
+                                    >
+                                        <div
+                                            v-for="facility in filteredFacilities(
+                                                facilities,
+                                                districtName
+                                            )"
+                                            :key="facility.id"
+                                            class="flex items-center space-x-2 border rounded p-2 shadow-sm hover:bg-gray-50 w-full"
+                                        >
+                                            <input
+                                                type="radio"
+                                                :id="`facility-${facility.id}`"
+                                                v-model="selectedFacility"
+                                                :value="facility.id"
+                                                class="form-radio text-blue-600"
+                                                name="facility-selection"
+                                            />
+                                            <label
+                                                :for="`facility-${facility.id}`"
+                                                class="text-sm"
+                                            >
+                                                {{ facility.name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h1>LMIS Monthly Report</h1>
+                <div>
+                    <div class="flex flex-col">
+                        <label for="month_year">Month Year</label>
+                        <input
+                            type="month"
+                            id="month_year"
+                            v-model="month_year"
+                        />
+                    </div>
+                </div>
+                <button
+                    :disabled="isLoading"
+                    @click="getReport"
+                    class="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                    <span v-if="!isLoading">Get Report</span>
+                    <span v-else>Please wait...</span>
+                </button>
+            </div>
+        </div>
+        <div class="mb-[80px]">
+            <div class="mb-2">
+                <!-- Facility Info Section -->
+                <div
+                    class="bg-white border border-gray-200 rounded p-6 shadow-sm"
+                >
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        Facility Information
+                    </h2>
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm"
+                    >
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Name:</span
+                            >
+                            {{ report.facility.name }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >District:</span
+                            >
+                            {{ report.facility.district }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Facility Type:</span
+                            >
+                            {{ report.facility.facility_type }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Cold Storage:</span
+                            >
+                            {{
+                                report.facility.has_cold_storage
+                                    ? "Yes"
+                                    : "No"
+                            }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Active:</span
+                            >
+                            {{ report.facility.is_active ? "Yes" : "No" }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Phone:</span
+                            >
+                            {{ report.facility.phone || "—" }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600"
+                                >Email:</span
+                            >
+                            {{ report.facility.email || "—" }}
+                        </div>
+                        <div class="col-span-full">
+                            <span class="font-medium text-gray-600"
+                                >Address:</span
+                            >
+                            {{ report.facility.address || "—" }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approval Timeline -->
+                <div
+                    class="bg-white border border-gray-200 rounded p-6 shadow-sm"
+                >
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        Approval Timeline
+                    </h2>
+                    <ol
+                        class="relative border-l border-gray-300 pl-4 space-y-6 text-sm text-gray-700"
+                    >
+                        <li class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-blue-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Submitted</p>
+                            <p class="text-xs">
+                                {{ report.submitted_by.name }} on
+                                {{ formatDate(report.submitted_at) }}
+                            </p>
+                        </li>
+
+                        <li v-if="report.reviewed_by" class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-yellow-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Reviewed</p>
+                            <p class="text-xs">
+                                {{ report.reviewed_by.name }} on
+                                {{ formatDate(report.reviewed_at) }}
+                            </p>
+                        </li>
+
+                        <li v-if="report.approved_by" class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-green-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Approved</p>
+                            <p class="text-xs">
+                                {{ report.approved_by.name }} on
+                                {{ formatDate(report.approved_at) }}
+                            </p>
+                        </li>
+
+                        <li v-if="report.rejected_by" class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-red-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Rejected</p>
+                            <p class="text-xs">
+                                {{ report.rejected_by.name }} on
+                                {{ formatDate(report.rejected_at) }}
+                            </p>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+            <!-- Report Items -->
+            <div class="mb-2 overflow-x-auto">
+                <table
+                    class="min-w-full bg-white border border-gray-200 text-xs"
+                >
+                    <thead
+                        class="bg-gray-100 text-left text-gray-600 capitalize tracking-wider"
+                    >
+                        <tr>
+                            <th class="px-4 py-2">Item</th>
+                            <th class="px-4 py-2">Opening Balance</th>
+                            <th class="px-4 py-2">Stock Received</th>
+                            <th class="px-4 py-2">Stock Issued</th>
+                            <th class="px-4 py-2">+ Adjustments</th>
+                            <th class="px-4 py-2">– Adjustments</th>
+                            <th class="px-4 py-2">Closing Balance</th>
+                            <th class="px-4 py-2">Stockout Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="item in report.items"
+                            :key="item.id"
+                            class="border-t hover:bg-gray-50"
+                        >
+                            <td class="px-4 py-2">
+                                {{ item.product?.name }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.opening_balance }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.stock_received }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.stock_issued }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.positive_adjustments }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.negative_adjustments }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.closing_balance }}
+                            </td>
+                            <td class="px-4 py-2">
+                                {{ item.stockout_days }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Comments -->
+            <div
+                v-if="report.comments"
+                class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded"
+            >
+                <h3 class="font-semibold text-gray-800 mb-2">Comments</h3>
+                <p class="text-sm text-gray-700">{{ report.comments }}</p>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, router } from "@inertiajs/vue3";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import { ref, onMounted } from "vue";
+import moment from "moment";
+
+const props = defineProps({
+    facilitiesGrouped: {
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object,
+        default: () => ({
+            facility: null,
+            month_year: new Date().toISOString().slice(0, 7), // Default to current year-month
+        }),
+    },
+    report: {
+        type: Object,
+        default: () => ({
+            facility: null,
+            month_year: "", // Default to current year-month
+        }),
+    },
+});
+
+// Initialize search queries when component mounts
+onMounted(() => {
+    initializeSearchQueries(Object.keys(props.facilitiesGrouped));
+});
+const selectedFacility = ref(null);
+const isLoading = ref(false);
+const searchQueries = ref({}); // Store search queries for each district
+
+// Track open/closed districts with a Set for O(1) toggle
+const openDistricts = ref(new Set());
+
+// Initialize search queries for each district
+const initializeSearchQueries = (districts) => {
+    districts.forEach((district) => {
+        searchQueries.value[district] = "";
+    });
+};
+
+// Filter facilities based on search query
+const filteredFacilities = (facilities, districtName) => {
+    const query = (searchQueries.value[districtName] || "").toLowerCase();
+    if (!query) return facilities;
+    return facilities.filter((facility) =>
+        facility.name.toLowerCase().includes(query)
+    );
+};
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return moment(dateStr).format("DD/MM/YYYY");
+};
+
+const formatPeriod = (periodStr) => {
+    if (!periodStr) return "—";
+    const [year, month] = periodStr.split("-");
+    const date = new Date(`${year}-${month}-01`);
+    return date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+    });
+};
+
+// Clear selected facility
+const clearFilters = () => {
+    selectedFacility.value = null;
+    month_year.value = "";
+    router.get(
+        route("reports.lmis-monthly"),
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            only: ["report"],
+        }
+    );
+};
+
+function toggleDistrict(district) {
+    if (openDistricts.value.has(district)) {
+        openDistricts.value.delete(district);
+    } else {
+        openDistricts.value.add(district);
+    }
+    // Trigger reactivity
+    openDistricts.value = new Set(openDistricts.value);
+}
+
+function isOpen(district) {
+    return openDistricts.value.has(district);
+}
+
+const facility = ref(props.filters.facility);
+const month_year = ref(props.filters.month_year);
+
+const getReport = async () => {
+    try {
+        // Validate required fields
+        if (!selectedFacility.value) {
+            alert("Please select a facility");
+            return;
+        }
+
+        if (!month_year.value) {
+            alert("Please select a month and year");
+            return;
+        }
+
+        isLoading.value = true;
+
+        await router.get(
+            route("reports.lmis-monthly"),
+            {
+                facility: selectedFacility.value,
+                month_year: month_year.value,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ["report"],
+                onSuccess: () => {
+                    console.log("Report data loaded successfully");
+                },
+                onError: (errors) => {
+                    console.error("Failed to load report:", errors);
+                    alert("Failed to load report. Please try again.");
+                },
+                onFinish: () => {
+                    isLoading.value = false;
+                },
+            }
+        );
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        alert("An unexpected error occurred. Please try again.");
+        isLoading.value = false;
+    }
+};
 </script>
+
+<style scoped>
+.collapse-enter-active,
+.collapse-leave-active {
+    transition: all 0.3s ease;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+.collapse-enter-to,
+.collapse-leave-from {
+    max-height: 1000px;
+    opacity: 1;
+}
+</style>

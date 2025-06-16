@@ -33,6 +33,7 @@ use App\Models\Transfer;
 use App\Http\Resources\DisposalResource;
 use App\Models\IssueQuantityItem;
 use App\Models\ReceivedQuantityItem;
+use App\Models\District;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +43,7 @@ use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\ImportIssueQuantityJob;
 use App\Imports\IssueQuantitiyImport;
+use App\Models\FacilityMonthlyReport;
 
 class ReportController extends Controller
 {
@@ -1003,7 +1005,21 @@ class ReportController extends Controller
     }
 
     public function lmisMonthlyReport(Request $request){
-        return inertia('Report/LMISMonthlyReport');
+        // Group facilities by their district name
+        $facilities = Facility::select('id', 'name', 'district')->get()
+            ->groupBy('district')
+            ->map(function ($group) {
+                return $group->values(); // reset array keys
+            });
+
+        $report = FacilityMonthlyReport::where('report_period', $request->month_year)
+            ->with('items.product.category','facility','submittedBy','reviewedBy','approvedBy','rejectedBy')->first();
+    
+        return inertia('Report/LMISMonthlyReport', [
+            'facilitiesGrouped' => $facilities,
+            'report' => $report,
+            'filters' => $request->only('facility', 'month_year')
+        ]);
     }
 
     public function export($monthYear, Request $request)
