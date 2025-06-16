@@ -151,7 +151,7 @@ const formatDate = (date) => {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-5">
                 <!-- Search -->
                 <div class="relative w-full">
-                    <input type="text" v-model="search" placeholder="Search orders..."
+                    <input type="text" v-model="search" placeholder="Search by Order No"
                         class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
