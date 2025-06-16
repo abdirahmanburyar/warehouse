@@ -145,14 +145,38 @@
                         />
                     </div>
                 </div>
-                <button
-                    :disabled="isLoading"
-                    @click="getReport"
-                    class="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                >
-                    <span v-if="!isLoading">Get Report</span>
-                    <span v-else>Please wait...</span>
-                </button>
+                <div class="flex gap-2 mt-2">
+                    <button
+                        :disabled="isLoading"
+                        @click="getReport"
+                        class="bg-blue-500 text-white px-4 py-2 rounded flex-1"
+                    >
+                        <span v-if="!isLoading">Get Report</span>
+                        <span v-else>Please wait...</span>
+                    </button>
+                    <button
+                        v-if="report"
+                        @click="exportToExcel"
+                        class="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-1"
+                        :disabled="isLoading"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Excel
+                    </button>
+                    <button
+                        v-if="report"
+                        @click="exportToPdf"
+                        class="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-1"
+                        :disabled="isLoading"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        PDF
+                    </button>
+                </div>
             </div>
         </div>
         <div v-if="isLoading" class="flex justify-center items-center py-12">
@@ -370,6 +394,11 @@ import { Head, router } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { ref, onMounted } from "vue";
 import moment from "moment";
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+
 
 const props = defineProps({
     facilitiesGrouped: {
@@ -458,6 +487,150 @@ function isOpen(district) {
 }
 
 const month_year = ref(props.filters.month_year);
+
+const exportToExcel = () => {
+    if (!props.report) return;
+    
+    // Prepare data for Excel
+    const data = [
+        ['Item', 'Opening Balance', 'Stock Received', 'Stock Issued', '+ Adjustments', '– Adjustments', 'Closing Balance', 'Stockout Days'],
+        ...props.report.items.map(item => [
+            item.product?.name || '—',
+            item.opening_balance,
+            item.stock_received,
+            item.stock_issued,
+            item.positive_adjustments,
+            item.negative_adjustments,
+            item.closing_balance,
+            item.stockout_days
+        ])
+    ];
+
+    // Create workbook and worksheet
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'LMIS Monthly Report');
+    
+    // Generate Excel file
+    XLSX.writeFile(wb, `LMIS_Report_${props.report.facility?.name || 'Facility'}_${props.report.report_period || 'Period'}.xlsx`);
+};
+
+// export tot pdf
+const exportToPdf = () => {
+    if (!props.report) return;
+
+    const report = props.report;
+    const facility = report.facility || {};
+
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const title = `LMIS Monthly Report - ${facility.name || 'Unknown Facility'}`;
+    const subtitle = `Report Period: ${report.report_period || '—'}`;
+
+    // Header
+    doc.setFontSize(18).setFont('helvetica', 'bold').text(title, 20, 20);
+    doc.setFontSize(14).setFont('helvetica', 'normal').text(subtitle, 20, 28);
+
+    // Facility Metadata
+    const metadata = [
+        `Facility Type: ${facility.facility_type || '—'}`,
+        `District: ${facility.district || '—'}`,
+        `Region: ${facility.region || '—'}`,
+        `Phone: ${facility.phone || '—'}`,
+        `Email: ${facility.email || '—'}`,
+        `Cold Storage: ${facility.has_cold_storage ? 'Yes' : 'No'}`,
+        `Active: ${facility.is_active ? 'Yes' : 'No'}`
+    ];
+
+    const reportInfo = [
+        report.submitted_at ? `Submitted: ${moment(report.submitted_at).format('YYYY-MM-DD HH:mm')} by ${report.submitted_by?.name || '—'}` : '',
+        report.reviewed_at ? `Reviewed: ${moment(report.reviewed_at).format('YYYY-MM-DD HH:mm')} by ${report.reviewed_by?.name || '—'}` : '',
+        report.approved_at ? `Approved: ${moment(report.approved_at).format('YYYY-MM-DD HH:mm')} by ${report.approved_by?.name || '—'}` : '',
+        report.rejected_at ? `Rejected: ${moment(report.rejected_at).format('YYYY-MM-DD HH:mm')} by ${report.rejected_by?.name || '—'}` : ''
+    ].filter(Boolean);
+
+    const yStart = 40;
+    let y = yStart;
+
+    // Section Headers
+    doc.setFontSize(11).setFont('helvetica', 'bold');
+    doc.text('Facility Details', 20, y);
+    doc.text('Report Status', 120, y);
+
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+
+    metadata.forEach((line, index) => {
+        doc.text(line, 20, y + index * 5);
+    });
+
+    reportInfo.forEach((line, index) => {
+        doc.text(line, 120, y + index * 5);
+    });
+
+    // Table Data
+    const tableColumn = [
+        'Item',
+        'Opening Balance',
+        'Stock Received',
+        'Stock Issued',
+        '+Adj',
+        '-Adj',
+        'Closing Balance',
+        'Stockout Days'
+    ];
+
+    const tableRows = (report.items || []).map(item => [
+        item.product?.name || '—',
+        item.opening_balance ?? '0.00',
+        item.stock_received ?? '0.00',
+        item.stock_issued ?? '0.00',
+        item.positive_adjustments ?? '0.00',
+        item.negative_adjustments ?? '0.00',
+        item.closing_balance ?? '0.00',
+        item.stockout_days ?? '0'
+    ]);
+
+    // Render Table
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: y + (Math.max(metadata.length, reportInfo.length) * 5) + 10,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            lineWidth: 0.1
+        }
+    });
+
+    // Page Numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+            `Page ${i} of ${pageCount}`,
+            doc.internal.pageSize.getWidth() - 20,
+            doc.internal.pageSize.getHeight() - 10
+        );
+    }
+
+    // Save PDF
+    const safeName = (facility.name || 'Facility').replace(/\s+/g, '_');
+    const fileName = `LMIS_Report_${safeName}_${report.report_period || 'Period'}.pdf`;
+    doc.save(fileName);
+};
+
 
 const getReport = () => {
     try {
