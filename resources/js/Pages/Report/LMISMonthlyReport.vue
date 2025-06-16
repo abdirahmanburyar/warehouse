@@ -132,7 +132,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-col">
+            <div class="flex flex-col mt-4">
                 <h1>LMIS Monthly Report</h1>
                 <div>
                     <div class="flex flex-col">
@@ -141,20 +141,43 @@
                             type="month"
                             id="month_year"
                             v-model="month_year"
+                            class="w-[300px]"
                         />
                     </div>
                 </div>
                 <button
                     :disabled="isLoading"
                     @click="getReport"
-                    class="bg-blue-500 text-white px-4 py-2 rounded"
+                    class="bg-blue-500 text-white px-4 py-2 rounded mt-2"
                 >
                     <span v-if="!isLoading">Get Report</span>
                     <span v-else>Please wait...</span>
                 </button>
             </div>
         </div>
-        <div class="mb-[80px]">
+        <div v-if="isLoading" class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <span class="ml-3 text-gray-600">Loading report...</span>
+        </div>
+        <div v-else-if="!report" class="text-center py-12">
+            <div class="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-lg font-medium text-gray-900">
+                    {{ props.filters.facility && month_year ? 'No report found' : 'No report selected' }}
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    <template v-if="props.filters.facility && month_year">
+                        No report found for the selected facility and month/year.
+                    </template>
+                    <template v-else>
+                        Select a facility and date range to view the report.
+                    </template>
+                </p>
+            </div>
+        </div>
+        <div v-else class="mb-[80px]">
             <div class="mb-2">
                 <!-- Facility Info Section -->
                 <div
@@ -167,59 +190,60 @@
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm"
                     >
                         <div>
-                            <span class="font-medium text-gray-600"
-                                >Name:</span
-                            >
-                            {{ report.facility.name }}
+                            <span class="font-medium text-gray-600">Name:</span>
+                            {{ props.report?.facility?.name }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >District:</span
                             >
-                            {{ report.facility.district }}
+                            {{ props.report?.facility?.district }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >Facility Type:</span
                             >
-                            {{ report.facility.facility_type }}
+                            {{ props.report?.facility?.facility_type }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >Cold Storage:</span
                             >
                             {{
-                                report.facility.has_cold_storage
-                                    ? "Yes"
-                                    : "No"
+                                props.report?.facility?.has_cold_storage ? "Yes" : "No"
                             }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >Active:</span
                             >
-                            {{ report.facility.is_active ? "Yes" : "No" }}
+                            {{ props.report?.facility?.is_active ? "Yes" : "No" }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >Phone:</span
                             >
-                            {{ report.facility.phone || "—" }}
+                            {{ props.report?.facility?.phone || "—" }}
                         </div>
                         <div>
                             <span class="font-medium text-gray-600"
                                 >Email:</span
                             >
-                            {{ report.facility.email || "—" }}
+                            {{ props.report?.facility?.email || "—" }}
                         </div>
                         <div class="col-span-full">
                             <span class="font-medium text-gray-600"
                                 >Address:</span
                             >
-                            {{ report.facility.address || "—" }}
+                            {{ props.report?.facility?.address || "—" }}
                         </div>
                     </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Report Period:</span>
+                        {{ props.report?.report_period }}
+                    </div>
                 </div>
+
 
                 <!-- Approval Timeline -->
                 <div
@@ -231,47 +255,45 @@
                     <ol
                         class="relative border-l border-gray-300 pl-4 space-y-6 text-sm text-gray-700"
                     >
+                    <li v-if="props.report?.approved_by" class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-green-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Approved</p>
+                            <p class="text-xs">
+                                {{ props.report?.approved_by?.name }} on
+                                {{ formatDate(props.report?.approved_at) }}
+                            </p>
+                        </li>
+                        <li v-if="props.report?.reviewed_by" class="ml-2">
+                            <div
+                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-yellow-500 rounded-full border border-white"
+                            ></div>
+                            <p class="font-medium">Reviewed</p>
+                            <p class="text-xs">
+                                {{ props.report?.reviewed_by?.name }} on
+                                {{ formatDate(props.report?.reviewed_at) }}
+                            </p>
+                        </li>
                         <li class="ml-2">
                             <div
                                 class="absolute -left-1.5 top-0.5 w-3 h-3 bg-blue-500 rounded-full border border-white"
                             ></div>
                             <p class="font-medium">Submitted</p>
                             <p class="text-xs">
-                                {{ report.submitted_by.name }} on
-                                {{ formatDate(report.submitted_at) }}
+                                {{ props.report?.submitted_by?.name }} on
+                                {{ formatDate(props.report?.submitted_at) }}
                             </p>
                         </li>
 
-                        <li v-if="report.reviewed_by" class="ml-2">
-                            <div
-                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-yellow-500 rounded-full border border-white"
-                            ></div>
-                            <p class="font-medium">Reviewed</p>
-                            <p class="text-xs">
-                                {{ report.reviewed_by.name }} on
-                                {{ formatDate(report.reviewed_at) }}
-                            </p>
-                        </li>
-
-                        <li v-if="report.approved_by" class="ml-2">
-                            <div
-                                class="absolute -left-1.5 top-0.5 w-3 h-3 bg-green-500 rounded-full border border-white"
-                            ></div>
-                            <p class="font-medium">Approved</p>
-                            <p class="text-xs">
-                                {{ report.approved_by.name }} on
-                                {{ formatDate(report.approved_at) }}
-                            </p>
-                        </li>
-
-                        <li v-if="report.rejected_by" class="ml-2">
+                        <li v-if="props.report?.rejected_by" class="ml-2">
                             <div
                                 class="absolute -left-1.5 top-0.5 w-3 h-3 bg-red-500 rounded-full border border-white"
                             ></div>
                             <p class="font-medium">Rejected</p>
                             <p class="text-xs">
-                                {{ report.rejected_by.name }} on
-                                {{ formatDate(report.rejected_at) }}
+                                {{ props.report?.rejected_by?.name }} on
+                                {{ formatDate(props.report?.rejected_at) }}
                             </p>
                         </li>
                     </ol>
@@ -298,7 +320,7 @@
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in report.items"
+                            v-for="item in props.report?.items"
                             :key="item.id"
                             class="border-t hover:bg-gray-50"
                         >
@@ -333,11 +355,11 @@
 
             <!-- Comments -->
             <div
-                v-if="report.comments"
+                v-if="props.report?.comments"
                 class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded"
             >
                 <h3 class="font-semibold text-gray-800 mb-2">Comments</h3>
-                <p class="text-sm text-gray-700">{{ report.comments }}</p>
+                <p class="text-sm text-gray-700">{{ props.report?.comments }}</p>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -358,23 +380,17 @@ const props = defineProps({
         type: Object,
         default: () => ({
             facility: null,
-            month_year: new Date().toISOString().slice(0, 7), // Default to current year-month
-        }),
-    },
-    report: {
-        type: Object,
-        default: () => ({
-            facility: null,
             month_year: "", // Default to current year-month
         }),
     },
+    report: Object,
 });
 
 // Initialize search queries when component mounts
 onMounted(() => {
     initializeSearchQueries(Object.keys(props.facilitiesGrouped));
 });
-const selectedFacility = ref(null);
+const selectedFacility = ref(props.filters.facility);
 const isLoading = ref(false);
 const searchQueries = ref({}); // Store search queries for each district
 
@@ -441,10 +457,9 @@ function isOpen(district) {
     return openDistricts.value.has(district);
 }
 
-const facility = ref(props.filters.facility);
 const month_year = ref(props.filters.month_year);
 
-const getReport = async () => {
+const getReport = () => {
     try {
         // Validate required fields
         if (!selectedFacility.value) {
@@ -459,7 +474,7 @@ const getReport = async () => {
 
         isLoading.value = true;
 
-        await router.get(
+        router.get(
             route("reports.lmis-monthly"),
             {
                 facility: selectedFacility.value,
