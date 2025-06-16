@@ -914,34 +914,40 @@ class ReportController extends Controller
     public function purchaseOrders(Request $request)
     {
         $suppliers = Supplier::get()->pluck('name')->toArray();
-        $purchaseOrders = PurchaseOrder::query();
-
-        if($request->filled('supplier')){
-            $purchaseOrders->whereHas('supplier', function($query) use ($request) {
+    
+        $purchaseOrdersQuery = PurchaseOrder::query();
+    
+        if ($request->filled('supplier')) {
+            $purchaseOrdersQuery->whereHas('supplier', function($query) use ($request) {
                 $query->where('name', $request->supplier);
             });
         }
-
-        if($request->filled('status')){
-            $purchaseOrders->where('status', $request->status);
+    
+        if ($request->filled('status')) {
+            $purchaseOrdersQuery->where('status', $request->status);
         }
-
-        if($request->filled('date_from') && !$request->filled('date_to')){
-            $purchaseOrders->whereDate('po_date', $request->date_from);
+    
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $purchaseOrdersQuery->whereDate('po_date', $request->date_from);
         }
-
-        if($request->filled('date_from') && $request->filled('date_to')){
-            $purchaseOrders->whereBetween('po_date', [$request->date_from, $request->date_to]);
+    
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $purchaseOrdersQuery->whereBetween('po_date', [$request->date_from, $request->date_to]);
         }
-
-        $purchaseOrders->with(['items.product.dosage', 'items.product.category', 'creator', 'approvedBy', 'rejectedBy', 'reviewedBy'])
+    
+        // ✅ Now assign the result of paginate() to a variable
+        $purchaseOrders = $purchaseOrdersQuery
+            ->with(['items.product.dosage', 'items.product.category', 'supplier', 'creator', 'approvedBy', 'rejectedBy', 'reviewedBy'])
             ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
-        
+
+        $purchaseOrders->setPath(url()->current());
+
+    
         return inertia('Report/PurchaseOrder', [
             'suppliers' => $suppliers,
             'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
-            'filters' => $request->only('per_page','page','supplier','date_from','date_to','status')
+            'filters' => $request->only('per_page', 'page', 'supplier', 'date_from', 'date_to', 'status')
         ]);
     }
 

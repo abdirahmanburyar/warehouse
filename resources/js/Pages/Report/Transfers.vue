@@ -321,112 +321,198 @@
 
         <!-- transfer items modal -->
         <transition name="fade">
-    <div v-if="selectedTransfer" class="fixed inset-0 z-50 bg-black bg-opacity-50">
-      <div class="fixed inset-0 bg-white p-8 overflow-y-auto">
-        <div class="max-w-7xl mx-auto">
-          <!-- Modal Header -->
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold text-gray-900">
-              Transfer #{{ selectedTransfer.transferID }}
-            </h3>
-            <button
-              @click="selectedTransfer = null"
-              class="no-export text-gray-400 hover:text-gray-600"
-              aria-label="Close"
+            <div
+                v-if="selectedTransfer"
+                class="fixed inset-0 z-50 bg-black bg-opacity-50"
             >
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+                <div class="fixed inset-0 bg-white p-8 overflow-y-auto">
+                    <div class="max-w-7xl mx-auto">
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">
+                                Transfer #{{ selectedTransfer.transferID }}
+                            </h3>
+                            <button
+                                @click="selectedTransfer = null"
+                                class="no-export text-gray-400 hover:text-gray-600"
+                                aria-label="Close"
+                            >
+                                <svg
+                                    class="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
 
-          <button
-            @click="downloadModal"
-            class="no-export text-blue-500 hover:text-blue-700 no-print ml-4 mb-6"
-            title="Download as PDF"
-          >
-            ⬇️ Download
-          </button>
+                        <button
+                            @click="downloadModal"
+                            class="no-export text-blue-500 hover:text-blue-700 no-print ml-4 mb-6"
+                            title="Download as PDF"
+                        >
+                            ⬇️ Download
+                        </button>
 
-          <!-- Transfer Info -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-            <div>
-              <strong>From:</strong>
-              {{ selectedTransfer.from_warehouse?.name || selectedTransfer.from_facility?.name || "—" }}
-            </div>
-            <div>
-              <strong>To:</strong>
-              {{ selectedTransfer.to_warehouse?.name || selectedTransfer.to_facility?.name || "—" }}
-            </div>
-            <div>
-              <strong>Status:</strong>
-              {{ selectedTransfer.status }}
-            </div>
-            <div>
-              <strong>Transfer Date:</strong>
-              {{ formatDate(selectedTransfer.transfer_date) }}
-            </div>
-            <div>
-              <strong>Quantity:</strong>
-              {{ selectedTransfer.quantity }}
-            </div>
-          </div>
+                        <!-- Transfer Info -->
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4"
+                        >
+                            <div>
+                                <strong>From:</strong>
+                                {{
+                                    selectedTransfer.from_warehouse?.name ||
+                                    selectedTransfer.from_facility?.name ||
+                                    "—"
+                                }}
+                            </div>
+                            <div>
+                                <strong>To:</strong>
+                                {{
+                                    selectedTransfer.to_warehouse?.name ||
+                                    selectedTransfer.to_facility?.name ||
+                                    "—"
+                                }}
+                            </div>
+                            <div>
+                                <strong>Status:</strong>
+                                {{ selectedTransfer.status }}
+                            </div>
+                            <div>
+                                <strong>Transfer Date:</strong>
+                                {{ formatDate(selectedTransfer.transfer_date) }}
+                            </div>
+                            <div>
+                                <strong>Quantity:</strong>
+                                {{ selectedTransfer.quantity }}
+                            </div>
+                        </div>
 
-          <!-- Note -->
-          <div class="mb-4">
-            <strong>Note:</strong>
-            <div class="mt-1 text-sm">{{ selectedTransfer.note || "—" }}</div>
-          </div>
+                        <!-- Note -->
+                        <div class="mb-4">
+                            <strong>Note:</strong>
+                            <div class="mt-1 text-sm">
+                                {{ selectedTransfer.note || "—" }}
+                            </div>
+                        </div>
 
-          <!-- Approvals -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-6">
-            <div>
-              <strong>Approved By:</strong>
-              <div class="mt-1">{{ selectedTransfer.approved_by?.name || "—" }}</div>
-            </div>
-            <div v-if="selectedTransfer.status === 'rejected'">
-              <strong>Rejected By:</strong>
-              <div class="mt-1">{{ selectedTransfer.rejected_by?.name || "—" }}</div>
-            </div>
-            <div>
-              <strong>Dispatched By:</strong>
-              <div class="mt-1">{{ selectedTransfer.dispatched_by?.name || "—" }}</div>
-            </div>
-          </div>
+                        <!-- Approvals -->
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-6"
+                        >
+                            <div>
+                                <strong>Approved By:</strong>
+                                <div class="mt-1">
+                                    {{
+                                        selectedTransfer.approved_by?.name ||
+                                        "—"
+                                    }}
+                                </div>
+                            </div>
+                            <div v-if="selectedTransfer.status === 'rejected'">
+                                <strong>Rejected By:</strong>
+                                <div class="mt-1">
+                                    {{
+                                        selectedTransfer.rejected_by?.name ||
+                                        "—"
+                                    }}
+                                </div>
+                            </div>
+                            <div>
+                                <strong>Dispatched By:</strong>
+                                <div class="mt-1">
+                                    {{
+                                        selectedTransfer.dispatched_by?.name ||
+                                        "—"
+                                    }}
+                                </div>
+                            </div>
+                        </div>
 
-          <!-- Items Table -->
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-xs border">
-              <thead class="bg-gray-100">
-                <tr>
-                  <th class="p-2 border border-black w-72">Item</th>
-                  <th class="p-2 border border-black w-20">UOM</th>
-                  <th class="p-2 border border-black w-20">Barcode</th>
-                  <th class="p-2 border border-black w-20">Batch Number</th>
-                  <th class="p-2 border border-black w-20">Expiry Date</th>
-                  <th class="p-2 border border-black w-20">Quantity</th>
-                  <th class="p-2 border border-black w-28">Received Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in selectedTransfer.items" :key="item.id" class="border-b">
-                  <td class="p-2 border border-black">
-                    {{ item.product?.name || "—" }}
-                  </td>
-                  <td class="p-2 border border-black">{{ item.uom }}</td>
-                  <td class="p-2 border border-black">{{ item.barcode }}</td>
-                  <td class="p-2 border border-black">{{ item.batch_number }}</td>
-                  <td class="p-2 border border-black">{{ formatDate(item.expire_date) }}</td>
-                  <td class="p-2 border border-black">{{ item.quantity }}</td>
-                  <td class="p-2 border border-black">{{ item.received_quantity }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </transition>
+                        <!-- Items Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left text-xs border">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th
+                                            class="p-2 border border-black w-72"
+                                        >
+                                            Item
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-20"
+                                        >
+                                            UOM
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-20"
+                                        >
+                                            Barcode
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-20"
+                                        >
+                                            Batch Number
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-20"
+                                        >
+                                            Expiry Date
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-20"
+                                        >
+                                            Quantity
+                                        </th>
+                                        <th
+                                            class="p-2 border border-black w-28"
+                                        >
+                                            Received Quantity
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="item in selectedTransfer.items"
+                                        :key="item.id"
+                                        class="border-b"
+                                    >
+                                        <td class="p-2 border border-black">
+                                            {{ item.product?.name || "—" }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ item.uom }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ item.barcode }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ item.batch_number }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ formatDate(item.expire_date) }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ item.quantity }}
+                                        </td>
+                                        <td class="p-2 border border-black">
+                                            {{ item.received_quantity }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
     </AuthenticatedLayout>
 </template>
 
@@ -519,24 +605,30 @@ function getResults(page = 1) {
     props.filters.page = page;
 }
 
-
 function downloadModal() {
     if (!selectedTransfer.value) return;
 
-    const fromName = selectedTransfer.value.from_warehouse?.name || selectedTransfer.value.from_facility?.name || 'Unknown From';
-    const toName = selectedTransfer.value.to_warehouse?.name || selectedTransfer.value.to_facility?.name || 'Unknown To';
-    const transferID = selectedTransfer.value.transferID || 'UnknownTransfer';
+    const fromName =
+        selectedTransfer.value.from_warehouse?.name ||
+        selectedTransfer.value.from_facility?.name ||
+        "Unknown From";
+    const toName =
+        selectedTransfer.value.to_warehouse?.name ||
+        selectedTransfer.value.to_facility?.name ||
+        "Unknown To";
+    const transferID = selectedTransfer.value.transferID || "UnknownTransfer";
 
     // 📄 Generate a clean filename
-    const fileName = `${fromName} to ${toName} - ${transferID}`
-        .replace(/[^a-zA-Z0-9-_ ]/g, '')
-        .replace(/\s+/g, '_') + '.pdf';
+    const fileName =
+        `${fromName} to ${toName} - ${transferID}`
+            .replace(/[^a-zA-Z0-9-_ ]/g, "")
+            .replace(/\s+/g, "_") + ".pdf";
 
     // 📄 Create jsPDF in landscape mode
     const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: "a4"
+        format: "a4",
     });
 
     // Header
@@ -547,41 +639,65 @@ function downloadModal() {
     doc.text(`From: ${fromName}`, 14, 32);
     doc.text(`To: ${toName}`, 14, 39);
     doc.text(`Status: ${selectedTransfer.value.status}`, 14, 46);
-    doc.text(`Transfer Date: ${moment(selectedTransfer.value.transfer_date).format('YYYY-MM-DD')}`, 14, 53);
+    doc.text(
+        `Transfer Date: ${moment(selectedTransfer.value.transfer_date).format(
+            "YYYY-MM-DD"
+        )}`,
+        14,
+        53
+    );
     doc.text(`Quantity: ${selectedTransfer.value.quantity}`, 14, 60);
-    doc.text(`Note: ${selectedTransfer.value.note || '—'}`, 14, 67);
+    doc.text(`Note: ${selectedTransfer.value.note || "—"}`, 14, 67);
 
     // Approvals
-    doc.text(`Approved By: ${selectedTransfer.value.approved_by?.name || '—'}`, 14, 74);
-    const nextY = selectedTransfer.value.status === 'rejected' ? 88 : 81;
-    if (selectedTransfer.value.status === 'rejected') {
-        doc.text(`Rejected By: ${selectedTransfer.value.rejected_by?.name || '—'}`, 14, 81);
+    doc.text(
+        `Approved By: ${selectedTransfer.value.approved_by?.name || "—"}`,
+        14,
+        74
+    );
+    const nextY = selectedTransfer.value.status === "rejected" ? 88 : 81;
+    if (selectedTransfer.value.status === "rejected") {
+        doc.text(
+            `Rejected By: ${selectedTransfer.value.rejected_by?.name || "—"}`,
+            14,
+            81
+        );
     }
-    doc.text(`Dispatched By: ${selectedTransfer.value.dispatched_by?.name || '—'}`, 14, nextY);
+    doc.text(
+        `Dispatched By: ${selectedTransfer.value.dispatched_by?.name || "—"}`,
+        14,
+        nextY
+    );
 
     // Items Table
-    const tableStartY = selectedTransfer.value.status === 'rejected' ? 95 : 88;
-    const items = Array.isArray(selectedTransfer.value.items) ? selectedTransfer.value.items : [];
+    const tableStartY = selectedTransfer.value.status === "rejected" ? 95 : 88;
+    const items = Array.isArray(selectedTransfer.value.items)
+        ? selectedTransfer.value.items
+        : [];
 
     autoTable(doc, {
         startY: tableStartY,
-        head: [[
-            'Item',
-            'UOM',
-            'Barcode',
-            'Batch #',
-            'Expiry Date',
-            'Quantity',
-            'Received Quantity'
-        ]],
-        body: items.map(item => [
-            item.product?.name || '',
-            item.uom || '',
-            item.barcode || '',
-            item.batch_number || '',
-            item.expire_date ? moment(item.expire_date).format('YYYY-MM-DD') : '',
-            item.quantity || '',
-            item.received_quantity || 0
+        head: [
+            [
+                "Item",
+                "UOM",
+                "Barcode",
+                "Batch #",
+                "Expiry Date",
+                "Quantity",
+                "Received Quantity",
+            ],
+        ],
+        body: items.map((item) => [
+            item.product?.name || "",
+            item.uom || "",
+            item.barcode || "",
+            item.batch_number || "",
+            item.expire_date
+                ? moment(item.expire_date).format("YYYY-MM-DD")
+                : "",
+            item.quantity || "",
+            item.received_quantity || 0,
         ]),
         styles: {
             fontSize: 8,
@@ -589,15 +705,14 @@ function downloadModal() {
         headStyles: {
             fillColor: [240, 240, 240],
             textColor: 0,
-            fontStyle: 'bold',
+            fontStyle: "bold",
         },
-        theme: 'grid'
+        theme: "grid",
     });
 
     // Save the PDF
     doc.save(fileName);
 }
-
 </script>
 
 <style setup>
