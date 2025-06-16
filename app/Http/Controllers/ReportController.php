@@ -834,6 +834,78 @@ class ReportController extends Controller
         ]);
     }
 
+    
+    public function transfers(Request $request)
+    {
+        // Get facilities for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+        $warehouses = Warehouse::get()->pluck('name')->toArray();
+
+        logger()->info($request->all());
+    
+        $query = Transfer::query();
+    
+        // Eager load nested relationships
+        $query->with([
+            'items.product',
+            'toFacility',
+            'fromFacility',
+            'toWarehouse',
+            'fromWarehouse',
+            'createdBy',
+            'approvedBy',
+            'rejectedBy',
+            'dispatchedBy'
+        ]);
+    
+        // Filters
+        if ($request->filled('facility')) {
+            $query->whereHas('toFacility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            })->orWhereHas('fromFacility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+
+        // warehouses
+        if ($request->filled('warehouse')) {
+            $query->whereHas('toWarehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse);
+            })->orWhereHas('fromWarehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse);
+            });
+        }
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('transfer_date', $request->date_from);
+        }
+    
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
+        }
+    
+        $transfers = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+    
+        // Set full path to keep proper pagination links
+        $transfers->setPath(url()->current());
+    
+        return inertia('Report/Transfers', [
+            'transfers' => $transfers,
+            'filters' => $request->only('facility','warehouse', 'status', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities,
+            'warehouses' => $warehouses
+        ]);
+    }
+
     public function export($monthYear, Request $request)
     {
         $format = $request->input('format', 'excel');

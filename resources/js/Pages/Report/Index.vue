@@ -41,13 +41,7 @@
                     <div v-show="openSection === 'transfer'" class="px-4 py-3 bg-gray-50 border-t border-black">
                         <ul class="space-y-2">
                             <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Transfer Status</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Transfer History</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Facility Transfers</a>
+                                <Link :href="route('reports.transfers')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Transfer Report</Link>
                             </li>
                         </ul>
                     </div>

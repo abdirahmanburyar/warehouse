@@ -7,12 +7,13 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex items-center space-x-3 mb-6">
                 <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <Link :href="route('reports.index')" class="text-blue-600 hover:text-blue-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </Link>
                 </div>
-                <div>
+                <div>                    
                     <h1 class="text-lg font-semibold text-gray-900">
                         Orders Report
                     </h1>
@@ -96,12 +97,6 @@
                 </div>
             </div>
 
-            <!-- Export Button -->
-            <div class="flex justify-end mb-4">
-                <button @click="exportToPDF" class="px-4 py-2 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded">
-                    Download PDF
-                </button>
-            </div>
             <!-- Orders Table -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-xs">
@@ -167,7 +162,7 @@
                             <h3 class="text-xl font-semibold text-gray-900">
                                 Order #{{ selectedOrder.order_number }}
                             </h3>
-                            <button @click="selectedOrder = null" class="text-gray-400 hover:text-gray-600"
+                            <button @click="selectedOrder = null" class="no-export text-gray-400 hover:text-gray-600"
                                 aria-label="Close">
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -175,6 +170,11 @@
                                 </svg>
                             </button>
                         </div>
+
+                        <button @click="downloadModal" class="no-export text-blue-500 hover:text-blue-700 no-print ml-4"
+                            title="Download as HTML">
+                            ⬇️ Download
+                        </button>
 
                         <!-- Order Info -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
@@ -330,12 +330,14 @@
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, router } from "@inertiajs/vue3";
+import { Head, router, Link } from "@inertiajs/vue3";
 import { ref, watch } from "vue";
 import { TailwindPagination } from "laravel-vue-pagination";
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import moment from "moment";
 
 const props = defineProps({
@@ -393,7 +395,6 @@ function reloadPage() {
 const selectedOrder = ref(null);
 
 function viewOrder(order) {
-    console.log(order);
     selectedOrder.value = {
         id: order.id,
         order_number: order.order_number,
@@ -463,187 +464,90 @@ function getResults(page = 1) {
     props.filters.page = page;
 }
 
-// Export to PDF
-function exportToPDF() {
-    if (!selectedOrder) return;
 
-    // Create a new window for printing
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-        alert("Popup was blocked. Please allow popups for this site.");
-        return;
+function downloadModal() {
+    if (!selectedOrder.value) return;
+
+    const facilityName = selectedOrder.value.facility?.name || 'Unknown Facility';
+    const orderNumber = selectedOrder.value.order_number || 'Unknown Order';
+
+    // Generate a clean filename
+    const fileName = `${facilityName} - ${orderNumber}`
+        .replace(/[^a-zA-Z0-9-_ ]/g, '')
+        .replace(/\s+/g, '_') + '.pdf';
+
+    // 📄 Create jsPDF in landscape mode
+    const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4"
+    });
+
+    // Title
+    doc.setFontSize(16);
+    doc.text(`Order Report`, 14, 15);
+    doc.setFontSize(12);
+    doc.text(`Order Number: ${selectedOrder.value.order_number}`, 14, 25);
+    doc.text(`Facility: ${facilityName}`, 14, 32);
+    doc.text(`Order Type: ${selectedOrder.value.order_type}`, 14, 39);
+    doc.text(`Status: ${selectedOrder.value.status}`, 14, 46);
+    doc.text(`Order Date: ${moment(selectedOrder.value.order_date).format('YYYY-MM-DD')}`, 14, 53);
+    doc.text(`Expected Date: ${moment(selectedOrder.value.expected_date).format('YYYY-MM-DD')}`, 14, 60);
+    doc.text(`Note: ${selectedOrder.value.note || '—'}`, 14, 67);
+
+    // Approvals
+    doc.text(`Approved By: ${selectedOrder.value.approved_by?.name || '—'}`, 14, 74);
+    const nextY = selectedOrder.value.status === 'rejected' ? 88 : 81;
+    if (selectedOrder.value.status === 'rejected') {
+        doc.text(`Rejected By: ${selectedOrder.value.rejected_by?.name || '—'}`, 14, 81);
     }
+    doc.text(`Dispatched By: ${selectedOrder.value.dispatched_by?.name || '—'}`, 14, nextY);
 
-    // Get the current date for the filename
-    const today = new Date();
-    const dateString = `${today.getFullYear()}-${String(
-        today.getMonth() + 1
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    // Inventory Allocations table
+    const tableStartY = selectedOrder.value.status === 'rejected' ? 95 : 88;
+    const allocations = Array.isArray(selectedOrder.value.inventory_allocations) ? selectedOrder.value.inventory_allocations : [];
 
-    // Create the print content
-    const order = selectedOrder;
+    autoTable(doc, {
+        startY: tableStartY,
+        head: [[
+            'Item',
+            'UOM',
+            'Barcode',
+            'Batch #',
+            'Expiry Date',
+            'Qty',
+            'Warehouse',
+            'Location',
+            'Unit Cost',
+            'Total Cost'
+        ]],
+        body: allocations.map((a) => [
+            a.product || '',
+            a.uom || '',
+            a.barcode || '',
+            a.batch_number || '',
+            a.expiry_date ? moment(a.expiry_date).format('YYYY-MM-DD') : '',
+            a.quantity || '',
+            a.warehouse || '',
+            a.location?.location || a.location?.name || '',
+            a.unit_cost !== undefined ? a.unit_cost.toFixed(2) : '',
+            a.total_cost !== undefined ? a.total_cost.toFixed(2) : ''
+        ]),
+        styles: {
+            fontSize: 8,
+        },
+        headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: 0,
+            fontStyle: 'bold',
+        },
+        theme: 'grid'
+    });
 
-    // Create the print document
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Order Details - ${order.order_number}</title>
-            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-            <style>
-                @media print {
-                    @page {
-                        size: A4 portrait;
-                        margin: 15mm 10mm;
-                    }
-                    body {
-                        font-family: Arial, sans-serif;
-                        font-size: 12px;
-                    }
-                    .no-print {
-                        display: none !important;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 1rem;
-                    }
-                    th, td {
-                        border: 1px solid #e2e8f0;
-                        padding: 0.5rem;
-                        text-align: left;
-                    }
-                    th {
-                        background-color: #f7fafc;
-                        font-weight: 600;
-                    }
-                }
-            </style>
-        </head>
-        <body class="p-4">
-            <div class="mb-6">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h1 class="text-2xl font-bold">Order Details</h1>
-                        <p class="text-gray-600">Generated on: ${formatDate(
-        new Date().toISOString()
-    )}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-lg font-semibold">Order #${order.order_number
-        }</p>
-                        <p class="text-sm text-gray-600">Status: <span class="font-medium">${order.status
-        }</span></p>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-gray-50 p-4 rounded">
-                        <h3 class="font-semibold mb-2">Order Information</h3>
-                        <p><strong>Facility:</strong> ${order.facility?.name || "N/A"
-        }</p>
-                        <p><strong>Type:</strong> ${order.order_type}</p>
-                        <p><strong>Order Date:</strong> ${formatDate(
-            order.order_date
-        )}</p>
-                        <p><strong>Expected Date:</strong> ${order.expected_date
-            ? formatDate(order.expected_date)
-            : "N/A"
-        }</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded">
-                        <h3 class="font-semibold mb-2">Approval & Dispatch</h3>
-                        <p><strong>Approved By:</strong> ${order.approved_by?.name || "Not Approved"
-        }</p>
-                        <p><strong>Dispatched By:</strong> ${order.dispatched_by?.name || "Not Dispatched"
-        }</p>
-                        <p><strong>Rejected By:</strong> ${order.rejected_by?.name || "N/A"
-        }</p>
-                        <p><strong>Note:</strong> ${order.note || "No notes"
-        }</p>
-                    </div>
-                </div>
-                
-                <h3 class="font-semibold mb-2">Order Items</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr>
-                                <th class="text-left">Item</th>
-                                <th class="text-left">UOM</th>
-                                <th class="text-left">Batch #</th>
-                                <th class="text-left">Expiry</th>
-                                <th class="text-right">Qty</th>
-                                <th class="text-left">Warehouse</th>
-                                <th class="text-left">Location</th>
-                                <th class="text-right">Unit Cost</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.inventory_allocations
-            .map(
-                (item) => `
-                                <tr>
-                                    <td>${item.product?.name || "N/A"}</td>
-                                    <td>${item.uom || "N/A"}</td>
-                                    <td>${item.batch_number || "N/A"}</td>
-                                    <td>${item.expiry_date
-                        ? formatDate(item.expiry_date)
-                        : "N/A"
-                    }</td>
-                                    <td class="text-right">${item.quantity}</td>
-                                    <td>${item.warehouse?.name || "N/A"}</td>
-                                    <td>${item.location?.location ||
-                    item.location?.name ||
-                    "N/A"
-                    }</td>
-                                    <td class="text-right">${formatCurrency(
-                        item.unit_cost || 0
-                    )}</td>
-                                    <td class="text-right font-medium">${formatCurrency(
-                        (item.unit_cost || 0) * item.quantity
-                    )}</td>
-                                </tr>
-                            `
-            )
-            .join("")}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="8" class="text-right font-semibold">Total:</td>
-                                <td class="text-right font-semibold">
-                                    ${formatCurrency(
-                order.inventory_allocations.reduce(
-                    (sum, item) =>
-                        sum +
-                        (item.unit_cost || 0) *
-                        item.quantity,
-                    0
-                )
-            )}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            <div class="mt-8 pt-4 border-t text-xs text-gray-500 text-center">
-                <p>Generated by Warehouse Management System</p>
-                <p>${window.location.origin}</p>
-            </div>
-        </body>
-        </html>
-    `);
-
-    printWindow.document.close();
-
-    // Wait for content to load before printing
-    setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-    }, 1000);
+    // Save PDF
+    doc.save(fileName);
 }
+
 </script>
 
 <style setup>
