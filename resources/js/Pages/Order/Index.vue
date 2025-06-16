@@ -257,7 +257,11 @@ const formatDate = (date) => {
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                        Date
+                                        Order Date  
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        Expected Date
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
@@ -289,9 +293,10 @@ const formatDate = (date) => {
                                     </td>
 
                                     <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
-                                        <div class="text-xs text-gray-900">{{ formatDate(order.created_at) }}</div>
-                                        <div class="text-xs text-black">Expected: {{ formatDate(order.expected_date)
-                                            }}</div>
+                                        {{ formatDate(order.order_date) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
+                                        {{ formatDate(order.expected_date) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
