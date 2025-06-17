@@ -123,7 +123,7 @@ const formatDate = (date) => {
     <AuthenticatedLayout title="Track Your Orders" description="Keeping Essentials Ready, Every Time" img="/assets/images/orders.png">
         <!-- Filters Section -->
         <div class="bg-white mb-6 p-4 text-xs">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-5">
                 <!-- Search -->
                 <div class="relative w-full">
                     <input type="text" v-model="search" placeholder="Search by Order No"
