@@ -8,7 +8,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <Link :href="route('orders.index')">Back to orders</Link>
-                    <h1 class="text-2xl font-semibold text-gray-900">
+                    <h1 class="text-xs font-semibold text-gray-900">
                         Order ID. {{ props.order.order_number }}
                     </h1>
                 </div>
@@ -18,7 +18,7 @@
                             statusClasses[props.order.status] ||
                                 statusClasses.default,
                         ]"
-                        class="flex items-center text-lg font-bold px-4 py-2"
+                        class="flex items-center text-xs font-bold px-4 py-2"
                     >
                         <!-- Status Icon -->
                         <span class="mr-3">
@@ -26,7 +26,7 @@
                             <img
                                 v-if="props.order.status === 'pending'"
                                 src="/assets/images/pending.png"
-                                class="w-6 h-6"
+                                class="w-4 h-4"
                                 alt="Pending"
                             />
 
@@ -34,7 +34,7 @@
                             <img
                                 v-else-if="props.order.status === 'approved'"
                                 src="/assets/images/approved.png"
-                                class="w-6 h-6"
+                                class="w-4 h-4"
                                 alt="Approved"
                             />
 
@@ -42,7 +42,7 @@
                             <img
                                 v-else-if="props.order.status === 'in_process'"
                                 src="/assets/images/inprocess.png"
-                                class="w-6 h-6"
+                                class="w-4 h-4"
                                 alt="In Process"
                             />
 
@@ -50,7 +50,7 @@
                             <img
                                 v-else-if="props.order.status === 'dispatched'"
                                 src="/assets/images/dispatch.png"
-                                class="w-6 h-6"
+                                class="w-4 h-4"
                                 alt="Dispatched"
                             />
 
@@ -58,14 +58,14 @@
                             <img
                                 v-else-if="props.order.status === 'received'"
                                 src="/assets/images/received.png"
-                                class="w-6 h-6"
+                                class="w-4 h-4"
                                 alt="Received"
                             />
 
                             <!-- Rejected Icon -->
                             <svg
                                 v-else-if="props.order.status === 'rejected'"
-                                class="w-6 h-6 text-red-700"
+                                class="w-4 h-4 text-red-700"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -91,25 +91,25 @@
                     Facility Details
                 </h2>
                 <div class="flex items-center">
-                    <BuildingOfficeIcon class="h-5 w-5 text-gray-400 mr-2" />
+                    <BuildingOfficeIcon class="h-4 w-4 text-gray-400 mr-2" />
                     <span class="text-sm text-gray-600">{{
                         props.order.facility.name
                     }}</span>
                 </div>
                 <div class="flex items-center">
-                    <EnvelopeIcon class="h-5 w-5 text-gray-400 mr-2" />
+                    <EnvelopeIcon class="h-4 w-4 text-gray-400 mr-2" />
                     <span class="text-sm text-gray-600">{{
                         props.order.facility.email
                     }}</span>
                 </div>
                 <div class="flex items-center">
-                    <PhoneIcon class="h-5 w-5 text-gray-400 mr-2" />
+                    <PhoneIcon class="h-4 w-4 text-gray-400 mr-2" />
                     <span class="text-sm text-gray-600">{{
                         props.order.facility.phone
                     }}</span>
                 </div>
                 <div class="flex items-center">
-                    <MapPinIcon class="h-5 w-5 text-gray-400 mr-2" />
+                    <MapPinIcon class="h-4 w-4 text-gray-400 mr-2" />
                     <span class="text-sm text-gray-600"
                         >{{ props.order.facility.address }},
                         {{ props.order.facility.city }}</span
@@ -118,40 +118,32 @@
             </div>
             <div>
                 <div class="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <h2 class="text-lg font-medium text-gray-900">
+                    <h2 class="text-xs font-medium text-gray-900">
                         Order Details
                     </h2>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <p class="text-sm font-medium text-gray-500">
+                            <p class="text-xs font-medium text-gray-500">
                                 Order Type
                             </p>
-                            <p class="text-sm text-gray-900">
+                            <p class="text-xs text-gray-900">
                                 {{ props.order.order_type }}
                             </p>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-500">
+                            <p class="text-xs font-medium text-gray-500">
                                 Order Date
                             </p>
-                            <p class="text-sm text-gray-900">
+                            <p class="text-xs text-gray-900">
                                 {{ formatDate(props.order.order_date) }}
                             </p>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-500">
+                            <p class="text-xs font-medium text-gray-500">
                                 Expected Date
                             </p>
-                            <p class="text-sm text-gray-900">
+                            <p class="text-xs text-gray-900">
                                 {{ formatDate(props.order.expected_date) }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">
-                                Created By
-                            </p>
-                            <p class="text-sm text-gray-900">
-                                {{ props.order.user.name }}
                             </p>
                         </div>
                     </div>
@@ -184,7 +176,7 @@
                     <!-- Pending -->
                     <div class="flex flex-col items-center">
                         <div
-                            class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                            class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10"
                             :class="[
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('pending')
@@ -193,8 +185,8 @@
                             ]"
                         >
                             <img
-                                src="/assets/images/pending.svg"
-                                class="w-10 h-10"
+                                src="/assets/images/pending.png"
+                                class="w-7 h-7"
                                 alt="Pending"
                                 :class="
                                     statusOrder.indexOf(props.order.status) >=
@@ -205,7 +197,7 @@
                             />
                         </div>
                         <span
-                            class="mt-3 text-lg font-bold"
+                            class="mt-3 text-xs font-bold"
                             :class="
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('pending')
@@ -219,7 +211,7 @@
                     <!-- Approved -->
                     <div class="flex flex-col items-center">
                         <div
-                            class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                            class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10"
                             :class="[
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('approved')
@@ -229,7 +221,7 @@
                         >
                             <img
                                 src="/assets/images/approved.png"
-                                class="w-10 h-10"
+                                class="w-7 h-7"
                                 alt="Approved"
                                 :class="
                                     statusOrder.indexOf(props.order.status) >=
@@ -240,7 +232,7 @@
                             />
                         </div>
                         <span
-                            class="mt-3 text-lg font-bold"
+                            class="mt-3 text-xs font-bold"
                             :class="
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('approved')
@@ -254,7 +246,7 @@
                     <!-- In Process -->
                     <div class="flex flex-col items-center">
                         <div
-                            class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                            class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10"
                             :class="[
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('in_process')
@@ -264,7 +256,7 @@
                         >
                             <img
                                 src="/assets/images/inprocess.png"
-                                class="w-10 h-10"
+                                class="w-7 h-7"
                                 alt="In Process"
                                 :class="
                                     statusOrder.indexOf(props.order.status) >=
@@ -275,7 +267,7 @@
                             />
                         </div>
                         <span
-                            class="mt-3 text-lg font-bold"
+                            class="mt-3 text-xs font-bold"
                             :class="
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('in_process')
@@ -289,7 +281,7 @@
                     <!-- Dispatch -->
                     <div class="flex flex-col items-center">
                         <div
-                            class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                            class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10"
                             :class="[
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('dispatched')
@@ -299,7 +291,7 @@
                         >
                             <img
                                 src="/assets/images/dispatch.png"
-                                class="w-10 h-10"
+                                class="w-7 h-7"
                                 alt="Dispatch"
                                 :class="
                                     statusOrder.indexOf(props.order.status) >=
@@ -310,7 +302,7 @@
                             />
                         </div>
                         <span
-                            class="mt-3 text-lg font-bold"
+                            class="mt-3 text-xs font-bold"
                             :class="
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('dispatched')
@@ -324,7 +316,7 @@
                     <!-- Received -->
                     <div class="flex flex-col items-center">
                         <div
-                            class="w-16 h-16 rounded-full border-4 flex items-center justify-center z-10"
+                            class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10"
                             :class="[
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('received')
@@ -334,7 +326,7 @@
                         >
                             <img
                                 src="/assets/images/received.png"
-                                class="w-10 h-10"
+                                class="w-7 h-7"
                                 alt="Received"
                                 :class="
                                     statusOrder.indexOf(props.order.status) >=
@@ -345,7 +337,7 @@
                             />
                         </div>
                         <span
-                            class="mt-3 text-lg font-bold"
+                            class="mt-3 text-xs font-bold"
                             :class="
                                 statusOrder.indexOf(props.order.status) >=
                                 statusOrder.indexOf('received')
@@ -359,57 +351,68 @@
             </div>
         </div>
         <!-- Order Items Table -->
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
-        <table class="min-w-full">
+        <h2 class="text-xs text-gray-900 mb-4">Order Items</h2>
+        <table class="min-w-full border border-black border-collapse">
             <thead class="bg-blue-500">
                 <tr class="bg-gray-50">
                     <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
                     >
                         Item
                     </th>
                     <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
                     >
-                        Facility Indicators
+                        Category
                     </th>
                     <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                    >
+                        AMC
+                    </th>
+                    <th
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                    >
+                        No. of Days
+                    </th>
+                    <th
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
                     >
                         Ordered Quantity
                     </th>
                     <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
+                        class="w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black"
                     >
                         Quantity to release
                     </th>
                     <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
+                        class="px-2 py-2 text-center text-xs text-black capitalize border border-black"
                     >
-                        Days
-                    </th>
-                    <th
-                        class="px-3 py-3 text-left text-sm font-medium text-gray-500 uppercase"
-                    >
-                        Actions
+                        Item Detail
                     </th>
                 </tr>
             </thead>
+
             <tbody>
                 <tr
                     v-for="(item, index) in form"
                     :key="item.id"
-                    class="hover:bg-gray-50 transition-colors duration-150 border-b"
+                    class="hover:bg-gray-50 transition-colors duration-150"
                 >
-                    <td class="px-3 py-3 text-sm text-gray-900">
-                        <div class="flex flex-col">
-                            <span class="font-medium text-sm">{{
-                                item.product?.name
-                            }}</span>
-                        </div>
+                    <td
+                        class="px-3 py-3 text-xs text-gray-900 border border-black"
+                    >
+                        {{ item.product?.name }}
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-900">
-                        <div class="flex flex-col space-y-1 text-sm">
+                    <td
+                        class="px-3 py-3 text-xs text-gray-900 border border-black"
+                    >
+                        {{ item.product?.category?.name }}
+                    </td>
+                    <td
+                        class="px-3 py-3 text-xs text-gray-900 border border-black"
+                    >
+                        <div class="flex flex-col space-y-1 text-xs">
                             <div class="flex">
                                 <span class="font-medium w-12">SOH:</span>
                                 <span>{{ item.soh }}</span>
@@ -424,120 +427,143 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-900">
+                    <td
+                        class="px-3 py-3 text-sm text-gray-900 border border-black"
+                    >
+                        {{ item.no_of_days }}/30
+                    </td>
+                    <td
+                        class="px-3 py-3 text-lg text-center text-black  border border-black"
+                    >
                         {{ item.quantity }}
+                       
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-900">
-                        <div class="flex justify-between items-center gap-2">
-                            <div class="w-[30%]">
-                                <input
-                                    type="number"
-                                    placeholder="0"
-                                    v-model="item.quantity_to_release"
-                                    @keydown.enter="updateQuantity(item)"
-                                    :readonly="
-                                        isUpading ||
-                                        props.order.status != 'pending'
-                                    "
-                                    class="w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="0"
-                                    v-model="item.received_quantity"
-                                    readonly
-                                    class="w-full rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                                />
-                                <span
-                                    v-if="isUpading"
-                                    class="text-green-500 text-md"
-                                    >Updating...</span
-                                >
-                                <button
-                                    @click="showBackOrderModal(item)"
-                                    v-if="
-                                        item.inventory_allocations &&
-                                        item.inventory_allocations.some(
-                                            (allocation) =>
-                                                allocation.back_order &&
-                                                allocation.back_order.length > 0
-                                        )
-                                    "
-                                    class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer"
-                                >
-                                    Show Back Order
-                                </button>
-                            </div>
-                            <div
-                                class="border rounded-md overflow-hidden text-sm flex-1"
-                            >
-                                <table class="min-w-full">
-                                    <tbody class="bg-white">
-                                        <tr
-                                            v-for="inv in item.inventory_allocations"
-                                            :key="inv.id"
-                                            class="hover:bg-gray-100"
-                                        >
-                                            <td class="px-2 py-1">
-                                                <div class="font-medium">
-                                                    QTY:
-                                                    {{ inv.allocated_quantity }}
-                                                </div>
-                                                <div class="font-medium">
-                                                    Batch:
-                                                    {{ inv.batch_number }}
-                                                </div>
-                                                <div class="font-medium">
-                                                    Barcode:
-                                                    {{ inv.barcode || "N/A" }}
-                                                </div>
-                                                <div class="font-medium">
-                                                    WH:{{ inv.warehouse?.name }}
-                                                </div>
-                                                <div class="font-medium">
-                                                    Loc:
-                                                    {{ inv.location?.location }}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <td
+                        class="px-3 py-3 text-xs text-gray-900 border border-black"
+                    >
+                        <input
+                            type="number"
+                            placeholder="0"
+                            v-model="item.quantity_to_release"
+                            @keydown.enter="updateQuantity(item, 'quantity_to_release')"
+                            :readonly="
+                                isUpading || props.order.status != 'pending'
+                            "
+                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                        />
+                        <label for="received_quantity">Received Quantity</label>
+                        <input
+                            type="number"
+                            placeholder="0"
+                            v-model="item.received_quantity"
+                            readonly
+                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                        />
+                        <label for="days">No. of Days</label>
+                        <input
+                            type="number"
+                            placeholder="0"
+                            v-model="item.days"
+                            @keydown.enter="updateQuantity(item, 'days')"
+                            readonly
+                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                        />
+                        <span v-if="isUpading" class="text-green-500 text-md"
+                            >Updating...</span
+                        >
+                        <button
+                            @click="showBackOrderModal(item)"
+                            v-if="
+                                item.inventory_allocations &&
+                                item.inventory_allocations.some(
+                                    (a) => a.back_order?.length > 0
+                                )
+                            "
+                            class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1"
+                        >
+                            Show Back Order
+                        </button>
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-900">
-                        <div class="w-full flex justify-center">
-                            <input
-                                type="number"
-                                v-model="item.no_of_days"
-                                readonly
-                                class="w-[70%] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                            />
-                        </div>
-                    </td>
-                    <td class="px-2 py-3 text-sm text-gray-900 w-10">
-                        <div class="flex flex-col space-y-2">
-                            <button
-                                type="button"
-                                class="inline-flex items-center justify-center w-8 h-8 bg-red-100 border border-transparent rounded text-sm text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                title="Delete"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
+                    <td class="text-xs text-gray-900 border border-black">
+                        <table class="min-w-full border border-black">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="text-xs border border-black px-2 py-1"
+                                    >
+                                        QTY
+                                    </th>
+                                    <th
+                                        class="text-xs border border-black px-2 py-1"
+                                    >
+                                        Uom
+                                    </th>
+                                    <th
+                                        class="text-xs border border-black px-2 py-1"
+                                    >
+                                        Batch Number
+                                    </th>
+                                    <th
+                                        class="text-xs border border-black px-2 py-1"
+                                    >
+                                        Expiry Date
+                                    </th>
+                                    <th
+                                        class="text-xs border border-black px-2 py-1"
+                                    >
+                                        S. Location
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white">
+                                <tr
+                                    v-for="inv in item.inventory_allocations"
+                                    :key="inv.id"
+                                    class="hover:bg-gray-100"
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
+                                    <td
+                                        class="px-2 py-1 text-xs border border-black"
+                                    >
+                                        {{ inv.allocated_quantity }}
+                                    </td>
+                                    <td
+                                        class="px-2 py-1 text-xs border border-black"
+                                    >
+                                        {{ inv.uom }}
+                                    </td>
+                                    <td
+                                        class="px-2 py-1 text-xs border border-black"
+                                    >
+                                        {{ inv.batch_number }}
+                                    </td>
+                                    <td
+                                        class="px-2 py-1 text-xs border border-black"
+                                    >
+                                        {{
+                                            moment(inv.expiry_date).format(
+                                                "DD/MM/YYYY"
+                                            )
+                                        }}
+                                    </td>
+                                    <td
+                                        class="px-2 py-1 text-xs border border-black"
+                                    >
+                                        <div class="flex flex-col">
+                                            <span
+                                                >WH:
+                                                {{ inv.warehouse?.name }}</span
+                                            >
+                                            <span
+                                                >LC:
+                                                {{
+                                                    inv.location?.location
+                                                }}</span
+                                            >
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </td>
                 </tr>
             </tbody>
@@ -868,7 +894,72 @@
                     </div>
                 </div>
             </div>
+            <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6"
+            >
+                <div
+                    v-for="dispatch in props.order.dispatch"
+                    :key="dispatch.id"
+                    class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                >
+                    <div class="p-5">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                Order #{{ dispatch.order_id }}
+                            </h3>
+                            <span class="text-sm text-gray-500">
+                                {{
+                                    new Date(
+                                        dispatch.created_at
+                                    ).toLocaleDateString()
+                                }}
+                            </span>
+                        </div>
+
+                        <!-- Driver Info -->
+                        <div class="text-sm text-gray-600 space-y-1 mb-4">
+                            <p>
+                                <span class="font-medium text-gray-700"
+                                    >Driver:</span
+                                >
+                                {{ dispatch.driver_name }}
+                            </p>
+                            <p>
+                                <span class="font-medium text-gray-700"
+                                    >Phone:</span
+                                >
+                                {{ dispatch.driver_number }}
+                            </p>
+                            <p>
+                                <span class="font-medium text-gray-700"
+                                    >Plate #:</span
+                                >
+                                {{ dispatch.plate_number }}
+                            </p>
+                        </div>
+
+                        <!-- Dispatch Details -->
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm">
+                                <span class="text-gray-500">Cartons</span>
+                                <div class="font-semibold text-gray-800">
+                                    {{ dispatch.no_of_cartoons }}
+                                </div>
+                            </div>
+                            <div>
+                                <span
+                                    class="inline-block px-3 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full"
+                                >
+                                    #{{ dispatch.id }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
         <!-- Back Order Modal -->
         <div
             v-if="showModal"
@@ -1007,77 +1098,98 @@
             </div>
         </div>
 
-        <!-- Dispatch Information Modal -->
         <Modal :show="showDispatchForm" @close="showDispatchForm = false">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
+            <div class="p-6 bg-white rounded-md shadow-md">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
                     Dispatch Information
                 </h2>
 
                 <!-- Driver Name -->
-                <div class="mt-4">
-                    <InputLabel for="driver_name" value="Driver Name" />
-                    <TextInput
+                <div class="mb-4">
+                    <label
+                        for="driver_name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Driver Name
+                    </label>
+                    <input
                         id="driver_name"
                         type="text"
-                        class="mt-1 block w-full"
-                        placeholder="Enter driver name"
                         v-model="dispatchForm.driver_name"
                         required
+                        placeholder="Enter driver name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 <!-- Driver Phone Number -->
-                <div class="mt-4">
-                    <InputLabel
+                <div class="mb-4">
+                    <label
                         for="driver_number"
-                        value="Driver Phone Number"
-                    />
-                    <TextInput
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Driver Phone Number
+                    </label>
+                    <input
                         id="driver_number"
                         type="tel"
-                        class="mt-1 block w-full"
-                        placeholder="Enter driver phone number"
                         v-model="dispatchForm.driver_number"
+                        placeholder="Enter driver phone number"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 <!-- Vehicle Plate Number -->
-                <div class="mt-4">
-                    <InputLabel
+                <div class="mb-4">
+                    <label
                         for="plate_number"
-                        value="Vehicle Plate Number"
-                    />
-                    <TextInput
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Vehicle Plate Number
+                    </label>
+                    <input
                         id="plate_number"
                         type="text"
-                        class="mt-1 block w-full"
-                        placeholder="Enter plate number"
                         v-model="dispatchForm.plate_number"
+                        placeholder="Enter plate number"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
-                <!-- Number of Cartoons -->
-                <div class="mt-4">
-                    <InputLabel for="no_of_cartoons" value="No. of Cartons" />
-                    <TextInput
+                <!-- Number of Cartons -->
+                <div class="mb-6">
+                    <label
+                        for="no_of_cartoons"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        No. of Cartons
+                    </label>
+                    <input
                         id="no_of_cartoons"
                         type="number"
                         min="0"
-                        class="mt-1 block w-full"
-                        placeholder="Enter number of cartons"
                         v-model="dispatchForm.no_of_cartoons"
+                        placeholder="Enter number of cartons"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 <!-- Actions -->
-                <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showDispatchForm = false">
+                <div class="flex justify-end space-x-3">
+                    <button
+                        @click="showDispatchForm = false"
+                        :disabled="isSaving"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
                         Cancel
-                    </SecondaryButton>
-                    <PrimaryButton @click="createDispatch">
-                        Save
-                    </PrimaryButton>
+                    </button>
+                    <button
+                        @click="createDispatch"
+                        :disabled="isSaving"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                    >
+                        {{ isSaving ? "Processing..." : "Save and Dispatch" }}
+                    </button>
                 </div>
             </div>
         </Modal>
@@ -1098,6 +1210,9 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import moment from "moment";
 import Modal from "@/Components/Modal.vue";
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
 
 const props = defineProps({
     order: {
@@ -1151,29 +1266,32 @@ const statusOrder = [
 
 // update quantity
 const isUpading = ref(false);
-async function updateQuantity(item) {
-    isUpading.value = true;
-    await axios
-        .post(route("orders.update-quantity"), {
-            item_id: item.id,
-            quantity: item.quantity_to_release,
-        })
-        .then((response) => {
-            isUpading.value = false;
-            Swal.fire({
-                title: "Success!",
-                text: response.data,
-                icon: "success",
-                confirmButtonText: "OK",
-            }).then(() => {
-                router.get(route("orders.show", props.order.id));
-            });
-        })
-        .catch((error) => {
-            isUpading.value = false;
-            console.log(error);
-            toast.error(error.response?.data || "Failed to update quantity");
-        });
+async function updateQuantity(item, type) {
+    console.log(item, type);
+    // isUpading.value = true;
+    // await axios
+    //     .post(route("orders.update-quantity"), {
+    //         item_id: item.id,
+    //         quantity: item.quantity_to_release,
+    //         days: item.days,
+    //         type,
+    //     })
+    //     .then((response) => {
+    //         isUpading.value = false;
+    //         Swal.fire({
+    //             title: "Success!",
+    //             text: response.data,
+    //             icon: "success",
+    //             confirmButtonText: "OK",
+    //         }).then(() => {
+    //             router.get(route("orders.show", props.order.id));
+    //         });
+    //     })
+    //     .catch((error) => {
+    //         isUpading.value = false;
+    //         console.log(error);
+    //         toast.error(error.response?.data || "Failed to update quantity");
+    //     });
 }
 
 const dispatchForm = ref({
@@ -1181,10 +1299,33 @@ const dispatchForm = ref({
     driver_number: "",
     plate_number: "",
     no_of_cartoons: "",
+    order_id: props.order.id,
+    status: "Dispatched",
 });
 
+const isSaving = ref(false);
+
 async function createDispatch() {
-    console.log(dispatchForm.value);
+    isSaving.value = true;
+    await axios
+        .post(route("orders.dispatch-info"), dispatchForm.value)
+        .then((response) => {
+            isSaving.value = false;
+            console.log(response.data);
+            // Swal.fire({
+            //     title: "Success!",
+            //     text: response.data,
+            //     icon: "success",
+            //     confirmButtonText: "OK",
+            // }).then(() => {
+            //     router.get(route("orders.show", props.order.id));
+            // });
+        })
+        .catch((error) => {
+            isSaving.value = false;
+            console.log(error);
+            toast.error(error.response?.data || "Failed to create dispatch");
+        });
 }
 
 // Function to change order status
@@ -1253,10 +1394,6 @@ const getStatusProgress = (currentStatus) => {
         isPast: index < currentIndex,
     }));
 };
-
-async function submit(item, index) {
-    console.log(item);
-}
 
 const statusProgress = computed(() => getStatusProgress(props.order.status));
 </script>

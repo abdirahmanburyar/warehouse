@@ -293,7 +293,8 @@ class GenerateQuarterlyOrders extends Command
                         'location_id' => $inventory->location_id,
                         'batch_number' => $inventory->batch_number,
                         'expiry_date' => $inventory->expiry_date,
-                        'quantity' => $inventory->quantity
+                        'quantity' => $inventory->quantity,
+                        'uom' => $inventory->uom,
                     ];
                 }
                 

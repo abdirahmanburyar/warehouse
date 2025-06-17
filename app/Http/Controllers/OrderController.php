@@ -24,7 +24,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Carbon\Carbon;
-
 // App Facades
 use App\Facades\Kafka;
 
@@ -222,15 +221,28 @@ class OrderController extends Controller
 
 
     public function dispatchInfo(Request $request){
-        $request->validate([
-            'driver_name',
-            'driver_number',
-            'place_number',
-            'no_of_cartoons'
-        ]);
-        return response()->json($request->all(), 200);
+        
         try {
-            //code...
+            return DB::transaction(function() use ($request){
+                $request->validate([
+                    'driver_name',
+                    'driver_number',
+                    'place_number',
+                    'no_of_cartoons',
+                    'order_id',
+                    'status'
+                ]);
+                $order = Order::with('dispatch')->find($request->order_id);
+                $order->dispatch()->create([
+                    'order_id' => $request->order_id,
+                    'driver_name' => $request->driver_name,
+                    'driver_number' => $request->driver_number,
+                    'plate_number' => $request->plate_number,
+                    'no_of_cartoons' => $request->no_of_cartoons,
+                ]);
+                
+                return response()->json("Dispatched Successfully", 200);
+            });
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -1202,7 +1214,7 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $order = Order::where('orders.id', $id)
-                ->with(['items.product', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user'])
+                ->with(['items.product.category','dispatch', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user'])
                 ->first();
 
             // Get items with SOH using subquery

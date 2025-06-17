@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('quantity_on_order')->default(0);
             $table->integer('soh')->default(0);
             $table->double('amc')->default(0);
+            $table->string('uom')->nullable();
             $table->integer('quantity_to_release')->default(0);
             $table->integer('no_of_days')->default(0);
             $table->timestamps();

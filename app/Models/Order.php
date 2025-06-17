@@ -30,6 +30,10 @@ class Order extends Model
         'rejected_by'
     ];
 
+    public function dispatch(){
+        return $this->hasMany(DispatchInfo::class);
+    }
+
     public function facility()
     {
         return $this->belongsTo(Facility::class);
