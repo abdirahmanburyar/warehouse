@@ -516,6 +516,7 @@ import {
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import moment from 'moment';
+import Modal from "@/Components/Modal.vue";
 
 const props = defineProps({
   order: {

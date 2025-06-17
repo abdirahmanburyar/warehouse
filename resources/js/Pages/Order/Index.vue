@@ -1,165 +1,3 @@
-<script setup>
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link, router } from "@inertiajs/vue3";
-import { ref, watch, computed } from "vue";
-import Multiselect from "vue-multiselect";
-import "vue-multiselect/dist/vue-multiselect.css";
-import "@/Components/multiselect.css";
-import { TailwindPagination } from "laravel-vue-pagination";
-import moment from "moment";
-import Modal from "@/Components/Modal.vue";
-import axios from "axios";
-
-// No longer using bulk actions
-
-const props = defineProps({
-    orders: Object,
-    filters: Object,
-    facilities: Array,
-    stats: Object,
-    regions: Array,
-});
-
-const districts = ref([]);
-
-async function handleRegionSelect(option) {
-    if (!option) {
-        district.value = null;
-        districts.value = [];
-        return;
-    }
-    district.value = null;
-    districts.value = [];
-    await loadDistrict();
-}
-
-// Fixed order types
-const orderTypes = [
-    { id: "quarterly", name: "Quarterly" },
-    { id: "replenishment", name: "Replenishment" },
-];
-
-// Compute total orders
-const totalOrders = computed(() => {
-    return (
-        props.stats.pending +
-        props.stats.approved +
-        props.stats.in_process +
-        props.stats.dispatched +
-        props.stats.received
-    );
-});
-
-// Status configuration
-const statusTabs = [
-    { value: null, label: "All Orders", color: "blue" },
-    { value: "pending", label: "Pending", color: "yellow" },
-    { value: "approved", label: "Approved", color: "green" },
-    { value: "in_process", label: "In Process", color: "blue" },
-    { value: "dispatched", label: "Dispatched", color: "purple" },
-    { value: "received", label: "Received", color: "indigo" },
-    { value: "rejected", label: "Rejected", color: "red" },
-];
-
-// Filter states
-const search = ref(props.filters.search);
-const currentStatus = ref(props.filters.currentStatus || null);
-const facility = ref(props.filters?.facility || null);
-const orderType = ref(props.filters?.orderType || null);
-const district = ref(props.filters?.district || null);
-const dateFrom = ref(props.filters?.dateFrom || null);
-const dateTo = ref(props.filters?.dateTo || null);
-const per_page = ref(props.filters.per_page || 25);
-const region = ref(props.filters?.region);
-
-// Initialize selected values with objects from the props arrays
-const selectedFacility = ref(
-    props.filters?.facility
-        ? props.facilities.find(
-              (f) => f.id === parseInt(props.filters.facility)
-          ) || null
-        : null
-);
-const selectedOrderType = ref(
-    props.filters?.orderType
-        ? orderTypes.find((t) => t.id === props.filters.orderType) || null
-        : null
-);
-
-function handleSelect(selected) {
-    selectedFacility.value = selected;
-    facility.value = selected ? selected.id : null;
-}
-
-function handleOrderTypeSelect(selected) {
-    selectedOrderType.value = selected;
-    orderType.value = selected ? selected.id : null;
-    console.log("Selected order type:", selected);
-}
-
-function reloadOrder() {
-    const query = {};
-
-    // Only add non-empty values to the query
-    if (search.value) query.search = search.value;
-    if (facility.value) query.facility = facility.value;
-    if (currentStatus.value) query.currentStatus = currentStatus.value;
-    if (orderType.value) query.orderType = orderType.value;
-    if (per_page.value) query.per_page = per_page.value;
-    if (props.filters.page) query.page = props.filters.page;
-    if (district.value) query.district = district.value;
-    if (dateFrom.value) query.dateFrom = dateFrom.value;
-    if (dateTo.value) query.dateTo = dateTo.value;
-    if (region.value) query.region = region.value;
-
-    router.get(route("orders.index"), query, {
-        preserveScroll: true,
-        preserveState: true,
-        only: ["orders", "stats"],
-    });
-}
-
-// Watch for filter changes
-watch(
-    [
-        () => search.value,
-        () => currentStatus.value,
-        () => facility.value,
-        () => orderType.value,
-        () => district.value,
-        () => dateFrom.value,
-        () => dateTo.value,
-        () => region.value,
-        () => per_page.value,
-        () => props.filters.page,
-    ],
-    () => {
-        reloadOrder();
-    }
-);
-
-function getResult(page = 1) {
-    props.filters.page = page;
-}
-
-async function loadDistrict() {
-    district.value = null;
-    districts.value = [];
-    await axios
-        .post(route("districts.get-districts"), { region: region.value })
-        .then((response) => {
-            districts.value = response.data;
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-}
-
-const formatDate = (date) => {
-    return moment(date).format("DD/MM/YYYY");
-};
-</script>
-
 <template>
     <Head title="All Orders" />
     <AuthenticatedLayout
@@ -866,3 +704,164 @@ const formatDate = (date) => {
         </div>
     </AuthenticatedLayout>
 </template>
+<script setup>
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import { Head, Link, router } from "@inertiajs/vue3";
+import { ref, watch, computed } from "vue";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+import { TailwindPagination } from "laravel-vue-pagination";
+import moment from "moment";
+import axios from "axios";
+
+// No longer using bulk actions
+
+const props = defineProps({
+    orders: Object,
+    filters: Object,
+    facilities: Array,
+    stats: Object,
+    regions: Array,
+});
+
+const districts = ref([]);
+
+async function handleRegionSelect(option) {
+    if (!option) {
+        district.value = null;
+        districts.value = [];
+        return;
+    }
+    district.value = null;
+    districts.value = [];
+    await loadDistrict();
+}
+
+// Fixed order types
+const orderTypes = [
+    { id: "quarterly", name: "Quarterly" },
+    { id: "replenishment", name: "Replenishment" },
+];
+
+// Compute total orders
+const totalOrders = computed(() => {
+    return (
+        props.stats.pending +
+        props.stats.approved +
+        props.stats.in_process +
+        props.stats.dispatched +
+        props.stats.received
+    );
+});
+
+// Status configuration
+const statusTabs = [
+    { value: null, label: "All Orders", color: "blue" },
+    { value: "pending", label: "Pending", color: "yellow" },
+    { value: "approved", label: "Approved", color: "green" },
+    { value: "in_process", label: "In Process", color: "blue" },
+    { value: "dispatched", label: "Dispatched", color: "purple" },
+    { value: "received", label: "Received", color: "indigo" },
+    { value: "rejected", label: "Rejected", color: "red" },
+];
+
+// Filter states
+const search = ref(props.filters.search);
+const currentStatus = ref(props.filters.currentStatus || null);
+const facility = ref(props.filters?.facility || null);
+const orderType = ref(props.filters?.orderType || null);
+const district = ref(props.filters?.district || null);
+const dateFrom = ref(props.filters?.dateFrom || null);
+const dateTo = ref(props.filters?.dateTo || null);
+const per_page = ref(props.filters.per_page || 25);
+const region = ref(props.filters?.region);
+
+// Initialize selected values with objects from the props arrays
+const selectedFacility = ref(
+    props.filters?.facility
+        ? props.facilities.find(
+              (f) => f.id === parseInt(props.filters.facility)
+          ) || null
+        : null
+);
+const selectedOrderType = ref(
+    props.filters?.orderType
+        ? orderTypes.find((t) => t.id === props.filters.orderType) || null
+        : null
+);
+
+function handleSelect(selected) {
+    selectedFacility.value = selected;
+    facility.value = selected ? selected.id : null;
+}
+
+function handleOrderTypeSelect(selected) {
+    selectedOrderType.value = selected;
+    orderType.value = selected ? selected.id : null;
+    console.log("Selected order type:", selected);
+}
+
+function reloadOrder() {
+    const query = {};
+
+    // Only add non-empty values to the query
+    if (search.value) query.search = search.value;
+    if (facility.value) query.facility = facility.value;
+    if (currentStatus.value) query.currentStatus = currentStatus.value;
+    if (orderType.value) query.orderType = orderType.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (props.filters.page) query.page = props.filters.page;
+    if (district.value) query.district = district.value;
+    if (dateFrom.value) query.dateFrom = dateFrom.value;
+    if (dateTo.value) query.dateTo = dateTo.value;
+    if (region.value) query.region = region.value;
+
+    router.get(route("orders.index"), query, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ["orders", "stats"],
+    });
+}
+
+// Watch for filter changes
+watch(
+    [
+        () => search.value,
+        () => currentStatus.value,
+        () => facility.value,
+        () => orderType.value,
+        () => district.value,
+        () => dateFrom.value,
+        () => dateTo.value,
+        () => region.value,
+        () => per_page.value,
+        () => props.filters.page,
+    ],
+    () => {
+        reloadOrder();
+    }
+);
+
+function getResult(page = 1) {
+    props.filters.page = page;
+}
+
+async function loadDistrict() {
+    district.value = null;
+    districts.value = [];
+    await axios
+        .post(route("districts.get-districts"), { region: region.value })
+        .then((response) => {
+            districts.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+const formatDate = (date) => {
+    return moment(date).format('DD/MM/YYYY');
+};
+</script>
+
