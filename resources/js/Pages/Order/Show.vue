@@ -595,6 +595,10 @@ const dispatchForm = ref({
   no_of_cartoons: ""
 });
 
+async function createDispatch(){
+  console.log(dispatchForm.value);
+}
+
 // Function to change order status
 const changeStatus = (orderId, newStatus) => {
   console.log(orderId, newStatus);
