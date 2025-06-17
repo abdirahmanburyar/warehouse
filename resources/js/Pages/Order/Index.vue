@@ -23,6 +23,7 @@ const districts = ref([]);
 
 
 async function handleRegionSelect(option) {
+    district.value  = null;
     await loadDistrict();
 }
 
