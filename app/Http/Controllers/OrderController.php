@@ -324,14 +324,20 @@ class OrderController extends Controller
             $oldQuantityToRelease = $orderItem->quantity_to_release ?? 0;
     
             if ($request->type === 'days') {
-                $oldDays = $orderItem->no_of_days ?? 1;
+                $oldDays = $orderItem->days ?? 1;
                 $usageRate = $oldQuantityToRelease / max($oldDays, 1); // avoid divide by zero
+            
                 $newDays = $request->quantity;
-    
-                $newQuantityToRelease = round($usageRate * $newDays, 2); // round if needed
-                $orderItem->days = $newDays; // optionally store new days
-            } else {
+                $newQuantityToRelease = round($usageRate * $newDays, 2);
+            
+                $orderItem->days = $newDays; // ✅ update days
+            } elseif ($request->type === 'quantity_to_release') {
+                $oldDays = $orderItem->days ?? 1;
                 $newQuantityToRelease = $request->quantity;
+                $usageRate = $oldQuantityToRelease / max($oldDays, 1); // previous usage rate
+            
+                $newDays = round($newQuantityToRelease / max($usageRate, 1), 2);
+                $orderItem->days = $newDays; // ✅ recalculate and update days
             }
     
             $currentAllocatedQuantity = $orderItem->inventory_allocations()->sum('allocated_quantity');
