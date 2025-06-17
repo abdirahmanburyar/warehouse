@@ -312,6 +312,7 @@ class OrderController extends Controller
                 'type' => 'required|in:quantity_to_release,days',
             ]);
     
+            // Get the order item
             $orderItem = OrderItem::findOrFail($request->item_id);
             $order = $orderItem->order;
     
@@ -319,38 +320,28 @@ class OrderController extends Controller
                 return response()->json('Cannot update quantity for orders that are not in pending status', 500);
             }
     
-            // Baseline original values
-            $baselineQuantity = $orderItem->quantity; // original order quantity
-            $baselineDays = $orderItem->no_of_days ?: 1; // original no_of_days (avoid zero)
+            // Use the original values as the reference
+            $originalQuantity = $orderItem->quantity ?? 0;
+            $originalDays = $orderItem->no_of_days ?: 1; // fallback to 1 to avoid division by zero
+            $dailyUsageRate = $originalQuantity / $originalDays;
     
-            // Calculate usage rate per day based on baseline values
-            $usageRate = $baselineQuantity / $baselineDays;
-    
-            // Variables for new calculated values
-            $newDays = $orderItem->days;
-            $newQuantityToRelease = $orderItem->quantity_to_release;
-    
+            // Recalculate based on type
             if ($request->type === 'days') {
-                // User changed days, recalc quantity_to_release based on baseline usageRate
                 $newDays = $request->quantity;
-                $newQuantityToRelease = round($usageRate * $newDays, 2);
-    
-            } elseif ($request->type === 'quantity_to_release') {
-                // User changed quantity_to_release, recalc days based on baseline usageRate
+                $newQuantityToRelease = round($dailyUsageRate * $newDays, 2);
+                $orderItem->days = $newDays;
+            } else { // quantity_to_release
                 $newQuantityToRelease = $request->quantity;
-                $newDays = $usageRate > 0 ? round($newQuantityToRelease / $usageRate, 2) : 0;
+                $newDays = round($newQuantityToRelease / $dailyUsageRate);
+                $orderItem->days = $newDays;
             }
     
-            // Save the recalculated values in the order item
-            $orderItem->days = $newDays;
-            $orderItem->quantity_to_release = $newQuantityToRelease;
-    
-            // Calculate difference with currently allocated quantity
+            $oldQuantityToRelease = $orderItem->quantity_to_release ?? 0;
             $currentAllocatedQuantity = $orderItem->inventory_allocations()->sum('allocated_quantity');
     
-            if ($newQuantityToRelease < $currentAllocatedQuantity) {
-                // Decrease allocations and return inventory
-                $quantityToRemove = $currentAllocatedQuantity - $newQuantityToRelease;
+            // Handle Decrease
+            if ($newQuantityToRelease < $oldQuantityToRelease) {
+                $quantityToRemove = $oldQuantityToRelease - $newQuantityToRelease;
                 $allocations = $orderItem->inventory_allocations()
                     ->orderBy('expiry_date', 'desc')
                     ->get();
@@ -370,13 +361,11 @@ class OrderController extends Controller
                         if ($allocation->allocated_quantity <= $remainingToRemove) {
                             $inventory->quantity += $allocation->allocated_quantity;
                             $inventory->save();
-    
                             $remainingToRemove -= $allocation->allocated_quantity;
                             $allocation->delete();
                         } else {
                             $inventory->quantity += $remainingToRemove;
                             $inventory->save();
-    
                             $allocation->allocated_quantity -= $remainingToRemove;
                             $allocation->save();
                             $remainingToRemove = 0;
@@ -393,7 +382,6 @@ class OrderController extends Controller
                                 'expiry_date' => $allocation->expiry_date,
                                 'quantity' => $allocation->allocated_quantity
                             ]);
-    
                             $remainingToRemove -= $allocation->allocated_quantity;
                             $allocation->delete();
                         } else {
@@ -407,7 +395,6 @@ class OrderController extends Controller
                                 'expiry_date' => $allocation->expiry_date,
                                 'quantity' => $remainingToRemove
                             ]);
-    
                             $allocation->allocated_quantity -= $remainingToRemove;
                             $allocation->save();
                             $remainingToRemove = 0;
@@ -415,15 +402,16 @@ class OrderController extends Controller
                     }
                 }
     
+                $orderItem->quantity_to_release = $newQuantityToRelease;
                 $orderItem->save();
-                DB::commit();
     
-                return response()->json('Quantity to release decreased and inventory updated successfully', 200);
+                DB::commit();
+                return response()->json('Quantity to release updated successfully', 200);
             }
     
-            if ($newQuantityToRelease > $currentAllocatedQuantity) {
-                // Increase allocations from inventory
-                $quantityToAdd = $newQuantityToRelease - $currentAllocatedQuantity;
+            // Handle Increase
+            if ($newQuantityToRelease > $oldQuantityToRelease) {
+                $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
     
                 $inventoryItems = Inventory::where('product_id', $orderItem->product_id)
                     ->where('quantity', '>', 0)
@@ -436,62 +424,38 @@ class OrderController extends Controller
                 }
     
                 $remainingToAllocate = $quantityToAdd;
-                $existingAllocations = $orderItem->inventory_allocations;
     
-                if ($existingAllocations->isNotEmpty()) {
-                    $firstAllocation = $existingAllocations->first();
-                    $matchingInventory = $inventoryItems->first(function ($inventory) use ($firstAllocation) {
-                        return $inventory->batch_number == $firstAllocation->batch_number &&
-                            $inventory->expiry_date == $firstAllocation->expiry_date;
-                    });
+                foreach ($inventoryItems as $inventory) {
+                    if ($remainingToAllocate <= 0) break;
     
-                    if ($matchingInventory && $matchingInventory->quantity >= $quantityToAdd) {
-                        $firstAllocation->allocated_quantity += $quantityToAdd;
-                        $firstAllocation->save();
+                    $quantityFromThisInventory = min($inventory->quantity, $remainingToAllocate);
     
-                        $matchingInventory->quantity -= $quantityToAdd;
-                        $matchingInventory->save();
+                    $existingAllocation = $orderItem->inventory_allocations()
+                        ->where('batch_number', $inventory->batch_number)
+                        ->where('expiry_date', $inventory->expiry_date)
+                        ->first();
     
-                        $remainingToAllocate = 0;
+                    if ($existingAllocation) {
+                        $existingAllocation->allocated_quantity += $quantityFromThisInventory;
+                        $existingAllocation->save();
+                    } else {
+                        $orderItem->inventory_allocations()->create([
+                            'product_id' => $inventory->product_id,
+                            'warehouse_id' => $inventory->warehouse_id,
+                            'location_id' => $inventory->location_id,
+                            'batch_number' => $inventory->batch_number,
+                            'uom' => $inventory->uom,
+                            'barcode' => $inventory->barcode ?? null,
+                            'expiry_date' => $inventory->expiry_date,
+                            'allocated_quantity' => $quantityFromThisInventory,
+                            'allocation_type' => $order->order_type,
+                            'notes' => 'Allocated from inventory ID: ' . $inventory->id
+                        ]);
                     }
-                }
     
-                if ($remainingToAllocate > 0) {
-                    foreach ($inventoryItems as $inventory) {
-                        if ($remainingToAllocate <= 0) break;
-    
-                        if ($inventory->quantity > 0) {
-                            $quantityFromThisInventory = min($inventory->quantity, $remainingToAllocate);
-    
-                            $existingAllocation = $orderItem->inventory_allocations()
-                                ->where('batch_number', $inventory->batch_number)
-                                ->where('expiry_date', $inventory->expiry_date)
-                                ->first();
-    
-                            if ($existingAllocation) {
-                                $existingAllocation->allocated_quantity += $quantityFromThisInventory;
-                                $existingAllocation->save();
-                            } else {
-                                $orderItem->inventory_allocations()->create([
-                                    'product_id' => $inventory->product_id,
-                                    'warehouse_id' => $inventory->warehouse_id,
-                                    'location_id' => $inventory->location_id,
-                                    'batch_number' => $inventory->batch_number,
-                                    'uom' => $inventory->uom,
-                                    'barcode' => $inventory->barcode ?? null,
-                                    'expiry_date' => $inventory->expiry_date,
-                                    'allocated_quantity' => $quantityFromThisInventory,
-                                    'allocation_type' => $order->order_type,
-                                    'notes' => 'Allocated from inventory ID: ' . $inventory->id
-                                ]);
-                            }
-    
-                            $inventory->quantity -= $quantityFromThisInventory;
-                            $inventory->save();
-    
-                            $remainingToAllocate -= $quantityFromThisInventory;
-                        }
-                    }
+                    $inventory->quantity -= $quantityFromThisInventory;
+                    $inventory->save();
+                    $remainingToAllocate -= $quantityFromThisInventory;
                 }
     
                 if ($remainingToAllocate > 0) {
@@ -499,16 +463,16 @@ class OrderController extends Controller
                     return response()->json('Insufficient inventory. Could only allocate ' . ($quantityToAdd - $remainingToAllocate) . ' out of ' . $quantityToAdd . ' requested items.', 500);
                 }
     
+                $orderItem->quantity_to_release = $newQuantityToRelease;
                 $orderItem->save();
+    
                 event(new InventoryUpdated());
     
                 DB::commit();
-                return response()->json('Quantity to release increased and inventory updated successfully', 200);
+                return response()->json('Quantity to release updated successfully', 200);
             }
     
-            // No change in quantity_to_release, just save
-            $orderItem->save();
-    
+            // No change
             DB::commit();
             return response()->json('No change in quantity to release', 200);
     
@@ -517,8 +481,6 @@ class OrderController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
-    
-    
     
     
     public function searchProduct(Request $request)
