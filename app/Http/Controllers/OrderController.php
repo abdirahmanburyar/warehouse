@@ -300,8 +300,6 @@ class OrderController extends Controller
         }
     }
 
-    use Illuminate\Support\Facades\Log;
-
     // updateQuantity
     public function updateQuantity(Request $request)
     {
