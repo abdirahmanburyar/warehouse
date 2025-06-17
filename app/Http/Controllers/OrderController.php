@@ -71,31 +71,35 @@ class OrderController extends Controller
     {
         $facility = $request->facility;
         $facilityLocation = $request->facilityLocation;
-        $query = Order::query()
-            ->with(['facility', 'user'])
-            ->when($request->dateFrom && $request->dateTo, function ($query) use ($request) {
-                $query->whereBetween('order_date', [$request->dateFrom, $request->dateTo]);
-            })
-            ->when($request->search, function ($query, $search) {
-                $query->where('order_number', $search);
-            })
-            ->when($request->currentStatus, function ($query, $search) {
-                $query->where('status', $search);
-            })
-            ->when($request->facility, function ($query, $facility) {
-                $query->where('facility_id', $facility);
-            })
-            ->when($request->orderType, function ($query, $orderType) {
-                $query->where('order_type', $orderType);
-            })
-            ->when($request->facilityLocation, function ($query) use($facilityLocation) {
-                $query->whereHas('facility', function($q) use ($facilityLocation) {
-                    $q->where('district', $facilityLocation);
-                });
-            })            
-            ->latest()
-            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1));
+        $query = Order::query();
 
+        if($request->filled('search')){
+            $query->where('order_number', 'like', "%{$request->search}%");
+        }
+
+        if($request->filled('currentStatus')){
+            $query->where('status', $request->currentStatus);
+        }
+        
+        if($request->filled('facility')){
+            $query->where('facility_id', $request->facility);
+        }
+        
+        if($request->filled('orderType')){
+            $query->where('order_type', $request->orderType);
+        }
+        
+        if($request->filled('facilityLocation')){
+            $query->whereHas('facility', function($q) use ($request) {
+                $q->where('district', $request->facilityLocation);
+            });
+        }
+        
+        $query->with(['facility', 'user']);
+
+        $orders = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $orders->setPath(url()->current()); // Force Laravel to use full URLs
         // Get order statistics from orders table
         $stats = DB::table('orders')
             ->select('status', DB::raw('count(*) as count'))
@@ -117,8 +121,6 @@ class OrderController extends Controller
         ];
 
         $stats = array_merge($defaultStats, $stats);
-
-        $orders = $query->setPath(url()->current());
 
         $facilities = Facility::select('id','name')->get();
         $facilityLocations = District::select('id','name')->pluck('name')->toArray();
