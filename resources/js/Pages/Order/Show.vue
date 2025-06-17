@@ -1269,31 +1269,30 @@ const statusOrder = [
 // update quantity
 const isUpading = ref(false);
 async function updateQuantity(item, type) {
-    console.log(item, type);
-    // isUpading.value = true;
-    // await axios
-    //     .post(route("orders.update-quantity"), {
-    //         item_id: item.id,
-    //         quantity: item.quantity_to_release,
-    //         days: item.days,
-    //         type,
-    //     })
-    //     .then((response) => {
-    //         isUpading.value = false;
-    //         Swal.fire({
-    //             title: "Success!",
-    //             text: response.data,
-    //             icon: "success",
-    //             confirmButtonText: "OK",
-    //         }).then(() => {
-    //             router.get(route("orders.show", props.order.id));
-    //         });
-    //     })
-    //     .catch((error) => {
-    //         isUpading.value = false;
-    //         console.log(error);
-    //         toast.error(error.response?.data || "Failed to update quantity");
-    //     });
+    isUpading.value = true;
+    await axios
+        .post(route("orders.update-quantity"), {
+            item_id: item.id,
+            quantity: item.quantity_to_release,
+            days: item.days,
+            type,
+        })
+        .then((response) => {
+            isUpading.value = false;
+            Swal.fire({
+                title: "Success!",
+                text: response.data,
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                router.get(route("orders.show", props.order.id));
+            });
+        })
+        .catch((error) => {
+            isUpading.value = false;
+            console.log(error);
+            toast.error(error.response?.data || "Failed to update quantity");
+        });
 }
 
 const dispatchForm = ref({
