@@ -91,7 +91,10 @@ function reloadOrder() {
     if (district.value) query.district = district.value;
     if (dateFrom.value) query.dateFrom = dateFrom.value;
     if (dateTo.value) query.dateTo = dateTo.value;    
-    if (region.value) query.region = region.value;    
+    if (region.value) {
+        query.district = '';    
+        query.region = region.value;    
+    }
 
     router.get(route('orders.index'), query, {
         preserveScroll: true,
