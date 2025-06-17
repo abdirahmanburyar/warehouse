@@ -23,9 +23,6 @@ const districts = ref([]);
 
 
 async function handleRegionSelect(option) {
-    district.value = "";
-    props.filters.district = "";
-    districts.value = [];   
     await loadDistrict();
 }
 
@@ -125,6 +122,8 @@ function getResult(page = 1){
 
 
 async function loadDistrict() {
+    district.value = null;
+    districts.value = [];
     await axios
         .post(route("districts.get-districts"), { region: region.value })
         .then((response) => {
