@@ -329,7 +329,7 @@ class OrderController extends Controller
                 $newDays = $request->quantity;
     
                 $newQuantityToRelease = round($usageRate * $newDays, 2); // round if needed
-                $orderItem->no_of_days = $newDays; // optionally store new days
+                $orderItem->days = $newDays; // optionally store new days
             } else {
                 $newQuantityToRelease = $request->quantity;
             }
