@@ -2,9 +2,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
-import debounce from 'lodash/debounce';
-import Swal from 'sweetalert2';
-import axios from 'axios';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
@@ -123,7 +120,7 @@ const formatDate = (date) => {
 <template>
 
     <Head title="All Orders" />
-    <AuthenticatedLayout title="All Orders" img="/assets/images/orders.png">
+    <AuthenticatedLayout title="Track Your Orders" description="Keeping Essentials Ready, Every Time" img="/assets/images/orders.png">
         <!-- Filters Section -->
         <div class="bg-white mb-6 p-4 text-xs">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-5">
