@@ -300,64 +300,268 @@ class OrderController extends Controller
         }
     }
 
+    use Illuminate\Support\Facades\Log;
+
     // updateQuantity
     public function updateQuantity(Request $request)
     {
         try {
             DB::beginTransaction();
     
+            Log::debug('UpdateQuantity called', ['request' => $request->all()]);
+    
             $request->validate([
                 'item_id' => 'required|exists:order_items,id',
-                'quantity' => 'required|numeric',
+                'quantity' => 'required|numeric', // quantity_to_release
+                'days' => 'required|numeric',
                 'type' => 'required|in:quantity_to_release,days',
             ]);
     
             $orderItem = OrderItem::findOrFail($request->item_id);
             $order = $orderItem->order;
     
+            Log::debug('Fetched OrderItem and Order', ['order_item_id' => $orderItem->id, 'order_status' => $order->status]);
+    
             if (!in_array($order->status, ['pending'])) {
+                Log::warning('Attempt to update non-pending order', ['order_status' => $order->status]);
                 return response()->json('Cannot update quantity for orders that are not in pending status', 500);
             }
     
-            // ORIGINAL fixed references — never change these
-            $originalQuantity = $orderItem->quantity;  
-            $originalDays = $orderItem->no_of_days ?: 1;  // avoid zero
+            $originalQuantity = $orderItem->quantity ?? 0;
+            $originalDays = $orderItem->no_of_days ?: 1; // avoid div by zero
+            $dailyUsageRate = $originalQuantity / $originalDays;
     
-            // Calculate per day usage rate
-            $usageRate = $originalQuantity / $originalDays;
-    
-            // New values to calculate
-            $newDays = $orderItem->days ?? $originalDays;
-            $newQuantityToRelease = $orderItem->quantity_to_release ?? $originalQuantity;
+            Log::debug('Original values', [
+                'original_quantity' => $originalQuantity,
+                'original_no_of_days' => $originalDays,
+                'daily_usage_rate' => $dailyUsageRate,
+            ]);
     
             if ($request->type === 'days') {
-                $newDays = max(1, $request->quantity);  // minimum 1 day
-                $newQuantityToRelease = round($usageRate * $newDays, 2);
-            } else if ($request->type === 'quantity_to_release') {
-                $newQuantityToRelease = max(0, $request->quantity);
-                $newDays = $usageRate > 0 ? round($newQuantityToRelease / $usageRate) : $originalDays;
+                $newDays = $request->days;
+                $newQuantityToRelease = round($dailyUsageRate * $newDays, 2);
+                $orderItem->days = $newDays;
+    
+                Log::debug('Type days update', [
+                    'new_days' => $newDays,
+                    'calculated_quantity_to_release' => $newQuantityToRelease,
+                ]);
+            } else { // quantity_to_release
+                $newQuantityToRelease = $request->quantity;
+                $newDays = $dailyUsageRate > 0 ? round($newQuantityToRelease / $dailyUsageRate) : $originalDays;
+                $orderItem->days = $newDays;
+    
+                Log::debug('Type quantity_to_release update', [
+                    'new_quantity_to_release' => $newQuantityToRelease,
+                    'calculated_days' => $newDays,
+                ]);
             }
     
-            // Now update allocations based on $newQuantityToRelease if needed
-            // Your existing allocation adjustment logic here (same as before)
-            // For brevity, I’m skipping re-posting the allocation code, 
-            // but you should use $newQuantityToRelease instead of old values.
+            $oldQuantityToRelease = $orderItem->quantity_to_release ?? 0;
+            $currentAllocatedQuantity = $orderItem->inventory_allocations()->sum('allocated_quantity');
     
-            // Save the updated fields
-            $orderItem->days = $newDays;
-            $orderItem->quantity_to_release = $newQuantityToRelease;
-            $orderItem->save();
+            Log::debug('Current allocation states', [
+                'old_quantity_to_release' => $oldQuantityToRelease,
+                'current_allocated_quantity' => $currentAllocatedQuantity,
+            ]);
     
+            // Handle Decrease
+            if ($newQuantityToRelease < $oldQuantityToRelease) {
+                $quantityToRemove = $oldQuantityToRelease - $newQuantityToRelease;
+                Log::debug('Quantity to decrease', ['quantity_to_remove' => $quantityToRemove]);
+    
+                $allocations = $orderItem->inventory_allocations()
+                    ->orderBy('expiry_date', 'desc')
+                    ->get();
+    
+                $remainingToRemove = $quantityToRemove;
+    
+                foreach ($allocations as $allocation) {
+                    if ($remainingToRemove <= 0) break;
+    
+                    Log::debug('Processing allocation for removal', [
+                        'allocation_id' => $allocation->id,
+                        'allocated_quantity' => $allocation->allocated_quantity,
+                        'remaining_to_remove' => $remainingToRemove,
+                    ]);
+    
+                    $inventory = Inventory::where('product_id', $allocation->product_id)
+                        ->where('warehouse_id', $allocation->warehouse_id)
+                        ->where('batch_number', $allocation->batch_number)
+                        ->where('expiry_date', $allocation->expiry_date)
+                        ->first();
+    
+                    if ($inventory) {
+                        if ($allocation->allocated_quantity <= $remainingToRemove) {
+                            $inventory->quantity += $allocation->allocated_quantity;
+                            $inventory->save();
+    
+                            $remainingToRemove -= $allocation->allocated_quantity;
+                            $allocation->delete();
+    
+                            Log::debug('Inventory updated and allocation deleted', [
+                                'inventory_id' => $inventory->id,
+                                'added_quantity' => $allocation->allocated_quantity,
+                                'remaining_to_remove' => $remainingToRemove,
+                            ]);
+                        } else {
+                            $inventory->quantity += $remainingToRemove;
+                            $inventory->save();
+    
+                            $allocation->allocated_quantity -= $remainingToRemove;
+                            $allocation->save();
+    
+                            $remainingToRemove = 0;
+    
+                            Log::debug('Partial inventory update and allocation reduced', [
+                                'inventory_id' => $inventory->id,
+                                'added_quantity' => $remainingToRemove,
+                            ]);
+                        }
+                    } else {
+                        Log::warning('No inventory found matching allocation, creating new inventory record', [
+                            'allocation_id' => $allocation->id,
+                        ]);
+                        if ($allocation->allocated_quantity <= $remainingToRemove) {
+                            Inventory::create([
+                                'product_id' => $allocation->product_id,
+                                'warehouse_id' => $allocation->warehouse_id,
+                                'location_id' => $allocation->location_id,
+                                'batch_number' => $allocation->batch_number,
+                                'uom' => $allocation->uom,
+                                'barcode' => $allocation->barcode,
+                                'expiry_date' => $allocation->expiry_date,
+                                'quantity' => $allocation->allocated_quantity
+                            ]);
+    
+                            $remainingToRemove -= $allocation->allocated_quantity;
+                            $allocation->delete();
+    
+                            Log::debug('New inventory created and allocation deleted', [
+                                'remaining_to_remove' => $remainingToRemove,
+                            ]);
+                        } else {
+                            Inventory::create([
+                                'product_id' => $allocation->product_id,
+                                'warehouse_id' => $allocation->warehouse_id,
+                                'location_id' => $allocation->location_id,
+                                'batch_number' => $allocation->batch_number,
+                                'uom' => $allocation->uom,
+                                'barcode' => $allocation->barcode,
+                                'expiry_date' => $allocation->expiry_date,
+                                'quantity' => $remainingToRemove
+                            ]);
+    
+                            $allocation->allocated_quantity -= $remainingToRemove;
+                            $allocation->save();
+    
+                            Log::debug('Partial new inventory created and allocation updated');
+    
+                            $remainingToRemove = 0;
+                        }
+                    }
+                }
+    
+                $orderItem->quantity_to_release = $newQuantityToRelease;
+                $orderItem->save();
+    
+                Log::debug('Decreased quantity_to_release saved', ['new_quantity_to_release' => $newQuantityToRelease]);
+    
+                DB::commit();
+                return response()->json('Quantity to release updated successfully', 200);
+            }
+    
+            // Handle Increase
+            if ($newQuantityToRelease > $oldQuantityToRelease) {
+                $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
+                Log::debug('Quantity to increase', ['quantity_to_add' => $quantityToAdd]);
+    
+                $inventoryItems = Inventory::where('product_id', $orderItem->product_id)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('expiry_date', 'asc')
+                    ->get();
+    
+                if ($inventoryItems->isEmpty()) {
+                    Log::warning('No inventory available for product', ['product_id' => $orderItem->product_id]);
+                    DB::rollBack();
+                    return response()->json('No inventory available for this product', 500);
+                }
+    
+                $remainingToAllocate = $quantityToAdd;
+    
+                foreach ($inventoryItems as $inventory) {
+                    if ($remainingToAllocate <= 0) break;
+    
+                    $quantityFromThisInventory = min($inventory->quantity, $remainingToAllocate);
+    
+                    Log::debug('Allocating inventory', [
+                        'inventory_id' => $inventory->id,
+                        'quantity_from_inventory' => $quantityFromThisInventory,
+                        'remaining_to_allocate' => $remainingToAllocate,
+                    ]);
+    
+                    $existingAllocation = $orderItem->inventory_allocations()
+                        ->where('batch_number', $inventory->batch_number)
+                        ->where('expiry_date', $inventory->expiry_date)
+                        ->first();
+    
+                    if ($existingAllocation) {
+                        $existingAllocation->allocated_quantity += $quantityFromThisInventory;
+                        $existingAllocation->save();
+                        Log::debug('Updated existing allocation', ['allocation_id' => $existingAllocation->id]);
+                    } else {
+                        $orderItem->inventory_allocations()->create([
+                            'product_id' => $inventory->product_id,
+                            'warehouse_id' => $inventory->warehouse_id,
+                            'location_id' => $inventory->location_id,
+                            'batch_number' => $inventory->batch_number,
+                            'uom' => $inventory->uom,
+                            'barcode' => $inventory->barcode ?? null,
+                            'expiry_date' => $inventory->expiry_date,
+                            'allocated_quantity' => $quantityFromThisInventory,
+                            'allocation_type' => $order->order_type,
+                            'notes' => 'Allocated from inventory ID: ' . $inventory->id
+                        ]);
+                        Log::debug('Created new allocation');
+                    }
+    
+                    $inventory->quantity -= $quantityFromThisInventory;
+                    $inventory->save();
+    
+                    $remainingToAllocate -= $quantityFromThisInventory;
+                }
+    
+                if ($remainingToAllocate > 0) {
+                    Log::warning('Insufficient inventory to allocate requested quantity', [
+                        'requested' => $quantityToAdd,
+                        'allocated' => $quantityToAdd - $remainingToAllocate,
+                    ]);
+                    DB::rollBack();
+                    return response()->json('Insufficient inventory. Could only allocate ' . ($quantityToAdd - $remainingToAllocate) . ' out of ' . $quantityToAdd . ' requested items.', 500);
+                }
+    
+                $orderItem->quantity_to_release = $newQuantityToRelease;
+                $orderItem->save();
+    
+                event(new InventoryUpdated());
+    
+                Log::debug('Increased quantity_to_release saved', ['new_quantity_to_release' => $newQuantityToRelease]);
+    
+                DB::commit();
+                return response()->json('Quantity to release updated successfully', 200);
+            }
+    
+            // No change
+            Log::debug('No change in quantity_to_release detected');
             DB::commit();
-    
-            return response()->json('Quantity and days updated successfully', 200);
+            return response()->json('No change in quantity to release', 200);
     
         } catch (\Throwable $th) {
             DB::rollBack();
+            Log::error('Exception in updateQuantity', ['error' => $th->getMessage()]);
             return response()->json($th->getMessage(), 500);
         }
     }
-    
     
     
     public function searchProduct(Request $request)
