@@ -312,7 +312,6 @@ class OrderController extends Controller
                 'type' => 'required|in:quantity_to_release,days',
             ]);
     
-            // Get the order item
             $orderItem = OrderItem::findOrFail($request->item_id);
             $order = $orderItem->order;
     
@@ -320,40 +319,38 @@ class OrderController extends Controller
                 return response()->json('Cannot update quantity for orders that are not in pending status', 500);
             }
     
-            // Baseline references — these never change on update
-            $orderedQuantity = $orderItem->quantity;          // Original ordered quantity (baseline)
-            $baselineDays = $orderItem->no_of_days ?: 1;      // Original no_of_days (baseline), avoid zero
+            // Baseline original values
+            $baselineQuantity = $orderItem->quantity; // original order quantity
+            $baselineDays = $orderItem->no_of_days ?: 1; // original no_of_days (avoid zero)
     
-            // Usage rate: quantity per baseline day
-            $usageRate = $orderedQuantity / $baselineDays;
+            // Calculate usage rate per day based on baseline values
+            $usageRate = $baselineQuantity / $baselineDays;
     
-            // Calculate new quantity_to_release and days depending on input type
+            // Variables for new calculated values
+            $newDays = $orderItem->days;
+            $newQuantityToRelease = $orderItem->quantity_to_release;
+    
             if ($request->type === 'days') {
-                // User updates days — calculate quantity_to_release based on baseline usage rate
-                $newDays = $request->quantity; // new days value user input
+                // User changed days, recalc quantity_to_release based on baseline usageRate
+                $newDays = $request->quantity;
                 $newQuantityToRelease = round($usageRate * $newDays, 2);
     
-                // Update the days and quantity_to_release on order item
-                $orderItem->days = $newDays;
-                $orderItem->quantity_to_release = $newQuantityToRelease;
-    
-            } else {
-                // User updates quantity_to_release — calculate days based on baseline usage rate
+            } elseif ($request->type === 'quantity_to_release') {
+                // User changed quantity_to_release, recalc days based on baseline usageRate
                 $newQuantityToRelease = $request->quantity;
                 $newDays = $usageRate > 0 ? round($newQuantityToRelease / $usageRate, 2) : 0;
-    
-                // Update both fields accordingly
-                $orderItem->quantity_to_release = $newQuantityToRelease;
-                $orderItem->days = $newDays;
             }
     
-            // Current allocated quantity in inventory allocations
+            // Save the recalculated values in the order item
+            $orderItem->days = $newDays;
+            $orderItem->quantity_to_release = $newQuantityToRelease;
+    
+            // Calculate difference with currently allocated quantity
             $currentAllocatedQuantity = $orderItem->inventory_allocations()->sum('allocated_quantity');
     
-            // Handle decreasing quantity_to_release: remove allocations and return to inventory
             if ($newQuantityToRelease < $currentAllocatedQuantity) {
+                // Decrease allocations and return inventory
                 $quantityToRemove = $currentAllocatedQuantity - $newQuantityToRelease;
-    
                 $allocations = $orderItem->inventory_allocations()
                     ->orderBy('expiry_date', 'desc')
                     ->get();
@@ -385,7 +382,6 @@ class OrderController extends Controller
                             $remainingToRemove = 0;
                         }
                     } else {
-                        // Inventory record missing — create new inventory accordingly
                         if ($allocation->allocated_quantity <= $remainingToRemove) {
                             Inventory::create([
                                 'product_id' => $allocation->product_id,
@@ -420,18 +416,18 @@ class OrderController extends Controller
                 }
     
                 $orderItem->save();
-    
                 DB::commit();
+    
                 return response()->json('Quantity to release decreased and inventory updated successfully', 200);
             }
     
-            // Handle increasing quantity_to_release: allocate inventory as needed
             if ($newQuantityToRelease > $currentAllocatedQuantity) {
+                // Increase allocations from inventory
                 $quantityToAdd = $newQuantityToRelease - $currentAllocatedQuantity;
     
                 $inventoryItems = Inventory::where('product_id', $orderItem->product_id)
                     ->where('quantity', '>', 0)
-                    ->orderBy('expiry_date', 'asc') // FIFO allocation
+                    ->orderBy('expiry_date', 'asc')
                     ->get();
     
                 if ($inventoryItems->isEmpty()) {
@@ -440,7 +436,6 @@ class OrderController extends Controller
                 }
     
                 $remainingToAllocate = $quantityToAdd;
-    
                 $existingAllocations = $orderItem->inventory_allocations;
     
                 if ($existingAllocations->isNotEmpty()) {
@@ -505,14 +500,13 @@ class OrderController extends Controller
                 }
     
                 $orderItem->save();
-    
                 event(new InventoryUpdated());
     
                 DB::commit();
                 return response()->json('Quantity to release increased and inventory updated successfully', 200);
             }
     
-            // If no change to quantity_to_release (already updated above if days changed), just commit
+            // No change in quantity_to_release, just save
             $orderItem->save();
     
             DB::commit();
@@ -523,6 +517,7 @@ class OrderController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+    
     
     
     public function searchProduct(Request $request)
