@@ -336,7 +336,7 @@
 
             <!-- Dispatch button -->
             <div class="relative">
-              <button @click="changeStatus(props.order.id, 'dispatched')"
+              <button @click="showDispatchForm = true"
                 :disabled="isLoading || props.order.status !== 'in_process'"
                 :class="[
                   props.order.status === 'in_process' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 
@@ -466,6 +466,40 @@
         </div>
       </div>
     </div>
+    
+        <!-- New Region Modal -->
+        <Modal :show="showDispatchForm" @close="showDispatchForm = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Dispatch Information
+                </h2>
+
+                <div class="mt-6">
+                    <InputLabel for="driver_name" value="Driver Name" />
+                    <TextInput
+                        id="driver_name"
+                        type="text"
+                        class="mt-1 block w-full"
+                        placeholder="Enter driver name"
+                        v-model="dispatchForm.driver_name"
+                        required
+                    />
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton
+                        @click="showDispatchForm = false"
+                    >
+                        Cancel
+                    </SecondaryButton>
+                    <PrimaryButton
+                        @click="createDispatch"
+                    >
+                        Save
+                    </PrimaryButton>
+                </div>
+            </div>
+        </Modal>
   </AuthenticatedLayout>
 </template>
 
@@ -494,6 +528,7 @@ const props = defineProps({
 
 const showModal = ref(false);
 const selectedBackOrder = ref(null);
+const showDispatchForm = ref(false);
 
 // Function to show the back order modal
 const showBackOrderModal = (item) => {
@@ -511,18 +546,6 @@ const statusClasses = {
   'partially_received': 'bg-orange-100 text-orange-800 rounded-full font-bold',
   default: 'bg-gray-100 text-gray-800 rounded-full font-bold'
 };
-
-// Function to get the display status
-const getDisplayStatus = (status, hasBackOrder) => {
-  if (status === 'received') {
-    if (hasBackOrder) {
-      return 'Partially Received';
-    }
-    return 'Completed';
-  }
-  return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-};
-
 
 
 const form = ref([]);
@@ -564,6 +587,13 @@ async function updateQuantity(item){
     toast.error(error.response?.data || 'Failed to update quantity');
   });
 }
+
+const dispatchForm = ref({
+  driver_name: "",
+  driver_number: "",
+  plate_number: "",
+  no_of_cartoons: ""
+});
 
 // Function to change order status
 const changeStatus = (orderId, newStatus) => {

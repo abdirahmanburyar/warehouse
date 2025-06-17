@@ -350,7 +350,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::put('/{order}', [OrderController::class, 'update'])->name('orders.update');
         Route::delete('/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
-
+        // dispatch info
+        Route::post('/dispatch-info', [OrderController::class, 'dispatchInfo'])->name('orders.dispatch-info');
+        
         // 'order.update-quantity
         Route::post('/update-quantity', [OrderController::class, 'updateQuantity'])->name('orders.update-quantity');
     });

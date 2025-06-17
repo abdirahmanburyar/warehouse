@@ -220,6 +220,21 @@ class OrderController extends Controller
         }
     }
 
+
+    public function dispatchInfo(Request $request){
+        $request->validate([
+            'driver_name',
+            'driver_number',
+            'place_number',
+            'no_of_cartoons'
+        ]);
+        return response()->json($request->all(), 200);
+        try {
+            //code...
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
     public function destroy(Order $order)
     {
         try {
