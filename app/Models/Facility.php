@@ -13,6 +13,8 @@ class Facility extends Model
         'email',
         'user_id',
         'district',
+        'handled_by',
+        'region',
         'phone',
         'address',
         'facility_type',
@@ -29,5 +31,9 @@ class Facility extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    public function handledby(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'handled_by');
+    }
+    
 }

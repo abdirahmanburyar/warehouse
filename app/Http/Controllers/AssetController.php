@@ -214,14 +214,16 @@ class AssetController extends Controller
     public function storeRegion(Request $request){
         try {
             $request->validate([
-                'name' => 'required',
+                'name' => 'required|unique:regions',
+            ],[
+                'name.unique' => $request->name . " already exists",
             ]);
             
             $region = Region::create([
                 'name' => $request->name
             ]);
             
-            return response()->json($region, 200);
+            return response()->json($region->name, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

@@ -20,7 +20,7 @@
         
         <!-- Filters Section -->
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
                 <!-- Search Bar -->
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -41,60 +41,63 @@
                     />
                 </div>
                 
-                <!-- Per Page Selection -->
-                <div class="lg:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Items Per Page</label>
-                    <select v-model="per_page"
-                        @change="props.filters.page = 1"
-                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
-                        <option value="10">10 per page</option>
-                        <option value="25">25 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                    </select>
-                </div>
+                
             </div>
+        </div>
+        <!-- Per Page Selection -->
+        <div class="flex justify-end">
+            <select v-model="per_page"
+                @change="props.filters.page = 1"
+                class="w-[200px] border-black rounded-3xl">
+                <option value="10">10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+            </select>
         </div>
         <!-- Table Section -->
         <div class="p-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="overflow-x-auto">
-                <table v-if="props.facilities.data.length > 0" class="min-w-full divide-y divide-gray-200 border-2 border-black">
+                <table v-if="props.facilities.data.length > 0" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-building mr-2"></i>SN
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-building mr-2"></i>Name
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-tag mr-2"></i>Type
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-user mr-2"></i>Manager
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                <i class="fas fa-user mr-2"></i>Handled By
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-map-marker-alt mr-2"></i>District
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-check-circle mr-2"></i>Status
                             </th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-2 border-black">
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 capitalize tracking-wider">
                                 <i class="fas fa-cog mr-2"></i>Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="(facility, index) in props.facilities.data" :key="facility.id" class="hover:bg-gray-50">
-                            <td class="w-[50px] px-6 py-4 whitespace-nowrap border-2 border-black">{{index + 1}}</td>
-                                <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                            <td class="w-[50px] px-6 py-4 whitespace-nowrap">{{index + 1}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <Link :href="route('facilities.show', facility.id)">
                                         {{ facility.name }}
                                     </Link>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i :class="{
                                         'fas mr-2': true,
@@ -105,7 +108,7 @@
                                     <span class="capitalize">{{ facility.facility_type }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="space-y-1">
                                     <div class="flex items-center">
                                         <i class="fas fa-user mr-2 text-gray-500"></i>
@@ -121,13 +124,29 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="space-y-1">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user mr-2 text-gray-500"></i>
+                                        <span>{{ facility.handledby?.name || 'Not assigned' }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-envelope mr-2 text-gray-500"></i>
+                                        <span class="text-sm text-gray-600">{{ facility.handledby?.email || 'No email' }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-phone mr-2 text-gray-500"></i>
+                                        <span class="text-sm text-gray-600">{{ facility.handledby?.phone || 'No phone' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i class="fas fa-map-marker-alt mr-2 text-gray-500"></i>
                                     <span>{{ facility.district || 'Not assigned' }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-2 border-black">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <span
                                     :class="facility.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                                     class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
@@ -135,7 +154,7 @@
                                     {{ facility.is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center border-2 border-black">
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="flex space-x-3 justify-center">
                                     <Link :href="route('facilities.edit', facility.id)"
                                         class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100">
@@ -285,7 +304,7 @@ const props = defineProps({
     }
 })
 
-const per_page = ref(props.filters.per_page)
+const per_page = ref(props.filters.per_page || 25)
 const search = ref(props.filters.search)
 const district = ref(props.filters.district)
 const loadingProducts = ref(new Set());

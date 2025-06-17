@@ -7,6 +7,7 @@ import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import { TailwindPagination } from "laravel-vue-pagination";
 import moment from 'moment';
+import axios from 'axios';
 
 // No longer using bulk actions
 
@@ -14,12 +15,19 @@ const props = defineProps({
     orders: Object,
     filters: Object,
     facilities: Array,
-    facilityLocations: Array,
-    stats: Object
+    stats: Object,
+    regions: Array
 });
 
-// Track loading state for each order action
-const loadingActions = ref({});
+const districts = ref([]);
+
+
+async function handleRegionSelect(option) {
+    district.value = "";
+    props.filters.district = "";
+    districts.value = [];   
+    await loadDistrict();
+}
 
 // Fixed order types
 const orderTypes = [
@@ -49,10 +57,11 @@ const search = ref(props.filters.search);
 const currentStatus = ref(props.filters.currentStatus || null);
 const facility = ref(props.filters?.facility || null);
 const orderType = ref(props.filters?.orderType || null);
-const facilityLocation = ref(props.filters?.facilityLocation || null);
+const district = ref(props.filters?.district || null);
 const dateFrom = ref(props.filters?.dateFrom || null);
 const dateTo = ref(props.filters?.dateTo || null);
 const per_page = ref(props.filters.per_page || 25);
+const region = ref(props.filters?.region);
 
 // Initialize selected values with objects from the props arrays
 const selectedFacility = ref(props.filters?.facility ?
@@ -82,9 +91,10 @@ function reloadOrder() {
     if (orderType.value) query.orderType = orderType.value;
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
-    if (facilityLocation.value) query.facilityLocation = facilityLocation.value;
+    if (district.value) query.district = district.value;
     if (dateFrom.value) query.dateFrom = dateFrom.value;
-    if (dateTo.value) query.dateTo = dateTo.value;
+    if (dateTo.value) query.dateTo = dateTo.value;    
+    if (region.value) query.region = region.value;    
 
     router.get(route('orders.index'), query, {
         preserveScroll: true,
@@ -99,9 +109,10 @@ watch([
     () => currentStatus.value,
     () => facility.value,
     () => orderType.value,
-    () => facilityLocation.value,
+    () => district.value,
     () => dateFrom.value,
     () => dateTo.value,
+    () => region.value,
     () => per_page.value,
     () => props.filters.page
 ], () => {
@@ -111,6 +122,19 @@ watch([
 function getResult(page = 1){
     props.filters.page = page;
 }
+
+
+async function loadDistrict() {
+    await axios
+        .post(route("districts.get-districts"), { region: region.value })
+        .then((response) => {
+            districts.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
 
 const formatDate = (date) => {
     return moment(date).format('DD/MM/YYYY');
@@ -151,13 +175,28 @@ const formatDate = (date) => {
                     </Multiselect>
                 </div>
 
-                <!-- District Filter -->
                 <div class="w-full">
-                    <Multiselect v-model="facilityLocation" :options="props.facilityLocations"
+                    <Multiselect v-model="region" :options="props.regions"
                         :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
-                        placeholder="Select District">
+                        @select="handleRegionSelect"
+                        placeholder="Select Region">
                     </Multiselect>
                 </div>
+
+                <!-- District Filter -->
+                <div>
+                        <label for="district">District</label>
+                        <Multiselect
+                            v-model="district"
+                            :options="districts"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            :disabled="region == null"
+                            placeholder="Select District"
+                        > </Multiselect>
+                    </div>
 
                 <!-- Date From -->
                 <div class="w-full">
@@ -219,89 +258,96 @@ const formatDate = (date) => {
                                 <tr>
                                     <!-- Checkbox column removed -->
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Order Number
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Facility
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Order Type
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Order Date
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Expected Date
                                     </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                        Handled By
+                                    </th>
+                                    <th
+                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
                                         Status
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white">
                                 <tr v-if="orders.data?.length === 0">
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-black">
+                                    <td colspan="7" class="px-2 py-2 text-center text-sm text-black border-b border-grey-500">
                                         No orders found
                                     </td>
                                 </tr>
-                                <tr v-for="order in orders.data" :key="order.id" :class="{
+                                <tr v-for="order in orders.data" :key="order.id" class="border-b border-grey-500" :class="{
                                     'hover:bg-gray-50': true,
                                     'text-red-500': order.status === 'rejected'
                                 }">
                                     <!-- Checkbox cell removed -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-2 py-2 whitespace-nowrap">
                                         <div class="text-xs text-gray-900">
                                             <Link :href="route('orders.show', order.id)">{{ order.order_number }}</Link>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-2 py-2 whitespace-nowrap">
                                         <div class="text-xs text-gray-900">{{ order.facility?.name }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
+                                    <td class="px-2 py-2 whitespace-nowrap text-xs text-black">
                                         {{ order.order_type }}
                                     </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
+                                    <td class="px-2 py-2 whitespace-nowrap text-xs text-black">
                                         {{ formatDate(order.order_date) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-black">
+                                    <td class="px-2 py-2 whitespace-nowrap text-xs text-black">
                                         {{ formatDate(order.expected_date) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-2 py-2 whitespace-nowrap text-xs text-black">
+                                        {{ order.handledby?.name || 'Not assigned' }}
+                                    </td>
+                                    <td class="px-2 py-2 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div class="flex items-center gap-1">
                                                 <!-- Always show pending as it's the initial state -->
-                                                <img src="/assets/images/pending.png" class="w-12 h-12" alt="pending" />
+                                                <img src="/assets/images/pending.png" class="w-6 h-6" alt="pending" />
 
                                                 <!-- Only show approved if status is approved or further -->
                                                 <img v-if="['approved', 'in_process', 'dispatched', 'received'].includes(order.status)"
-                                                    src="/assets/images/approved.png" class="w-12 h-12"
+                                                    src="/assets/images/approved.png" class="w-6 h-6"
                                                     alt="Approved" />
                                                 <!-- Only show rejected if status is rejected -->
                                                 <img v-if="order.status === 'rejected'"
-                                                    src="/assets/images/rejected.svg" class="w-12 h-12"
+                                                    src="/assets/images/rejected.svg" class="w-6 h-6"
                                                     alt="Rejected" />
 
                                                 <!-- Only show in_process if status is in_process or further -->
                                                 <img v-if="['in_process', 'dispatched', 'received'].includes(order.status)"
-                                                    src="/assets/images/inprocess.png" class="w-12 h-12"
+                                                    src="/assets/images/inprocess.png" class="w-6 h-6"
                                                     alt="In Process" />
 
                                                 <!-- Only show dispatched if status is dispatched or further -->
                                                 <img v-if="['dispatched', 'received'].includes(order.status)"
-                                                    src="/assets/images/dispatch.png" class="w-12 h-12"
+                                                    src="/assets/images/dispatch.png" class="w-6 h-6"
                                                     alt="Dispatched" />
 
                                                 <!-- Only show received if status is received -->
                                                 <img v-if="order.status === 'received'"
-                                                    src="/assets/images/received.png" class="w-12 h-12"
+                                                    src="/assets/images/received.png" class="w-6 h-6"
                                                     alt="Received" />
                                             </div>
                                         </div>

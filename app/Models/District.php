@@ -11,22 +11,23 @@ class District extends Model
     
     protected $fillable = [
         'name',
-        'state_id'
+        'region',
+        // 'state_id'
     ];
     
     /**
      * Get the state that owns the district.
      */
-    public function state()
-    {
-        return $this->belongsTo(State::class);
-    }
+    // public function state()
+    // {
+    //     return $this->belongsTo(State::class);
+    // }
     
-    /**
-     * Get the cities for the district.
-     */
-    public function cities()
-    {
-        return $this->hasMany(City::class);
-    }
+    // /**
+    //  * Get the cities for the district.
+    //  */
+    // public function cities()
+    // {
+    //     return $this->hasMany(City::class);
+    // }
 }

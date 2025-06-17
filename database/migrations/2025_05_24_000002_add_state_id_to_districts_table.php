@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('districts', function (Blueprint $table) {
             $table->unsignedBigInteger('state_id')->nullable()->after('region_name');
             $table->foreign('state_id')->references('id')->on('states')->onDelete('set null');
+            $table->string('region');
         });
     }
 

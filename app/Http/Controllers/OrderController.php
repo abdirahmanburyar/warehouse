@@ -15,6 +15,7 @@ use App\Events\OrderEvent;
 use App\Models\IssuedQuantity;
 use App\Http\Resources\OrderResource;
 use App\Events\InventoryUpdated;
+use App\Models\Region;
 
 // Laravel Core
 use Illuminate\Http\Request;
@@ -85,17 +86,23 @@ class OrderController extends Controller
             $query->where('facility_id', $request->facility);
         }
         
+        if($request->filled('region')){
+            $query->whereHas('facility', function($q) use ($request) {
+                $q->where('region', $request->region);
+            });
+        }
+
+        if($request->filled('district')){
+            $query->whereHas('facility', function($q) use ($request) {
+                $q->where('district', $request->district);
+            });
+        }
+        
         if($request->filled('orderType')){
             $query->where('order_type', $request->orderType);
         }
         
-        if($request->filled('facilityLocation')){
-            $query->whereHas('facility', function($q) use ($request) {
-                $q->where('district', $request->facilityLocation);
-            });
-        }
-        
-        $query->with(['facility', 'user']);
+        $query->with(['facility.handledby:id,name', 'user']);
 
         $orders = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
@@ -127,10 +134,11 @@ class OrderController extends Controller
         
         return Inertia::render('Order/Index', [
             'orders' => OrderResource::collection($orders),
-            'filters' => $request->only('search', 'page', 'currentStatus', 'facility', 'orderType', 'facilityLocation', 'dateFrom', 'dateTo','per_page'),
+            'filters' => $request->only('search', 'page', 'currentStatus', 'region', 'facility', 'orderType', 'district', 'dateFrom', 'dateTo','per_page'),
             'stats' => $stats,
             'facilities' => $facilities,
-            'facilityLocations' => $facilityLocations
+            'facilityLocations' => $facilityLocations,
+            'regions' => Region::pluck('name')->toArray()
         ]);
     }
 

@@ -445,6 +445,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{district}/edit', [DistrictController::class, 'edit'])->middleware(PermissionMiddleware::class . ':district.edit')->name('districts.edit');
         Route::put('/{district}', [DistrictController::class, 'update'])->middleware(PermissionMiddleware::class . ':district.edit')->name('districts.update');
         Route::delete('/{district}', [DistrictController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':district.delete')->name('districts.destroy');
+
+        // get district by region
+        Route::post('/get-districts', [DistrictController::class, 'getDistricts'])->name('districts.get-districts');
+        Route::post('/store', [DistrictController::class, 'store'])->name('districts.store');
     });
 
     // Asset Management Routes

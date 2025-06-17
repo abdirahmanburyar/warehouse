@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Facility;
 use App\Models\User;
 use App\Models\District;
+use App\Models\Region;
 use Illuminate\Http\Request;
 use App\Http\Resources\FacilityResource;
 use Maatwebsite\Excel\Facades\Excel;
@@ -46,19 +47,21 @@ class FacilityController extends Controller
             ->when($request->filled('district'), function ($query) use ($request) {
                 $query->where('district', 'like', "%{$request->district}%");
             })
-            ->with(['user'])
+            ->with(['user','handledby'])
             ->paginate($request->per_page ?? 10, ['*'], 'page', $request->page ?? 1);
 
         $facilities = $facilities->setPath(url()->current());
+
+
 
         return inertia('Facility/Index', [
             'facilities' => FacilityResource::collection($facilities),
             'users' => User::get(),
             'filters' => $request->only('page', 'per_page', 'search','district'),
             'districts' => District::pluck('name')->toArray(),
+            'regions' => Region::pluck('name')->toArray(),
         ]);
     }
-
 
     public function show(Request $request, $id){
         $facility = Facility::find($id);
@@ -106,6 +109,7 @@ class FacilityController extends Controller
         return inertia('Facility/Create', [
             'users' => User::get(),
             'districts' => District::pluck('name')->toArray(),
+            'regions' => Region::pluck('name')->toArray()
         ]);
     }
     
@@ -114,7 +118,7 @@ class FacilityController extends Controller
         return inertia('Facility/Edit', [
             'facility' => $facility,
             'users' => User::get(),
-            'districts' => District::pluck('name')->toArray(),
+            'regions' => Region::pluck('name')->toArray()
         ]);
     }
 
@@ -127,12 +131,16 @@ class FacilityController extends Controller
                 'phone' => 'required|string|max:20',
                 'address' => 'required|string|max:255',
                 'district' => 'required|string',
+                'region' => 'required|string',
+                'handled_by' => 'required',
                 'facility_type' => 'required|string|max:50',
                 'has_cold_storage' => 'boolean',
                 'is_active' => 'boolean',
                 'user_id' => 'required'
             ]);
 
+            $validated['handled_by'] = $request->handled_by['id'];
+            $validated['user_id'] = $request->user_id['id'];
             Facility::updateOrCreate(['id' => $request->id], $validated);
 
             return response()->json($request->id ? 'Facility updated successfully.' : 'Facility created successfully.', 200);

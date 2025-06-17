@@ -33,18 +33,15 @@ class DistrictController extends Controller
         try {
             $validated = $request->validate([
                 'id' => 'nullable|exists:districts,id',
-                'district_name' => 'required|string|max:255',
-                'region_name' => 'required|string|max:255',
+                'name' => 'required|string|max:255',
+                'region' => 'required|string|max:255',
+            ],[
+                'name.unique' => $request->name .' already exist'
             ]);
-
-            if(District::where('district_name', $validated['district_name'])->where('region_name', $validated['region_name'])->exists() && !$request->id) {
-                return response()->json('District name already exists', 400);
-            }
-    
-            District::updateOrCreate(['id' => $request->id], $validated);
-            return response()->json('District saved successfully', 200);
+            $district = District::updateOrCreate(['id' => $request->id], $validated);
+            return response()->json($district->name, 200);
         } catch (\Throwable $th) {
-            return response()->json('Failed to save district', 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
 
@@ -52,6 +49,16 @@ class DistrictController extends Controller
     {
         District::destroy($id);
         return response()->json('District deleted successfully', 200);
+    }
+
+    public function getDistricts(Request $request)
+    {
+        try {
+            $districts = District::where('region', $request->region)->pluck('name')->toArray();
+            return response()->json($districts, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
     }
 
     // API methods
