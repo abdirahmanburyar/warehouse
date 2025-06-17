@@ -336,7 +336,7 @@
 
             <!-- Dispatch button -->
             <div class="relative">
-              <button @click="showDispatchForm = true"
+              <button
                 :disabled="isLoading || props.order.status !== 'in_process'"
                 :class="[
                   props.order.status === 'in_process' ? 'bg-[#f59e0b] hover:bg-[#d97706]' : 

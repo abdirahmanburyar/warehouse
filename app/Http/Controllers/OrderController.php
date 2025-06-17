@@ -611,9 +611,9 @@ class OrderController extends Controller
             $order->update($updates);
 
             // Trigger Kafka event for order status change
-            Kafka::publishOrderPlaced("Refreshed");
+            // Kafka::publishOrderPlaced("Refreshed");
             // Broadcast event
-            event(new OrderEvent('Refreshed'));
+            // event(new OrderEvent('Refreshed'));
 
             DB::commit();
             return response()->json('Order status updated successfully.', 200);
