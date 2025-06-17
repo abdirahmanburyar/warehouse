@@ -74,26 +74,6 @@ function handleOrderTypeSelect(selected) {
     console.log('Selected order type:', selected);
 }
 
-function handleFacilityLocationSelect(selected) {
-    selectedFacilityLocation.value = selected;
-    facilityLocation.value = selected ? selected.id : null;
-}
-
-// Handle deselection for any filter
-function handleRemove(filterType) {
-    if (filterType === 'facility') {
-        facility.value = null;
-        selectedFacility.value = null;
-    } else if (filterType === 'orderType') {
-        orderType.value = null;
-        selectedOrderType.value = null;
-    } else if (filterType === 'facilityLocation') {
-        facilityLocation.value = null;
-        selectedFacilityLocation.value = null;
-    }
-    // Reload with updated filters
-    reloadOrder();
-}
 
 function reloadOrder() {
     const query = {}
@@ -109,12 +89,10 @@ function reloadOrder() {
     if (dateFrom.value) query.dateFrom = dateFrom.value;
     if (dateTo.value) query.dateTo = dateTo.value;
 
-    console.log('Applying filters:', query);
-
     router.get(route('orders.index'), query, {
         preserveScroll: false,
         preserveState: false,
-        only: ["orders", 'filters', 'stats']
+        only: ["orders", 'stats']
     })
 }
 
