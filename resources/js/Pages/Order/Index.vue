@@ -23,7 +23,13 @@ const districts = ref([]);
 
 
 async function handleRegionSelect(option) {
-    district.value  = null;
+    if(!option){
+        district.value = null;
+        districts.value = [];
+        return;
+    }
+    district.value = null;
+    districts.value = [];
     await loadDistrict();
 }
 
@@ -92,11 +98,7 @@ function reloadOrder() {
     if (district.value) query.district = district.value;
     if (dateFrom.value) query.dateFrom = dateFrom.value;
     if (dateTo.value) query.dateTo = dateTo.value;    
-    if (region.value) {
-        delete query.district;   
-        query.region = region.value;    
-    }
-
+    if (region.value) query.region = region.value;
     router.get(route('orders.index'), query, {
         preserveScroll: true,
         preserveState: true,
