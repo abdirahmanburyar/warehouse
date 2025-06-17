@@ -308,12 +308,12 @@ class OrderController extends Controller
     
             $request->validate([
                 'item_id' => 'required|exists:order_items,id',
-                'quantity' => 'required|numeric',  // quantity_to_release
+                'quantity' => 'required|numeric', // quantity_to_release
                 'days' => 'required|numeric',
                 'type' => 'required|in:quantity_to_release,days',
             ]);
     
-            // Get the order item
+            // Get the order item and related order
             $orderItem = OrderItem::findOrFail($request->item_id);
             $order = $orderItem->order;
     
@@ -321,12 +321,12 @@ class OrderController extends Controller
                 return response()->json('Cannot update quantity for orders that are not in pending status', 500);
             }
     
-            // Use the original values as the reference
+            // Original values reference
             $originalQuantity = $orderItem->quantity ?? 0;
-            $originalDays = $orderItem->no_of_days ?: 1; // fallback to 1 to avoid division by zero
+            $originalDays = $orderItem->no_of_days ?: 1; // avoid divide by zero
             $dailyUsageRate = $originalQuantity / $originalDays;
     
-            // Recalculate based on type
+            // Calculate new values based on type
             if ($request->type === 'days') {
                 $newDays = (int) ceil($request->days);
                 $newQuantityToRelease = (int) ceil($dailyUsageRate * $newDays);
@@ -338,8 +338,9 @@ class OrderController extends Controller
             }
     
             $oldQuantityToRelease = $orderItem->quantity_to_release ?? 0;
+            $currentAllocatedQuantity = $orderItem->inventory_allocations()->sum('allocated_quantity');
     
-            // Handle Decrease
+            // Handle Decrease in quantity_to_release
             if ($newQuantityToRelease < $oldQuantityToRelease) {
                 $quantityToRemove = $oldQuantityToRelease - $newQuantityToRelease;
                 $allocations = $orderItem->inventory_allocations()
@@ -361,11 +362,13 @@ class OrderController extends Controller
                         if ($allocation->allocated_quantity <= $remainingToRemove) {
                             $inventory->quantity += $allocation->allocated_quantity;
                             $inventory->save();
+    
                             $remainingToRemove -= $allocation->allocated_quantity;
                             $allocation->delete();
                         } else {
                             $inventory->quantity += $remainingToRemove;
                             $inventory->save();
+    
                             $allocation->allocated_quantity -= $remainingToRemove;
                             $allocation->save();
                             $remainingToRemove = 0;
@@ -382,6 +385,7 @@ class OrderController extends Controller
                                 'expiry_date' => $allocation->expiry_date,
                                 'quantity' => $allocation->allocated_quantity
                             ]);
+    
                             $remainingToRemove -= $allocation->allocated_quantity;
                             $allocation->delete();
                         } else {
@@ -395,6 +399,7 @@ class OrderController extends Controller
                                 'expiry_date' => $allocation->expiry_date,
                                 'quantity' => $remainingToRemove
                             ]);
+    
                             $allocation->allocated_quantity -= $remainingToRemove;
                             $allocation->save();
                             $remainingToRemove = 0;
@@ -409,7 +414,7 @@ class OrderController extends Controller
                 return response()->json('Quantity to release updated successfully', 200);
             }
     
-            // Handle Increase
+            // Handle Increase in quantity_to_release
             if ($newQuantityToRelease > $oldQuantityToRelease) {
                 $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
     
@@ -455,7 +460,31 @@ class OrderController extends Controller
     
                     $inventory->quantity -= $quantityFromThisInventory;
                     $inventory->save();
+    
                     $remainingToAllocate -= $quantityFromThisInventory;
+                }
+    
+                // Fix allocation sum mismatch by adjusting the last allocation if needed
+                $totalAllocated = $orderItem->inventory_allocations()->sum('allocated_quantity');
+                if ($totalAllocated < $newQuantityToRelease) {
+                    $difference = $newQuantityToRelease - $totalAllocated;
+                    $lastAllocation = $orderItem->inventory_allocations()->latest()->first();
+    
+                    if ($lastAllocation) {
+                        $lastAllocation->allocated_quantity += $difference;
+                        $lastAllocation->save();
+    
+                        $inventory = Inventory::where('product_id', $lastAllocation->product_id)
+                            ->where('warehouse_id', $lastAllocation->warehouse_id)
+                            ->where('batch_number', $lastAllocation->batch_number)
+                            ->where('expiry_date', $lastAllocation->expiry_date)
+                            ->first();
+    
+                        if ($inventory) {
+                            $inventory->quantity -= $difference;
+                            $inventory->save();
+                        }
+                    }
                 }
     
                 if ($remainingToAllocate > 0) {
@@ -481,6 +510,7 @@ class OrderController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+    
     
     
     public function searchProduct(Request $request)
