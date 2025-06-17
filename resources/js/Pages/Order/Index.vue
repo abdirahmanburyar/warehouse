@@ -87,8 +87,8 @@ function reloadOrder() {
     if (dateTo.value) query.dateTo = dateTo.value;
 
     router.get(route('orders.index'), query, {
-        preserveScroll: false,
-        preserveState: false,
+        preserveScroll: true,
+        preserveState: true,
         only: ["orders", 'stats']
     })
 }
