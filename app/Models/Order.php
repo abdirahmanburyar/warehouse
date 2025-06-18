@@ -89,4 +89,9 @@ class Order extends Model
         return $this->belongsTo(User::class, 'delivered_by');
     }
 
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
 }

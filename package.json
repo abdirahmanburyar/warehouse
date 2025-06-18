@@ -27,7 +27,7 @@
         "@heroicons/vue": "^2.2.0",
         "@soketi/soketi-js": "^1.4.3",
         "@vueform/multiselect": "^2.6.11",
-        "chart.js": "^4.4.9",
+        "chart.js": "^4.5.0",
         "dayjs": "^1.11.13",
         "html2pdf.js": "^0.10.3",
         "jspdf": "^3.0.1",

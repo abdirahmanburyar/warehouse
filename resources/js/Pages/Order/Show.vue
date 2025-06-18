@@ -1013,14 +1013,15 @@
                     <div class="flex flex-col gap-4 sm:flex-row">
                         <!-- Delivered Status -->
                         <div class="relative">
+                            <div class="flex flex-col">
                             <button
                                 :class="[
                                     props.order.status === 'dispatched'
-                                        ? 'bg-[#f59e0b] hover:bg-[#d97706]'
+                                        ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(
                                               props.order.status
                                           ) > statusOrder.indexOf('dispatched')
-                                        ? 'bg-[#55c5ff]'
+                                        ? 'bg-green-500'
                                         : 'bg-gray-300 cursor-not-allowed',
                                 ]"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
@@ -1036,11 +1037,15 @@
                                         statusOrder.indexOf(
                                             props.order.status
                                         ) > statusOrder.indexOf("dispatched")
-                                            ? "dispatched"
+                                            ? "Delivered on " + moment(props.order.delivered_at).format('DD/MM/YYYY HH:mm')
                                             : "Waiting to be Delivered"
                                     }}
                                 </span>
                             </button>
+                            <span v-show="props.order?.delivered_by" class="text-sm text-gray-600">
+                                By {{ props.order?.delivered_by?.name }}
+                            </span> 
+                            </div>
 
                             <!-- Pulse Indicator if currently at this status -->
                             <div
@@ -1051,14 +1056,15 @@
 
                         <!-- Received Status -->
                         <div class="relative">
+                            <div class="flex flex-col">
                             <button
                                 :class="[
                                     props.order.status === 'delivered'
-                                        ? 'bg-[#f59e0b] hover:bg-[#d97706]'
+                                        ? 'bg-yellow-400'
                                         : statusOrder.indexOf(
                                               props.order.status
                                           ) > statusOrder.indexOf('delivered')
-                                        ? 'bg-[#55c5ff]'
+                                        ? 'bg-green-500'
                                         : 'bg-gray-300 cursor-not-allowed',
                                 ]"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
@@ -1074,13 +1080,15 @@
                                         statusOrder.indexOf(
                                             props.order.status
                                         ) > statusOrder.indexOf("received")
-                                            ? "Received"
-                                            : statusOrder.indexOf("delivered")
-                                            ? "Waiting to be Delivered"
-                                            : "Received"
+                                            ? "Waiting to be Received"
+                                            : "Received on " + moment(props.order.received_at).format('DD/MM/YYYY HH:mm')
                                     }}
                                 </span>
                             </button>
+                            <span v-show="props.order?.received_by" class="text-sm text-gray-600">
+                                By {{ props.order?.received_by?.name }}
+                            </span> 
+                            </div>
 
                             <!-- Pulse Indicator if currently at this status -->
                             <div
