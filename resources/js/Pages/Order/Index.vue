@@ -278,8 +278,10 @@
                                                     v-if="
                                                         [
                                                             'reviewed',
+                                                            'approved',
                                                             'in_process',
                                                             'dispatched',
+                                                            'delivered',
                                                             'received',
                                                         ].includes(order.status)
                                                     "
@@ -295,6 +297,7 @@
                                                             'approved',
                                                             'in_process',
                                                             'dispatched',
+                                                            'delivered',
                                                             'received',
                                                         ].includes(order.status)
                                                     "
@@ -321,6 +324,7 @@
                                                         [
                                                             'in_process',
                                                             'dispatched',
+                                                            'delivered',
                                                             'received',
                                                         ].includes(order.status)
                                                     "
@@ -335,6 +339,7 @@
                                                     v-if="
                                                         [
                                                             'dispatched',
+                                                            'delivered',
                                                             'received',
                                                         ].includes(order.status)
                                                     "
