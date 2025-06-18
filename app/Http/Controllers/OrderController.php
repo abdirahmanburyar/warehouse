@@ -250,6 +250,11 @@ class OrderController extends Controller
                     'plate_number' => $request->plate_number,
                     'no_of_cartoons' => $request->no_of_cartoons,
                 ]);
+
+                $order->status = $request->status;
+                $order->dispatched_at = now();
+                $order->dispatched_by = auth()->user()->id;
+                $order->save();
                 
                 return response()->json("Dispatched Successfully", 200);
             });
@@ -551,14 +556,15 @@ class OrderController extends Controller
             // Validate request
             $validated = $request->validate([
                 'order_id' => 'required|exists:orders,id',
-                'status' => ['required', Rule::in(['approved', 'in_process', 'dispatched'])]
+                'status' => ['required', Rule::in(['reviewed','approved', 'in_process', 'dispatched'])]
             ]);
 
             $order = Order::with('items.inventory_allocations')->find($request->order_id);
 
             // Define allowed transitions
             $allowedTransitions = [
-                'pending' => ['approved'],
+                'pending' => ['reviewed'],
+                'reviewed' => ['approved'],
                 'approved' => ['in_process'],
                 'in_process' => ['dispatched'],
                 'rejected' => ['approved'] // Allow rejected orders to be approved
@@ -580,6 +586,10 @@ class OrderController extends Controller
 
             // Add timestamp based on the status
             switch ($request->status) {
+                case 'reviewed':
+                    $updates['reviewed_at'] = $now;
+                    $updates['reviewed_by'] = $userId;
+                    break;
                 case 'approved':
                     $updates['approved_at'] = $now;
                     $updates['approved_by'] = $userId;
@@ -592,7 +602,6 @@ class OrderController extends Controller
                     // issued quantity - history
                    foreach($order->items as $item){
                         foreach($item['inventory_allocations'] as $allocation){
-                            logger()->info($allocation);
                             IssuedQuantity::create([
                                 'product_id' => $allocation['product_id'],
                                 'warehouse_id' => $allocation['warehouse_id'],
@@ -610,9 +619,9 @@ class OrderController extends Controller
                     }
                     break;
                 case 'in_process':
-                    $updates['in_process'] = true;
-                    $updates['in_process_at'] = $now;
-                    $updates['in_process_by'] = $userId;
+                    $updates['status'] = 'in_process';
+                    $updates['processed_at'] = $now;
+                    $updates['processed_by'] = $userId;
                     break;
                 case 'dispatched':
                     $updates['dispatched_by'] = $userId;
@@ -1215,7 +1224,7 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $order = Order::where('orders.id', $id)
-                ->with(['items.product.category','dispatch', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user'])
+                ->with(['items.product.category','dispatch', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy'])
                 ->first();
 
             // Get items with SOH using subquery
