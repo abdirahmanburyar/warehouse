@@ -32,7 +32,7 @@
 
                     <!-- warehouse or facility selection -->
                     <div>
-                        <Multiselect v-model="transfer_type" :options="['Warehouse','Facility']" :searchable="true"
+                        <Multiselect v-model="transfer_type" :options="facilityType" :searchable="true"
                             :allow-empty="true" :show-labels="false" placeholder="All Transfer Type" class="rounded-2xl">
                         </Multiselect>
                     </div>
@@ -393,7 +393,7 @@ const props = defineProps({
 });
 
 const currentTab = ref('all');
-
+const facilityType = ['Warehouse to Warehouse', 'Facility to Facility','Facility to Warehouse','Warehouse to Facility'];
 // Status configuration
 const statusTabs = [
     { value: 'all', label: 'All Transfers', color: 'blue' },

@@ -123,27 +123,30 @@ class TransferController extends Controller
             });
         }
         
-        // Filter by facility (supports multiple selections)
-        if ($request->has('facility')){
-            $facilityIds = $request->facility;
-            $query->whereHas('fromFacility', function($q) use ($facilityIds) {
-                $q->where('name', $facilityIds);
-            })
-              ->orWhereHas('toFacility', function($q) use ($facilityIds) {
-                  $q->where('name', $facilityIds);
-              });
+        if ($request->filled('transfer_type')) {
+            switch ($request->transfer_type) {
+                case 'Warehouse to Warehouse':
+                    $query->whereNotNull('from_warehouse_id')
+                          ->whereNotNull('to_warehouse_id');
+                    break;
+        
+                case 'Facility to Facility':
+                    $query->whereNotNull('from_facility_id')
+                          ->whereNotNull('to_facility_id');
+                    break;
+        
+                case 'Facility to Warehouse':
+                    $query->whereNotNull('from_facility_id')
+                          ->whereNotNull('to_warehouse_id');
+                    break;
+        
+                case 'Warehouse to Facility':
+                    $query->whereNotNull('from_warehouse_id')
+                          ->whereNotNull('to_facility_id');
+                    break;
+            }
         }
         
-        // Filter by warehouse (supports multiple selections)
-        if ($request->has('warehouse')) {
-            $warehouseIds = $request->warehouse;
-            $query->whereHas('fromWarehouse', function($q) use ($warehouseIds) {
-                $q->where('name', $warehouseIds);
-            })
-              ->orWhereHas('toWarehouse', function($q) use ($warehouseIds) {
-                  $q->where('name', $warehouseIds);
-              });
-        }
 
         if($request->filled('date_from') && !$request->filled('date_to')){
             $query->whereDate('transfer_date', $request->date_from);
