@@ -126,21 +126,37 @@ class TransferController extends Controller
         // Filter by facility (supports multiple selections)
         if ($request->has('facility')){
             $facilityIds = $request->facility;
-            $query->where('from_facility_id', $facilityIds)
-              ->orWhere('to_facility_id', $facilityIds);
+            $query->whereHas('fromFacility', function($q) use ($facilityIds) {
+                $q->where('name', $facilityIds);
+            })
+              ->orWhereHas('toFacility', function($q) use ($facilityIds) {
+                  $q->where('name', $facilityIds);
+              });
         }
         
         // Filter by warehouse (supports multiple selections)
         if ($request->has('warehouse')) {
             $warehouseIds = $request->warehouse;
-            $query->where(function($q) use ($warehouseIds) {
-                $q->where('from_warehouse_id', $warehouseIds)
-                  ->orWhere('to_warehouse_id', $warehouseIds);
-            });
+            $query->whereHas('fromWarehouse', function($q) use ($warehouseIds) {
+                $q->where('name', $warehouseIds);
+            })
+              ->orWhereHas('toWarehouse', function($q) use ($warehouseIds) {
+                  $q->where('name', $warehouseIds);
+              });
         }
 
         if($request->filled('date_from') && !$request->filled('date_to')){
             $query->whereDate('transfer_date', $request->date_from);
+        }
+
+        if($request->filled('transfer_type') && $request->transfer_type == 'Facility'){
+            $query->whereHas('toFacility')
+            ->whereHas('fromFacility');
+        }
+
+        if($request->filled('transfer_type') && $request->transfer_type == 'Warehouse'){
+            $query->whereHas('toWarehouse')
+            ->whereHas('fromWarehouse');
         }
         
         // Filter by date range
@@ -197,8 +213,8 @@ class TransferController extends Controller
         ];
         
         // Get data for filter dropdowns
-        $facilities = Facility::select('id', 'name')->orderBy('name')->get();
-        $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
+        $facilities = Facility::pluck('name')->toArray();
+        $warehouses = Warehouse::pluck('name')->toArray();
         $locations = DB::table('locations')->select('id', 'location')->orderBy('location')->get();
 
         return inertia('Transfer/Index', [

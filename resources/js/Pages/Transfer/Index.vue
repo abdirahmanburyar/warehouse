@@ -30,24 +30,24 @@
                         </div>
                     </div>
 
+                    <!-- warehouse or facility selection -->
+                    <div>
+                        <Multiselect v-model="transfer_type" :options="['Warehouse','Facility']" :searchable="true"
+                            :allow-empty="true" :show-labels="false" placeholder="All Transfer Type" class="rounded-2xl">
+                        </Multiselect>
+                    </div>
+
                     <!-- Facility Selector -->
                     <div>
                         <Multiselect v-model="facility" :options="props.facilities" :searchable="true"
-                            :allow-empty="true" :show-labels="false" placeholder="All Facilities" label="name"
-                            track-by="id" class="rounded-2xl">
-                            <template #singleLabel="{ option }">
-                                <span class="multiselect__single">
-                                    {{ option ? option.name : 'All Facilities' }}
-                                </span>
-                            </template>
+                            :allow-empty="true" :show-labels="false" placeholder="All Facilities" class="rounded-2xl">
                         </Multiselect>
                     </div>
 
                     <!-- Warehouse Selector -->
                     <div>
                         <Multiselect v-model="warehouse" :options="props.warehouses" :close-on-select="true"
-                            :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" label="name"
-                            track-by="id" class="rounded-2xl" :preselect-first="false">
+                            :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" class="rounded-2xl" :preselect-first="false">
                         </Multiselect>
                     </div>
                     <div class="relative">
@@ -359,20 +359,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import { router, Link, usePage } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import '@/Components/multiselect.css';
 import { TailwindPagination } from 'laravel-vue-pagination';
-import { useToast } from 'vue-toastification';
-
-const toast = useToast();
-
-// In Vue 3 with script setup, components are automatically registered when imported
 
 const props = defineProps({
     transfers: {
@@ -418,11 +411,7 @@ const facility = ref(props.filters.facility);
 const warehouse = ref(props.filters.warehouse);
 const date_from = ref(props.filters.date_from);
 const date_to = ref(props.filters.date_to);
-
-onMounted(async () => {
-    warehouse.value = props.warehouses.find(w => w.id == props.filters.warehouse);
-    facility.value = props.facilities.find(w => w.id == props.filters.facility);
-});
+const transfer_type = ref(props.filters.transfer_type);
 
 watch([
     () => search.value,
@@ -432,7 +421,8 @@ watch([
     () => currentTab.value,
     () => warehouse.value,
     () => date_from.value,
-    () => date_to.value
+    () => date_to.value,
+    () => transfer_type.value,
 ], () => {
     reloadTransfer();
 })
@@ -448,10 +438,11 @@ function reloadTransfer() {
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
     if (currentTab.value) query.tab = currentTab.value;
-    if (facility.value) query.facility = facility.value?.id;
-    if (warehouse.value) query.warehouse = warehouse.value?.id;
+    if (facility.value) query.facility = facility.value;
+    if (warehouse.value) query.warehouse = warehouse.value;
     if (date_from.value) query.date_from = date_from.value;
     if (date_to.value) query.date_to = date_to.value;
+    if (transfer_type.value) query.transfer_type = transfer_type.value;
 
     router.get(route('transfers.index'), query, {
         preserveState: true,
