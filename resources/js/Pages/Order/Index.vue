@@ -270,8 +270,24 @@
                                                     src="/assets/images/pending.png"
                                                     class="w-6 h-6"
                                                     alt="pending"
+                                                    title="Pending"
                                                 />
 
+                                                <!-- Only show approved if status is approved or further -->
+                                                <img
+                                                    v-if="
+                                                        [
+                                                            'reviewed',
+                                                            'in_process',
+                                                            'dispatched',
+                                                            'received',
+                                                        ].includes(order.status)
+                                                    "
+                                                    src="/assets/images/review.png"
+                                                    class="w-6 h-6"
+                                                    alt="Reviewed"
+                                                    title="Reviewed"
+                                                />
                                                 <!-- Only show approved if status is approved or further -->
                                                 <img
                                                     v-if="
@@ -285,6 +301,7 @@
                                                     src="/assets/images/approved.png"
                                                     class="w-6 h-6"
                                                     alt="Approved"
+                                                    title="Approved"
                                                 />
                                                 <!-- Only show rejected if status is rejected -->
                                                 <img
@@ -295,6 +312,7 @@
                                                     src="/assets/images/rejected.svg"
                                                     class="w-6 h-6"
                                                     alt="Rejected"
+                                                    title="Rejected"
                                                 />
 
                                                 <!-- Only show in_process if status is in_process or further -->
@@ -309,6 +327,7 @@
                                                     src="/assets/images/inprocess.png"
                                                     class="w-6 h-6"
                                                     alt="In Process"
+                                                    title="In Process"
                                                 />
 
                                                 <!-- Only show dispatched if status is dispatched or further -->
@@ -322,17 +341,34 @@
                                                     src="/assets/images/dispatch.png"
                                                     class="w-6 h-6"
                                                     alt="Dispatched"
+                                                    title="Dispatched"
                                                 />
+
+                                                <img
+                                                    v-if="
+                                                        [
+                                                            'delivered',
+                                                            'received',
+                                                        ].includes(order.status)
+                                                    "
+                                                    src="/assets/images/delivery.png"
+                                                    class="w-6 h-6"
+                                                    alt="Dispatched"
+                                                    title="Dispatched"
+                                                />
+
 
                                                 <!-- Only show received if status is received -->
                                                 <img
                                                     v-if="
-                                                        order.status ===
-                                                        'received'
+                                                        [
+                                                            'received',
+                                                        ].includes(order.status)
                                                     "
                                                     src="/assets/images/received.png"
                                                     class="w-6 h-6"
                                                     alt="Received"
+                                                    title="Received"
                                                 />
                                             </div>
                                         </div>
