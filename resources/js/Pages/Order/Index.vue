@@ -33,41 +33,7 @@
                     </svg>
                 </div>
 
-                <!-- Facility Filter -->
-                <div class="w-full">
-                    <Multiselect
-                        v-model="selectedFacility"
-                        :options="props.facilities"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        :allow-empty="true"
-                        placeholder="Select Facility"
-                        track-by="id"
-                        label="name"
-                        @select="handleSelect"
-                        @remove="handleRemove('facility')"
-                    >
-                    </Multiselect>
-                </div>
-
-                <!-- Order Type Filter -->
-                <div class="w-full">
-                    <Multiselect
-                        v-model="selectedOrderType"
-                        :options="orderTypes"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        :allow-empty="true"
-                        placeholder="Select Order Type"
-                        track-by="id"
-                        label="name"
-                        @select="handleOrderTypeSelect"
-                        @remove="handleRemove('orderType')"
-                    >
-                    </Multiselect>
-                </div>
+               
 
                 <div class="w-full">
                     <Multiselect
@@ -85,7 +51,6 @@
 
                 <!-- District Filter -->
                 <div>
-                    <label for="district">District</label>
                     <Multiselect
                         v-model="district"
                         :options="districts"
@@ -98,33 +63,47 @@
                     >
                     </Multiselect>
                 </div>
-
-                <!-- Date From -->
-                <div class="w-full">
-                    <div class="relative">
-                        <input
-                            type="date"
-                            v-model="dateFrom"
-                            class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <label class="absolute -top-5 left-0 text-xs text-black"
-                            >From Date</label
-                        >
-                    </div>
+                 <!-- Facility Filter -->
+                 <div class="w-full">
+                    <Multiselect
+                        v-model="facility"
+                        :options="props.facilities"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        :allow-empty="true"
+                        placeholder="Select Facility"
+                    >
+                    </Multiselect>
                 </div>
 
-                <!-- Date To -->
+                <!-- Order Type Filter -->
                 <div class="w-full">
-                    <div class="relative">
-                        <input
-                            type="date"
-                            v-model="dateTo"
-                            class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <label class="absolute -top-5 left-0 text-xs text-black"
-                            >To Date</label
-                        >
-                    </div>
+                    <Multiselect
+                        v-model="orderType"
+                        :options="orderTypes"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        :allow-empty="true"
+                        placeholder="Select Order Type"
+                    >
+                    </Multiselect>
+                </div>
+
+                <!-- Date From -->
+                <div class="w-full flex items-center space-x-2">
+                    <input
+                        type="date"
+                        v-model="dateFrom"
+                        class="w-[300px] px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span class="text-sm">To</span>
+                    <input
+                        type="date"
+                        v-model="dateTo"
+                        class="w-[300px] px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
             </div>
             <div class="flex justify-end items-center">
@@ -739,10 +718,7 @@ async function handleRegionSelect(option) {
 }
 
 // Fixed order types
-const orderTypes = [
-    { id: "quarterly", name: "Quarterly" },
-    { id: "replenishment", name: "Replenishment" },
-];
+const orderTypes = ["Quarterly", "Replenishment"];
 
 // Compute total orders
 const totalOrders = computed(() => {
@@ -768,39 +744,14 @@ const statusTabs = [
 
 // Filter states
 const search = ref(props.filters.search);
-const currentStatus = ref(props.filters.currentStatus || null);
-const facility = ref(props.filters?.facility || null);
-const orderType = ref(props.filters?.orderType || null);
-const district = ref(props.filters?.district || null);
-const dateFrom = ref(props.filters?.dateFrom || null);
-const dateTo = ref(props.filters?.dateTo || null);
+const currentStatus = ref(props.filters.currentStatus);
+const facility = ref(props.filters?.facility);
+const orderType = ref(props.filters?.orderType);
+const district = ref(props.filters?.district);
+const dateFrom = ref(props.filters?.dateFrom);
+const dateTo = ref(props.filters?.dateTo);
 const per_page = ref(props.filters.per_page || 25);
 const region = ref(props.filters?.region);
-
-// Initialize selected values with objects from the props arrays
-const selectedFacility = ref(
-    props.filters?.facility
-        ? props.facilities.find(
-              (f) => f.id === parseInt(props.filters.facility)
-          ) || null
-        : null
-);
-const selectedOrderType = ref(
-    props.filters?.orderType
-        ? orderTypes.find((t) => t.id === props.filters.orderType) || null
-        : null
-);
-
-function handleSelect(selected) {
-    selectedFacility.value = selected;
-    facility.value = selected ? selected.id : null;
-}
-
-function handleOrderTypeSelect(selected) {
-    selectedOrderType.value = selected;
-    orderType.value = selected ? selected.id : null;
-    console.log("Selected order type:", selected);
-}
 
 function reloadOrder() {
     const query = {};
