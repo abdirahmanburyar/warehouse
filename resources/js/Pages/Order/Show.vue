@@ -1,6 +1,9 @@
 <template>
-    <AuthenticatedLayout title="Orders" img="/assets/images/orders.png">
-        <!-- Order Header -->
+<AuthenticatedLayout
+        title="Track Your Orders"
+        description="Keeping Essentials Ready, Every Time"
+        img="/assets/images/orders.png"
+    >        <!-- Order Header -->
         <div v-if="props.error">
             {{ props.error }}
         </div>
@@ -941,6 +944,7 @@
 
                     <!-- Dispatch button -->
                     <div class="relative">
+                        <div class="flex flex-col">
                         <button
                             @click="showDispatchForm = true"
                             :disabled="
@@ -995,6 +999,10 @@
                                 }}</span>
                             </template>
                         </button>
+                        <span v-show="props.order?.dispatched_by" class="text-sm text-gray-600">
+                            By {{ props.order?.dispatched_by?.name }}
+                        </span>
+                    </div>
                         <div
                             v-if="props.order.status === 'in_process'"
                             class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"

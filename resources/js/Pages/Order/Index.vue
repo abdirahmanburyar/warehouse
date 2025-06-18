@@ -765,6 +765,7 @@ const orderTypes = ["Quarterly", "Replenishment"];
 const totalOrders = computed(() => {
     return (
         props.stats.pending +
+        props.stats.reviewed +
         props.stats.approved +
         props.stats.in_process +
         props.stats.dispatched +
@@ -776,6 +777,7 @@ const totalOrders = computed(() => {
 const statusTabs = [
     { value: null, label: "All Orders", color: "blue" },
     { value: "pending", label: "Pending", color: "yellow" },
+    { value: "reviewed", label: "Reviewed", color: "yellow" },
     { value: "approved", label: "Approved", color: "green" },
     { value: "in_process", label: "In Process", color: "blue" },
     { value: "dispatched", label: "Dispatched", color: "purple" },
