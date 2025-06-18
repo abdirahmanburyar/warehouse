@@ -27,6 +27,7 @@ class Order extends Model
         'expected_date',
         'dispatched_by',
         'approved_by',
+        'approved_at',
         'rejected_by',
         'rejected_at',
         'delivered_by',
@@ -37,7 +38,7 @@ class Order extends Model
         'received_at',
         'reviewed_by',
         'reviewed_at',
-        'processed_at'
+        'processed_at',
     ];
     
     public function dispatch(){
