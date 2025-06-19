@@ -728,6 +728,12 @@ const groupingInventory = computed(() => {
                     </tbody>
                 </table>
             </div>
+            <TailwindPagination
+                            :data="props.inventories"
+                            @pagination-change-page="getResults"
+                            :limit="2"
+                        />
+
         </div>
 
         <!-- Excel Upload Modal -->
