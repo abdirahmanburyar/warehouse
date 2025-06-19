@@ -628,7 +628,7 @@ function getResults(page = 1) {
                                                             class="w-6 h-6"
                                                             alt="Expire soon"
                                                         />
-                                                        <Link :href="route('inventory.transfer', item.id)" class="text-xs">Transfer</Link>
+                                                        Transfer
                                                     </div>
                                                     <div
                                                         v-if="isExpired(item)"
