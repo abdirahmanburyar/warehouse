@@ -113,10 +113,10 @@ class InventoryController extends Controller
             'inventories' => InventoryResource::collection($inventories),
             'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
             'products'   => Product::select('id', 'name')->get(),
-            'warehouses' => Warehouse::when(auth()->user()->warehouse_id, fn($q) => $q->where('id', auth()->user()->warehouse_id))->pluck('name'),
+            'warehouses' => Warehouse::pluck('name')->toArray(),
             'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'per_page', 'page']),
-            'category'   => Category::pluck('name'),
-            'dosage'     => Dosage::pluck('name'),
+            'category'   => Category::pluck('name')->toArray(),
+            'dosage'     => Dosage::pluck('name')->toArray(),
         ]);
     }
 

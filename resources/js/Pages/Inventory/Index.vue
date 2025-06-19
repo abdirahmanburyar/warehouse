@@ -3,18 +3,12 @@ import {
     ref,
     watch,
     computed,
-    reactive,
     onMounted,
     onBeforeUnmount,
 } from "vue";
 import { Head, router, Link } from "@inertiajs/vue3";
-import Echo from "laravel-echo";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import TextInput from "@/Components/TextInput.vue";
-import InputLabel from "@/Components/InputLabel.vue";
-import PrimaryButton from "@/Components/PrimaryButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
-import DangerButton from "@/Components/DangerButton.vue";
 import Modal from "@/Components/Modal.vue";
 import { useToast } from "vue-toastification";
 import axios from "axios";
@@ -22,7 +16,6 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import moment from "moment";
-import Swal from "sweetalert2";
 import { TailwindPagination } from "laravel-vue-pagination";
 
 const props = defineProps({
@@ -37,59 +30,33 @@ const props = defineProps({
 
 const toast = useToast();
 
-// DEBUG: On component mount, log all props and filter values
-onMounted(() => {
-    if (props.inventories) {
-        console.log("[DEBUG] Inventories (raw):", props.inventories);
-        if (props.inventories.data) {
-            console.log(
-                "[DEBUG] Inventories Data Array:",
-                props.inventories.data
-            );
-            props.inventories.data.forEach((item, idx) => {
-                console.log(`[DEBUG] Inventory Row #${idx + 1}:`, item);
-                if ("amc" in item && "reorder_level" in item) {
-                    console.log(
-                        `  [DEBUG] AMC: ${item.amc}, Reorder Level: ${item.reorder_level}`
-                    );
-                }
-            });
-        }
-    }
-});
-
 // Search and filter states
-const search = ref(props.filters.search || "");
-const location = ref(props.filters.location || "");
-const dosage = ref(props.filters.dosage || "");
-const category = ref(props.filters.category || "");
-const warehouse = ref(props.filters.warehouse || "");
-const per_page = ref(props.filters.per_page || 6);
+const search = ref(props.filters.search);
+const location = ref(props.filters.location);
+const dosage = ref(props.filters.dosage);
+const category = ref(props.filters.category);
+const warehouse = ref(props.filters.warehouse);
+const per_page = ref(props.filters.per_page);
 const loadedLocation = ref([]);
 const isSubmitting = ref(false);
 
 // Modal states
 const showAddModal = ref(false);
 
-watch([() => warehouse.value], () => {
-    if (warehouse.value == null) {
-        location.value = null;
-        return;
-    }
-    loadLocations();
-});
 async function loadLocations() {
-    console.log("warehouse:", warehouse.value);
+    if (!warehouse.value) {
+        loadedLocation.value = [];
+        location.value = '';
+        return;
+    };
     await axios
         .post(route("invetnories.getLocations"), {
             warehouse: warehouse.value,
         })
         .then((response) => {
-            console.log(response.data);
             loadedLocation.value = response.data;
         })
         .catch((error) => {
-            console.log(error);
             toast.error(error.response.data);
         });
 }
@@ -123,19 +90,7 @@ onMounted(() => {
         ".refresh",
         (data) => {
             console.log("[PUSHER-DEBUG] Received inventory update:", data);
-
-            // Show notification about the update
-            toast.info(
-                `Inventory updated: ${data.inventory.quantity} units of product #${data.inventory.product_id} received from backorder`
-            );
-
-            // If the current warehouse matches the updated inventory's warehouse, refresh the data
-            if (
-                !warehouse.value ||
-                warehouse.value == data.inventory.warehouse_id
-            ) {
-                applyFilters();
-            }
+            applyFilters();
         }
     );
 });
@@ -146,19 +101,6 @@ onBeforeUnmount(() => {
         echoChannel.stopListening(".refresh");
     }
 });
-
-// Watch for product changes to update product_id
-watch(
-    () => form.value.product,
-    (newProduct) => {
-        if (newProduct && newProduct.id) {
-            form.value.product_id = newProduct.id;
-        } else {
-            form.value.product_id = null;
-        }
-    },
-    { deep: true }
-);
 
 // Apply filters
 const applyFilters = () => {
@@ -181,7 +123,6 @@ const applyFilters = () => {
             "inventories",
             "products",
             "warehouses",
-            "filters",
             "inventoryStatusCounts",
             "locations",
             "dosage",
@@ -314,7 +255,7 @@ const isExpiringSoon = (inventory) => {
     const expiryDate = moment(inventory.expiry_date);
     const today = moment();
     const diffDays = expiryDate.diff(today, "days");
-    return diffDays <= 30 && diffDays > 0;
+    return diffDays <= 160 && diffDays > 0;
 };
 
 // Check if product is expired
@@ -371,7 +312,7 @@ function getResults(page = 1) {
             <!-- Navigation Buttons and Heading -->
             <div class="flex justify-between items-center mb-6">
                 <!-- Page Heading -->
-                <h1 class="text-2xl font-bold text-gray-800">
+                <h1 class="text-sm font-bold text-gray-800">
                     Warehouse Inventory
                 </h1>
                 <div class="flex space-x-4">
@@ -457,20 +398,14 @@ function getResults(page = 1) {
                 class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"
             >
                 <div class="col-span-1 md:col-span-2 min-w-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Search</label
-                    >
-                    <TextInput
+                    <input
                         v-model="search"
                         type="text"
                         class="w-full"
-                        placeholder="Search by item name, barcode"
+                        placeholder="Search by item name, barcode, batch number, uom"
                     />
                 </div>
                 <div class="col-span-1 min-w-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Category</label
-                    >
                     <Multiselect
                         v-model="category"
                         :options="props.category"
@@ -484,9 +419,6 @@ function getResults(page = 1) {
                     </Multiselect>
                 </div>
                 <div class="col-span-1 min-w-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Dosage Form</label
-                    >
                     <Multiselect
                         v-model="dosage"
                         :options="props.dosage"
@@ -500,9 +432,6 @@ function getResults(page = 1) {
                     </Multiselect>
                 </div>
                 <div class="col-span-1 min-w-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Warehouse</label
-                    >
                     <Multiselect
                         v-model="warehouse"
                         :options="props.warehouses"
@@ -510,15 +439,13 @@ function getResults(page = 1) {
                         :close-on-select="true"
                         :show-labels="false"
                         placeholder="Select a warehouse"
+                        @select="loadLocations"
                         :allow-empty="true"
                         class="multiselect--with-icon multiselect--rounded w-full"
                     >
                     </Multiselect>
                 </div>
                 <div class="col-span-1 min-w-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Storage Location</label
-                    >
                     <Multiselect
                         v-model="location"
                         :options="loadedLocation"
@@ -527,7 +454,7 @@ function getResults(page = 1) {
                         :show-labels="false"
                         placeholder="Select a S. Location"
                         :allow-empty="true"
-                        :disabled="warehouse == null"
+                        :disabled="!warehouse"
                         class="multiselect--with-icon multiselect--rounded w-full"
                     >
                     </Multiselect>
@@ -539,18 +466,16 @@ function getResults(page = 1) {
                     class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3"
                     @change="props.filters.page = 1"
                 >
-                    <option :value="6">6 per page</option>
-                    <option :value="25">25 per page</option>
-                    <option :value="50">50 per page</option>
-                    <option :value="100">100 per page</option>
-                    <option :value="200">200 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                    <option value="200">200 per page</option>
                 </select>
             </div>
 
             <!-- Add Button -->
-
-            <div class="lg:grid lg:grid-cols-7">
-                <div class="lg:col-span-6 overflow-auto w-full">
+            <div class="lg:grid lg:grid-cols-8 lg:gap-2">
+                <div class="lg:col-span-7 overflow-auto w-full">
                     <!-- Inventory Table -->
                     <table
                         class="w-full border border-gray-300 text-sm text-left"
@@ -584,39 +509,39 @@ function getResults(page = 1) {
                                 </td>
 
                                 <!-- Nested Table for Item Details -->
-                                <td class="px-0 py-2">
+                                <td>
                                     <table
                                         class="w-full text-xs border border-gray-300"
                                     >
                                         <thead class="bg-gray-50">
                                             <tr class="text-gray-600">
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     UoM
                                                 </th>
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     QTY
                                                 </th>
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     Batch
                                                 </th>
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     Expiry
                                                 </th>
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     Location
                                                 </th>
                                                 <th
-                                                    class="border-b border-gray-300 px-2 py-1"
+                                                    class="border border-gray-300"
                                                 >
                                                     Status
                                                 </th>
@@ -628,34 +553,49 @@ function getResults(page = 1) {
                                                 :key="item.id"
                                                 class="bg-white even:bg-gray-50"
                                             >
-                                                <td
-                                                    class="border-t border-gray-200 px-2 py-1"
+                                            <td
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
                                                 >
                                                     {{ item.uom }}
                                                 </td>
                                                 <td
-                                                    class="border-t border-gray-200 px-2 py-1"
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
                                                 >
                                                     {{ item.quantity }}
                                                 </td>
                                                 <td
-                                                    class="border-t border-gray-200 px-2 py-1"
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
                                                 >
                                                     {{ item.batch_number }}
                                                 </td>
                                                 <td
-                                                    class="border-t border-gray-200 px-2 py-1"
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
                                                 >
-                                                    {{ item.expiry_date }}
+                                                    {{ formatDate(item.expiry_date) }}
                                                 </td>
                                                 <td
-                                                    class="border-t border-gray-200 px-2 py-1"
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
                                                 >
                                                     <div
-                                                        class="flex flex-col space-y-0.5"
+                                                        class="text-xs flex flex-col space-y-0.5"
                                                     >
                                                         <span
-                                                            class="text-gray-700"
+                                                            class="text-xs"
                                                             >WH:
                                                             {{
                                                                 item.warehouse
@@ -663,7 +603,7 @@ function getResults(page = 1) {
                                                             }}</span
                                                         >
                                                         <span
-                                                            class="text-gray-600 text-xs"
+                                                            class="text-xs"
                                                             >LC:
                                                             {{
                                                                 item.location
@@ -672,17 +612,15 @@ function getResults(page = 1) {
                                                         >
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td
+                                                    :class="[
+                                                        'border border-gray-300 px-2',
+                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
+                                                    ]"
+                                                >
                                                     <div
-                                                        v-if="
-                                                            !isOutOfStock(
-                                                                inventory
-                                                            ) &&
-                                                            isExpiringSoon(
-                                                                inventory
-                                                            )
-                                                        "
-                                                        class="flex items-center"
+                                                        v-if="isExpiringSoon(item)"
+                                                        class="flex flex-col items-center"
                                                     >
                                                         <img
                                                             src="/assets/images/soon_expire.png"
@@ -690,12 +628,11 @@ function getResults(page = 1) {
                                                             class="w-6 h-6"
                                                             alt="Expire soon"
                                                         />
+                                                        <Link :href="route('inventory.transfer', item.id)" class="text-xs">Transfer</Link>
                                                     </div>
                                                     <div
-                                                        v-if="
-                                                            isExpired(inventory)
-                                                        "
-                                                        class="flex items-center"
+                                                        v-if="isExpired(item)"
+                                                        class="flex flex-col items-center"
                                                     >
                                                         <img
                                                             src="/assets/images/expired_stock.png"
@@ -761,21 +698,57 @@ function getResults(page = 1) {
                                         </div>
                                     </div>
                                 </td>
-
-                                <td class="px-3 py-2">
-                                    <!-- Action buttons -->
-                                    <button
-                                        class="text-blue-600 hover:underline text-xs"
-                                        @click="viewInventory(inventory)"
-                                    >
-                                        View
-                                    </button>
+                                <td
+                                    class="px-3 py-4 whitespace-nowrap text-sm font-medium"
+                                >
+                                    <div class="flex items-center space-x-3">
+                                        <button
+                                            @click="editInventory(inventory)"
+                                            class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <Link
+                                            :href="route('supplies.purchase_order')"
+                                            v-if="inventory.quantity > inventory.reorder_level"
+                                            class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                />
+                                            </svg>
+                                        </Link
+                                            :href="route('inventory.edit', inventory.id)">
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div class="mt-2">
+                    <div class="mt-2 flex justify-end">
                         <TailwindPagination
                             :data="props.inventories"
                             @pagination-change-page="getResults"
@@ -783,15 +756,15 @@ function getResults(page = 1) {
                         />
                     </div>
                 </div>
-                <div class="lg:col-span-1 mt-2">
-                    <div class="sticky top-0 z-10 shadow-sm p-2">
+                <div class="lg:col-span-1">
+                    <div class="sticky top-0 z-10 shadow-sm">
                         <div class="space-y-4">
                             <div
-                                class="flex items-center p-3 rounded-lg bg-green-50"
+                                class="flex items-center rounded-lg bg-green-50"
                             >
                                 <img
                                     src="/assets/images/in_stock.png"
-                                    class="w-[60px] h-[60px]"
+                                    class="w-[40px] h-[40px]"
                                     alt="In Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -805,11 +778,11 @@ function getResults(page = 1) {
                                 </div>
                             </div>
                             <div
-                                class="flex items-center p-3 rounded-lg bg-orange-50"
+                                class="flex items-center rounded-lg bg-orange-50"
                             >
                                 <img
                                     src="/assets/images/low_stock.png"
-                                    class="w-[60px] h-[60px]"
+                                    class="w-[40px] h-[40px]"
                                     alt="Low Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -823,11 +796,11 @@ function getResults(page = 1) {
                                 </div>
                             </div>
                             <div
-                                class="flex items-center p-3 rounded-lg bg-red-50"
+                                class="flex items-center rounded-lg bg-red-50"
                             >
                                 <img
                                     src="/assets/images/out_stock.png"
-                                    class="w-[60px] h-[60px]"
+                                    class="w-[40px] h-[40px]"
                                     alt="Out of Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -841,11 +814,11 @@ function getResults(page = 1) {
                                 </div>
                             </div>
                             <div
-                                class="flex items-center p-3 rounded-lg bg-gray-50"
+                                class="flex items-center rounded-lg bg-gray-50"
                             >
                                 <img
                                     src="/assets/images/expired_stock.png"
-                                    class="w-[60px] h-[60px]"
+                                    class="w-[40px] h-[40px]"
                                     alt="Expired"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -940,70 +913,5 @@ function getResults(page = 1) {
             </div>
         </Modal>
 
-        <!-- Add Inventory Modal -->
-        <Modal :show="showAddModal" @close="showAddModal = false">
-            <div class="p-6">
-                <form @submit.prevent="submitForm">
-                    <h2 class="text-lg font-medium text-gray-900">
-                        {{ showEditModal ? "Edit" : "Add" }} Inventory Item
-                    </h2>
-                    <div class="mt-6 space-y-4">
-                        <div class="w-full">
-                            <InputLabel for="location" value="Location" />
-                            <TextInput
-                                id="location"
-                                v-model="form.location"
-                                type="text"
-                                placeholder="Enter location"
-                                class="mt-1 block w-full"
-                            />
-                        </div>
-
-                        <div>
-                            <InputLabel for="notes" value="Notes" />
-                            <textarea
-                                id="notes"
-                                v-model="form.notes"
-                                placeholder="Enter notes"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                rows="3"
-                            ></textarea>
-                        </div>
-
-                        <div class="flex items-center">
-                            <input
-                                id="is_active"
-                                v-model="form.is_active"
-                                type="checkbox"
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            />
-                            <label
-                                for="is_active"
-                                class="ml-2 block text-sm text-gray-900"
-                                >Active</label
-                            >
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex justify-end">
-                        <SecondaryButton
-                            @click="showAddModal = false"
-                            :disabled="isSubmitting"
-                            class="mr-2"
-                            >Cancel
-                        </SecondaryButton>
-                        <PrimaryButton type="submit" :disabled="isSubmitting">{{
-                            showEditModal
-                                ? isSubmitting
-                                    ? "Processing..."
-                                    : "Update"
-                                : isSubmitting
-                                ? "Processing..."
-                                : "Create"
-                        }}</PrimaryButton>
-                    </div>
-                </form>
-            </div>
-        </Modal>
     </AuthenticatedLayout>
 </template>
