@@ -27,100 +27,98 @@ use App\Models\Warehouse;
 class InventoryController extends Controller
 {
     public function index(Request $request)
-{
-    $lastFourMonths = IssueQuantityReport::select('month_year')
-        ->distinct()
-        ->orderByDesc('month_year')
-        ->limit(4)
-        ->pluck('month_year');
+    {
+        $lastThreeMonths = IssueQuantityReport::select('month_year')
+            ->distinct()
+            ->orderByDesc('month_year')
+            ->limit(3)
+            ->pluck('month_year')
+            ->toArray();        
 
-    $amcSubquery = IssueQuantityItem::join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
-        ->whereIn('issue_quantity_reports.month_year', $lastFourMonths)
-        ->select('issue_quantity_items.product_id', DB::raw('COALESCE(SUM(issue_quantity_items.quantity) / 4, 0) as amc'))
-        ->groupBy('issue_quantity_items.product_id');
+        $amcSubquery = IssueQuantityItem::join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
+            ->whereIn('issue_quantity_reports.month_year', $lastThreeMonths)
+            ->select('issue_quantity_items.product_id', DB::raw('COALESCE(SUM(issue_quantity_items.quantity) / 3, 0) as amc'))
+            ->groupBy('issue_quantity_items.product_id');
 
-    $query = Inventory::query()
-        ->with([
-            'items.warehouse:id,name',
-            'items.location:id,location',
-            'product:id,name,category_id,dosage_id',
-            'product.category:id,name',
-            'product.dosage:id,name',
-            'product.category:id,name'
-        ])
-        ->leftJoinSub($amcSubquery, 'amc_data', function ($join) {
-            $join->on('inventories.product_id', '=', 'amc_data.product_id');
-        })
-        ->addSelect('inventories.*')
-        ->addSelect(DB::raw('COALESCE(amc_data.amc, 0) as amc'))
-        ->addSelect(DB::raw('ROUND(COALESCE(amc_data.amc, 0) * 6) as reorder_level'));
+        $query = Inventory::query()
+            ->with([
+                'items.warehouse:id,name',
+                'items.location:id,location',
+                'product:id,name,category_id,dosage_id',
+                'product.category:id,name',
+                'product.dosage:id,name'
+            ])
+            ->leftJoinSub($amcSubquery, 'amc_data', function ($join) {
+                $join->on('inventories.product_id', '=', 'amc_data.product_id');
+            })
+            ->addSelect('inventories.*')
+            ->addSelect(DB::raw('COALESCE(amc_data.amc, 0) as amc'))
+            ->addSelect(DB::raw('ROUND(COALESCE(amc_data.amc, 0) * 6) as reorder_level'));
 
-    if ($search = $request->search) {
-        $query->whereHas('product', fn($q) => $q->where('name', 'like', "%{$search}%"));
-    }
+        if ($search = $request->search) {
+            $query->whereHas('product', fn($q) => $q->where('name', 'like', "%{$search}%"));
+        }
 
-    if ($request->filled('product_id')) {
-        $query->where('product_id', $request->product_id);
-    }
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
 
-    if ($request->filled('category')) {
-        $query->whereHas('product.category', fn($q) => $q->where('name', $request->category));
-    }
+        if ($request->filled('category')) {
+            $query->whereHas('product.category', fn($q) => $q->where('name', $request->category));
+        }
 
-    if ($request->filled('dosage')) {
-        $query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
-    }
+        if ($request->filled('dosage')) {
+            $query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
+        }
 
-    $inventories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
-    ->withQueryString();
-    $inventories->setPath(url()->current()); // Force Laravel to use full URLs
+        $inventories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+        ->withQueryString();
+        $inventories->setPath(url()->current()); // Force Laravel to use full URLs
 
-    $statusCounts = [
-        'in_stock' => 0,
-        'low_stock' => 0,
-        'out_of_stock' => 0,
-        'soon_expiring' => 0,
-        'expired' => 0,
-    ];
+        $statusCounts = [
+            'in_stock' => 0,
+            'low_stock' => 0,
+            'out_of_stock' => 0,
+            'soon_expiring' => 0,
+            'expired' => 0,
+        ];
 
-    $now = now();
-    foreach ($inventories as $inventory) {
-        $amc = $inventory->amc ?: 0;
-        $reorderLevel = $inventory->reorder_level ?: ($amc * 6);
+        $now = now();
+        foreach ($inventories as $inventory) {
+            $amc = $inventory->amc ?: 0;
+            $reorderLevel = $inventory->reorder_level ?: ($amc * 6);
 
-        foreach ($inventory->items ?? [] as $item) {
-            $qty = $item->quantity;
+            foreach ($inventory->items ?? [] as $item) {
+                $qty = $item->quantity;
 
-            if ($qty == 0) {
-                $statusCounts['out_of_stock']++;
-            } elseif ($qty <= $reorderLevel) {
-                $statusCounts['low_stock']++;
-            } else {
-                $statusCounts['in_stock']++;
-            }
+                if ($qty == 0) {
+                    $statusCounts['out_of_stock']++;
+                } elseif ($qty <= $reorderLevel) {
+                    $statusCounts['low_stock']++;
+                } else {
+                    $statusCounts['in_stock']++;
+                }
 
-            if ($item->expiry_date) {
-                if ($item->expiry_date < $now) {
-                    $statusCounts['expired']++;
-                } elseif ($item->expiry_date <= $now->copy()->addDays(160)) {
-                    $statusCounts['soon_expiring']++;
+                if ($item->expiry_date) {
+                    if ($item->expiry_date < $now) {
+                        $statusCounts['expired']++;
+                    } elseif ($item->expiry_date <= $now->copy()->addDays(160)) {
+                        $statusCounts['soon_expiring']++;
+                    }
                 }
             }
         }
+
+        return Inertia::render('Inventory/Index', [
+            'inventories' => InventoryResource::collection($inventories),
+            'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
+            'products'   => Product::select('id', 'name')->get(),
+            'warehouses' => Warehouse::when(auth()->user()->warehouse_id, fn($q) => $q->where('id', auth()->user()->warehouse_id))->pluck('name'),
+            'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'per_page', 'page']),
+            'category'   => Category::pluck('name'),
+            'dosage'     => Dosage::pluck('name'),
+        ]);
     }
-
-    return Inertia::render('Inventory/Index', [
-        'inventories' => InventoryResource::collection($inventories),
-        'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
-        'products'   => Product::select('id', 'name')->get(),
-        'warehouses' => Warehouse::when(auth()->user()->warehouse_id, fn($q) => $q->where('id', auth()->user()->warehouse_id))->pluck('name'),
-        'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'per_page', 'page']),
-        'category'   => Category::pluck('name'),
-        'dosage'     => Dosage::pluck('name'),
-    ]);
-}
-
-       
 
     /**
      * Store a newly created resource in storage.
