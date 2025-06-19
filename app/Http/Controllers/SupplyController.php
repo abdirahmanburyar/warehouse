@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BackOrderHistory;
 use App\Models\Disposal;
 use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Models\IssuedQuantity;
 use App\Models\Location;
 use App\Models\PackingList;
@@ -1666,156 +1667,120 @@ class SupplyController extends Controller
         }
     }
 
+    // approve packing list and release to the inventory
     public function approvePK(Request $request)
     {
-        
+        $request->validate([
+            'id' => 'required|exists:packing_lists,id',
+            'status' => 'required|in:approved',
+            'items' => 'required|array',
+        ]);
+
+        DB::beginTransaction();
+
         try {
-            $request->validate([
-                'id' => 'required|exists:packing_lists,id',
-                'status' => 'required|in:approved',
-                'items' => 'array'
-            ]);
-            DB::beginTransaction();
+            $packingList = PackingList::with('items.purchaseOrderItem')->findOrFail($request->id);
 
-            $packingList = PackingList::with('items')->find($request->id);
+            foreach ($request->items as $itemData) {
+                $pli = PackingListItem::findOrFail($itemData['id']);
+                $recvQty = (int)$itemData['quantity'];
+                if ($recvQty <= 0) continue;
 
-            foreach ($request->items as $item) {
-                // Get the full packing list item data
-                $packingListItem = DB::table('packing_list_items')
-                    ->where('id', $item['id'])
-                    ->first();
+                // 1️⃣ Upsert Inventory
+                $inventory = Inventory::firstOrCreate(
+                    [
+                        'product_id' => $pli->product_id,
+                    ],
+                    [
+                        'quantity' => 0,
+                    ]
+                );
+                $inventory->increment('quantity', $recvQty);
 
-                if ($packingListItem) {
-                    // Check if inventory exists for this product in this warehouse
-                    $inventory = DB::table('inventories')
-                        ->where('product_id', $packingListItem->product_id)
-                        ->where('warehouse_id', $packingListItem->warehouse_id)
-                        ->where('batch_number', $packingListItem->batch_number)
-                        ->first();
+                // 2️⃣ Create or update InventoryItem batch record
+                $inventoryItem = InventoryItem::firstOrNew([
+                    'inventory_id'   => $inventory->id,
+                    'batch_number'   => $pli->batch_number,
+                    'warehouse_id'   => $pli->warehouse_id,
+                ]);
 
-                    $receivedQuantity = (int) $item['quantity'];
-                    if ($receivedQuantity > 0) {
-                        if ($inventory) {
-                            // Update existing inventory
-                            DB::table('inventories')
-                                ->where('id', $inventory->id)
-                                ->update([
-                                    'quantity' => DB::raw('quantity + ' . $receivedQuantity),
-                                    'batch_number' => $packingListItem->batch_number,
-                                    'expiry_date' => $packingListItem->expire_date,
-                                    'barcode' => $packingListItem->barcode,
-                                    'unit_cost' => $packingListItem->unit_cost,
-                                    'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
-                                    'updated_at' => now()
-                                ]);
-                                ReceivedQuantity::create([
-                                    'quantity' => $receivedQuantity,
-                                    'received_by' => auth()->id(),
-                                    'received_at' => now(),
-                                    'product_id' => $inventory->product_id,
-                                    'packing_list_id' => $packingListItem->packing_list_id,
-                                    'expiry_date' => $packingListItem->expire_date,
-                                    'uom' => $inventory->uom,
-                                    'warehouse_id' => $inventory->warehouse_id,
-                                    'barcode' => $inventory->barcode,
-                                    'batch_number' => $inventory->batch_number,
-                                    'unit_cost' => $inventory->unit_cost,
-                                    'total_cost' => $inventory->unit_cost * $receivedQuantity
-                                ]);
-                        } else {
-                            // Create new inventory record
-                            DB::table('inventories')->insert([
-                                'product_id' => $packingListItem->product_id,
-                                'warehouse_id' => $packingListItem->warehouse_id,
-                                'quantity' => $receivedQuantity,
-                                'batch_number' => $packingListItem->batch_number,
-                                'barcode' => $packingListItem->barcode,
-                                'uom' => $packingListItem->uom,
-                                'expiry_date' => $packingListItem->expire_date,
-                                'unit_cost' => $packingListItem->unit_cost,
-                                'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
-                                'location_id' => $packingListItem->location_id,
-                                'is_active' => true,
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ]);
-                            ReceivedQuantity::create([
-                                'quantity' => $receivedQuantity,
-                                'received_by' => auth()->id(),
-                                'received_at' => now(),
-                                'product_id' => $packingListItem->product_id,
-                                'packing_list_id' => $packingListItem->packing_list_id,
-                                'expiry_date' => $packingListItem->expire_date,
-                                'uom' => $packingListItem->uom,
-                                'warehouse_id' => $packingListItem->warehouse_id,
-                                'barcode' => $packingListItem->barcode,
-                                'batch_number' => $packingListItem->batch_number,
-                                'unit_cost' => $packingListItem->unit_cost,
-                                'total_cost' => $packingListItem->unit_cost * $receivedQuantity
-                            ]);
-                        }
-                    }
+                // fill or update fields
+                $inventoryItem->fill([
+                    'product_id'    => $pli->product_id,
+                    'quantity'      => ($inventoryItem->exists ? $inventoryItem->quantity : 0) + $recvQty,
+                    'expiry_date'   => $pli->expire_date,
+                    'barcode'       => $pli->barcode,
+                    'location_id'   => $pli->location_id,
+                    'uom'           => $pli->uom,
+                    'unit_cost'     => $pli->unit_cost,
+                    'total_cost'    => $pli->unit_cost * $inventoryItem->quantity,
+                ]);
+                $inventoryItem->save();
 
-                // Only create a difference record if there's actually a difference in quantity
-                $difference = (int) $packingListItem->quantity - (int) $item['purchase_order_item']['quantity'];
-                if ($difference > 0) {
-                    // Check if a difference record already exists
-                    $existingDiff = DB::table('packing_list_differences')
-                        ->where('packing_listitem_id', $item['id'])
-                        ->where('status', 'Missing')
-                        ->first();
-                    
-                    if (!$existingDiff) {
-                        DB::table('packing_list_differences')->insert([
-                            'product_id' => $packingListItem->product_id,
-                            'packing_listitem_id' => $item['id'],
-                            'quantity' => $difference,
-                            'status' => 'Missing',
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]);
-                    }
+                // 3️⃣ Track received quantities
+                ReceivedQuantity::create([
+                    'quantity'         => $recvQty,
+                    'received_by'      => auth()->id(),
+                    'received_at'      => now(),
+                    'product_id'       => $pli->product_id,
+                    'packing_list_id'  => $pli->packing_list_id,
+                    'expiry_date'      => $pli->expire_date,
+                    'uom'              => $pli->uom,
+                    'warehouse_id'     => $pli->warehouse_id,
+                    'barcode'          => $pli->barcode,
+                    'batch_number'     => $pli->batch_number,
+                    'unit_cost'        => $pli->unit_cost,
+                    'total_cost'       => $pli->unit_cost * $recvQty,
+                ]);
+
+                // 4️⃣ Check for quantity differences
+                $poQty = $pli->purchaseOrderItem->quantity ?? 0;
+                $diff = $pli->quantity - $poQty;
+                if ($diff > 0) {
+                    PackingListDifference::firstOrCreate(
+                        [
+                            'packing_listitem_id' => $pli->id,
+                            'status'              => 'Missing'
+                        ],
+                        [
+                            'product_id' => $pli->product_id,
+                            'quantity'   => $diff,
+                        ]
+                    );
                 }
             }
-        }
 
+            // 5️⃣ Update packing list status
             $packingList->update([
-                'status' => $request->status,
-                'approved_by' => auth()->user()->id,
-                'approved_at' => now()
+                'status'         => $request->status,
+                'approved_by'    => auth()->id(),
+                'approved_at'    => now(),
             ]);
 
-            // Check if PO should be marked as completed
-            $purchaseOrder = PurchaseOrder::with(['items', 'packingLists' => function($query) {
-                $query->where('status', 'approved');
-            }])->find($request->id);        
-            if ($purchaseOrder) {
-                // Get total quantities from PO items
-                $poQuantities = $purchaseOrder->items->groupBy('product_id')
-                    ->map(fn($items) => $items->sum('quantity'));
-                
-                // Get total quantities from approved packing lists only
-                $plQuantities = $purchaseOrder->packingLists->groupBy('product_id')
-                    ->map(fn($items) => $items->sum('quantity'));
-                
-                // Check if quantities match for all products
-                $allReceived = $poQuantities->every(function($quantity, $productId) use ($plQuantities) {
-                    return $plQuantities->get($productId, 0) >= $quantity;
-                });
+            // 6️⃣ Optionally close PO if fully received
+            $po = PurchaseOrder::with('items', 'packingLists')
+                ->find($packingList->purchase_order_id);
 
-                // Update PO status if all items received
-                if ($allReceived) {
-                    $purchaseOrder->update(['status' => 'completed']);
+            if ($po) {
+                $poQtys = $po->items->groupBy('product_id')
+                    ->map(fn($it) => $it->sum('quantity'));
+                $plQtys = $po->packingLists->where('status', 'approved')
+                    ->flatMap->items
+                    ->groupBy('product_id')
+                    ->map(fn($it) => $it->sum('quantity'));
+
+                if ($poQtys->every(fn($qty, $pid) => $plQtys->get($pid, 0) >= $qty)) {
+                    $po->update(['status' => 'completed']);
                 }
             }
-        
 
             DB::commit();
-            return response()->json('Packing list items have been approved and inventory has been updated');
-        }catch (\Throwable $th) {
+
+            return response()->json(['message' => 'Packing list approved and inventory updated'], 200);
+        } catch (\Throwable $e) {
             DB::rollBack();
-            logger()->error('Error approving packing list: ' . $th->getMessage());
-            return response()->json($th->getMessage(), 500);
+            Log::error('approvePK error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

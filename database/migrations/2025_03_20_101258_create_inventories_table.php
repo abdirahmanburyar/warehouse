@@ -14,17 +14,7 @@ return new class extends Migration
         Schema::create('inventories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('warehouse_id')->constrained()->onDelete('cascade');
-            $table->integer('quantity')->default(0);
-            $table->date('manufacturing_date')->nullable();
-            $table->date('expiry_date')->nullable();
-            $table->string('batch_number')->nullable();
-            $table->string('generic_name')->nullable();
-            $table->double('unit_cost')->nullable();
-            $table->double('total_cost')->nullable();
-            $table->string('location')->nullable();
-            $table->text('notes')->nullable();
-            $table->string('uom')->nullable();
+            $table->integer('quantity')->default(0);           
             $table->timestamps();
         });
     }
@@ -34,6 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        
         Schema::dropIfExists('inventories');
     }
 };
