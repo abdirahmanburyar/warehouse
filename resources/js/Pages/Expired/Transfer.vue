@@ -123,6 +123,21 @@ const handleSubmit = async () => {
         img="/assets/images/transfer.png"
     >
         <form @submit.prevent="handleSubmit">
+            <div class="flex flex-col items-start w-full">
+                <div class="flex flex-col">
+                    Transfer ID: {{ props.transferID }}
+                </div>
+                <div class="flex flex-col">
+                    <label class="inline-flex items-center">
+                        Transfer Date
+                    </label>
+                    <input
+                        type="date"
+                        v-model="transfer_date"
+                        class="form-input"
+                    />
+                </div>
+            </div>
             <div class="p-1 text-gray-900 mb-6">
                 <div class="flex flex-col space-y-6">
                     <div class="flex items-start flex-col w-full gap-5 mb-6">
@@ -157,22 +172,6 @@ const handleSubmit = async () => {
                                     label="name"
                                     track-by="id"
                                 />
-                            </div>
-                            <div class="flex items-center w-full gap-2">
-                               
-                                <div class="flex flex-col">
-                                    Transfer ID: {{props.transferID}}
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="inline-flex items-center">
-                                        Transfer Date
-                                    </label>
-                                    <input
-                                        type="date"
-                                        v-model="transfer_date"
-                                        class="form-input"
-                                    />
-                                </div>
                             </div>
                         </div>
                     </div>
