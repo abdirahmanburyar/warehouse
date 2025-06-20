@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Inventory;
 use App\Models\District;
+use App\Models\InventoryItem;
 // App Events and Resources
 use App\Events\OrderEvent;
 use App\Models\IssuedQuantity;
