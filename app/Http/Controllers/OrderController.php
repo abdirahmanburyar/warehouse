@@ -367,7 +367,7 @@ class OrderController extends Controller
                 foreach ($allocations as $allocation) {
                     if ($remainingToRemove <= 0) break;
     
-                    $inventory = Inventory::where('product_id', $allocation->product_id)
+                    $inventory = InventoryItem::where('product_id', $allocation->product_id)
                         ->where('warehouse_id', $allocation->warehouse_id)
                         ->where('batch_number', $allocation->batch_number)
                         ->where('expiry_date', $allocation->expiry_date)
@@ -390,7 +390,7 @@ class OrderController extends Controller
                         }
                     } else {
                         if ($allocation->allocated_quantity <= $remainingToRemove) {
-                            Inventory::create([
+                            InventoryItem::create([
                                 'product_id' => $allocation->product_id,
                                 'warehouse_id' => $allocation->warehouse_id,
                                 'location_id' => $allocation->location_id,
@@ -404,7 +404,7 @@ class OrderController extends Controller
                             $remainingToRemove -= $allocation->allocated_quantity;
                             $allocation->delete();
                         } else {
-                            Inventory::create([
+                            InventoryItem::create([
                                 'product_id' => $allocation->product_id,
                                 'warehouse_id' => $allocation->warehouse_id,
                                 'location_id' => $allocation->location_id,
@@ -433,7 +433,7 @@ class OrderController extends Controller
             if ($newQuantityToRelease > $oldQuantityToRelease) {
                 $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
     
-                $inventoryItems = Inventory::where('product_id', $orderItem->product_id)
+                $inventoryItems = InventoryItem::where('product_id', $orderItem->product_id)
                     ->where('quantity', '>', 0)
                     ->orderBy('expiry_date', 'asc')
                     ->get();
@@ -489,7 +489,7 @@ class OrderController extends Controller
                         $lastAllocation->allocated_quantity += $difference;
                         $lastAllocation->save();
     
-                        $inventory = Inventory::where('product_id', $lastAllocation->product_id)
+                        $inventory = InventoryItem::where('product_id', $lastAllocation->product_id)
                             ->where('warehouse_id', $lastAllocation->warehouse_id)
                             ->where('batch_number', $lastAllocation->batch_number)
                             ->where('expiry_date', $lastAllocation->expiry_date)
