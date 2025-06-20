@@ -337,7 +337,7 @@ const location = ref(props.filters.location || "");
 const dosage = ref(props.filters.dosage || "");
 const category = ref(props.filters.category || "");
 const warehouse = ref(props.filters.warehouse || "");
-const per_page = ref(props.filters.per_page || 6);
+const per_page = ref(props.filters.per_page || 25);
 
 const loadedLocation = ref([]);
 
