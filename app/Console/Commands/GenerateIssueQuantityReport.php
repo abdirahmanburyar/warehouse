@@ -104,26 +104,30 @@ class GenerateIssueQuantityReport extends Command
             $totalQuantity = 0;
 
             foreach ($issuedQuantities as $issuedQuantity) {
-                $item = new IssueQuantityItem();
-                $item->parent_id = $report->id;
-                $item->product_id = $issuedQuantity->product_id;
-                $item->warehouse_id = $issuedQuantity->warehouse_id;
-                $item->quantity = $issuedQuantity->quantity;
-                $item->unit_cost = $issuedQuantity->unit_cost;
-                $item->total_cost = $issuedQuantity->total_cost;
-                $item->issued_date = $issuedQuantity->issued_date;
-                $item->batch_number = $issuedQuantity->batch_number;
-                $item->expiry_date = $issuedQuantity->expiry_date;
-                $item->barcode = $issuedQuantity->barcode;
-                $item->uom = $issuedQuantity->uom;
-                $item->issued_by = $issuedQuantity->issued_by;
-                $item->save();
-                
+                // Try to find existing item with the same parent_id and product_id
+                $item = IssueQuantityItem::where('parent_id', $report->id)
+                    ->where('product_id', $issuedQuantity->product_id)
+                    ->first();
+            
+                if ($item) {
+                    // If found, update quantity
+                    $item->quantity += $issuedQuantity->quantity;
+                    $item->save();
+                } else {
+                    // Otherwise, create a new row
+                    IssueQuantityItem::create([
+                        'parent_id' => $report->id,
+                        'product_id' => $issuedQuantity->product_id,
+                        'quantity' => $issuedQuantity->quantity,
+                    ]);
+                }
+            
                 // Add to total quantity
                 $totalQuantity += $issuedQuantity->quantity;
-
+            
                 $bar->advance();
             }
+            
 
             $bar->finish();
             $this->newLine(2);

@@ -328,41 +328,6 @@
                                 >
                                     Quantity
                                 </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    UOM
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Batch #
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Unit Cost
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Total Cost
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Warehouse
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Issued By
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Issued Date
-                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -395,41 +360,6 @@
                                     class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
                                 >
                                     {{ item.quantity.toLocaleString() }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.uom || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.batch_number || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.unit_cost.toLocaleString() }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.total_cost.toLocaleString() }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.warehouse?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.issuer?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ formatDate(item.issued_date) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -780,13 +710,6 @@ function exportReportItems(reportId) {
             'Category', 
             'Dosage Form', 
             'Quantity', 
-            'UOM', 
-            'Batch #', 
-            'Unit Cost', 
-            'Total Cost', 
-            'Warehouse', 
-            'Issued By', 
-            'Issued Date'
         ]);
         
         // Add data rows - match the table data structure
@@ -797,14 +720,7 @@ function exportReportItems(reportId) {
                     item.product?.name || 'N/A',
                     item.product?.category?.name || 'N/A',
                     item.product?.dosage?.name || 'N/A',
-                    item.quantity,
-                    item.uom || 'N/A',
-                    item.batch_number || 'N/A',
-                    item.unit_cost,
-                    item.total_cost,
-                    item.warehouse?.name || 'N/A',
-                    item.issuer?.name || 'N/A',
-                    formatDate(item.issued_date)
+                    item.quantity
                 ]);
             });
         }
@@ -819,13 +735,6 @@ function exportReportItems(reportId) {
             { wch: 20 }, // Category
             { wch: 20 }, // Dosage Form
             { wch: 10 }, // Quantity
-            { wch: 10 }, // UOM
-            { wch: 15 }, // Batch #
-            { wch: 15 }, // Unit Cost
-            { wch: 15 }, // Total Cost
-            { wch: 20 }, // Warehouse
-            { wch: 20 }, // Issued By
-            { wch: 15 }  // Issued Date
         ];
         
         // Style the header row

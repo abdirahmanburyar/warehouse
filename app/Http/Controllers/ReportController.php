@@ -161,7 +161,7 @@ class ReportController extends Controller
     public function issueQuantityReports(Request $request)
     {
         $query = IssueQuantityReport::query()
-            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse','items.issuer']);
+            ->with(['items.product.dosage', 'items.product.category']);
 
         // Handle multiple date filters (year and month combinations)
         if ($request->filled('date_filters') && is_array($request->date_filters)) {
@@ -191,7 +191,6 @@ class ReportController extends Controller
 
         return inertia('Report/IssueQuantityReports', [
             'issueQuantityReports' => $issueQuantityReports,
-            'warehouses' => Warehouse::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
             'filters' => $request->only(['month', 'per_page']),
         ]);
