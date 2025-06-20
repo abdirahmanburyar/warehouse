@@ -19,17 +19,23 @@ class Transfer extends Model
         'to_warehouse_id',
         'from_facility_id',
         'to_facility_id',
-        'created_by',
+        'user_id',  
+        'status',
+        'expected_date',
+        'dispatched_by',
         'approved_by',
         'approved_at',
-        'dispatched_by',
-        'dispatched_at',
         'rejected_by',
         'rejected_at',
-        'quantity',
-        'transfer_date',
-        'status',
-        'note'
+        'delivered_by',
+        'received_by',
+        'processed_by',
+        'dispatched_at',
+        'delivered_at',
+        'received_at',
+        'reviewed_by',
+        'reviewed_at',
+        'processed_at',
     ];
 
     public static function generateTransferId()
@@ -67,31 +73,6 @@ class Transfer extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function inventory()
-    {
-        return $this->belongsTo(Inventory::class);
-    }
-
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function approvedBy()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    public function dispatchedBy()
-    {
-        return $this->belongsTo(User::class, 'dispatched_by');
-    }
-
-    public function rejectedBy()
-    {
-        return $this->belongsTo(User::class, 'rejected_by');
     }
     
     public function items()

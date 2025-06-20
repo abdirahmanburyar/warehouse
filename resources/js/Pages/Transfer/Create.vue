@@ -292,9 +292,9 @@ const submit = async () => {
         });
 };
 
-const isLoading = ref(false);
+const isLoading = ref([]);
 async function handleProductSelect(index, selected) {
-    isLoading.value = true;
+    isLoading.value[index] = true;
     const item = form.value.items[index];
     item.details = [];
     if (selected) {
@@ -305,11 +305,11 @@ async function handleProductSelect(index, selected) {
                 source_id: form.value.source_id,
             })
             .then((response) => {
-                isLoading.value = false;
+                isLoading.value[index] = false;
                 console.log(response.data);
 
-                item.details = response.data?.items;
-                item.available_quantity = response.data?.items?.reduce(
+                item.details = response.data;
+                item.available_quantity = response.data?.reduce(
                     (sum, item) => sum + item.quantity,
                     0
                 );
@@ -318,11 +318,10 @@ async function handleProductSelect(index, selected) {
                 addNewItem();
             })
             .catch((error) => {
-                isLoading.value = false;
+                isLoading.value[index] = false;
                 console.log(error);
             });
     }
-    isLoading.value = false;
 }
 
 function addNewItem() {
@@ -592,7 +591,7 @@ function formatDate(date) {
                                             label="name"
                                             :searchable="true"
                                             :allow-empty="true"
-                                            :loading="isLoading"
+                                            :loading="isLoading[index]"
                                             @select="
                                                 handleProductSelect(
                                                     index,

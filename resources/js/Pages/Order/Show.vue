@@ -1521,7 +1521,7 @@ const dispatchForm = ref({
     driver_number: "",
     plate_number: "",
     no_of_cartoons: "",
-    order_id: props.order.id,
+    order_id: props.order?.id,
     status: "Dispatched",
 });
 
@@ -1540,7 +1540,7 @@ async function createDispatch() {
                 icon: "success",
                 confirmButtonText: "OK",
             }).then(() => {
-                router.get(route("orders.show", props.order.id));
+                router.get(route("orders.show", props.order?.id));
             });
         })
         .catch((error) => {

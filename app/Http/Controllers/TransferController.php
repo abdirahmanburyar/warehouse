@@ -256,9 +256,6 @@ class TransferController extends Controller
                 'to_warehouse_id' => $request->destination_type === 'warehouse' ? $request->destination_id : null,
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
                 'created_by' => auth()->id(),
-                'quantity' => collect($request->items)->sum('quantity'),
-                'status' => 'pending',
-                'note' => $request->notes
             ];
     
             $transfer = Transfer::create($transferData);
@@ -282,48 +279,7 @@ class TransferController extends Controller
                         ->get();
                 }
     
-                foreach ($inventories as $invItem) {
-                    if ($remainingQty <= 0) break;
-    
-                    $deductQty = min($remainingQty, $invItem->quantity);
-    
-                    // Create TransferItem
-                    TransferItem::create([
-                        'transfer_id' => $transfer->id,
-                        'product_id' => $item['product_id'],
-                        'barcode' => $invItem->barcode ?? '',
-                        'uom' => $invItem->uom ?? '',
-                        'quantity' => $deductQty,
-                        'batch_number' => $invItem->batch_number,
-                        'expire_date' => $invItem->expiry_date,
-                    ]);
-    
-                    // Deduct inventory
-                    $invItem->decrement('quantity', $deductQty);
-    
-                    if ($invItem->quantity == 0) {
-                        $invItem->delete();
-                    }
-    
-                    // Create IssuedQuantity
-                    if ($request->source_type === 'warehouse') {
-                        IssuedQuantity::create([
-                            'product_id' => $item['product_id'],
-                            'warehouse_id' => $sourceId,
-                            'quantity' => $deductQty,
-                            'unit_cost' => $invItem->unit_cost,
-                            'total_cost' => $deductQty * $invItem->unit_cost,
-                            'issued_date' => now(),
-                            'barcode' => $invItem->barcode ?? '',
-                            'uom' => $invItem->uom ?? '',
-                            'batch_number' => $invItem->batch_number,
-                            'expiry_date' => $invItem->expiry_date,
-                            'issued_by' => auth()->id(),
-                        ]);
-                    }
-    
-                    $remainingQty -= $deductQty;
-                }
+                logger()->info($inventories);
     
                 if ($remainingQty > 0) {
                     DB::rollBack();
@@ -414,19 +370,16 @@ class TransferController extends Controller
                 ]);
                 
                 if ($request->source_type === 'warehouse') {
-                    $inventory = Inventory::whereHas('items', function($query) use ($request) {
-                        $query->where('product_id', $request->product_id)
-                            ->where('warehouse_id', $request->source_id);
-                    })
-                        ->with('items.location:id,location','items.warehouse:id,name')
-                        ->first();
+                    $inventory = InventoryItem::where('product_id', $request->product_id)
+                        ->where('warehouse_id', $request->source_id)
+                        ->with('location:id,location','warehouse:id,name')
+                        ->get();
                 } else {
-                    // $inventory = FacilityInventory::whereHas('items', function($query) use ($request) {
-                    //     $query->where('product_id', $request->product_id)
-                    //         ->where('facility_id', $request->source_id);
-                    // })
-                    //     ->with('items')
-                    //     ->first();
+                    $inventory = FacilityInventoryItem::where('product_id', $request->product_id)
+                        ->whereHas('inventory.facility', function($query) use ($request) {
+                            $query->where('id', $request->source_id);
+                        })
+                        ->get();
                 }
                 
                 return response()->json($inventory, 200);
@@ -458,47 +411,14 @@ class TransferController extends Controller
                 return response()->json($products, 200);
             } else {
                 // Get facility inventories directly with DB query
-                $result = DB::table('facility_inventories as fi')
-                    ->join('products as p', 'fi.product_id', '=', 'p.id')
-                    ->leftJoin('facilities as f', 'fi.facility_id', '=', 'f.id')
-                    ->where('fi.facility_id', $request->source_id)
-                    ->where('fi.quantity', '>', 0)
-                    ->whereNotNull('p.id') // Ensure product exists
-                    ->select([
-                        'fi.id',
-                        'fi.product_id',
-                        'p.name',
-                        'fi.batch_number',
-                        'fi.uom',
-                        'fi.quantity',
-                        'fi.expiry_date',
-                        'fi.facility_id',
-                        'f.name as facility_name',
-                        // Add JSON for product object
-                        DB::raw("JSON_OBJECT('id', p.id, 'name', p.name) as product_json")
-                    ])
-                    ->get()
-                    ->map(function($item) {
-                        // Convert product_json to actual product array
-                        $item->product = json_decode($item->product_json);
-                        unset($item->product_json);
-                        
-                        // Add missing fields with default values
-                        $item->uom = $item->uom ?? 'N/A'; // Default UoM since column doesn't exist
-                        $item->barcode = $item->barcode ?? ''; // Default barcode since column doesn't exist
-                        $item->batch_number = $item->batch_number ?? '';
-                        $item->facility_name = $item->facility_name ?? 'Unknown';
-                        $item->product_id = $item->product_id ?? 'Unknown';
-                        $item->product = $item->product ?? 'Unknown';
-                        $item->quantity = $item->quantity ?? 'Unknown';
-                        $item->available_quantity = $item->available_quantity ?? 'Unknown';
-                        $item->expire_date = $item->expire_date ?? 'Unknown';
-                        $item->id = $item->id ?? 'Unknown';
-                        return $item;
-                    });
-                    return response()->json($result, 200);
-                }
-            return response()->json('Invalid source type', 500);
+                $products = Product::whereHas('facilityInventories.items', function($query) use ($request) {
+                    $query->where('facility_id', $request->source_id);
+                })
+                    ->select('id','name')
+                    ->get();
+                
+                return response()->json($products, 200);
+            }
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

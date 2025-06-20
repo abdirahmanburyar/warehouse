@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'reviewed', 'approved','rejected', 'in_process', 'dispatched', 'delivered', 'received'])->default('pending');
             $table->dateTime('order_date');
             $table->date('expected_date')->nullable();
+            
             $table->foreignIdFor(User::class, 'approved_by')->nullable();
             $table->dateTime('approved_at')->nullable();
 

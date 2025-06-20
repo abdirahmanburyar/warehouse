@@ -8,6 +8,7 @@ class InventoryAllocation extends Model
 {
     protected $fillable = [
         'order_item_id',
+        'transfer_item_id',
         'product_id',
         'warehouse_id',
         'location_id',

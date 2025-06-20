@@ -5,24 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class FacilityInventory extends Model
+
+class FacilityInventoryItem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'facility_inventory_id',
         'product_id',
-        'facility_id',
         'quantity',
+        'expiry_date',
+        'batch_number',
+        'barcode',
+        'notes',
+        'uom',
+        'unit_cost',
+        'total_cost',
     ];
 
-    public function facility()
+    public function inventory()
     {
-        return $this->belongsTo(Facility::class);
-    }
-
-    public function items()
-    {
-        return $this->hasMany(FacilityInventoryItem::class, 'facility_inventory_id');
+        return $this->belongsTo(FacilityInventory::class);
     }
 
     public function product()

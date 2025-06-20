@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Transfer;
+use App\Models\Product;
 
 return new class extends Migration
 {
@@ -13,13 +15,13 @@ return new class extends Migration
     {
         Schema::create('transfer_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('transfer_id');
-            $table->foreignId('product_id');
-            $table->string('barcode');
-            $table->string('uom');
-            $table->string('batch_number');
-            $table->string('expire_date');
+            $table->foreignIdFor(Transfer::class)->cascadeOnDelete();
+            $table->foreignIdFor(Product::class)->nullable()->cascadeOnDelete();
+            $table->integer('quantity'); // This stores the needed quantity
+            $table->integer('quantity_on_order')->default(0);
+            $table->integer('quantity_to_release')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

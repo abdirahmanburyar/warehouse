@@ -100,4 +100,8 @@ class Product extends Model
     public function eligible(){
         return $this->hasMany(EligibleItem::class);
     }
+
+    public function facilityInventories(){
+        return $this->hasMany(FacilityInventoryItem::class);
+    }
 }

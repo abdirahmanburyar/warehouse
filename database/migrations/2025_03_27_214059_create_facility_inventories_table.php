@@ -15,11 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('facility_id')->constrained()->onDelete('cascade');
-            $table->integer('quantity')->default(0);
-            $table->string('barcode')->nullable();
-            $table->date('expiry_date')->nullable();
-            $table->string('batch_number')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->integer('quantity')->default(0);           
             $table->timestamps();
         });
     }
