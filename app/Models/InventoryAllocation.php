@@ -16,6 +16,8 @@ class InventoryAllocation extends Model
         'expiry_date',
         'allocated_quantity',
         'allocation_type',
+        'unit_cost',
+        'total_cost',
         'notes',
         'uom'
     ];
