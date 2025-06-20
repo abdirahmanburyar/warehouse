@@ -367,6 +367,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{transfer}/edit', [TransferController::class, 'edit'])->name('transfers.edit');
         Route::put('/{transfer}', [TransferController::class, 'update'])->name('transfers.update');
         Route::delete('/{transfer}', [TransferController::class, 'destroy'])->name('transfers.destroy');
+
+        // get inventory for transfer
+        Route::post('/inventory', [TransferController::class, 'getSourceInventoryDetail'])->name('transfers.inventory');
                 
         // Route to get available inventories for transfer
         Route::get('/get-inventories', [TransferController::class, 'getInventories'])->name('transfers.getInventories');

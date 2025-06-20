@@ -420,6 +420,40 @@ class TransferController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+
+    // get transfer source imventory
+    public function getSourceInventoryDetail(Request $request)
+    {
+        try {
+            return DB::transaction(function() use ($request){
+                $request->validate([
+                    'source_type' => 'required|in:warehouse,facility',
+                    'source_id' => 'required|integer',
+                    'product_id' => 'required|integer',
+                ]);
+                
+                if ($request->source_type === 'warehouse') {
+                    $inventory = Inventory::whereHas('items', function($query) use ($request) {
+                        $query->where('product_id', $request->product_id)
+                            ->where('warehouse_id', $request->source_id);
+                    })
+                        ->with('items.location:id,location','items.warehouse:id,name')
+                        ->first();
+                } else {
+                    // $inventory = FacilityInventory::whereHas('items', function($query) use ($request) {
+                    //     $query->where('product_id', $request->product_id)
+                    //         ->where('facility_id', $request->source_id);
+                    // })
+                    //     ->with('items')
+                    //     ->first();
+                }
+                
+                return response()->json($inventory, 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
     
     /**
      * Get inventories based on source type and ID
@@ -434,43 +468,13 @@ class TransferController extends Controller
         try {
             if ($request->source_type === 'warehouse') {
                 // Get warehouse inventories directly with DB query
-                $result = DB::table('inventories as i')
-                    ->join('products as p', 'i.product_id', '=', 'p.id')
-                    ->leftJoin('warehouses as w', 'i.warehouse_id', '=', 'w.id')
-                    ->where('i.warehouse_id', $request->source_id)
-                    ->where('i.quantity', '>', 0)
-                    ->whereNotNull('p.id') // Ensure product exists
-                    ->select([
-                        'i.id',
-                        'i.product_id',
-                        'p.name',
-                        'i.batch_number',
-                        'i.uom',
-                        'i.quantity',
-                        'i.expiry_date',
-                        'i.warehouse_id',
-                        'w.name as warehouse_name',
-                        // Add JSON for product object
-                        DB::raw("JSON_OBJECT('id', p.id, 'name', p.name) as product_json")
-                    ])
-                    ->get()
-                    ->map(function($item) {
-                        // Convert product_json to actual product array
-                        $item->product = json_decode($item->product_json);
-                        unset($item->product_json);
-                        
-                        // Add missing fields with default values
-                        $item->barcode = ''; // Default barcode since column doesn't exist
-                        $item->batch_number = $item->batch_number ?? '';
-                        $item->id = $item->id ?? 'Unknown';
-                        $item->product_id = $item->product_id ?? 'Unknown';
-                        $item->warehouse_name = $item->warehouse_name ?? 'Unknown';
-                        $item->expiry_date = $item->expiry_date ?? 'Unknown';
-                        $item->uom = $item->uom ?? 'Unknown';
-                        // logger()->info($item);
-                        
-                        return $item;
-                    });
+                $products = Product::whereHas('inventories.items', function($query) use ($request) {
+                    $query->where('warehouse_id', $request->source_id);
+                })
+                    ->select('id','name')                   
+                    ->get();
+                
+                return response()->json($products, 200);
             } else {
                 // Get facility inventories directly with DB query
                 $result = DB::table('facility_inventories as fi')
@@ -511,14 +515,11 @@ class TransferController extends Controller
                         $item->id = $item->id ?? 'Unknown';
                         return $item;
                     });
-            }
-            
-            // Log the count of items found
-            $count = $result->count();
-            
-            return response()->json($result, 200);
+                    return response()->json($result, 200);
+                }
+            return response()->json('Invalid source type', 500);
         } catch (\Throwable $th) {
-            return response()->json(['error' => $th->getMessage()], 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
 

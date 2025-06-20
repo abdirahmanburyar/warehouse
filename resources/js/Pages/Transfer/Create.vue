@@ -1,19 +1,19 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, computed, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import InputError from '@/Components/InputError.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
-import '@/Components/multiselect.css';
-import axios from 'axios';
-import { useToast } from 'vue-toastification';
-import Swal from 'sweetalert2';
-import moment from 'moment';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import { ref, computed, watch } from "vue";
+import { router } from "@inertiajs/vue3";
+import InputLabel from "@/Components/InputLabel.vue";
+import TextInput from "@/Components/TextInput.vue";
+import InputError from "@/Components/InputError.vue";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+import axios from "axios";
+import { useToast } from "vue-toastification";
+import Swal from "sweetalert2";
+import moment from "moment";
 
 const toast = useToast();
 
@@ -21,66 +21,68 @@ const props = defineProps({
     inventory: Object,
     warehouses: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     facilities: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     transferID: {
         type: String,
-        required: true
-    }
-
+        required: true,
+    },
 });
 
-const sourceType = ref('warehouse');
-const destinationType = ref('warehouse');
+const sourceType = ref("warehouse");
+const destinationType = ref("warehouse");
 const loading = ref(false);
 const selectedSource = ref(null);
 const selectedDestination = ref(null);
 const selectedInventory = ref(null);
 const filteredInventories = ref([]);
 const availableInventories = ref([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const loadingInventories = ref(false);
 
 const form = ref({
-    source_type: 'warehouse', // Default source type is warehouse since it's an expired item
+    source_type: "warehouse", // Default source type is warehouse since it's an expired item
     source_id: null,
-    destination_type: 'warehouse',
+    destination_type: "warehouse",
     destination_id: null,
-    transfer_date: moment().format('YYYY-MM-DD'),
+    transfer_date: moment().format("YYYY-MM-DD"),
     transferID: props.transferID,
     items: [
         {
             id: null,
-            product_id: '',
+            product_id: "",
             product: null,
             quantity: 0,
             available_quantity: 0,
-            batch_number: '',
-            barcode: '',
-            expiry_date: null,
-            uom: ''
-        }
-    ]
+            details: [],
+        },
+    ],
 });
 
 const errors = ref({});
 
 const sourceOptions = computed(() => {
-    return sourceType.value === 'warehouse' ? props.warehouses : props.facilities;
+    return sourceType.value === "warehouse"
+        ? props.warehouses
+        : props.facilities;
 });
 
 const destinationOptions = computed(() => {
-    return destinationType.value === 'warehouse' ? props.warehouses : props.facilities;
+    return destinationType.value === "warehouse"
+        ? props.warehouses
+        : props.facilities;
 });
 
 // Filter out the selected source from destination options if they are of the same type
 const filteredDestinationOptions = computed(() => {
     if (sourceType.value === destinationType.value && selectedSource.value) {
-        return destinationOptions.value.filter(item => item.id !== selectedSource.value.id);
+        return destinationOptions.value.filter(
+            (item) => item.id !== selectedSource.value.id
+        );
     }
     return destinationOptions.value;
 });
@@ -90,17 +92,19 @@ const handleSourceSelect = async (selected) => {
     selectedInventory.value = null;
 
     // Reset the items array to have only one empty item when source changes
-    form.value.items = [{
-        id: null,
-        product_id: null,
-        product: null,
-        quantity: 0,
-        batch_number: '',
-        barcode: '',
-        expiry_date: null,
-        uom: '',
-        available_quantity: 0
-    }];
+    form.value.items = [
+        {
+            id: null,
+            product_id: null,
+            product: null,
+            quantity: 0,
+            batch_number: "",
+            barcode: "",
+            expiry_date: null,
+            uom: "",
+            available_quantity: 0,
+        },
+    ];
 
     if (selected) {
         await fetchInventories();
@@ -114,7 +118,6 @@ const handleDestinationSelect = (selected) => {
     form.value.destination_id = selected ? selected.id : null;
 };
 
-
 const fetchInventories = async () => {
     // If no source selected, reset and exit
     if (!selectedSource.value || !form.value.source_id) {
@@ -126,120 +129,48 @@ const fetchInventories = async () => {
     // Set loading state
     loadingInventories.value = true;
     filteredInventories.value = [];
-    searchQuery.value = '';
+    searchQuery.value = "";
 
     // Show Swal loading counter
     let timerInterval;
     const swalLoading = Swal.fire({
-        title: 'Loading Inventory',
-        html: 'Fetching inventory items... <b></b>',
+        title: "Loading Inventory",
+        html: "Fetching inventory items... <b></b>",
         timer: 30000, // 30 seconds max timeout
         timerProgressBar: true,
         allowOutsideClick: false,
         allowEscapeKey: false,
         didOpen: () => {
             Swal.showLoading();
-            const timer = Swal.getPopup().querySelector('b');
+            const timer = Swal.getPopup().querySelector("b");
             timerInterval = setInterval(() => {
                 timer.textContent = `${Math.ceil(Swal.getTimerLeft() / 1000)}s`;
             }, 100);
         },
         willClose: () => {
             clearInterval(timerInterval);
-        }
+        },
     });
 
     // Use axios with then/catch pattern
-    await axios.get(route('transfers.getInventories'), {
-        params: {
-            source_type: sourceType.value,
-            source_id: form.value.source_id
-        }
-    })
-        .then(response => {
-            if (!response.data || !Array.isArray(response.data)) {
-                throw new Error('Invalid response format');
-            }
-
-            // Filter valid items
-            const validItems = response.data.filter(item => {
-                return item && item.product && item.product.name;
-            });
-
-            // Update available inventories
-            console.log("validItems", validItems);
-
-            availableInventories.value = validItems;
-
-            // Close Swal and show appropriate message
-            swalLoading.close();
-            if (validItems.length > 0) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Inventory Loaded',
-                    text: `Successfully loaded ${validItems.length} inventory items`,
-                    timer: 2000,
-                    timerProgressBar: true,
-                    showConfirmButton: false
-                });
-            } else {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'No Inventory',
-                    text: 'No inventory items available',
-                    timer: 2000,
-                    timerProgressBar: true,
-                    showConfirmButton: false
-                });
-            }
+    await axios
+        .get(route("transfers.getInventories"), {
+            params: {
+                source_type: sourceType.value,
+                source_id: form.value.source_id,
+            },
         })
-        .catch(error => {
-            console.error('[ERROR] Fetch inventories failed:', error);
+        .then((response) => {
+            console.log(response.data);
+            swalLoading.close();
+            availableInventories.value = response.data;
+        })
+        .catch((error) => {
+            console.error("[ERROR] Fetch inventories failed:", error);
             availableInventories.value = [];
-
+            filteredInventories.value = availableInventories.value;
             // Close Swal loading
             swalLoading.close();
-
-            // Handle different error types
-            if (error.response) {
-                console.error('[ERROR] Server response:', error.response.status, error.response.data);
-                if (error.response.status === 500) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Server Error',
-                        text: 'The inventory service is currently unavailable',
-                        confirmButtonText: 'OK'
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: `Error ${error.response.status}`,
-                        text: error.response.data?.message || 'Unknown error',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            } else if (error.request) {
-                console.error('[ERROR] No response received');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Network Error',
-                    text: 'No response received from server',
-                    confirmButtonText: 'OK'
-                });
-            } else {
-                console.error('[ERROR] Request setup error:', error.message);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.message || 'Unknown error',
-                    confirmButtonText: 'OK'
-                });
-            }
-        })
-        .finally(() => {
-            // Always clean up
-            console.log('[DEBUG] Fetch inventories completed');
-            loadingInventories.value = false;
         });
 };
 
@@ -249,19 +180,22 @@ const validateForm = () => {
 
     // Validate source and destination
     if (!form.value.source_id) {
-        errors.value.source_id = 'Please select a source.';
+        errors.value.source_id = "Please select a source.";
         isValid = false;
     }
 
     if (!form.value.destination_id) {
-        errors.value.destination_id = 'Please select a destination.';
+        errors.value.destination_id = "Please select a destination.";
         isValid = false;
     }
 
     // Check if source and destination are the same
-    if (form.value.source_id === form.value.destination_id &&
-        form.value.source_type === form.value.destination_type) {
-        errors.value.destination_id = 'Source and destination cannot be the same.';
+    if (
+        form.value.source_id === form.value.destination_id &&
+        form.value.source_type === form.value.destination_type
+    ) {
+        errors.value.destination_id =
+            "Source and destination cannot be the same.";
         isValid = false;
     }
 
@@ -271,31 +205,40 @@ const validateForm = () => {
     form.value.items.forEach((item, index) => {
         // Check if inventory item is selected
         if (!item.inventory_id) {
-            errors.value[`item_${index}_inventory`] = 'Please select an inventory item.';
+            errors.value[`item_${index}_inventory`] =
+                "Please select an inventory item.";
             isValid = false;
         }
 
         // Check if quantity is valid (must be at least 1)
         if (item.inventory_id && (!item.quantity || item.quantity < 1)) {
-            errors.value[`item_${index}_quantity`] = 'Quantity must be at least 1.';
+            errors.value[`item_${index}_quantity`] =
+                "Quantity must be at least 1.";
             isValid = false;
         }
 
         // Check if quantity exceeds available quantity
         if (item.inventory_id && item.quantity > item.available_quantity) {
-            errors.value[`item_${index}_quantity`] = `Maximum available quantity is ${item.available_quantity}.`;
+            errors.value[
+                `item_${index}_quantity`
+            ] = `Maximum available quantity is ${item.available_quantity}.`;
             isValid = false;
         }
 
         // Track if we have at least one valid item
-        if (item.inventory_id && item.quantity >= 1 && item.quantity <= item.available_quantity) {
+        if (
+            item.inventory_id &&
+            item.quantity >= 1 &&
+            item.quantity <= item.available_quantity
+        ) {
             hasValidItems = true;
         }
     });
 
     // Ensure at least one valid item exists
     if (!hasValidItems) {
-        errors.value.items = 'At least one item must be selected with a valid quantity.';
+        errors.value.items =
+            "At least one item must be selected with a valid quantity.";
         isValid = false;
     }
 
@@ -323,46 +266,62 @@ watch(destinationType, (newValue) => {
 const submit = async () => {
     loading.value = true;
 
-    await axios.post(route('transfers.store'), form.value)
+    await axios
+        .post(route("transfers.store"), form.value)
         .then((response) => {
             loading.value = false;
             toast.success(response.data);
             Swal.fire({
-                title: 'Success!',
+                title: "Success!",
                 text: response.data,
-                icon: 'success',
-                confirmButtonColor: '#4F46E5',
+                icon: "success",
+                confirmButtonColor: "#4F46E5",
             }).then(() => {
-                router.get(route('transfers.index'));
+                router.get(route("transfers.index"));
             });
         })
         .catch((error) => {
             console.error(error.response);
             loading.value = false;
-            toast.error(error.response?.data || 'Failed to create transfer');
+            toast.error(error.response?.data || "Failed to create transfer");
             Swal.fire({
-                title: 'Error!',
-                text: error.response?.data || 'Failed to create transfer',
-                icon: 'error',
-                confirmButtonColor: '#4F46E5',
+                title: "Error!",
+                text: error.response?.data || "Failed to create transfer",
+                icon: "error",
+                confirmButtonColor: "#4F46E5",
             });
         });
 };
 
-function handleProductSelect(index, selected) {
+const isLoading = ref(false);
+async function handleProductSelect(index, selected) {
+    isLoading.value = true;
     const item = form.value.items[index];
+    item.details = [];
+    if (selected) {
+        await axios
+            .post(route("transfers.inventory"), {
+                product_id: selected.id,
+                source_type: sourceType.value,
+                source_id: form.value.source_id,
+            })
+            .then((response) => {
+                isLoading.value = false;
+                console.log(response.data);
 
-    console.log(selected);
-    item.uom = selected.uom;
-    item.batch_number = selected.batch_number;
-    item.product_id = selected.product?.id;
-    item.product = selected.product;
-    item.product_name = selected.product?.name;
-    item.barcode = selected.barcode;
-    item.expiry_date = selected.expiry_date;
-    item.id = selected.id;
-    item.available_quantity = selected.quantity;
-
+                item.details = response.data?.items;
+                item.available_quantity = response.data?.items?.reduce(
+                    (sum, item) => sum + item.quantity,
+                    0
+                );
+                addNewItem();
+            })
+            .catch((error) => {
+                isLoading.value = false;
+                console.log(error);
+            });
+    }
+    isLoading.value = false;
 }
 
 function addNewItem() {
@@ -370,41 +329,16 @@ function addNewItem() {
         id: null,
         product_id: null,
         product: null,
-        product_name: '',
+        available_quantity: 0,
         quantity: 0,
-        batch_number: '',
-        barcode: '',
-        expiry_date: null,
-        uom: '',
-        available_quantity: 0
+        details: []
     });
 }
 
 function removeItem(index) {
     // Check if we have more than one item before removing
     if (form.value.items.length > 1) {
-        const itemToRemove = form.value.items[index];
-        const itemName = itemToRemove.product_name || 'this item';
-
-        // Show confirmation dialog
-        Swal.fire({
-            title: 'Confirm Deletion',
-            text: `Are you sure you want to remove ${itemName}?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Remove the item from the local array
-                form.value.items.splice(index, 1);
-
-                // Show success message
-                toast.success('Item removed successfully');
-            }
-        });
+        form.value.items.splice(index, 1);
     }
 }
 
@@ -414,15 +348,21 @@ function checkQuantity(index) {
     // Ensure quantity is at least 1
     if (item.quantity < 1) {
         item.quantity = 1;
-        toast.info('Minimum quantity is 1');
+        toast.info("Minimum quantity is 1");
     }
 
     // Ensure quantity doesn't exceed available quantity
     if (item.quantity > item.available_quantity) {
         // Reset to available quantity if exceeded
         item.quantity = item.available_quantity;
-        toast.warning(`Quantity reset to maximum available (${item.available_quantity})`);
+        toast.warning(
+            `Quantity reset to maximum available (${item.available_quantity})`
+        );
     }
+}
+
+function formatDate(date) {
+    return moment(date).format("DD/MM/YYYY");
 }
 </script>
 
@@ -435,17 +375,24 @@ function checkQuantity(index) {
                     <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
+                                <svg
+                                    class="h-5 w-5 text-blue-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
                                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                        clip-rule="evenodd" />
+                                        clip-rule="evenodd"
+                                    />
                                 </svg>
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-blue-700">
-                                    Select source and destination locations, then choose inventory items to transfer.
-                                    The quantity must not exceed available quantity.
+                                    Select source and destination locations,
+                                    then choose inventory items to transfer. The
+                                    quantity must not exceed available quantity.
                                 </p>
                             </div>
                         </div>
@@ -458,7 +405,11 @@ function checkQuantity(index) {
                         </div>
                         <div class="flex flex-col">
                             <label for="transfer_date">Transfer Date</label>
-                            <input type="date" v-model="form.transfer_date" class="form-input">
+                            <input
+                                type="date"
+                                v-model="form.transfer_date"
+                                class="form-input"
+                            />
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -467,11 +418,21 @@ function checkQuantity(index) {
                             <InputLabel value="Transfer From" />
                             <div class="mt-2 space-x-4">
                                 <label class="inline-flex items-center">
-                                    <input type="radio" v-model="sourceType" value="warehouse" class="form-radio">
+                                    <input
+                                        type="radio"
+                                        v-model="sourceType"
+                                        value="warehouse"
+                                        class="form-radio"
+                                    />
                                     <span class="ml-2">Warehouse</span>
                                 </label>
                                 <label class="inline-flex items-center">
-                                    <input type="radio" v-model="sourceType" value="facility" class="form-radio">
+                                    <input
+                                        type="radio"
+                                        v-model="sourceType"
+                                        value="facility"
+                                        class="form-radio"
+                                    />
                                     <span class="ml-2">Facility</span>
                                 </label>
                             </div>
@@ -480,17 +441,38 @@ function checkQuantity(index) {
                         <!-- Source Selection -->
                         <div>
                             <InputLabel
-                                :value="`Select Source ${sourceType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
-                            <Multiselect v-model="selectedSource" :options="sourceOptions" :searchable="true"
-                                :close-on-select="true" :show-labels="false" :allow-empty="true"
-                                :placeholder="`Select source ${sourceType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                track-by="id" label="name" @select="handleSourceSelect"
-                                :class="{ 'border-red-500': errors.source_id }" @open="errors.source_id = null">
+                                :value="`Select Source ${
+                                    sourceType === 'warehouse'
+                                        ? 'Warehouse'
+                                        : 'Facility'
+                                }`"
+                            />
+                            <Multiselect
+                                v-model="selectedSource"
+                                :options="sourceOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                :placeholder="`Select source ${
+                                    sourceType === 'warehouse'
+                                        ? 'warehouse'
+                                        : 'facility'
+                                }`"
+                                track-by="id"
+                                label="name"
+                                @select="handleSourceSelect"
+                                :class="{ 'border-red-500': errors.source_id }"
+                                @open="errors.source_id = null"
+                            >
                                 <template v-slot:option="{ option }">
                                     <span>{{ option.name }}</span>
                                 </template>
                             </Multiselect>
-                            <InputError :message="errors.source_id" class="mt-2" />
+                            <InputError
+                                :message="errors.source_id"
+                                class="mt-2"
+                            />
                         </div>
 
                         <!-- Destination Type Selection -->
@@ -498,11 +480,21 @@ function checkQuantity(index) {
                             <InputLabel value="Transfer To" />
                             <div class="mt-2 space-x-4">
                                 <label class="inline-flex items-center">
-                                    <input type="radio" v-model="destinationType" value="warehouse" class="form-radio">
+                                    <input
+                                        type="radio"
+                                        v-model="destinationType"
+                                        value="warehouse"
+                                        class="form-radio"
+                                    />
                                     <span class="ml-2">Warehouse</span>
                                 </label>
                                 <label class="inline-flex items-center">
-                                    <input type="radio" v-model="destinationType" value="facility" class="form-radio">
+                                    <input
+                                        type="radio"
+                                        v-model="destinationType"
+                                        value="facility"
+                                        class="form-radio"
+                                    />
                                     <span class="ml-2">Facility</span>
                                 </label>
                             </div>
@@ -511,18 +503,41 @@ function checkQuantity(index) {
                         <!-- Destination Selection -->
                         <div>
                             <InputLabel
-                                :value="`Select Destination ${destinationType === 'warehouse' ? 'Warehouse' : 'Facility'}`" />
-                            <Multiselect v-model="selectedDestination" :options="filteredDestinationOptions"
-                                :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
-                                :placeholder="`Select destination ${destinationType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                track-by="id" label="name" @select="handleDestinationSelect" required
-                                :class="{ 'border-red-500': errors.destination_id }"
-                                @open="errors.destination_id = null">
+                                :value="`Select Destination ${
+                                    destinationType === 'warehouse'
+                                        ? 'Warehouse'
+                                        : 'Facility'
+                                }`"
+                            />
+                            <Multiselect
+                                v-model="selectedDestination"
+                                :options="filteredDestinationOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                :placeholder="`Select destination ${
+                                    destinationType === 'warehouse'
+                                        ? 'warehouse'
+                                        : 'facility'
+                                }`"
+                                track-by="id"
+                                label="name"
+                                @select="handleDestinationSelect"
+                                required
+                                :class="{
+                                    'border-red-500': errors.destination_id,
+                                }"
+                                @open="errors.destination_id = null"
+                            >
                                 <template v-slot:option="{ option }">
                                     <span>{{ option.name }}</span>
                                 </template>
                             </Multiselect>
-                            <InputError :message="errors.destination_id" class="mt-2" />
+                            <InputError
+                                :message="errors.destination_id"
+                                class="mt-2"
+                            />
                         </div>
                         <!-- here for items -->
                     </div>
@@ -532,65 +547,209 @@ function checkQuantity(index) {
                             <thead class="w-full bg-gray-50">
                                 <tr>
                                     <th
-                                        class="w-auto px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border border-black">
-                                        Item</th>
+                                        class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                    >
+                                        Item
+                                    </th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
-                                        UoM</th>
-                                    <th
-                                        class="w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
+                                        class="w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                    >
                                         Item Information
                                     </th>
                                     <th
-                                        class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
-                                        Available quantity</th>
+                                        class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                    >
+                                        Available quantity
+                                    </th>
                                     <th
-                                        class="w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
-                                        Quantity to release</th>
+                                        class="w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                    >
+                                        Quantity to release
+                                    </th>
                                     <th
-                                        class="w-[70px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider">
-                                        Actions</th>
+                                        class="w-[70px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                    >
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <!-- Inventory Items rows -->
-                                <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-gray-50">
+                                <tr
+                                    v-for="(item, index) in form.items"
+                                    :key="index"
+                                    class="hover:bg-gray-50"
+                                >
+                                    <td class="px-3 py-2">
+                                        <Multiselect
+                                            v-model="item.product"
+                                            :value="item.product_id"
+                                            :options="availableInventories"
+                                            placeholder="Search for an item..."
+                                            required
+                                            track-by="id"
+                                            label="name"
+                                            :searchable="true"
+                                            :allow-empty="true"
+                                            :loading="isLoading"
+                                            @select="
+                                                handleProductSelect(
+                                                    index,
+                                                    $event
+                                                )
+                                            "
+                                        />
+                                    </td>
                                     <td
-                                        class="px-6 py-4 whitespace-nowrap border border-black text-sm font-medium text-gray-900">
-                                        <Multiselect v-model="item.product" :value="item.product_id"
-                                            :options="availableInventories" placeholder="Search for an item..." required
-                                            track-by="id" label="name" :searchable="true" :allow-empty="true"
-                                            @select="handleProductSelect(index, $event)"></Multiselect>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
-                                        {{ item.uom }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
-                                        <div>Batch Number: {{ item.batch_number }}</div>
-                                        <div>Barcode: {{ item.barcode }}</div>
-                                        <div>Expire Date: {{ item.expiry_date ?
-                                            moment(item.expiry_date).format('DD/MM/YYYY') : 'N/A' }}
-                                        </div>
+                                        class="whitespace-nowrap border border-black text-sm text-gray-500"
+                                    >
+                                        <table
+                                            class="w-full text-xs border border-gray-300"
+                                        >
+                                            <thead class="bg-gray-50">
+                                                <tr class="text-gray-600">
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        UoM
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        QTY
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Batch
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Expiry
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Location
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="detail in item?.details"
+                                                    :key="detail.id"
+                                                    class="bg-white even:bg-gray-50"
+                                                >
+                                                    <td
+                                                        class="border border-gray-300"
+                                                    >
+                                                        {{ detail.uom }}
+                                                    </td>
+                                                    <td
+                                                        class="border border-gray-300"
+                                                    >
+                                                        {{ detail.quantity }}
+                                                    </td>
+                                                    <td
+                                                        class="border border-gray-300"
+                                                    >
+                                                        {{
+                                                            detail.batch_number
+                                                        }}
+                                                    </td>
+                                                    <td
+                                                        class="border border-gray-300"
+                                                    >
+                                                        {{
+                                                            formatDate(
+                                                                detail.expiry_date
+                                                            )
+                                                        }}
+                                                    </td>
+                                                    <td
+                                                        class="border border-gray-300"
+                                                    >
+                                                        <div
+                                                            class="text-xs flex flex-col space-y-0.5"
+                                                        >
+                                                            <span
+                                                                class="text-xs"
+                                                                >WH:
+                                                                {{
+                                                                    detail
+                                                                        .warehouse
+                                                                        ?.name
+                                                                }}</span
+                                                            >
+                                                            <span
+                                                                class="text-xs"
+                                                                >LC:
+                                                                {{
+                                                                    detail
+                                                                        .location
+                                                                        ?.location
+                                                                }}</span
+                                                            >
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
+                                    <td
+                                        class="whitespace-nowrap border border-black text-center text-sm text-black"
+                                    >
                                         {{ item.available_quantity }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-black">
-                                        <input type="text" v-model.number="item.quantity" required :class="[
-                                            'w-full text-sm',
-                                            errors[`item_${index}_quantity`] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                                        ]" min="1" :max="item.available_quantity" :disabled="!item.product?.id"
+                                    <td
+                                        class="whitespace-nowrap border border-black text-sm text-black"
+                                    >
+                                        <input
+                                            type="text"
+                                            v-model.number="item.quantity"
+                                            required
+                                            :class="[
+                                                'w-full text-sm',
+                                                errors[`item_${index}_quantity`]
+                                                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                                    : '',
+                                            ]"
+                                            min="1"
+                                            :max="item.available_quantity"
+                                            :disabled="!item.product?.id"
                                             placeholder="0"
-                                            @input="checkQuantity(index); errors[`item_${index}_quantity`] = null" />
+                                            @input="
+                                                checkQuantity(index);
+                                                errors[
+                                                    `item_${index}_quantity`
+                                                ] = null;
+                                            "
+                                        />
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap border border-black text-sm text-gray-500">
-                                        <button type="button" @click="removeItem(index)"
-                                            class="text-red-600 hover:text-red-900" :disabled="form.items.length <= 1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <td
+                                        class="whitespace-nowrap border border-black text-sm text-gray-500"
+                                    >
+                                        <button
+                                            type="button"
+                                            @click="removeItem(index)"
+                                            class="text-red-600 hover:text-red-900"
+                                            :disabled="form.items.length <= 1"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
                                             </svg>
                                         </button>
                                     </td>
@@ -599,29 +758,54 @@ function checkQuantity(index) {
                         </table>
                     </div>
 
-                    <div class="flex items-center justify-between space-x-4 mb-4">
-                        <button type="button" @click="addNewItem"
-                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <div
+                        class="flex items-center justify-between space-x-4 mb-4"
+                    >
+                        <button
+                            type="button"
+                            @click="addNewItem"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
                             Add Another Item
                         </button>
                         <div>
-                            <SecondaryButton :href="route('transfers.index')" as="a" :disabled="loading"
-                                class="opacity-75" :class="{ 'opacity-50 cursor-not-allowed': loading }">
+                            <SecondaryButton
+                                :href="route('transfers.index')"
+                                as="a"
+                                :disabled="loading"
+                                class="opacity-75"
+                                :class="{
+                                    'opacity-50 cursor-not-allowed': loading,
+                                }"
+                            >
                                 Cancel
                             </SecondaryButton>
                             <PrimaryButton :disabled="loading" class="relative">
                                 <span v-if="loading" class="absolute left-2">
-                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                                    <svg
+                                        class="animate-spin h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
                                     </svg>
                                 </span>
-                                <span :class="{ 'pl-7': loading }">{{ loading ? 'Processing...' : 'Transfer Item'
-                                    }}</span>
+                                <span :class="{ 'pl-7': loading }">{{
+                                    loading ? "Processing..." : "Transfer Item"
+                                }}</span>
                             </PrimaryButton>
                         </div>
                     </div>
