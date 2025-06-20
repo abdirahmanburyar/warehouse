@@ -470,10 +470,12 @@ class OrderController extends Controller
                             'expiry_date' => $inventory->expiry_date,
                             'allocated_quantity' => $quantityFromThisInventory,
                             'allocation_type' => $order->order_type,
+                            'unit_cost' => $inventory->unit_cost,
+                            'total_cost' => $inventory->unit * $quantityFromThisInventory,
                             'notes' => 'Allocated from inventory ID: ' . $inventory->id
                         ]);
                     }
-    
+
                     $inventory->quantity -= $quantityFromThisInventory;
                     $inventory->save();
     
