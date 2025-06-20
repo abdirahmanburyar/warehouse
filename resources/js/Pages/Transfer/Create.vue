@@ -266,11 +266,11 @@ watch(destinationType, (newValue) => {
 const submit = async () => {
     loading.value = true;
 
+    console.log(form.value);
     await axios
         .post(route("transfers.store"), form.value)
         .then((response) => {
             loading.value = false;
-            toast.success(response.data);
             Swal.fire({
                 title: "Success!",
                 text: response.data,
@@ -283,7 +283,6 @@ const submit = async () => {
         .catch((error) => {
             console.error(error.response);
             loading.value = false;
-            toast.error(error.response?.data || "Failed to create transfer");
             Swal.fire({
                 title: "Error!",
                 text: error.response?.data || "Failed to create transfer",
@@ -314,6 +313,8 @@ async function handleProductSelect(index, selected) {
                     (sum, item) => sum + item.quantity,
                     0
                 );
+                item.product = selected;
+                item.product_id = selected.id;
                 addNewItem();
             })
             .catch((error) => {
