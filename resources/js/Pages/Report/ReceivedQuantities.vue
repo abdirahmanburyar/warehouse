@@ -352,36 +352,6 @@
                                 >
                                     Quantity
                                 </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    UOM
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Batch #
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Expiry Date
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Source
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Received By
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Received At
-                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -414,44 +384,6 @@
                                     class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
                                 >
                                     {{ item.quantity.toLocaleString() }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.uom || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.batch_number || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ formatDate(item.expiry_date) }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    <span v-if="item.transfer_id"
-                                        >Transfer #{{ item.transfer_id }}</span
-                                    >
-                                    <span v-else-if="item.packing_list_id"
-                                        >Packing List #{{
-                                            item.packing_list_id
-                                        }}</span
-                                    >
-                                    <span v-else>N/A</span>
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.receiver?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ formatDateTime(item.received_at) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -669,19 +601,9 @@ const downloadReportItems = (report) => {
     const exportData = report.items.map((item, index) => ({
         SN: index + 1,
         Item: item.product ? item.product.name : "N/A",
-        "Dosage Form": item.product?.dosage?.name || "N/A",
         Category: item.product?.category?.name || "N/A",
-        UOM: item.uom || "N/A",
-        Quantity: item.quantity,
-        "Batch #": item.batch_number || "N/A",
-        "Expiry Date": item.expiry_date ? formatDate(item.expiry_date) : "N/A",
-        Source: item.transfer_id
-            ? `Transfer #${item.transfer_id}`
-            : item.packing_list_id
-            ? `Packing List #${item.packing_list_id}`
-            : "N/A",
-        "Received By": item.receiver ? item.receiver.name : "N/A",
-        "Received At": formatReceivedAt(item.received_at),
+        "Dosage Form": item.product?.dosage?.name || "N/A",
+        Quantity: item.quantity
     }));
 
     // Calculate total quantity
@@ -779,15 +701,9 @@ const downloadReportItems = (report) => {
     const headers = [
         "SN",
         "Item",
-        "Dosage Form",
         "Category",
-        "UOM",
-        "Quantity",
-        "Batch #",
-        "Expiry Date",
-        "Source",
-        "Received By",
-        "Received At",
+        "Dosage Form",
+        "Quantity"
     ];
     summaryData.push(headers);
 

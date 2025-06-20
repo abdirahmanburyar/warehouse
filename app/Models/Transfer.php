@@ -32,6 +32,18 @@ class Transfer extends Model
         'note'
     ];
 
+    public static function generateTransferId()
+    {
+        $latestTransfer = self::latest()->first();
+        $latestId = $latestTransfer ? (int) $latestTransfer->transferID : 0;
+        $nextId = $latestId + 1;
+
+        // Determine the minimum length based on the latest ID's length, default to 4
+        $minLength = max(strlen((string)$latestId), 4);
+
+        // Return zero-padded ID dynamically
+        return str_pad($nextId, $minLength, '0', STR_PAD_LEFT);
+    }
     public function toWarehouse()
     {
         return $this->belongsTo(Warehouse::class, 'to_warehouse_id');

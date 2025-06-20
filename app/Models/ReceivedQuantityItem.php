@@ -16,30 +16,8 @@ class ReceivedQuantityItem extends Model
      */
     protected $fillable = [
         'quantity',
-        'parent_id',
-        'received_by',
-        'received_at',
-        'transfer_id',
         'product_id',
-        'packing_list_id',
-        'expiry_date',
-        'uom',
-        'barcode',
-        'batch_number',
-        'unit_cost',
-        'total_cost',
-        'warehouse_id',
-    ];
-    
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'received_at' => 'datetime',
-        'expiry_date' => 'date',
-        'quantity' => 'integer',
+        'parent_id',
     ];
     
     /**
@@ -51,34 +29,11 @@ class ReceivedQuantityItem extends Model
     }
     
     /**
-     * Get the user who received this item.
-     */
-    public function receiver()
-    {
-        return $this->belongsTo(User::class, 'received_by');
-    }
-    
-    /**
-     * Get the transfer associated with this item.
-     */
-    public function transfer()
-    {
-        return $this->belongsTo(Transfer::class);
-    }
-    
-    /**
      * Get the product associated with this item.
      */
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
-    
-    /**
-     * Get the packing list associated with this item.
-     */
-    public function packingList()
-    {
-        return $this->belongsTo(PackingList::class);
-    }
+
 }

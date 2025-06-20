@@ -262,7 +262,7 @@ class ReportController extends Controller
     public function receivedQuantities(Request $request)
     {
         $query = MonthlyQuantityReceived::query()
-            ->with(['items.product.dosage','items.product.category', 'items.receiver', 'items.transfer', 'items.packingList']);
+            ->with(['items.product.dosage','items.product.category']);
 
         // Apply filters
         // Warehouse filter removed as warehouse_id doesn't exist in the product table
@@ -285,14 +285,6 @@ class ReportController extends Controller
         // Backward compatibility for old filter format
         else if ($request->filled('month')) {
             $query->where('month_year', 'like', $request->month . '%');
-        }
-
-        if ($request->filled('source')) {
-            if ($request->source === 'transfer') {
-                $query->whereNotNull('transfer_id')->whereNull('packing_list_id');
-            } elseif ($request->source === 'packing_list') {
-                $query->whereNotNull('packing_list_id')->whereNull('transfer_id');
-            }
         }
         
         $receivedQuantities = $query->paginate($request->input('per_page', 1), ['*'], 'page', $request->input('page', 1))

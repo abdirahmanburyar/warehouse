@@ -208,6 +208,7 @@ class ExpiredController extends Controller
             $inv = InventoryItem::with('product','location','warehouse')->find($inventory);
             $facilities = Facility::get();
             $warehouses = Warehouse::get();
+            $transferID = Transfer::generateTransferId();
             if (!$inv) {
                 return redirect()->route('expired.index')->with('error', 'Inventory not found');
             }
@@ -215,7 +216,8 @@ class ExpiredController extends Controller
             return inertia("Expired/Transfer", [
                 "inventory" => $inv,
                 'facilities' => $facilities,
-                'warehouses' => $warehouses
+                'warehouses' => $warehouses,
+                'transferID' => $transferID
             ]);
         }
 
@@ -238,10 +240,10 @@ class ExpiredController extends Controller
             }
 
             // Generate transfer ID
-            $transferId = ExpiredTransfer::generateTransferId();
+            $transferId = Transfer::generateTransferId();
 
             // Create transfer record
-            $transfer = ExpiredTransfer::create([
+            $transfer = Transfer::create([
                 'transfer_id' => $transferId,
                 'inventory_id' => $inventory->id,
                 'destination_type' => $request->destination_type,

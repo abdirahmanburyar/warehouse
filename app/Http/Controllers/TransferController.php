@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\IssuedQuantity;
 use App\Models\Disposal;
 use App\Models\BackOrderHistory;
+use App\Models\InventoryItem;
 use App\Models\Liquidate;
 use App\Models\ReceivedQuantity;
 use Carbon\Carbon;
@@ -239,6 +240,7 @@ class TransferController extends Controller
                 'source_id' => 'required|integer',
                 'destination_type' => 'required|in:warehouse,facility',
                 'destination_id' => 'required|integer',
+                'transfer_date' => 'required|date',
                 'items' => 'required|array',
                 'items.*.id' => 'required|integer',
                 'items.*.product_id' => 'required|integer',
@@ -259,7 +261,7 @@ class TransferController extends Controller
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
                 'created_by' => auth()->id(),
                 'quantity' => collect($request->items)->sum('quantity'),
-                'transfer_date' => now(),
+                'transfer_date' => $request->transfer_date,
                 'status' => 'pending',
                 'note' => $request->notes
             ];
@@ -271,7 +273,7 @@ class TransferController extends Controller
             foreach ($request->items as $item) {
                 // Validate inventory exists and has sufficient quantity
                 if ($request->source_type === 'warehouse') {
-                    $inventory = Inventory::where('warehouse_id', $request->source_id)
+                    $inventory = InventoryItem::where('warehouse_id', $request->source_id)
                         ->where('id', $item['id'])
                         ->first();
                         
@@ -544,7 +546,7 @@ class TransferController extends Controller
             if ($differences > 0) {
                 if ($isWarehouseTransfer) {
                     // Warehouse inventory check
-                    $inventoryQuery = Inventory::where('product_id', $transferItem->product_id)
+                    $inventoryQuery = InventoryItem::where('product_id', $transferItem->product_id)
                         ->where('warehouse_id', $transfer->from_warehouse_id)
                         ->where('batch_number', $transferItem->batch_number)
                         ->where('is_active', true);
@@ -601,7 +603,7 @@ class TransferController extends Controller
             if ($differences != 0) {
                 if ($isWarehouseTransfer) {
                     // Update warehouse inventory
-                    $inventoryQuery = Inventory::where('product_id', $transferItem->product_id)
+                    $inventoryQuery = InventoryItem::where('product_id', $transferItem->product_id)
                         ->where('warehouse_id', $transfer->from_warehouse_id)
                         ->where('batch_number', $transferItem->batch_number);
                         
@@ -629,13 +631,18 @@ class TransferController extends Controller
                         $inventory->save();
                     } else if ($differences < 0) {
                         // Create new inventory record if we're returning items to the warehouse
-                        Inventory::create([
+                        $inventory = Inventory::create([
+                            'product_id' => $transferItem->product_id
+                        ]);
+                        $inventory->items()->create([
                             'product_id' => $transferItem->product_id,
-                            'warehouse_id' => $transfer->from_warehouse_id,
-                            'quantity' => abs($differences),
                             'batch_number' => $transferItem->batch_number,
                             'expiry_date' => $transferItem->expire_date,
-                            'is_active' => true
+                            'barcode' => $transferItem->barcode,
+                            'uom' => $transferItem->uom,
+                            'unit_cost' => $transferItem->unit_cost,
+                            'total_cost' => $transferItem->unit_cost * $transferItem->quantity,
+                            'quantity' => $transferItem->quantity,
                         ]);
                     }
                 } else {
@@ -1110,14 +1117,19 @@ class TransferController extends Controller
                     'batch_number' => $item['batch_number'],
                 ]);
             } else {
-                Inventory::create([
+                $inventory = Inventory::create([
                     'warehouse_id' => $transfer['to_warehouse_id'],
-                    'location_id' => null,
+                    'product_id' => $item['product_id']
+                ]);
+                $inventory->items()->create([
                     'product_id' => $item['product_id'],
                     'batch_number' => $item['batch_number'],
-                    'quantity' => $item['received_quantity'],
                     'expiry_date' => $item['expire_date'],
                     'barcode' => $item['barcode'],
+                    'uom' => $item['uom'],
+                    'unit_cost' => $item['unit_cost'],
+                    'total_cost' => $item['unit_cost'] * $item['received_quantity'],
+                    'quantity' => $item['received_quantity'],
                 ]);
                 ReceivedQuantity::create([
                     'quantity' => $item['received_quantity'],

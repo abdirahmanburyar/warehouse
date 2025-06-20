@@ -105,29 +105,30 @@ class GenerateMonthlyReceivedReport extends Command
             $totalQuantity = 0;
 
             foreach ($receivedQuantities as $receivedQuantity) {
-                $item = new ReceivedQuantityItem();
-                $item->parent_id = $report->id;
-                $item->quantity = $receivedQuantity->quantity;
-                $item->received_by = $receivedQuantity->received_by;
-                $item->warehouse_id = $receivedQuantity->warehouse_id;
-                $item->unit_cost = $receivedQuantity->unit_cost;
-                $item->total_cost = $receivedQuantity->unit_cost * $receivedQuantity->quantity;
-                $item->received_at = $receivedQuantity->received_at;
-                $item->transfer_id = $receivedQuantity->transfer_id;
-                $item->product_id = $receivedQuantity->product_id;
-                $item->packing_list_id = $receivedQuantity->packing_list_id;
-                $item->expiry_date = $receivedQuantity->expiry_date;
-                $item->uom = $receivedQuantity->uom;
-                $item->barcode = $receivedQuantity->barcode;
-                $item->batch_number = $receivedQuantity->batch_number;
-                $item->save();
-                
+                // Check if a row for this product_id already exists in the report
+                $item = ReceivedQuantityItem::where('parent_id', $report->id)
+                    ->where('product_id', $receivedQuantity->product_id)
+                    ->first();
+            
+                if ($item) {
+                    // Update quantity if found
+                    $item->quantity += $receivedQuantity->quantity;
+                    $item->save();
+                } else {
+                    // Create new entry if not found
+                    ReceivedQuantityItem::create([
+                        'parent_id' => $report->id,
+                        'product_id' => $receivedQuantity->product_id,
+                        'quantity' => $receivedQuantity->quantity,
+                    ]);
+                }
+            
                 // Add to total quantity
                 $totalQuantity += $receivedQuantity->quantity;
-
+            
                 $bar->advance();
             }
-
+            
             $bar->finish();
             $this->newLine(2);
             

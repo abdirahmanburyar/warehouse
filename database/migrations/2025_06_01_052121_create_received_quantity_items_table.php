@@ -15,18 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('quantity');
             $table->foreignId('parent_id')->nullable()->constrained('monthly_quantity_receiveds');
-            $table->foreignId('received_by')->nullable()->constrained('users');
-            $table->timestamp('received_at')->nullable();
-            $table->foreignId('transfer_id')->nullable()->constrained('transfers')->onDelete('cascade');
             $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('cascade');
-            $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
-            $table->date('expiry_date')->nullable();
-            $table->string('uom')->nullable();
-            $table->string('barcode')->nullable();
-            $table->double('unit_cost');
-            $table->double('total_cost');
-            $table->string('batch_number')->nullable();
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->timestamps();
         });
     }
