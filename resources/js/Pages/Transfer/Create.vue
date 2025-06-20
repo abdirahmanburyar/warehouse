@@ -458,7 +458,7 @@ function checkQuantity(index) {
                         </div>
                         <div class="flex flex-col">
                             <label for="transfer_date">Transfer Date</label>
-                            <input type="date" v-model="form.transfer_date" class="form-input" readonly>
+                            <input type="date" v-model="form.transfer_date" class="form-input">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
