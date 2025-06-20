@@ -159,6 +159,10 @@ const handleSubmit = async () => {
                                 />
                             </div>
                             <div class="flex items-center w-full gap-2">
+                               
+                                <div class="flex flex-col">
+                                    Transfer ID: {{props.transferID}}
+                                </div>
                                 <div class="flex flex-col">
                                     <label class="inline-flex items-center">
                                         Transfer Date
@@ -166,17 +170,6 @@ const handleSubmit = async () => {
                                     <input
                                         type="date"
                                         v-model="transfer_date"
-                                        class="form-input"
-                                    />
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="inline-flex items-center">
-                                        Transfer ID
-                                    </label>
-                                    <input
-                                        type="text"
-                                        :value="props.transferID"
-                                        readonly
                                         class="form-input"
                                     />
                                 </div>

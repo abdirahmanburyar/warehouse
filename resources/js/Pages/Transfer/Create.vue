@@ -27,6 +27,10 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
+    transferID: {
+        type: String,
+        required: true
+    }
 
 });
 
@@ -46,6 +50,8 @@ const form = ref({
     source_id: null,
     destination_type: 'warehouse',
     destination_id: null,
+    transfer_date: moment().format('YYYY-MM-DD'),
+    transferID: props.transferID,
     items: [
         {
             id: null,
@@ -446,6 +452,15 @@ function checkQuantity(index) {
                     </div>
                 </div>
                 <form @submit.prevent="submit" class="space-y-6">
+                    <div class="w-[300px]">
+                        <div class="flex flex-col">
+                            Transfer ID: {{ props.transferID }}
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="transfer_date">Transfer Date</label>
+                            <input type="date" v-model="form.transfer_date" class="form-input" readonly>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Source Type Selection -->
                         <div>

@@ -388,10 +388,12 @@ class TransferController extends Controller
     public function create(Request $request){
         $warehouses = Warehouse::select('id','name')->get();
         $facilities = Facility::select('id','name')->get();
+        $transferID = Transfer::generateTransferId();
         
         return inertia('Transfer/Create', [
             'warehouses' => $warehouses,
             'facilities' => $facilities,
+            'transferID' => $transferID
         ]);
     }
     
