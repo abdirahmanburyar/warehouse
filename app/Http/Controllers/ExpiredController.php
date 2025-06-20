@@ -181,6 +181,9 @@ class ExpiredController extends Controller
                 'uom' => $inventory->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
             ]);
+
+            // Update inventory quantity
+            $inventory->delete();
             
             // Commit the transaction
             DB::commit();
