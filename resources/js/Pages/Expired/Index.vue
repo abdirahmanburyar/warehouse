@@ -184,7 +184,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-xs font-medium text-gray-500">Product Name</p>
-                        <p class="text-xs text-gray-900">{{ selectedItem.product_name }}</p>
+                        <p class="text-xs text-gray-900">{{ selectedItem.product?.name }}</p>
                         <p class="text-xs font-medium text-gray-500">Batch Number</p>
                         <p class="text-xs text-gray-900">{{ selectedItem.batch_number }}</p>
                         <p class="text-xs font-medium text-gray-500">Barcode</p>
@@ -322,6 +322,7 @@ const removeFile = (index) => {
 };
 
 const disposeItem = (item) => {
+    console.log(item);
     selectedItem.value = item;
     disposeForm.value = {
         quantity: item.quantity || 0,

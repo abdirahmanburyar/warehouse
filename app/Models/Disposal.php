@@ -24,7 +24,7 @@ class Disposal extends Model
         'transfer_id',
         'purchase_order_id',
         'packing_listitem_id',
-        'inventory_id',
+        'inventory_item_id',
         'disposed_by',
         'disposed_at',
         'quantity',

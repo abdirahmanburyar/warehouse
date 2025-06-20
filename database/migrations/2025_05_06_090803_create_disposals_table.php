@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('product_id')->nullable()->nullOnDelete();
             $table->foreignId('purchase_order_id')->nullable()->nullOnDelete();
             $table->foreignId('packing_listitem_id')->nullable()->nullOnDelete();
-            $table->foreignId('inventory_id')->nullable()->nullOnDelete();
+            $table->foreignId('inventory_item_id')->nullable()->nullOnDelete();
             $table->foreignId('disposed_by')->nullable()->nullOnDelete();
             $table->string('barcode')->nullable();
             $table->date('expire_date')->nullable();

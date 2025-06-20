@@ -76,7 +76,7 @@ class ExpiredController extends Controller
     
         // ✅ Paginate while still a query builder
         $paginatedInventories = $query->paginate(
-            $request->input('per_page', 2),
+            $request->input('per_page', 25),
             ['*'],
             'page',
             $request->input('page', 1)
@@ -128,15 +128,10 @@ class ExpiredController extends Controller
         try {
             // Validate the request
             $validated = $request->validate([
-                'id' => 'required|exists:inventories,id',
+                'id' => 'required|exists:inventory_items,id',
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
-                'status' => 'required|string',
-                'note' => 'required|string|max:255',
-                'barcode' => 'required|string',
-                'expiry_date' => 'required|date',
-                'batch_number' => 'required|string',
-                'uom' => 'required|string',
+                'note' => 'nullable|string|max:255',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf', // Max 10MB per file
             ]);
@@ -173,23 +168,18 @@ class ExpiredController extends Controller
             
             // Create a new liquidation record
             $disposal = Disposal::create([
-                'inventory_id' => $request->id,
+                'inventory_item_id' => $request->id,
                 'product_id' => $request->product_id,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => Carbon::now(),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
-                'barcode' => $request->barcode,
-                'expire_date' => $request->expiry_date,
-                'batch_number' => $request->batch_number,
-                'uom' => $request->uom,
+                'barcode' => $inventory->barcode,
+                'expire_date' => $inventory->expiry_date,
+                'batch_number' => $inventory->batch_number,
+                'uom' => $inventory->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
-            ]);
-            
-            // Update the inventory quantity
-            $inventory->update([
-                'quantity' => $inventory->quantity - $request->quantity
             ]);
             
             // Commit the transaction
