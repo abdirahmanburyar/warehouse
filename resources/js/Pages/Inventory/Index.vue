@@ -628,7 +628,6 @@ function getResults(page = 1) {
                                                             class="w-6 h-6"
                                                             alt="Expire soon"
                                                         />
-                                                        Transfer
                                                     </div>
                                                     <div
                                                         v-if="isExpired(item)"
@@ -683,8 +682,6 @@ function getResults(page = 1) {
                                         <div
                                             v-if="
                                                 !isLowStock(inventory) &&
-                                                !isExpiringSoon(inventory) &&
-                                                !isExpired(inventory) &&
                                                 !isOutOfStock(inventory)
                                             "
                                             class="flex items-center"
@@ -702,7 +699,7 @@ function getResults(page = 1) {
                                     class="px-3 py-4 whitespace-nowrap text-sm font-medium"
                                 >
                                     <div class="flex items-center space-x-3">
-                                        <button
+                                        <!-- <button
                                             @click="editInventory(inventory)"
                                             class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
                                         >
@@ -720,7 +717,10 @@ function getResults(page = 1) {
                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                                                 />
                                             </svg>
-                                        </button>
+                                        </button> -->
+                                        <div v-if="isLowStock(inventory)">
+                                            <img src="/assets/images/reorder_status.png" alt="Reorder Status" class="w-6 h-6" title="Reorder Status">
+                                        </div>
                                         <Link
                                             :href="route('supplies.purchase_order')"
                                             v-if="inventory.quantity > inventory.reorder_level"

@@ -498,7 +498,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::put('/{inventory}', [InventoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update');
         Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.destroy');
 
-
         Route::post('/get-locations', [InventoryController::class, 'getLocations'])->name('invetnories.getLocations');
         Route::post('/import', [InventoryController::class, 'import'])->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.import');
     });

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ExpiredResource;
-use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Disposal;
@@ -24,7 +24,7 @@ class ExpiredController extends Controller
         $sixMonthsFromNow = $now->copy()->addMonths(6);
         $oneYearFromNow = $now->copy()->addYear();
     
-        $query = Inventory::query();
+        $query = InventoryItem::query();
     
         $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse', 'location:id,location']);
     
@@ -145,7 +145,7 @@ class ExpiredController extends Controller
             DB::beginTransaction();
             
             // Get the inventory to include its number in the note
-            $inventory = Inventory::find($request->id);
+            $inventory = InventoryItem::find($request->id);
             
             // Generate note based on condition and source
             $note = "Inventory ($inventory->id) - {$request->status}";
@@ -205,7 +205,7 @@ class ExpiredController extends Controller
     public function transfer(Request $request, $inventory)
     {
         if ($request->isMethod('get')) {
-            $inv = Inventory::with('product','location','warehouse')->find($inventory);
+            $inv = InventoryItem::with('product','location','warehouse')->find($inventory);
             $facilities = Facility::get();
             $warehouses = Warehouse::get();
             if (!$inv) {
@@ -229,7 +229,7 @@ class ExpiredController extends Controller
         try {
             DB::beginTransaction();
 
-            $inventory = Inventory::findOrFail($inventory);
+            $inventory = InventoryItem::findOrFail($inventory);
             
             if ($request->quantity > $inventory->quantity) {
                 return response()->json([
