@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('inventory_allocations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_item_id')->constrained('order_items')->cascadeOnDelete();
-            $table->foreignId('transfer_item_id')->constrained('transfer_items')->cascadeOnDelete();
+            $table->foreignId('order_item_id')->nullable()->constrained('order_items')->cascadeOnDelete();
+            $table->foreignId('transfer_item_id')->nullable()->constrained('transfer_items')->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
             $table->foreignId('location_id')->nullable()->constrained('locations');

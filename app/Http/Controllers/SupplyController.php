@@ -351,9 +351,6 @@ class SupplyController extends Controller
         } catch (\Throwable $th) {
             // Rollback the transaction in case of error
             DB::rollBack();
-            logger()->info($request->all());
-
-            
             return response()->json([
                 'message' => $th->getMessage()
             ], 500);
@@ -780,7 +777,6 @@ class SupplyController extends Controller
             $products = Product::get();
             $suppliers = Supplier::get();
             $po = PurchaseOrder::with('supplier','items.product:id,name','items.edited:id,name')->find($id);
-            logger()->info($po);
             return inertia('Supplies/EditPo', [
                 'products' => $products,
                 'suppliers' => $suppliers,
@@ -1046,7 +1042,6 @@ class SupplyController extends Controller
             return response()->json('Document uploaded successfully', 200);
 
         } catch (\Throwable $th) {
-            logger()->error('Upload failed: ' . $th->getMessage());
             return response()->json('Upload failed: The uploaded file could not be saved.', 500);
         }
     }
@@ -1558,7 +1553,6 @@ class SupplyController extends Controller
     {
         try {
             return DB::transaction(function() use ($request){
-                logger()->info($request->all());
                 $request->validate([
                     'id' => 'required',
                     'pk_date' => 'required|date',
@@ -1779,7 +1773,6 @@ class SupplyController extends Controller
             return response()->json(['message' => 'Packing list approved and inventory updated'], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('approvePK error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -1795,9 +1788,6 @@ class SupplyController extends Controller
                 'expire_date' => 'required',
                 'quantity' => 'required|numeric|min:0'
             ]);
-
-            logger()->info($validated);
-
             $packingList->update([
                 'batch_number' => $validated['batch_number'],
                 'location' => $validated['location'],
