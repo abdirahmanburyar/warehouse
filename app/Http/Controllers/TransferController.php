@@ -255,7 +255,7 @@ class TransferController extends Controller
                 'from_facility_id' => $request->source_type === 'facility' ? $request->source_id : null,
                 'to_warehouse_id' => $request->destination_type === 'warehouse' ? $request->destination_id : null,
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
-                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
             ];
     
             $transfer = Transfer::create($transferData);
