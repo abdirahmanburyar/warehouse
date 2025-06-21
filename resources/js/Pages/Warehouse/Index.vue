@@ -159,7 +159,7 @@
                         <td
                             class="px-2 py-2 border border-black text-sm font-medium text-gray-900"
                         >
-                            {{ warehouse.status }}
+                            <span class="capitalize" :class="warehouse.status == 'active' ? 'text-green-500' : 'text-gray-200'">{{ warehouse.status }}</span>
                         </td>
                         <td
                             class="px-2 py-2 border border-black text-sm font-medium text-gray-900"
