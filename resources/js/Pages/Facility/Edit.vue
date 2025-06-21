@@ -364,6 +364,11 @@ const form = ref({
     handled_by: props.facility.handled_by,
 });
 
+onMounted(() => {
+    form.value.handled_by = props.users.find(user => user.id == props.facility.handled_by);
+    form.value.user_id = props.users.find(user => user.id == props.facility.user_id);
+})
+
 async function handleRegionSelect(option) {
     if (option == ADD_NEW_REGION_OPTION) {
         form.value.region = null;
