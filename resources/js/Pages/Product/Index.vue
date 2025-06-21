@@ -589,6 +589,7 @@ const props = defineProps({
 });
 
 const eligibleItems = [
+    "All",
     "Health Centre",
     "Primary Health Unit",
     "District Hospital",

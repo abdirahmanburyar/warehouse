@@ -58,24 +58,45 @@ class EligibleItemController extends Controller
             $request->validate([
                 'products' => 'required|array|min:1',
                 'products.*.product_id' => 'required|exists:products,id',
-                'facility_types' => 'required|array|min:1'
+                'facility_types' => 'required|array|min:1',
             ]);
-
-            foreach ($request->facility_types as $type) {
-                foreach ($request->products as $product) {
-                    $eligibleItem = EligibleItem::firstOrCreate([
-                        'product_id' => $product['product_id'],
-                        'facility_type' => $type,
-                    ]);
+    
+            $allTypes = ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit'];
+    
+            foreach ($request->products as $product) {
+                $productId = $product['product_id'];
+    
+                if (in_array('All', $request->facility_types)) {
+                    // Check which types already exist
+                    $existingTypes = EligibleItem::where('product_id', $productId)
+                        ->pluck('facility_type')
+                        ->toArray();
+    
+                    // Get types that are missing
+                    $missingTypes = array_diff($allTypes, $existingTypes);
+    
+                    foreach ($missingTypes as $type) {
+                        EligibleItem::firstOrCreate([
+                            'product_id' => $productId,
+                            'facility_type' => $type,
+                        ]);
+                    }
+                } else {
+                    foreach ($request->facility_types as $type) {
+                        EligibleItem::firstOrCreate([
+                            'product_id' => $productId,
+                            'facility_type' => $type,
+                        ]);
+                    }
                 }
-            }   
-
+            }
+    
             return response()->json("Created eligible items successfully", 200);
-
         } catch (\Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }
     }
+    
 
     public function update(Request $request)
     {

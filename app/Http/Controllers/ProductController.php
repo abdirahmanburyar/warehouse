@@ -24,30 +24,6 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        // $lastFourMonths = now()->subMonths(4)->format('Y-m');
-        // $leadTime = 5; // days
-
-        // Method 1: Calculate AMC and reorder level using SQL (efficient way)
-        // Update reorder levels with a default of 0 for products without AMC data
-        // DB::statement("
-        //     UPDATE products p
-        //     SET reorder_level = COALESCE(
-        //         (
-        //             SELECT CEIL(avg_quantity * ? + avg_quantity)
-        //             FROM (
-        //                 SELECT 
-        //                     product_id, 
-        //                     CEIL(AVG(quantity)) as avg_quantity
-        //                 FROM warehouse_amcs
-        //                 WHERE month_year >= ?
-        //                 GROUP BY product_id
-        //             ) amc
-        //             WHERE amc.product_id = p.id
-        //         ),
-        //         0  -- Default value if no AMC data exists
-        //     )
-        // ", [$leadTime, $lastFourMonths]);
-
         $query = Product::with(['category', 'dosage'])->latest();
 
         // Search functionality
@@ -60,9 +36,16 @@ class ProductController extends Controller
 
         // EligibleItem
         if($request->filled('eligible')){
-            $query->whereHas('eligible', function ($q) use ($request) {
-                $q->where('facility_type', $request->eligible);
-            });
+            $type = $request->input('eligible');
+            if($type == 'All'){
+                $query->whereHas('eligible', function ($q) use ($request) {
+                    $q->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit']);
+                });
+            }else{
+                $query->whereHas('eligible', function ($q) use ($type) {
+                    $q->where('facility_type', 'like', "%{$type}%");
+                });
+            }
         }
 
         // Category filter

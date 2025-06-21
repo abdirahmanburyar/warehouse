@@ -91,7 +91,7 @@
                                 :class="{ 'opacity-25': processing }"
                                 :disabled="processing"
                             >
-                                Create
+                                {{processing ? 'Creating...' : 'Create'}}
                             </PrimaryButton>
                         </div>
                     </form>
@@ -126,6 +126,7 @@ const props = defineProps({
 
 // Define facility type options
 const facilityTypeOptions = [
+    'All',
     'Distrit Hospital',
     'Primary Health Unit',
     'Health Centre',
