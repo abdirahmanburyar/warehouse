@@ -304,7 +304,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import axios from "axios";
 import Swal from "sweetalert2";
