@@ -3,10 +3,10 @@
         title="Eligible Items"
         description="Manage product eligibility for facilities"
     >
-    <Link :href="route('products.index')" class="inline-flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    Back to Products
-                </Link>
+        <Link :href="route('products.index')" class="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            Back to Products
+        </Link>
         <!-- Import Section -->
         <div class="mb-4 p-4 bg-white shadow rounded-lg">
             <h3 class="text-lg font-medium mb-2">Import Eligible Items</h3>
@@ -79,7 +79,7 @@
                 <Multiselect
                     v-model="facilityType"
                     :options="facilityTypes"
-                    :close-on-select="false"
+                    :close-on-select="true"
                     :searchable="true"
                     :show-labels="true"
                     placeholder="Select Facility Type"
@@ -272,6 +272,7 @@ const submitImport = async () => {
 };
 
 const facilityTypes = [
+    'All',
     "Regional Hospital",
     "District Hospital",
     "Health Centre",
@@ -281,8 +282,6 @@ const facilityTypes = [
 const search = ref(props.filters.search || "");
 const perPage = ref(props.filters.per_page || "10");
 const facilityType = ref(props.filters.facility_type || "");
-const sort_field = ref(props.filters.sort_field || "created_at");
-const sort_direction = ref(props.filters.sort_direction || "desc");
 
 function getResults(page = 1) {
     props.filters.page = page;

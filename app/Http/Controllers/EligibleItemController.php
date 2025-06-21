@@ -28,7 +28,11 @@ class EligibleItemController extends Controller
 
         if ($request->filled('facility_type')) {
             $type = $request->input('facility_type');
-            $query->where('facility_type', 'like', "%{$type}%");
+            if($type == 'All'){
+                $query->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit']);
+            }else{
+                $query->where('facility_type', 'like', "%{$type}%");
+            }
         }
         
         $query = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
@@ -37,7 +41,7 @@ class EligibleItemController extends Controller
 
         return Inertia::render('Product/Eligible/Index', [
             'eligibleItems' => EligibleItemResource::collection($query),
-            'filters' => $request->only(['search', 'sort_field', 'sort_direction', 'per_page','facility_type']),
+            'filters' => $request->only(['search', 'per_page','facility_type']),
         ]);
     }
 
