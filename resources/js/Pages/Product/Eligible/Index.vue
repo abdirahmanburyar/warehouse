@@ -333,6 +333,7 @@ function destroy(item) {
                 .then(() => {
                     isDeleteing.value = false;
                     toast.success("Eligible item deleted successfully");
+                    updateRoute();
                 })
                 .catch(() => {
                     isDeleteing.value = false;
