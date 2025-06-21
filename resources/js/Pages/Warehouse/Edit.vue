@@ -1,6 +1,6 @@
 <template>
-    <AuthenticatedLayout title="Edit Warehouse">
-        <div class="p-6 bg-white border-b flex justify-between items-center">
+    <AuthenticatedLayout title="Warehouse Management" description="Edit warehouse" img="/assets/images/facility.png">
+        <Head title="Edit Warehouse" />        <div class="p-6 bg-white border-b flex justify-between items-center">
             <h1 class="text-3xl font-bold text-gray-900">Edit Warehouse</h1>
         </div>
 

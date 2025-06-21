@@ -1,8 +1,8 @@
 <template>
     <Head title="Warehouses" />
 
-    <AuthenticatedLayout title="Warehouse Management">
-        <!-- Page Header -->
+    <AuthenticatedLayout title="Warehouse Management" description="Warehouse" img="/assets/images/facility.png">
+        <Head title="Warehouses" />        <!-- Page Header -->
         <div class="flex justify-between items-center mb-6">
             <Link
                 :href="route('inventories.index')"
