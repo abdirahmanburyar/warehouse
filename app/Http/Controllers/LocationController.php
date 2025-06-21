@@ -5,28 +5,29 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Location;
 use App\Models\Warehouse;
+use App\Http\Resources\LocationResource;
 
 class LocationController extends Controller
 {
     public function index(Request $request){
-        $locations = Location::query()
-            ->when($request->filled('search'), function($query) use ($request){
-                $query->where('location', 'like', '%' . $request->search . '%');
-            })
-            ->when($request->filled('warehouse'), function($query) use ($request){
-                $query->whereHas('warehouse', function($query) use($request){
-                    $query->where('name', $request->warehouse);
-                });
-            })
-            ->with('warehouse')
-            ->get();
-            
-        $warehouses = Warehouse::select('id','name')->pluck('name')->toArray();
+        $locations = Location::query();
+
+        if($request->filled('search')){
+            $locations->where('location','like','%'.$request->search.'%');
+        }
+        
+        if($request->filled('warehouse')){
+            $locations->where('warehouse', $request->warehouse);
+        }
+
+        $locations = $locations->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $locations->setPath(url()->current());
         
         return inertia('Location/Index', [
-            'locations' => $locations,
-            'warehouses' => $warehouses,
-            'filters' => $request->only(['search', 'warehouse'])
+            'locations' => LocationResource::collection($locations),
+            'warehouses' => Warehouse::pluck('name')->toArray(),
+            'filters' => $request->only('search', 'warehouse','per_page','page')
         ]);
     }
 
@@ -35,13 +36,13 @@ class LocationController extends Controller
             $request->validate([
                 'id' => 'nullable',
                 'location' => 'required|string|unique:locations,location,' . $request->id,
-                'warehouse_id' => 'required'
+                'warehouse' => 'required'
             ]);
             Location::updateOrCreate([
                 'id' => $request->id
             ],[
                 'location' => $request->location,
-                'warehouse_id' => $request->warehouse_id,
+                'warehouse' => $request->warehouse,
             ]);
             return response()->json($request->id ? "Updated" : "Created", 200);
         } catch (\Throwable $th) {
@@ -50,7 +51,7 @@ class LocationController extends Controller
     }
 
     public function create(Request $request){
-        $warehouses = Warehouse::get();
+        $warehouses = Warehouse::pluck('name')->toArray();
         return inertia('Location/Create',[
             'warehouses' => $warehouses
         ]);
@@ -68,13 +69,13 @@ class LocationController extends Controller
 
     public function edit(Request $request, $id){
         $location = Location::find($id);
-        $warehouses = Warehouse::get();
+        $warehouses = Warehouse::pluck('name')->toArray();
         return inertia("Location/Edit", ['location' => $location, 'warehouses' => $warehouses]);
     }
 
     public function getLocations(Request $request, $id){
         try {
-            $locations = Location::where('warehouse_id', $id)->select('id','location','warehouse_id')->get();
+            $locations = Location::where('warehouse', $id)->select('id','location','warehouse')->get();
             return response()->json($locations, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);

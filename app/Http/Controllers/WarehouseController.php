@@ -129,16 +129,7 @@ class WarehouseController extends Controller
             $warehouse->city = \App\Models\City::find($warehouse->city_id);
         }
         
-        // Log the warehouse data for debugging
-        logger()->info([
-            'warehouse_id' => $warehouse->id,
-            'state_id' => $warehouse->state_id,
-            'district_id' => $warehouse->district_id,
-            'city_id' => $warehouse->city_id,
-            'state' => $warehouse->state,
-            'district' => $warehouse->district,
-            'city' => $warehouse->city
-        ]);
+
         
         return Inertia::render('Warehouse/Edit', [
             'warehouse' => $warehouse,

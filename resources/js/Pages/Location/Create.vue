@@ -19,44 +19,35 @@
                 <div>
                     <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
                     <div class="relative">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
                         <input 
                             type="text" 
                             id="location" 
                             v-model="form.location" 
-                            class="pl-10 block w-full rounded-full border-black shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            class="pl-10 block w-full border-black shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                             placeholder="Enter location name (e.g. Shelf A-1)"
                             required
                         >
                     </div>
                 </div>
                 <div>
-                    <label for="warehouse_id" class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                    <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
                     <div class="relative">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="filter-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <select 
-                            id="warehouse_id" 
-                            v-model="form.warehouse_id" 
-                            class="pl-10 block w-full rounded-full border-black shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 appearance-none bg-white"
+                        <Multiselect
+                            v-model="form.warehouse"
+                            :options="props.warehouses"
+                            placeholder="Select a warehouse"
                             required
-                            placeholder="Select a warehouse"                             
-                        >
-                            <option value="">Select a warehouse</option>
-                            <option :value="w.id" v-for="w in props.warehouses">{{ w.name }}</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
+                        />
                     </div>
                 </div>
                 <div class="flex items-center justify-end space-x-4 mt-8">
+                    <Link
+                        :href="route('inventories.location.index')"
+                        :disabled="processing"
+                        class="text-indigo-600 hover:text-indigo-900"
+                    >
+                        Exit
+                    </Link>
                     <button 
                         type="submit"
                         class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-full font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-800 focus:outline-none focus:border-indigo-700 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150"
@@ -82,7 +73,9 @@ import { Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import {ref} from 'vue';
 import Swal from 'sweetalert2';
-
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const props = defineProps({
     warehouses: Array
@@ -91,7 +84,7 @@ const props = defineProps({
 const form = ref({
     id: null,
     location: '',
-    warehouse_id: null
+    warehouse: ''
 });
 
 const processing = ref(false);
