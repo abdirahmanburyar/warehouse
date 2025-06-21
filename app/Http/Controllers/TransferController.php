@@ -255,7 +255,7 @@ class TransferController extends Controller
                 'from_facility_id' => $request->source_type === 'facility' ? $request->source_id : null,
                 'to_warehouse_id' => $request->destination_type === 'warehouse' ? $request->destination_id : null,
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
-                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
             ];
     
             $transfer = Transfer::create($transferData);
@@ -278,9 +278,7 @@ class TransferController extends Controller
                         ->orderBy('expiry_date', 'asc')
                         ->get();
                 }
-    
-                logger()->info($inventories);
-    
+        
                 if ($remainingQty > 0) {
                     DB::rollBack();
                     return response()->json("Not enough stock to fulfill {$item['quantity']} units for Item: {$item['product']['name']}", 400);
