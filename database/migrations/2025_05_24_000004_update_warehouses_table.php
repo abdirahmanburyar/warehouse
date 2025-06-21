@@ -23,26 +23,14 @@ return new class extends Migration
         Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code')->unique();
             $table->text('address')->nullable()->comment('Street name');
-            $table->string('state')->nullable();
-            $table->string('district')->nullable();
-            $table->string('city')->nullable();
-            $table->unsignedBigInteger('state_id')->nullable();
-            $table->unsignedBigInteger('district_id')->nullable();
-            $table->unsignedBigInteger('city_id')->nullable();
+            $table->string('district');
+            $table->string('region');
             $table->string('manager_name')->nullable();
             $table->string('manager_phone')->nullable();
             $table->string('manager_email')->nullable();
             $table->string('status')->default('active');
-            $table->foreignIdFor(User::class)->cascadeOnDelete();
-            $table->timestamps();
-            $table->softDeletes();
-            
-            // Add foreign key constraints
-            $table->foreign('state_id')->references('id')->on('states')->onDelete('set null');
-            $table->foreign('district_id')->references('id')->on('districts')->onDelete('set null');
-            $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
+            $table->timestamps();            
         });
         
         // Re-enable foreign key checks

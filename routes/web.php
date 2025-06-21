@@ -178,6 +178,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::delete('/{id}/delete', 'destroy')->name('inventories.warehouses.destroy');
             Route::get('/{id}/edit', 'edit')->name('inventories.warehouses.edit');
 
+            // delete warehouse
+            Route::get('/{id}/toggle-status', 'toggleStatus')->name('inventories.warehouses.toggle-status');
+
         });
 
      // Warehouse Management Routes

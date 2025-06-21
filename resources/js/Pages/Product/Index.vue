@@ -873,31 +873,4 @@ const confirmToggleStatus = (product) => {
     });
 };
 
-const confirmDelete = (product) => {
-    Swal.fire({
-        title: "Are you sure?",
-        text: `Do you want to delete ${product.name}?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(route("products.destroy", product.id), {
-                onSuccess: () => {
-                    Swal.fire(
-                        "Deleted!",
-                        "Product has been deleted.",
-                        "success"
-                    );
-                    updateRoute();
-                },
-                onError: (error) => {
-                    toast.error(error);
-                },
-            });
-        }
-    });
-};
 </script>
