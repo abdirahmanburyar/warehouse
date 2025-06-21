@@ -331,6 +331,12 @@ class OrderController extends Controller
     
             $orderItem = OrderItem::findOrFail($request->item_id);
             $order = $orderItem->order;
+
+            if($orderItem->quantity <= 0) {
+                $orderItem->quantity = $request->quantity;
+                $orderItem->save();
+                $orderItem->refresh();
+            }
     
             if (!in_array($order->status, ['pending'])) {
                 return response()->json('Cannot update quantity for orders that are not in pending status', 500);
