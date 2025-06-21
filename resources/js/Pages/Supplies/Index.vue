@@ -134,11 +134,15 @@
                     </div>
                     <div class="flex-1 mx-2">
                         <label for="supplier" class="text-xs font-medium text-gray-700">Supplier</label>
-                        <select v-model="supplier"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="">Filter by Supplier</option>
-                            <option :value="s.id" v-for="s in props.suppliers">{{ s.name }}</option>
-                        </select>
+                        <Multiselect
+                            v-model="supplier"
+                            :options="props.suppliers"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            placeholder="Select Supplier"
+                        />
                     </div>
                     <div class="flex-1 ml-2">
                         <label for="status" class="text-xs font-medium text-gray-700">Status</label>
@@ -153,11 +157,11 @@
                     <div class="flex-1 ml-2 w-[100px]">
                         <label for="per_page" class="text-xs font-medium text-gray-700">Per Page</label>
                         <select v-model="per_page" @change="props.filters.page = 1"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
+                            class="w-full rounded-3xl border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="10">10 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
                         </select>
                     </div>
                 </div>
@@ -265,27 +269,27 @@
                             <div class="relative">
                                 <div class="overflow-auto">
                                     <table class="min-w-full text-left border-b border-gray-200">
-                                        <thead class="bg-white sticky top-0 z-10">
+                                        <thead class="bg-white sticky  top-0 z-10">
                                             <tr>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     SN#
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     PO Number
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     Supplier
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     P.O Date
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     Total Amount
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     Status
                                                 </th>
-                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black rounded-tl-3xl text-left" style="background: #F7F9FB;">
+                                                <th class="px-4 py-3 text-left align-middle  text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left" style="background: #F7F9FB;">
                                                     Actions
                                                 </th>
                                             </tr>
@@ -316,21 +320,15 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-xs">
                                                     <div class="flex items-center space-x-4">
                                                         <!-- Always show Pending Icon (all statuses start as pending) -->
-                                                        <img src="/assets/images/pending.png" class="w-12 h-12"
+                                                        <img src="/assets/images/pending.png" class="w-8 h-8"
                                                             alt="Pending" />
 
-                                                        <!-- Show Reviewed Icon if status is reviewed, approved, or rejected -->
-                                                        <svg v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'"
-                                                            class="w-12 h-12 text-blue-700" fill="none"
-                                                            stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
+                                                        <img src="/assets/images/review.png" class="w-10 h-10" v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'"
+                                                        alt="Pending" />
 
                                                         <!-- Show Approved Icon if status is approved -->
                                                         <img v-if="po.status === 'approved'"
-                                                            src="/assets/images/approved.png" class="w-12 h-12"
+                                                            src="/assets/images/approved.png" class="w-8 h-8"
                                                             alt="Approved" />
 
                                                         <!-- Show Rejected Icon if status is rejected -->
@@ -522,6 +520,9 @@ import { TailwindPagination } from 'laravel-vue-pagination';
 import moment from 'moment';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { EyeIcon } from '@heroicons/vue/24/outline';
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const toast = useToast();
 const dropdownRef = ref(null);
@@ -604,7 +605,7 @@ const props = defineProps({
 const search = ref(props.filters?.search || '');
 const supplier = ref(props.filters?.supplier || '')
 const status = ref(props.filters?.status || '')
-const per_page = ref(props.filters?.per_page)
+const per_page = ref(props.filters?.per_page || 25)
 
 function formatCurrency(value) {
     return new Intl.NumberFormat('en-US', {

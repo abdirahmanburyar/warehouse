@@ -50,7 +50,9 @@ class SupplyController extends Controller
                 });
             })
             ->when($request->filled('supplier'), function($query) use ($request) {
-                $query->where('supplier_id', $request->supplier);
+                $query->whereHas('supplier', function($query) use ($request) {
+                    $query->where('name', 'like', "%{$request->supplier}%");
+                });
             })
             ->when($request->filled('status'), function($query) use ($request) {
                 $query->where('status', $request->status);
@@ -86,7 +88,7 @@ class SupplyController extends Controller
             'back_orders' => PackingListDifference::count(), // Count the number of back orders instead of summing quantities
         ];
 
-        $purchaseOrders = $purchaseOrders->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $purchaseOrders = $purchaseOrders->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $purchaseOrders->setPath(url()->current()); // Force Laravel to use full URLs
@@ -95,7 +97,7 @@ class SupplyController extends Controller
         return Inertia::render('Supplies/Index', [
             'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
             'filters' => $request->only('search', 'page','per_page', 'supplier','status'),
-            'suppliers' => Supplier::get(),
+            'suppliers' => Supplier::pluck('name')->toArray(),
             'stats' => $stats
         ]);
     }
