@@ -1,9 +1,13 @@
 <template>
-    <AuthenticatedLayout title="Edit Category" description="Edit product category">
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Category</h2>
-        </template>
-
+    <AuthenticatedLayout title="Categories" description="Manage product categories" img="/assets/images/products.png">
+        
+        <div>
+            <Link :href="route('products.index')" class="inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    Back to Products
+                </Link>
+            <h2 class="font-semibold text-xl text-black leading-tight">Edit Category</h2>
+        </div>
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -18,16 +22,6 @@
                                     v-model="form.name"
                                     required
                                     autofocus
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel for="description" value="Description" />
-                                <TextArea
-                                    id="description"
-                                    class="mt-1 block w-full"
-                                    v-model="form.description"
-                                    rows="3"
                                 />
                             </div>
 
@@ -76,8 +70,7 @@ const props = defineProps({
 
 const form = ref({
     id: props.category.data.id,
-    name: props.category.data.name,
-    description: props.category.data.description
+    name: props.category.data.name
 });
 
 const isSubmitting = ref(false);

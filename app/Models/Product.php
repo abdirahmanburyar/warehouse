@@ -30,9 +30,6 @@ class Product extends Model
         'is_active',
     ];
 
-    
-    public $incrementing = false;
-
     protected static function boot()
     {
         parent::boot();

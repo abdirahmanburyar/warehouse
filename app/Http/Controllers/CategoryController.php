@@ -27,13 +27,13 @@ class CategoryController extends Controller
             });
         }
         
-        $categories = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $categories = $query->paginate($request->input('per_page', 22), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
     $categories->setPath(url()->current()); // Force Laravel to use full URLs
         
         return Inertia::render('Product/Category/Index', [
             'categories' => CategoryResource::collection($categories),
-            'filters' => $request->only(['search', 'per_page', 'page']),
+            'filters' => $request->only(['search', 'per_page', 'page'])
         ]);
     }
 
@@ -63,19 +63,17 @@ class CategoryController extends Controller
         try {
             $request->validate([
                 'id' => 'nullable',
-                'name' => 'required',
-                'description' => 'nullable',
+                'name' => 'required'
             ]);
             
-            $dosage = Category::updateOrCreate(
+            $category = Category::updateOrCreate(
                 [
                     'id' => $request->id
                 ],[
-                "name" => $request->name,
-                "description" => $request->description
+                "name" => $request->name
             ]);
             
-            return response()->json('Category created successfully', 200);
+            return response()->json($category, 200);
         } catch (Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }

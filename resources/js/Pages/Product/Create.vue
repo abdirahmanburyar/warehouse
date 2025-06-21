@@ -133,16 +133,8 @@
                                         type="text"
                                         class="mt-1 block w-full"
                                         v-model="newCategory.name"
+                                        placeholder="Create new Category"
                                     />
-                                </div>
-                                <div>
-                                    <InputLabel for="new-category-description" value="Description" />
-                                    <textarea
-                                        id="new-category-description"
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        v-model="newCategory.description"
-                                        rows="3"
-                                    ></textarea>
                                 </div>
                             </div>
                         </div>
@@ -180,6 +172,7 @@
                                         type="text"
                                         class="mt-1 block w-full"
                                         v-model="newDosage.name"
+                                        placeholder="Create new Dosage"
                                     />
                                 </div>
                             </div>
@@ -249,10 +242,11 @@ const form = ref({
 const processing = ref(false);
 const showCategoryModal = ref(false);
 const showDosageModal = ref(false);
-const newCategory = ref({ name: '', description: '' });
-const newDosage = ref({ name: '', description: '' });
+const newCategory = ref({ name: '' });
+const newDosage = ref({ name: '' });
 
 const facilityTypes = ref([
+    "All",
     "Health Centre",
     "Primary Health Unit",
     "District Hospital",
@@ -268,6 +262,7 @@ const submit = async () => {
         category_id: form.value.category?.id,
         dosage_id: form.value.dosage?.id
     };
+    console.log(payload);
     processing.value = true;
     await axios.post(route('products.store'), payload)
     .then((response) => {
@@ -289,6 +284,7 @@ const submit = async () => {
 
 // Function to create a new category
 async function createNewCategory() {
+    console.log(newCategory.value);
     if (!newCategory.value.name) {
         toast.error('Category name is required');
         return;
@@ -296,13 +292,12 @@ async function createNewCategory() {
     
     try {
         processing.value = true;
-        const response = await axios.post(route('categories.store'), newCategory.value);
+        const response = await axios.post(route('products.categories.store'), newCategory.value);
         
         // Add the new category to the categories list
         const newCategoryObj = {
             id: response.data.id || response.data,  // Handle different response formats
-            name: newCategory.value.name,
-            description: newCategory.value.description
+            name: newCategory.value.name
         };
         
         props.categories.data.push(newCategoryObj);
@@ -312,13 +307,14 @@ async function createNewCategory() {
         form.value.category_id = newCategoryObj.id;
         
         // Reset and close modal
-        newCategory.value = { name: '', description: '' };
+        newCategory.value = { name: '' };
         showCategoryModal.value = false;
         
         toast.success('Category created successfully');
         processing.value = false;
     } catch (error) {
         processing.value = false;
+        console.log(error);
         toast.error(error.response?.data || 'Failed to create category');
     }
 }
@@ -347,7 +343,7 @@ async function createNewDosage() {
         form.value.dosage_id = newDosageObj.id;
         
         // Reset and close modal
-        newDosage.value = { name: '', id: '' };
+        newDosage.value = { name: '' };
         showDosageModal.value = false;
         
         toast.success('Dosage form created successfully');

@@ -3,6 +3,10 @@
         title="Eligible Items"
         description="Manage product eligibility for facilities"
     >
+    <Link :href="route('products.index')" class="inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    Back to Products
+                </Link>
         <!-- Import Section -->
         <div class="mb-4 p-4 bg-white shadow rounded-lg">
             <h3 class="text-lg font-medium mb-2">Import Eligible Items</h3>

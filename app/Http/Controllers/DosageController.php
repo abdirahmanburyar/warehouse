@@ -27,7 +27,7 @@ class DosageController extends Controller
             });
         }
 
-        $dosages = $query->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
+        $dosages = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
         $dosages->setPath(url()->current()); // Force Laravel to use full URLs        
         
@@ -74,7 +74,7 @@ class DosageController extends Controller
                 "name" => $request->name,
             ]);
             
-            return response()->json('Dosage created successfully', 200);
+            return response()->json($dosage, 200);
         } catch (Throwable $e) {
             return response()->json($e->getMessage(), 500);
         }

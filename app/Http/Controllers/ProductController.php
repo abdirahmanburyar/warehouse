@@ -12,6 +12,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Throwable;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProductsImport;
@@ -57,11 +58,23 @@ class ProductController extends Controller
             });
         }
 
+        // EligibleItem
+        if($request->filled('eligible')){
+            $query->whereHas('eligible', function ($q) use ($request) {
+                $q->where('facility_type', $request->eligible);
+            });
+        }
+
         // Category filter
         if ($request->filled('category')) {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('name', $request->category);
             });
+        }
+
+        // status
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status);
         }
 
         // Dosage filter
@@ -87,7 +100,7 @@ class ProductController extends Controller
             'products' => ProductResource::collection($products),
             'categories' => Category::pluck('name')->toArray(),
             'dosages' => Dosage::pluck('name')->toArray(),
-            'filters' => $request->only(['search', 'category', 'dosage', 'per_page', 'page'])
+            'filters' => $request->only(['search', 'category', 'dosage', 'per_page', 'page','eligible', 'status'])
         ]);
     }
 
@@ -120,58 +133,68 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
+            $request->validate([
                 'id' => 'nullable|exists:products,id',
-                'name' => $request->id ? 'required|string|max:255' : 'required|string|max:255|unique:products,name',
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    $request->id ? Rule::unique('products', 'name')->ignore($request->id) : Rule::unique('products', 'name')
+                ],
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                'movement' => 'required',
+                'movement' => 'required|string',
                 'facility_types' => 'nullable|array'
             ]);
-
+    
             DB::beginTransaction();
-            
+    
             // Create or update the product
-            $product = Product::updateOrCreate(['id' => $validated['id']], [
-                'name' => $validated['name'],
-                'category_id' => $validated['category_id'] ?? null,
-                'dosage_id' => $validated['dosage_id'] ?? null,
-                'movement' => $validated['movement'],
-            ]);
-            
-            // For a new product, we need to make sure we have the correct ID
-            if ($request->id === null) {
-                // Get the latest product with this name
-                $freshProduct = Product::where('name', $validated['name'])->latest()->first();
-                
-                if ($freshProduct) {
-                    $product = $freshProduct;
-                    logger()->info('Using product with ID: ' . $product->id);
-                } else {
-                    logger()->error('Could not find the newly created product');
-                }
+            $product = Product::find($request->id);
+            if($product){
+                $product->update([
+                    'name' => $request->name,
+                    'category_id' => $request->category_id,
+                    'dosage_id' => $request->dosage_id,
+                    'movement' => $request->movement,
+                ]);
+            }else{
+                $product = Product::create([
+                    'name' => $request->name,
+                    'category_id' => $request->category_id,
+                    'dosage_id' => $request->dosage_id,
+                    'movement' => $request->movement,
+                ]);
             }
-            
-            // Handle facility types if provided - only for new products
-            if (!empty($request->facility_types) && $request->id === null && $product) {
-                // Create eligible items for each facility type
-                foreach ($request->facility_types as $facilityType) {
+    
+            // Only assign facility types for new products
+            if (!$request->id && !empty($request->facility_types)) {
+                $facilityTypes = $request->facility_types;
+    
+                if (in_array('All', $facilityTypes)) {
+                    // Replace "All" with all actual types
+                    $facilityTypes = ['Health Centre', 'Primary Health Unit', 'District Hospital', 'Regional Hospital'];
+                }
+    
+                foreach ($facilityTypes as $type) {
                     EligibleItem::create([
                         'product_id' => $product->id,
-                        'facility_type' => $facilityType
+                        'facility_type' => $type,
                     ]);
                 }
             }
-            
+    
             DB::commit();
-            
+    
             return response()->json($request->id ? 'Product updated successfully.' : 'Product created successfully.', 200);
-        } catch (Throwable $e) {
+    
+        } catch (Throwable $th) {
             DB::rollBack();
-            logger()->info($e->getMessage());
-            return response()->json($e->getMessage(), 500);
+            logger()->error('Product store error', ['error' => $th->getMessage()]);
+            return response()->json($th->getMessage(), 500);
         }
     }
+    
 
     /**
      * Remove the specified product from storage.

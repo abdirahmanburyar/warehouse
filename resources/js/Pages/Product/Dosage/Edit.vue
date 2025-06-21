@@ -1,8 +1,12 @@
 <template>
-    <AuthenticatedLayout title="Edit Dosage Form" description="Edit dosage form">
-        <template #header>
+    <AuthenticatedLayout title="Edit Dosage Form" description="Edit dosage form" img="/assets/images/products.png">
+        <div>
+            <Link :href="route('products.index')" class="inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    Back to Products
+                </Link>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Dosage Form</h2>
-        </template>
+        </div>
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -18,16 +22,6 @@
                                     v-model="form.name"
                                     required
                                     autofocus
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel for="description" value="Description" />
-                                <TextArea
-                                    id="description"
-                                    class="mt-1 block w-full"
-                                    v-model="form.description"
-                                    rows="3"
                                 />
                             </div>
 
@@ -63,7 +57,6 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextArea from '@/Components/TextArea.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useToast } from 'vue-toastification';
 import Swal from 'sweetalert2';
 import { ref } from 'vue';
 import axios from 'axios';
@@ -77,8 +70,7 @@ const props = defineProps({
 
 const form = ref({
     id: props.dosage.data.id,
-    name: props.dosage.data.name,
-    description: props.dosage.data.description
+    name: props.dosage.data.name
 });
 
 const isSubmitting = ref(false);

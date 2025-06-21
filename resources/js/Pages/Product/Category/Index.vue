@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Categories" description="Manage product categories">
+    <AuthenticatedLayout title="Categories" description="Manage product categories" img="/assets/images/products.png">
         <div class="flex justify-between items-center mb-5">
             <div>
                 <Link :href="route('products.index')" class="inline-flex items-center">
@@ -26,7 +26,7 @@
             placeholder="Search categories..."
             class="w-[300px]"
         >
-        <select v-model="per_page" class="w-[200px]">
+        <select v-model="per_page" class="w-[200px] rounded-3xl">
             <option value="10">10 per page</option>
             <option value="25">25 per page</option>
             <option value="50">50 per page</option>
@@ -35,7 +35,7 @@
         </div>
 
         <div class="py-6">
-            <div v-if="!categories.data.length" class="text-center py-12 bg-white rounded-lg shadow">
+            <div v-if="!categories.data.length" class=" py-12 bg-white rounded-lg shadow">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                 </svg>
@@ -54,46 +54,34 @@
                 <table class="min-w-full divide-y divide-black">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
+                            <th class="px-6 py-3 text-start text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
                                 Name
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
-                                Description
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase cursor-pointer hover:text-gray-700 border border-black">
-                                Created At
-                            </th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-black uppercase border border-black">
+                            <th class="px-6 py-3 text-start text-xs font-medium text-black uppercase border border-black">
                                 Status
                             </th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-black uppercase border border-black">
+                            <th class="px-6 py-3 text-start text-xs font-medium text-black uppercase border border-black">
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-black">
+                    <tbody class="bg-white divide-y divide-black text-start">
                         <tr v-for="category in categories.data" :key="category.id" class="hover:bg-gray-50 border-b border-black">
                             <td class="px-6 py-4 border border-black">
                                 <div class="text-sm font-medium text-black">{{ category.name }}</div>
                                 </td>
-                            <td class="px-6 py-4 text-sm text-black border border-black">
-                                {{ category.description || '-' }}
-                            </td>
-                            <td class="px-6 py-4 text-sm text-black border border-black">
-                                {{ moment(category.created_at).format('DD/MM/YYYY') }}
-                            </td>
-                            <td class="px-6 py-4 text-center text-sm font-medium border border-black">
+                            <td class="px-6 py-4  text-sm font-medium border border-black">
                             <span 
                                 :class="{
                                     'bg-green-100 text-green-800': category.is_active,
-                                    'bg-red-100 text-red-800': !category.is_active
+                                    'bg-red-100 text-red-800': !category.is_active,
                                 }"
                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                             >
                                 {{ category.is_active ? 'Active' : 'Inactive' }}
                             </span>
                             </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium border border-black">
+                            <td class="px-6 py-4 text-start text-sm font-medium border border-black">
                                 <Link :href="route('products.categories.edit', category.id)" class="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -105,8 +93,8 @@
                                 @click="confirmToggleStatus(category)" 
                                 class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none"
                                 :class="{
-                                    'bg-red-600': category.is_active,
-                                    'bg-green-600': !category.is_active,
+                                    'bg-red-600': !category.is_active,
+                                    'bg-green-600': category.is_active,
                                     'opacity-50 cursor-wait': loadingCategories.has(category.id)
                                 }"
                                 :disabled="loadingCategories.has(category.id)"
@@ -160,7 +148,7 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || '');
-const per_page = ref(props.filters.per_page);
+const per_page = ref(props.filters.per_page || 25);
 
 watch([() => search.value, () => per_page.value, () => props.filters.page], () => {
     updateRoute();

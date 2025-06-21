@@ -2,6 +2,7 @@
     <AuthenticatedLayout
         title="Dosage Forms"
         description="Manage product dosage forms"
+        img="/assets/images/products.png"
     >
         <div class="flex justify-between items-center">
             <div>
@@ -40,7 +41,7 @@
             />
             <select
                 v-model="perPage"
-                class="w-[200px]"
+                class="w-[200px] rounded-3xl"
             >
                 <option value="10">10 per page</option>
                 <option value="25">25 per page</option>
@@ -72,9 +73,6 @@
                             Name
                         </th>
                         <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 border border-black">
-                            Created At
-                        </th>
-                        <th class="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 border border-black">
                             Status
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black">
@@ -90,11 +88,6 @@
                             <div class="text-sm font-medium text-gray-900">
                                 {{ dosage.name }}
                             </div>
-                        </td>
-                        <td
-                            class="px-6 py-4 text-sm text-gray-500 border border-black"
-                        >
-                            {{ moment(dosage.created_at).format("DD/MM/YYYY") }}
                         </td>
                         <td
                             class="px-6 py-4 text-sm text-gray-500 border border-black"
@@ -201,10 +194,11 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || "");
-const perPage = ref(props.filters.per_page || "10");
-
+const perPage = ref(props.filters.per_page || "25");
+const status = ref(props.filters.status || "");
 watch([
     () => search.value,
+    () => status.value,
     () => perPage.value,
     () => props.filters.page
 ], () => {
@@ -215,6 +209,7 @@ function updateRoute() {
     const query = {};
 
     if (search.value) query.search = search.value;
+    if (status.value) query.status = status.value;
     if (perPage.value) query.per_page = perPage.value;
     if (props.filters.page) query.page = props.filters.page;
 
@@ -222,6 +217,9 @@ function updateRoute() {
         preserveState: true,
         preserveScroll: true,
         replace: true,
+        only: [
+            'dosages'
+        ]
     });
 }
 

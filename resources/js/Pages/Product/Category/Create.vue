@@ -1,8 +1,12 @@
 <template>
-    <AuthenticatedLayout title="Create Category" description="Create a new product category">
-        <template #header>
+    <AuthenticatedLayout title="Categories" description="Manage product categories" img="/assets/images/products.png">
+        <div>
+            <Link :href="route('products.index')" class="inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    Back to Products
+                </Link>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create Category</h2>
-        </template>
+        </div>
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -18,16 +22,6 @@
                                     v-model="form.name"
                                     required
                                     autofocus
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel for="description" value="Description" />
-                                <TextArea
-                                    id="description"
-                                    class="mt-1 block w-full"
-                                    v-model="form.description"
-                                    rows="3"
                                 />
                             </div>
 
@@ -71,8 +65,7 @@ import axios from 'axios';
 const toast = useToast();
 
 const form = ref({
-    name: '',
-    description: ''
+    name: ''
 });
 const isSubmitting = ref(false);
 
