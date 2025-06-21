@@ -338,7 +338,7 @@ class OrderController extends Controller
             }
     
             // Original values reference
-            $originalQuantity = $orderItem->quantity ?? 0;
+            $originalQuantity = $orderItem->quantity ?? $request->quantity;
             $originalDays = $orderItem->no_of_days ?: 1; // avoid divide by zero
             $dailyUsageRate = $originalQuantity / $originalDays;
     
