@@ -1,279 +1,382 @@
 <template>
-    <AuthenticatedLayout title="Warehouse Management" description="Edit warehouse" img="/assets/images/facility.png">
-        <Head title="Edit Warehouse" />        <div class="p-6 bg-white border-b flex justify-between items-center">
-            <h1 class="text-3xl font-bold text-gray-900">Edit Warehouse</h1>
-        </div>
+    <Head title="Edit Warehouse" />
+    <AuthenticatedLayout title="Warehouse Management" description="Create new warehouse" img="/assets/images/facility.png">
+        <Link :href="route('inventories.warehouses.index')" >
+            <i class="fas fa-arrow-left mr-2"></i> Back to inventory
+        </Link>
 
-        <div class=" overflow-hidden sm:rounded-lg p-6">
+        <div class="overflow-hidden sm:rounded-lg p-6 mb-[60px]">
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Basic Information -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                        <input type="text" id="name" v-model="form.name" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            required>
-                    </div>
-                    <div>
-                        <label for="code" class="block text-sm font-medium text-gray-700">Code</label>
-                        <input type="text" id="code" v-model="form.code"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            required>
-                    </div>
-                    <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                        <input type="text" id="address" v-model="form.address"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-                
-                <!-- State, District, City Selection -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="state" class="block text-sm font-medium text-gray-700">State</label>
-                        <Multiselect
-                            v-model="selectedState"
-                            :options="states"
-                            :searchable="true"
-                            :close-on-select="true"
-                            :show-labels="false"
-                            placeholder="Select state"
-                            label="name"
-                            track-by="id"
-                            class="multiselect-blue"
-                        >
-                            <template #noResult>No states found</template>
-                        </Multiselect>
-                    </div>
-                    <div>
-                        <label for="district" class="block text-sm font-medium text-gray-700">District</label>
-                        <Multiselect
-                            v-model="selectedDistrict"
-                            :options="filteredDistricts"
-                            :searchable="true"
-                            :close-on-select="true"
-                            :show-labels="false"
-                            placeholder="Select district"
-                            label="name"
-                            track-by="id"
-                            :disabled="!selectedState"
-                            class="multiselect-blue"
-                        >
-                            <template #noResult>No districts found</template>
-                        </Multiselect>
-                    </div>
-                    <div>
-                        <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                        <Multiselect
-                            v-model="selectedCity"
-                            :options="filteredCities"
-                            :searchable="true"
-                            :close-on-select="true"
-                            :show-labels="false"
-                            placeholder="Select city"
-                            label="name"
-                            track-by="id"
-                            :disabled="!selectedDistrict"
-                            class="multiselect-blue"
-                        >
-                            <template #noResult>No cities found</template>
-                        </Multiselect>
-                    </div>
-                </div>
-
-                <!-- Manager Information -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="manager_name" class="block text-sm font-medium text-gray-700">Manager Name</label>
-                        <input type="text" id="manager_name" v-model="form.manager_name"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="manager_email" class="block text-sm font-medium text-gray-700">Manager Email</label>
-                        <input type="email" id="manager_email" v-model="form.manager_email"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="manager_phone" class="block text-sm font-medium text-gray-700">Manager Phone</label>
-                        <input type="tel" id="manager_phone" v-model="form.manager_phone"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-
-                <!-- Warehouse Status -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                        <select id="status" v-model="form.status"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <label
+                            for="name"
+                            class="block text-sm font-medium text-gray-700"
+                            >Name <span class="text-red-500">*</span></label
+                        >
+                        <input
+                            type="text"
+                            id="name"
+                            placeholder="Enter warehouse name"
+                            v-model="form.name"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="address"
+                            class="block text-sm font-medium text-gray-700"
+                            >Address</label
+                        >
+                        <input
+                            type="text"
+                            id="address"
+                            placeholder="Enter warehouse address"
+                            v-model="form.address"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="manager_name">Manager Name</label>
+                        <input
+                            type="text"
+                            id="manager_name"
+                            placeholder="Enter manager name"
+                            v-model="form.manager_name"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="manager_email">Manager Email</label>
+                        <input
+                            type="email"
+                            id="manager_email"
+                            placeholder="Enter manager email"
+                            v-model="form.manager_email"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="manager_phone">Manager Phone</label>
+                        <input
+                            type="tel"
+                            id="manager_phone"
+                            v-model="form.manager_phone"
+                            placeholder="Enter manager phone"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- region -->
+                    <div>
+                        <label for="region">Region</label>
+                        <Multiselect
+                            v-model="form.region"
+                            :options="[...props.regions, ADD_NEW_REGION_OPTION]"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            placeholder="Select Region"
+                            @select="handleRegionSelect"
+                        >
+                            <template v-slot:option="{ option }">
+                                <div
+                                    :class="{
+                                        'add-new-option': option.isAddNew,
+                                    }"
+                                >
+                                    <span
+                                        v-if="option.isAddNew"
+                                        class="text-indigo-600 font-medium"
+                                    >
+                                        + Add New Region
+                                    </span>
+                                    <span v-else>{{ option }}</span>
+                                </div>
+                            </template>
+                        </Multiselect>
+                    </div>
+                    <div>
+                        <label for="district">District</label>
+                        <Multiselect
+                            v-model="form.district"
+                            :options="[...districts, ADD_NEW_DISTRICT_OPTION]"
+                            :searchable="true"
+                            :disabled="!form.region"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            placeholder="Select District"
+                            @select="handleDistrictSelect"
+                        >
+                            <template v-slot:option="{ option }">
+                                <div
+                                    :class="{
+                                        'add-new-option': option.isAddNew,
+                                    }"
+                                >
+                                    <span
+                                        v-if="option.isAddNew"
+                                        class="text-indigo-600 font-medium"
+                                    >
+                                        + Add New District
+                                    </span>
+                                    <span v-else>{{ option }}</span>
+                                </div>
+                            </template>
+                        </Multiselect>
+                    </div>
+                    <div>
+                        <label for="status">Status</label>
+                        <select
+                            id="status"
+                            v-model="form.status"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        >
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                            <option value="maintenance">Maintenance</option>
                         </select>
                     </div>
                 </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end space-x-3">
-                    <Link :href="route('inventories.warehouses.index')" 
-                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <div class="flex justify-end mt-3 gap-2">
+                    <!-- exit btn -->
+                    <Link :disabled="isSumitting" :href="route('inventories.warehouses.index')" class="mt-6 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">
                         Exit
                     </Link>
-                    <button type="submit"
-                        :disabled="loading"
-                        class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {{ loading ? 'Saving...' : 'Save Changes' }}
+                    <button type="submit" :disabled="isSumitting" class="mt-6 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">
+                        {{ isSumitting ? 'Updating...' : 'Update Warehouse' }}
                     </button>
                 </div>
+
             </form>
+            <!-- New Region Modal -->
+            <Modal :show="showRegionModal" @close="showRegionModal = false">
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        Add New Region
+                    </h2>
+
+                    <div class="mt-6">
+                        <label for="new_region" class="block text-sm font-medium text-gray-700">Region Name</label>
+                        <input
+                            id="new_region"
+                            type="text"
+                            class="mt-1 block w-full"
+                            placeholder="Enter region name"
+                            v-model="newRegion"
+                            required
+                        />
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <SecondaryButton
+                            @click="showRegionModal = false"
+                            :disabled="isNewRegion"
+                        >
+                            Cancel
+                        </SecondaryButton>
+                        <PrimaryButton
+                            :disabled="isNewRegion"
+                            @click="createRegion"
+                        >
+                            {{
+                                isNewRegion ? "Waiting..." : "Create Region"
+                            }}
+                        </PrimaryButton>
+                    </div>
+                </div>
+            </Modal>
+
+            <!-- New District Modal -->
+            <Modal
+                :show="showDistrictModal"
+                @close="showDistrictModal = false"
+            >
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        Add New District
+                    </h2>
+
+                    <div class="mt-6">
+                        <label for="name" class="block text-sm font-medium text-gray-700">District Name</label>
+                        <input
+                            id="name"
+                            type="text"
+                            class="mt-1 block w-full"
+                            placeholder="Enter district name"
+                            v-model="newDistrict"
+                            required
+                        />
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <SecondaryButton
+                            @click="showDistrictModal = false"
+                            :disabled="isNewDistrict"
+                        >
+                            Cancel
+                        </SecondaryButton>
+                        <PrimaryButton
+                            :disabled="isNewDistrict"
+                            @click="createDistrict"
+                        >
+                            {{
+                                isNewDistrict
+                                    ? "Waiting..."
+                                    : "Create District"
+                            }}
+                        </PrimaryButton>
+                    </div>
+                </div>
+            </Modal>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Link, router } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted } from 'vue';
-import Swal from 'sweetalert2';
-import axios from 'axios';
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
-import '@/Components/multiselect.css';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import { Link, router } from "@inertiajs/vue3";
+import { ref } from "vue";
+import axios from "axios";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+import Modal from "@/Components/Modal.vue";
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
 
 const props = defineProps({
-    warehouse: {
-        required: true,
-        type: Object
-    },
-    states: {
-        type: Array,
-        default: () => []
-    },
-    districts: {
-        type: Array,
-        default: () => []
-    },
-    cities: {
-        type: Array,
-        default: () => []
-    }
+    warehouse: Object,
+    regions: Array,
 });
 
-// Use the data passed from the controller
-const states = ref(props.states || []);
-const districts = ref(props.districts || []);
-const cities = ref(props.cities || []);
+const districts = ref([]);
 
-// Selected values
-const selectedState = ref(null);
-const selectedDistrict = ref(null);
-const selectedCity = ref(null);
+const showRegionModal = ref(false);
+const newRegion = ref("");
+const isNewRegion = ref(false);
+const showDistrictModal = ref(false);
+const newDistrict = ref("");
+const isNewDistrict = ref(false);
 
-// Filter districts based on selected state
-const filteredDistricts = computed(() => {
-    if (!selectedState.value) return [];
-    return districts.value.filter(d => d.state_id === selectedState.value.id);
-});
-
-// Filter cities based on selected district
-const filteredCities = computed(() => {
-    if (!selectedDistrict.value) return [];
-    return cities.value.filter(c => c.district_id === selectedDistrict.value.id);
-});
-
-// Initialize selected values if they exist
-onMounted(() => {
-    console.log('Warehouse data:', props.warehouse);
-    console.log('States data:', states.value);
-    
-    // Set state
-    if (props.warehouse.state_id && states.value.length > 0) {
-        selectedState.value = states.value.find(s => s.id === props.warehouse.state_id);
-    }
-    
-    // Set district
-    if (props.warehouse.district_id && districts.value.length > 0) {
-        selectedDistrict.value = districts.value.find(d => d.id === props.warehouse.district_id);
-    }
-    
-    // Set city
-    if (props.warehouse.city_id && cities.value.length > 0) {
-        selectedCity.value = cities.value.find(c => c.id === props.warehouse.city_id);
-    }
-});
+const ADD_NEW_REGION_OPTION = "+ Add New Region";
+const ADD_NEW_DISTRICT_OPTION = "+ Add New District";
 
 // Form data
-const loading = ref(false);
 const form = ref({
-    id: props.warehouse.id,
     name: props.warehouse.name,
-    code: props.warehouse.code,
     address: props.warehouse.address,
-    state_id: props.warehouse.state_id,
-    district_id: props.warehouse.district_id,
-    city_id: props.warehouse.city_id,
     manager_name: props.warehouse.manager_name,
-    manager_email: props.warehouse.manager_email,
     manager_phone: props.warehouse.manager_phone,
-    status: props.warehouse.status || 'active',
+    manager_email: props.warehouse.manager_email,
+    status: props.warehouse.status,
+    district: props.warehouse.district,
+    region: props.warehouse.region,
 });
 
-// Watch for state changes
-watch(selectedState, (newState) => {
-    form.value.state_id = newState ? newState.id : null;
-    // Reset district and city when state changes
-    if (selectedDistrict.value && selectedDistrict.value.state_id !== form.value.state_id) {
-        selectedDistrict.value = null;
-        form.value.district_id = null;
+async function handleRegionSelect(option) {
+    if (option == ADD_NEW_REGION_OPTION) {
+        form.value.region = null;
+        showRegionModal.value = true;
+    } else {
+        form.value.region = option;
+        await loadDistrict();
     }
-    // Also reset city
-    if (selectedCity.value) {
-        selectedCity.value = null;
-        form.value.city_id = null;
+}
+
+async function handleDistrictSelect(option) {
+    if (option == ADD_NEW_DISTRICT_OPTION) {
+        form.value.district = null;
+        showDistrictModal.value = true;
+    } else {
+        form.value.district = option;
     }
-});
+}
 
-// Watch for district changes
-watch(selectedDistrict, (newDistrict) => {
-    form.value.district_id = newDistrict ? newDistrict.id : null;
-    // Reset city when district changes
-    if (selectedCity.value && selectedCity.value.district_id !== form.value.district_id) {
-        selectedCity.value = null;
-        form.value.city_id = null;
+const createRegion = async () => {
+    if (!newRegion.value) {
+        toast.error("Please enter a region name");
+        return;
     }
-});
-
-// Watch for city changes
-watch(selectedCity, (newCity) => {
-    form.value.city_id = newCity ? newCity.id : null;
-});
-
-// Submit form
-const submit = async () => {
-    loading.value = true;
-    try {
-        const response = await axios.post(route('inventories.warehouses.store'), form.value);
-        Swal.fire({
-            title: 'Success!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonColor: '#4F46E5',
-        }).then(() => {
-            router.get(route('inventories.warehouses.index'));
+    isNewRegion.value = true;
+    await axios
+        .post(route("assets.regions.store"), { name: newRegion.value })
+        .then((response) => {
+            isNewRegion.value = false;
+            form.value.region = response.data;
+            props.regions.push(response.data);
+            newRegion.value = "";
+            showRegionModal.value = false;
+        })
+        .catch((error) => {
+            isNewRegion.value = false;
+            console.log(error);
         });
-    } catch (error) {
-        console.log(error);
-        loading.value = false;
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'An error occurred',
-            icon: 'error',
-            confirmButtonColor: '#4F46E5',
-        });
-    }
 };
+
+const createDistrict = async () => {
+    if (!newDistrict.value || !form.value.region) {
+        toast.error("Please select region");
+        return;
+    }
+    isNewDistrict.value = true;
+    await axios
+        .post(route("districts.store"), {
+            name: newDistrict.value,
+            region: form.value.region,
+        })
+        .then((response) => {
+            isNewDistrict.value = false;
+            form.value.district = response.data;
+            districts.value.push(response.data);
+            newDistrict.value = "";
+            showDistrictModal.value = false;
+        })
+        .catch((error) => {
+            isNewDistrict.value = false;
+            console.log(error);
+        });
+};
+
+async function loadDistrict() {
+    await axios
+        .post(route("districts.get-districts"), { region: form.value.region })
+        .then((response) => {
+            districts.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+const isSumitting = ref(false);
+
+async function submit() {
+    isSumitting.value = true;
+    await axios.post(route('inventories.warehouses.store'), form.value)
+        .then((response) => {
+            isSumitting.value = false;
+            toast.success(response.data);
+            router.visit(route('inventories.warehouses.index'));
+        })
+        .catch((error) => {
+            isSumitting.value = false
+            console.log(error);
+            toast.error(error.response?.data || "Error creating warehouse");
+        });
+}
 </script>

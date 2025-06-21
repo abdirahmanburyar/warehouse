@@ -20,6 +20,8 @@ class LocationController extends Controller
             $locations->where('warehouse', $request->warehouse);
         }
 
+        $locations->latest();
+
         $locations = $locations->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $locations->setPath(url()->current());

@@ -217,7 +217,7 @@
             </table>
         </div>
 
-        <div class="mt-3 flex justify-end items-center">
+        <div class="mt-3 flex justify-end items-center mb-[100px]">
             <TailwindPagination
                 :data="props.warehouses"
                 :limit="2"

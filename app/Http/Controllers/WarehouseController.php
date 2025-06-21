@@ -36,6 +36,8 @@ class WarehouseController extends Controller
             $warehouses->where('district', $request->district);
         }
 
+        $warehouses->latest();
+
         $warehouses = $warehouses->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $warehouses->setPath(url()->current());
@@ -104,38 +106,14 @@ class WarehouseController extends Controller
     public function edit($id)
     {
         // Make sure the warehouse exists
-        $warehouse = \App\Models\Warehouse::find($id);
+        $warehouse = Warehouse::find($id);
         if (!$warehouse) {
             return redirect()->route('inventories.warehouses.index')->with('error', 'Warehouse not found');
         }
-
-        // Get all states
-        $states = \App\Models\State::orderBy('name')->get();
-        
-        // Get all districts and cities (we'll filter them in the frontend)
-        $districts = \App\Models\District::orderBy('name')->get();
-        $cities = \App\Models\City::orderBy('name')->get();
-        
-        // Load state, district, and city data if they exist
-        if ($warehouse->state_id && !$warehouse->state) {
-            $warehouse->state = \App\Models\State::find($warehouse->state_id);
-        }
-        
-        if ($warehouse->district_id && !$warehouse->district) {
-            $warehouse->district = \App\Models\District::find($warehouse->district_id);
-        }
-        
-        if ($warehouse->city_id && !$warehouse->city) {
-            $warehouse->city = \App\Models\City::find($warehouse->city_id);
-        }
-        
-
         
         return Inertia::render('Warehouse/Edit', [
             'warehouse' => $warehouse,
-            'states' => $states,
-            'districts' => $districts,
-            'cities' => $cities
+            'regions' => Region::pluck('name')->toArray()
         ]);
     }
 
