@@ -130,9 +130,13 @@ class EligibleItemController extends Controller
         ]);
     }
 
-    public function destroy(EligibleItem $eligible)
+    public function destroy($id)
     {
         try {
+            $eligible = EligibleItem::find($id);
+            if (!$eligible) {
+                return response()->json('Eligible item not found', 500);
+            }
             $eligible->delete();
 
             return response()->json('Eligible item deleted successfully.', 200);
