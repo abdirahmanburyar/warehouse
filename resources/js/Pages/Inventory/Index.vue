@@ -646,7 +646,7 @@ function getResults(page = 1) {
                                 </td>
 
                                 <td class="px-3 py-2 text-gray-800">
-                                    {{ inventory.quantity }}
+                                    {{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}
                                 </td>
 
                                 <td class="px-3 py-2 text-gray-800">
