@@ -347,12 +347,14 @@ class TransferController extends Controller
                         ->where('warehouse_id', $sourceId)
                         ->with('product:id,name')
                         ->where('quantity', '>', 0)
+                        ->where('expiry_date', '>', \Carbon\Carbon::now())
                         ->orderBy('expiry_date', 'asc')
                         ->get();
                 } else {
                     $inventories = FacilityInventory::where('product_id', $item['product_id'])
                         ->where('facility_id', $sourceId)
                         ->where('quantity', '>', 0)
+                        ->where('expiry_date', '>', \Carbon\Carbon::now())
                         ->orderBy('expiry_date', 'asc')
                         ->get();
                 }
@@ -429,6 +431,27 @@ class TransferController extends Controller
             'items.inventory_allocations.location',
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
+
+        // Add total quantity on hand for each item using efficient subqueries
+        if ($transfer && $transfer->items) {
+            foreach ($transfer->items as $item) {
+                // Get warehouse inventory for this product (excluding expired)
+                $warehouseQuantity = InventoryItem::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    ->where('expiry_date', '>', \Carbon\Carbon::now())
+                    ->sum('quantity');
+
+                // Get facility inventory for this product (excluding expired)
+                $facilityQuantity = FacilityInventory::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    ->where('expiry_date', '>', \Carbon\Carbon::now())
+                    ->sum('quantity');
+
+                // Add total quantity on hand to the item
+                $item->total_quantity_on_hand = $warehouseQuantity + $facilityQuantity;
+            }
+        }
+
         return inertia('Transfer/Show', [
             'transfer' => $transfer
         ]);
@@ -1025,7 +1048,7 @@ class TransferController extends Controller
                         'name' => $file->getClientOriginalName(),
                         'path' => '/attachments/disposals/' . $fileName,
                         'type' => $file->getClientMimeType(),
-                        'size' => filesize(public_path('attachments/liquidations/' . $fileName)),
+                        'size' => filesize(public_path('attachments/disposals/' . $fileName)),
                         'uploaded_at' => now()->toDateTimeString()
                     ];
                 }
