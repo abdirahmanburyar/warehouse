@@ -692,58 +692,142 @@
                                     </td>
                                     
                                     <!-- Item Details -->
-                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        <table class="w-full border border-collapse border-gray-300">
-                                            <tr>
-                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                                    UoM
-                                                </th>
-                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                                    QTY
-                                                </th>
-                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                                    Batch Number
-                                                </th>
-                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                                    Expiry Date
-                                                </th>
-                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                                    Location
-                                                </th>
-                                            </tr>
-                                            <tr>
-                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                                    {{ item.product?.dosage?.uom || 'N/A' }}
-                                                </td>
-                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                                    {{ allocation.allocated_quantity || 0 }}
-                                                </td>
-                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                                    <span
-                                                        :class="{
-                                                            'text-red-600 font-bold': allocation.batch_number === 'HK5273'
-                                                        }"
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 align-top"
+                                    >
+                                        <table
+                                            class="w-full text-xs border border-gray-300"
+                                        >
+                                            <thead class="bg-gray-50">
+                                                <tr class="text-gray-600">
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        UoM
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        QTY
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Batch
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Expiry
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Location
+                                                    </th>
+                                                    <th
+                                                        class="border border-gray-300"
+                                                    >
+                                                        Status
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="allocation in item.inventory_allocations || [{}]"
+                                                    :key="allocation.id"
+                                                    class="bg-white even:bg-gray-50"
+                                                >
+                                                <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
+                                                    >
+                                                        {{ item.product?.dosage?.uom || 'N/A' }}
+                                                    </td>
+                                                    <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
+                                                    >
+                                                        {{ allocation.allocated_quantity || 0 }}
+                                                    </td>
+                                                    <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
                                                     >
                                                         {{ allocation.batch_number || 'N/A' }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                                    <span
-                                                        :class="{
-                                                            'text-red-600': isExpiringItem(allocation.expiry_date)
-                                                        }"
+                                                    </td>
+                                                    <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
                                                     >
-                                                        {{
-                                                            allocation.expiry_date
-                                                                ? moment(allocation.expiry_date).format("MMM YYYY")
-                                                                : 'N/A'
-                                                        }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                                    {{ allocation.location?.location || 'N/A' }}
-                                                </td>
-                                            </tr>
+                                                        {{ allocation.expiry_date ? moment(allocation.expiry_date).format("MMM YYYY") : 'N/A' }}
+                                                    </td>
+                                                    <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
+                                                    >
+                                                        <div
+                                                            class="text-xs flex flex-col space-y-0.5"
+                                                        >
+                                                            <span
+                                                                class="text-xs"
+                                                                >WH:
+                                                                {{
+                                                                    allocation.location?.warehouse?.name
+                                                                }}</span
+                                                            >
+                                                            <span
+                                                                class="text-xs"
+                                                                >LC:
+                                                                {{
+                                                                    allocation.location?.location
+                                                                }}</span
+                                                            >
+                                                        </div>
+                                                    </td>
+                                                    <td
+                                                        :class="[
+                                                            'border border-gray-300 px-2',
+                                                            isExpiringItem(allocation.expiry_date) ? 'border border-red-500 text-red-500' : ''
+                                                        ]"
+                                                    >
+                                                        <div
+                                                            v-if="isExpiringItem(allocation.expiry_date)"
+                                                            class="flex flex-col items-center"
+                                                        >
+                                                            <img
+                                                                src="/assets/images/soon_expire.png"
+                                                                title="Expire soon"
+                                                                class="w-6 h-6"
+                                                                alt="Expire soon"
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            v-if="moment(allocation.expiry_date).isBefore(moment())"
+                                                            class="flex flex-col items-center"
+                                                        >
+                                                            <img
+                                                                src="/assets/images/expired_stock.png"
+                                                                title="Expired"
+                                                                class="w-6 h-6"
+                                                                alt="Expired"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
                                         </table>
                                     </td>
                                     
