@@ -361,6 +361,15 @@ async function handleProductSelect(index, selected) {
             .catch((error) => {
                 isLoading.value[index] = false;
                 console.log(error);
+                Swal.fire({
+                    title: "Error!",
+                    text: error.response.data,
+                    icon: "error",
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 5000,
+                })
             });
     }
 }
