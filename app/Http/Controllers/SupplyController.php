@@ -285,9 +285,9 @@ class SupplyController extends Controller
             $packingListNumber = $item ? $item->packingList->packing_list_number : 'Unknown';
             
             // Generate note based on condition and source
-            $note = "PL ($packingListNumber) - {$item->status}";
+            $note = "FROM PACKING LIST";
             if ($request->note) {
-                $note .= " - {$item->note}";
+                $note .= " - {$request->note}";
             }
             
             // Handle file attachments if any

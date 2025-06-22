@@ -267,8 +267,8 @@ function getResults(page = 1) {
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">SN</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposal ID</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
-                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Info</th>
-                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposed At</th>
+                        <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Detail</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposal Date</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
@@ -292,10 +292,8 @@ function getResults(page = 1) {
                             <span>Barcode: {{ disposal.barcode || 'N/A' }}</span>
                             <span>Expiry Date: {{ disposal.expire_date ?
                                 moment(disposal.expire_date).format('DD/MM/YYYY') : 'N/A' }}</span>
-                            <span>Warehouse: {{ disposal.packing_list?.warehouse?.name ||
-                                disposal.inventory?.warehouse?.name || 'N/A' }}</span>
-                            <span>Location: {{ disposal.packing_list?.location?.location ||
-                                disposal.inventory?.location?.location || 'N/A' }}</span>
+                            <span>Warehouse: {{ disposal.warehouse || 'N/A' }}</span>
+                            <span>Facility: {{ disposal.facility || 'N/A' }}</span>
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ disposal.disposed_at ? new Date(disposal.disposed_at).toLocaleDateString() : 'N/A' }}
@@ -324,7 +322,7 @@ function getResults(page = 1) {
                                 class="relative attachments-dropdown">
                                 <button @click="toggleDropdown(disposal.id)"
                                     class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1 text-sm">
-                                    <span>View Files ({{ parseAttachments(disposal.attachments).length }})</span>
+                                    <span>View Files</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

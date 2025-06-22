@@ -141,7 +141,7 @@ class ExpiredController extends Controller
             $inventory = InventoryItem::find($request->id);
             
             // Generate note based on condition and source
-            $note = "Inventory ($inventory->id) - {$request->status}";
+            $note = "FROM INVENTORY";
             if ($request->note) {
                 $note .= " - {$request->note}";
             }
