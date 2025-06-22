@@ -265,15 +265,15 @@ class TransferController extends Controller
                 $sourceId = $request->source_id;
     
                 if ($request->source_type === 'warehouse') {
-                    $inventories = InventoryItem::where('warehouse_id', $sourceId)
-                        ->where('product_id', $item['product_id'])
+                    $inventories = InventoryItem::where('product_id', $item['product_id'])
+                        ->where('warehouse_id', $sourceId)
                         ->with('product:id,name')
                         ->where('quantity', '>', 0)
                         ->orderBy('expiry_date', 'asc')
                         ->get();
                 } else {
-                    $inventories = FacilityInventory::where('facility_id', $sourceId)
-                        ->where('product_id', $item['product_id'])
+                    $inventories = FacilityInventory::where('product_id', $item['product_id'])
+                        ->where('facility_id', $sourceId)
                         ->where('quantity', '>', 0)
                         ->orderBy('expiry_date', 'asc')
                         ->get();
@@ -367,17 +367,73 @@ class TransferController extends Controller
                     'product_id' => 'required|integer',
                 ]);
                 
+                // Get current date for expiry comparison
+                $currentDate = Carbon::now()->toDateString();
+                
                 if ($request->source_type === 'warehouse') {
+                    // Check if any items are expired before fetching
+                    $expiredCount = InventoryItem::where('product_id', $request->product_id)
+                        ->where('warehouse_id', $request->source_id)
+                        ->where('quantity', '>', 0)
+                        ->where('expiry_date', '<', $currentDate)
+                        ->count();
+                        
+                    if ($expiredCount > 0) {
+                        return response()->json([
+                            'error' => 'This item is expired and cannot be transferred',
+                            'message' => 'Cannot fetch expired inventory items for transfer'
+                        ], 422);
+                    }
+                    
                     $inventory = InventoryItem::where('product_id', $request->product_id)
                         ->where('warehouse_id', $request->source_id)
+                        ->where('quantity', '>', 0)
+                        ->where(function($query) use ($currentDate) {
+                            $query->whereNull('expiry_date')
+                                  ->orWhere('expiry_date', '>=', $currentDate);
+                        })
                         ->with('location:id,location','warehouse:id,name')
                         ->get();
                 } else {
+                    // For facility inventory, also check for expired items
+                    $facilityInventoryIds = FacilityInventoryItem::where('product_id', $request->product_id)
+                        ->whereHas('inventory.facility', function($query) use ($request) {
+                            $query->where('id', $request->source_id);
+                        })
+                        ->pluck('id');
+                    
+                    if ($facilityInventoryIds->isNotEmpty()) {
+                        $expiredCount = FacilityInventoryItem::whereIn('id', $facilityInventoryIds)
+                            ->where('quantity', '>', 0)
+                            ->where('expiry_date', '<', $currentDate)
+                            ->count();
+                            
+                        if ($expiredCount > 0) {
+                            return response()->json([
+                                'error' => 'This item is expired and cannot be transferred',
+                                'message' => 'Cannot fetch expired inventory items for transfer'
+                            ], 422);
+                        }
+                    }
+                    
                     $inventory = FacilityInventoryItem::where('product_id', $request->product_id)
                         ->whereHas('inventory.facility', function($query) use ($request) {
                             $query->where('id', $request->source_id);
                         })
+                        ->where('quantity', '>', 0)
+                        ->where(function($query) use ($currentDate) {
+                            $query->whereNull('expiry_date')
+                                  ->orWhere('expiry_date', '>=', $currentDate);
+                        })
                         ->get();
+                }
+                
+                // Check if no valid inventory items are available
+                if ($inventory->isEmpty()) {
+                    return response()->json([
+                        'error' => 'No available inventory items for transfer',
+                        'message' => 'All items are either expired or out of stock'
+                    ], 404);
                 }
                 
                 return response()->json($inventory, 200);
@@ -670,7 +726,7 @@ class TransferController extends Controller
                     'barcode' => $transferItem->barcode,
                     'batch_number' => $transferItem->batch_number,
                     'unit_cost' => $transferItem->unit_cost,
-                    'total_cost' => $transferItem->total_cost
+                    'total_cost' => $transferItem->unit_cost
                 ]);
             } else {
                 // Create new inventory record
@@ -996,58 +1052,69 @@ class TransferController extends Controller
     private function processInventoryChanges(Transfer $transfer, $items)
     {
         foreach ($items as $item) {
+            // First, find or create the parent Inventory record
             $inventory = Inventory::where([
-                'warehouse_id' => $transfer['to_warehouse_id'],
                 'product_id' => $item['product_id'],
-                'batch_number' => $item['batch_number'],
             ])->first();
 
-            if ($inventory) {
-                $inventory->increment('quantity', $item['received_quantity']);
-                ReceivedQuantity::create([
-                    'quantity' => $item['received_quantity'],
-                    'received_by' => auth()->id(),
-                    'received_at' => now(),
-                    'product_id' => $item['product_id'],
-                    'transfer_id' => $transfer->id,
-                    'expiry_date' => $item['expire_date'],
-                    'warehouse_id' => $transfer['to_warehouse_id'],
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['unit_cost'] * $item['received_quantity'],
-                    'uom' => $item['uom'],
-                    'barcode' => $item['barcode'],
-                    'batch_number' => $item['batch_number'],
-                ]);
-            } else {
+            if (!$inventory) {
                 $inventory = Inventory::create([
-                    'warehouse_id' => $transfer['to_warehouse_id'],
-                    'product_id' => $item['product_id']
-                ]);
-                $inventory->items()->create([
                     'product_id' => $item['product_id'],
-                    'batch_number' => $item['batch_number'],
-                    'expiry_date' => $item['expire_date'],
-                    'barcode' => $item['barcode'],
-                    'uom' => $item['uom'],
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['unit_cost'] * $item['received_quantity'],
-                    'quantity' => $item['received_quantity'],
-                ]);
-                ReceivedQuantity::create([
-                    'quantity' => $item['received_quantity'],
-                    'received_by' => auth()->id(),
-                    'received_at' => now(),
-                    'product_id' => $item['product_id'],
-                    'transfer_id' => $transfer->id,
-                    'expiry_date' => $item['expire_date'],
-                    'warehouse_id' => $transfer['to_warehouse_id'],
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['unit_cost'] * $item['received_quantity'],
-                    'uom' => $item['uom'],
-                    'barcode' => $item['barcode'],
-                    'batch_number' => $item['batch_number'],
+                    'quantity' => 0, // Will be updated when InventoryItem is created
                 ]);
             }
+
+            // Now find existing inventory item with same batch and warehouse
+            $inventoryItem = InventoryItem::where([
+                'inventory_id' => $inventory->id,
+                'product_id' => $item['product_id'],
+                'warehouse_id' => $transfer['to_warehouse_id'],
+                'batch_number' => $item['batch_number'],
+                'expiry_date' => $item['expire_date'],
+            ])->first();
+
+            if ($inventoryItem) {
+                // Update existing inventory item
+                $inventoryItem->increment('quantity', $item['received_quantity']);
+                $inventoryItem->update([
+                    'unit_cost' => $item['unit_cost'],
+                    'total_cost' => $inventoryItem->quantity * $item['unit_cost'],
+                ]);
+            } else {
+                // Create new inventory item
+                $inventoryItem = InventoryItem::create([
+                    'inventory_id' => $inventory->id,
+                    'product_id' => $item['product_id'],
+                    'warehouse_id' => $transfer['to_warehouse_id'],
+                    'batch_number' => $item['batch_number'],
+                    'expiry_date' => $item['expire_date'],
+                    'barcode' => $item['barcode'],
+                    'uom' => $item['uom'],
+                    'unit_cost' => $item['unit_cost'],
+                    'quantity' => $item['received_quantity'],
+                    'total_cost' => $item['unit_cost'] * $item['received_quantity'],
+                ]);
+            }
+
+            // Update parent inventory total quantity
+            $inventory->quantity = $inventory->items()->sum('quantity');
+            $inventory->save();
+
+            // Create received quantity record
+            ReceivedQuantity::create([
+                'quantity' => $item['received_quantity'],
+                'received_by' => auth()->id(),
+                'received_at' => Carbon::now(),
+                'product_id' => $item['product_id'],
+                'transfer_id' => $transfer->id,
+                'expiry_date' => $item['expire_date'],
+                'warehouse_id' => $transfer['to_warehouse_id'],
+                'unit_cost' => $item['unit_cost'],
+                'total_cost' => $item['unit_cost'] * $item['received_quantity'],
+                'uom' => $item['uom'],
+                'barcode' => $item['barcode'],
+                'batch_number' => $item['batch_number'],
+            ]);
         }
     }
 
