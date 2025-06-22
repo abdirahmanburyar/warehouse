@@ -51,7 +51,9 @@ class LiquidateDisposalController extends Controller
             'approvedBy',
             'reviewedBy',
             'rejectedBy'
-        ])->latest('liquidate_id');
+        ])
+        ->whereIn('status', ['pending', 'reviewed'])
+        ->latest('liquidate_id');
 
         if ($request->has('search')) {
             $search = $request->search;
