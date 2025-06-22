@@ -651,6 +651,12 @@
                                     Quantity to be transferred
                                 </th>
                                 <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Received Quantity
+                                </th>
+                                <th
                                     class="px-4 py-2 border border-gray-300 text-center text-black font-semibold"
                                     rowspan="2"
                                 >
@@ -777,8 +783,22 @@
                                     >
                                         <input
                                             type="number"
-                                            v-model="item.quantity_to_transfer"
+                                            v-model="item.quantity_to_release"
                                             :readonly="props.transfer.status !== 'pending'"
+                                            class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
+                                        />
+                                    </td>
+                                    
+                                    <!-- Received Quantity (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
+                                    >
+                                        <input
+                                            type="number"
+                                            v-model="item.received_quantity"
+                                            :readonly="!['delivered', 'received'].includes(props.transfer.status)"
                                             class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                                         />
                                     </td>
