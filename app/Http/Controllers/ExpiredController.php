@@ -142,7 +142,7 @@ class ExpiredController extends Controller
             
             // Generate note based on condition and source
             $note = "FROM INVENTORY";
-            if ($request->note) {
+            if ($request->note && $request->note !== 'undefined' && trim($request->note) !== '') {
                 $note .= " - {$request->note}";
             }
             

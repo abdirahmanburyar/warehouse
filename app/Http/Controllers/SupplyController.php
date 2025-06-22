@@ -270,7 +270,7 @@ class SupplyController extends Controller
             $validated = $request->validate([
                 'id' => 'required|exists:packing_list_differences,id',
                 'packing_listitem_id' => 'required|exists:packing_list_items,id',                
-                'note' => 'nullable|string|max:255',
+                'note' => 'nullable|string',
                 'quantity' => "required|min:1",
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
@@ -286,7 +286,7 @@ class SupplyController extends Controller
             
             // Generate note based on condition and source
             $note = "FROM PACKING LIST";
-            if ($request->note) {
+            if ($request->note && $request->note !== 'undefined' && trim($request->note) !== '') {
                 $note .= " - {$request->note}";
             }
             
