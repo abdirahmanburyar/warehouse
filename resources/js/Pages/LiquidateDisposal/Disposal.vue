@@ -269,6 +269,7 @@ function getResults(page = 1) {
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Item</th>
                         <th class="w-[300px] px-4 py-2 border-r border-gray-300 text-left text-black">Item Detail</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Disposal Date</th>
+                        <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Reason of Disposal</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Source and Reason</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Attachments</th>
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">Status</th>
@@ -277,7 +278,7 @@ function getResults(page = 1) {
                 </thead>
                 <tbody>
                     <tr v-if="props.disposals.data.length === 0">
-                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">No disposal records found</td>
+                        <td colspan="10" class="px-4 py-8 text-center text-gray-500">No disposal records found</td>
                     </tr>
                     <tr v-for="(disposal, index) in props.disposals.data" :key="disposal.id"
                         class="border-b border-gray-300">
@@ -297,6 +298,9 @@ function getResults(page = 1) {
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             {{ disposal.disposed_at ? new Date(disposal.disposed_at).toLocaleDateString() : 'N/A' }}
+                        </td>
+                        <td class="px-4 py-2 border-r border-gray-300">
+                            {{ disposal.type || 'N/A' }}
                         </td>
                         <td class="px-4 py-2 border-r border-gray-300">
                             <div class="flex flex-col">
