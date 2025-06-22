@@ -175,7 +175,7 @@ const fetchInventories = async () => {
                     
             Swal.fire({
                 title: "Error!",
-                text: errorMessage,
+                text: error.response.data,
                 icon: "error",
                 toast: true,
                 position: "top-end",
