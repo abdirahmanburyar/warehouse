@@ -424,10 +424,7 @@ class TransferController extends Controller
                 
                 // Check if no valid inventory items are available
                 if ($inventory->isEmpty()) {
-                    return response()->json([
-                        'error' => 'No available inventory items for transfer',
-                        'message' => 'All items are either expired or out of stock'
-                    ], 404);
+                    return response()->json('No available inventory items for transfer', 500);
                 }
                 
                 return response()->json($inventory, 200);

@@ -152,37 +152,67 @@ const fetchInventories = async () => {
         },
     });
 
+    try {
         // Use GET request to fetch available inventories
-        await axios.get(route("transfers.getInventories"), {
+        const response = await axios.get(route("transfers.getInventories"), {
             params: {
                 source_type: sourceType.value,
                 source_id: form.value.source_id,
             },
-        })
-        .then((response) => {
-            console.log(response.data);
-            swalLoading.close();
-            availableInventories.value = response.data;
-            filteredInventories.value = availableInventories.value;
-            loadingInventories.value = false;
-        })
-        .catch((error) => {
-            console.error("[ERROR] Fetch inventories failed:", error);
-            swalLoading.close();
-            loadingInventories.value = false;
-            availableInventories.value = [];
-            filteredInventories.value = [];
-                    
+        });
+        
+        console.log("[SUCCESS] Fetch inventories response:", response.data);
+        swalLoading.close();
+        availableInventories.value = response.data;
+        filteredInventories.value = availableInventories.value;
+        loadingInventories.value = false;
+        
+    } catch (error) {
+        console.error("[ERROR] Fetch inventories failed:", error);
+        console.error("[ERROR] Full error object:", error.response);
+        
+        // Close loading dialog first
+        swalLoading.close();
+        
+        // Reset states
+        loadingInventories.value = false;
+        availableInventories.value = [];
+        filteredInventories.value = [];
+        
+        // Add small delay before showing error dialog to avoid timing conflicts
+        setTimeout(() => {
+            let errorMessage = "Failed to fetch inventories";
+            
+            if (error.response) {
+                console.log("[DEBUG] Error response status:", error.response.status);
+                console.log("[DEBUG] Error response data:", error.response.data);
+                
+                if (typeof error.response.data === 'string') {
+                    errorMessage = error.response.data;
+                } else if (error.response.data && error.response.data.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.response.data && error.response.data.error) {
+                    errorMessage = error.response.data.error;
+                } else {
+                    errorMessage = `Server error (${error.response.status})`;
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            console.log("[DEBUG] Final error message:", errorMessage);
+            
             Swal.fire({
                 title: "Error!",
-                text: error.response.data,
+                text: errorMessage,
                 icon: "error",
                 toast: true,
                 position: "top-end",
                 showConfirmButton: false,
                 timer: 5000,
             });
-        });
+        }, 100); // 100ms delay
+    }
 };
 
 const validateForm = () => {
