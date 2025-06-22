@@ -43,7 +43,6 @@ class InventoryController extends Controller
         $query = Inventory::query()
             ->with([
                 'items.warehouse:id,name',
-                'items.location:id,location',
                 'product:id,name,category_id,dosage_id',
                 'product.category:id,name',
                 'product.dosage:id,name'
