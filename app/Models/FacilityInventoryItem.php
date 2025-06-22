@@ -25,7 +25,7 @@ class FacilityInventoryItem extends Model
 
     public function inventory()
     {
-        return $this->belongsTo(FacilityInventory::class);
+        return $this->belongsTo(FacilityInventory::class, 'facility_inventory_id');
     }
 
     public function product()
