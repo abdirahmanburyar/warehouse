@@ -636,7 +636,7 @@ function formatDate(date) {
                                     :key="index"
                                     class="hover:bg-gray-50"
                                 >
-                                    <td class="px-3 py-2">
+                                    <td class="px-3 py-2 border border-black">
                                         <Multiselect
                                             v-model="item.product"
                                             :value="item.product_id"
@@ -742,9 +742,7 @@ function formatDate(date) {
                                                                 class="text-xs"
                                                                 >LC:
                                                                 {{
-                                                                    detail
-                                                                        .location
-                                                                        ?.location
+                                                                    detail.location
                                                                 }}</span
                                                             >
                                                         </div>
