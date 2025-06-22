@@ -1503,7 +1503,6 @@ class SupplyController extends Controller
         $packing_list = PackingList::with([
             'items.warehouse:id,name',
             'items.product:id,name',
-            'items.location:id,location',
             'items.purchaseOrderItem:id,quantity',
             'items.differences',
             'purchaseOrder.supplier'

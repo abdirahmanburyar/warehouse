@@ -116,24 +116,17 @@
                                     :options="props.warehouses" :searchable="true" :close-on-select="true"
                                     :show-labels="false" :allow-empty="true" placeholder="Select Warehouse"
                                     track-by="id" :disabled="props.packing_list.status === 'approved'"
-                                    :append-to-body="true" label="name" @select="hadleWarehouseSelect(index, $event)">
+                                    :append-to-body="true" label="name" @select="handleWarehouseSelect(index, $event)">
                                 </Multiselect>
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <Multiselect v-model="item.location" :value="item.location_id"
-                                    :disabled="props.packing_list.status === 'approved' || !item.warehouse_id"
-                                    :options="[{ id: 'new', name: '+ Add New Location', isAddNew: true }, ...getFilteredLocations(item.warehouse_id)]"
+                                <Multiselect v-model="item.location" :value="item.location"
+                                    :disabled="props.packing_list.status == 'approved' || !item.warehouse_id"
+                                    :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                     placeholder="Select Location" track-by="id" label="location"
-                                    @select="hadleLocationSelect(index, $event)">
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New
-                                                Location</span>
-                                            <span v-else>{{ option.location }}</span>
-                                        </div>
-                                    </template>
+                                    @select="hadleLocationSelect(index, $event)" :append-to-body="true">
                                 </Multiselect>
                             </td>
                             <td
@@ -469,6 +462,13 @@ const selectedItem = ref(null);
 const backOrderRows = ref([]);
 const isNewLocation = ref(false);
 const selectedWarehouse = ref(null);
+const loadedLocation = ref([]);
+
+// Add New Location option constant
+const ADD_NEW_LOCATION_OPTION = {
+    isAddNew: true,
+    location: 'Add New Location'
+};
 
 // Function to filter locations based on warehouse_id
 function getFilteredLocations(warehouseId) {
@@ -542,13 +542,31 @@ onMounted(() => {
 });
 
 function handleWarehouseSelect(index, selected) {
-    if (selected.isAddNew) {
-        form.value.items[index].warehouse_id = "";
-        form.value.items[index].warehouse = null;
-        return;
-    }
     form.value.items[index].warehouse_id = selected.id;
     form.value.items[index].warehouse = selected;
+    
+    // Reset location when warehouse changes
+    form.value.items[index].location = null;
+    
+    // Load locations for the selected warehouse
+    if (selected && selected.name) {
+        loadLocationsByWarehouse(selected.name);
+    }
+}
+
+// Function to load locations by warehouse name
+async function loadLocationsByWarehouse(warehouseName) {
+    try {
+        const response = await axios.get(route('invetnories.getLocations'), {
+            params: { warehouse: warehouseName }
+        });
+        
+        loadedLocation.value = response.data;
+    } catch (error) {
+        console.error('Error loading locations:', error);
+        toast.error('Failed to load locations');
+        loadedLocation.value = [];
+    }
 }
 
 function hadleLocationSelect(index, selected) {
@@ -565,8 +583,8 @@ function hadleLocationSelect(index, selected) {
         showLocationModal.value = true;
         return;
     }
-    form.value.items[index].location_id = selected.id;
-    form.value.items[index].location = selected;
+    // Set the location name for backend (packing list items use location name, not location_id)
+    form.value.items[index].location = selected.location;
 }
 
 function closeLocationModal() {
@@ -590,16 +608,22 @@ async function createLocation() {
 
     await axios.post(route('supplies.store-location'), {
         location: newLocation.value,
-        warehouse_id: selectedWarehouse.value.id
+        warehouse: selectedWarehouse.value.name
     })
         .then((response) => {
             isNewLocation.value = false;
-            const newLocationData = response.data.location;
-            props.locations.push(newLocationData);
-            // Update the selected item's location
+            const formattedLocation = {
+                id: response.data.location.id,
+                location: response.data.location.location,
+                warehouse: response.data.location.warehouse
+            };
+            
+            // Add to locations array
+            props.locations.push(formattedLocation);
+            
+            // Update the selected item's location (store location name, not ID)
             if (selectedItemIndex.value !== null) {
-                form.value.items[selectedItemIndex.value].location_id = newLocationData.id;
-                form.value.items[selectedItemIndex.value].location = newLocationData;
+                form.value.items[selectedItemIndex.value].location = formattedLocation.location;
             }
             toast.success(response.data.message);
             closeLocationModal();
@@ -816,7 +840,7 @@ const checkAndHandleIncompleteItems = async () => {
         if (!item.quantity || item.quantity == item.purchase_order_item.quantity) return false;
         const mismatches = item.purchase_order_item.quantity - item.quantity;
         const totalDifferences = (item.differences || []).reduce(
-            (total, diff) => total + (parseInt(diff.quantity) || 0), 0
+            (total, diff) => total + (parseInt(diff?.quantity) || 0), 0
         );
         return totalDifferences !== mismatches;
     });
@@ -972,7 +996,6 @@ const availableStatuses = computed(() => {
     const usedStatuses = new Set(backOrderRows.value.map(row => row.status));
     return allStatuses.filter(status => !usedStatuses.has(status));
 });
-
 
 const isReviewing = ref(false);
 
