@@ -18,7 +18,7 @@ class InventoryItem extends Model
         'expiry_date',
         'batch_number',
         'barcode',
-        'location_id',
+        'location',
         'notes',
         'uom',
         'unit_cost',
@@ -35,13 +35,9 @@ class InventoryItem extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
-    public function location()
-    {
-        return $this->belongsTo(Location::class);
-    }
-
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
+    
 }

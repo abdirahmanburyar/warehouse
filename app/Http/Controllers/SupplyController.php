@@ -1697,7 +1697,7 @@ class SupplyController extends Controller
                     'quantity'      => ($inventoryItem->exists ? $inventoryItem->quantity : 0) + $recvQty,
                     'expiry_date'   => $pli->expire_date,
                     'barcode'       => $pli->barcode,
-                    'location_id'   => $pli->location_id,
+                    'location'      => $pli->location,
                     'uom'           => $pli->uom,
                     'unit_cost'     => $pli->unit_cost,
                     'total_cost'    => $pli->unit_cost * $inventoryItem->quantity,
