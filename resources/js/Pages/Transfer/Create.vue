@@ -365,7 +365,6 @@ async function handleProductSelect(index, selected) {
                     title: "Error!",
                     text: error.response.data,
                     icon: "error",
-                    toast: true,
                     position: "top-end",
                     showConfirmButton: false,
                     timer: 5000,
