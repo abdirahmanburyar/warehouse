@@ -258,21 +258,17 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Status</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Quantity</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Status</th>
+                                            Note</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="(row, index) in backOrderRows" :key="index">
-                                        <td class="px-3 py-2">
-                                            <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
-                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                min="0">
-                                                <!-- min="0" @input="validateBackOrderQuantities"> -->
-                                        </td>
                                         <td class="px-3 py-2">
                                             <select v-model="row.status"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
@@ -283,7 +279,17 @@
                                                 </option>
                                             </select>
                                         </td>
-
+                                        <td class="px-3 py-2">
+                                            <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                min="0">
+                                                <!-- min="0" @input="validateBackOrderQuantities"> -->
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input type="text" v-model="row.note" 
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                placeholder="Enter note...">
+                                        </td>
                                         <td class="px-3 py-2">
                                             <button @click="removeBackOrderRow(index, row)"
                                                 class="text-red-600 hover:text-red-800">
@@ -751,7 +757,8 @@ function openBackOrderModal(index) {
         : [{
             id: null,
             quantity: 0,
-            status: 'Missing'
+            status: 'Missing',
+            note: ''
         }];
 
     showBackOrderModal.value = true;
@@ -828,7 +835,7 @@ const closeBackOrderModal = () => {
 };
 
 // Define all possible statuses
-const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired'];
+const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality'];
 
 // Compute available statuses (not used in other rows)
 const availableStatuses = computed(() => {
@@ -850,7 +857,8 @@ const addBackOrderRow = () => {
     backOrderRows.value.push({
         id: null,
         quantity: 0,
-        status: status
+        status: status,
+        note: ''
     });
 
     // Sync after adding row
@@ -953,7 +961,8 @@ const syncBackOrdersWithDifferences = () => {
     form.value.items[itemIndex].differences = backOrderRows.value.map(row => ({
         id: row.id ?? null,
         quantity: parseInt(row.quantity) || 0,
-        status: row.status
+        status: row.status,
+        note: row.note
     }));
 };
 
