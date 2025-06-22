@@ -353,8 +353,8 @@ class TransferController extends Controller
                         ->get();
                 } else {
                     $inventories = FacilityInventoryItem::where('product_id', $item['product_id'])
-                        ->whereHas('inventory.facility', function($query) use ($request) {
-                            $query->where('id', $request->source_id);
+                        ->whereHas('inventory', function($query) use ($request) {
+                            $query->where('facility_id', $request->source_id);
                         })
                         ->where('quantity', '>', 0)
                         ->where('expiry_date', '>', \Carbon\Carbon::now())
@@ -516,8 +516,8 @@ class TransferController extends Controller
                         ->get();
                 } else {
                     $inventory = FacilityInventoryItem::where('product_id', $request->product_id)
-                        ->whereHas('inventory.facility', function($query) use ($request) {
-                            $query->where('id', $request->source_id);
+                        ->whereHas('inventory', function($query) use ($request) {
+                            $query->where('facility_id', $request->source_id);
                         })
                         ->where('quantity', '>', 0)
                         ->where(function($query) use ($currentDate) {
@@ -628,8 +628,8 @@ class TransferController extends Controller
                 } else {
                     // Facility inventory check
                     $inventoryQuery = FacilityInventoryItem::where('product_id', $transferItem->product_id)
-                        ->whereHas('inventory.facility', function($query) use ($transfer) {
-                            $query->where('id', $transfer->from_facility_id);
+                        ->whereHas('inventory', function($query) use ($transfer) {
+                            $query->where('facility_id', $transfer->from_facility_id);
                         })
                         ->where('batch_number', $transferItem->batch_number)
                         ->where('is_active', true);
@@ -705,8 +705,8 @@ class TransferController extends Controller
                 } else {
                     // Update facility inventory
                     $inventoryQuery = FacilityInventoryItem::where('product_id', $transferItem->product_id)
-                        ->whereHas('inventory.facility', function($query) use ($transfer) {
-                            $query->where('id', $transfer->from_facility_id);
+                        ->whereHas('inventory', function($query) use ($transfer) {
+                            $query->where('facility_id', $transfer->from_facility_id);
                         })
                         ->where('batch_number', $transferItem->batch_number);
                         
