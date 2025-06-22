@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Location;
 
 class Warehouse extends Model
 {
@@ -22,7 +23,7 @@ class Warehouse extends Model
         'manager_name',
         'manager_phone',
         'manager_email',
-        'status'
-    ];    
+        'status',
+    ];
     
 }

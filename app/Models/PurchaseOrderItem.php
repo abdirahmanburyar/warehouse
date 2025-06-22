@@ -34,8 +34,8 @@ class PurchaseOrderItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function packingLists()
+    public function packingListItems()
     {
-        return $this->hasMany(PackingList::class, 'po_id');
+        return $this->hasMany(PackingListItem::class, 'po_item_id');
     }
 }

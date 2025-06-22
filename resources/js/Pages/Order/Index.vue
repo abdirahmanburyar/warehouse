@@ -255,7 +255,7 @@
                                         class="px-2 py-2 whitespace-nowrap text-xs text-black"
                                     >
                                         {{
-                                            order.handledby?.name ||
+                                            order.facility?.handledby.name ||
                                             "Not assigned"
                                         }}
                                     </td>

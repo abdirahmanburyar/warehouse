@@ -20,11 +20,11 @@ return new class extends Migration
         //     $table->foreignId('warehouse_id')->constrained();
         //     $table->foreignIdFor(PurchaseOrderItem::class, 'po_item_id')->constrained();
         //     $table->string('barcode')->nullable();
-        //     $table->string('batch_number')->nullable();
-        //     $table->foreignId('location_id')->nullable();
+        //     $table->string('batch_number')->nullable();        
+        //     $table->string('location');
         //     $table->integer('quantity');
         //     $table->string('uom');
-        //     $table->date('expire_date')->nullable();
+        //     $table->date('expire_date');
         //     $table->double('unit_cost');
         //     $table->double('total_cost');
         //     $table->timestamps();
