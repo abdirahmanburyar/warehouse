@@ -25,6 +25,213 @@
                 </div>
             </div>
 
+            <!-- Transfer Approval Section -->
+            <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
+                    Transfer Approval
+                </h3>
+                
+                <!-- Transfer Approval Actions -->
+                <div class="flex justify-center items-center mb-6">
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        <!-- Pending Approval -->
+                        <div class="relative">
+                            <div class="flex flex-col items-center">
+                                <button
+                                    :class="[
+                                        props.transfer.status === 'pending'
+                                            ? 'bg-yellow-500 hover:bg-yellow-600'
+                                            : statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending')
+                                            ? 'bg-green-500'
+                                            : 'bg-gray-300 cursor-not-allowed',
+                                    ]"
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[140px]"
+                                    disabled
+                                >
+                                    <img
+                                        src="/assets/images/pending.png"
+                                        class="w-5 h-5 mr-2"
+                                        alt="Pending"
+                                    />
+                                    <span class="text-sm font-bold">Pending</span>
+                                </button>
+                                <span v-show="props.transfer?.user" class="text-xs text-gray-600 mt-1">
+                                    By {{ props.transfer.user?.name || 'System' }}
+                                </span>
+                            </div>
+                            <!-- Pulse indicator for pending -->
+                            <div
+                                v-if="props.transfer.status === 'pending'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                            ></div>
+                        </div>
+
+                        <!-- Approve Button -->
+                        <div class="relative">
+                            <div class="flex flex-col items-center">
+                                <button
+                                    @click="changeStatus(props.transfer.id, 'approved', 'is_approve')"
+                                    :disabled="
+                                        isType['is_approve'] ||
+                                        props.transfer.status !== 'pending' ||
+                                        !$page.props.auth.can.transfer_approve
+                                    "
+                                    :class="[
+                                        props.transfer.status === 'pending' && $page.props.auth.can.transfer_approve
+                                            ? 'bg-green-500 hover:bg-green-600'
+                                            : statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending')
+                                            ? 'bg-green-500'
+                                            : 'bg-gray-300 cursor-not-allowed',
+                                    ]"
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[140px]"
+                                >
+                                    <svg
+                                        v-if="isType['is_approve'] && props.transfer.status === 'pending'"
+                                        class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    <template v-else>
+                                        <img
+                                            src="/assets/images/approved.png"
+                                            class="w-5 h-5 mr-2"
+                                            alt="Approve"
+                                        />
+                                        <span class="text-sm font-bold">{{
+                                            statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending')
+                                                ? `Approved on ${moment(props.transfer?.approved_at).format('DD/MM/YYYY')}`
+                                                : isType['is_approve'] ? "Please Wait..." : "Approve"
+                                        }}</span>
+                                    </template>
+                                </button>
+                                <span v-show="props.transfer?.approved_by" class="text-xs text-gray-600 mt-1">
+                                    By {{ props.transfer?.approved_by?.name }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Reject Button -->
+                        <div class="relative">
+                            <div class="flex flex-col items-center">
+                                <button
+                                    @click="changeStatus(props.transfer.id, 'rejected', 'is_reject')"
+                                    :disabled="
+                                        isType['is_reject'] ||
+                                        props.transfer.status !== 'pending' ||
+                                        !$page.props.auth.can.transfer_approve
+                                    "
+                                    :class="[
+                                        props.transfer.status === 'pending' && $page.props.auth.can.transfer_approve
+                                            ? 'bg-red-500 hover:bg-red-600'
+                                            : props.transfer.status === 'rejected'
+                                            ? 'bg-red-500'
+                                            : 'bg-gray-300 cursor-not-allowed',
+                                    ]"
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[140px]"
+                                >
+                                    <svg
+                                        v-if="isType['is_reject'] && props.transfer.status === 'pending'"
+                                        class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    <template v-else>
+                                        <svg
+                                            class="w-5 h-5 mr-2"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12"
+                                            />
+                                        </svg>
+                                        <span class="text-sm font-bold">{{
+                                            props.transfer.status === 'rejected'
+                                                ? `Rejected on ${moment(props.transfer?.rejected_at).format('DD/MM/YYYY')}`
+                                                : isType['is_reject'] ? "Please Wait..." : "Reject"
+                                        }}</span>
+                                    </template>
+                                </button>
+                                <span v-show="props.transfer?.rejected_by" class="text-xs text-gray-600 mt-1">
+                                    By {{ props.transfer?.rejected_by?.name }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Timeline -->
+                <div class="mt-6 flex justify-center">
+                    <div class="flex items-center space-x-4">
+                        <!-- Pending Icon -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                                 :class="props.transfer.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'">
+                                <img src="/assets/images/pending.png" class="w-5 h-5" alt="Pending" />
+                            </div>
+                            <span class="text-xs text-gray-600 mt-1">Pending</span>
+                        </div>
+
+                        <!-- Arrow -->
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+
+                        <!-- Approved/Rejected Icon -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                                 :class="{
+                                     'bg-green-500': props.transfer.status === 'approved' || statusOrder.indexOf(props.transfer.status) > statusOrder.indexOf('pending'),
+                                     'bg-red-500': props.transfer.status === 'rejected',
+                                     'bg-gray-300': props.transfer.status === 'pending'
+                                 }">
+                                <img v-if="props.transfer.status === 'rejected'" 
+                                     src="/assets/images/rejected.png" class="w-5 h-5" alt="Rejected" />
+                                <img v-else 
+                                     src="/assets/images/approved.png" class="w-5 h-5" alt="Approved" />
+                            </div>
+                            <span class="text-xs text-gray-600 mt-1">
+                                {{ props.transfer.status === 'rejected' ? 'Rejected' : 'Approved' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Transfer Status Actions -->
             <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
@@ -531,7 +738,9 @@ const isType = ref({
   is_process: false,
   is_dispatch: false,
   is_delivered: false,
-  is_received: false
+  is_received: false,
+  is_approve: false,
+  is_reject: false
 });
 
 // Main status change function
