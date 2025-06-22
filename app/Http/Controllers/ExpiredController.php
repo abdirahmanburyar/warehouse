@@ -72,7 +72,7 @@ class ExpiredController extends Controller
             $query->where('location', 'like', "%{$request->location}%");
         }
     
-        // ✅ Paginate while still a query builder
+        // Paginate while still a query builder
         $paginatedInventories = $query->paginate(
             $request->input('per_page', 25),
             ['*'],
@@ -85,7 +85,7 @@ class ExpiredController extends Controller
         // Map inventory data for expiry-related flags
         $paginatedInventories->getCollection()->transform(function($inventory) {
             $inventory->expiry_date = Carbon::parse($inventory->expiry_date);
-            $now = Carbon::now(); // ✅ keep it as Carbon
+            $now = Carbon::now(); // keep it as Carbon
         
             $inventory->expired = $inventory->expiry_date->lt($now);
         
@@ -166,14 +166,17 @@ class ExpiredController extends Controller
             
             // Create a new liquidation record
             $disposal = Disposal::create([
-                'inventory_item_id' => $request->id,
                 'product_id' => $request->product_id,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => Carbon::now(),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'warehouse' => $inventory->warehouse->name ?? null,  // Add warehouse info
+                'location' => $inventory->location ?? null,          // Add location info
                 'barcode' => $inventory->barcode,
+                'unit_cost' => $inventory->unit_cost ?? 0,
+                'tota_cost' => ($inventory->unit_cost ?? 0) * $request->quantity,  
                 'expire_date' => $inventory->expiry_date,
                 'batch_number' => $inventory->batch_number,
                 'uom' => $inventory->uom,

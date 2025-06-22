@@ -206,7 +206,7 @@
             <!-- Quantity -->
             <div>
                 <label for="quantity" class="block text-xs font-medium text-gray-700">Quantity</label>
-                <input type="number" id="quantity" v-model="disposeForm.quantity"
+                <input type="number" id="quantity" v-model="disposeForm.quantity" readonly
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs"
                     :min="1" :max="selectedItem?.quantity" required>
             </div>
@@ -322,7 +322,6 @@ const removeFile = (index) => {
 };
 
 const disposeItem = (item) => {
-    console.log(item);
     selectedItem.value = item;
     disposeForm.value = {
         quantity: item.quantity || 0,
@@ -354,8 +353,6 @@ const applyFilters = () => {
     // Always include per_page in query if it exists
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
-
-    console.log(query);
 
     router.get(route("expired.index"), query, {
         preserveState: true,
@@ -499,13 +496,11 @@ watch([() => warehouse.value], () => {
     loadLocations();
 });
 async function loadLocations() {
-    console.log("warehouse:", warehouse.value);
     await axios
         .post(route("invetnories.getLocations"), {
             warehouse: warehouse.value,
         })
         .then((response) => {
-            console.log(response.data);
             loadedLocation.value = response.data;
         })
         .catch((error) => {
