@@ -958,7 +958,7 @@ const saveBackOrders = async () => {
    // Handle success
    Swal.fire({
      title: "Success!",
-     text: "Back orders have been saved successfully.",
+     text: response.data.message || "Back orders have been saved successfully",
      icon: "success",
      toast: true,
      position: "top-end",
@@ -1105,7 +1105,7 @@ const receiveTransfer = (transferId) => {
        // Show success message with details
        Swal.fire({
          title: "Success!",
-         text: "Transfer received successfully!",
+         text: response.data.message || "Transfer received successfully!",
          icon: "success",
          confirmButtonText: "OK",
        }).then(() => {
@@ -1168,7 +1168,7 @@ const changeStatus = (transferId, newStatus) => {
                    console.log(response.data);
                    Swal.fire({
                        title: "Updated!",
-                       text: response.data || "Transfer status updated successfully",
+                       text: response.data.message || "Transfer status updated successfully",
                        icon: "success",
                        timer: 3000,
                    }).then(() => {
