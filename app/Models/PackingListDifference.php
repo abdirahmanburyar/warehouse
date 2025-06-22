@@ -16,7 +16,8 @@ class PackingListDifference extends Model
         'product_id',
         'quantity',
         'finalized',
-        'status'
+        'status',
+        'note'
     ];
 
     public function packingListItem()

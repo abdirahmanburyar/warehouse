@@ -13,22 +13,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::create('packing_list_items', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->foreignId('packing_list_id');
-        //     $table->foreignId('product_id')->constrained();
-        //     $table->foreignId('warehouse_id')->constrained();
-        //     $table->foreignIdFor(PurchaseOrderItem::class, 'po_item_id')->constrained();
-        //     $table->string('barcode')->nullable();
-        //     $table->string('batch_number')->nullable();        
-        //     $table->string('location');
-        //     $table->integer('quantity');
-        //     $table->string('uom');
-        //     $table->date('expire_date');
-        //     $table->double('unit_cost');
-        //     $table->double('total_cost');
-        //     $table->timestamps();
-        // });
+        Schema::create('packing_list_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('packing_list_id');
+            $table->foreignId('product_id')->constrained();
+            $table->foreignId('warehouse_id')->constrained();
+            $table->foreignIdFor(PurchaseOrderItem::class, 'po_item_id')->constrained();
+            $table->string('barcode')->nullable();
+            $table->string('batch_number')->nullable();        
+            $table->string('location');
+            $table->integer('quantity');
+            $table->string('uom');
+            $table->date('expire_date');
+            $table->double('unit_cost');
+            $table->double('total_cost');
+            $table->timestamps();
+        });
         Schema::create('packing_list_differences', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(PackingListItem::class, 'packing_listitem_id')->constrained()->cascadeOnDelete();
@@ -36,6 +36,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->string('finalized')->nullable();
             $table->enum('status', ['Expired', 'Damaged','Missing','Low quality','Lost']);
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
@@ -45,7 +46,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Schema::dropIfExists('packing_list_items');
+        Schema::dropIfExists('packing_list_items');
         Schema::dropIfExists('packing_list_differences');
     }
 };

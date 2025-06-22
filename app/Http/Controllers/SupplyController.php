@@ -700,8 +700,8 @@ class SupplyController extends Controller
                     'items.*.status' => 'required|in:pending,approved,rejected',
                     'items.*.differences' => 'nullable|array',
                     'items.*.differences.*.id' => 'nullable',
-                    'items.*.differences.*.quantity' => 'required_with:items.*.differences|numeric|min:1',
-                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Expired,Damaged,Missing,Low quality,Lost'
+                    'items.*.differences.*.quantity' => 'required_with:items.*.differences|numeric|min:0',
+                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Low quality',
                 ]);
 
                 $request['purchase_order_id'] = $request->id;
@@ -1488,8 +1488,9 @@ class SupplyController extends Controller
                     'items.*.total_cost' => 'required|numeric|min:0',
                     'items.*.differences' => 'nullable|array',
                     'items.*.differences.*.id' => 'nullable|exists:packing_list_differences,id',
-                    'items.*.differences.*.quantity' => 'required|numeric|min:0',
-                    'items.*.differences.*.status' => 'required|in:Missing,Damaged'
+                    'items.*.differences.*.quantity' => 'required_with:items.*.differences|numeric|min:0',
+                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Low quality',
+                    'items.*.differences.*.note' => 'nullable|string'
                 ]);
 
                 // Update main packing list
@@ -1533,6 +1534,7 @@ class SupplyController extends Controller
                                     [
                                         'quantity' => $diff['quantity'],
                                         'status' => $diff['status'],
+                                        'note' => $diff['note'] ?? null,
                                         'product_id' => $item['product_id']
                                     ]
                                 );

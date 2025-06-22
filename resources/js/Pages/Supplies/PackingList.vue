@@ -258,9 +258,9 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Status</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Quantity</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Status</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Note</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -270,6 +270,12 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="(row, index) in backOrderRows" :key="index">
                                         <td class="px-3 py-2">
+                                            <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                min="0">
+                                                <!-- min="0" @input="validateBackOrderQuantities"> -->
+                                        </td>
+                                        <td class="px-3 py-2">
                                             <select v-model="row.status"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                                 <option
@@ -278,12 +284,6 @@
                                                     {{ status }}
                                                 </option>
                                             </select>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
-                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                min="0">
-                                                <!-- min="0" @input="validateBackOrderQuantities"> -->
                                         </td>
                                         <td class="px-3 py-2">
                                             <input type="text" v-model="row.note" 
