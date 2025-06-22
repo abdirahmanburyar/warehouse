@@ -409,10 +409,7 @@ class TransferController extends Controller
                             ->count();
                             
                         if ($expiredCount > 0) {
-                            return response()->json([
-                                'error' => 'This item is expired and cannot be transferred',
-                                'message' => 'Cannot fetch expired inventory items for transfer'
-                            ], 422);
+                            return response()->json('This item is expired and cannot be transferred', 500);
                         }
                     }
                     
