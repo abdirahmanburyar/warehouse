@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('quantity'); // This stores the needed quantity
             $table->integer('quantity_on_order')->default(0);
             $table->integer('quantity_to_release')->default(0);
+            $table->integer('quantity_per_unit')->default(0);            
             $table->timestamps();
             $table->softDeletes();
         });

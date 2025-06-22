@@ -10,7 +10,8 @@ class TransferItem extends Model
         'transfer_id',
         'product_id',
         'quantity',
-        'quantity_to_release'
+        'quantity_to_release',
+        'quantity_per_unit'
     ];
     
     public function transfer()

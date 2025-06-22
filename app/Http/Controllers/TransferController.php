@@ -9,7 +9,7 @@ use App\Models\Warehouse;
 use App\Models\Facility;
 use App\Models\FacilityInventory;
 use App\Models\FacilityInventoryItem;
-use App\Http\Resources\TransferResource;
+use App\Models\TransferResource;
 use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
@@ -362,11 +362,25 @@ class TransferController extends Controller
                         ->get();
                 }
 
+                // Calculate total quantity on hand for this product (excluding expired)
+                $warehouseQuantity = InventoryItem::where('product_id', $item['product_id'])
+                    ->where('quantity', '>', 0)
+                    ->where('expiry_date', '>', \Carbon\Carbon::now())
+                    ->sum('quantity');
+
+                $facilityQuantity = FacilityInventoryItem::where('product_id', $item['product_id'])
+                    ->where('quantity', '>', 0)
+                    ->where('expiry_date', '>', \Carbon\Carbon::now())
+                    ->sum('quantity');
+
+                $totalQuantityOnHand = $warehouseQuantity + $facilityQuantity;
+
                 // Create transfer item for this product
                 $transferItem = $transfer->items()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'], // Total requested quantity
-                    'quantity_to_release' => $item['quantity']
+                    'quantity_to_release' => $item['quantity'],
+                    'quantity_per_unit' => $totalQuantityOnHand // Save total quantity on hand at time of transfer creation
                 ]);
 
                 // Process each inventory item to fulfill the transfer quantity
@@ -434,26 +448,6 @@ class TransferController extends Controller
             'items.inventory_allocations.location',
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
-
-        // Add total quantity on hand for each item using efficient subqueries
-        if ($transfer && $transfer->items) {
-            foreach ($transfer->items as $item) {
-                // Get warehouse inventory for this product (excluding expired)
-                $warehouseQuantity = InventoryItem::where('product_id', $item->product_id)
-                    ->where('quantity', '>', 0)
-                    ->where('expiry_date', '>', \Carbon\Carbon::now())
-                    ->sum('quantity');
-
-                // Get facility inventory for this product (excluding expired)
-                $facilityQuantity = FacilityInventoryItem::where('product_id', $item->product_id)
-                    ->where('quantity', '>', 0)
-                    ->where('expiry_date', '>', \Carbon\Carbon::now())
-                    ->sum('quantity');
-
-                // Add total quantity on hand to the item
-                $item->total_quantity_on_hand = $warehouseQuantity + $facilityQuantity;
-            }
-        }
 
         return inertia('Transfer/Show', [
             'transfer' => $transfer

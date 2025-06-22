@@ -664,6 +664,9 @@
                             </tr>
                             <tr class="bg-gray-50">
                                 <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    UoM
+                                </th>
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
                                     QTY
                                 </th>
                                 <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
@@ -675,9 +678,7 @@
                                 <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
                                     Location
                                 </th>
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    UoM
-                                </th>
+                                
                             </tr>
                         </thead>
 
@@ -696,6 +697,7 @@
                                         class="px-4 py-2 border border-gray-300 text-left text-black align-top"
                                     >
                                         <div class="font-medium">{{ item.product?.name }}</div>
+                                        {{ item.quantity_to_release }}
                                     </td>
                                     
                                     <!-- Category (only show on first row for this item) -->
@@ -754,7 +756,7 @@
                                         :rowspan="item.inventory_allocations?.length || 1"
                                         class="px-4 py-2 border border-gray-300 text-center text-black align-top"
                                     >
-                                        {{ item.total_quantity_on_hand || 1000 }}
+                                        {{ item.quantity_per_unit || 0 }}
                                     </td>
                                     
                                     <!-- Reasons for Transfers (only show on first row for this item) -->
