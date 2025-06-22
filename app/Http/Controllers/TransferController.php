@@ -435,7 +435,6 @@ class TransferController extends Controller
             return response()->json('Failed to create transfer: ' . $e->getMessage(), 500);
         }
     }
-    
 
     public function show($id){
         $transfer = Transfer::where('id', $id)->with([
@@ -574,6 +573,7 @@ class TransferController extends Controller
                 return response()->json($products, 200);
             }
         } catch (\Throwable $th) {
+            logger()->info($th->getMessage());
             return response()->json($th->getMessage(), 500);
         }
     }

@@ -99,6 +99,6 @@ class Product extends Model
     }
 
     public function facilityInventories(){
-        return $this->hasMany(FacilityInventoryItem::class);
+        return $this->hasMany(FacilityInventory::class);
     }
 }
