@@ -152,35 +152,50 @@ const fetchInventories = async () => {
         },
     });
 
-    // Use axios with then/catch pattern
-    await axios
-        .get(route("transfers.getInventories"), {
+    try {
+        // Use GET request to fetch available inventories
+        const response = await axios.get(route("transfers.getInventories"), {
             params: {
                 source_type: sourceType.value,
                 source_id: form.value.source_id,
             },
-        })
-        .then((response) => {
-            console.log(response.data);
-            swalLoading.close();
-            availableInventories.value = response.data;
-        })
-        .catch((error) => {
-            console.error("[ERROR] Fetch inventories failed:", error);
-            availableInventories.value = [];
-            filteredInventories.value = availableInventories.value;
-            // Close Swal loading
-            swalLoading.close();
-            Swal.fire({
-                title: "Error!",
-                text: error.response?.data || "Failed to fetch inventories",
-                icon: "error",
-                toast: true,
-                position: "top-end",
-                showConfirmButton: false,
-                timer: 3000,
-            });
         });
+        
+        console.log(response.data);
+        swalLoading.close();
+        availableInventories.value = response.data;
+        filteredInventories.value = availableInventories.value;
+        loadingInventories.value = false;
+        
+    } catch (error) {
+        console.error("[ERROR] Fetch inventories failed:", error);
+        swalLoading.close();
+        loadingInventories.value = false;
+        availableInventories.value = [];
+        filteredInventories.value = [];
+        
+        // Show detailed error message
+        let errorMessage = "Failed to fetch inventories";
+        if (error.response) {
+            if (error.response.status === 422) {
+                errorMessage = error.response.data.message || "Validation error occurred";
+            } else if (error.response.status === 500) {
+                errorMessage = error.response.data || "Server error occurred";
+            } else {
+                errorMessage = error.response.data.message || error.response.data || errorMessage;
+            }
+        }
+        
+        Swal.fire({
+            title: "Error!",
+            text: errorMessage,
+            icon: "error",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 5000,
+        });
+    }
 };
 
 const validateForm = () => {
