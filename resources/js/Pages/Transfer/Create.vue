@@ -171,6 +171,15 @@ const fetchInventories = async () => {
             filteredInventories.value = availableInventories.value;
             // Close Swal loading
             swalLoading.close();
+            Swal.fire({
+                title: "Error!",
+                text: error.response?.data || "Failed to fetch inventories",
+                icon: "error",
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 3000,
+            });
         });
 };
 
