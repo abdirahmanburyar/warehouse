@@ -607,7 +607,6 @@ function getResults(page = 1) {
                                                             >LC:
                                                             {{
                                                                 item.location
-                                                                    ?.location
                                                             }}</span
                                                         >
                                                     </div>
