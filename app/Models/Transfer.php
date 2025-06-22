@@ -15,6 +15,7 @@ class Transfer extends Model
     use SoftDeletes;
     protected $fillable = [
         'transferID',
+        'transfer_date',
         'from_warehouse_id',
         'to_warehouse_id',
         'from_facility_id',
