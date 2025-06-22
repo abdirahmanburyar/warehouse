@@ -627,7 +627,7 @@
                                 </th>
                                 <th
                                     class="px-4 py-2 border border-gray-300 text-center text-black font-semibold"
-                                    colspan="5"
+                                    rowspan="2"
                                 >
                                     Item details
                                 </th>
@@ -662,24 +662,6 @@
                                     Action
                                 </th>
                             </tr>
-                            <tr class="bg-gray-50">
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    UoM
-                                </th>
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    QTY
-                                </th>
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    Batch Number
-                                </th>
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    Expiry Date
-                                </th>
-                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
-                                    Location
-                                </th>
-                                
-                            </tr>
                         </thead>
 
                         <tbody>
@@ -709,45 +691,60 @@
                                         {{ item.product?.category?.name }}
                                     </td>
                                     
-                                    <!-- Item Details - QTY -->
+                                    <!-- Item Details -->
                                     <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        {{ allocation.allocated_quantity || 0 }}
-                                    </td>
-                                    
-                                    <!-- Item Details - Batch Number -->
-                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        <span
-                                            :class="{
-                                                'text-red-600 font-bold': allocation.batch_number === 'HK5273'
-                                            }"
-                                        >
-                                            {{ allocation.batch_number || 'N/A' }}
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Item Details - Expiry Date -->
-                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        <span
-                                            :class="{
-                                                'text-red-600': isExpiringItem(allocation.expiry_date)
-                                            }"
-                                        >
-                                            {{
-                                                allocation.expiry_date
-                                                    ? moment(allocation.expiry_date).format("MMM YYYY")
-                                                    : 'N/A'
-                                            }}
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Item Details - Location -->
-                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        {{ allocation.location?.location || 'N/A' }}
-                                    </td>
-                                    
-                                    <!-- Item Details - UoM -->
-                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        {{ item.product?.dosage?.uom || 'N/A' }}
+                                        <table class="w-full border border-collapse border-gray-300">
+                                            <tr>
+                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                                    UoM
+                                                </th>
+                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                                    QTY
+                                                </th>
+                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                                    Batch Number
+                                                </th>
+                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                                    Expiry Date
+                                                </th>
+                                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                                    Location
+                                                </th>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                                    {{ item.product?.dosage?.uom || 'N/A' }}
+                                                </td>
+                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                                    {{ allocation.allocated_quantity || 0 }}
+                                                </td>
+                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                                    <span
+                                                        :class="{
+                                                            'text-red-600 font-bold': allocation.batch_number === 'HK5273'
+                                                        }"
+                                                    >
+                                                        {{ allocation.batch_number || 'N/A' }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                                    <span
+                                                        :class="{
+                                                            'text-red-600': isExpiringItem(allocation.expiry_date)
+                                                        }"
+                                                    >
+                                                        {{
+                                                            allocation.expiry_date
+                                                                ? moment(allocation.expiry_date).format("MMM YYYY")
+                                                                : 'N/A'
+                                                        }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                                    {{ allocation.location?.location || 'N/A' }}
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                     
                                     <!-- Total Quantity on Hand Per Unit (only show on first row for this item) -->
