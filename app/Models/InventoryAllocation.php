@@ -34,6 +34,14 @@ class InventoryAllocation extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function transfer_item(){
+        return $this->belongsTo(TransferItem::class);
+    }
+
+    public function order_item(){
+        return $this->belongsTo(OrderItem::class);
+    }
+
     public function back_order(){
         return $this->hasMany(FacilityBackorder::class, 'inventory_allocation_id');
     }

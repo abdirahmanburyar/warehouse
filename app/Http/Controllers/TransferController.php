@@ -263,7 +263,7 @@ class TransferController extends Controller
             foreach ($request->items as $item) {
                 $remainingQty = $item['quantity'];
                 $sourceId = $request->source_id;
-    
+
                 if ($request->source_type === 'warehouse') {
                     $inventories = InventoryItem::where('product_id', $item['product_id'])
                         ->where('warehouse_id', $sourceId)
@@ -278,7 +278,41 @@ class TransferController extends Controller
                         ->orderBy('expiry_date', 'asc')
                         ->get();
                 }
+
+                // Create transfer item for this product
+                $transferItem = $transfer->items()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'], // Total requested quantity
+                    'quantity_to_release' => $item['quantity']
+                ]);
+
+                // Process each inventory item to fulfill the transfer quantity
+                foreach ($inventories as $inventory) {
+                    if ($remainingQty <= 0) break;
+
+                    $deductQty = min($remainingQty, $inventory->quantity);
+                    
+                    // Create inventory allocation record for detailed tracking
+                    $transferItem->inventory_allocations()->create([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $request->source_type === 'warehouse' ? $sourceId : null,
+                        'batch_number' => $inventory->batch_number ?? null,
+                        'expiry_date' => $inventory->expiry_date ?? null,
+                        'allocated_quantity' => $deductQty,
+                        'allocation_type' => 'transfer',
+                        'unit_cost' => $inventory->unit_cost ?? 0,
+                        'total_cost' => $deductQty * ($inventory->unit_cost ?? 0),
+                    ]);
+
+                    // Deduct from source inventory
+                    $inventory->quantity -= $deductQty;
+                    $inventory->save();
+
+                    // Update remaining quantity needed
+                    $remainingQty -= $deductQty;
+                }
         
+                // Check if we couldn't fulfill the complete request
                 if ($remainingQty > 0) {
                     DB::rollBack();
                     return response()->json("Not enough stock to fulfill {$item['quantity']} units for Item: {$item['product']['name']}", 400);
