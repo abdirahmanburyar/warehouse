@@ -9,7 +9,6 @@ use App\Models\Warehouse;
 use App\Models\Facility;
 use App\Models\FacilityInventory;
 use App\Models\FacilityInventoryItem;
-use App\Models\TransferResource;
 use App\Models\FacilityBackorder;
 use App\Models\Transfer;
 use App\Models\TransferItem;
@@ -28,6 +27,7 @@ use App\Notifications\TransferCreated;
 use App\Events\TransferStatusChanged;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\TransferResource;
 
 class TransferController extends Controller
 {
@@ -715,33 +715,19 @@ class TransferController extends Controller
                     }
                     
                     $inventory = $inventoryQuery->first();
+                        
+                    if (!$inventory) {
+                        return response()->json([
+                            'message' => 'No inventory available for this product with the specified batch number and expiry date',
+                            'quantity' => $transferItem->quantity
+                        ], 500);
+                    }
                     
-                    if ($inventory) {
-                        // Update existing inventory
-                        if ($differences > 0) {
-                            // Increasing transfer quantity means decreasing facility inventory
-                            $inventory->quantity = $inventory->quantity - $differences;
-                        } else {
-                            // Decreasing transfer quantity means increasing facility inventory
-                            $inventory->quantity = $inventory->quantity + abs($differences);
-                        }
-                        
-                        // Mark as inactive if quantity is zero
-                        if ($inventory->quantity <= 0) {
-                            $inventory->is_active = false;
-                        }
-                        
-                        $inventory->save();
-                    } else if ($differences < 0) {
-                        // Create new inventory record if we're returning items to the facility
-                        FacilityInventory::create([
-                            'product_id' => $transferItem->product_id,
-                            'facility_id' => $transfer->from_facility_id,
-                            'quantity' => abs($differences),
-                            'batch_number' => $transferItem->batch_number,
-                            'expiry_date' => $transferItem->expire_date,
-                            'is_active' => true
-                        ]);
+                    if ($inventory->quantity < $differences) {
+                        return response()->json([
+                            'message' => 'Insufficient balance. Requested additional: ' . $differences . ', Available: ' . $inventory->quantity,
+                            'quantity' => $transferItem->quantity
+                        ], 500);
                     }
                 }
             }
