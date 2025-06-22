@@ -389,7 +389,7 @@ class TransferController extends Controller
                             $query->whereNull('expiry_date')
                                   ->orWhere('expiry_date', '>=', $currentDate);
                         })
-                        ->with('location:id,location','warehouse:id,name')
+                        ->with('location:id,location','warehouse:id,name','product:id,name')
                         ->get();
                 } else {
                     // For facility inventory, also check for expired items
@@ -419,6 +419,7 @@ class TransferController extends Controller
                             $query->whereNull('expiry_date')
                                   ->orWhere('expiry_date', '>=', $currentDate);
                         })
+                        ->with('product:id,name')
                         ->get();
                 }
                 
