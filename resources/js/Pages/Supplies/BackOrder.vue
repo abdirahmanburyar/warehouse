@@ -585,6 +585,7 @@ const submitDisposal = async () => {
     const formData = new FormData();
     formData.append('id', selectedItem.value.id);
     formData.append('note', disposeForm.value.note);
+    formData.append('type', selectedItem.value.status);
     formData.append('quantity', selectedItem.value.quantity);
     formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
 
