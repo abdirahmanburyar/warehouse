@@ -562,8 +562,11 @@ class TransferController extends Controller
                 return response()->json($products, 200);
             } else {
                 // Get facility inventories directly with DB query
-                $products = Product::whereHas('facilityInventories.items', function($query) use ($request) {
-                    $query->where('facility_id', $request->source_id);
+                $products = Product::whereHas('facilityInventories', function($query) use ($request) {
+                    $query->where('facility_id', $request->source_id)
+                          ->whereHas('items', function($subQuery) {
+                              $subQuery->where('quantity', '>', 0);
+                          });
                 })
                     ->select('id','name')
                     ->get();
