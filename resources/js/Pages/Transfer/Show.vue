@@ -651,12 +651,6 @@
                                     Quantity to be transferred
                                 </th>
                                 <th
-                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Total Quantity to be transferred
-                                </th>
-                                <th
                                     class="px-4 py-2 border border-gray-300 text-center text-black font-semibold"
                                     rowspan="2"
                                 >
@@ -787,15 +781,6 @@
                                             :readonly="props.transfer.status !== 'pending'"
                                             class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                                         />
-                                    </td>
-                                    
-                                    <!-- Total Quantity to be transferred (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
-                                    >
-                                        {{ item.quantity || 100 }}
                                     </td>
                                     
                                     <!-- Action (only show on first row for this item) -->
