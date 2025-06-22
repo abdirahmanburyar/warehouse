@@ -703,7 +703,7 @@ class SupplyController extends Controller
                     'items.*.differences' => 'nullable|array',
                     'items.*.differences.*.id' => 'nullable',
                     'items.*.differences.*.quantity' => 'required_with:items.*.differences|numeric|min:0',
-                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Low quality',
+                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Lost,Expired,Low quality',
                 ]);
 
                 $request['purchase_order_id'] = $request->id;
@@ -1491,7 +1491,7 @@ class SupplyController extends Controller
                     'items.*.differences' => 'nullable|array',
                     'items.*.differences.*.id' => 'nullable|exists:packing_list_differences,id',
                     'items.*.differences.*.quantity' => 'required_with:items.*.differences|numeric|min:0',
-                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Low quality',
+                    'items.*.differences.*.status' => 'required_with:items.*.differences|in:Missing,Damaged,Lost,Expired,Low quality',
                     'items.*.differences.*.note' => 'nullable|string'
                 ]);
 
