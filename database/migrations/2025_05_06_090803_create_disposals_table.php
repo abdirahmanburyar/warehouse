@@ -23,6 +23,7 @@ return new class extends Migration
             $table->date('disposed_at');
             $table->integer('quantity');
             $table->string('status');
+            $table->string('type');
             $table->string('location')->nullable();
             $table->string('facility')->nullable();
             $table->string('warehouse')->nullable();

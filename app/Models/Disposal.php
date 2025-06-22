@@ -31,6 +31,7 @@ class Disposal extends Model
         'uom',
         'attachments',
         'note',
+        'type',
         'reviewed_by',
         'reviewed_at',
         'approved_by',

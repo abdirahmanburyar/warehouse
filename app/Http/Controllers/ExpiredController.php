@@ -130,6 +130,7 @@ class ExpiredController extends Controller
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
                 'note' => 'nullable|string|max:255',
+                'type' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf', // Max 10MB per file
             ]);
@@ -172,6 +173,7 @@ class ExpiredController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'type' => $request->type,
                 'warehouse' => $inventory->warehouse->name ?? null,  // Add warehouse info
                 'location' => $inventory->location ?? null,          // Add location info
                 'barcode' => $inventory->barcode,

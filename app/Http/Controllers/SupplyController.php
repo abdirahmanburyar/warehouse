@@ -271,6 +271,7 @@ class SupplyController extends Controller
                 'id' => 'required|exists:packing_list_differences,id',
                 'packing_listitem_id' => 'required|exists:packing_list_items,id',                
                 'note' => 'nullable|string',
+                'type' => 'nullable|string',
                 'quantity' => "required|min:1",
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
@@ -314,6 +315,7 @@ class SupplyController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'type' => $request->type,
                 'warehouse' => $item->warehouse->name,
                 'location' => $item->location,
                 'barcode' => $item->barcode,
