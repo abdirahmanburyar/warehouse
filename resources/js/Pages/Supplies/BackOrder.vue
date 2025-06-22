@@ -76,15 +76,27 @@
                                                             class="text-yellow-600 font-medium">
                                                             Missing
                                                         </span>
-                                                        <span v-if="row.status === 'Damaged'"
+                                                        <span v-else-if="row.status === 'Damaged'"
                                                             class="text-red-600 font-medium">
                                                             Damaged
+                                                        </span>
+                                                        <span v-else-if="row.status === 'Lost'"
+                                                            class="text-gray-600 font-medium">
+                                                            Lost
+                                                        </span>
+                                                        <span v-else-if="row.status === 'Expired'"
+                                                            class="text-orange-600 font-medium">
+                                                            Expired
+                                                        </span>
+                                                        <span v-else-if="row.status === 'Low quality'"
+                                                            class="text-purple-600 font-medium">
+                                                            Low quality
                                                         </span>
                                                     </td>
                                                     <td class="px-6 py-3 text-sm border-r border-black">
                                                         <div class="flex gap-2">
                                                             <button
-                                                                v-if="row.status === 'Missing' || row.status === 'Damaged'"
+                                                                v-if="row.status === 'Missing' || row.status === 'Damaged' || row.status === 'Lost' || row.status === 'Expired' || row.status === 'Low quality'"
                                                                 @click="handleAction('Receive', { ...item, status: row.status, quantity: row.quantity })"
                                                                 class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
                                                                 :disabled="isLoading">
@@ -96,7 +108,7 @@
                                                                 :disabled="isLoading">
                                                                 Liquidate
                                                             </button>
-                                                            <button v-if="row.status === 'Damaged'"
+                                                            <button v-if="row.status === 'Damaged' || row.status === 'Expired' || row.status === 'Low quality'"
                                                                 @click="handleAction('Dispose', { ...item, status: row.status, quantity: row.quantity })"
                                                                 class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
                                                                 :disabled="isLoading">
@@ -345,6 +357,9 @@ const groupedItems = computed(() => {
 const getAvailableActions = (status) => {
     if (status === 'Missing') return ['Receive', 'Liquidate'];
     if (status === 'Damaged') return ['Receive', 'Dispose'];
+    if (status === 'Lost') return ['Receive'];
+    if (status === 'Expired') return ['Receive', 'Dispose'];
+    if (status === 'Low quality') return ['Receive', 'Dispose'];
     return [];
 };
 
