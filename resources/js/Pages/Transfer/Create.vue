@@ -361,10 +361,18 @@ async function handleProductSelect(index, selected) {
             .catch((error) => {
                 isLoading.value[index] = false;
                 console.log(error);
+                
+                // Clear product fields on error
+                item.product_id = null;
+                item.product = null;
+                item.details = [];
+                item.available_quantity = 0;
+                
                 Swal.fire({
                     title: "Error!",
                     text: error.response.data,
                     icon: "error",
+                    toast: true,
                     position: "top-end",
                     showConfirmButton: false,
                     timer: 5000,
