@@ -47,11 +47,6 @@ class LiquidateDisposalController extends Controller
     public function liquidates(Request $request){   
         $liquidates = Liquidate::query()->with([
             'product',
-            'purchaseOrder',
-            'packingListItem.warehouse',
-            'packingListItem.location',
-            'inventory.warehouse',
-            'inventory.location',
             'liquidatedBy',
             'approvedBy',
             'reviewedBy',
