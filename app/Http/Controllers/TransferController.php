@@ -371,17 +371,6 @@ class TransferController extends Controller
                 $currentDate = Carbon::now()->toDateString();
                 
                 if ($request->source_type === 'warehouse') {
-                    // Check if any items are expired before fetching
-                    $expiredCount = InventoryItem::where('product_id', $request->product_id)
-                        ->where('warehouse_id', $request->source_id)
-                        ->where('quantity', '>', 0)
-                        ->where('expiry_date', '<=', $currentDate)
-                        ->count();
-                        
-                    if ($expiredCount > 0) {
-                        return response()->json('Cannot fetch expired inventory items for transfer', 500);
-                    }
-                    
                     $inventory = InventoryItem::where('product_id', $request->product_id)
                         ->where('warehouse_id', $request->source_id)
                         ->where('quantity', '>', 0)
@@ -392,24 +381,6 @@ class TransferController extends Controller
                         ->with('location:id,location','warehouse:id,name','product:id,name')
                         ->get();
                 } else {
-                    // For facility inventory, also check for expired items
-                    $facilityInventoryIds = FacilityInventoryItem::where('product_id', $request->product_id)
-                        ->whereHas('inventory.facility', function($query) use ($request) {
-                            $query->where('id', $request->source_id);
-                        })
-                        ->pluck('id');
-                    
-                    if ($facilityInventoryIds->isNotEmpty()) {
-                        $expiredCount = FacilityInventoryItem::whereIn('id', $facilityInventoryIds)
-                            ->where('quantity', '>', 0)
-                            ->where('expiry_date', '<=', $currentDate)
-                            ->count();
-                            
-                        if ($expiredCount > 0) {
-                            return response()->json('This item is expired and cannot be transferred', 500);
-                        }
-                    }
-                    
                     $inventory = FacilityInventoryItem::where('product_id', $request->product_id)
                         ->whereHas('inventory.facility', function($query) use ($request) {
                             $query->where('id', $request->source_id);
