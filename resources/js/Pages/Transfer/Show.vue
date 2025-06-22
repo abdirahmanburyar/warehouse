@@ -100,7 +100,7 @@
         </div>
 
         <!-- Transfer Timeline -->
-        <div class="mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+        <div class="mb-6 bg-white rounded-lg shadow-sm">
           <h3 class="text-lg font-semibold text-gray-800 mb-6 text-center">Transfer Timeline</h3>
           
           <div class="relative flex justify-center items-center">
