@@ -15,12 +15,6 @@ class LiquidateDisposalController extends Controller
     public function disposals(Request $request){
         $disposals = Disposal::query()->with([
             'product',
-            'purchaseOrder',
-            'transfer',
-            'packingListItem.warehouse',
-            'packingListItem.location',
-            'inventory.warehouse',
-            'inventory.location',
             'disposedBy',
             'approvedBy',
             'reviewedBy',
@@ -52,7 +46,6 @@ class LiquidateDisposalController extends Controller
         $liquidates = Liquidate::query()->with([
             'product',
             'purchaseOrder',
-            'transfer',
             'packingListItem.warehouse',
             'packingListItem.location',
             'inventory.warehouse',
