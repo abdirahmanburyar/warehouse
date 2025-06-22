@@ -1450,6 +1450,7 @@ const showDispatchForm = ref(false);
 
 // Function to show the back order modal
 const showBackOrderModal = (item) => {
+    console.log(item);
     selectedBackOrder.value = null;
     showModal.value = true;
     selectedBackOrder.value = item?.inventory_allocations;

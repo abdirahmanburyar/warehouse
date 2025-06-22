@@ -420,7 +420,7 @@ class TransferController extends Controller
 
     public function show($id){
         $transfer = Transfer::where('id', $id)->with([
-            'items.product', 
+            'items.product.category', 
             'items.backorders', 
             'fromWarehouse', 
             'toWarehouse', 

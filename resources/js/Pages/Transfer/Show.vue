@@ -1,5 +1,9 @@
 <template>
-    <AuthenticatedLayout>
+    <AuthenticatedLayout
+        title="Transfer Details"
+        description="Transfer Details"
+        img="/assets/images/transfer.png"
+    >
         <div class="container mx-auto">
             <!-- Transfer Header -->
             <div class="mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
@@ -606,266 +610,212 @@
                         Transfer Items
                     </h3>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full table-auto">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                    >
-                                        Product
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                    >
-                                        Batch
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                    >
-                                        Expiry
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                    >
-                                        Ordered Qty
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                        v-if="showReceivedColumn"
-                                    >
-                                        Received Qty
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                                        v-if="showActionsColumn"
-                                    >
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <table class="min-w-full border border-collapse border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Item Name
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Category
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-center text-black font-semibold"
+                                    colspan="5"
+                                >
+                                    Item details
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Total Quantity on Hand Per Unit
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Reasons for Transfers
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Quantity to be transferred
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-left text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Total Quantity to be transferred
+                                </th>
+                                <th
+                                    class="px-4 py-2 border border-gray-300 text-center text-black font-semibold"
+                                    rowspan="2"
+                                >
+                                    Action
+                                </th>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    QTY
+                                </th>
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    Batch Number
+                                </th>
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    Expiry Date
+                                </th>
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    Location
+                                </th>
+                                <th class="px-4 py-2 border border-gray-300 text-center text-black font-semibold">
+                                    UoM
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <template v-for="(item, index) in form" :key="item.id">
+                                <!-- Main row for items with multiple allocations -->
                                 <tr
-                                    v-for="item in props.transfer.items"
-                                    :key="item.id"
-                                    class="border-t hover:bg-gray-50"
+                                    v-for="(allocation, allocIndex) in item.inventory_allocations || [{}]"
+                                    :key="`${item.id}-${allocIndex}`"
+                                    class="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-300"
                                 >
-                                    <td class="px-4 py-3">
-                                        <div>
-                                            <p
-                                                class="font-medium text-gray-900"
-                                            >
-                                                {{ item.product?.name }}
-                                            </p>
-                                            <p class="text-sm text-gray-500">
-                                                Code:
-                                                {{ item.product?.productID }}
-                                            </p>
-                                            <p class="text-xs text-gray-400">
-                                                {{
-                                                    item.product?.movement
-                                                }}
-                                                Movement
-                                            </p>
-                                        </div>
+                                    <!-- Item Name (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-left text-black align-top"
+                                    >
+                                        <div class="font-medium">{{ item.product?.name }}</div>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    
+                                    <!-- Category (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-left text-black align-top"
+                                    >
+                                        {{ item.product?.category?.name }}
+                                    </td>
+                                    
+                                    <!-- Item Details - QTY -->
+                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                        {{ allocation.allocated_quantity || 0 }}
+                                    </td>
+                                    
+                                    <!-- Item Details - Batch Number -->
+                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
                                         <span
-                                            v-if="
-                                                item.inventory_allocations
-                                                    ?.length > 0
-                                            "
-                                            class="text-sm text-gray-700"
+                                            :class="{
+                                                'text-red-600 font-bold': allocation.batch_number === 'HK5273'
+                                            }"
+                                        >
+                                            {{ allocation.batch_number || 'N/A' }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Item Details - Expiry Date -->
+                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                        <span
+                                            :class="{
+                                                'text-red-600': isExpiringItem(allocation.expiry_date)
+                                            }"
                                         >
                                             {{
-                                                item.inventory_allocations[0]
-                                                    .batch_number || "N/A"
+                                                allocation.expiry_date
+                                                    ? moment(allocation.expiry_date).format("MMM YYYY")
+                                                    : 'N/A'
                                             }}
                                         </span>
-                                        <span
-                                            v-else
-                                            class="text-sm text-gray-400"
-                                            >N/A</span
-                                        >
                                     </td>
-                                    <td class="px-4 py-3">
+                                    
+                                    <!-- Item Details - Location -->
+                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                        {{ allocation.location?.location || 'N/A' }}
+                                    </td>
+                                    
+                                    <!-- Item Details - UoM -->
+                                    <td class="px-4 py-2 border border-gray-300 text-center text-black">
+                                        {{ item.product?.dosage?.uom || 'N/A' }}
+                                    </td>
+                                    
+                                    <!-- Total Quantity on Hand Per Unit (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
+                                    >
+                                        {{ item.total_quantity_on_hand || 1000 }}
+                                    </td>
+                                    
+                                    <!-- Reasons for Transfers (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
+                                    >
                                         <span
-                                            v-if="
-                                                item.inventory_allocations
-                                                    ?.length > 0 &&
-                                                item.inventory_allocations[0]
-                                                    .expiry_date
-                                            "
-                                            class="text-sm"
-                                            :class="
-                                                isExpiringItem(
-                                                    item
-                                                        .inventory_allocations[0]
-                                                        .expiry_date
-                                                )
-                                                    ? 'text-red-600 font-medium'
-                                                    : 'text-gray-700'
-                                            "
+                                            :class="{
+                                                'text-red-600': allocation.batch_number === 'HK5273'
+                                            }"
                                         >
-                                            {{
-                                                moment(
-                                                    item
-                                                        .inventory_allocations[0]
-                                                        .expiry_date
-                                                ).format("DD/MM/YYYY")
-                                            }}
+                                            {{ item.transfer_reason || (isExpiringItem(allocation.expiry_date) ? 'Soon to expire' : 'Slow Moving') }}
                                         </span>
-                                        <span
-                                            v-else
-                                            class="text-sm text-gray-400"
-                                            >N/A</span
-                                        >
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            class="text-sm font-medium text-gray-900"
-                                            >{{ item.quantity }}</span
-                                        >
-                                    </td>
+                                    
+                                    <!-- Quantity to be transferred (only show on first row for this item) -->
                                     <td
-                                        class="px-4 py-3"
-                                        v-if="showReceivedColumn"
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
                                     >
-                                        <div
-                                            class="flex items-center space-x-2"
-                                        >
-                                            <input
-                                                v-if="canEditReceivedQuantity"
-                                                type="number"
-                                                :value="
-                                                    item.received_quantity || 0
-                                                "
-                                                @input="
-                                                    updateReceivedQuantity(
-                                                        item.id,
-                                                        $event.target.value
-                                                    )
-                                                "
-                                                class="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                :min="0"
-                                                :max="item.quantity"
-                                            />
-                                            <span
-                                                v-else
-                                                class="text-sm font-medium"
-                                                :class="
-                                                    getReceivedQuantityClass(
-                                                        item
-                                                    )
-                                                "
-                                            >
-                                                {{
-                                                    item.received_quantity || 0
-                                                }}
-                                            </span>
-
-                                            <!-- Status indicator -->
-                                            <div
-                                                v-if="
-                                                    item.received_quantity !==
-                                                        undefined &&
-                                                    item.received_quantity <
-                                                        item.quantity
-                                                "
-                                                class="flex items-center"
-                                            >
-                                                <span
-                                                    class="w-2 h-2 bg-orange-400 rounded-full mr-1"
-                                                ></span>
-                                                <span
-                                                    class="text-xs text-orange-600"
-                                                    >Partial</span
-                                                >
-                                            </div>
-                                            <div
-                                                v-else-if="
-                                                    item.received_quantity ===
-                                                    item.quantity
-                                                "
-                                                class="flex items-center"
-                                            >
-                                                <span
-                                                    class="w-2 h-2 bg-green-400 rounded-full mr-1"
-                                                ></span>
-                                                <span
-                                                    class="text-xs text-green-600"
-                                                    >Complete</span
-                                                >
-                                            </div>
-                                        </div>
+                                        <input
+                                            type="number"
+                                            v-model="item.quantity_to_transfer"
+                                            :readonly="props.transfer.status !== 'pending'"
+                                            class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
+                                        />
                                     </td>
+                                    
+                                    <!-- Total Quantity to be transferred (only show on first row for this item) -->
                                     <td
-                                        class="px-4 py-3"
-                                        v-if="showActionsColumn"
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center text-black align-top"
                                     >
-                                        <div class="flex space-x-2">
-                                            <button
-                                                v-if="canCreateBackorder(item)"
-                                                @click="
-                                                    openBackOrderModal(item)
-                                                "
-                                                class="px-3 py-1 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 transition-colors"
-                                            >
-                                                Backorder
-                                            </button>
-                                            <button
-                                                v-if="
-                                                    item.backorders?.length > 0
-                                                "
-                                                @click="viewBackorders(item)"
-                                                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                                            >
-                                                View ({{
-                                                    item.backorders.length
-                                                }})
-                                            </button>
-                                        </div>
+                                        {{ item.quantity || 100 }}
+                                    </td>
+                                    
+                                    <!-- Action (only show on first row for this item) -->
+                                    <td
+                                        v-if="allocIndex === 0"
+                                        :rowspan="item.inventory_allocations?.length || 1"
+                                        class="px-4 py-2 border border-gray-300 text-center align-top"
+                                    >
+                                        <button
+                                            v-if="props.transfer.status === 'pending'"
+                                            @click="removeItem(index)"
+                                            class="text-red-600 hover:text-red-800 transition-colors"
+                                            title="Delete item"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Summary Row -->
-                    <div class="mt-4 pt-4 border-t bg-gray-50 rounded p-4">
-                        <div class="flex justify-between items-center">
-                            <div class="text-sm text-gray-600">
-                                Total Items:
-                                <span class="font-medium">{{
-                                    props.transfer.items?.length || 0
-                                }}</span>
-                            </div>
-                            <div
-                                v-if="showReceivedColumn"
-                                class="text-sm text-gray-600"
-                            >
-                                Total Ordered:
-                                <span class="font-medium">{{
-                                    totalOrderedQuantity
-                                }}</span>
-                                | Total Received:
-                                <span class="font-medium">{{
-                                    totalReceivedQuantity
-                                }}</span>
-                                | Completion:
-                                <span
-                                    class="font-medium"
-                                    :class="
-                                        completionPercentage === 100
-                                            ? 'text-green-600'
-                                            : 'text-orange-600'
-                                    "
-                                >
-                                    {{ completionPercentage }}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -873,7 +823,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import moment from "moment";
 
@@ -882,6 +832,13 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+});
+
+const form = ref([]);
+const isLoading = ref(false);
+
+onMounted(() => {
+    form.value = props.transfer.items || [];
 });
 
 const statusOrder = [
@@ -1080,5 +1037,13 @@ const openBackOrderModal = (item) => {
 const viewBackorders = (item) => {
     // TODO: Implement view backorders
     console.log("View backorders for item:", item);
+};
+
+const removeItem = (index) => {
+    if (confirm('Are you sure you want to remove this item from the transfer?')) {
+        form.value.splice(index, 1);
+        // TODO: Implement API call to remove item from transfer
+        console.log("Removed item at index:", index);
+    }
 };
 </script>
