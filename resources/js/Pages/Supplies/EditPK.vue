@@ -353,6 +353,7 @@
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity
                                 </th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
@@ -374,6 +375,10 @@
                                         </option>
                                     </select>
                                     <span>{{ row.finalized }}</span>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <input type="text" v-model="row.note" :disabled="props.packing_list.status == 'approved'"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 </td>
                                 <td class="px-3 py-2">
                                     <button @click="removeBackOrderRow(index, row)" v-if="!row.finalized"
@@ -677,7 +682,8 @@ function openBackOrderModal(index) {
         : [{
             id: null,
             quantity: 0,
-            status: 'Missing'
+            status: 'Missing',
+            note: ''
         }];
 
     showBackOrderModal.value = true;
@@ -707,7 +713,8 @@ const syncBackOrdersWithDifferences = () => {
     selectedItem.value.differences = validRows.map(row => ({
         id: row.id,
         quantity: parseInt(row.quantity),
-        status: row.status
+        status: row.status,
+        note: row.note
     }));
 
     const itemIndex = form.value.items.findIndex(item => item === selectedItem.value);
@@ -717,7 +724,8 @@ const syncBackOrdersWithDifferences = () => {
     form.value.items[itemIndex].differences = backOrderRows.value.map(row => ({
         id: row.id ?? null,
         quantity: parseInt(row.quantity) || 0,
-        status: row.status
+        status: row.status,
+        note: row.note
     }));
 };
 
@@ -973,7 +981,8 @@ const addBackOrderRow = () => {
     backOrderRows.value.push({
         id: null,
         quantity: 0,
-        status: 'Missing'
+        status: 'Missing',
+        note: ''
     });
 };
 
