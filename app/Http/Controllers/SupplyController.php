@@ -1559,7 +1559,7 @@ class SupplyController extends Controller
                     'items.*.po_item_id' => 'required|exists:purchase_order_items,id',
                     'items.*.barcode' => 'nullable',
                     'items.*.batch_number' => 'required',
-                    'items.*.location_id' => 'required|exists:locations,id',
+                    'items.*.location' => 'required|string',
                     'items.*.quantity' => 'required|numeric|min:0',
                     'items.*.uom' => 'required',
                     'items.*.expire_date' => 'required|date',
@@ -1586,7 +1586,7 @@ class SupplyController extends Controller
                     
                     $packingListItem->update([
                         'warehouse_id' => $item['warehouse_id'],
-                        'location_id' => $item['location_id'],
+                        'location' => $item['location'],
                         'quantity' => $item['quantity'],
                         'batch_number' => $item['batch_number'],
                         'barcode' => $item['barcode'],

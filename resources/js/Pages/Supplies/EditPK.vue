@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Edit Packing List" descript="Edit Packing List">
+    <AuthenticatedLayout title="Edit Packing List" description="Edit Packing List" img="/assets/images/Instock.png">
         <Link :href="route('supplies.packing-list.showPK')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer">
         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -47,16 +47,18 @@
                             <th
                                 class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-[40px]  bg-gray-50 z-10">
                                 Item</th>
-                            <th class="w-[150px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Qty</th>
-                            <th class="w-[300px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                            <th class="min-w-[180px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Warehouse</th>
-                            <th class="w-[300px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Locations</th>
                             <th class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Batch Number</th>
+                                Item Detail</th>
                             <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Unit Cost</th>
+                            <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                Total Cost</th>
                             <th class="w-[110px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                 Fullfillment Rate</th>
                         </tr>
@@ -121,11 +123,13 @@
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <Multiselect v-model="item.location" :value="item.location"
+                                {{ props.packing_list.location }}
+                                <Multiselect 
+                                    :model-value="getLocationForItem(item)"
                                     :disabled="props.packing_list.status == 'approved' || !item.warehouse_id"
                                     :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
-                                    placeholder="Select Location" track-by="id" label="location"
+                                    placeholder="Select Location" track-by="location" label="location"
                                     @select="hadleLocationSelect(index, $event)" :append-to-body="true">
                                 </Multiselect>
                             </td>
@@ -155,21 +159,17 @@
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
-                                <div class="flex flex-col justify-center items-center">
-                                    <div class="flex flex-col">
-                                        <label class="text-xs">Unit Cost</label>
-                                        {{ item.unit_cost }}
-                                    </div>
-                                    <div class="flex flex-col items-center">
-                                        <label class="text-xs">Total Cost</label>
-                                        <div class="text-sm text-gray-900">
-                                            {{ Number(item.total_cost).toLocaleString('en-US', {
-                                                style: 'currency',
-                                                currency: 'USD'
-                                            }) }}
-                                        </div>
-                                    </div>
-                                </div>
+                                {{ Number(item.unit_cost).toLocaleString('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD'
+                                }) }}
+                            </td>
+                            <td
+                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
+                                {{ Number(item.total_cost).toLocaleString('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD'
+                                }) }}
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status == 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-left']">
@@ -270,27 +270,40 @@
             </div>
         </div>
         <!-- New Location Modal -->
-        <Modal :show="showLocationModal" @close="showLocationModal = false">
+        <Modal :show="showLocationModal" @close="closeLocationModal">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Add New Location</h2>
-                <div class="mt-6">
-                    <InputLabel for="new_location" value="Location Name" />
-                    <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Add New Location</h2>
+                
+                <div class="mb-4">
+                    <InputLabel for="warehouse" value="Warehouse" />
+                    <TextInput 
+                        :modelValue="selectedWarehouse?.name || ''" 
+                        class="mt-1 block w-full bg-gray-100" 
+                        disabled 
+                    />
                 </div>
-                <div class="mt-6">
-                    <InputLabel for="warehouse_id" value="Warehouse" />
-                    <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true"
-                        :close-on-select="true" :show-labels="false" :allow-empty="false" placeholder="Select Warehouse"
-                        track-by="id" label="name" required>
-                    </Multiselect>
+                
+                <div class="mb-4">
+                    <InputLabel for="location" value="Location Name" />
+                    <TextInput 
+                        id="location"
+                        v-model="newLocation"
+                        type="text"
+                        class="mt-1 block w-full"
+                        placeholder="Enter location name"
+                        :disabled="isNewLocation"
+                        required
+                    />
                 </div>
-                <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
+                
+                <div class="flex justify-end space-x-2">
+                    <SecondaryButton @click="closeLocationModal" :disabled="isNewLocation">
+                        Cancel
                     </SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">{{
-                        isNewLocation ?
-                            "Waiting..." :
-                        "Create new location" }}</PrimaryButton>
+                    <PrimaryButton @click="createLocation" :disabled="isNewLocation || !newLocation">
+                        <span v-if="isNewLocation">Creating...</span>
+                        <span v-else>Create Location</span>
+                    </PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -303,7 +316,8 @@
                         <div class="rounded-full bg-yellow-100 p-3 mr-3">
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
                             </svg>
                         </div>
                         <h2 class="text-lg font-medium text-gray-900">Incomplete Back Orders</h2>
@@ -441,10 +455,18 @@ const props = defineProps({
 const form = ref(props.packing_list || {});
 const processing = ref(false);
 const isSubmitting = ref(false);
+const showBackOrderModal = ref(false);
 const showLocationModal = ref(false);
 const isLoading = ref(false);
 const selectedItemIndex = ref(null);
 const error = ref("");
+const loadedLocation = ref([]);
+const newLocation = ref('');
+const showIncompleteBackOrderModal = ref(false);
+const selectedItem = ref(null);
+const backOrderRows = ref([]);
+const isNewLocation = ref(false);
+const selectedWarehouse = ref(null);
 
 const hasIncompleteBackOrder = (item) => {
     if (!item?.quantity || item.quantity === item?.purchase_order_item?.quantity) return false;
@@ -455,26 +477,11 @@ const hasIncompleteBackOrder = (item) => {
     return totalDifferences !== mismatches;
 };
 
-const showBackOrderModal = ref(false);
-const newLocation = ref('');
-const showIncompleteBackOrderModal = ref(false);
-const selectedItem = ref(null);
-const backOrderRows = ref([]);
-const isNewLocation = ref(false);
-const selectedWarehouse = ref(null);
-const loadedLocation = ref([]);
-
 // Add New Location option constant
 const ADD_NEW_LOCATION_OPTION = {
     isAddNew: true,
     location: 'Add New Location'
 };
-
-// Function to filter locations based on warehouse_id
-function getFilteredLocations(warehouseId) {
-    if (!warehouseId) return [];
-    return props.locations.filter(location => location.warehouse_id === warehouseId);
-}
 
 const hasNotApprovedItems = computed(() => {
     return form.value?.items?.some(item => item.status != 'approved') ?? false;
@@ -491,7 +498,7 @@ const totalExistingDifferences = computed(() => {
 
 const actualMismatches = computed(() => {
     if (!selectedItem.value) return 0;
-    return selectedItem.value.quantity - (selectedItem.value.quantity || 0);
+    return selectedItem.value.purchase_order_item.quantity - (selectedItem.value.quantity || 0);
 });
 
 const missingQuantity = computed(() => {
@@ -535,10 +542,24 @@ const hasReviewedItems = computed(() => {
     return props.packing_list?.status == 'reviewed';
 });
 
-onMounted(() => {
+onMounted(async () => {
     // First create a reactive form object
     form.value = props.packing_list;
     form.value.pk_date = moment(form.value.pk_date).format('YYYY-MM-DD');
+
+    // Load locations for existing items that have warehouses selected
+    const existingWarehouses = new Set();
+    
+    form.value.items?.forEach(item => {
+        if (item.warehouse?.name) {
+            existingWarehouses.add(item.warehouse.name);
+        }
+    });
+    
+    // Load locations for all existing warehouses
+    for (const warehouseName of existingWarehouses) {
+        await loadLocationsByWarehouse(warehouseName);
+    }
 });
 
 function handleWarehouseSelect(index, selected) {
@@ -551,21 +572,6 @@ function handleWarehouseSelect(index, selected) {
     // Load locations for the selected warehouse
     if (selected && selected.name) {
         loadLocationsByWarehouse(selected.name);
-    }
-}
-
-// Function to load locations by warehouse name
-async function loadLocationsByWarehouse(warehouseName) {
-    try {
-        const response = await axios.get(route('invetnories.getLocations'), {
-            params: { warehouse: warehouseName }
-        });
-        
-        loadedLocation.value = response.data;
-    } catch (error) {
-        console.error('Error loading locations:', error);
-        toast.error('Failed to load locations');
-        loadedLocation.value = [];
     }
 }
 
@@ -675,6 +681,20 @@ function openBackOrderModal(index) {
         }];
 
     showBackOrderModal.value = true;
+}
+
+async function loadLocationsByWarehouse(warehouseName) {
+    try {
+        const response = await axios.get(route('invetnories.getLocations'), {
+            params: { warehouse: warehouseName }
+        });
+        
+        loadedLocation.value = response.data;
+    } catch (error) {
+        console.error('Error loading locations:', error);
+        toast.error('Failed to load locations');
+        loadedLocation.value = [];
+    }
 }
 
 const syncBackOrdersWithDifferences = () => {
@@ -913,7 +933,7 @@ const submit = async () => {
     // Validate required fields
     const invalidItems = form.value.items.filter(item =>
         !item.warehouse_id ||
-        !item.location_id ||
+        !item.location ||
         !item.batch_number ||
         !item.expire_date ||
         item.quantity === null ||
@@ -1073,5 +1093,28 @@ async function approvePackingList() {
                 toast.error(error.response?.data || 'An error occurred while approving the items');
             });
     }
+}
+
+function getLocationForItem(item) {
+    // If item.location is a string, find the matching location object
+    if (typeof item.location === 'string' && item.location) {
+        const location = loadedLocation.value.find(loc => loc.location === item.location);
+        if (location) {
+            return location;
+        }
+        // If not found in loadedLocation, create a temporary object for display
+        return {
+            location: item.location,
+            warehouse: item.warehouse?.name || '',
+            id: 'temp-' + item.location
+        };
+    }
+    
+    // If item.location is already an object, return it
+    if (item.location && typeof item.location === 'object') {
+        return item.location;
+    }
+    
+    return null;
 }
 </script>
