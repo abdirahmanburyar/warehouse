@@ -21,18 +21,20 @@ class Liquidate extends Model
     protected $fillable = [
         'liquidate_id',
         'product_id',
-        'purchase_order_id',
-        'packing_listitem_id',
-        'inventory_id',
         'liquidated_by',
         'liquidated_at',
         'quantity',
         'status',
+        'type',
         'barcode',
         'expire_date',
         'batch_number',
         'uom',
-        'attachments',
+        'location',
+        'facility',
+        'warehouse',
+        'unit_cost',
+        'tota_cost',
         'note',
         'reviewed_by',
         'reviewed_at',
@@ -41,6 +43,7 @@ class Liquidate extends Model
         'rejected_by',
         'rejected_at',
         'rejection_reason',
+        'attachments',
     ];
 
     /**
@@ -49,30 +52,6 @@ class Liquidate extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * Get the purchase order that owns the liquidate record
-     */
-    public function purchaseOrder(): BelongsTo
-    {
-        return $this->belongsTo(PurchaseOrder::class);
-    }
-
-    /**
-     * Get the packing list item that owns the liquidate record
-     */
-    public function packingListItem(): BelongsTo
-    {
-        return $this->belongsTo(PackingListItem::class);
-    }
-
-    /**
-     * Get the inventory that owns the liquidate record
-     */
-    public function inventory(): BelongsTo
-    {
-        return $this->belongsTo(Inventory::class);
     }
 
     /**

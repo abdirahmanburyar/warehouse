@@ -173,6 +173,7 @@ class SupplyController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
                 'note' => 'nullable|string|max:255',
+                'type' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
             ]);
@@ -216,6 +217,7 @@ class SupplyController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'type' => $request->type,
                 'barcode' => $item->packingListItem->barcode,
                 'expire_date' => $item->packingListItem->expire_date,
                 'batch_number' => $item->packingListItem->batch_number,

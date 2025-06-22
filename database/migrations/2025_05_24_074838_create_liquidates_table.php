@@ -15,9 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('liquidate_id')->unique();
             $table->foreignId('product_id')->nullable()->nullOnDelete();
-            $table->foreignId('purchase_order_id')->nullable()->nullOnDelete();
-            $table->foreignId('packing_listitem_id')->nullable()->nullOnDelete();
-            $table->foreignId('inventory_id')->nullable()->nullOnDelete();
             $table->foreignId('liquidated_by')->nullable()->nullOnDelete();
             $table->string('barcode')->nullable();
             $table->date('expire_date')->nullable();
@@ -26,6 +23,12 @@ return new class extends Migration
             $table->date('liquidated_at');
             $table->integer('quantity');
             $table->string('status');
+            $table->string('type');
+            $table->string('location')->nullable();
+            $table->string('facility')->nullable();
+            $table->string('warehouse')->nullable();
+            $table->double('unit_cost')->nullable();
+            $table->double('total_cost')->nullable();
             $table->text('note')->nullable();
             $table->foreignId('reviewed_by')->nullable()->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();

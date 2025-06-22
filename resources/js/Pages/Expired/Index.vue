@@ -398,6 +398,7 @@ const submitDisposal = async () => {
     formData.append('id', selectedItem.value.id);
     formData.append('quantity', disposeForm.value.quantity);
     formData.append('note', disposeForm.value.note);
+    formData.append('type', 'Expired');
     formData.append('barcode', selectedItem.value.barcode);
     formData.append('batch_number', selectedItem.value.batch_number);
     formData.append('uom', selectedItem.value.uom);

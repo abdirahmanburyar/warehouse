@@ -508,6 +508,7 @@ const submitLiquidation = async () => {
     formData.append('batch_number', selectedItem.value.packing_list.batch_number);
     formData.append('uom', selectedItem.value.packing_list.uom);
     formData.append('status', selectedItem.value.status);
+    formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
 
     // Append each attachment
