@@ -26,7 +26,7 @@ class ExpiredController extends Controller
     
         $query = InventoryItem::query();
     
-        $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse', 'location:id,location']);
+        $query->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse']);
     
         $query->where('quantity', '>', 0)
               ->where(function($q) use ($now, $oneYearFromNow) {
@@ -69,9 +69,7 @@ class ExpiredController extends Controller
         }
     
         if ($request->filled('location')) {
-            $query->whereHas('location', function($q) use($request){
-                $q->where('location', 'like', "%{$request->location}%");
-            });
+            $query->where('location', 'like', "%{$request->location}%");
         }
     
         // ✅ Paginate while still a query builder
@@ -198,7 +196,7 @@ class ExpiredController extends Controller
     public function transfer(Request $request, $inventory)
     {
         if ($request->isMethod('get')) {
-            $inv = InventoryItem::with('product','location','warehouse')->find($inventory);
+            $inv = InventoryItem::with('product','warehouse')->find($inventory);
             $facilities = Facility::get();
             $warehouses = Warehouse::get();
             $transferID = Transfer::generateTransferId();
