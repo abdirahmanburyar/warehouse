@@ -211,7 +211,6 @@ class SupplyController extends Controller
             // Create a new liquidation record
             $liquidate = Liquidate::create([
                 'product_id' => $request->product_id,
-                'packing_listitem_id' => $item->packing_listitem_id,
                 'liquidated_by' => auth()->id(),
                 'liquidated_at' => Carbon::now(),
                 'quantity' => $request->quantity,
@@ -282,7 +281,7 @@ class SupplyController extends Controller
             DB::beginTransaction();
             
             // Get the packing list to include its number in the note
-            $item = PackingListItem::with('packingList')->find($request->packing_listitem_id);
+            $item = PackingListItem::with('packingList','warehouse:id,name')->find($request->packing_listitem_id);
             $packingListNumber = $item ? $item->packingList->packing_list_number : 'Unknown';
             
             // Generate note based on condition and source
@@ -310,13 +309,16 @@ class SupplyController extends Controller
             // Create a new liquidation record
             $disposal = Disposal::create([
                 'product_id' => $item->product_id,
-                'packing_listitem_id' => $request->packing_listitem_id,
                 'disposed_by' => auth()->id(),
                 'disposed_at' => Carbon::now(),
                 'quantity' => $request->quantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
+                'warehouse' => $item->warehouse->name,
+                'location' => $item->location,
                 'barcode' => $item->barcode,
+                'unit_cost' => $item->unit_cost,
+                'tota_cost' => $item->unit_cost * $request->quantity,
                 'expire_date' => $item->expire_date,
                 'batch_number' => $item->batch_number,
                 'uom' => $item->uom,
@@ -1217,99 +1219,6 @@ class SupplyController extends Controller
         }
     }
 
-    /**
-     * Delete multiple supplies at once
-     */
-    public function bulkDelete(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:supplies,id'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // Delete supplies that have no approved items
-            $supplies = Supply::whereIn('id', $request->ids)
-                ->whereDoesntHave('items', function ($query) {
-                    $query->where('status', 'approved');
-                })
-                ->get();
-
-            if ($supplies->isEmpty()) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Cannot delete supplies because they have approved items.'
-                ], 422);
-            }
-
-            // Delete the supply items first
-            foreach ($supplies as $supply) {
-                $supply->items()->delete();
-                $supply->delete();
-            }
-
-            DB::commit();
-            return response()->json([
-                'message' => 'Supplies deleted successfully',
-                'deleted_count' => $supplies->count()
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to delete supplies: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Bulk delete supplies after checking if they can be deleted
-     */
-    public function bulkDeleteSupplies(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:supplies,id'
-        ]);
-
-        $supplies = Supply::whereIn('id', $request->ids)
-            ->with('items')
-            ->get();
-
-        // Check if any supply has approved items
-        foreach ($supplies as $supply) {
-            if ($supply->items->contains('is_approved', true)) {
-                return response()->json([
-                    'message' => 'Cannot delete supplies that have approved items.',
-                    'supply_id' => $supply->id
-                ], 500);
-            }
-        }
-
-        // If we get here, none of the supplies have approved items
-        try {
-            DB::beginTransaction();
-            
-            // Delete all supply items first
-            SupplyItem::whereIn('supply_id', $request->ids)->delete();
-            
-            // Then delete the supplies
-            Supply::whereIn('id', $request->ids)->delete();
-            
-            DB::commit();
-            
-            return response()->json([
-                'message' => 'Supplies deleted successfully'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to delete supplies: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     public function searchSuppliers(Request $request)
     {
         $query = $request->input('query');
@@ -1580,7 +1489,7 @@ class SupplyController extends Controller
                     'items.*.differences' => 'nullable|array',
                     'items.*.differences.*.id' => 'nullable|exists:packing_list_differences,id',
                     'items.*.differences.*.quantity' => 'required|numeric|min:0',
-                    'items.*.differences.*.status' => 'required|in:Missing,Damaged,Expired'
+                    'items.*.differences.*.status' => 'required|in:Missing,Damaged'
                 ]);
 
                 // Update main packing list

@@ -21,10 +21,6 @@ class Disposal extends Model
     protected $fillable = [
         'disposal_id',
         'product_id',
-        'transfer_id',
-        'purchase_order_id',
-        'packing_listitem_id',
-        'inventory_item_id',
         'disposed_by',
         'disposed_at',
         'quantity',
@@ -42,6 +38,12 @@ class Disposal extends Model
         'rejected_by',
         'rejected_at',
         'rejection_reason',
+        'location',
+        'facility',
+        'warehouse',
+        'unit_cost',
+        'tota_cost',
+        'attachments',
     ];
 
     /**
@@ -50,38 +52,6 @@ class Disposal extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * Get the transfer that owns the disposal record
-     */
-    public function transfer(): BelongsTo
-    {
-        return $this->belongsTo(Transfer::class);
-    }
-
-    /**
-     * Get the purchase order that owns the disposal record
-     */
-    public function purchaseOrder(): BelongsTo
-    {
-        return $this->belongsTo(PurchaseOrder::class);
-    }
-
-    /**
-     * Get the packing list item that owns the disposal record
-     */
-    public function packingListItem(): BelongsTo
-    {
-        return $this->belongsTo(PackingListItem::class);
-    }
-
-    /**
-     * Get the inventory that owns the disposal record
-     */
-    public function inventory(): BelongsTo
-    {
-        return $this->belongsTo(Inventory::class);
     }
 
     /**
