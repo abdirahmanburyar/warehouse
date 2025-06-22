@@ -368,7 +368,7 @@
                                     <select v-model="row.status"
                                         :disabled="props.packing_list.status == 'approved'"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                        <option v-for="status in ['Missing', 'Damaged', 'Expired', 'Lost']"
+                                        <option v-for="status in ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality']"
                                             :key="status" :value="status">
                                             {{ status }}
                                         </option>
@@ -1010,7 +1010,7 @@ const removeBackOrderRow = async (index, item) => {
     }
 };
 
-const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired'];
+const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality'];
 
 const availableStatuses = computed(() => {
     const usedStatuses = new Set(backOrderRows.value.map(row => row.status));
