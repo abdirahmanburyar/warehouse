@@ -399,7 +399,7 @@ class SupplyController extends Controller
             ]);
             
             // Update inventory with the received items
-            $inventory = Inventory::where('product_id', $request->product_id)
+            $inventory = InventoryItem::where('product_id', $request->product_id)
                 ->where('batch_number', $packingListDiff->packingListItem->batch_number)
                 ->first();
             
@@ -423,12 +423,24 @@ class SupplyController extends Controller
                 ]);
             } else {
                 // Create a new inventory record if it doesn't exist
-                $inventory = Inventory::create([
+                $inventory = Inventory::firstOrCreate([
                     'product_id' => $request->product_id,
+                ], [
+                    'quantity' => 0,
+                ]);
+                $inventory->increment('quantity', $receivedQuantity);
+                $inventory->save();
+                
+                $inventory = InventoryItem::create([
+                    'inventory_id' => $inventory->id,
                     'quantity' => $receivedQuantity,
                     'batch_number' => $packingListDiff->packingListItem->batch_number,
                     'expiry_date' => $packingListDiff->packingListItem->expire_date,
                     'barcode' => $packingListDiff->packingListItem->barcode,
+                    'warehouse_id' => $packingListDiff->packingListItem->warehouse_id,
+                    'location' => $packingListDiff->packingListItem->location,
+                    'unit_cost' => $packingListDiff->packingListItem->unit_cost,
+                    'total_cost' => $packingListDiff->packingListItem->unit_cost * $receivedQuantity,
                     'uom' => $packingListDiff->packingListItem->uom,
                     'status' => 'active'
                 ]);
