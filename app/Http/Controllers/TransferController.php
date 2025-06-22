@@ -375,14 +375,11 @@ class TransferController extends Controller
                     $expiredCount = InventoryItem::where('product_id', $request->product_id)
                         ->where('warehouse_id', $request->source_id)
                         ->where('quantity', '>', 0)
-                        ->where('expiry_date', '<', $currentDate)
+                        ->where('expiry_date', '<=', $currentDate)
                         ->count();
                         
                     if ($expiredCount > 0) {
-                        return response()->json([
-                            'error' => 'This item is expired and cannot be transferred',
-                            'message' => 'Cannot fetch expired inventory items for transfer'
-                        ], 422);
+                        return response()->json('Cannot fetch expired inventory items for transfer', 500);
                     }
                     
                     $inventory = InventoryItem::where('product_id', $request->product_id)
@@ -405,7 +402,7 @@ class TransferController extends Controller
                     if ($facilityInventoryIds->isNotEmpty()) {
                         $expiredCount = FacilityInventoryItem::whereIn('id', $facilityInventoryIds)
                             ->where('quantity', '>', 0)
-                            ->where('expiry_date', '<', $currentDate)
+                            ->where('expiry_date', '<=', $currentDate)
                             ->count();
                             
                         if ($expiredCount > 0) {
