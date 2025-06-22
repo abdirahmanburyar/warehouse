@@ -427,7 +427,7 @@ class TransferController extends Controller
             'fromFacility', 
             'toFacility',
             'items.inventory_allocations.location',
-            'items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
+            'items.inventory_allocations.back_order', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
         return inertia('Transfer/Show', [
             'transfer' => $transfer
