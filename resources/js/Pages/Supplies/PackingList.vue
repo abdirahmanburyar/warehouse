@@ -432,8 +432,10 @@ async function loadLocations(warehouse) {
         return;
     };
     await axios
-        .post(route("invetnories.getLocations"), {
-            warehouse: warehouse,
+        .get(route("invetnories.getLocations"), {
+            params: {
+                warehouse: warehouse,
+            }
         })
         .then((response) => {
 
