@@ -38,19 +38,57 @@ class TransferController extends Controller
 
             $request->validate([
                 'transfer_id' => 'required|exists:transfers,id',
-                'status' => 'required|in:approved,in_process,dispatched'
+                'status' => 'required|in:reviewed,approved,rejected,in_process,dispatched,delivered,received'
             ]);
 
             $transfer = Transfer::find($request->transfer_id);
             if(!$transfer){
-                return response()->json("Not Found or you are authorized to take this action", 500);
+                return response()->json("Not Found or you are not authorized to take this action", 500);
             }
+            
+            // Determine user's role in the transfer
+            $currentUser = auth()->user();
+            $currentWarehouse = $currentUser->warehouse;
+            $currentFacility = $currentUser->facility_id;
+            
+            // User is sender if their warehouse/facility is the source
+            $isSender = ($transfer->from_warehouse_id === $currentWarehouse?->id) || 
+                       ($transfer->from_facility_id === $currentFacility);
+            
+            // User is receiver if their warehouse/facility is the destination
+            $isReceiver = ($transfer->to_warehouse_id === $currentWarehouse?->id) || 
+                         ($transfer->to_facility_id === $currentFacility);
             
             // Store the old status before making any changes
             $oldStatus = $transfer->status;
             $newStatus = $request->status;
 
-            if($oldStatus == 'pending' && $newStatus == 'approved' && auth()->user()->can('transfer.approve')){                
+            // pending -> reviewed (SENDER ACTION)
+            if($oldStatus == 'pending' && $newStatus == 'reviewed' && $isSender && auth()->user()->can('transfer.review')){                
+                $transfer->update([
+                    'status' => 'reviewed',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now()
+                ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+            }
+            
+            // pending -> rejected (branch) (SENDER ACTION)
+            if($oldStatus == 'pending' && $newStatus == 'rejected' && $isSender && auth()->user()->can('transfer.approve')){
+                $transfer->update([
+                    'status' => 'rejected',
+                    'rejected_by' => auth()->id(),
+                    'rejected_at' => now()
+                ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+            }
+            
+            // reviewed -> approved (SENDER ACTION)
+            if($oldStatus == 'reviewed' && $newStatus == 'approved' && $isSender && auth()->user()->can('transfer.approve')){                
                 $transfer->update([
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
@@ -61,20 +99,60 @@ class TransferController extends Controller
                 event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
-            if($oldStatus == 'approved' && $newStatus == 'in_process' && auth()->user()->can('transfer.in_process')){
+            // reviewed -> rejected (branch) (SENDER ACTION)
+            if($oldStatus == 'reviewed' && $newStatus == 'rejected' && $isSender && auth()->user()->can('transfer.approve')){
+                $transfer->update([
+                    'status' => 'rejected',
+                    'rejected_by' => auth()->id(),
+                    'rejected_at' => now()
+                ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+            }
+            
+            // approved -> in_process (SENDER ACTION)
+            if($oldStatus == 'approved' && $newStatus == 'in_process' && $isSender && auth()->user()->can('transfer.in_process')){
                 $transfer->update([
                     'status' => 'in_process',
+                    'processed_by' => auth()->id(),
+                    'processed_at' => now()
                 ]);
                 
                 // Dispatch event for status change
                 event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
 
-            if($oldStatus == 'in_process' && $newStatus == 'dispatched' && auth()->user()->can('transfer.dispatch')){
+            // in_process -> dispatched (SENDER ACTION)
+            if($oldStatus == 'in_process' && $newStatus == 'dispatched' && $isSender && auth()->user()->can('transfer.dispatch')){
                 $transfer->update([
                     'status' => 'dispatched',
                     'dispatched_by' => auth()->id(),    
                     'dispatched_at' => now()
+                ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+            }
+            
+            // dispatched -> delivered (RECEIVER ACTION)
+            if($oldStatus == 'dispatched' && $newStatus == 'delivered' && $isReceiver && auth()->user()->can('transfer.deliver')){
+                $transfer->update([
+                    'status' => 'delivered',
+                    'delivered_by' => auth()->id(),    
+                    'delivered_at' => now()
+                ]);
+                
+                // Dispatch event for status change
+                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+            }
+            
+            // delivered -> received (RECEIVER ACTION)
+            if($oldStatus == 'delivered' && $newStatus == 'received' && $isReceiver && auth()->user()->can('transfer.receive')){
+                $transfer->update([
+                    'status' => 'received',
+                    'received_by' => auth()->id(),    
+                    'received_at' => now()
                 ]);
                 
                 // Dispatch event for status change
