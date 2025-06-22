@@ -103,128 +103,97 @@
         <div class="mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
           <h3 class="text-lg font-semibold text-gray-800 mb-6 text-center">Transfer Timeline</h3>
           
-          <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4">
-            <!-- Pending -->
-            <div class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('pending')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 2a1 1 0 000 2h6a1 1 0 100-2H9zM6.447 4.106A1 1 0 105.553 5.894 9.953 9.953 0 004 12c0 5.514 4.486 10 10 10s10-4.486 10-10a9.953 9.953 0 00-1.553-6.106 1 1 0 10-1.788.894A7.95 7.95 0 0122 12c0 4.411-3.589 8-8 8s-8-3.589-8-8a7.95 7.95 0 011.341-4.447 1 1 0 00-.894-1.447z"/>
-                  <path d="M14 12a1 1 0 11-2 0V8a1 1 0 112 0v4z"/>
-                </svg>
+          <div class="relative flex justify-center items-center">
+            <!-- Background connecting line -->
+            <div class="absolute top-8 left-0 right-0 h-1 bg-green-400 z-0"></div>
+            
+            <div class="relative z-10 flex justify-between items-center w-full max-w-4xl">
+              <!-- Pending -->
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('pending')">
+                  <img src="/images/pending.png" alt="Pending" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">Pending</span>
+                <div v-if="props.transfer.created_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.created_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">Pending</span>
-              <div v-if="props.transfer.created_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.created_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line -->
-            <div class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- Reviewed -->
-            <div class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('reviewed')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+              <!-- Reviewed -->
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('reviewed')">
+                  <img src="/images/review.png" alt="Reviewed" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">Reviewed</span>
+                <div v-if="props.transfer.reviewed_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.reviewed_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">Reviewed</span>
-              <div v-if="props.transfer.reviewed_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.reviewed_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line -->
-            <div class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- Approved/Rejected -->
-            <div class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('approved')">
-                <svg v-if="props.transfer.status === 'rejected'" class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <svg v-else class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                </svg>
+              <!-- Approved/Rejected -->
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('approved')">
+                  <img :src="props.transfer.status === 'rejected' ? '/images/reject.png' : '/images/approve.png'" 
+                       :alt="props.transfer.status === 'rejected' ? 'Rejected' : 'Approved'" 
+                       class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">
+                  {{ props.transfer.status === 'rejected' ? 'Rejected' : 'Approved' }}
+                </span>
+                <div v-if="props.transfer.approved_at || props.transfer.rejected_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.approved_at || props.transfer.rejected_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">
-                {{ props.transfer.status === 'rejected' ? 'Rejected' : 'Approved' }}
-              </span>
-              <div v-if="props.transfer.approved_at || props.transfer.rejected_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.approved_at || props.transfer.rejected_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line (only show if not rejected) -->
-            <div v-if="props.transfer.status !== 'rejected'" class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- In Process (only show if not rejected) -->
-            <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('in_process')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
+              <!-- In Process (only show if not rejected) -->
+              <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('in_process')">
+                  <img src="/images/in_process.png" alt="In Process" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">In Process</span>
+                <div v-if="props.transfer.processed_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.processed_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">In Process</span>
-              <div v-if="props.transfer.processed_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.processed_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line -->
-            <div v-if="props.transfer.status !== 'rejected'" class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- Dispatched -->
-            <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('dispatched')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 17a1 1 0 102 0 1 1 0 00-2 0zM15 17a1 1 0 102 0 1 1 0 00-2 0zM3 4a1 1 0 011-1h1a1 1 0 011 1v3h4l2 3h5a1 1 0 011 1v2a3 3 0 00-3 3H9a3 3 0 00-3-3v-2H4a1 1 0 01-1-1V4z"/>
-                </svg>
+              <!-- Dispatched -->
+              <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('dispatched')">
+                  <img src="/images/dispatched.png" alt="Dispatched" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">Dispatched</span>
+                <div v-if="props.transfer.dispatched_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.dispatched_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">Dispatched</span>
-              <div v-if="props.transfer.dispatched_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.dispatched_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line -->
-            <div v-if="props.transfer.status !== 'rejected'" class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- Delivered -->
-            <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('delivered')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5 8a1 1 0 011-1h1a1 1 0 011 1v3h4l2 3h5a1 1 0 011 1v2a3 3 0 00-3 3H9a3 3 0 00-3-3v-2H4a1 1 0 01-1-1V8z"/>
-                  <path d="M19 7h3l-3-3v3z"/>
-                </svg>
+              <!-- Delivered -->
+              <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('delivered')">
+                  <img src="/images/delivery.png" alt="Delivered" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">Delivered</span>
+                <div v-if="props.transfer.delivered_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.delivered_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
-              <span class="text-sm font-medium mt-2 text-center">Delivered</span>
-              <div v-if="props.transfer.delivered_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.delivered_at).format('DD/MM HH:mm') }}
-              </div>
-            </div>
 
-            <!-- Connecting Line -->
-            <div v-if="props.transfer.status !== 'rejected'" class="hidden sm:block w-8 h-1 bg-green-400"></div>
-
-            <!-- Received -->
-            <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center border-4"
-                   :class="getTimelineStatusClass('received')">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <span class="text-sm font-medium mt-2 text-center">Received</span>
-              <div v-if="props.transfer.received_at" class="text-xs text-gray-500 mt-1">
-                {{ moment(props.transfer.received_at).format('DD/MM HH:mm') }}
+              <!-- Received -->
+              <div v-if="props.transfer.status !== 'rejected'" class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center border-4 bg-white"
+                     :class="getTimelineStatusBorder('received')">
+                  <img src="/images/received.png" alt="Received" class="w-8 h-8" />
+                </div>
+                <span class="text-sm font-medium mt-2 text-center">Received</span>
+                <div v-if="props.transfer.received_at" class="text-xs text-gray-500 mt-1">
+                  {{ moment(props.transfer.received_at).format('DD/MM HH:mm') }}
+                </div>
               </div>
             </div>
           </div>
@@ -391,6 +360,28 @@ const getTimelineStatusClass = (status) => {
     return 'bg-orange-500 border-orange-500 text-white'; // current/next
   } else {
     return 'bg-gray-100 border-gray-300 text-gray-400'; // not reached
+  }
+};
+
+const getTimelineStatusBorder = (status) => {
+  const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
+  const statusIndex = statusOrder.indexOf(status);
+  
+  // Handle rejected status
+  if (props.transfer.status === 'rejected') {
+    if (status === 'pending') return 'border-green-500'; // completed
+    if (status === 'reviewed') return 'border-green-500'; // completed
+    if (status === 'approved') return 'border-red-500'; // rejected
+    return 'border-gray-300'; // not applicable
+  }
+  
+  // Normal progression
+  if (statusIndex <= currentStatusIndex) {
+    return 'border-green-500'; // completed
+  } else if (statusIndex === currentStatusIndex + 1) {
+    return 'border-orange-500'; // current/next
+  } else {
+    return 'border-gray-300'; // not reached
   }
 };
 
