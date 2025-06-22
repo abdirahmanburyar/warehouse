@@ -680,7 +680,7 @@ class SupplyController extends Controller
                     'items.*.uom' => 'required|string',
                     'items.*.batch_number' => 'required|string',
                     'items.*.expire_date' => 'required|date',
-                    'items.*.location_id' => 'required|exists:locations,id',
+                    'items.*.location' => 'required|string',
                     'items.*.unit_cost' => 'required|numeric|min:0',
                     'items.*.total_cost' => 'required|numeric|min:0',
                     'items.*.status' => 'required|in:pending,approved,rejected',
@@ -718,7 +718,7 @@ class SupplyController extends Controller
                         [
                             'product_id' => $item['product_id'],
                             'warehouse_id' => $item['warehouse_id'],
-                            'location_id' => $item['location_id'],
+                            'location' => $item['location'],
                             'barcode' => $item['barcode'],
                             'batch_number' => $item['batch_number'],
                             'quantity' => $item['received_quantity'],

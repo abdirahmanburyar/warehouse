@@ -18,7 +18,7 @@ class PackingListItem extends Model
         'expire_date',
         'batch_number',
         'po_item_id',
-        'location_id',
+        'location',
         'quantity',
         'unit_cost',
         'total_cost',
@@ -46,11 +46,6 @@ class PackingListItem extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
-    }
-
-    public function location()
-    {
-        return $this->belongsTo(Location::class);
     }
 
     protected static function booted()
