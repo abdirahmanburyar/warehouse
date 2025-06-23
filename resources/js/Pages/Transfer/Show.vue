@@ -1180,7 +1180,7 @@
                                     statusOrder.indexOf(props.transfer.status) >
                                     statusOrder.indexOf("approved")
                                         ? "Processed by" + moment(props.transfer?.processed_at).format('DD/MM/YYYY HH:mm')
-                                        : isType['is_process'] ? "Please Wait..." : props.transfer.status === 'approved' && !canDispatch
+                                        : isType['is_process'] ? "Please Wait..." : props.transfer.status === 'approved' && canDispatch
                                         ? "Waiting to be processed"
                                         : "Process"
                                 }}</span>
