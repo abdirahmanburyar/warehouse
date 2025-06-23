@@ -748,7 +748,7 @@
                                     
                                     <!-- Item Details - UoM -->
                                     <td class="px-4 py-2 border border-gray-300 text-center text-black">
-                                        {{ item.product?.dosage?.uom || 'N/A' }}
+                                        {{ item.uom || 'N/A' }}
                                     </td>
                                     
                                     <!-- Total Quantity on Hand Per Unit (only show on first row for this item) -->
@@ -785,8 +785,12 @@
                                             type="number"
                                             v-model="item.quantity_to_release"
                                             :readonly="props.transfer.status !== 'pending'"
+                                            @keyup.enter="updateQuantity(item)"
                                             class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                                         />
+                                        <span v-if="isUpading[index]" class="text-green-600">
+                                            {{ isUpading[index] ? 'Updating...' : '' }}
+                                        </span>
                                     </td>
                                     
                                     <!-- Received Quantity (only show on first row for this item) -->
@@ -833,8 +837,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { router, Head } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import moment from "moment";
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
     transfer: {
@@ -1055,4 +1065,33 @@ const removeItem = (index) => {
         console.log("Removed item at index:", index);
     }
 };
+
+
+// update quantity
+const isUpading = ref(false);
+async function updateQuantity(item, type) {
+    isUpading.value = true;
+    await axios
+        .post(route("transfers.update-quantity"), {
+            item_id: item.id,
+            quantity: item.quantity_to_release,
+        })
+        .then((response) => {
+            isUpading.value = false;
+            Swal.fire({
+                title: "Success!",
+                text: response.data,
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                router.get(route("transfers.show", props.transfer.id));
+            });
+        })
+        .catch((error) => {
+            isUpading.value = false;
+            console.log(error);
+            toast.error(error.response?.data || "Failed to update quantity");
+        });
+}
+
 </script>

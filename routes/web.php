@@ -405,6 +405,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // transfer dispose
         Route::post('/dispose', [TransferController::class, 'transferDispose'])->name('transfers.dispose');
+
+
+         // transfer update-quantity
+         Route::post('/update-quantity', [TransferController::class, 'updateQuantity'])->name('transfers.update-quantity');
     });
 
 
