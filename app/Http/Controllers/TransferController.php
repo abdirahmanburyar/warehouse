@@ -445,6 +445,7 @@ class TransferController extends Controller
             'toWarehouse', 
             'fromFacility', 
             'toFacility',
+            'dispatchInfo',
             'items.inventory_allocations.location',
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
