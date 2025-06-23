@@ -959,7 +959,7 @@ class TransferController extends Controller
 
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['error' => $th->getMessage()], 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
 

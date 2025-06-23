@@ -945,11 +945,11 @@
                                                 v-model="row.status"
                                                 class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                             >
-                                                <option v-for="status in ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality']"
+                                                <option v-for="status in getAvailableStatuses(index)"
                                                     :key="status" 
                                                     :value="status"
                                                 >
-                                                    {{ status }}
+                                                    {{ status === '' ? 'Select Status...' : status }}
                                                 </option>
                                             </select>
                                         </td>
@@ -1090,80 +1090,6 @@ const statusClasses = computed(() => ({
     received: "bg-green-100 text-green-800",
 }));
 
-const getTimelineStatusBorder = (status) => {
-    const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
-    const statusIndex = statusOrder.indexOf(status);
-
-    // Handle rejected status
-    if (props.transfer.status === "rejected") {
-        if (status === "pending") return "border-green-500"; // completed
-        if (status === "reviewed") return "border-green-500"; // completed
-        if (status === "approved") return "border-red-500"; // rejected
-        return "border-black"; // not applicable
-    }
-
-    // Normal progression
-    if (statusIndex <= currentStatusIndex) {
-        return "border-green-500"; // completed
-    } else if (statusIndex === currentStatusIndex + 1) {
-        return "border-orange-500"; // current/next
-    } else {
-        return "border-black"; // not reached
-    }
-};
-
-const getTimelineLineClass = (fromStatus, toStatus) => {
-    const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
-    const fromStatusIndex = statusOrder.indexOf(fromStatus);
-    const toStatusIndex = statusOrder.indexOf(toStatus);
-
-    // Handle rejected status
-    if (props.transfer.status === "rejected") {
-        if (fromStatus === "pending" && toStatus === "reviewed")
-            return "bg-green-400"; // completed
-        if (fromStatus === "reviewed" && toStatus === "approved")
-            return "bg-red-400"; // rejected
-        return "bg-gray-200"; // not applicable
-    }
-
-    // Normal progression
-    if (
-        fromStatusIndex <= currentStatusIndex &&
-        toStatusIndex <= currentStatusIndex
-    ) {
-        return "bg-green-400"; // completed
-    } else if (
-        fromStatusIndex <= currentStatusIndex &&
-        toStatusIndex === currentStatusIndex + 1
-    ) {
-        return "bg-orange-400"; // current/next
-    } else {
-        return "bg-gray-200"; // not reached
-    }
-};
-
-const getTimelineImageClass = (status) => {
-    const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
-    const statusIndex = statusOrder.indexOf(status);
-
-    // Handle rejected status
-    if (props.transfer.status === "rejected") {
-        if (status === "pending") return "text-green-500"; // completed
-        if (status === "reviewed") return "text-green-500"; // completed
-        if (status === "approved") return "text-red-500"; // rejected
-        return "text-gray-400"; // not applicable
-    }
-
-    // Normal progression
-    if (statusIndex <= currentStatusIndex) {
-        return "text-green-500"; // completed
-    } else if (statusIndex === currentStatusIndex + 1) {
-        return "text-orange-500"; // current/next
-    } else {
-        return "text-gray-400"; // not reached
-    }
-};
-
 // Computed properties for table functionality
 const showReceivedColumn = computed(() => {
     return ["delivered", "received"].includes(props.transfer.status);
@@ -1209,13 +1135,6 @@ const isExpiringItem = (expiryDate) => {
     const now = moment();
     const daysUntilExpiry = expiry.diff(now, "days");
     return daysUntilExpiry <= 30; // Consider items expiring within 30 days as expiring
-};
-
-const getReceivedQuantityClass = (item) => {
-    if (!item.received_quantity) return "text-gray-500";
-    if (item.received_quantity === item.quantity) return "text-green-600";
-    if (item.received_quantity < item.quantity) return "text-orange-600";
-    return "text-gray-900";
 };
 
 const removeItem = (index) => {
@@ -1371,23 +1290,45 @@ const isValidForSave = computed(() => {
     return remainingToAllocate.value === 0 && backOrderError.value === '';
 });
 
+const getAvailableStatuses = (currentIndex) => {
+    const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality'];
+    const currentRowStatus = backOrderRows.value[currentIndex]?.status;
+    const selectedStatuses = backOrderRows.value
+        .map((row, index) => index !== currentIndex ? row.status : null)
+        .filter(status => status && status !== '');
+    
+    const availableStatuses = allStatuses.filter(status => !selectedStatuses.includes(status));
+    
+    // If current row has no status selected, add empty option at the beginning
+    if (!currentRowStatus || currentRowStatus === '') {
+        return ['', ...availableStatuses];
+    }
+    
+    // If current row has a status, make sure it's included even if selected elsewhere
+    if (!availableStatuses.includes(currentRowStatus)) {
+        availableStatuses.push(currentRowStatus);
+    }
+    
+    return availableStatuses;
+};
+
 const saveBackOrders = async () => {
     if (!isValidForSave.value) return;
 
     isSaving.value = true;
-    try {
-        const response = await axios.post(route('transfers.save-back-orders'), {
-            item_id: selectedBackOrderItem.value.id,
-            back_orders: backOrderRows.value
-        });
+    await axios.post(route('transfers.save-back-orders'), {
+        item_id: selectedBackOrderItem.value.id,
+        back_orders: backOrderRows.value
+    })
+    .then((response) => {
         toast.success(response.data);
         showModal.value = false;
         router.get(route("transfers.show", props.transfer.id));
-    } catch (error) {
+    })
+    .catch((error) => {
+        isSaving.value = false;
         console.log(error);
         toast.error(error.response?.data || "Failed to save back orders");
-    } finally {
-        isSaving.value = false;
-    }
+    });
 }
 </script>
