@@ -2208,15 +2208,13 @@ const canApprove = computed(() => {
 
 const canDispatch = computed(() => {
     const user = page.props.auth.user;
-    return (user.warehouse_id === props.transfer.from_warehouse_id) || 
-           (user.facility_id === props.transfer.from_facility_id);
+    return user.can.transfer_dispatch;
 });
 
 const canReceive = computed(() => {
     const user = page.props.auth.user;
     return ((user.warehouse_id === props.transfer.to_warehouse_id) || 
-           (user.facility_id === props.transfer.to_facility_id)) && 
-           user.can.transfer_dispatch;
+           (user.facility_id === props.transfer.to_facility_id))
 });
 
 // Function to change transfer status
