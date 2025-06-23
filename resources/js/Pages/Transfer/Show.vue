@@ -2208,6 +2208,7 @@ const canApprove = computed(() => {
 
 const canDispatch = computed(() => {
     const user = page.props.auth.user;
+    console.log(user.can.transfer_dispatch);
     return user.can.transfer_dispatch;
 });
 
