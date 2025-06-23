@@ -1413,10 +1413,9 @@ class TransferController extends Controller
 
                 case 'in_process':
                     // Can be done by from warehouse/facility staff
-                    if ($user->warehouse_id !== $transfer->from_warehouse_id && 
-                        $user->facility_id !== $transfer->from_facility_id) {
+                    if (!$user->can('transfer_approve')) {
                         DB::rollBack();
-                        return response()->json('You can only process transfers from your warehouse/facility', 403);
+                        return response()->json('You do not have permission to process transfers', 403);
                     }
                     if ($transfer->status !== 'approved') {
                         DB::rollBack();
@@ -1428,10 +1427,9 @@ class TransferController extends Controller
 
                 case 'dispatched':
                     // Can be done by from warehouse/facility staff
-                    if ($user->warehouse_id !== $transfer->from_warehouse_id && 
-                        $user->facility_id !== $transfer->from_facility_id) {
+                    if (!$user->can('transfer_dispatch')) {
                         DB::rollBack();
-                        return response()->json('You can only dispatch transfers from your warehouse/facility', 403);
+                        return response()->json('You do not have permission to dispatch transfers', 403);
                     }
                     if ($transfer->status !== 'in_process') {
                         DB::rollBack();
