@@ -887,6 +887,10 @@ class TransferController extends Controller
                 'back_orders.*.quantity' => 'required|integer|min:1',
                 'back_orders.*.status' => 'required|string|in:Missing,Damaged,Lost,Expired,Low quality',
                 'back_orders.*.note' => 'nullable|string'
+            ],[
+                'back_orders.*.quantity.required' => 'Quantity is required',
+                'back_orders.*.status.required' => 'Status is required',
+                'back_orders.*.note' => 'Note is required'
             ]);
 
             $transferItem = TransferItem::findOrFail($request->item_id);
