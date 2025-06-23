@@ -2214,8 +2214,9 @@ const canDispatch = computed(() => {
 
 const canReceive = computed(() => {
     const user = page.props.auth.user;
-    return (user.warehouse_id === props.transfer.to_warehouse_id) || 
-           (user.facility_id === props.transfer.to_facility_id);
+    return ((user.warehouse_id === props.transfer.to_warehouse_id) || 
+           (user.facility_id === props.transfer.to_facility_id)) && 
+           user.can.transfer_dispatch;
 });
 
 // Function to change transfer status
