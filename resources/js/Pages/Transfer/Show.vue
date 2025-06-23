@@ -1250,7 +1250,7 @@
                                     statusOrder.indexOf(props.transfer.status) >
                                     statusOrder.indexOf("in_process")
                                         ? "Dispatched on " + moment(props.transfer.dispatched_at).format('DD/MM/YYYY HH:mm')
-                                        : isType['is_dispatch'] ? "Please Wait..." : props.transfer.status === 'in_process' && !canDispatch
+                                        : isType['is_dispatch'] ? "Please Wait..." : props.transfer.status === 'in_process' && canDispatch
                                         ? "Waiting to be dispatched"
                                         : "Dispatch"
                                 }}</span>
