@@ -2410,7 +2410,7 @@ const dispatchForm = ref({
 async function createDispatch() {
     isSaving.value = true;
     await axios
-        .post(route("orders.dispatch-info"), dispatchForm.value)
+        .post(route("transfers.dispatch-info"), dispatchForm.value)
         .then((response) => {
             isSaving.value = false;
             showDispatchForm.value = false;
@@ -2420,7 +2420,7 @@ async function createDispatch() {
                 icon: "success",
                 confirmButtonText: "OK",
             }).then(() => {
-                router.get(route("orders.show", props.order?.id));
+                router.get(route("transfers.show", props.order?.id));
             });
         })
         .catch((error) => {
