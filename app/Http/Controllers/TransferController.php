@@ -1367,8 +1367,8 @@ class TransferController extends Controller
                     'transfer_id',
                     'status'
                 ]);
-                $transfer = Transfer::with('dispatch')->find($request->transfer_id);
-                $transfer->dispatch()->create([
+                $transfer = Transfer::with('dispatchInfo')->find($request->transfer_id);
+                $transfer->dispatchInfo()->create([
                     'transfer_id' => $request->transfer_id,
                     'driver_name' => $request->driver_name,
                     'driver_number' => $request->driver_number,

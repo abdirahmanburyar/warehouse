@@ -115,7 +115,7 @@ class Transfer extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
-    public function dispatch()
+    public function dispatchInfo()
     {
         return $this->hasMany(DispatchInfo::class);
     }
