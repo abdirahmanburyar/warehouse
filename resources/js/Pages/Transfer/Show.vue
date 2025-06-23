@@ -2299,4 +2299,20 @@ const changeStatus = (transferId, newStatus, type) => {
         }
     });
 };
+
+
+
+const dispatchForm = ref({
+    driver_name: "",
+    driver_number: "",
+    plate_number: "",
+    no_of_cartoons: "",
+    order_id: props.order?.id,
+    status: "Dispatched",
+});
+
+
+
+
+
 </script>
