@@ -1367,8 +1367,8 @@ class TransferController extends Controller
                     'transfer_id',
                     'status'
                 ]);
-                $order = Order::with('dispatch')->find($request->transfer_id);
-                $order->dispatch()->create([
+                $transfer = Transfer::with('dispatch')->find($request->transfer_id);
+                $transfer->dispatch()->create([
                     'transfer_id' => $request->transfer_id,
                     'driver_name' => $request->driver_name,
                     'driver_number' => $request->driver_number,
@@ -1376,10 +1376,10 @@ class TransferController extends Controller
                     'no_of_cartoons' => $request->no_of_cartoons,
                 ]);
 
-                $order->status = $request->status;
-                $order->dispatched_at = now();
-                $order->dispatched_by = auth()->user()->id;
-                $order->save();
+                $transfer->status = $request->status;
+                $transfer->dispatched_at = now();
+                $transfer->dispatched_by = auth()->user()->id;
+                $transfer->save();
                 
                 return response()->json("Dispatched Successfully", 200);
             });
