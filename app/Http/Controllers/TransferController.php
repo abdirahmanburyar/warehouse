@@ -1413,13 +1413,9 @@ class TransferController extends Controller
 
                 case 'in_process':
                     // Can be done by from warehouse/facility staff
-                    if (!$user->can('transfer_approve')) {
+                    if (!$user->can('transfer_process') && $transfer->status == 'approved') {
                         DB::rollBack();
                         return response()->json('You do not have permission to process transfers', 403);
-                    }
-                    if ($transfer->status !== 'approved') {
-                        DB::rollBack();
-                        return response()->json('Transfer must be approved to process', 400);
                     }
                     $transfer->processed_at = now();
                     $transfer->processed_by = $user->id;
