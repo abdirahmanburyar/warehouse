@@ -415,6 +415,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
          
          // delete transfer back order
          Route::post('/delete-back-order', [TransferController::class, 'deleteBackOrder'])->name('transfers.delete-back-order');
+          // change transfer status
+          Route::post('/change-status', [TransferController::class, 'changeStatus'])->name('transfers.change-status');
 
     });
 

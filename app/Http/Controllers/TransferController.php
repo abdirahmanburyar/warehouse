@@ -1355,6 +1355,122 @@ class TransferController extends Controller
     }
     
     /**
+     * Change transfer status with proper permissions and workflow validation
+     */
+    public function changeStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'transfer_id' => 'required|exists:transfers,id',
+                'status' => 'required|string|in:pending,reviewed,approved,in_process,dispatched,delivered,received'
+            ]);
+
+            $transfer = Transfer::findOrFail($request->transfer_id);
+            $newStatus = $request->status;
+            $user = auth()->user();
+
+            // Define status progression order
+            $statusOrder = ['pending', 'reviewed', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
+            $currentStatusIndex = array_search($transfer->status, $statusOrder);
+            $newStatusIndex = array_search($newStatus, $statusOrder);
+
+            // Validate status progression (can only move forward, except for certain cases)
+            if ($newStatusIndex <= $currentStatusIndex && $newStatus !== $transfer->status) {
+                return response()->json('Cannot move backwards in transfer workflow', 400);
+            }
+
+            // Permission checks based on status
+            switch ($newStatus) {
+                case 'reviewed':
+                    if (!$user->can('transfer_review')) {
+                        return response()->json('You do not have permission to review transfers', 403);
+                    }
+                    if ($transfer->status !== 'pending') {
+                        return response()->json('Transfer must be pending to review', 400);
+                    }
+                    $transfer->reviewed_at = now();
+                    $transfer->reviewed_by = $user->id;
+                    break;
+
+                case 'approved':
+                    if (!$user->can('transfer_approve')) {
+                        return response()->json('You do not have permission to approve transfers', 403);
+                    }
+                    if ($transfer->status !== 'reviewed') {
+                        return response()->json('Transfer must be reviewed to approve', 400);
+                    }
+                    $transfer->approved_at = now();
+                    $transfer->approved_by = $user->id;
+                    break;
+
+                case 'in_process':
+                    // Can be done by from warehouse/facility staff
+                    if ($user->warehouse_id !== $transfer->from_warehouse_id && 
+                        $user->facility_id !== $transfer->from_facility_id) {
+                        return response()->json('You can only process transfers from your warehouse/facility', 403);
+                    }
+                    if ($transfer->status !== 'approved') {
+                        return response()->json('Transfer must be approved to process', 400);
+                    }
+                    $transfer->processed_at = now();
+                    $transfer->processed_by = $user->id;
+                    break;
+
+                case 'dispatched':
+                    // Can be done by from warehouse/facility staff
+                    if ($user->warehouse_id !== $transfer->from_warehouse_id && 
+                        $user->facility_id !== $transfer->from_facility_id) {
+                        return response()->json('You can only dispatch transfers from your warehouse/facility', 403);
+                    }
+                    if ($transfer->status !== 'in_process') {
+                        return response()->json('Transfer must be in process to dispatch', 400);
+                    }
+                    $transfer->dispatched_at = now();
+                    $transfer->dispatched_by = $user->id;
+                    break;
+
+                case 'delivered':
+                    // Can be done by to warehouse/facility staff
+                    if ($user->warehouse_id !== $transfer->to_warehouse_id && 
+                        $user->facility_id !== $transfer->to_facility_id) {
+                        return response()->json('You can only mark transfers as delivered to your warehouse/facility', 403);
+                    }
+                    if ($transfer->status !== 'dispatched') {
+                        return response()->json('Transfer must be dispatched to deliver', 400);
+                    }
+                    $transfer->delivered_at = now();
+                    $transfer->delivered_by = $user->id;
+                    break;
+
+                case 'received':
+                    // Can be done by to warehouse/facility staff
+                    if ($user->warehouse_id !== $transfer->to_warehouse_id && 
+                        $user->facility_id !== $transfer->to_facility_id) {
+                        return response()->json('You can only receive transfers to your warehouse/facility', 403);
+                    }
+                    if ($transfer->status !== 'delivered') {
+                        return response()->json('Transfer must be delivered to receive', 400);
+                    }
+                    $transfer->received_at = now();
+                    $transfer->received_by = $user->id;
+                    break;
+
+                default:
+                    return response()->json('Invalid status', 400);
+            }
+
+            // Update the status
+            $transfer->status = $newStatus;
+            $transfer->save();
+
+            return response()->json('Transfer status updated successfully', 200);
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+    
+    /**
      * Receive a back order
      */
     public function receiveBackOrder(Request $request){

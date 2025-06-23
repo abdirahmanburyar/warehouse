@@ -610,253 +610,945 @@
                         Transfer Items
                     </h3>
 
-                   <div class="overflow-auto">
-                    <table class="min-w-full border border-collapse border-black">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th
-                                    class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Item Name
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Category
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
-                                    colspan="5"
-                                >
-                                    Item details
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Total Quantity on Hand Per Unit
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Reasons for Transfers
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Quantity to be transferred
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Received Quantity
-                                </th>
-                                <th
-                                    class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
-                                    rowspan="2"
-                                >
-                                    Action
-                                </th>
-                            </tr>
-                            <tr class="bg-gray-50">
-                                <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold">
-                                    UoM
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold">
-                                    QTY
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold">
-                                    Batch Number
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold">
-                                    Expiry Date
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold">
-                                    Location
-                                </th>
-                                
-                            </tr>
-                        </thead>
+                    <div class="overflow-auto">
+                        <table
+                            class="min-w-full border border-collapse border-black"
+                        >
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th
+                                        class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Item Name
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Category
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        colspan="5"
+                                    >
+                                        Item details
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Total Quantity on Hand Per Unit
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Reasons for Transfers
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Quantity to be transferred
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Received Quantity
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Action
+                                    </th>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        UoM
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        QTY
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Batch Number
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Expiry Date
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Location
+                                    </th>
+                                </tr>
+                            </thead>
 
-                        <tbody>
-                            <template v-for="(item, index) in form" :key="item.id">
-                                <!-- Main row for items with multiple allocations -->
-                                <tr
-                                    v-for="(allocation, allocIndex) in item.inventory_allocations || [{}]"
-                                    :key="`${item.id}-${allocIndex}`"
-                                    class="hover:bg-gray-50 transition-colors duration-150 border-b border-black"
+                            <tbody>
+                                <template
+                                    v-for="(item, index) in form"
+                                    :key="item.id"
                                 >
-                                    <!-- Item Name (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-left text-black align-top"
+                                    <!-- Main row for items with multiple allocations -->
+                                    <tr
+                                        v-for="(
+                                            allocation, allocIndex
+                                        ) in item.inventory_allocations || [{}]"
+                                        :key="`${item.id}-${allocIndex}`"
+                                        class="hover:bg-gray-50 transition-colors duration-150 border-b border-black"
                                     >
-                                        <div class="font-medium">{{ item.product?.name }}</div>
-                                        {{ item.quantity_to_release }}
-                                    </td>
-                                    
-                                    <!-- Category (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-left text-black align-top"
-                                    >
-                                        {{ item.product?.category?.name }}
-                                    </td>
-                                    
-                                    <!-- Item Details - QTY -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                                        {{ allocation.allocated_quantity || 0 }}
-                                    </td>
-                                    
-                                    <!-- Item Details - Batch Number -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                                        <span
-                                            :class="{
-                                                'text-red-600 font-bold': allocation.batch_number === 'HK5273'
-                                            }"
+                                        <!-- Item Name (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
                                         >
-                                            {{ allocation.batch_number || 'N/A' }}
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Item Details - Expiry Date -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                                        <span
-                                            :class="{
-                                                'text-red-600': isExpiringItem(allocation.expiry_date)
-                                            }"
+                                            <div class="font-medium">
+                                                {{ item.product?.name }}
+                                            </div>
+                                            {{ item.quantity_to_release }}
+                                        </td>
+
+                                        <!-- Category (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
+                                        >
+                                            {{ item.product?.category?.name }}
+                                        </td>
+
+                                        <!-- Item Details - QTY -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
                                             {{
-                                                allocation.expiry_date
-                                                    ? moment(allocation.expiry_date).format("MMM YYYY")
-                                                    : 'N/A'
+                                                allocation.allocated_quantity ||
+                                                0
                                             }}
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Item Details - Location -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                                        {{ allocation.location?.location || 'N/A' }}
-                                    </td>
-                                    
-                                    <!-- Item Details - UoM -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                                        {{ item.uom || 'N/A' }}
-                                    </td>
-                                    
-                                    <!-- Total Quantity on Hand Per Unit (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-center text-black align-top"
-                                    >
-                                        {{ item.quantity_per_unit || 0 }}
-                                    </td>
-                                    
-                                    <!-- Reasons for Transfers (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-center text-black align-top"
-                                    >
-                                        <span
-                                            :class="{
-                                                'text-red-600': allocation.batch_number === 'HK5273'
-                                            }"
+                                        </td>
+
+                                        <!-- Item Details - Batch Number -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
-                                            {{ item.transfer_reason || (isExpiringItem(allocation.expiry_date) ? 'Soon to expire' : 'Slow Moving') }}
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Quantity to be transferred (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-center text-black align-top"
-                                    >
-                                        <input
-                                            type="number"
-                                            v-model="item.quantity_to_release"
-                                            @keyup.enter="updateQuantity(item)"
-                                            class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
-                                        />
-                                        <span v-if="isUpading[index]" class="text-green-600">
-                                            {{ isUpading[index] ? 'Updating...' : '' }}
-                                        </span>
-                                       
-                                    </td>
-                                    
-                                    <!-- Received Quantity (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-center text-black align-top"
-                                    >
-                                    <input
-                                        type="number"
-                                        v-model="item.received_quantity"
-                                        :max="item.quantity_to_release || 0"
-                                        min="0"
-                                        @input="validateReceivedQuantity(item)"
-                                        :id="`received-quantity-${index}`"
-                                        class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
-                                    />
-                                    <!-- :readonly="!['delivered', 'received'].includes(props.transfer.status)" -->
-                                      <!-- Backorder button - show when quantity_to_release > received_quantity -->
-                                      <button
-                                            @click="showBackOrderModal(item)"
-                                            v-if="(item.quantity_to_release || 0) > (item.received_quantity || 0)"
-                                            class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block"
+                                            <span
+                                                :class="{
+                                                    'text-red-600 font-bold':
+                                                        allocation.batch_number ===
+                                                        'HK5273',
+                                                }"
+                                            >
+                                                {{
+                                                    allocation.batch_number ||
+                                                    "N/A"
+                                                }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Item Details - Expiry Date -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
-                                            Back Order
-                                        </button>
-                                    </td>
-                                    
-                                    <!-- Action (only show on first row for this item) -->
-                                    <td
-                                        v-if="allocIndex === 0"
-                                        :rowspan="item.inventory_allocations?.length || 1"
-                                        class="px-2 py-1 text-xs border border-black text-center align-top"
-                                    >
-                                        <button
-                                            v-if="props.transfer.status === 'pending'"
-                                            @click="removeItem(index)"
-                                            class="text-red-600 hover:text-red-800 transition-colors"
-                                            title="Delete item"
+                                            <span
+                                                :class="{
+                                                    'text-red-600':
+                                                        isExpiringItem(
+                                                            allocation.expiry_date
+                                                        ),
+                                                }"
+                                            >
+                                                {{
+                                                    allocation.expiry_date
+                                                        ? moment(
+                                                              allocation.expiry_date
+                                                          ).format("MMM YYYY")
+                                                        : "N/A"
+                                                }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Item Details - Location -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
+                                            {{
+                                                allocation.location?.location ||
+                                                "N/A"
+                                            }}
+                                        </td>
+
+                                        <!-- Item Details - UoM -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{ item.uom || "N/A" }}
+                                        </td>
+
+                                        <!-- Total Quantity on Hand Per Unit (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            {{ item.quantity_per_unit || 0 }}
+                                        </td>
+
+                                        <!-- Reasons for Transfers (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            <span
+                                                :class="{
+                                                    'text-red-600':
+                                                        allocation.batch_number ===
+                                                        'HK5273',
+                                                }"
+                                            >
+                                                {{
+                                                    item.transfer_reason ||
+                                                    (isExpiringItem(
+                                                        allocation.expiry_date
+                                                    )
+                                                        ? "Soon to expire"
+                                                        : "Slow Moving")
+                                                }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Quantity to be transferred (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            <input
+                                                type="number"
+                                                v-model="
+                                                    item.quantity_to_release
+                                                "
+                                                @keyup.enter="
+                                                    updateQuantity(item)
+                                                "
+                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
+                                            />
+                                            <span
+                                                v-if="isUpading[index]"
+                                                class="text-green-600"
+                                            >
+                                                {{
+                                                    isUpading[index]
+                                                        ? "Updating..."
+                                                        : ""
+                                                }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Received Quantity (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            <input
+                                                type="number"
+                                                v-model="item.received_quantity"
+                                                :max="
+                                                    item.quantity_to_release ||
+                                                    0
+                                                "
+                                                min="0"
+                                                @input="
+                                                    validateReceivedQuantity(
+                                                        item
+                                                    )
+                                                "
+                                                :id="`received-quantity-${index}`"
+                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
+                                            />
+                                            <!-- :readonly="!['delivered', 'received'].includes(props.transfer.status)" -->
+                                            <!-- Backorder button - show when quantity_to_release > received_quantity -->
+                                            <button
+                                                @click="
+                                                    showBackOrderModal(item)
+                                                "
+                                                v-if="
+                                                    (item.quantity_to_release ||
+                                                        0) >
+                                                    (item.received_quantity ||
+                                                        0)
+                                                "
+                                                class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block"
+                                            >
+                                                Back Order
+                                            </button>
+                                        </td>
+
+                                        <!-- Action (only show on first row for this item) -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center align-top"
+                                        >
+                                            <button
+                                                v-if="
+                                                    props.transfer.status ===
+                                                    'pending'
+                                                "
+                                                @click="removeItem(index)"
+                                                class="text-red-600 hover:text-red-800 transition-colors"
+                                                title="Delete item"
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- actions -->
+
+            <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
+                Order Status Actions
+            </h3>
+            <div class="flex justify-center items-center mb-6">
+                <!-- Status Action Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-4">
+                    <!-- Pending status indicator -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                            <button
+                                :class="[
+                                    props.transfer.status === 'pending'
+                                        ? 'bg-green-500 hover:bg-green-600'
+                                        : statusOrder.indexOf(props.transfer.status) >
+                                          statusOrder.indexOf('pending')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                            disabled
+                        >
+                            <img
+                                src="/assets/images/pending.png"
+                                class="w-5 h-5 mr-2"
+                                alt="Pending"
+                            />
+                            <span class="text-sm font-bold text-white"
+                                >Pending since {{ moment(props.transfer.created_at).format('DD/MM/YYYY HH:mm') }}</span
+                            >
+                        </button>
+                        </div>
+                        <span v-show="props.transfer?.user" class="text-sm text-gray-600">
+                            By {{ props.transfer.user?.name || 'System' }}
+                        </span>
+                    </div>
+                    <!-- Review button -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                            <button
+                            @click="
+                                changeStatus(
+                                    props.transfer.id,
+                                    'reviewed',
+                                    'is_reviewing'
+                                )
+                            "
+                            :disabled="
+                                isType['is_reviewing'] ||
+                                props.transfer.status !== 'pending' ||
+                                !canReview
+                            "
+                            :class="[
+                                props.transfer.status === 'pending'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : statusOrder.indexOf(props.transfer.status) >
+                                      statusOrder.indexOf('pending')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                        >
+                            <img
+                                src="/assets/images/review.png"
+                                class="w-5 h-5 mr-2"
+                                alt="Review"
+                            />
+                            <span class="text-sm font-bold text-white">{{
+                                statusOrder.indexOf(props.transfer.status) >
+                                statusOrder.indexOf("pending")
+                                    ? "Reviewed on" + moment(props.transfer.reviewed_at).format('DD/MM/YYYY HH:mm')
+                                    : isType["is_reviewing"]
+                                    ? "Please Wait..."
+                                    : props.transfer.status === 'pending' && !canReview
+                                    ? "Waiting to be reviewed"
+                                    : "Review"
+                            }}</span>
+                        </button>
+                        <span v-show="props.transfer?.reviewed_by" class="text-sm text-gray-600">
+                           By {{ props.transfer?.reviewed_by?.name }}
+                        </span>
+                        </div>
+                        <div
+                            v-if="props.transfer.status === 'pending'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+                    
+                    <!-- Approved button -->
+                    <div class="relative">
+                        <div class="flex flex-col">                            
+                        <button
+                            @click="
+                                changeStatus(
+                                    props.transfer.id,
+                                    'approved',
+                                    'is_approve'
+                                )
+                            "
+                            :disabled="
+                                isType['is_approve'] ||
+                                props.transfer.status !== 'reviewed' ||
+                                !canApprove
+                            "
+                            :class="[
+                                props.transfer.status == 'reviewed'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : statusOrder.indexOf(props.transfer.status) >
+                                      statusOrder.indexOf('reviewed')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                        >
+                            <svg
+                                v-if="
+                                    isLoading &&
+                                    props.transfer.status === 'reviewed'
+                                "
+                                class="animate-spin h-5 w-5 mr-2"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            <template v-else>
+                                <img
+                                    src="/assets/images/approved.png"
+                                    class="w-5 h-5 mr-2"
+                                    alt="Approve"
+                                />
+                                <span class="text-sm font-bold text-white">{{
+                                    statusOrder.indexOf(props.transfer.status) >
+                                    statusOrder.indexOf("reviewed")
+                                        ? "Approved on" + moment(props.transfer?.approved_at).format('DD/MM/YYYY HH:mm')
+                                        : isType["is_approve"] ? "Please Wait..." : props.transfer.status === 'reviewed' && !canApprove
+                                        ? "Waiting to be approved"
+                                        : "Approve"
+                                }}</span>
                             </template>
-                        </tbody>
-                    </table>
-                   </div>
+                        </button>
+                        <span v-show="props.transfer?.approved_by" class="text-sm text-gray-600">
+                           By {{ props.transfer?.approved_by?.name }}
+                        </span>
+                    </div>
+                        <div
+                            v-if="props.transfer.status === 'reviewed'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+
+                    <!-- Process button -->
+                    <div class="relative">
+                        <div class="flex flex-col">                            
+                        <button
+                            @click="
+                                changeStatus(
+                                    props.transfer.id,
+                                    'in_process',
+                                    'is_process'
+                                )
+                            "
+                            :disabled="
+                                isType['is_process'] ||
+                                props.transfer.status !== 'approved' ||
+                                !canDispatch
+                            "
+                            :class="[
+                                props.transfer.status === 'approved'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : statusOrder.indexOf(props.transfer.status) >
+                                      statusOrder.indexOf('approved')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                        >
+                            <svg
+                                v-if="
+                                    isType['is_process'] &&
+                                    props.transfer.status == 'approved'
+                                "
+                                class="animate-spin h-5 w-5 mr-2"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            <template v-else>
+                                <img
+                                    src="/assets/images/inprocess.png"
+                                    class="w-5 h-5 mr-2"
+                                    alt="Process"
+                                />
+                                <span class="text-sm font-bold text-white">{{
+                                    statusOrder.indexOf(props.transfer.status) >
+                                    statusOrder.indexOf("approved")
+                                        ? "Processed by" + moment(props.transfer?.processed_at).format('DD/MM/YYYY HH:mm')
+                                        : isType['is_process'] ? "Please Wait..." : "Process"
+                                }}</span>
+                            </template>
+                        </button>
+                        <span v-show="props.transfer?.processed_by" class="text-sm text-gray-600">
+                            By {{ props.transfer?.processed_by?.name }}
+                        </span>
+                    </div>
+                        <div
+                            v-if="props.transfer.status === 'approved'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+
+                    <!-- Dispatch button -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                        <button
+                            @click="showDispatchForm = true"
+                            :disabled="
+                                isType['is_dispatch'] ||
+                                props.transfer.status !== 'in_process' ||
+                                !canDispatch
+                            "
+                            :class="[
+                                props.transfer.status === 'in_process'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : statusOrder.indexOf(props.transfer.status) >
+                                      statusOrder.indexOf('in_process')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                        >
+                            <svg
+                                v-if="
+                                    isType['is_dispatch'] &&
+                                    props.transfer.status === 'in_process'
+                                "
+                                class="animate-spin h-5 w-5 mr-2"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            <template v-else>
+                                <img
+                                    src="/assets/images/dispatch.png"
+                                    class="w-5 h-5 mr-2"
+                                    alt="Dispatch"
+                                />
+                                <span class="text-sm font-bold text-white">{{
+                                    statusOrder.indexOf(props.transfer.status) >
+                                    statusOrder.indexOf("in_process")
+                                        ? "Dispatched on " + moment(props.transfer.dispatched_at).format('DD/MM/YYYY HH:mm')
+                                        : isType['is_dispatch'] ? "Please Wait..." : props.transfer.status === 'in_process' && !canDispatch
+                                        ? "Waiting to be dispatched"
+                                        : "Dispatch"
+                                }}</span>
+                            </template>
+                        </button>
+                        <span v-show="props.transfer?.dispatched_by" class="text-sm text-gray-600">
+                            By {{ props.transfer?.dispatched_by?.name }}
+                        </span>
+                    </div>
+                        <div
+                            v-if="props.transfer.status === 'in_process'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+
+                    <!-- Order Delivery Indicators -->
+                    <div class="flex flex-col gap-4 sm:flex-row">
+                        <!-- Delivered Status -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                            <button
+                                @click="
+                                    changeStatus(
+                                        props.transfer.id,
+                                        'delivered',
+                                        'is_deliver'
+                                    )
+                                "
+                                :disabled="
+                                    isType['is_deliver'] ||
+                                    props.transfer.status !== 'dispatched' ||
+                                    !canReceive
+                                "
+                                :class="[
+                                    props.transfer.status === 'dispatched'
+                                        ? 'bg-yellow-500 hover:bg-yellow-600'
+                                        : statusOrder.indexOf(
+                                              props.transfer.status
+                                          ) > statusOrder.indexOf('dispatched')
+                                        ? 'bg-green-500'
+                                        : 'bg-gray-300 cursor-not-allowed',
+                                ]"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                            >
+                                <svg
+                                    v-if="
+                                        isType['is_deliver'] &&
+                                        props.transfer.status === 'dispatched'
+                                    "
+                                    class="animate-spin h-5 w-5 mr-2"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        class="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        stroke-width="4"
+                                    ></circle>
+                                    <path
+                                        class="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                                <template v-else>
+                                    <img
+                                        src="/assets/images/delivery.png"
+                                        class="w-5 h-5 mr-2"
+                                        alt="Delivered"
+                                    />
+                                    <span class="text-sm font-bold text-white">
+                                        {{
+                                            statusOrder.indexOf(
+                                                props.transfer.status
+                                            ) > statusOrder.indexOf("dispatched")
+                                                ? "Delivered on " + moment(props.transfer.delivered_at).format('DD/MM/YYYY HH:mm')
+                                                : isType['is_deliver'] ? "Please Wait..." : props.transfer.status === 'dispatched' && !canReceive
+                                                ? "Waiting to be delivered"
+                                                : "Deliver"
+                                        }}
+                                    </span>
+                                </template>
+                            </button>
+                            <span v-show="props.transfer?.delivered_by" class="text-sm text-gray-600">
+                                By {{ props.transfer?.delivered_by?.name }}
+                            </span> 
+                            </div>
+
+                            <!-- Pulse Indicator if currently at this status -->
+                            <div
+                                v-if="props.transfer.status === 'dispatched'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                            ></div>
+                        </div>
+
+                        <!-- Received Status -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                            <button
+                                @click="
+                                    changeStatus(
+                                        props.transfer.id,
+                                        'received',
+                                        'is_receive'
+                                    )
+                                "
+                                :disabled="
+                                    isType['is_receive'] ||
+                                    props.transfer.status !== 'delivered' ||
+                                    !canReceive
+                                "
+                                :class="[
+                                    props.transfer.status === 'delivered'
+                                        ? 'bg-yellow-500 hover:bg-yellow-600'
+                                        : statusOrder.indexOf(
+                                              props.transfer.status
+                                          ) > statusOrder.indexOf('delivered')
+                                        ? 'bg-green-500'
+                                        : 'bg-gray-300 cursor-not-allowed',
+                                ]"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                            >
+                                <svg
+                                    v-if="
+                                        isType['is_receive'] &&
+                                        props.transfer.status === 'delivered'
+                                    "
+                                    class="animate-spin h-5 w-5 mr-2"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        class="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        stroke-width="4"
+                                    ></circle>
+                                    <path
+                                        class="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                                <template v-else>
+                                    <img
+                                        src="/assets/images/receive.png"
+                                        class="w-5 h-5 mr-2"
+                                        alt="Received"
+                                    />
+                                    <span class="text-sm font-bold text-white">
+                                        {{
+                                            statusOrder.indexOf(
+                                                props.transfer.status
+                                            ) > statusOrder.indexOf('delivered')
+                                                ? "Received on " + moment(props.transfer.received_at).format('DD/MM/YYYY HH:mm')
+                                                : isType['is_receive'] ? "Please Wait..." : props.transfer.status === 'delivered' && !canReceive
+                                                ? "Waiting to be received"
+                                                : "Receive"
+                                        }}
+                                    </span>
+                                </template>
+                            </button>
+                            <span v-show="props.transfer?.received_by" class="text-sm text-gray-600">
+                                By {{ props.transfer?.received_by?.name }}
+                            </span>
+                            </div>
+
+                            <!-- Pulse Indicator if currently at this status -->
+                            <div
+                                v-if="props.transfer.status === 'delivered'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <!-- Reject button (only available for pending status) -->
+                    <div
+                        class="relative"
+                        v-if="props.transfer.status === 'pending'"
+                    >
+                        <button
+                            @click="
+                                changeStatus(
+                                    props.transfer.id,
+                                    'rejected',
+                                    'is_reject'
+                                )
+                            "
+                            :disabled="isType['is_reject'] || isLoading"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-red-600 hover:bg-red-700 min-w-[160px]"
+                        >
+                            <svg
+                                v-if="isType['is_reject']"
+                                class="animate-spin h-5 w-5 mr-2"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            <template v-else>
+                                <svg
+                                    class="w-5 h-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                                <span class="text-sm font-bold text-white"
+                                    >Reject</span
+                                >
+                            </template>
+                        </button>
+                    </div>
+
+                    <!-- Status indicator for rejected status -->
+                    <div
+                        v-if="props.transfer.status === 'rejected'"
+                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-100 text-red-800 min-w-[160px]"
+                    >
+                        <svg
+                            class="w-5 h-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                        <span class="text-sm font-bold">Rejected</span>
+                    </div>
                 </div>
             </div>
         </div>
 
+
+        </div>
+
         <!-- Back Order Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div
+            v-if="showModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+            <div
+                class="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto"
+            >
                 <!-- Modal Header -->
-                <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-900">Back Order Details - Transfer #{{ props.transfer.transferID }}</h2>
+                <div
+                    class="p-4 border-b border-gray-200 flex justify-between items-center"
+                >
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        Back Order Details - Transfer #{{
+                            props.transfer.transferID
+                        }}
+                    </h2>
                     <button
                         @click="showModal = false"
                         class="text-gray-400 hover:text-gray-600 transition-colors duration-150"
                     >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
                         </svg>
                     </button>
                 </div>
@@ -864,56 +1556,121 @@
                 <!-- Modal Content -->
                 <div class="p-6">
                     <!-- Product Information -->
-                    <div v-if="selectedBackOrderItem" class="mb-6 bg-gray-50 p-4 rounded-lg">
+                    <div
+                        v-if="selectedBackOrderItem"
+                        class="mb-6 bg-gray-50 p-4 rounded-lg"
+                    >
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Product</p>
-                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.product?.name }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Product
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedBackOrderItem.product?.name }}
+                                </p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Product ID</p>
-                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.product?.productID }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Product ID
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{
+                                        selectedBackOrderItem.product?.productID
+                                    }}
+                                </p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Quantity to Release</p>
-                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.quantity_to_release }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Quantity to Release
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{
+                                        selectedBackOrderItem.quantity_to_release
+                                    }}
+                                </p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Received Quantity</p>
-                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.received_quantity || 0 }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Received Quantity
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{
+                                        selectedBackOrderItem.received_quantity ||
+                                        0
+                                    }}
+                                </p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Missing Quantity</p>
-                                <p class="text-sm font-bold text-red-600">{{ getMissingQuantity(selectedBackOrderItem) }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Missing Quantity
+                                </p>
+                                <p class="text-sm font-bold text-red-600">
+                                    {{
+                                        getMissingQuantity(
+                                            selectedBackOrderItem
+                                        )
+                                    }}
+                                </p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Existing Back Orders</p>
-                                <p class="text-sm text-gray-900">{{ getExistingBackOrders(selectedBackOrderItem) }}</p>
+                                <p class="text-sm font-medium text-gray-500"
+                                >Existing Back Orders
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{
+                                        getExistingBackOrders(
+                                            selectedBackOrderItem
+                                        )
+                                    }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Instructions -->
-                    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div
+                        class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
+                    >
                         <div class="flex items-center mb-2">
-                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <svg
+                                class="w-5 h-5 text-blue-600 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
                             </svg>
-                            <h3 class="text-sm font-medium text-blue-800">Instructions</h3>
+                            <h3 class="text-sm font-medium text-blue-800">
+                                Instructions
+                            </h3>
                         </div>
                         <p class="text-sm text-blue-700">
-                            Record the missing quantity by categorizing items as Missing, Damaged, Lost, Expired, or Low Quality. 
-                            You can add multiple entries to account for different issue types. 
-                            The total of all entries should equal the missing quantity ({{ getMissingQuantity(selectedBackOrderItem) }}).
+                            Record the missing quantity by categorizing items as
+                            Missing, Damaged, Lost, Expired, or Low Quality. You
+                            can add multiple entries to account for different
+                            issue types. The total of all entries should equal
+                            the missing quantity ({{
+                                getMissingQuantity(selectedBackOrderItem)
+                            }}).
                         </p>
                     </div>
 
                     <!-- Backorder Recording Table -->
                     <div class="mb-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Record Missing Items</h3>
-                        
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            Record Missing Items
+                        </h3>
+
                         <!-- Error Message -->
-                        <div v-if="backOrderError" class="mb-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded">
+                        <div
+                            v-if="backOrderError"
+                            class="mb-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded"
+                        >
                             {{ backOrderError }}
                         </div>
 
@@ -922,63 +1679,126 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        >
+                                            Quantity
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        >
+                                            Status
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        >
+                                            Note
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        >
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="(row, index) in backOrderRows" :key="index">
+                                <tbody
+                                    class="bg-white divide-y divide-gray-200"
+                                >
+                                    <tr
+                                        v-for="(row, index) in backOrderRows"
+                                        :key="index"
+                                    >
                                         <td class="px-3 py-2">
-                                            <input 
-                                                type="number" 
+                                            <input
+                                                type="number"
                                                 v-model="row.quantity"
                                                 class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                min="1" 
-                                                :max="getMissingQuantity(selectedBackOrderItem)"
-                                                @input="validateBackOrderQuantities"
-                                            >
+                                                min="1"
+                                                :max="
+                                                    getMissingQuantity(
+                                                        selectedBackOrderItem
+                                                    )
+                                                "
+                                                @input="
+                                                    validateBackOrderQuantities
+                                                "
+                                            />
                                         </td>
                                         <td class="px-3 py-2">
-                                            <select 
+                                            <select
                                                 v-model="row.status"
                                                 class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                             >
-                                                <option v-for="status in getAvailableStatuses(index)"
-                                                    :key="status" 
+                                                <option
+                                                    v-for="status in getAvailableStatuses(
+                                                        index
+                                                    )"
+                                                    :key="status"
                                                     :value="status"
                                                 >
-                                                    {{ status === '' ? 'Select Status...' : status }}
+                                                    {{
+                                                        status === ""
+                                                            ? "Select Status..."
+                                                            : status
+                                                    }}
                                                 </option>
                                             </select>
                                         </td>
                                         <td class="px-3 py-2">
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 v-model="row.note"
                                                 class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                                 placeholder="Add note..."
-                                            >
+                                            />
                                         </td>
                                         <td class="px-3 py-2">
-                                            <button 
-                                                @click="removeBackOrderRow(index)" 
+                                            <button
+                                                @click="
+                                                    removeBackOrderRow(index)
+                                                "
                                                 v-if="backOrderRows.length > 1"
                                                 class="text-red-600 hover:text-red-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 type="button"
                                                 :disabled="isDeleting[index]"
                                             >
                                                 <!-- Loading spinner when deleting -->
-                                                <svg v-if="isDeleting[index]" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                <svg
+                                                    v-if="isDeleting[index]"
+                                                    class="animate-spin h-5 w-5"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        class="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        stroke-width="4"
+                                                    ></circle>
+                                                    <path
+                                                        class="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
                                                 </svg>
                                                 <!-- Delete icon when not deleting -->
-                                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                <svg
+                                                    v-else
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-5 w-5"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
                                                 </svg>
                                             </button>
                                         </td>
@@ -990,7 +1810,7 @@
                         <!-- Add Row and Summary -->
                         <div class="mt-4 flex justify-between items-center">
                             <div class="flex items-center gap-4">
-                                <button 
+                                <button
                                     @click="addBackOrderRow"
                                     class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                     :disabled="!canAddMoreRows"
@@ -998,17 +1818,33 @@
                                     Add Row
                                 </button>
                                 <div class="text-sm">
-                                    <span class="font-medium text-gray-900">{{ totalBackOrderQuantity }}</span>
-                                    <span class="text-gray-600"> / {{ getMissingQuantity(selectedBackOrderItem) }} items recorded</span>
+                                    <span class="font-medium text-gray-900">{{
+                                        totalBackOrderQuantity
+                                    }}</span>
+                                    <span class="text-gray-600">
+                                        /
+                                        {{
+                                            getMissingQuantity(
+                                                selectedBackOrderItem
+                                            )
+                                        }}
+                                        items recorded</span
+                                    >
                                 </div>
                             </div>
 
                             <!-- Status indicator -->
                             <div class="text-sm">
-                                <span v-if="remainingToAllocate <= 0" class="text-green-600 font-medium">
+                                <span
+                                    v-if="remainingToAllocate <= 0"
+                                    class="text-green-600 font-medium"
+                                >
                                     ✓ All missing items recorded
                                 </span>
-                                <span v-else class="text-yellow-600 font-medium">
+                                <span
+                                    v-else
+                                    class="text-yellow-600 font-medium"
+                                >
                                     {{ remainingToAllocate }} items remaining
                                 </span>
                             </div>
@@ -1017,7 +1853,9 @@
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="p-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div
+                    class="p-4 border-t border-gray-200 flex justify-end space-x-3"
+                >
                     <button
                         @click="showModal = false"
                         class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-150"
@@ -1040,14 +1878,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { router, Head } from "@inertiajs/vue3";
+import { router, Head, usePage } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import moment from "moment";
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import { useToast } from 'vue-toastification';
+import axios from "axios";
+import Swal from "sweetalert2";
+import { useToast } from "vue-toastification";
 
 const toast = useToast();
+const page = usePage();
 
 const props = defineProps({
     transfer: {
@@ -1061,23 +1900,13 @@ const isLoading = ref(false);
 const showModal = ref(false);
 const selectedBackOrderItem = ref(null);
 const backOrderRows = ref([]);
-const backOrderError = ref('');
+const backOrderError = ref("");
 const isSaving = ref(false);
 const isDeleting = ref([]);
 
 onMounted(() => {
     form.value = props.transfer.items || [];
 });
-
-const statusOrder = [
-    "pending",
-    "reviewed",
-    "approved",
-    "in_process",
-    "dispatched",
-    "delivered",
-    "received",
-];
 
 // Status styling
 const statusClasses = computed(() => ({
@@ -1138,7 +1967,9 @@ const isExpiringItem = (expiryDate) => {
 };
 
 const removeItem = (index) => {
-    if (confirm('Are you sure you want to remove this item from the transfer?')) {
+    if (
+        confirm("Are you sure you want to remove this item from the transfer?")
+    ) {
         form.value.splice(index, 1);
         // TODO: Implement API call to remove item from transfer
         console.log("Removed item at index:", index);
@@ -1179,136 +2010,155 @@ const showBackOrderModal = (item) => {
     selectedBackOrderItem.value = item;
     backOrderRows.value = [];
     isDeleting.value = []; // Reset deleting states
-    
+
     // Load existing backorders from inventory allocations
     if (item.inventory_allocations) {
-        item.inventory_allocations.forEach(allocation => {
+        item.inventory_allocations.forEach((allocation) => {
             if (allocation.back_order && allocation.back_order.length > 0) {
-                allocation.back_order.forEach(backOrder => {
+                allocation.back_order.forEach((backOrder) => {
                     backOrderRows.value.push({
                         id: backOrder.id, // Include ID for existing backorders
                         quantity: backOrder.quantity,
                         status: backOrder.type,
-                        note: backOrder.notes || ''
+                        note: backOrder.notes || "",
                     });
                     isDeleting.value.push(false); // Initialize deleting state for each row
                 });
             }
         });
     }
-    
+
     // If no existing backorders found, add one empty row for new entry
     if (backOrderRows.value.length === 0) {
         addBackOrderRow();
     }
-}
+};
 
 const validateReceivedQuantity = (item) => {
     if (item.received_quantity > item.quantity_to_release) {
         item.received_quantity = item.quantity_to_release;
     }
-}
+};
 
 const getMissingQuantity = (item) => {
     return item.quantity_to_release - item.received_quantity;
-}
+};
 
 const getExistingBackOrders = (item) => {
     if (!item || !item.inventory_allocations) return 0;
-    
+
     let totalBackOrders = 0;
-    item.inventory_allocations.forEach(allocation => {
+    item.inventory_allocations.forEach((allocation) => {
         if (allocation.back_order && allocation.back_order.length > 0) {
             totalBackOrders += allocation.back_order.length;
         }
     });
-    
+
     return totalBackOrders;
-}
+};
 
 const addBackOrderRow = () => {
     backOrderRows.value.push({
         quantity: 0,
-        status: '',
-        note: ''
+        status: "",
+        note: "",
     });
     isDeleting.value.push(false); // Initialize deleting state for new row
-}
+};
 
 const removeBackOrderRow = async (index) => {
     const row = backOrderRows.value[index];
-    
+
     // If the row has an ID, it's an existing backorder - delete from database
     if (row.id) {
         // Set loading state for this specific row
         isDeleting.value[index] = true;
-        
+
         try {
-            await axios.post(route('transfers.delete-back-order'), {
-                backorder_id: row.id
+            await axios.post(route("transfers.delete-back-order"), {
+                backorder_id: row.id,
             });
-            toast.success('Backorder record deleted');
+            toast.success("Backorder record deleted");
         } catch (error) {
-            console.error('Error deleting backorder:', error);
-            toast.error(error.response?.data?.error || 'Failed to delete backorder');
+            console.error("Error deleting backorder:", error);
+            toast.error(
+                error.response?.data?.error || "Failed to delete backorder"
+            );
             return; // Don't remove from frontend if backend deletion failed
         } finally {
             // Clear loading state for this row
             isDeleting.value[index] = false;
         }
     }
-    
+
     // Remove from frontend array
     backOrderRows.value.splice(index, 1);
-    
+
     // Also remove the corresponding isDeleting entry to keep arrays in sync
     isDeleting.value.splice(index, 1);
-}
+};
 
 const validateBackOrderQuantities = () => {
-    const totalQuantity = backOrderRows.value.reduce((total, row) => total + row.quantity, 0);
+    const totalQuantity = backOrderRows.value.reduce(
+        (total, row) => total + row.quantity,
+        0
+    );
     if (totalQuantity > getMissingQuantity(selectedBackOrderItem.value)) {
-        backOrderError.value = 'Total quantity exceeds missing quantity';
+        backOrderError.value = "Total quantity exceeds missing quantity";
     } else {
-        backOrderError.value = '';
+        backOrderError.value = "";
     }
-}
+};
 
 const totalBackOrderQuantity = computed(() => {
     return backOrderRows.value.reduce((total, row) => total + row.quantity, 0);
 });
 
 const canAddMoreRows = computed(() => {
-    return totalBackOrderQuantity.value < getMissingQuantity(selectedBackOrderItem.value);
+    return (
+        totalBackOrderQuantity.value <
+        getMissingQuantity(selectedBackOrderItem.value)
+    );
 });
 
 const remainingToAllocate = computed(() => {
-    return getMissingQuantity(selectedBackOrderItem.value) - totalBackOrderQuantity.value;
+    return (
+        getMissingQuantity(selectedBackOrderItem.value) -
+        totalBackOrderQuantity.value
+    );
 });
 
 const isValidForSave = computed(() => {
-    return remainingToAllocate.value === 0 && backOrderError.value === '';
+    return remainingToAllocate.value === 0 && backOrderError.value === "";
 });
 
 const getAvailableStatuses = (currentIndex) => {
-    const allStatuses = ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality'];
+    const allStatuses = [
+        "Missing",
+        "Damaged",
+        "Lost",
+        "Expired",
+        "Low quality",
+    ];
     const currentRowStatus = backOrderRows.value[currentIndex]?.status;
     const selectedStatuses = backOrderRows.value
-        .map((row, index) => index !== currentIndex ? row.status : null)
-        .filter(status => status && status !== '');
-    
-    const availableStatuses = allStatuses.filter(status => !selectedStatuses.includes(status));
-    
+        .map((row, index) => (index !== currentIndex ? row.status : null))
+        .filter((status) => status && status !== "");
+
+    const availableStatuses = allStatuses.filter(
+        (status) => !selectedStatuses.includes(status)
+    );
+
     // If current row has no status selected, add empty option at the beginning
-    if (!currentRowStatus || currentRowStatus === '') {
-        return ['', ...availableStatuses];
+    if (!currentRowStatus || currentRowStatus === "") {
+        return ["", ...availableStatuses];
     }
-    
+
     // If current row has a status, make sure it's included even if selected elsewhere
     if (!availableStatuses.includes(currentRowStatus)) {
         availableStatuses.push(currentRowStatus);
     }
-    
+
     return availableStatuses;
 };
 
@@ -1316,19 +2166,112 @@ const saveBackOrders = async () => {
     if (!isValidForSave.value) return;
 
     isSaving.value = true;
-    await axios.post(route('transfers.save-back-orders'), {
-        item_id: selectedBackOrderItem.value.id,
-        back_orders: backOrderRows.value
-    })
-    .then((response) => {
-        toast.success(response.data);
-        showModal.value = false;
-        router.get(route("transfers.show", props.transfer.id));
-    })
-    .catch((error) => {
-        isSaving.value = false;
-        console.log(error);
-        toast.error(error.response?.data || "Failed to save back orders");
+    await axios
+        .post(route("transfers.save-back-orders"), {
+            item_id: selectedBackOrderItem.value.id,
+            back_orders: backOrderRows.value,
+        })
+        .then((response) => {
+            toast.success(response.data);
+            showModal.value = false;
+            router.get(route("transfers.show", props.transfer.id));
+        })
+        .catch((error) => {
+            isSaving.value = false;
+            console.log(error);
+            toast.error(error.response?.data || "Failed to save back orders");
+        });
+};
+
+const isType = ref([]);
+// Define status order for progression
+const statusOrder = ref([
+    "pending",
+    "reviewed",
+    "approved",
+    "in_process",
+    "dispatched",
+    "delivered",
+    "received",
+]);
+
+// Permission-based computed properties
+const canReview = computed(() => {
+    return page.props.auth.can?.transfer_review || false;
+});
+
+const canApprove = computed(() => {
+    return page.props.auth.can?.transfer_approve || false;
+});
+
+const canDispatch = computed(() => {
+    const user = page.props.auth.user;
+    return (user.warehouse_id === props.transfer.from_warehouse_id) || 
+           (user.facility_id === props.transfer.from_facility_id);
+});
+
+const canReceive = computed(() => {
+    const user = page.props.auth.user;
+    return (user.warehouse_id === props.transfer.to_warehouse_id) || 
+           (user.facility_id === props.transfer.to_facility_id);
+});
+
+// Function to change transfer status
+const changeStatus = (transferId, newStatus, type) => {
+    console.log(transferId, newStatus, type);
+    
+    Swal.fire({
+        title: "Are you sure?",
+        text: `Do you want to change the transfer status to ${newStatus}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, change it!",
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            // Set loading state
+            isType.value[type] = true;
+
+            await axios
+                .post(route("transfers.change-status"), {
+                    transfer_id: transferId,
+                    status: newStatus,
+                })
+                .then((response) => {
+                    // Reset loading state
+                    isType.value[type] = false;
+
+                    Swal.fire({
+                        title: "Updated!",
+                        text: "Transfer status has been updated.",
+                        icon: "success",
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                    }).then(() => {
+                        // Reload the page to show the updated status
+                        router.get(route("transfers.show", props.transfer.id));
+                    });
+                })
+                .catch((error) => {
+                    // Reset loading state
+                    isType.value[type] = false;
+
+                    Swal.fire({
+                        title: "Error!",
+                        text:
+                            error.response?.data ||
+                            "Failed to update transfer status",
+                        icon: "error",
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                    });
+                });
+        }
     });
-}
+};
 </script>
