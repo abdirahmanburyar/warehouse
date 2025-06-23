@@ -965,10 +965,17 @@
                                             <button 
                                                 @click="removeBackOrderRow(index)" 
                                                 v-if="backOrderRows.length > 1"
-                                                class="text-red-600 hover:text-red-800 transition-colors duration-150"
+                                                class="text-red-600 hover:text-red-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 type="button"
+                                                :disabled="isDeleting[index]"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                <!-- Loading spinner when deleting -->
+                                                <svg v-if="isDeleting[index]" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <!-- Delete icon when not deleting -->
+                                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1056,6 +1063,7 @@ const selectedBackOrderItem = ref(null);
 const backOrderRows = ref([]);
 const backOrderError = ref('');
 const isSaving = ref(false);
+const isDeleting = ref([]);
 
 onMounted(() => {
     form.value = props.transfer.items || [];
@@ -1278,6 +1286,7 @@ const showBackOrderModal = (item) => {
     showModal.value = true;
     selectedBackOrderItem.value = item;
     backOrderRows.value = [];
+    isDeleting.value = []; // Reset deleting states
     
     // Load existing backorders from inventory allocations
     if (item.inventory_allocations) {
@@ -1285,10 +1294,12 @@ const showBackOrderModal = (item) => {
             if (allocation.back_order && allocation.back_order.length > 0) {
                 allocation.back_order.forEach(backOrder => {
                     backOrderRows.value.push({
+                        id: backOrder.id, // Include ID for existing backorders
                         quantity: backOrder.quantity,
                         status: backOrder.type,
                         note: backOrder.notes || ''
                     });
+                    isDeleting.value.push(false); // Initialize deleting state for each row
                 });
             }
         });
@@ -1333,10 +1344,37 @@ const addBackOrderRow = () => {
         status: '',
         note: ''
     });
+    isDeleting.value.push(false); // Initialize deleting state for new row
 }
 
-const removeBackOrderRow = (index) => {
+const removeBackOrderRow = async (index) => {
+    const row = backOrderRows.value[index];
+    
+    // If the row has an ID, it's an existing backorder - delete from database
+    if (row.id) {
+        // Set loading state for this specific row
+        isDeleting.value[index] = true;
+        
+        try {
+            await axios.post(route('transfers.delete-back-order'), {
+                backorder_id: row.id
+            });
+            toast.success('Backorder record deleted');
+        } catch (error) {
+            console.error('Error deleting backorder:', error);
+            toast.error(error.response?.data?.error || 'Failed to delete backorder');
+            return; // Don't remove from frontend if backend deletion failed
+        } finally {
+            // Clear loading state for this row
+            isDeleting.value[index] = false;
+        }
+    }
+    
+    // Remove from frontend array
     backOrderRows.value.splice(index, 1);
+    
+    // Also remove the corresponding isDeleting entry to keep arrays in sync
+    isDeleting.value.splice(index, 1);
 }
 
 const validateBackOrderQuantities = () => {

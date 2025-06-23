@@ -906,6 +906,9 @@ class TransferController extends Controller
                 return response()->json('Total back order quantity cannot exceed missing quantity', 400);
             }
 
+            // Clear existing backorders for this transfer item to prevent duplicates
+            FacilityBackorder::where('transfer_item_id', $transferItem->id)->delete();
+
             // Get existing allocations to find where to create back orders
             $allocations = $transferItem->inventory_allocations()
                 ->orderBy('expiry_date', 'asc')
@@ -922,16 +925,18 @@ class TransferController extends Controller
 
                     $quantityToAllocateFromThisAllocation = min($tempRemaining, $allocation->allocated_quantity);
 
-                    // Create back order record
-                    FacilityBackorder::create([
+                    // Create back order record using updateOrCreate for safety
+                    FacilityBackorder::updateOrCreate([
                         'inventory_allocation_id' => $allocation->id,
                         'transfer_item_id' => $transferItem->id,
                         'product_id' => $transferItem->product_id,
-                        'quantity' => $quantityToAllocateFromThisAllocation,
                         'type' => $backOrderData['status'],
+                    ], [
+                        'quantity' => $quantityToAllocateFromThisAllocation,
                         'notes' => $backOrderData['note'] ?? null,
                         'status' => 'pending',
                         'created_by' => auth()->id(),
+                        'updated_by' => auth()->id(),
                     ]);
 
                     $tempRemaining -= $quantityToAllocateFromThisAllocation;
@@ -1312,6 +1317,35 @@ class TransferController extends Controller
 
         } catch (\Throwable $th) {
             DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Delete a specific back order record
+     */
+    public function deleteBackOrder(Request $request)
+    {
+        try {
+            $request->validate([
+                'backorder_id' => 'required|exists:facility_backorders,id',
+            ]);
+
+            $backorder = FacilityBackorder::findOrFail($request->backorder_id);
+            $transferItem = $backorder->transferItem;
+            
+            // Verify user has permission to delete back orders for this transfer
+            if (!in_array($transferItem->transfer->status, ['pending', 'shipped', 'received'])) {
+                return response()->json(['error' => 'Cannot delete back orders for transfers with this status'], 400);
+            }
+
+            $backorder->delete();
+
+            event(new InventoryUpdated());
+
+            return response()->json('Back order deleted successfully', 200);
+
+        } catch (\Throwable $th) {
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
