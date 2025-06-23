@@ -1875,6 +1875,101 @@
                 </div>
             </div>
         </div>
+        <Modal :show="showDispatchForm" @close="showDispatchForm = false">
+            <div class="p-6 bg-white rounded-md shadow-md">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    Dispatch Information
+                </h2>
+
+                <!-- Driver Name -->
+                <div class="mb-4">
+                    <label
+                        for="driver_name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Driver Name
+                    </label>
+                    <input
+                        id="driver_name"
+                        type="text"
+                        v-model="dispatchForm.driver_name"
+                        required
+                        placeholder="Enter driver name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+
+                <!-- Driver Phone Number -->
+                <div class="mb-4">
+                    <label
+                        for="driver_number"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Driver Phone Number
+                    </label>
+                    <input
+                        id="driver_number"
+                        type="tel"
+                        v-model="dispatchForm.driver_number"
+                        placeholder="Enter driver phone number"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+
+                <!-- Vehicle Plate Number -->
+                <div class="mb-4">
+                    <label
+                        for="plate_number"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Vehicle Plate Number
+                    </label>
+                    <input
+                        id="plate_number"
+                        type="text"
+                        v-model="dispatchForm.plate_number"
+                        placeholder="Enter plate number"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+
+                <!-- Number of Cartons -->
+                <div class="mb-6">
+                    <label
+                        for="no_of_cartoons"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        No. of Cartons
+                    </label>
+                    <input
+                        id="no_of_cartoons"
+                        type="number"
+                        min="0"
+                        v-model="dispatchForm.no_of_cartoons"
+                        placeholder="Enter number of cartons"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-3">
+                    <button
+                        @click="showDispatchForm = false"
+                        :disabled="isSaving"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="createDispatch"
+                        :disabled="isSaving"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                    >
+                        {{ isSaving ? "Processing..." : "Save and Dispatch" }}
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 
@@ -1886,6 +1981,7 @@ import moment from "moment";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useToast } from "vue-toastification";
+import Modal from "@/Components/Modal.vue";
 
 const toast = useToast();
 const page = usePage();
@@ -2300,7 +2396,7 @@ const changeStatus = (transferId, newStatus, type) => {
     });
 };
 
-
+const showDispatchForm = ref(false);
 
 const dispatchForm = ref({
     driver_name: "",
@@ -2310,6 +2406,29 @@ const dispatchForm = ref({
     order_id: props.order?.id,
     status: "Dispatched",
 });
+
+async function createDispatch() {
+    isSaving.value = true;
+    await axios
+        .post(route("orders.dispatch-info"), dispatchForm.value)
+        .then((response) => {
+            isSaving.value = false;
+            showDispatchForm.value = false;
+            Swal.fire({
+                title: "Success!",
+                text: response.data,
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                router.get(route("orders.show", props.order?.id));
+            });
+        })
+        .catch((error) => {
+            isSaving.value = false;
+            console.log(error);
+            toast.error(error.response?.data || "Failed to create dispatch");
+        });
+}
 
 
 

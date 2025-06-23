@@ -946,7 +946,7 @@
                     <div class="relative">
                         <div class="flex flex-col">
                         <button
-                            @click="alert('hi')"
+                            @click="showDispatchForm = true"
                             :disabled="
                                 isType['is_dispatch'] ||
                                 props.order.status !== 'in_process'

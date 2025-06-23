@@ -418,6 +418,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
           // change transfer status
           Route::post('/change-status', [TransferController::class, 'changeStatus'])->name('transfers.change-status');
 
+
+          Route::post('/dispatch-info', [TransferController::class, 'dispatchInfo'])->name('transfers.dispatch-info');
+
     });
 
 

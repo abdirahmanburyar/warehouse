@@ -1353,6 +1353,40 @@ class TransferController extends Controller
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
+
+
+    public function dispatchInfo(Request $request){
+        
+        try {
+            return DB::transaction(function() use ($request){
+                $request->validate([
+                    'driver_name',
+                    'driver_number',
+                    'place_number',
+                    'no_of_cartoons',
+                    'transfer_id',
+                    'status'
+                ]);
+                $order = Order::with('dispatch')->find($request->transfer_id);
+                $order->dispatch()->create([
+                    'transfer_id' => $request->transfer_id,
+                    'driver_name' => $request->driver_name,
+                    'driver_number' => $request->driver_number,
+                    'plate_number' => $request->plate_number,
+                    'no_of_cartoons' => $request->no_of_cartoons,
+                ]);
+
+                $order->status = $request->status;
+                $order->dispatched_at = now();
+                $order->dispatched_by = auth()->user()->id;
+                $order->save();
+                
+                return response()->json("Dispatched Successfully", 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
     
     /**
      * Change transfer status with proper permissions and workflow validation
