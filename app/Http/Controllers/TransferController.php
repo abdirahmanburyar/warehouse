@@ -1360,6 +1360,8 @@ class TransferController extends Controller
     public function changeStatus(Request $request)
     {
         try {
+            DB::beginTransaction();
+            
             $request->validate([
                 'transfer_id' => 'required|exists:transfers,id',
                 'status' => 'required|string|in:pending,reviewed,approved,in_process,dispatched,delivered,received'
@@ -1367,6 +1369,7 @@ class TransferController extends Controller
 
             $transfer = Transfer::findOrFail($request->transfer_id);
             $newStatus = $request->status;
+            $oldStatus = $transfer->status;
             $user = auth()->user();
 
             // Define status progression order
@@ -1376,6 +1379,7 @@ class TransferController extends Controller
 
             // Validate status progression (can only move forward, except for certain cases)
             if ($newStatusIndex <= $currentStatusIndex && $newStatus !== $transfer->status) {
+                DB::rollBack();
                 return response()->json('Cannot move backwards in transfer workflow', 400);
             }
 
@@ -1383,9 +1387,11 @@ class TransferController extends Controller
             switch ($newStatus) {
                 case 'reviewed':
                     if (!$user->can('transfer_review')) {
+                        DB::rollBack();
                         return response()->json('You do not have permission to review transfers', 403);
                     }
                     if ($transfer->status !== 'pending') {
+                        DB::rollBack();
                         return response()->json('Transfer must be pending to review', 400);
                     }
                     $transfer->reviewed_at = now();
@@ -1394,9 +1400,11 @@ class TransferController extends Controller
 
                 case 'approved':
                     if (!$user->can('transfer_approve')) {
+                        DB::rollBack();
                         return response()->json('You do not have permission to approve transfers', 403);
                     }
                     if ($transfer->status !== 'reviewed') {
+                        DB::rollBack();
                         return response()->json('Transfer must be reviewed to approve', 400);
                     }
                     $transfer->approved_at = now();
@@ -1407,9 +1415,11 @@ class TransferController extends Controller
                     // Can be done by from warehouse/facility staff
                     if ($user->warehouse_id !== $transfer->from_warehouse_id && 
                         $user->facility_id !== $transfer->from_facility_id) {
+                        DB::rollBack();
                         return response()->json('You can only process transfers from your warehouse/facility', 403);
                     }
                     if ($transfer->status !== 'approved') {
+                        DB::rollBack();
                         return response()->json('Transfer must be approved to process', 400);
                     }
                     $transfer->processed_at = now();
@@ -1420,9 +1430,11 @@ class TransferController extends Controller
                     // Can be done by from warehouse/facility staff
                     if ($user->warehouse_id !== $transfer->from_warehouse_id && 
                         $user->facility_id !== $transfer->from_facility_id) {
+                        DB::rollBack();
                         return response()->json('You can only dispatch transfers from your warehouse/facility', 403);
                     }
                     if ($transfer->status !== 'in_process') {
+                        DB::rollBack();
                         return response()->json('Transfer must be in process to dispatch', 400);
                     }
                     $transfer->dispatched_at = now();
@@ -1433,9 +1445,11 @@ class TransferController extends Controller
                     // Can be done by to warehouse/facility staff
                     if ($user->warehouse_id !== $transfer->to_warehouse_id && 
                         $user->facility_id !== $transfer->to_facility_id) {
+                        DB::rollBack();
                         return response()->json('You can only mark transfers as delivered to your warehouse/facility', 403);
                     }
                     if ($transfer->status !== 'dispatched') {
+                        DB::rollBack();
                         return response()->json('Transfer must be dispatched to deliver', 400);
                     }
                     $transfer->delivered_at = now();
@@ -1446,9 +1460,11 @@ class TransferController extends Controller
                     // Can be done by to warehouse/facility staff
                     if ($user->warehouse_id !== $transfer->to_warehouse_id && 
                         $user->facility_id !== $transfer->to_facility_id) {
+                        DB::rollBack();
                         return response()->json('You can only receive transfers to your warehouse/facility', 403);
                     }
                     if ($transfer->status !== 'delivered') {
+                        DB::rollBack();
                         return response()->json('Transfer must be delivered to receive', 400);
                     }
                     $transfer->received_at = now();
@@ -1456,6 +1472,7 @@ class TransferController extends Controller
                     break;
 
                 default:
+                    DB::rollBack();
                     return response()->json('Invalid status', 400);
             }
 
@@ -1463,9 +1480,14 @@ class TransferController extends Controller
             $transfer->status = $newStatus;
             $transfer->save();
 
+            // Dispatch event for real-time updates
+            event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, $user->id));
+
+            DB::commit();
             return response()->json('Transfer status updated successfully', 200);
 
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json($th->getMessage(), 500);
         }
     }

@@ -2220,57 +2220,81 @@ const canReceive = computed(() => {
 const changeStatus = (transferId, newStatus, type) => {
     console.log(transferId, newStatus, type);
     
+    // Get action name for better messaging
+    const actionMap = {
+        'reviewed': 'review',
+        'approved': 'approve', 
+        'in_process': 'process',
+        'dispatched': 'dispatch',
+        'delivered': 'mark as delivered',
+        'received': 'receive'
+    };
+    
+    const actionName = actionMap[newStatus] || 'change status of';
+    
     Swal.fire({
         title: "Are you sure?",
-        text: `Do you want to change the transfer status to ${newStatus}?`,
+        text: `Are you sure to make this Transfer ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace('_', ' ')}?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, change it!",
+        confirmButtonText: `Yes, ${actionName}!`,
     }).then(async (result) => {
         if (result.isConfirmed) {
             // Set loading state
             isType.value[type] = true;
 
-            await axios
-                .post(route("transfers.change-status"), {
+            try {
+                const response = await axios.post(route("transfers.change-status"), {
                     transfer_id: transferId,
                     status: newStatus,
-                })
-                .then((response) => {
-                    // Reset loading state
-                    isType.value[type] = false;
-
-                    Swal.fire({
-                        title: "Updated!",
-                        text: "Transfer status has been updated.",
-                        icon: "success",
-                        toast: true,
-                        position: "top-end",
-                        showConfirmButton: false,
-                        timer: 3000,
-                    }).then(() => {
-                        // Reload the page to show the updated status
-                        router.get(route("transfers.show", props.transfer.id));
-                    });
-                })
-                .catch((error) => {
-                    // Reset loading state
-                    isType.value[type] = false;
-
-                    Swal.fire({
-                        title: "Error!",
-                        text:
-                            error.response?.data ||
-                            "Failed to update transfer status",
-                        icon: "error",
-                        toast: true,
-                        position: "top-end",
-                        showConfirmButton: false,
-                        timer: 3000,
-                    });
                 });
+
+                // Reset loading state
+                isType.value[type] = false;
+
+                Swal.fire({
+                    title: "Success!",
+                    text: `Transfer has been ${actionMap[newStatus] || 'updated'}d successfully.`,
+                    icon: "success",
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                }).then(() => {
+                    // Reload the page to show the updated status
+                    router.get(route("transfers.show", props.transfer.id));
+                });
+            } catch (error) {
+                // Reset loading state
+                isType.value[type] = false;
+
+                // Extract error message from response
+                let errorMessage = "Failed to update transfer status";
+                
+                if (error.response) {
+                    if (error.response.status === 403) {
+                        errorMessage = error.response.data || "You don't have permission to perform this action";
+                    } else if (error.response.status === 400) {
+                        errorMessage = error.response.data || "Invalid operation";
+                    } else if (error.response.data) {
+                        errorMessage = error.response.data;
+                    }
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+
+                Swal.fire({
+                    title: "Error!",
+                    text: errorMessage,
+                    icon: "error",
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 5000, // Show error longer than success
+                });
+            }
         }
     });
 };
