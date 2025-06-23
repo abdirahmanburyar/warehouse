@@ -1180,7 +1180,7 @@
                                     statusOrder.indexOf(props.transfer.status) >
                                     statusOrder.indexOf("approved")
                                         ? "Processed by" + moment(props.transfer?.processed_at).format('DD/MM/YYYY HH:mm')
-                                        : isType['is_process'] ? "Please Wait..." : props.transfer.status === 'approved' && canDispatch
+                                        : isType['is_process'] ? "Please Wait..." : props.transfer.status === 'approved' && !canDispatch
                                         ? "Waiting to be processed"
                                         : "Process"
                                 }}</span>
@@ -1198,7 +1198,6 @@
 
                     <!-- Dispatch button -->
                     <div class="relative">
-                        {{props.transfer.status}}
                         <div class="flex flex-col">
                         <button
                             @click="showDispatchForm = true"
@@ -1251,7 +1250,7 @@
                                     statusOrder.indexOf(props.transfer.status) >
                                     statusOrder.indexOf("in_process")
                                         ? "Dispatched on " + moment(props.transfer.dispatched_at).format('DD/MM/YYYY HH:mm')
-                                        : isType['is_dispatch'] ? "Please Wait..." : props.transfer.status === 'in_process' && canDispatch
+                                        : isType['is_dispatch'] ? "Please Wait..." : props.transfer.status === 'in_process' && !canDispatch
                                         ? "Waiting to be dispatched"
                                         : "Dispatch"
                                 }}</span>
@@ -2208,13 +2207,12 @@ const canApprove = computed(() => {
 });
 
 const canDispatch = computed(() => {
-    const user = page.props.auth.user;
-    console.log(user.can.transfer_dispatch);
+    const user = page.props.auth;
     return user.can.transfer_dispatch;
 });
 
 const canReceive = computed(() => {
-    const user = page.props.auth.user;
+    const user = page.props.auth;
     return ((user.warehouse_id === props.transfer.to_warehouse_id) || 
            (user.facility_id === props.transfer.to_facility_id))
 });
