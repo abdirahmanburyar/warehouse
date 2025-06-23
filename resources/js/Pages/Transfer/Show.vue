@@ -1278,7 +1278,26 @@ const showBackOrderModal = (item) => {
     showModal.value = true;
     selectedBackOrderItem.value = item;
     backOrderRows.value = [];
-    addBackOrderRow();
+    
+    // Load existing backorders from inventory allocations
+    if (item.inventory_allocations) {
+        item.inventory_allocations.forEach(allocation => {
+            if (allocation.back_order && allocation.back_order.length > 0) {
+                allocation.back_order.forEach(backOrder => {
+                    backOrderRows.value.push({
+                        quantity: backOrder.quantity,
+                        status: backOrder.type,
+                        note: backOrder.notes || ''
+                    });
+                });
+            }
+        });
+    }
+    
+    // If no existing backorders found, add one empty row for new entry
+    if (backOrderRows.value.length === 0) {
+        addBackOrderRow();
+    }
 }
 
 const validateReceivedQuantity = (item) => {
@@ -1292,7 +1311,16 @@ const getMissingQuantity = (item) => {
 }
 
 const getExistingBackOrders = (item) => {
-    return item.back_orders?.length || 0;
+    if (!item || !item.inventory_allocations) return 0;
+    
+    let totalBackOrders = 0;
+    item.inventory_allocations.forEach(allocation => {
+        if (allocation.back_order && allocation.back_order.length > 0) {
+            totalBackOrders += allocation.back_order.length;
+        }
+    });
+    
+    return totalBackOrders;
 }
 
 const getRemainingToAllocate = (item) => {
