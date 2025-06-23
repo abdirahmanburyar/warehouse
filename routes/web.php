@@ -409,6 +409,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
          // transfer update-quantity
          Route::post('/update-quantity', [TransferController::class, 'updateQuantity'])->name('transfers.update-quantity');
+
+         // save transfer back orders
+         Route::post('/save-back-orders', [TransferController::class, 'saveBackOrders'])->name('transfers.save-back-orders');
     });
 
 

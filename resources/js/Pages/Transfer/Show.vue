@@ -784,13 +784,13 @@
                                         <input
                                             type="number"
                                             v-model="item.quantity_to_release"
-                                            :readonly="props.transfer.status !== 'pending'"
                                             @keyup.enter="updateQuantity(item)"
                                             class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                                         />
                                         <span v-if="isUpading[index]" class="text-green-600">
                                             {{ isUpading[index] ? 'Updating...' : '' }}
                                         </span>
+                                       
                                     </td>
                                     
                                     <!-- Received Quantity (only show on first row for this item) -->
@@ -799,12 +799,24 @@
                                         :rowspan="item.inventory_allocations?.length || 1"
                                         class="px-4 py-2 border border-gray-300 text-center text-black align-top"
                                     >
-                                        <input
-                                            type="number"
-                                            v-model="item.received_quantity"
-                                            :readonly="!['delivered', 'received'].includes(props.transfer.status)"
-                                            class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
-                                        />
+                                    <input
+                                        type="number"
+                                        v-model="item.received_quantity"
+                                        :max="item.quantity_to_release || 0"
+                                        min="0"
+                                        @input="validateReceivedQuantity(item)"
+                                        :id="`received-quantity-${index}`"
+                                        class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm"
+                                    />
+                                    <!-- :readonly="!['delivered', 'received'].includes(props.transfer.status)" -->
+                                      <!-- Backorder button - show when quantity_to_release > received_quantity -->
+                                      <button
+                                            @click="showBackOrderModal(item)"
+                                            v-if="(item.quantity_to_release || 0) > (item.received_quantity || 0)"
+                                            class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block"
+                                        >
+                                            Back Order
+                                        </button>
                                     </td>
                                     
                                     <!-- Action (only show on first row for this item) -->
@@ -832,6 +844,190 @@
                 </div>
             </div>
         </div>
+
+        <!-- Back Order Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+                <!-- Modal Header -->
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Back Order Details - Transfer #{{ props.transfer.transferID }}</h2>
+                    <button
+                        @click="showModal = false"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="p-6">
+                    <!-- Product Information -->
+                    <div v-if="selectedBackOrderItem" class="mb-6 bg-gray-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Product</p>
+                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.product?.name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Product ID</p>
+                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.product?.productID }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Quantity to Release</p>
+                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.quantity_to_release }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Received Quantity</p>
+                                <p class="text-sm text-gray-900">{{ selectedBackOrderItem.received_quantity || 0 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Missing Quantity</p>
+                                <p class="text-sm font-bold text-red-600">{{ getMissingQuantity(selectedBackOrderItem) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Existing Back Orders</p>
+                                <p class="text-sm text-gray-900">{{ getExistingBackOrders(selectedBackOrderItem) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center mb-2">
+                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="text-sm font-medium text-blue-800">Instructions</h3>
+                        </div>
+                        <p class="text-sm text-blue-700">
+                            Record the missing quantity by categorizing items as Missing, Damaged, Lost, Expired, or Low Quality. 
+                            You can add multiple entries to account for different issue types. 
+                            The total of all entries should equal the missing quantity ({{ getMissingQuantity(selectedBackOrderItem) }}).
+                        </p>
+                    </div>
+
+                    <!-- Backorder Recording Table -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Record Missing Items</h3>
+                        
+                        <!-- Error Message -->
+                        <div v-if="backOrderError" class="mb-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded">
+                            {{ backOrderError }}
+                        </div>
+
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="(row, index) in backOrderRows" :key="index">
+                                        <td class="px-3 py-2">
+                                            <input 
+                                                type="number" 
+                                                v-model="row.quantity"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                min="1" 
+                                                :max="getMissingQuantity(selectedBackOrderItem)"
+                                                @input="validateBackOrderQuantities"
+                                            >
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <select 
+                                                v-model="row.status"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                            >
+                                                <option v-for="status in ['Missing', 'Damaged', 'Lost', 'Expired', 'Low quality']"
+                                                    :key="status" 
+                                                    :value="status"
+                                                >
+                                                    {{ status }}
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input 
+                                                type="text" 
+                                                v-model="row.note"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                placeholder="Add note..."
+                                            >
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <button 
+                                                @click="removeBackOrderRow(index)" 
+                                                v-if="backOrderRows.length > 1"
+                                                class="text-red-600 hover:text-red-800 transition-colors duration-150"
+                                                type="button"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Add Row and Summary -->
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <button 
+                                    @click="addBackOrderRow"
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    :disabled="!canAddMoreRows"
+                                >
+                                    Add Row
+                                </button>
+                                <div class="text-sm">
+                                    <span class="font-medium text-gray-900">{{ totalBackOrderQuantity }}</span>
+                                    <span class="text-gray-600"> / {{ getMissingQuantity(selectedBackOrderItem) }} items recorded</span>
+                                </div>
+                            </div>
+
+                            <!-- Status indicator -->
+                            <div class="text-sm">
+                                <span v-if="remainingToAllocate <= 0" class="text-green-600 font-medium">
+                                    ✓ All missing items recorded
+                                </span>
+                                <span v-else class="text-yellow-600 font-medium">
+                                    {{ remainingToAllocate }} items remaining
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-4 border-t border-gray-200 flex justify-end space-x-3">
+                    <button
+                        @click="showModal = false"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-150"
+                    >
+                        Exit
+                    </button>
+                    <button
+                        @click="saveBackOrders"
+                        class="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="isSaving || !isValidForSave"
+                    >
+                        <span v-if="isSaving">Saving...</span>
+                        <span v-else>Save Back Orders and Exit</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -855,6 +1051,11 @@ const props = defineProps({
 
 const form = ref([]);
 const isLoading = ref(false);
+const showModal = ref(false);
+const selectedBackOrderItem = ref(null);
+const backOrderRows = ref([]);
+const backOrderError = ref('');
+const isSaving = ref(false);
 
 onMounted(() => {
     form.value = props.transfer.items || [];
@@ -880,33 +1081,6 @@ const statusClasses = computed(() => ({
     delivered: "bg-indigo-100 text-indigo-800",
     received: "bg-green-100 text-green-800",
 }));
-
-// Timeline status order
-// Timeline status class function
-const getTimelineStatusClass = (status) => {
-    const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
-    const statusIndex = statusOrder.indexOf(status);
-
-    // Handle rejected status
-    if (props.transfer.status === "rejected") {
-        if (status === "pending")
-            return "bg-green-500 border-green-500 text-white"; // completed
-        if (status === "reviewed")
-            return "bg-green-500 border-green-500 text-white"; // completed
-        if (status === "approved")
-            return "bg-red-500 border-red-500 text-white"; // rejected
-        return "bg-gray-100 border-gray-300 text-gray-400"; // not applicable
-    }
-
-    // Normal progression
-    if (statusIndex <= currentStatusIndex) {
-        return "bg-green-500 border-green-500 text-white"; // completed
-    } else if (statusIndex === currentStatusIndex + 1) {
-        return "bg-orange-500 border-orange-500 text-white"; // current/next
-    } else {
-        return "bg-gray-100 border-gray-300 text-gray-400"; // not reached
-    }
-};
 
 const getTimelineStatusBorder = (status) => {
     const currentStatusIndex = statusOrder.indexOf(props.transfer.status);
@@ -1066,7 +1240,6 @@ const removeItem = (index) => {
     }
 };
 
-
 // update quantity
 const isUpading = ref(false);
 async function updateQuantity(item, type) {
@@ -1094,4 +1267,92 @@ async function updateQuantity(item, type) {
         });
 }
 
+const focusReceivedQuantity = (index) => {
+    const input = document.querySelector(`#received-quantity-${index}`);
+    input.focus();
+}
+
+const showBackOrderModal = (item) => {
+    console.log(item);
+    selectedBackOrderItem.value = null;
+    showModal.value = true;
+    selectedBackOrderItem.value = item;
+    backOrderRows.value = [];
+    addBackOrderRow();
+}
+
+const validateReceivedQuantity = (item) => {
+    if (item.received_quantity > item.quantity_to_release) {
+        item.received_quantity = item.quantity_to_release;
+    }
+}
+
+const getMissingQuantity = (item) => {
+    return item.quantity_to_release - item.received_quantity;
+}
+
+const getExistingBackOrders = (item) => {
+    return item.back_orders?.length || 0;
+}
+
+const getRemainingToAllocate = (item) => {
+    return getMissingQuantity(item) - getExistingBackOrders(item);
+}
+
+const addBackOrderRow = () => {
+    backOrderRows.value.push({
+        quantity: 0,
+        status: '',
+        note: ''
+    });
+}
+
+const removeBackOrderRow = (index) => {
+    backOrderRows.value.splice(index, 1);
+}
+
+const validateBackOrderQuantities = () => {
+    const totalQuantity = backOrderRows.value.reduce((total, row) => total + row.quantity, 0);
+    if (totalQuantity > getMissingQuantity(selectedBackOrderItem.value)) {
+        backOrderError.value = 'Total quantity exceeds missing quantity';
+    } else {
+        backOrderError.value = '';
+    }
+}
+
+const totalBackOrderQuantity = computed(() => {
+    return backOrderRows.value.reduce((total, row) => total + row.quantity, 0);
+});
+
+const canAddMoreRows = computed(() => {
+    return totalBackOrderQuantity.value < getMissingQuantity(selectedBackOrderItem.value);
+});
+
+const remainingToAllocate = computed(() => {
+    return getMissingQuantity(selectedBackOrderItem.value) - totalBackOrderQuantity.value;
+});
+
+const isValidForSave = computed(() => {
+    return remainingToAllocate.value === 0 && backOrderError.value === '';
+});
+
+const saveBackOrders = async () => {
+    if (!isValidForSave.value) return;
+
+    isSaving.value = true;
+    try {
+        const response = await axios.post(route('transfers.save-back-orders'), {
+            item_id: selectedBackOrderItem.value.id,
+            back_orders: backOrderRows.value
+        });
+        toast.success(response.data);
+        showModal.value = false;
+        router.get(route("transfers.show", props.transfer.id));
+    } catch (error) {
+        console.log(error);
+        toast.error(error.response?.data || "Failed to save back orders");
+    } finally {
+        isSaving.value = false;
+    }
+}
 </script>
