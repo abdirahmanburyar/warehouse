@@ -1198,6 +1198,7 @@
 
                     <!-- Dispatch button -->
                     <div class="relative">
+                        {{props.transfer.status}}
                         <div class="flex flex-col">
                         <button
                             @click="showDispatchForm = true"
