@@ -893,6 +893,9 @@
                                                 :id="`received-quantity-${index}`"
                                                 class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
                                             />
+                                            <span class="text-green-600">
+                                                {{isSavingQty[index] ? 'Updating...' : ''}}
+                                            </span>
                                             <!-- :readonly="!['delivered', 'received'].includes(props.transfer.status)" -->
                                             <!-- Backorder button - show when quantity_to_release > received_quantity -->
                                             <button
