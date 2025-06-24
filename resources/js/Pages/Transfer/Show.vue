@@ -611,155 +611,297 @@
                     </h3>
 
                     <div class="overflow-auto">
-                        <table class="min-w-full border border-collapse border-black">
-    <thead>
-        <tr class="bg-gray-50">
-            <th class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Item Name
-            </th>
-            <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Category
-            </th>
-            <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold" colspan="5">
-                Item Details
-            </th>
-            <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Total Quantity on Hand Per Unit
-            </th>
-            <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Reasons for Transfers
-            </th>
-            <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Quantity to be transferred
-            </th>
-            <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold" rowspan="2">
-                Received Quantity
-            </th>
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold" rowspan="2">
-                Action
-            </th>
-        </tr>
-        <tr class="bg-gray-50">
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">UoM</th>
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">QTY</th>
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">Batch Number</th>
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">Expiry Date</th>
-            <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">Location</th>
-        </tr>
-    </thead>
+                        <table
+                            class="min-w-full border border-collapse border-black"
+                        >
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th
+                                        class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Item Name
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Category
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        colspan="5"
+                                    >
+                                        Item Details
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Total Quantity on Hand Per Unit
+                                    </th>
+                                    <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Reasons for Transfers
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Quantity to be transferred
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Received Quantity
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        Action
+                                    </th>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        UoM
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        QTY
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Batch Number
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Expiry Date
+                                    </th>
+                                    <th
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
+                                    >
+                                        Location
+                                    </th>
+                                </tr>
+                            </thead>
 
-    <tbody>
-        <template v-for="(item, index) in form" :key="item.id">
-            <tr
-                v-for="(allocation, allocIndex) in item.inventory_allocations || [{}]"
-                :key="`${item.id}-${allocIndex}`"
-                class="hover:bg-gray-50 transition-colors duration-150 border-b border-black"
-            >
-                <!-- Item Name -->
-                <td class="px-2 py-1 text-xs border border-black text-left text-black align-top">
-                    {{ item.product?.name || "N/A" }}
-                </td>
+                            <tbody>
+                                <template
+                                    v-for="(item, index) in form"
+                                    :key="item.id"
+                                >
+                                    <tr
+                                        v-for="(
+                                            allocation, allocIndex
+                                        ) in item.inventory_allocations || [{}]"
+                                        :key="`${item.id}-${allocIndex}`"
+                                        class="hover:bg-gray-50 transition-colors duration-150 border-b border-black"
+                                    >
+                                        <!-- Item Name -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
+                                        >
+                                            {{ item.product?.name || "N/A" }}
+                                        </td>
 
-                <!-- Category -->
-                <td class="px-2 py-1 text-xs border border-black text-left text-black align-top">
-                    {{ item.product?.category?.name || "N/A" }}
-                </td>
+                                        <!-- Category -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
+                                        >
+                                            {{
+                                                item.product?.category?.name ||
+                                                "N/A"
+                                            }}
+                                        </td>
 
-                <!-- UoM (Allocation) -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                    {{ allocation.uom || "N/A" }}
-                </td>
+                                        <!-- UoM (Allocation) -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{ allocation.uom || "N/A" }}
+                                        </td>
 
-                <!-- Quantity -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                    {{ allocation.allocated_quantity || 0 }}
-                </td>
+                                        <!-- Quantity -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{
+                                                allocation.allocated_quantity ||
+                                                0
+                                            }}
+                                        </td>
 
-                <!-- Batch Number -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                    {{ allocation.batch_number || "N/A" }}
-                </td>
+                                        <!-- Batch Number -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{
+                                                allocation.batch_number || "N/A"
+                                            }}
+                                        </td>
 
-                <!-- Expiry Date -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                    <span :class="{ 'text-red-600': isExpiringItem(allocation.expiry_date) }">
-                        {{ moment(allocation.expiry_date).format('DD/MM/YYYY') }}
-                    </span>
-                </td>
+                                        <!-- Expiry Date -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            <span
+                                                :class="{
+                                                    'text-red-600':
+                                                        isExpiringItem(
+                                                            allocation.expiry_date
+                                                        ),
+                                                }"
+                                            >
+                                                {{
+                                                    moment(
+                                                        allocation.expiry_date
+                                                    ).format("DD/MM/YYYY")
+                                                }}
+                                            </span>
+                                        </td>
 
-                <!-- Location -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black">
-                    {{ allocation.location || "N/A" }}
-                </td>
+                                        <!-- Location -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{ allocation.location || "N/A" }}
+                                        </td>
 
-                <!-- Total Quantity per Unit -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                    {{ item.quantity_per_unit || 0 }}
-                </td>
+                                        <!-- Total Quantity per Unit -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            {{ item.quantity_per_unit || 0 }}
+                                        </td>
 
-                <!-- Reason for Transfer -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                    {{ props.transfer.transfer_type || "N/A" }}
-                </td>
+                                        <!-- Reason for Transfer -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            {{
+                                                props.transfer.transfer_type ||
+                                                "N/A"
+                                            }}
+                                        </td>
 
-                <!-- Quantity to Transfer -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                    <input
-                        type="number"
-                        v-model="item.quantity_to_release"
-                        @keyup.enter="updateQuantity(item)"
-                        class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
-                    />
-                    <span v-if="isUpading[index]" class="text-green-600">Updating...</span>
-                </td>
+                                        <!-- Quantity to Transfer -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            <input
+                                                type="number"
+                                                v-model="
+                                                    item.quantity_to_release
+                                                "
+                                                @keyup.enter="
+                                                    updateQuantity(item)
+                                                "
+                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
+                                            />
+                                            <span
+                                                v-if="isUpading[index]"
+                                                class="text-green-600"
+                                                >Updating...</span
+                                            >
+                                        </td>
 
-                <!-- Received Quantity -->
-                <td class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                    <input
-                        type="number"
-                        v-model="item.received_quantity"
-                        @keyup.enter="receivedQty(item, index)"
-                        :readonly="props.transfer.to_warehouse_id != null || props.transfer.to_facility_id != null"
-                        :max="item.quantity_to_release || 0"
-                        min="0"
-                        @input="validateReceivedQuantity(item)"
-                        :id="`received-quantity-${index}`"
-                        class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
-                    />
-                    <span class="text-green-600" v-if="isSaving[index]">Updating...</span>
-                    <button
-                        v-if="(item.quantity_to_release || 0) > (item.received_quantity || 0)"
-                        @click="showBackOrderModal(item)"
-                        class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block"
-                    >
-                        Back Order
-                    </button>
-                </td>
+                                        <!-- Received Quantity -->
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top"
+                                        >
+                                            <input
+                                                type="number"
+                                                v-model="item.received_quantity"
+                                                @keyup.enter="
+                                                    receivedQty(item, index)
+                                                "
+                                                :readonly="
+                                                    props.transfer
+                                                        .to_warehouse_id !=
+                                                        null ||
+                                                    props.transfer
+                                                        .to_facility_id != null
+                                                "
+                                                :max="
+                                                    item.quantity_to_release ||
+                                                    0
+                                                "
+                                                min="0"
+                                                @input="
+                                                    validateReceivedQuantity(
+                                                        item
+                                                    )
+                                                "
+                                                :id="`received-quantity-${index}`"
+                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
+                                            />
+                                            <span
+                                                class="text-green-600"
+                                                v-if="isSaving[index]"
+                                                >Updating...</span
+                                            >
+                                            <button
+                                                v-if="
+                                                    (item.quantity_to_release ||
+                                                        0) >
+                                                    (item.received_quantity ||
+                                                        0)
+                                                "
+                                                @click="
+                                                    showBackOrderModal(item)
+                                                "
+                                                class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block"
+                                            >
+                                                Back Order
+                                            </button>
+                                        </td>
 
-                <!-- Action -->
-                <td
-                    v-if="allocIndex === 0"
-                    :rowspan="item.inventory_allocations?.length || 1"
-                    class="px-2 py-1 text-xs border border-black text-center align-top"
-                >
-                    <button
-                        v-if="props.transfer.status === 'pending'"
-                        @click="removeItem(index)"
-                        class="text-red-600 hover:text-red-800 transition-colors"
-                        title="Delete item"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                            </path>
-                        </svg>
-                    </button>
-                </td>
-            </tr>
-        </template>
-    </tbody>
-</table>
-
+                                        <!-- Action -->
+                                        <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="
+                                                item.inventory_allocations
+                                                    ?.length || 1
+                                            "
+                                            class="px-2 py-1 text-xs border border-black text-center align-top"
+                                        >
+                                            <button
+                                                v-if="
+                                                    props.transfer.status ===
+                                                    'pending'
+                                                "
+                                                @click="removeItem(index)"
+                                                class="text-red-600 hover:text-red-800 transition-colors"
+                                                title="Delete item"
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1612,7 +1754,7 @@
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    {{ item.transfer_type }}
+                                    {{ props.transfer.transfer_type }}
                                 </p>
                                 <p class="text-sm font-bold text-red-600">
                                     {{
@@ -2119,7 +2261,6 @@ async function updateQuantity(item, type) {
 }
 
 const showBackOrderModal = (item) => {
-    console.log(item);
     selectedBackOrderItem.value = null;
     showModal.value = true;
     selectedBackOrderItem.value = item;
