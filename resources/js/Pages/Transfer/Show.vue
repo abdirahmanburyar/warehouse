@@ -879,6 +879,7 @@
                                                 type="number"
                                                 v-model="item.received_quantity"
                                                 @keyup.enter="receivedQty(item, index)"
+                                                :readonly="props.transfer.to_warehouse_id != null || props.transfer.to_facility_id != null"
                                                 :max="
                                                     item.quantity_to_release ||
                                                     0
