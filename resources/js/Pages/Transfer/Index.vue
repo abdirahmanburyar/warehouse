@@ -83,7 +83,6 @@
                 <div class="flex justify-end mt-2">
                     <select class="rounded-3xl" name="per_page" id="per_page" @change="props.filters.page = 1"
                         v-model="per_page">
-                        <option value="2">2 per page</option>
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
