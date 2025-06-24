@@ -794,7 +794,7 @@
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
                                             <span>
-                                                {{ props.transfer }}
+                                                {{ props.transfer.transfer_type }}
                                             </span>
                                         </td>
 
