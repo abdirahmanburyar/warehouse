@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('transfer_item_id')->nullable()->constrained('transfer_items')->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
-            $table->foreignId('location_id')->nullable()->constrained('locations');
+            $table->string('location')->nullable();
             $table->string('batch_number');
             $table->string('uom')->nullable();
             $table->string('barcode')->nullable();

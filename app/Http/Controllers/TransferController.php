@@ -391,14 +391,19 @@ class TransferController extends Controller
                     if ($remainingQty <= 0) break;
 
                     $deductQty = min($remainingQty, $inventory->quantity);
+
+                    logger()->info($inventory->toArray());
                     
                     // Create inventory allocation record for detailed tracking
                     $transferItem->inventory_allocations()->create([
                         'product_id' => $item['product_id'],
                         'warehouse_id' => $request->source_type === 'warehouse' ? $sourceId : null,
-                        'batch_number' => $inventory->batch_number ?? null,
-                        'expiry_date' => $inventory->expiry_date ?? null,
+                        'location' => $inventory->location,
+                        'batch_number' => $inventory->batch_number,
+                        'expiry_date' => $inventory->expiry_date,
                         'allocated_quantity' => $deductQty,
+                        'uom' => $inventory->uom,
+                        'barcode' => $inventory->barcode,
                         'allocation_type' => 'transfer',
                         'unit_cost' => $inventory->unit_cost ?? 0,
                         'total_cost' => $deductQty * ($inventory->unit_cost ?? 0),
@@ -447,8 +452,6 @@ class TransferController extends Controller
             'items.inventory_allocations.location',
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
-
-        logger()->info($transfer);
 
         return inertia('Transfer/Show', [
             'transfer' => $transfer
