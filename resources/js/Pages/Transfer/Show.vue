@@ -826,10 +826,7 @@
                                                 "
                                                 :readonly="
                                                     props.transfer
-                                                        .to_warehouse_id !=
-                                                        null ||
-                                                    props.transfer
-                                                        .to_facility_id != null
+                                                        .to_warehouse_id == null
                                                 "
                                                 :max="
                                                     item.quantity_to_release ||
@@ -2174,44 +2171,6 @@ const statusClasses = computed(() => ({
     received: "bg-green-100 text-green-800",
 }));
 
-// Computed properties for table functionality
-const showReceivedColumn = computed(() => {
-    return ["delivered", "received"].includes(props.transfer.status);
-});
-
-const showActionsColumn = computed(() => {
-    return ["delivered", "received"].includes(props.transfer.status);
-});
-
-const canEditReceivedQuantity = computed(() => {
-    return props.transfer.status === "delivered";
-});
-
-const totalOrderedQuantity = computed(() => {
-    return (
-        props.transfer.items?.reduce(
-            (total, item) => total + (item.quantity || 0),
-            0
-        ) || 0
-    );
-});
-
-const totalReceivedQuantity = computed(() => {
-    return (
-        props.transfer.items?.reduce(
-            (total, item) => total + (item.received_quantity || 0),
-            0
-        ) || 0
-    );
-});
-
-const completionPercentage = computed(() => {
-    if (totalOrderedQuantity.value === 0) return 0;
-    return Math.round(
-        (totalReceivedQuantity.value / totalOrderedQuantity.value) * 100
-    );
-});
-
 // Methods
 const isExpiringItem = (expiryDate) => {
     if (!expiryDate) return false;
@@ -2463,7 +2422,10 @@ const canDispatch = computed(() => {
 
 const canReceive = computed(() => {
     const auth = page.props.auth;
-    return auth.user.warehouse_id == props.transfer.to_warehouse_id && auth.can.transfer_receive;
+    return (
+        auth.user.warehouse_id == props.transfer.to_warehouse_id &&
+        auth.can.transfer_receive
+    );
 });
 
 // Function to change transfer status
@@ -2592,28 +2554,28 @@ async function createDispatch() {
             console.log(error);
             toast.error(error.response?.data || "Failed to create dispatch");
         });
+}
 
-    const isSavingQty = ref([]);
-    async function receivedQty(item, index) {
-        isSavingQty.value[index] = true;
-        // console.log(item, index);
-        if (item.quantity_to_release < item.received_quantity) {
-            item.received_quantity = item.quantity_to_release;
-        }
-
-        await axios
-            .post(route("transfers.receivedQuantity"), {
-                transfer_item_id: item.id,
-                received_quantity: item.received_quantity,
-            })
-            .then((response) => {
-                isSavingQty.value[index] = false;
-            })
-            .catch((error) => {
-                console.log(error.response.data);
-                isSavingQty.value[index] = false;
-            });
-        // 'orders.receivedQuantity
+const isSavingQty = ref([]);
+async function receivedQty(item, index) {
+    isSavingQty.value[index] = true;
+    // console.log(item, index);
+    if (item.quantity_to_release < item.received_quantity) {
+        item.received_quantity = item.quantity_to_release;
     }
+
+    await axios
+        .post(route("transfers.receivedQuantity"), {
+            transfer_item_id: item.id,
+            received_quantity: item.received_quantity,
+        })
+        .then((response) => {
+            isSavingQty.value[index] = false;
+        })
+        .catch((error) => {
+            console.log(error.response.data);
+            isSavingQty.value[index] = false;
+        });
+    // 'orders.receivedQuantity
 }
 </script>
