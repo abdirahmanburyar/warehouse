@@ -475,29 +475,7 @@ function formatDate(date) {
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Source Type Selection -->
-                        <div>
-                            <InputLabel value="Transfer From" />
-                            <div class="mt-2 space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="radio"
-                                        v-model="sourceType"
-                                        value="warehouse"
-                                        class="form-radio"
-                                    />
-                                    <span class="ml-2">Warehouse</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="radio"
-                                        v-model="sourceType"
-                                        value="facility"
-                                        class="form-radio"
-                                    />
-                                    <span class="ml-2">Facility</span>
-                                </label>
-                            </div>
-                        </div>
+                       
 
                         <!-- Source Selection -->
                         <div>
