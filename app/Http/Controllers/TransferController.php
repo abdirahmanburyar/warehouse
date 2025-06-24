@@ -325,7 +325,8 @@ class TransferController extends Controller
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|integer',
                 'items.*.quantity' => 'required|integer|min:1',
-                'notes' => 'nullable|string|max:500'
+                'notes' => 'nullable|string|max:500',
+                'transfer_type' => 'required|string|max:500'
             ]);
     
             $transferData = [
@@ -335,6 +336,7 @@ class TransferController extends Controller
                 'from_facility_id' => $request->source_type === 'facility' ? $request->source_id : null,
                 'to_warehouse_id' => $request->destination_type === 'warehouse' ? $request->destination_id : null,
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
+                'transfer_type' => $request->transfer_type,
                 'created_by' => auth()->id(),
             ];
     
@@ -1355,6 +1357,25 @@ class TransferController extends Controller
         }
     }
 
+        
+    public function receivedQuantity(Request $request){
+        try {
+            $request->validate([
+                'transfer_item_id' => 'required',
+                'received_quantity' => 'required|min:1',
+            ]);
+            $transferItem = TransferItem::find($request->transfer_item_id);
+            logger()->info($transferItem);
+
+            if(!$transferItem) return response()->json("Transfer item not exist", 500);
+            if((int) $transferItem->received_quantity > (int) $transferItem->quantity) return response()->json("Received quantity can be exceed the original quantity", 500);
+            $transferItem->received_quantity = $request->received_quantity;
+            $transferItem->save();
+            return response()->json("Done", 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 
     public function dispatchInfo(Request $request){
         

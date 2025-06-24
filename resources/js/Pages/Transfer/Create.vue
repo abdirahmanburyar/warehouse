@@ -51,6 +51,7 @@ const form = ref({
     destination_id: null,
     transfer_date: moment().format("YYYY-MM-DD"),
     transferID: props.transferID,
+    transfer_type: "",
     items: [
         {
             id: null,
@@ -466,6 +467,10 @@ function formatDate(date) {
                                 v-model="form.transfer_date"
                                 class="form-input"
                             />
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="transfer_type">Transfer Type</label>
+                            <textarea name="transfer_type" id="transfer_type" v-model="form.transfer_type" class="form-input"></textarea>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

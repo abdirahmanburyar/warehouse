@@ -30,7 +30,7 @@ const loading = ref(false);
 const selectedDestination = ref(null);
 const quantityToTransfer = ref("");
 const transfer_date = ref(moment().format("YYYY-MM-DD"));
-
+const transfer_type = ref("");
 const destinations = computed(() => {
     return transferType.value === "warehouse"
         ? props.warehouses
@@ -88,6 +88,7 @@ const handleSubmit = async () => {
                 ],
                 transferID: props.transferID,
                 transfer_date: transfer_date.value,
+                transfer_type: transfer_type.value,
                 notes: `Transferred ${quantityToTransfer.value} items to ${selectedDestination.value.name}`,
             })
             .then((response) => {
@@ -136,6 +137,15 @@ const handleSubmit = async () => {
                         v-model="transfer_date"
                         class="form-input"
                     />
+                </div>
+                <div class="flex flex-col">
+                    <label class="inline-flex items-center">
+                        Transfer Type
+                    </label>
+                    <textarea
+                        v-model="transfer_type"
+                        class="form-input"
+                    ></textarea>
                 </div>
             </div>
             <div class="p-1 text-gray-900 mb-6">

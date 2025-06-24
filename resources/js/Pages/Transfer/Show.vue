@@ -883,6 +883,7 @@
                                             <input
                                                 type="number"
                                                 v-model="item.received_quantity"
+                                                @keyup.enter="receivedQty(item, index)"
                                                 :max="
                                                     item.quantity_to_release ||
                                                     0
@@ -2640,5 +2641,30 @@ async function createDispatch() {
             console.log(error);
             toast.error(error.response?.data || "Failed to create dispatch");
         });
+
+
+        
+const isSavingQty = ref([]);
+async function receivedQty(item, index) {
+    isSavingQty.value[index] = true;
+    // console.log(item, index);
+    if (item.quantity_to_release < item.received_quantity) {
+        item.received_quantity = item.quantity_to_release;
+    }
+
+    await axios.post(route('transfers.receivedQuantity'), {
+        transfer_item_id: item.id,
+        received_quantity: item.received_quantity
+    })
+        .then((response) => {
+            isSavingQty.value[index] = false;
+        })
+        .catch((error) => {
+            console.log(error.response.data);
+            isSavingQty.value[index] = false;
+
+        });
+    // 'orders.receivedQuantity
+}
 }
 </script>
