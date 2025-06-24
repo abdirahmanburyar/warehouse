@@ -611,6 +611,7 @@
                     </h3>
 
                     <div class="overflow-auto">
+                        {{ form }}
                         <table
                             class="min-w-full border border-collapse border-black"
                         >
@@ -748,18 +749,9 @@
                                         <td
                                             class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
-                                            <span
-                                                :class="{
-                                                    'text-red-600 font-bold':
-                                                        allocation.batch_number ===
-                                                        'HK5273',
-                                                }"
-                                            >
-                                                {{
-                                                    allocation.batch_number ||
-                                                    "N/A"
-                                                }}
-                                            </span>
+                                            {{
+                                                allocation.batch_number || "N/A"
+                                            }}
                                         </td>
 
                                         <!-- Item Details - Expiry Date -->
@@ -829,9 +821,7 @@
                                                         'HK5273',
                                                 }"
                                             >
-                                                {{
-                                                    item.transfer_type
-                                                }}
+                                                {{ item.transfer_type }}
                                             </span>
                                         </td>
 
@@ -878,8 +868,16 @@
                                             <input
                                                 type="number"
                                                 v-model="item.received_quantity"
-                                                @keyup.enter="receivedQty(item, index)"
-                                                :readonly="props.transfer.to_warehouse_id != null || props.transfer.to_facility_id != null"
+                                                @keyup.enter="
+                                                    receivedQty(item, index)
+                                                "
+                                                :readonly="
+                                                    props.transfer
+                                                        .to_warehouse_id !=
+                                                        null ||
+                                                    props.transfer
+                                                        .to_facility_id != null
+                                                "
                                                 :max="
                                                     item.quantity_to_release ||
                                                     0
@@ -893,11 +891,13 @@
                                                 :id="`received-quantity-${index}`"
                                                 class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
                                             />
-                                            <span class="text-green-600">
-                                                {{isSavingQty[index] ? 'Updating...' : ''}}
+                                            <span class="text-green-600" v-if="isSaving[index]">
+                                                {{
+                                                    isSaving[index]
+                                                        ? "Updating..."
+                                                        : ""
+                                                }}
                                             </span>
-                                            <!-- :readonly="!['delivered', 'received'].includes(props.transfer.status)" -->
-                                            <!-- Backorder button - show when quantity_to_release > received_quantity -->
                                             <button
                                                 @click="
                                                     showBackOrderModal(item)
@@ -1803,7 +1803,7 @@
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    Missing Quantity
+                                   {{item.transfer_type}}
                                 </p>
                                 <p class="text-sm font-bold text-red-600">
                                     {{
@@ -2173,7 +2173,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { router, Head, usePage } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import moment from "moment";
@@ -2202,8 +2202,17 @@ const isSaving = ref(false);
 const isDeleting = ref([]);
 
 onMounted(() => {
+    console.log(props.transfer.items);
     form.value = props.transfer.items || [];
 });
+
+watch(
+    () => props.transfer.items,
+    (newItems) => {
+        console.log("Updated:", newItems);
+        form.value = newItems || [];
+    }
+);
 
 // Status styling
 const statusClasses = computed(() => ({
@@ -2641,29 +2650,27 @@ async function createDispatch() {
             toast.error(error.response?.data || "Failed to create dispatch");
         });
 
+    const isSavingQty = ref([]);
+    async function receivedQty(item, index) {
+        isSavingQty.value[index] = true;
+        // console.log(item, index);
+        if (item.quantity_to_release < item.received_quantity) {
+            item.received_quantity = item.quantity_to_release;
+        }
 
-        
-const isSavingQty = ref([]);
-async function receivedQty(item, index) {
-    isSavingQty.value[index] = true;
-    // console.log(item, index);
-    if (item.quantity_to_release < item.received_quantity) {
-        item.received_quantity = item.quantity_to_release;
+        await axios
+            .post(route("transfers.receivedQuantity"), {
+                transfer_item_id: item.id,
+                received_quantity: item.received_quantity,
+            })
+            .then((response) => {
+                isSavingQty.value[index] = false;
+            })
+            .catch((error) => {
+                console.log(error.response.data);
+                isSavingQty.value[index] = false;
+            });
+        // 'orders.receivedQuantity
     }
-
-    await axios.post(route('transfers.receivedQuantity'), {
-        transfer_item_id: item.id,
-        received_quantity: item.received_quantity
-    })
-        .then((response) => {
-            isSavingQty.value[index] = false;
-        })
-        .catch((error) => {
-            console.log(error.response.data);
-            isSavingQty.value[index] = false;
-
-        });
-    // 'orders.receivedQuantity
-}
 }
 </script>

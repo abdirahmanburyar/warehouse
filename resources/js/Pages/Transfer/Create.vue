@@ -161,34 +161,39 @@ const fetchInventories = async () => {
                 source_id: form.value.source_id,
             },
         });
-        
+
         console.log("[SUCCESS] Fetch inventories response:", response.data);
         swalLoading.close();
         availableInventories.value = response.data;
         filteredInventories.value = availableInventories.value;
         loadingInventories.value = false;
-        
     } catch (error) {
         console.error("[ERROR] Fetch inventories failed:", error);
         console.error("[ERROR] Full error object:", error.response);
-        
+
         // Close loading dialog first
         swalLoading.close();
-        
+
         // Reset states
         loadingInventories.value = false;
         availableInventories.value = [];
         filteredInventories.value = [];
-        
+
         // Add small delay before showing error dialog to avoid timing conflicts
         setTimeout(() => {
             let errorMessage = "Failed to fetch inventories";
-            
+
             if (error.response) {
-                console.log("[DEBUG] Error response status:", error.response.status);
-                console.log("[DEBUG] Error response data:", error.response.data);
-                
-                if (typeof error.response.data === 'string') {
+                console.log(
+                    "[DEBUG] Error response status:",
+                    error.response.status
+                );
+                console.log(
+                    "[DEBUG] Error response data:",
+                    error.response.data
+                );
+
+                if (typeof error.response.data === "string") {
                     errorMessage = error.response.data;
                 } else if (error.response.data && error.response.data.message) {
                     errorMessage = error.response.data.message;
@@ -200,9 +205,9 @@ const fetchInventories = async () => {
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             console.log("[DEBUG] Final error message:", errorMessage);
-            
+
             Swal.fire({
                 title: "Error!",
                 text: errorMessage,
@@ -362,13 +367,13 @@ async function handleProductSelect(index, selected) {
             .catch((error) => {
                 isLoading.value[index] = false;
                 console.log(error);
-                
+
                 // Clear product fields on error
                 item.product_id = null;
                 item.product = null;
                 item.details = [];
                 item.available_quantity = 0;
-                
+
                 Swal.fire({
                     title: "Error!",
                     text: error.response.data,
@@ -376,7 +381,7 @@ async function handleProductSelect(index, selected) {
                     position: "top-end",
                     showConfirmButton: false,
                     timer: 5000,
-                })
+                });
             });
     }
 }
@@ -388,7 +393,7 @@ function addNewItem() {
         product: null,
         available_quantity: 0,
         quantity: 0,
-        details: []
+        details: [],
     });
 }
 
@@ -424,7 +429,11 @@ function formatDate(date) {
 </script>
 
 <template>
-    <AuthenticatedLayout title="Transfer Item">
+    <AuthenticatedLayout
+        title="Optimize Your Transfers"
+        description="Moving Supplies, Bridging needs"
+        img="/assets/images/transfer.png"
+    >
         <div class="mb-5">
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-semibold mb-6">Transfer Item</h2>
@@ -470,7 +479,12 @@ function formatDate(date) {
                         </div>
                         <div class="flex flex-col">
                             <label for="transfer_type">Transfer Type</label>
-                            <textarea name="transfer_type" id="transfer_type" v-model="form.transfer_type" class="form-input"></textarea>
+                            <textarea
+                                name="transfer_type"
+                                id="transfer_type"
+                                v-model="form.transfer_type"
+                                class="form-input"
+                            ></textarea>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

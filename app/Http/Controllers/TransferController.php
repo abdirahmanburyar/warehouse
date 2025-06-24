@@ -325,8 +325,8 @@ class TransferController extends Controller
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|integer',
                 'items.*.quantity' => 'required|integer|min:1',
-                'notes' => 'nullable|string|max:500',
-                'transfer_type' => 'required|string|max:500'
+                'notes' => 'nullable|string',
+                'transfer_type' => 'required|string'
             ]);
     
             $transferData = [
@@ -376,7 +376,7 @@ class TransferController extends Controller
                     ->where('expiry_date', '>', \Carbon\Carbon::now())
                     ->sum('quantity');
 
-                $totalQuantityOnHand = $warehouseQuantity + $facilityQuantity;
+                $totalQuantityOnHand = (int) $warehouseQuantity ?? (int) $facilityQuantity;
 
                 // Create transfer item for this product
                 $transferItem = $transfer->items()->create([
@@ -412,11 +412,6 @@ class TransferController extends Controller
                     $remainingQty -= $deductQty;
                 }
         
-                // Check if we couldn't fulfill the complete request
-                if ($remainingQty > 0) {
-                    DB::rollBack();
-                    return response()->json("Not enough stock to fulfill {$item['quantity']} units for Item: {$item['product']['name']}", 400);
-                }
             }
     
             $transfer->load(['fromWarehouse', 'toWarehouse', 'fromFacility', 'toFacility', 'items.product']);
@@ -432,7 +427,7 @@ class TransferController extends Controller
             DB::commit();
             return response()->json('Transfer created successfully', 200);
     
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             logger()->error($e);
             return response()->json('Failed to create transfer: ' . $e->getMessage(), 500);
@@ -440,6 +435,7 @@ class TransferController extends Controller
     }
 
     public function show($id){
+       try {
         $transfer = Transfer::where('id', $id)->with([
             'items.product.category', 
             'items.backorders', 
@@ -452,9 +448,15 @@ class TransferController extends Controller
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
 
+        logger()->info($transfer);
+
         return inertia('Transfer/Show', [
             'transfer' => $transfer
         ]);
+       } catch (\Throwable $th) {
+        logger()->error($th->getMessage());
+        return redirect()->back()->with('error', $th->getMessage());
+       }
     }
     
     public function create(Request $request){
