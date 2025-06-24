@@ -830,12 +830,7 @@
                                                 }"
                                             >
                                                 {{
-                                                    item.transfer_reason ||
-                                                    (isExpiringItem(
-                                                        allocation.expiry_date
-                                                    )
-                                                        ? "Soon to expire"
-                                                        : "Slow Moving")
+                                                    item.transfer_type
                                                 }}
                                             </span>
                                         </td>
