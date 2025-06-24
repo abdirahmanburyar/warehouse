@@ -611,7 +611,6 @@
                     </h3>
 
                     <div class="overflow-auto">
-                        {{ form }}
                         <table
                             class="min-w-full border border-collapse border-black"
                         >
@@ -648,19 +647,19 @@
                                         Reasons for Transfers
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
                                         rowspan="2"
                                     >
                                         Quantity to be transferred
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
                                         rowspan="2"
                                     >
                                         Received Quantity
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                         rowspan="2"
                                     >
                                         Action
@@ -668,27 +667,27 @@
                                 </tr>
                                 <tr class="bg-gray-50">
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
                                         UoM
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
                                         QTY
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
                                         Batch Number
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
                                         Expiry Date
                                     </th>
                                     <th
-                                        class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                        class="px- py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
                                         Location
                                     </th>
@@ -708,34 +707,21 @@
                                         :key="`${item.id}-${allocIndex}`"
                                         class="hover:bg-gray-50 transition-colors duration-150 border-b border-black"
                                     >
-                                        <!-- Item Name (only show on first row for this item) -->
-                                        <td
-                                            v-if="allocIndex === 0"
-                                            :rowspan="
-                                                item.inventory_allocations
-                                                    ?.length || 1
-                                            "
-                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
-                                        >
-                                            <div class="font-medium">
-                                                {{ item.product?.name }}
-                                            </div>
-                                            {{ item.quantity_to_release }}
-                                        </td>
 
                                         <!-- Category (only show on first row for this item) -->
                                         <td
-                                            v-if="allocIndex === 0"
-                                            :rowspan="
-                                                item.inventory_allocations
-                                                    ?.length || 1
-                                            "
                                             class="px-2 py-1 text-xs border border-black text-left text-black align-top"
                                         >
                                             {{ item.product?.category?.name }}
                                         </td>
 
                                         <!-- Item Details - QTY -->
+                                       
+                                        <td
+                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                        >
+                                            {{ allocation.uom }}
+                                        </td>
                                         <td
                                             class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
@@ -766,13 +752,7 @@
                                                         ),
                                                 }"
                                             >
-                                                {{
-                                                    allocation.expiry_date
-                                                        ? moment(
-                                                              allocation.expiry_date
-                                                          ).format("DD/MM/YYYY")
-                                                        : "N/A"
-                                                }}
+                                                {{ moment(allocation.expiry_date).format('DD/MM/YYYY') }}
                                             </span>
                                         </td>
 
@@ -781,8 +761,7 @@
                                             class="px-2 py-1 text-xs border border-black text-center text-black"
                                         >
                                             {{
-                                                allocation.location?.location ||
-                                                "N/A"
+                                                allocation.location
                                             }}
                                         </td>
 
@@ -814,14 +793,8 @@
                                             "
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
-                                            <span
-                                                :class="{
-                                                    'text-red-600':
-                                                        allocation.batch_number ===
-                                                        'HK5273',
-                                                }"
-                                            >
-                                                {{ item.transfer_type }}
+                                            <span>
+                                                {{ props.transfer }}
                                             </span>
                                         </td>
 
@@ -891,7 +864,10 @@
                                                 :id="`received-quantity-${index}`"
                                                 class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
                                             />
-                                            <span class="text-green-600" v-if="isSaving[index]">
+                                            <span
+                                                class="text-green-600"
+                                                v-if="isSaving[index]"
+                                            >
                                                 {{
                                                     isSaving[index]
                                                         ? "Updating..."
@@ -1803,7 +1779,7 @@
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                   {{item.transfer_type}}
+                                    {{ item.transfer_type }}
                                 </p>
                                 <p class="text-sm font-bold text-red-600">
                                     {{

@@ -16,6 +16,7 @@ class Transfer extends Model
     protected $fillable = [
         'transferID',
         'transfer_date',
+        'transfer_type',
         'from_warehouse_id',
         'to_warehouse_id',
         'from_facility_id',
