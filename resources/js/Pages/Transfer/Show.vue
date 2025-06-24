@@ -2153,14 +2153,12 @@ const isSaving = ref(false);
 const isDeleting = ref([]);
 
 onMounted(() => {
-    console.log(props.transfer.items);
     form.value = props.transfer.items || [];
 });
 
 watch(
     () => props.transfer.items,
     (newItems) => {
-        console.log("Updated:", newItems);
         form.value = newItems || [];
     }
 );
@@ -2228,8 +2226,6 @@ const removeItem = (index) => {
         confirm("Are you sure you want to remove this item from the transfer?")
     ) {
         form.value.splice(index, 1);
-        // TODO: Implement API call to remove item from transfer
-        console.log("Removed item at index:", index);
     }
 };
 
@@ -2466,12 +2462,9 @@ const canDispatch = computed(() => {
 });
 
 const canReceive = computed(() => {
-    const user = page.props.auth;
-    // return (
-    //     user.warehouse_id === props.transfer.to_warehouse_id ||
-    //     user.facility_id === props.transfer.to_facility_id
-    // );
-    return true;
+    const auth = page.props.auth;
+    console.log(auth);
+    return auth.user.warehouse_id === props.transfer.to_warehouse_id && auth.user.can.transfer_receive;
 });
 
 // Function to change transfer status
