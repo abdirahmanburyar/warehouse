@@ -1010,8 +1010,7 @@ class TransferController extends Controller
                 // Get warehouse inventories directly with DB query
                 $products = Product::whereHas('inventories.items', function($query) use ($request) {
                     $query->where('warehouse_id', $request->source_id);
-                })
-                    ->select('id','name')                   
+                })             
                     ->get();
                 
                 return response()->json($products, 200);
@@ -1023,7 +1022,6 @@ class TransferController extends Controller
                               $subQuery->where('quantity', '>', 0);
                           });
                 })
-                    ->select('id','name')
                     ->get();
                 
                 return response()->json($products, 200);
