@@ -905,7 +905,7 @@ class TransferController extends Controller
             $transfer = $transferItem->transfer;
 
             // Verify user has permission to save back orders for this transfer
-            if (!in_array($transfer->status, ['pending', 'shipped', 'received'])) {
+            if (!in_array($transfer->status, ['delivered'])) {
                 return response()->json('Cannot save back orders for transfers with this status', 400);
             }
 
