@@ -280,7 +280,7 @@ function getResults(page = 1) {
             </select>
         </div>
         <!-- Table Section -->
-        <div class="mb-[100px]">
+        <div class="mb-[100px] overflow-auto">
             <table class="min-w-full border border-collapse border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
