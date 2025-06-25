@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed, defineProps } from 'vue';
+import ProductCategoriesChart from '@/Components/Charts/ProductCategoriesChart.vue';
 import { 
     BuildingOfficeIcon, 
     UserGroupIcon, 
@@ -291,11 +292,14 @@ const getProgressBarColor = (color) => {
                 <div class="space-y-6">
 
 
+                    <!-- Products by Category Chart -->
+                    <ProductCategoriesChart v-if="dashboardData.product_categories" :chartData="dashboardData.product_categories" class="mb-6" />
+
                     <!-- Quick Actions -->
                     <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl shadow-lg p-5 border border-slate-200 hover:shadow-xl transition-shadow duration-200">
                         <h3 class="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <Link :href="route('supplies.newPO')" class="flex flex-col items-center justify-center p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                            <Link :href="route('supplies.purchase_order')" class="flex flex-col items-center justify-center p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>

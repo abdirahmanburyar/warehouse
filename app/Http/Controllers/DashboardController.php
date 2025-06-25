@@ -102,19 +102,21 @@ class DashboardController extends Controller
         
         // Get product counts by category
         $productCategories = \App\Models\Product::select(
-                'category',
+                'categories.name as category_name',
                 DB::raw('count(*) as count')
             )
-            ->groupBy('category')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->groupBy('categories.name')
             ->get()
-            ->pluck('count', 'category')
+            ->pluck('count', 'category_name')
             ->toArray();
             
+        // Map category names to match the chart's expectations
         $dashboardData = [
             'product_categories' => [
-                'Drugs' => $productCategories['drug'] ?? 0,
-                'Consumables' => $productCategories['consumable'] ?? 0,
-                'Lab' => $productCategories['lab'] ?? 0,
+                'Drugs' => $productCategories['Drugs'] ?? 0,
+                'Consumables' => $productCategories['Consumables'] ?? 0,
+                'Lab' => $productCategories['Lab'] ?? 0,
             ],
             'summary' => [
                 [
