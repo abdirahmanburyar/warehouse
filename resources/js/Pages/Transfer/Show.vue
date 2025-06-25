@@ -826,7 +826,8 @@
                                                 "
                                                 :readonly="
                                                     props.transfer
-                                                        .to_warehouse_id == null
+                                                        .to_warehouse_id == null ||
+                                                    props.transfer.status == 'received'
                                                 "
                                                 :max="
                                                     item.quantity_to_release ||
