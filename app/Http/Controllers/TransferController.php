@@ -1531,8 +1531,7 @@ class TransferController extends Controller
                             }
                             $finalQuantity = (int) $allocation->allocated_quantity - (int) $allocation->back_order->sum('quantity');
                             
-                            $inventory = Inventory::where('facility_id', $transfer->to_facility_id)
-                                ->where('product_id', $allocation->product_id)
+                            $inventory = Inventory::where('product_id', $allocation->product_id)
                                 ->first();
         
                             if($inventory){
@@ -1557,7 +1556,6 @@ class TransferController extends Controller
                                 
                             }else{
                                 $inventory = Inventory::create([
-                                    'facility_id' => $transfer->to_facility_id,
                                     'product_id' => $allocation->product_id
                                 ]);
                                 $inventory->items()->create([
