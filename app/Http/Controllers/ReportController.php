@@ -184,7 +184,7 @@ class ReportController extends Controller
             $query->where('month_year', 'like', $request->month . '%');
         }
 
-        $issueQuantityReports = $query->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
+        $issueQuantityReports = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $issueQuantityReports->setPath(url()->current()); // Force Laravel to use full URLs
@@ -832,7 +832,6 @@ class ReportController extends Controller
         ]);
     }
 
-    
     public function transfers(Request $request)
     {
         // Get facilities for dropdown

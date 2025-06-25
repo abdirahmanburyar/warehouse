@@ -10,16 +10,7 @@ class IssueQuantityItem extends Model
     protected $fillable = [
         'product_id',
         'parent_id',
-        'warehouse_id',
         'quantity',
-        'batch_number',
-        'uom',
-        'expiry_date',
-        'unit_cost',
-        'total_cost',
-        'issued_date',
-        'barcode',
-        'issued_by'
     ];
 
     /**
@@ -36,21 +27,5 @@ class IssueQuantityItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * Get the warehouse for this item.
-     */
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
-
-    /**
-     * Get the issuer for this item.
-     */
-    public function issuer(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'issued_by');
     }
 }

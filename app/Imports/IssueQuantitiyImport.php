@@ -14,8 +14,8 @@ use App\Models\Warehouse;
 use App\Models\Location;
 use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class IssueQuantitiyImport implements ToCollection, WithHeadingRow, WithChunkReading, ShouldQueue
 {
@@ -41,169 +41,97 @@ class IssueQuantitiyImport implements ToCollection, WithHeadingRow, WithChunkRea
         $this->month_year = $month_year;
         $this->user_id = $user_id;
         
-        Log::info('IssueQuantitiyImport constructed', [
-            'month_year' => $this->month_year,
-            'user_id' => $this->user_id
-        ]);
     }
-    
+
     public function collection(Collection $rows): void
     {
-        Log::info('Processing Excel import chunk', [
-            'rows_count' => $rows->count(),
-            'month_year' => $this->month_year,
-            'user_id' => $this->user_id
-        ]);
-        
         try {
-            DB::beginTransaction();
-            
-            // Create or find the report for this month/year
-            $report = IssueQuantityReport::firstOrCreate(
-                ['month_year' => $this->month_year],
-                [
-                    'month_year' => $this->month_year,
-                    'total_quantity' => 0, // Initialize total quantity
-                    'created_by' => $this->user_id,
-                    'status' => 'processing', // Set status to processing
-                    'generated_by' => $this->user_id
-                ]
-            );
-            
-            $chunkTotalQty = 0;
-            
-            foreach ($rows as $rowIndex => $row) {
-                Log::info('Processing row', ['row_index' => $row]);
-                // Extract data from the row, ensuring keys exist
-                $itemDescription = $row['item_description'] ?? null;
-                $warehouseName = $row['warehouse'] ?? null;
-                $locationName = $row['location'] ?? null;
-                $quantity = isset($row['quantity']) ? (float)$row['quantity'] : 0;
-                $batchNumber = $row['batch_number'] ?? null;
-                $uom = $row['uom'] ?? null;
-                $expiryDateExcel = $row['expiry_date'] ?? null;
-                $unitCost = isset($row['unit_cost']) ? (float)$row['unit_cost'] : 0;
-                $totalCost = isset($row['total_cost']) ? (float)$row['total_cost'] : 0;
-                $issuedDateExcel = $row['issued_date'] ?? null;
-                $barcode = $row['barcode'] ?? null;
-                
-                // Skip rows with missing required data
-                if (empty($itemDescription) || empty($warehouseName)) {
-                    Log::warning('Skipping row with missing item_description or warehouse', [
-                        'row_index' => $rowIndex,
-                        'item_description' => $itemDescription,
-                        'warehouse' => $warehouseName
-                    ]);
-                    continue;
-                }
-                
-                // Format dates if they exist
-                $expiryDate = null;
-                if ($expiryDateExcel) {
-                    try {
-                        if (is_numeric($expiryDateExcel)) {
-                            $expiryDate = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($expiryDateExcel));
-                        } else {
-                            $expiryDate = Carbon::parse($expiryDateExcel);
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Invalid expiry_date format', ['date' => $expiryDateExcel, 'row_index' => $rowIndex]);
-                    }
-                }
-                
-                $issuedDate = null;
-                if ($issuedDateExcel) {
-                    try {
-                        if (is_numeric($issuedDateExcel)) {
-                            $issuedDate = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($issuedDateExcel));
-                        } else {
-                            $issuedDate = Carbon::parse($issuedDateExcel);
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Invalid issued_date format', ['date' => $issuedDateExcel, 'row_index' => $rowIndex]);
-                    }
-                }
-                
-                // Find or create product
-                $product = Product::where('name', $itemDescription)->first();
-                if (!$product) {
-                    Log::error('Product not found during import', ['item_description' => $itemDescription, 'row_index' => $rowIndex]);
-                    // Optionally, you could create the product here if desired
-                    // For now, we'll skip this item or throw an exception
-                    // throw new \Exception("Product not found: {$itemDescription}");
-                    continue; // Skip this item if product not found
-                }
-                
-                // Find or create warehouse
-                $warehouse = Warehouse::firstOrCreate(['name' => $warehouseName], ['user_id' => $this->user_id]);
-                
-                // Find or create location
-                $location = null;
-                if ($locationName) {
-                    $location = Location::firstOrCreate(
-                        ['warehouse_id' => $warehouse->id, 'location' => $locationName]
-                    );
-                } else {
-                    // Create a default location if none provided
-                    $location = Location::firstOrCreate(
-                        ['warehouse_id' => $warehouse->id, 'location' => 'Default']
-                    );
-                }
-                
-                // Create issue quantity item
-                IssueQuantityItem::updateOrCreate(
-                    [
-                        'product_id' => $product->id,
-                        'parent_id' => $report->id,
-                        'warehouse_id' => $warehouse->id,
-                        'location_id' => $location->id,
-                    ],
-                    [   
-                        'product_id' => $product->id,
-                        'parent_id' => $report->id,
-                        'warehouse_id' => $warehouse->id,
-                        'location_id' => $location->id,
-                        'quantity' => $quantity,
-                        'batch_number' => $batchNumber,
-                        'uom' => $uom,
-                        'expiry_date' => $expiryDate,
-                        'unit_cost' => $unitCost,
-                        'total_cost' => $totalCost,
-                        'issued_date' => $issuedDate,
-                        'barcode' => $barcode,
-                        'issued_by' => $this->user_id,
-                    ]
-                );
-                
-                $chunkTotalQty += $quantity;
-                
-            }
-            
-            // Atomically update the total quantity for the report
-            if ($chunkTotalQty > 0) {
-                $report->increment('total_quantity', $chunkTotalQty);
-            }
-            
-            DB::commit();
-            
-            Log::info('Import chunk processed successfully', [
-                'report_id' => $report->id,
-                'chunk_total_quantity' => $chunkTotalQty,
-                'rows_in_chunk' => $rows->count()
-            ]);
-            
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('Import chunk failed', [
-                'month_year' => $this->month_year,
+            Log::info("Import started", [
                 'user_id' => $this->user_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            'month_year' => $this->month_year,
+            'row_count' => $rows->count(),
+        ]);
+
+        DB::beginTransaction();
+
+        // Check if report exists for this month_year
+        $report = IssueQuantityReport::where('month_year', $this->month_year)->first();
+
+        if ($report) {
+            // Delete existing items for this report
+            IssueQuantityItem::where('parent_id', $report->id)->delete();
+            // Update the existing report
+            $report->update([
+                'total_quantity' => 0,
+                'status' => 'processing',
+                'generated_by' => $this->user_id,
+                'updated_at' => now()
             ]);
-            // Re-throw the exception to let Laravel's queue worker handle retries/failures
-            throw $e;
+        } else {
+            // Create new report if doesn't exist
+            $report = IssueQuantityReport::create([
+                'month_year' => $this->month_year,
+                'total_quantity' => 0,
+                'created_by' => $this->user_id,
+                'status' => 'processing',
+                'generated_by' => $this->user_id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
         }
+
+        $totalQuantity = 0;
+
+        foreach ($rows as $index => $row) {
+            Log::debug("Processing row", ['index' => $index, 'data' => $row->toArray()]);
+
+            // Normalize header names (case-insensitive and remove spaces)
+            $rowData = [];
+            foreach ($row as $key => $value) {
+                $normalizedKey = strtolower(str_replace(' ', '_', trim($key)));
+                $rowData[$normalizedKey] = $value;
+            }
+
+            if (!isset($rowData['item_description']) || !isset($rowData['quantity'])) {
+                Log::warning("Missing data", ['row' => $index + 2, 'row_data' => $rowData]);
+                throw new \Exception("Missing required data at row " . ($index + 2) . ". Required columns: 'Item Description' and 'quantity'");
+            }
+
+            $description = trim($rowData['item_description']);
+            $quantity = (int) $rowData['quantity'];
+
+            $product = Product::where('description', $description)->first();
+
+            if (!$product) {
+                Log::error("Product not found", ['description' => $description, 'row' => $index + 2]);
+                throw new \Exception("Product with description '{$description}' not found (Row " . ($index + 2) . ").");
+            }
+
+            IssueQuantityItem::create([
+                'parent_id' => $report->id,
+                'month_year' => $this->month_year,
+                'quantity' => $quantity,
+                'product_id' => $product->id,
+            ]);
+
+            $totalQuantity += $quantity;
+        }
+
+        $report->update([
+            'total_quantity' => $totalQuantity,
+            'status' => 'completed'
+        ]);
+
+        DB::commit();
+
+        Log::info("Import completed", ['report_id' => $report->id, 'total_quantity' => $totalQuantity]);
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        Log::error("Import failed", ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        throw $e;
     }
+}
+
 
 
     public function chunkSize(): int
