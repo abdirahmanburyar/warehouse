@@ -10,6 +10,8 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Queue\Events\JobFailed;
+use App\Listeners\LogFailedQueueJob;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,9 @@ class EventServiceProvider extends ServiceProvider
     {
         // Register observers
         \App\Models\User::observe(\App\Observers\UserObserver::class);
+        
+        // Log failed queue jobs
+        Event::listen(JobFailed::class, [LogFailedQueueJob::class, 'handle']);
     }
 
     /**

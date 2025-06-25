@@ -44,26 +44,29 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\ImportIssueQuantityJob;
 use App\Imports\IssueQuantitiyImport;
 use App\Models\FacilityMonthlyReport;
+use App\Jobs\ProcessIssueQuantityImport;
 
 class ReportController extends Controller
 {
     public function importIssueQuantity(Request $request)
     {
-        try {
-            $request->validate([
-                'month_year' => 'required|string',
-                'file' => 'required|file|mimes:xlsx,xls',
-            ]);
-            
-            $userId = Auth::id();
-            
-            Excel::queueImport(new IssueQuantitiyImport($request->month_year, $userId), $request->file('file'));
-
-            return response()->json('Import queued successfully.', 200);
-        } catch (\Throwable $th) {
-            Log::error('Import error', ['error' => $th->getMessage(), 'trace' => $th->getTraceAsString()]);
-            return response()->json($th->getMessage(), 500);
-        }
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'month_year' => 'required|date_format:Y-m'
+        ]);
+    
+        $file = $request->file('file');
+        $monthYear = $request->input('month_year');
+        $userId = auth()->id();
+    
+        // Store the file temporarily
+        $path = $file->store('temp');
+    
+        // Dispatch the job
+        ProcessIssueQuantityImport::dispatch($path, $monthYear, $userId)
+            ->onQueue('imports');
+    
+        return back()->with('success', 'Import has been queued and will be processed shortly.');
     }
 
     public function index(Request $request){
