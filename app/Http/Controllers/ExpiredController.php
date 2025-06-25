@@ -119,7 +119,6 @@ class ExpiredController extends Controller
             'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page'),
         ]);
     }
-    
 
     public function dispose(Request $request)
     {

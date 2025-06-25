@@ -927,7 +927,7 @@
                                 <span class="text-sm font-bold text-white">{{
                                     statusOrder.indexOf(props.order.status) >
                                     statusOrder.indexOf("approved")
-                                        ? "Processed by" + moment(props.order?.processed_at).format('DD/MM/YYYY HH:mm')
+                                        ? "Processed on " + moment(props.order?.processed_at).format('DD/MM/YYYY HH:mm')
                                         : isType['is_process'] ? "Please Wait..." : "Process"
                                 }}</span>
                             </template>
