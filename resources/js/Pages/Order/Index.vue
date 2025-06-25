@@ -504,6 +504,60 @@
                         </div>
                     </div>
 
+                    <!-- Reviewed -->
+                    <div class="relative">
+                        <div class="flex items-center mb-2">
+                            <div class="w-16 h-16 relative mr-4">
+                                <svg class="w-16 h-16 transform -rotate-90">
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#e2e8f0"
+                                        stroke-width="4"
+                                    />
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#22c55e"
+                                        stroke-width="4"
+                                        :stroke-dasharray="`${
+                                            (stats.reviewed / totalOrders) *
+                                            125.6
+                                        } 125.6`"
+                                    />
+                                </svg>
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center"
+                                >
+                                    <span
+                                        class="text-base font-bold text-green-600"
+                                        >{{
+                                            totalOrders > 0
+                                                ? Math.round(
+                                                      (stats.reviewed /
+                                                          totalOrders) *
+                                                          100
+                                                  )
+                                                : 0
+                                        }}%</span
+                                    >
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">
+                                    {{ stats.reviewed }}
+                                </div>
+                                <div class="text-base text-gray-600">
+                                    Reviewed
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Rejected -->
                     <div class="relative">
                         <div class="flex items-center mb-2">

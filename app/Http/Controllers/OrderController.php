@@ -130,6 +130,7 @@ class OrderController extends Controller
         // Ensure all statuses have a value
         $defaultStats = [
             'pending' => 0,
+            'reviewed' => 0,
             'approved' => 0,
             'rejected' => 0,
             'in_process' => 0,
