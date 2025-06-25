@@ -391,8 +391,6 @@ class TransferController extends Controller
                     if ($remainingQty <= 0) break;
 
                     $deductQty = min($remainingQty, $inventory->quantity);
-
-                    logger()->info($inventory->toArray());
                     
                     // Create inventory allocation record for detailed tracking
                     $transferItem->inventory_allocations()->create([
@@ -547,45 +545,6 @@ class TransferController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
-    
-    /**
-     * Get inventories based on source type and ID
-     */
-    // public function getInventories(Request $request)
-    // {
-    //     $request->validate([
-    //         'source_type' => 'required|in:warehouse,facility',
-    //         'source_id' => 'required|integer',
-    //     ]);
-        
-    //     try {
-    //         if ($request->source_type === 'warehouse') {
-    //             // Get warehouse inventories directly with DB query
-    //             $products = Product::whereHas('inventories.items', function($query) use ($request) {
-    //                 $query->where('warehouse_id', $request->source_id);
-    //             })
-    //                 ->select('id','name')                   
-    //                 ->get();
-                
-    //             return response()->json($products, 200);
-    //         } else {
-    //             // Get facility inventories directly with DB query
-    //             $products = Product::whereHas('facilityInventories', function($query) use ($request) {
-    //                 $query->where('facility_id', $request->source_id)
-    //                       ->whereHas('items', function($subQuery) {
-    //                           $subQuery->where('quantity', '>', 0);
-    //                       });
-    //             })
-    //                 ->select('id','name')
-    //                 ->get();
-                
-    //             return response()->json($products, 200);
-    //         }
-    //     } catch (\Throwable $th) {
-    //         logger()->info($th->getMessage());
-    //         return response()->json($th->getMessage(), 500);
-    //     }
-    // }
 
     public function updateItem(Request $request){
         try {
@@ -1368,7 +1327,6 @@ class TransferController extends Controller
                 'received_quantity' => 'required|min:1',
             ]);
             $transferItem = TransferItem::find($request->transfer_item_id);
-            logger()->info($transferItem);
 
             if(!$transferItem) return response()->json("Transfer item not exist", 500);
             if((int) $transferItem->received_quantity > (int) $transferItem->quantity) return response()->json("Received quantity can be exceed the original quantity", 500);
@@ -1392,7 +1350,6 @@ class TransferController extends Controller
                     'transfer_id',
                     'status'
                 ]);
-                logger()->info($request->all());
                 $transfer = Transfer::with('dispatchInfo')->where('id',$request->transfer_id)->first();
                 $transfer->dispatchInfo()->create([
                     'transfer_id' => $request->transfer_id,
@@ -1523,7 +1480,6 @@ class TransferController extends Controller
                     }
                     foreach ($transfer->items as $item) {
                         foreach ($item->inventory_allocations as $allocation) {
-                            logger()->info($allocation);
                             // Calculate total back order quantity for this allocation
                             if((int) $allocation->allocated_quantity < (int) $allocation->back_order->sum('quantity')){
                                 DB::rollback();
