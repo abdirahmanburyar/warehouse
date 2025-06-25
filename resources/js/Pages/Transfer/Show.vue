@@ -2582,7 +2582,7 @@ async function receivedQty(item, index) {
                 confirmButtonText: "OK",
             });
             isSavingQty.value[index] = false;
+            router.get(route("transfers.show", props.transfer?.id), {}, { preserveState: true, preserveScroll: true, only: ['transfer'] });
         });
-    // 'orders.receivedQuantity
 }
 </script>
