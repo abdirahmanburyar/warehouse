@@ -9,7 +9,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\IssueQuantitiyImport;
-use Illuminate\Support\Facades\File;
 
 class ProcessIssueQuantityImport implements ShouldQueue
 {
@@ -28,39 +27,37 @@ class ProcessIssueQuantityImport implements ShouldQueue
 
     public function handle()
     {
-        \Log::info('Starting import', [
-            'file' => $this->filePath,
-            'exists' => file_exists($this->filePath)
-        ]);
+        // Convert relative path to absolute path
+        $filePath = $this->filePath;
+        if (!str_starts_with($filePath, '/')) {
+            $filePath = storage_path('app/' . ltrim($filePath, '/'));
+        }
 
-        if (!file_exists($this->filePath)) {
-            \Log::error('File not found', ['path' => $this->filePath]);
-            throw new \Exception("File not found at path: " . $this->filePath);
+        if (!file_exists($filePath)) {
+            throw new \Exception("File not found at path: " . $filePath);
         }
 
         try {
             Excel::import(
                 new IssueQuantitiyImport($this->monthYear, $this->userId),
-                $this->filePath
+                $filePath
             );
             
             // Delete the file after successful import
-            if (file_exists($this->filePath)) {
-                unlink($this->filePath);
+            if (file_exists($filePath)) {
+                unlink($filePath);
             }
-            
         } catch (\Exception $e) {
-            \Log::error('Import failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
             throw $e;
         }
     }
 
     public function failed(\Throwable $exception)
     {
-        \Log::error('Import job failed', [
+        Log::error('Import job failed', [
             'error' => $exception->getMessage(),
             'file' => $this->filePath
         ]);
