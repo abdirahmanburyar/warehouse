@@ -844,7 +844,7 @@
                                             />
                                             <span
                                                 class="text-green-600"
-                                                v-if="isSaving[index]"
+                                                v-if="isSavingQty[index]"
                                                 >Updating...</span
                                             >
                                             <button
@@ -2575,6 +2575,12 @@ async function receivedQty(item, index) {
         })
         .catch((error) => {
             console.log(error.response.data);
+            Swal.fire({
+                title: "Error!",
+                text: error.response?.data || "Failed to update quantity",
+                icon: "error",
+                confirmButtonText: "OK",
+            });
             isSavingQty.value[index] = false;
         });
     // 'orders.receivedQuantity
