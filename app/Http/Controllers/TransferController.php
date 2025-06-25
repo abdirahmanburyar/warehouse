@@ -171,16 +171,18 @@ class TransferController extends Controller
         }
     }
 
-    public function index(Request $request)
+        public function index(Request $request)
     {
         // Start building the query
-        $query = Transfer::with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items')
+        $query = Transfer::query();
+        
+        $query->with('fromWarehouse', 'toWarehouse', 'fromFacility','fromFacility', 'fromWarehouse', 'toFacility', 'items')
             ->withCount('items')
-            ->latest('transfer_date');
+            ->latest('created_at');
         
         // Apply filters
         // Filter by tab/status
-        if ($request->has('tab') && $request->tab !== 'all') {
+        if ($request->filled('tab') && $request->tab !== 'all') {
             $query->where('status', $request->tab);
         }
         
@@ -251,13 +253,14 @@ class TransferController extends Controller
         // Execute the query
         $transfers = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
-    $transfers->setPath(url()->current()); // Force Laravel to use full URLs
+        $transfers->setPath(url()->current()); // Force Laravel to use full URLs
         
         // Get all transfers for statistics (unfiltered)
         $allTransfers = Transfer::all();
         $total = $allTransfers->count();
         $approvedCount = $allTransfers->whereIn('status', ['approved'])->count();
-        $inProcessCount = $allTransfers->whereIn('status', ['in_process', 'dispatched'])->count();
+        $reviewedCount = $allTransfers->whereIn('status', ['reviewed'])->count();
+        $inProcessCount = $allTransfers->whereIn('status', ['in_process'])->count();
         $dispatchedCount = $allTransfers->where('status', 'dispatched')->count();
         $receivedCount = $allTransfers->where('status', 'received')->count();
         $rejectedCount = $allTransfers->where('status', 'rejected')->count();
@@ -273,6 +276,11 @@ class TransferController extends Controller
                 'count' => $pendingCount,
                 'percentage' => $total > 0 ? round(($pendingCount / $total) * 100) : 0,
                 'stages' => ['pending']
+            ],
+            'reviewed' => [
+                'count' => $reviewedCount,
+                'percentage' => $total > 0 ? round(($reviewedCount / $total) * 100) : 0,
+                'stages' => ['reviewed']
             ],
             'in_process' => [
                 'count' => $inProcessCount,
