@@ -1427,7 +1427,7 @@ class TransferController extends Controller
                 'status' => 'required|string|in:pending,reviewed,approved,in_process,dispatched,delivered,received'
             ]);
 
-            $transfer = Transfer::findOrFail($request->transfer_id);
+            $transfer = Transfer::with('items.inventory_allocations.back_order')->find($request->transfer_id);
             $newStatus = $request->status;
             $oldStatus = $transfer->status;
             $user = auth()->user();
@@ -1522,16 +1522,14 @@ class TransferController extends Controller
                         return response()->json('Transfer must be delivered to receive', 400);
                     }
                     foreach ($transfer->items as $item) {
-                        // Debug information for this item
-                        
                         foreach ($item->inventory_allocations as $allocation) {
                             logger()->info($allocation);
                             // Calculate total back order quantity for this allocation
-                            if((int) $allocation->allocated_quantity < (int) $allocation->backorders->sum('quantity')){
+                            if((int) $allocation->allocated_quantity < (int) $allocation->back_order->sum('quantity')){
                                 DB::rollback();
                                 return response()->json('Backorder quantities exceeded the allocated quantity', 500);
                             }
-                            $finalQuantity = $allocation->allocated_quantity - $allocation->backorders->sum('quantity');
+                            $finalQuantity = (int) $allocation->allocated_quantity - (int) $allocation->back_order->sum('quantity');
                             
                             $inventory = Inventory::where('facility_id', $transfer->to_facility_id)
                                 ->where('product_id', $allocation->product_id)
@@ -1579,10 +1577,8 @@ class TransferController extends Controller
                     }
                     
                     // Update transfer status to received
-                    $transfer->status = 'received';
                     $transfer->received_at = Carbon::now();
                     $transfer->received_by = auth()->user()->id;
-                    $transfer->save();
                     break;
 
                 default:
