@@ -1532,7 +1532,7 @@
                                         </svg>
                                         <template v-else>
                                             <img
-                                                src="/assets/images/receive.png"
+                                                src="/assets/images/received.png"
                                                 class="w-5 h-5 mr-2"
                                                 alt="Received"
                                             />
