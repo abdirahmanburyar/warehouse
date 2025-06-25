@@ -1546,6 +1546,8 @@ class TransferController extends Controller
                                         'product_id' => $allocation->product_id,
                                         'quantity' => $finalQuantity,
                                         'expiry_date' => $allocation->expiry_date,
+                                        'warehouse_id' => $transfer->to_warehouse_id,
+                                        'location' => $allocation->location,
                                         'batch_number' => $allocation->batch_number,
                                         'barcode' => $allocation->barcode,
                                         'uom' => $allocation->uom,
