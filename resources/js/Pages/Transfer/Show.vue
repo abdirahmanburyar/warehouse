@@ -2419,7 +2419,7 @@ const canApprove = computed(() => {
 const canDispatch = computed(() => {
     const auth = page.props.auth;
     return (
-        auth.user.warehouse_id == props.transfer.to_warehouse_id &&
+        auth.user.warehouse_id == props.transfer.from_warehouse_id &&
         auth.can.transfer_dispatch
     );
 });
