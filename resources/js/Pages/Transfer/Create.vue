@@ -464,18 +464,23 @@ function formatDate(date) {
                         </div>
                     </div>
                 </div>
+               <div class="flex justify-between mb-6">
+                    <h2 class="text-xs">Transfer Item</h2>
+                    <div class="flex flex-col">
+                        Transfer ID: {{ props.transferID }}
+                    </div>
+                </div>
                 <form @submit.prevent="submit" class="space-y-6">
-                    <div class="w-[300px]">
-                        <div class="flex flex-col">
-                            Transfer ID: {{ props.transferID }}
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="transfer_date">Transfer Date</label>
-                            <input
-                                type="date"
-                                v-model="form.transfer_date"
-                                class="form-input"
-                            />
+                    <div class="flex gap-2">
+                        <div>
+                            <div class="flex flex-col">
+                                <label for="transfer_date">Transfer Date</label>
+                                <input
+                                    type="date"
+                                    v-model="form.transfer_date"
+                                    class="form-input"
+                                />
+                            </div>
                         </div>
                         <div class="flex flex-col">
                             <label for="transfer_type">Transfer Type</label>
@@ -483,7 +488,8 @@ function formatDate(date) {
                                 name="transfer_type"
                                 id="transfer_type"
                                 v-model="form.transfer_type"
-                                class="form-input"
+                                class="form-input w-[300px]"
+                                placeholder="Enter transfer type [Soon to expire, Replenishment, ...]"
                             ></textarea>
                         </div>
                     </div>
