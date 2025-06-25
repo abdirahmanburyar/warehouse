@@ -2,185 +2,380 @@
     <div class="app-container">
         <!-- Permission changes are now handled globally in app.js -->
         <!-- Sidebar -->
-        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="p-0" >
-            <div class="white-box" style="border-color: white;">
-                <Link :href="route('dashboard')" class="logo-container flex justify-between">
-                <img src="/assets/images/moh.png" class="moh-logo" style="height: 30px" />
-                <img src="/assets/images/psi.jpg" class="psi-logo" style="height: 30px" />
+        <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="p-0">
+            <div class="white-box" style="border-color: white">
+                <Link
+                    :href="route('dashboard')"
+                    class="logo-container flex justify-between"
+                >
+                    <img
+                        src="/assets/images/moh.png"
+                        class="moh-logo"
+                        style="height: 30px"
+                    />
+                    <img
+                        src="/assets/images/psi.jpg"
+                        class="psi-logo"
+                        style="height: 30px"
+                    />
                 </Link>
-
             </div>
             <div class="sidebar-menu">
-                <Link :href="route('dashboard')" class="menu-item" :class="{ active: route().current('dashboard') }"
-                    style="margin-top: 30px;" @click="setCurrentPage('dashboard')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('dashboard')" src="/assets/images/dashboard-b.png"
-                            class="dashboard-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/dashboard-w.png" class="dashboard-icon" style="height: 15px" />
+                <Link
+                    :href="route('dashboard')"
+                    class="menu-item"
+                    :class="{ active: route().current('dashboard') }"
+                    style="margin-top: 30px"
+                    @click="setCurrentPage('dashboard')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('dashboard')"
+                                src="/assets/images/dashboard-b.png"
+                                class="dashboard-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/dashboard-w.png"
+                                class="dashboard-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text text-xs">Dashboard</span>
                     </div>
-                    <span class="menu-text text-xs">Dashboard</span>
-                </div>
                 </Link>
-                <Link v-if="$page.props.auth.can.order_view" :href="route('orders.index')" class="menu-item" :class="{ active: route().current('orders.*') }"
-                    @click="setCurrentPage('orders')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('orders.*')" src="/assets/images/tracking-b.png" class="order-icon"
-                            style="height: 15px" />
-                        <img v-else src="/assets/images/tracking-w.png" class="order-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.order_view"
+                    :href="route('orders.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('orders.*') }"
+                    @click="setCurrentPage('orders')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('orders.*')"
+                                src="/assets/images/tracking-b.png"
+                                class="order-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/tracking-w.png"
+                                class="order-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Orders</span>
                     </div>
-                    <span class="menu-text">Orders</span>
-                </div>
-                </Link>
-
-                <Link v-if="$page.props.auth.can.transfer_view" :href="route('transfers.index')" class="menu-item"
-                    :class="{ active: route().current('transfers.*') }" @click="setCurrentPage('transfers')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('transfers.*')" src="/assets/images/transfer-b.png"
-                            class="transfer-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/transfer-w.png" class="transfer-icon" style="height: 15px" />
-                    </div>
-                    <span class="menu-text">Transfers</span>
-                </div> 
-                </Link>
-
-                <Link v-if="$page.props.auth.can.product_view" :href="route('products.index')" class="menu-item"
-                    :class="{ active: route().current('products.*') }" @click="setCurrentPage('products')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('products.*')" src="/assets/images/product-b.png"
-                            class="product-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/product-w.png" class="product-icon" style="height: 15px" />
-                    </div>
-                    <span class="menu-text">Product List</span>
-                </div>
-                </Link>
-
-
-                <Link v-if="$page.props.auth.can.inventory_view" :href="route('inventories.index')" class="menu-item"
-                    :class="{ active: route().current('inventories.*') }" @click="setCurrentPage('inventories')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('inventories.*')" src="/assets/images/inventory-b.png"
-                            class="inventory-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/inventory-w.png" class="inventory-icon" style="height: 15px" />
-                    </div>
-                    <span class="menu-text">Inventory</span>
-                </div>
                 </Link>
 
-                <Link v-if="$page.props.auth.can.inventory_view" :href="route('expired.index')" class="menu-item" :class="{ active: route().current('expired.*') }"
-                    @click="setCurrentPage('expired')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('expired.*')" src="/assets/images/expire-b.png" class="expire-icon"
-                            style="height: 15px" />
-                        <img v-else src="/assets/images/expire-w.png" class="expire-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.transfer_view"
+                    :href="route('transfers.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('transfers.*') }"
+                    @click="setCurrentPage('transfers')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('transfers.*')"
+                                src="/assets/images/transfer-b.png"
+                                class="transfer-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/transfer-w.png"
+                                class="transfer-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Transfers</span>
                     </div>
-                    <span class="menu-text">Expires</span>
-                </div>
+                </Link>
+
+                <Link
+                    v-if="$page.props.auth.can.product_view"
+                    :href="route('products.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('products.*') }"
+                    @click="setCurrentPage('products')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('products.*')"
+                                src="/assets/images/product-b.png"
+                                class="product-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/product-w.png"
+                                class="product-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Product List</span>
+                    </div>
+                </Link>
+
+                <Link
+                    v-if="$page.props.auth.can.inventory_view"
+                    :href="route('inventories.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('inventories.*') }"
+                    @click="setCurrentPage('inventories')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('inventories.*')"
+                                src="/assets/images/inventory-b.png"
+                                class="inventory-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/inventory-w.png"
+                                class="inventory-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Inventory</span>
+                    </div>
+                </Link>
+
+                <Link
+                    v-if="$page.props.auth.can.inventory_view"
+                    :href="route('expired.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('expired.*') }"
+                    @click="setCurrentPage('expired')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('expired.*')"
+                                src="/assets/images/expire-b.png"
+                                class="expire-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/expire-w.png"
+                                class="expire-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Expires</span>
+                    </div>
                 </Link>
 
                 <!-- Liquidate and disposals -->
-                <Link v-if="$page.props.auth.can.liquidate_view" :href="route('liquidate-disposal.liquidates')" class="menu-item"
-                    :class="{ active: route().current('liquidate-disposal.*') }" @click="setCurrentPage('liquidate-disposal')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('liquidate-disposal.*')" src="/assets/images/liquidate-disposal-b.png"
-                            class="liquidate-disposal-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/liquidate-disposal-w.png" class="liquidate-disposal-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.liquidate_view"
+                    :href="route('liquidate-disposal.liquidates')"
+                    class="menu-item"
+                    :class="{ active: route().current('liquidate-disposal.*') }"
+                    @click="setCurrentPage('liquidate-disposal')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('liquidate-disposal.*')"
+                                src="/assets/images/liquidate-disposal-b.png"
+                                class="liquidate-disposal-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/liquidate-disposal-w.png"
+                                class="liquidate-disposal-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Liquidate & Disposal</span>
                     </div>
-                    <span class="menu-text">Liquidate & Disposal</span>
-                </div>
-                </Link>                
-
-                <Link v-if="$page.props.auth.can.supply_view" :href="route('supplies.index')" class="menu-item"
-                    :class="{ active: route().current('supplies.*') }" @click="setCurrentPage('supplies')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('supplies.*')" src="/assets/images/supplier-b.png"
-                            class="supplies-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/supplier-w.png" class="supplies-icon" style="height: 15px" />
-                    </div>
-                    <span class="menu-text">Supplies</span>
-                </div>
-                </Link>
-                <Link v-if="$page.props.auth.can.report_view" :href="route('reports.index')" class="menu-item"
-                    :class="{ active: route().current('reports.*') }" @click="setCurrentPage('reports')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('reports.*')" src="/assets/images/reports-b.png"
-                            class="reports-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/reports-w.png" class="reports-icon" style="height: 15px" />
-                    </div>
-                    <span class="menu-text">Reports</span>
-                </div>
                 </Link>
 
-                <Link v-if="$page.props.auth.can.facility_view" :href="route('facilities.index')" class="menu-item"
-                    :class="{ active: route().current('facilities.*') }" @click="setCurrentPage('facilities')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('facilities.*')" src="/assets/images/facility-b.png"
-                            class="facility-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/facility-w.png" class="facility-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.supply_view"
+                    :href="route('supplies.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('supplies.*') }"
+                    @click="setCurrentPage('supplies')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('supplies.*')"
+                                src="/assets/images/supplier-b.png"
+                                class="supplies-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/supplier-w.png"
+                                class="supplies-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Supplies</span>
                     </div>
-                    <span class="menu-text">Facilities</span>
-                </div>
+                </Link>
+                <Link
+                    v-if="$page.props.auth.can.report_view"
+                    :href="route('reports.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('reports.*') }"
+                    @click="setCurrentPage('reports')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('reports.*')"
+                                src="/assets/images/reports-b.png"
+                                class="reports-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/reports-w.png"
+                                class="reports-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Reports</span>
+                    </div>
                 </Link>
 
-                <Link v-if="$page.props.auth.can.asset_view" :href="route('assets.index')" class="menu-item" :class="{ active: route().current('assets.*') }"
-                    @click="setCurrentPage('assets')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('assets.*')" src="/assets/images/assets-b.png" class="assets-icon"
-                            style="height: 15px" />
-                        <img v-else src="/assets/images/assets-w.png" class="assets-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.facility_view"
+                    :href="route('facilities.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('facilities.*') }"
+                    @click="setCurrentPage('facilities')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('facilities.*')"
+                                src="/assets/images/facility-b.png"
+                                class="facility-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/facility-w.png"
+                                class="facility-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Facilities</span>
                     </div>
-                    <span class="menu-text">Assets</span>
-                </div>
                 </Link>
 
-                <Link v-if="$page.props.auth.can.settings_view" :href="route('settings.index')" class="menu-item"
-                    :class="{ active: route().current('settings.*') }" @click="setCurrentPage('settings')">
-                <div class="menu-content">
-                    <div class="menu-icon">
-                        <img v-if="route().current('settings.*')" src="/assets/images/setting-b.png"
-                            class="setting-icon" style="height: 15px" />
-                        <img v-else src="/assets/images/setting-w.png" class="setting-icon" style="height: 15px" />
+                <Link
+                    v-if="$page.props.auth.can.asset_view"
+                    :href="route('assets.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('assets.*') }"
+                    @click="setCurrentPage('assets')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('assets.*')"
+                                src="/assets/images/assets-b.png"
+                                class="assets-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/assets-w.png"
+                                class="assets-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Assets</span>
                     </div>
-                    <span class="menu-text">Settings</span>
-                </div>
                 </Link>
 
+                <Link
+                    v-if="$page.props.auth.can.settings_view"
+                    :href="route('settings.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('settings.*') }"
+                    @click="setCurrentPage('settings')"
+                >
+                    <div class="menu-content">
+                        <div class="menu-icon">
+                            <img
+                                v-if="route().current('settings.*')"
+                                src="/assets/images/setting-b.png"
+                                class="setting-icon"
+                                style="height: 15px"
+                            />
+                            <img
+                                v-else
+                                src="/assets/images/setting-w.png"
+                                class="setting-icon"
+                                style="height: 15px"
+                            />
+                        </div>
+                        <span class="menu-text">Settings</span>
+                    </div>
+                </Link>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div :class="['main-content', { 'main-content-expanded': !sidebarOpen }]">
+        <div
+            :class="['main-content', { 'main-content-expanded': !sidebarOpen }]"
+        >
             <!-- Top Navigation -->
             <div class="top-nav h-16 text-xs">
                 <div class="inventory-banner">
                     <div class="flex justify-between items-center">
                         <!-- <div class="flex flex-col"> -->
-                            <button @click="toggleSidebar" class="back-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                                    <path v-if="sidebarOpen"
-                                        d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
-                                        fill="currentColor" />
-                                    <path v-else d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
-                                        fill="currentColor" />
-                                </svg>
-                            </button>
-                            <div class="inventory-text">
-                                <h1>{{ title }}</h1>
-                                <h3 class="text-black text-lg">"{{ description }}"</h3>
-                            </div>
+                        <button @click="toggleSidebar" class="back-button">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                width="24"
+                                height="24"
+                            >
+                                <path
+                                    v-if="sidebarOpen"
+                                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                                    fill="currentColor"
+                                />
+                                <path
+                                    v-else
+                                    d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                        </button>
+                        <div class="inventory-text">
+                            <h1>{{ title }}</h1>
+                            <h3 class="text-black text-lg">
+                                "{{ description }}"
+                            </h3>
+                        </div>
                         <!-- </div> -->
                         <div v-if="img">
-                            <img :src="img" alt="Inventory illustration" class="svg-image" height="30" />
+                            <img
+                                :src="img"
+                                alt="Inventory illustration"
+                                class="svg-image"
+                                height="30"
+                            />
                         </div>
                     </div>
                     <div class="user-section">
@@ -190,17 +385,35 @@
                                     <span>A</span>
                                 </div>
                                 <div class="user-details">
-                                    <span class="user-role">Pharmaceutical Manager</span>
-                                    <span class="user-name">{{ $page.props.auth.user?.name }}</span>
-                                    <span class="user-name">{{ $page.props.warehouse?.name }}</span>
+                                    <span class="user-role"
+                                        >Pharmaceutical Manager</span
+                                    >
+                                    <span class="user-name">{{
+                                        $page.props.auth.user?.name
+                                    }}</span>
+                                    <span class="user-name">{{
+                                        $page.props.warehouse?.name
+                                    }}</span>
                                 </div>
                             </div>
                             <button class="logout-button" @click="logout">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path
+                                        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                                    ></path>
+                                    <polyline
+                                        points="16 17 21 12 16 7"
+                                    ></polyline>
                                     <line x1="21" y1="12" x2="9" y2="12"></line>
                                 </svg>
                             </button>
@@ -215,19 +428,37 @@
                 <div class="flex-1">
                     <slot />
                 </div>
-                <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 text-xs">
+                <div
+                    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 text-xs"
+                >
                     <div class="container mx-auto py-2">
                         <div class="flex justify-center items-center gap-4">
-                            <img src="/assets/images/vista.png" alt="Vista" class="w-[80px]" />
-                            <span class="flex items-center text-gray-400">|</span>
-                            <span class="flex items-center text-gray-600">Copyright 2025 Vista. All rights
-                                reserved.</span>
-                            <span class="flex items-center text-gray-400">|</span>
-                            <span class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Terms of
-                                Use</span>
-                            <span class="flex items-center text-gray-400">|</span>
+                            <img
+                                src="/assets/images/vista.png"
+                                alt="Vista"
+                                class="w-[80px]"
+                            />
+                            <span class="flex items-center text-gray-400"
+                                >|</span
+                            >
+                            <span class="flex items-center text-gray-600"
+                                >Copyright 2025 Vista. All rights
+                                reserved.</span
+                            >
+                            <span class="flex items-center text-gray-400"
+                                >|</span
+                            >
                             <span
-                                class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer">Privacy</span>
+                                class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer"
+                                >Terms of Use</span
+                            >
+                            <span class="flex items-center text-gray-400"
+                                >|</span
+                            >
+                            <span
+                                class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer"
+                                >Privacy</span
+                            >
                         </div>
                     </div>
                 </div>
@@ -237,32 +468,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { useToast } from 'vue-toastification';
+import { ref, onMounted, watch } from "vue";
+import { Link, router, usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
+import { useToast } from "vue-toastification";
 
 const toast = useToast();
 
 const props = defineProps({
     title: {
         type: String,
-        required: true
+        required: true,
     },
     description: {
         type: String,
-        default: ''
+        default: "",
     },
     img: {
         type: String,
-        default: '/assets/images/head_web.gif'
-    }
+        default: "/assets/images/head_web.gif",
+    },
 });
 
 const page = usePage();
 const debug = ref(false); // Set to true to see permissions debug info
 const sidebarOpen = ref(true);
-const currentPage = ref('dashboard');
+const currentPage = ref("dashboard");
 
 // Setup permission change listener
 onMounted(() => {
@@ -272,44 +503,50 @@ onMounted(() => {
 // Function to handle permission change events
 const setupPermissionChangeListener = () => {
     if (!window.Echo) {
-        console.warn('⚠️ Echo not available, permission change listener not set up');
+        console.warn(
+            "⚠️ Echo not available, permission change listener not set up"
+        );
         return;
     }
-    
+
     // Get the current user ID
     const currentUserId = page.props.auth?.user?.id;
     if (!currentUserId) {
-        console.warn('⚠️ User ID not available, permission change listener not set up');
+        console.warn(
+            "⚠️ User ID not available, permission change listener not set up"
+        );
         return;
     }
-    
-    console.log('🔄 Setting up permission change listener for user:', currentUserId);
-    
+
+    console.log(
+        "🔄 Setting up permission change listener for user:",
+        currentUserId
+    );
+
     // Listen on the private user channel
     const channel = window.Echo.private(`user.${currentUserId}`);
-    
+
     // Listen for permission change events
-    channel.listen('.permissions-changed', (event) => {
-        console.log('🔔 Permission changed event received:', event);
+    channel.listen(".permissions-changed", (event) => {
+        console.log("🔔 Permission changed event received:", event);
         handlePermissionEvent(event);
     });
-
 };
 
 // Function to handle the permission event
 const handlePermissionEvent = (event) => {
-    console.log('🔄 Permission change detected, reloading page...');
-    
-    toast.info('Your permissions have been updated. The page will reload to apply changes.');
-    
+    console.log("🔄 Permission change detected, reloading page...");
+
+    toast.info(
+        "Your permissions have been updated. The page will reload to apply changes."
+    );
+
     // Reload the page after a short delay
     setTimeout(() => {
-        console.log('🔄 Reloading page now...');
+        console.log("🔄 Reloading page now...");
         window.location.reload();
     }, 3000);
 };
-
-
 
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
@@ -320,7 +557,7 @@ const setCurrentPage = (page) => {
 };
 
 const logout = () => {
-    router.post(route('logout'));
+    router.post(route("logout"));
 };
 </script>
 
@@ -337,7 +574,7 @@ const logout = () => {
     flex-direction: column;
     transition: all 0.3s ease;
     z-index: 50;
-    background: linear-gradient(to bottom, #14D399, #FF8500);
+    background: linear-gradient(to bottom, #14d399, #ff8500);
     transform: translateX(-100%);
     opacity: 0;
     visibility: hidden;
@@ -560,7 +797,7 @@ const logout = () => {
 .inventory-banner {
     display: flex;
     align-items: center;
-    background-color: #81C4F6;
+    background-color: #81c4f6;
     color: white;
     padding: 0.5rem 1.5rem;
     width: 100%;
@@ -710,7 +947,7 @@ main {
 
 /* When sidebar is open, adjust the main content margin on desktop */
 @media (min-width: 1025px) {
-    .sidebar-open+.main-content {
+    .sidebar-open + .main-content {
         margin-left: 100px;
     }
 }
@@ -746,7 +983,7 @@ main {
 }
 
 /* When sidebar is open, set appropriate margin */
-.sidebar-open+.main-content {
+.sidebar-open + .main-content {
     width: calc(100% - 100px);
 }
 </style>

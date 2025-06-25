@@ -9,10 +9,6 @@ class MonthlyConsumptionItem extends Model
     protected $fillable = [
         'parent_id',
         'product_id',
-        'batch_number',
-        'uom',
-        'dispense_date',
-        'expiry_date',
         'quantity',
     ];
 

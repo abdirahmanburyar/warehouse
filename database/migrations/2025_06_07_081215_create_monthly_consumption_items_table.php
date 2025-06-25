@@ -15,10 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('parent_id')->constrained('monthly_consumption_reports')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->string('batch_number')->nullable();
-            $table->string('uom')->nullable();
-            $table->date('expiry_date');
-            $table->date('dispense_date');
             $table->integer('quantity')->default(0)->comment('Actual consumption quantity for this month');
             $table->timestamps();
         });
