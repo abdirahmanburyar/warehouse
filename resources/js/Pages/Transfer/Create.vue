@@ -628,27 +628,27 @@ function formatDate(date) {
                             <thead class="w-full bg-gray-50">
                                 <tr>
                                     <th
-                                        class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        class="w-[400px] text-left text-xs font-medium text-gray-500 border border-black uppercase"
                                     >
                                         Item
                                     </th>
                                     <th
-                                        class="w-[300px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                        class="w-[300px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
                                     >
                                         Item Information
                                     </th>
                                     <th
-                                        class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                        class="w-[100px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
                                     >
                                         Available quantity
                                     </th>
                                     <th
-                                        class="w-[200px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                        class="w-[200px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
                                     >
                                         Quantity to release
                                     </th>
                                     <th
-                                        class="w-[70px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
+                                        class="w-[70px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
                                     >
                                         Actions
                                     </th>
@@ -661,7 +661,7 @@ function formatDate(date) {
                                     :key="index"
                                     class="hover:bg-gray-50"
                                 >
-                                    <td class="px-3 py-2 border border-black">
+                                    <td class="border border-black">
                                         <Multiselect
                                             v-model="item.product"
                                             :value="item.product_id"
@@ -682,35 +682,35 @@ function formatDate(date) {
                                         />
                                     </td>
                                     <td
-                                        class="whitespace-nowrap border border-black text-sm text-gray-500"
+                                        class="whitespace-nowrap border border-black text-sm text-black"
                                     >
                                         <table
-                                            class="w-full text-xs border border-gray-300"
+                                            class="w-full text-xs border border-black"
                                         >
                                             <thead class="bg-gray-50">
                                                 <tr class="text-gray-600">
                                                     <th
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         UoM
                                                     </th>
                                                     <th
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         QTY
                                                     </th>
                                                     <th
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         Batch
                                                     </th>
                                                     <th
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         Expiry
                                                     </th>
                                                     <th
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         Location
                                                     </th>
@@ -723,24 +723,24 @@ function formatDate(date) {
                                                     class="bg-white even:bg-gray-50"
                                                 >
                                                     <td
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         {{ detail.uom }}
                                                     </td>
                                                     <td
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         {{ detail.quantity }}
                                                     </td>
                                                     <td
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         {{
                                                             detail.batch_number
                                                         }}
                                                     </td>
                                                     <td
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         {{
                                                             formatDate(
@@ -749,7 +749,7 @@ function formatDate(date) {
                                                         }}
                                                     </td>
                                                     <td
-                                                        class="border border-gray-300"
+                                                        class="border border-black"
                                                     >
                                                         <div
                                                             class="text-xs flex flex-col space-y-0.5"
