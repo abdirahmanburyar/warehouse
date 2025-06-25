@@ -1329,7 +1329,7 @@ class TransferController extends Controller
             $transferItem = TransferItem::find($request->transfer_item_id);
 
             if(!$transferItem) return response()->json("Transfer item not exist", 500);
-            if((int) $transferItem->received_quantity > (int) $transferItem->quantity) return response()->json("Received quantity can be exceed the original quantity", 500);
+            if((int) $transferItem->received_quantity > (int) $transferItem->quantity_to_release) return response()->json("Received quantity can be exceed the original quantity", 500);
             $transferItem->received_quantity = $request->received_quantity;
             $transferItem->save();
             return response()->json("Done", 200);
