@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { computed, defineProps } from 'vue';
+import { computed } from 'vue';
 import ProductCategoriesChart from '@/Components/Charts/ProductCategoriesChart.vue';
 import { 
     BuildingOfficeIcon, 

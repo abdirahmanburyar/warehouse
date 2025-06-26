@@ -37,13 +37,14 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 
 // Welcome route - accessible without authentication
 
-
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
     return Inertia::render('Welcome');
-})->name('welcome');
+})
+    ->name('welcome')
+    ->middleware('guest');
 
 // Broadcast routes
 Broadcast::routes(['middleware' => ['web', 'auth']]);
@@ -54,7 +55,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/two-factor', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
     Route::post('/two-factor/resend', [TwoFactorController::class, 'resend'])->name('two-factor.resend');
 });
-
 
 // All routes that require authentication and 2FA
 Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(function () {

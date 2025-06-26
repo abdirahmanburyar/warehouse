@@ -63,4 +63,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Facility::class);
     }
+
+    /**
+     * Get the trusted devices for the user.
+     */
+    public function trustedDevices()
+    {
+        return $this->hasMany(TrustedDevice::class);
+    }
 }

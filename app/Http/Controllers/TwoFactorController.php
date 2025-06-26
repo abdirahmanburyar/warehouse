@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\TrustedDevice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class TwoFactorController extends Controller
 {
@@ -92,7 +95,24 @@ class TwoFactorController extends Controller
         // Remove the code from the session
         Session::forget('two_factor_code');
         Session::forget('two_factor_expires_at');
-        
+
+        // Handle trusted device
+        $trustedToken = $request->cookie('trusted_device_token');
+        $user = Auth::user();
+        if (!$trustedToken || !TrustedDevice::where('user_id', $user->id)->where('device_token', $trustedToken)->exists()) {
+            // Generate a new trusted device token
+            $newToken = Str::random(64);
+            TrustedDevice::create([
+                'user_id' => $user->id,
+                'device_token' => $newToken,
+                'device_name' => $request->header('User-Agent'),
+                'ip_address' => $request->ip(),
+                'last_used_at' => now(),
+            ]);
+            // Set a long-lived cookie (e.g., 1 year)
+            $cookie = cookie('trusted_device_token', $newToken, 60 * 24 * 365); // 1 year
+            return redirect()->intended(route('dashboard'))->withCookie($cookie);
+        }
         // Redirect to the intended URL or dashboard
         return redirect()->intended(route('dashboard'));
     }

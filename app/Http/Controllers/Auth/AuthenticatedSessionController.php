@@ -33,7 +33,28 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redirect to 2FA verification page instead of dashboard
+        // Check for trusted device
+        $trustedToken = $request->cookie('trusted_device_token');
+        $user = auth()->user();
+        
+        if ($trustedToken) {
+            $trustedDevice = \App\Models\TrustedDevice::where('user_id', $user->id)
+                ->where('device_token', $trustedToken)
+                ->first();
+                
+            if ($trustedDevice) {
+                // Update last used timestamp
+                $trustedDevice->update(['last_used_at' => now()]);
+                
+                // Mark as 2FA authenticated
+                session(['two_factor_authenticated' => true]);
+                
+                // Redirect to dashboard
+                return redirect()->intended(route('dashboard'));
+            }
+        }
+
+        // If no trusted device found, redirect to 2FA
         return redirect()->route('two-factor.show');
     }
 

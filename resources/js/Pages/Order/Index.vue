@@ -33,8 +33,6 @@
                     </svg>
                 </div>
 
-               
-
                 <div class="w-full">
                     <Multiselect
                         v-model="region"
@@ -63,8 +61,8 @@
                     >
                     </Multiselect>
                 </div>
-                 <!-- Facility Filter -->
-                 <div class="w-full">
+                <!-- Facility Filter -->
+                <div class="w-full">
                     <Multiselect
                         v-model="facility"
                         :options="props.facilities"
@@ -362,13 +360,12 @@
                                                     title="Dispatched"
                                                 />
 
-
                                                 <!-- Only show received if status is received -->
                                                 <img
                                                     v-if="
-                                                        [
-                                                            'received',
-                                                        ].includes(order.status)
+                                                        ['received'].includes(
+                                                            order.status
+                                                        )
                                                     "
                                                     src="/assets/images/received.png"
                                                     class="w-6 h-6"
@@ -450,8 +447,8 @@
                         </div>
                     </div>
 
-                     <!-- Reviewed -->
-                     <div class="relative">
+                    <!-- Reviewed -->
+                    <div class="relative">
                         <div class="flex items-center mb-2">
                             <div class="w-16 h-16 relative mr-4">
                                 <svg class="w-16 h-16 transform -rotate-90">
@@ -557,8 +554,6 @@
                             </div>
                         </div>
                     </div>
-
-                   
 
                     <!-- Rejected -->
                     <div class="relative">
@@ -911,7 +906,6 @@ async function loadDistrict() {
 }
 
 const formatDate = (date) => {
-    return moment(date).format('DD/MM/YYYY');
+    return moment(date).format("DD/MM/YYYY");
 };
 </script>
-
