@@ -250,7 +250,7 @@ function getResults(page = 1) {
             <input type="text" v-model="search"
                 placeholder="Search by [Disposal ID, Item Name, Item Barcode, Item Batch Number]..."
                 class="w-[600px] form-control">
-            <select v-model="per_page" @change="props.filters.page = 1" class="w-[200px] form-select">
+            <select v-model="per_page" @change="props.filters.page = 1" class="w-[200px] rounded-3xl form-select">
                 <option value="2"> Per Page 2</option>
                 <option value="5"> Per Page 5</option>
                 <option value="10"> Per Page 10</option>
@@ -260,8 +260,8 @@ function getResults(page = 1) {
             </select>
         </div>
         <!-- Table Section -->
-        <div class="mb-[100px]">
-            <table class="min-w-full border border-collapse border-gray-300">
+        <div class="overflow-auto">
+            <table class="min-w-full border border-collapse border-gray-300 whitespace-nowrap">
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="px-4 py-2 border-r border-gray-300 text-left text-black">SN</th>
@@ -414,9 +414,9 @@ function getResults(page = 1) {
                     </tr>
                 </tbody>
             </table>
-            <div class="flex justify-end items-center mt-3">
-                <TailwindPagination :data="props.disposals" :limit="2" @pagination-change-page="getResults" />
-            </div>
+        </div>
+        <div class="flex justify-end items-center mt-3 mb-[100px]">
+            <TailwindPagination :data="props.disposals" :limit="2" @pagination-change-page="getResults" />
         </div>
     </Tab>
 </template>
