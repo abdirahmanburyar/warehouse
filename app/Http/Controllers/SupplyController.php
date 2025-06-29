@@ -795,20 +795,19 @@ class SupplyController extends Controller
 
     public function editPO($id)
     {
-        try {
-            $products = Product::get();
-            $suppliers = Supplier::get();
-            $po = PurchaseOrder::with('supplier','items.product:id,name','items.edited:id,name')->find($id);
-            return inertia('Supplies/EditPo', [
-                'products' => $products,
-                'suppliers' => $suppliers,
-                'po' => $po
-            ]);
-        } catch (\Throwable $th) {
-            return inertia('Supplies/EditPo', [
-                'error' => $th->getMessage()
-            ]);
-        }
+        $po = PurchaseOrder::with([
+            'items.product',
+            'supplier',
+            'reviewedBy:id,name',
+            'approvedBy:id,name',
+            'rejectedBy:id,name'
+        ])->findOrFail($id);
+
+        return inertia('Supplies/EditPo', [
+            'po' => $po,
+            'products' => Product::select('id', 'name', 'productID')->get(),
+            'suppliers' => Supplier::select('id', 'name', 'contact_person', 'email', 'phone', 'address')->get(),
+        ]);
     }
 
     public function storePO(Request $request)
@@ -975,7 +974,7 @@ class SupplyController extends Controller
     {
         try {
             return DB::transaction(function () use ($id) {
-                $po = PurchaseOrder::with('items')->findOrFail($id);
+                $po = PurchaseOrder::with(['items', 'approvedBy'])->findOrFail($id);
                 
                 if (!$po->reviewed_by || !$po->reviewed_at) {
                     return response()->json('Purchase order must be reviewed before it can be approved', 422);
@@ -1000,7 +999,14 @@ class SupplyController extends Controller
                     ]);
                 }
 
-                return response()->json('Purchase order has been approved and inventory has been updated');
+                // Reload the PO to get the fresh approvedBy relationship
+                $po->load('approvedBy');
+
+                return response()->json([
+                    'message' => 'Purchase order has been approved and inventory has been updated',
+                    'approved_at' => $po->approved_at,
+                    'approved_by' => $po->approvedBy
+                ]);
             });
         } catch (\Exception $e) {
             return response()->json($e->getMessage(), 500);
