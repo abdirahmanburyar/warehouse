@@ -5,33 +5,13 @@ namespace App\Imports;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\Importable;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
-use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
+use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 
-class ProductsImport extends DefaultValueBinder implements 
-    ToModel, 
-    WithHeadingRow, 
-    WithValidation, 
-    WithChunkReading, 
-    WithBatchInserts,
-    WithCustomValueBinder,
-    ShouldQueue
+class ProductsImport
 {
-    use Importable, Queueable, SerializesModels;
-
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
@@ -39,10 +19,10 @@ class ProductsImport extends DefaultValueBinder implements
     protected $dosageCache = [];
     protected $importId;
     protected $filePath;
+    protected $batchSize = 1000; // Process 1000 rows at a time
 
     public function __construct($filePath = null)
     {
-        // Generate a unique import ID
         $this->importId = uniqid('import_', true);
         $this->filePath = $filePath;
         
@@ -65,111 +45,141 @@ class ProductsImport extends DefaultValueBinder implements
     }
 
     /**
-     * Transform a row from the Excel file into a Product model
+     * Import the products from the Excel file
      */
-    public function model(array $row)
+    public function import()
     {
         try {
-            // Check if required field exists
-            if (empty($row['item_description'])) {
-                $this->addError("Row skipped: Missing item description");
-                $this->incrementSkipped();
-                return null;
-            }
+            // Create the reader based on file extension
+            $reader = ReaderEntityFactory::createReaderFromFile($this->filePath);
+            $reader->open($this->filePath);
 
-            $itemName = trim($row['item_description']);
-            $category = !empty($row['category']) ? trim($row['category']) : null;
-            $dosageForm = !empty($row['dosage_form']) ? trim($row['dosage_form']) : null;
+            $batch = [];
+            $headers = null;
+            $isFirstRow = true;
 
-            // Check if product already exists
-            if (Product::where('name', $itemName)->exists()) {
-                $this->addError("Row skipped: Product '{$itemName}' already exists");
-                $this->incrementSkipped();
-                return null;
-            }
+            // Iterate through all sheets
+            foreach ($reader->getSheetIterator() as $sheet) {
+                // Iterate through all rows
+                foreach ($sheet->getRowIterator() as $row) {
+                    // Get the row as an array
+                    $values = $row->toArray();
 
-            // Find or create category if provided
-            $categoryId = null;
-            if ($category) {
-                if (isset($this->categoryCache[$category])) {
-                    $categoryId = $this->categoryCache[$category];
-                } else {
-                    $categoryModel = Category::firstOrCreate(
-                        ['name' => $category],
-                        ['is_active' => true]
-                    );
-                    $categoryId = $categoryModel->id;
-                    $this->categoryCache[$category] = $categoryId;
+                    // If this is the first row, store headers
+                    if ($isFirstRow) {
+                        $headers = array_map('strtolower', $values);
+                        $isFirstRow = false;
+                        continue;
+                    }
+
+                    // Create associative array combining headers with values
+                    $rowData = array_combine($headers, $values);
+
+                    try {
+                        $product = $this->processRow($rowData);
+                        if ($product !== null) {
+                            $batch[] = $product;
+                        }
+
+                        // If we've reached batch size, insert the batch
+                        if (count($batch) >= $this->batchSize) {
+                            Product::insert($batch);
+                            $batch = [];
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Import row error: ' . $e->getMessage());
+                        $this->addError("Failed to process row: {$e->getMessage()}");
+                        $this->incrementSkipped();
+                    }
                 }
             }
 
-            // Find or create dosage form if provided
-            $dosageId = null;
-            if ($dosageForm) {
-                if (isset($this->dosageCache[$dosageForm])) {
-                    $dosageId = $this->dosageCache[$dosageForm];
-                } else {
-                    $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
-                    $dosageId = $dosageModel->id;
-                    $this->dosageCache[$dosageForm] = $dosageId;
-                }
+            // Insert any remaining batch items
+            if (!empty($batch)) {
+                Product::insert($batch);
             }
 
-            $this->incrementImported();
+            $reader->close();
 
-            // Return new Product model instance
-            return new Product([
-                'name' => $itemName,
-                'category_id' => $categoryId,
-                'dosage_id' => $dosageId,
-                'movement' => 'Slow Moving', // Default movement value
-                'is_active' => true, // Default value
-            ]);
+            return [
+                'imported' => $this->getImportedCount(),
+                'skipped' => $this->getSkippedCount(),
+                'errors' => $this->getErrors()
+            ];
 
         } catch (\Exception $e) {
             Log::error('Import error: ' . $e->getMessage());
-            $this->addError("Failed to process row: {$e->getMessage()}");
-            $this->incrementSkipped();
-            return null;
+            throw $e;
+        } finally {
+            // Cleanup
+            if ($this->filePath && file_exists($this->filePath)) {
+                unlink($this->filePath);
+            }
         }
     }
 
     /**
-     * Validation rules
+     * Process a single row from the Excel file
      */
-    public function rules(): array
+    protected function processRow($row)
     {
+        // Check if required field exists
+        if (empty($row['item_description'])) {
+            $this->addError("Row skipped: Missing item description");
+            $this->incrementSkipped();
+            return null;
+        }
+
+        $itemName = trim($row['item_description']);
+        $category = !empty($row['category']) ? trim($row['category']) : null;
+        $dosageForm = !empty($row['dosage_form']) ? trim($row['dosage_form']) : null;
+
+        // Check if product already exists
+        if (Product::where('name', $itemName)->exists()) {
+            $this->addError("Row skipped: Product '{$itemName}' already exists");
+            $this->incrementSkipped();
+            return null;
+        }
+
+        // Find or create category if provided
+        $categoryId = null;
+        if ($category) {
+            if (isset($this->categoryCache[$category])) {
+                $categoryId = $this->categoryCache[$category];
+            } else {
+                $categoryModel = Category::firstOrCreate(
+                    ['name' => $category],
+                    ['is_active' => true]
+                );
+                $categoryId = $categoryModel->id;
+                $this->categoryCache[$category] = $categoryId;
+            }
+        }
+
+        // Find or create dosage form if provided
+        $dosageId = null;
+        if ($dosageForm) {
+            if (isset($this->dosageCache[$dosageForm])) {
+                $dosageId = $this->dosageCache[$dosageForm];
+            } else {
+                $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
+                $dosageId = $dosageModel->id;
+                $this->dosageCache[$dosageForm] = $dosageId;
+            }
+        }
+
+        $this->incrementImported();
+
+        // Return data for batch insert
         return [
-            'item_description' => 'required|string',
-            'category' => 'nullable|string',
-            'dosage_form' => 'nullable|string',
+            'name' => $itemName,
+            'category_id' => $categoryId,
+            'dosage_id' => $dosageId,
+            'movement' => 'Slow Moving', // Default movement value
+            'is_active' => true, // Default value
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
-    }
-
-    /**
-     * Custom validation messages
-     */
-    public function customValidationMessages()
-    {
-        return [
-            'item_description.required' => 'Item description is required',
-        ];
-    }
-
-    /**
-     * Define the chunk size for reading the Excel file
-     */
-    public function chunkSize(): int
-    {
-        return 100; // Process 100 rows at a time for better memory management
-    }
-
-    /**
-     * Define the batch size for database inserts
-     */
-    public function batchSize(): int
-    {
-        return 50; // Insert 50 records at a time
     }
 
     /**
@@ -228,16 +238,5 @@ class ProductsImport extends DefaultValueBinder implements
     public function getErrors(): array
     {
         return Cache::get("import_{$this->importId}_errors", []);
-    }
-
-    /**
-     * Clean up after import
-     */
-    public function __destruct()
-    {
-        // Clean up the stored file
-        if ($this->filePath && file_exists($this->filePath)) {
-            unlink($this->filePath);
-        }
     }
 }
