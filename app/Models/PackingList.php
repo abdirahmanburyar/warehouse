@@ -15,6 +15,7 @@ class PackingList extends Model
         'status',
         'ref_no',
         'pk_date',
+        'notes',
         'confirmed_at',
         'confirmed_by',
         'reviewed_at',

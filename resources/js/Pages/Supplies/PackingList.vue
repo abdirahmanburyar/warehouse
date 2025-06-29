@@ -70,172 +70,193 @@
                                 <span>PL Data:</span>
                                 <input type="date" v-model="form.pk_date" class="border-0" :min="form.po_date" />
                             </div>
-
                         </div>
                     </div>
+                </div>
+                <!-- Memo Field -->
+                <div v-if="!isLoading && form" class="mt-4 bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Memo</h3>
+                    <textarea 
+                        v-model="form.notes"
+                        rows="3"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        placeholder="Enter memo or additional notes here..."></textarea>
                 </div>
                 <div v-else>
                     <span>No P.O Data found</span>
                 </div>
               <!-- halkaan ku past karee -->
                  <!-- Items List -->
-                 <table class="w-full"
-                    v-if="!isLoading && form">
-                    <thead class="bg-gray-50 border border-blck">
-                        <tr>
-                            <th
-                                class="w-[40px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">
-                                #
-                            </th>
-                            <th
-                                class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-[40px]  bg-gray-50 z-10">
-                                Item</th>
-                            <th class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Qty</th>
-                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Warehouse</th>
-                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                               St. Locations</th>
-                            <th class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Item Detail</th>
-                            <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Unit Cost</th>
-                            <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                 <div class="mt-4 w-full">
+                    <table class="w-full table-fixed whitespace-nowrap"
+                        v-if="!isLoading && form">
+                        <colgroup>
+                            <col class="w-12">
+                            <col class="w-48">
+                            <col class="w-[150px]">
+                            <col class="w-[200px]">
+                            <col class="w-48">
+                            <col class="w-48">
+                            <col class="w-32">
+                            <col class="w-32">
+                            <col class="w-32">
+                        </colgroup>
+                        <thead class="bg-gray-50 border border-black">
+                            <tr>
+                                <th
+                                    class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10">
+                                    #
+                                </th>
+                                <th
+                                    class="text-left text-xs text-black capitalize sticky left-12 bg-gray-50 z-10">
+                                    Item</th>
+                                <th class="text-left text-xs text-black capitalize">
+                                    Qty</th>
+                                <th class="text-left text-xs text-black capitalize">
+                                    S. Location</th>
+                                <th class="text-left text-xs text-black capitalize">
+                                   St. Locations</th>
+                                <th class="text-left text-xs text-black capitalize">
+                                    Item Detail</th>
+                                <th class="text-left text-xs text-black capitalize">
+                                    Unit Cost</th>
+                                <th class="text-left text-xs text-black capitalize">
                                     Total Cost</th>
-                            <th class="w-[110px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Fullfillment Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(item, index) in form.items" :key="index" :class="[
-                            'hover:bg-gray-50',
-                            { 'bg-red-50': hasIncompleteBackOrder(item) },
-                            { 'border-red-500 border-2': item.hasError },
-                            { 'bg-red-50/20': item.hasError }
-                        ]" :data-row="index + 1">
-                            <td :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">{{ index + 1 }}</td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
-                                <div class="flex flex-col">
-                                    {{ item.product?.name }}
-                                    <span>UoM:  <input type="text" v-model="item.uom" readonly class="border-0"/></span>
-                                </div>
+                                <th class="text-left text-xs text-black capitalize">
+                                    Fullfillment Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-xs">
+                            <tr v-for="(item, index) in form.items" :key="index" :class="[
+                                'hover:bg-gray-50',
+                                { 'bg-red-50': hasIncompleteBackOrder(item) },
+                                { 'border-red-500 border-2': item.hasError },
+                                { 'bg-red-50/20': item.hasError }
+                            ]" :data-row="index + 1">
+                                <td :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">{{ index + 1 }}</td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'sticky left-[40px] z-10']">
+                                    <div class="flex flex-col">
+                                        {{ item.product?.name }}
+                                        <span>UoM:  <input type="text" v-model="item.uom" readonly class="border-0"/></span>
+                                    </div>
 
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <div class="flex flex-col">
-                                    <div>
-                                        <input type="number" v-model="item.quantity" readonly
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
-                                    </div>
-                                    <div>
-                                        <label for="received_quantity" class="text-xs">Received Quantity</label>
-                                        <input type="number" v-model="item.received_quantity" required min="1"
-                                            :disabled="item.status == 'approved'"
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm"
-                                            @input="handleReceivedQuantityChange(index)">
-                                    </div>
-                                    <div>
-                                        <label for="mismatches" class="text-xs">Mismatches</label>
-                                        <input type="text" :value="calculateMismatches(item)" readonly
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
-                                    </div>
-                                    <button v-if="calculateFulfillmentRate(item) < 100"
-                                            @click="openBackOrderModal(index)"
-                                            class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                                            Back Order
-                                        </button>
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                    <div class="flex flex-col">
+                                        <div>
+                                            <input type="number" v-model="item.quantity" readonly
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label for="received_quantity" class="text-xs">Received Quantity</label>
+                                            <input type="number" v-model="item.received_quantity" required min="1"
+                                                :disabled="item.status == 'approved'"
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm"
+                                                @input="handleReceivedQuantityChange(index)">
+                                        </div>
+                                        <div>
+                                            <label for="mismatches" class="text-xs">Mismatches</label>
+                                            <input type="text" :value="calculateMismatches(item)" readonly
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                        </div>
+                                        <button v-if="calculateFulfillmentRate(item) < 100"
+                                                @click="openBackOrderModal(index)"
+                                                class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                                Back Order
+                                            </button>
 
-                                        <!-- Add tooltip for incomplete back orders -->
-                                        <div v-if="hasIncompleteBackOrder(item)"
-                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                            Please record the mismatch
+                                                <!-- Add tooltip for incomplete back orders -->
+                                                <div v-if="hasIncompleteBackOrder(item)"
+                                                    class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                                    Please record the mismatch
+                                                </div>
+                                    </div>
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }]">
+                                    <Multiselect v-model="item.warehouse" :value="item.warehouse_id"
+                                        :options="props.warehouses" :searchable="true" :close-on-select="true"
+                                        :show-labels="false" :allow-empty="true" placeholder="Select Warehouse" required
+                                        track-by="id" :disabled="item.status === 'approved'" :append-to-body="true"
+                                        label="name" @select="hadleWarehouseSelect(index, $event)">
+                                    </Multiselect>
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }]">
+                                    <Multiselect v-model="item.location" :value="item.location_id" required
+                                        :disabled="item.status === 'approved' || !item.warehouse_id"
+                                        :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]"
+                                        :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
+                                        placeholder="Select Location"
+                                        @select="hadleLocationSelect(index, $event)">
+                                        <template v-slot:option="{ option }">
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New
+                                                    Location</span>
+                                                <span v-else>{{ option.location }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                    <div class="flex flex-col">
+                                        <div>
+                                            <label for="batch_number" class="text-xs">Batch Number</label>
+                                            <input type="text" v-model="item.batch_number" required
+                                                :disabled="item.status === 'approved'"
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                         </div>
-                                </div>
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }]">
-                                <Multiselect v-model="item.warehouse" :value="item.warehouse_id"
-                                    :options="props.warehouses" :searchable="true" :close-on-select="true"
-                                    :show-labels="false" :allow-empty="true" placeholder="Select Warehouse" required
-                                    track-by="id" :disabled="item.status === 'approved'" :append-to-body="true"
-                                    label="name" @select="hadleWarehouseSelect(index, $event)">
-                                </Multiselect>
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }]">
-                                <Multiselect v-model="item.location" :value="item.location_id" required
-                                    :disabled="item.status === 'approved' || !item.warehouse_id"
-                                    :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]"
-                                    :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
-                                    placeholder="Select Location"
-                                    @select="hadleLocationSelect(index, $event)">
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New
-                                                Location</span>
-                                            <span v-else>{{ option.location }}</span>
+                                        <div>
+                                            <label for="expire_date" class="text-xs">Expire Date</label>
+                                            <input type="date" :value="formatDateForInput(item.expire_date)" required
+                                                @input="item.expire_date = $event.target.value"
+                                                :min="moment().add(6, 'months').format('YYYY-MM-DD')"
+                                                :disabled="item.status === 'approved'"
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
                                         </div>
-                                    </template>
-                                </Multiselect>
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                <div class="flex flex-col">
-                                    <div>
-                                        <label for="batch_number" class="text-xs">Batch Number</label>
-                                        <input type="text" v-model="item.batch_number" required
-                                            :disabled="item.status === 'approved'"
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                        <div>
+                                            <label for="barcode" class="text-xs">Barcode</label>
+                                            <input type="text" v-model="item.barcode" required
+                                                :disabled="item.status === 'approved'"
+                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label for="expire_date" class="text-xs">Expire Date</label>
-                                        <input type="date" :value="formatDateForInput(item.expire_date)" required
-                                            @input="item.expire_date = $event.target.value"
-                                            :min="moment().add(6, 'months').format('YYYY-MM-DD')"
-                                            :disabled="item.status === 'approved'"
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                    {{ Number(item.unit_cost).toLocaleString('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }) }}
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
+                                    {{ Number(item.total_cost).toLocaleString('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }) }}
+                                </td>
+                                <td
+                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'text-left']">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center flex-col">
+                                            <span>{{ calculateFulfillmentRate(item) }}%</span>
+                                            
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label for="barcode" class="text-xs">Barcode</label>
-                                        <input type="text" v-model="item.barcode" required
-                                            :disabled="item.status === 'approved'"
-                                            class="block w-full text-left text-black focus:ring-0 sm:text-sm">
-                                    </div>
-                                </div>
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                {{ Number(item.unit_cost).toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }) }}
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                {{ Number(item.total_cost).toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }) }}
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-left']">
-                                <div class="space-y-2">
-                                    <div class="flex items-center flex-col">
-                                        <span>{{ calculateFulfillmentRate(item) }}%</span>
-                                        
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="form?.items?.length === 0">
-                            <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500">
-                                No items added. Click "Add Item" to start creating your purchase order.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            <tr v-if="form?.items?.length === 0">
+                                <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500">
+                                    No items added. Click "Add Item" to start creating your purchase order.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <!-- Back Order Modal -->
                 <Modal :show="showBackOrderModal" @close="attemptCloseModal" maxWidth="2xl">
@@ -257,13 +278,13 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">
                                             Quantity</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">
                                             Status</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">
                                             Note</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">
                                             Actions</th>
                                     </tr>
                                 </thead>

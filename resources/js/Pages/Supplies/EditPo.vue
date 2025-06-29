@@ -580,12 +580,32 @@ const formatDate = (dateString) => {
 async function reviewPO() {
     if (isProcessing.value.review) return;
 
+    const result = await Swal.fire({
+        title: 'Review Purchase Order',
+        text: 'Are you sure you want to review this purchase order?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, review it!'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
         isProcessing.value.review = true;
         const response = await axios.post(route('supplies.reviewPO', form.value.id));
         form.value.reviewed_at = response.data.reviewed_at;
         form.value.reviewed_by = response.data.reviewed_by;
-        toast.success('Purchase order has been reviewed successfully');
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Purchase order has been reviewed successfully',
+            confirmButtonColor: '#3085d6'
+        });
+        
+        router.reload();
     } catch (error) {
         console.error('Error reviewing PO:', error);
         Swal.fire({
@@ -601,13 +621,33 @@ async function reviewPO() {
 async function approvePO() {
     if (isProcessing.value.approve) return;
 
+    const result = await Swal.fire({
+        title: 'Approve Purchase Order',
+        text: 'Are you sure you want to approve this purchase order?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, approve it!'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
         isProcessing.value.approve = true;
         const response = await axios.post(route('supplies.approvePO', form.value.id));
         form.value.approved_at = response.data.approved_at;
         form.value.approved_by = response.data.approved_by;
         form.value.status = 'approved';
-        toast.success('Purchase order has been approved successfully');
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Purchase order has been approved successfully',
+            confirmButtonColor: '#3085d6'
+        });
+        
+        router.reload();
     } catch (error) {
         console.error('Error approving PO:', error);
         Swal.fire({
@@ -632,6 +672,9 @@ async function rejectPO() {
             'aria-label': 'Type your reason here'
         },
         showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Reject',
         inputValidator: (value) => {
             if (!value) {
                 return 'You need to provide a reason!';
@@ -648,6 +691,15 @@ async function rejectPO() {
         });
         form.value.rejected_at = response.data.rejected_at;
         form.value.rejected_by = response.data.rejected_by;
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Purchase order has been rejected successfully',
+            confirmButtonColor: '#3085d6'
+        });
+        
+        router.reload();
     } catch (error) {
         console.error('Error rejecting PO:', error);
         Swal.fire({

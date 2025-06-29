@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('packing_list_number');
             $table->foreignId('purchase_order_id')->constrained();
             $table->string('status')->default('pending');            
+            $table->string('notes')->nullable();            
             $table->string('ref_no')->nullable();
             $table->timestamp('pk_date')->default(now());
             $table->foreignId('confirmed_by')->nullable()->constrained('users');
