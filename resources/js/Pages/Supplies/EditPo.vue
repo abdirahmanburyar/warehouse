@@ -3,6 +3,7 @@
     <AuthenticatedLayout
         title="Purchase Orders"
         description="Manage your purchase orders"
+        img="/assets/images/supplies.png"
     >
     <div v-if="props.error">{{props.error}}</div>
     <div v-else>

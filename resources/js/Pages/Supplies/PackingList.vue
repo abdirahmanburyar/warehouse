@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Packing List">
+    <AuthenticatedLayout title="Packing List" img="images/assets/orders.png" description="Manage your packing list">
         <Link :href="route('supplies.packing-list.showPK')"
             class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer mb-4">
         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
