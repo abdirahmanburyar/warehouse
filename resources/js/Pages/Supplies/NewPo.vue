@@ -8,7 +8,7 @@
         </Link>
         <div class="max-w-7xl mx-auto">
             <!-- Supplier Selection -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 transition-all duration-200 hover:shadow-md">
+            <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6 transition-all duration-200">
                 <h2 class="text-xl font-semibold text-gray-800 mb-6">New Purchase Order</h2>
                 <div class="grid grid-cols-1 gap-6">
                     <div class="w-full max-w-md">
@@ -81,12 +81,12 @@
                             <div class="flex items-center gap-2">
                                 <input type="file" ref="fileInput" @change="handleFileUpload" accept=".xlsx,.xls" class="hidden"/>
                                 <button type="button" @click="$refs.fileInput.click()"
-                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                                     Upload Excel
                                 </button>
                                 <button type="button" @click="downloadTemplate"
-                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200">
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     Download Template
                                 </button>
@@ -99,7 +99,7 @@
 
             <!-- Items List -->
             <form @submit.prevent="submitForm">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md mb-6">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-200 mb-6">
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-medium text-gray-900">Order Items</h3>
                         <p class="mt-1 text-sm text-gray-500">Add items to your purchase order</p>
@@ -107,21 +107,21 @@
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="w-[40px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                <th class="w-[400px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                                <th class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                <th class="w-[100px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UoM</th>
-                                <th class="w-[120px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                                <th class="w-[120px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="w-[40px] px-6 py-3"></th>
+                                <th class="w-12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                <th class="w-1/3 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                                <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UoM</th>
+                                <th class="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
+                                <th class="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="w-12 px-3 py-3"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
                             <tr v-for="(item, index) in form.items" :key="index" 
                                 class="transition-colors duration-150 hover:bg-gray-50" 
                                 :data-item-index="index">
-                                <td class="px-6 py-4 text-sm text-gray-500 align-top pt-4">{{ index + 1 }}</td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 py-3 text-sm text-gray-500 align-middle">{{ index + 1 }}</td>
+                                <td class="px-3 py-3">
                                     <Multiselect v-model="item.product" :value="item.product_id"
                                         :options="props.products"
                                         :searchable="true" :close-on-select="true" :show-labels="false" required
@@ -130,28 +130,30 @@
                                         @select="hadleProductSelect(index, $event)">
                                     </Multiselect>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 py-3">
                                     <input type="number" v-model="item.quantity" @input="calculateTotal(index)" required
-                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200"
-                                        min="1">
+                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-2 py-1"
+                                        min="1" placeholder="Enter quantity">
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 py-3">
                                     <input type="text" v-model="item.uom" required
-                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200">
+                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-2 py-1"
+                                        placeholder="e.g. PCS">
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 py-3">
                                     <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)" required
-                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200"
-                                        step="0.01" min="0">
+                                        class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-2 py-1"
+                                        step="0.01" min="0" placeholder="Enter cost">
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 py-3">
                                     <input type="text" :value="formatCurrency(item.total_cost)" readonly
-                                        class="block w-full rounded-lg bg-gray-50 border-gray-200 text-sm text-gray-500">
+                                        class="block w-full rounded-lg bg-gray-50 border-gray-200 text-sm text-gray-500 px-2 py-1"
+                                        placeholder="$0.00">
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-3 py-3 text-center">
                                     <button type="button" @click="removeItem(index)"
                                         class="text-gray-400 hover:text-red-600 transition-colors duration-200">
-                                        <TrashIcon class="h-5 w-5" />
+                                        <TrashIcon class="h-4 w-4" />
                                     </button>
                                 </td>
                             </tr>
@@ -179,18 +181,18 @@
                         <div class="flex justify-between items-center">
                             <div class="flex space-x-3">
                                 <button type="button" @click="addItem"
-                                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                     <PlusIcon class="h-5 w-5 mr-2 text-gray-400" />
                                     Add Item
                                 </button>
                                 <button type="button" @click="form.items = []"
-                                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                     <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     Clear Items
                                 </button>
                             </div>
                             <div class="w-72">
-                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                                <div class="bg-white rounded-lg p-4 border border-gray-100">
                                     <div class="flex justify-between items-center text-sm">
                                         <span class="font-medium text-gray-900">Total Amount</span>
                                         <span class="text-lg font-bold text-indigo-600">{{ formatCurrency(subtotal) }}</span>
@@ -202,7 +204,7 @@
                 </div>
 
                 <!-- Memo -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 transition-all duration-200 hover:shadow-md">
+                <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6 transition-all duration-200">
                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-3">Memo</label>
                     <textarea v-model="form.notes" rows="3" 
                         class="w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200" 
@@ -212,11 +214,11 @@
                 <!-- Action Buttons -->
                 <div class="mt-6 flex justify-end space-x-3 mb-8">
                     <button type="button" @click="router.visit(route('supplies.index'))" :disabled="isSubmitting"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                         Exit
                     </button>
                     <button type="submit" :disabled="isSubmitting"
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                         <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -348,6 +350,14 @@ function handleSupplierSelect(selected){
 }
 
 function addItem() {
+    // Check if there are existing items and if the last item has no product_id
+    if (form.value.items.length > 0) {
+        const lastItem = form.value.items[form.value.items.length - 1];
+        if (!lastItem.product_id) {
+            return;
+        }
+    }
+
     form.value.items.push({
         product_id: null,
         product: null,
