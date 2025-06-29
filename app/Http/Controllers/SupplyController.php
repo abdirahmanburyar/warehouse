@@ -38,7 +38,8 @@ class SupplyController extends Controller
      */
     public function index(Request $request)
     {
-        $purchaseOrders = PurchaseOrder::with(['supplier'])
+        $purchaseOrders = PurchaseOrder::with('supplier')
+            ->withSum('items', 'total_cost')
             ->where('status', '!=', 'completed')
             ->when($request->filled('search'), function($query) use ($request) {
                 $search = $request->search;
@@ -92,6 +93,8 @@ class SupplyController extends Controller
             ->withQueryString();
 
         $purchaseOrders->setPath(url()->current()); // Force Laravel to use full URLs
+
+        logger()->info($purchaseOrders);
 
 
         return Inertia::render('Supplies/Index', [
