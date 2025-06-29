@@ -5,165 +5,237 @@ namespace App\Imports;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
-class ProductsImport implements ToCollection
+class ProductsImport extends DefaultValueBinder implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithValidation, 
+    WithChunkReading, 
+    WithBatchInserts,
+    WithCustomValueBinder,
+    ShouldQueue
 {
+    use Importable;
+
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
-    protected $batchSize = 100; // Process records in batches of 100
+    protected $categoryCache = [];
+    protected $dosageCache = [];
+    protected $importId;
+    protected $filePath;
+
+    public function __construct($filePath = null)
+    {
+        // Generate a unique import ID
+        $this->importId = uniqid('import_', true);
+        $this->filePath = $filePath;
+        
+        // Initialize counters in cache
+        Cache::put("import_{$this->importId}_imported", 0, now()->addHours(24));
+        Cache::put("import_{$this->importId}_skipped", 0, now()->addHours(24));
+        Cache::put("import_{$this->importId}_errors", [], now()->addHours(24));
+
+        // Store the file in a persistent location if provided
+        if ($this->filePath) {
+            $storagePath = Storage::disk('local')->path('excel-imports');
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true);
+            }
+            
+            $newPath = $storagePath . '/' . basename($this->filePath);
+            copy($this->filePath, $newPath);
+            $this->filePath = $newPath;
+        }
+    }
 
     /**
-     * Process the collection of rows from the Excel file
+     * Transform a row from the Excel file into a Product model
      */
-    public function collection(Collection $rows)
+    public function model(array $row)
     {
-        // Get headers to identify columns
-        $headers = $rows->first();
-        if (!$headers) return;
-        
-        // Find column indexes
-        $itemDescIndex = null;
-        $categoryIndex = null;
-        $dosageFormIndex = null;
-        
-        foreach ($headers as $key => $header) {
-            if (is_string($header)) {
-                $header = trim(strtolower($header));
-                if ($header === 'item description') {
-                    $itemDescIndex = $key;
-                } else if ($header === 'category') {
-                    $categoryIndex = $key;
-                } else if ($header === 'dosage form') {
-                    $dosageFormIndex = $key;
-                }
-            }
-        }
-        
-        // Validate that we found the required columns
-        if ($itemDescIndex === null) {
-            $this->errors[] = "Item Description column not found in Excel file";
-            return;
-        }
-        
-        // Increase PHP execution time limit for large imports
-        set_time_limit(300); // 5 minutes
-        
-        DB::beginTransaction();
         try {
-            // Prepare for batch processing
-            $records = [];
-            $categoryCache = [];
-            $dosageCache = [];
-            
-            // Process data rows
-            foreach ($rows->skip(1) as $rowIndex => $row) {
-                // Skip empty rows
-                if (empty($row[$itemDescIndex])) {
-                    $this->errors[] = "Row skipped: Missing item description";
-                    $this->skippedCount++;
-                    continue;
-                }
-                
-                // Trim whitespace from values
-                $itemName = trim($row[$itemDescIndex]);
-                $category = ($categoryIndex !== null && !empty($row[$categoryIndex])) ? trim($row[$categoryIndex]) : null;
-                $dosageForm = ($dosageFormIndex !== null && !empty($row[$dosageFormIndex])) ? trim($row[$dosageFormIndex]) : null;
+            // Check if required field exists
+            if (empty($row['item_description'])) {
+                $this->addError("Row skipped: Missing item description");
+                $this->incrementSkipped();
+                return null;
+            }
 
-                // Check if product already exists
-                $existingProduct = Product::where('name', $itemName)->first();
-                if ($existingProduct) {
-                    $this->errors[] = "Row skipped: Product '{$itemName}' already exists";
-                    $this->skippedCount++;
-                    continue;
-                }
+            $itemName = trim($row['item_description']);
+            $category = !empty($row['category']) ? trim($row['category']) : null;
+            $dosageForm = !empty($row['dosage_form']) ? trim($row['dosage_form']) : null;
 
-                // Find or create category if provided
-                $categoryId = null;
-                if ($category) {
-                    // Use cached category ID if available
-                    if (isset($categoryCache[$category])) {
-                        $categoryId = $categoryCache[$category];
-                    } else {
-                        // Use firstOrCreate for better performance
-                        $categoryModel = Category::firstOrCreate(
-                            ['name' => $category],
-                            ['is_active' => true]
-                        );
-                        $categoryId = $categoryModel->id;
-                        
-                        // Cache the category ID
-                        $categoryCache[$category] = $categoryId;
-                    }
-                }
+            // Check if product already exists
+            if (Product::where('name', $itemName)->exists()) {
+                $this->addError("Row skipped: Product '{$itemName}' already exists");
+                $this->incrementSkipped();
+                return null;
+            }
 
-                // Find or create dosage form if provided
-                $dosageId = null;
-                if ($dosageForm) {
-                    // Use cached dosage ID if available
-                    if (isset($dosageCache[$dosageForm])) {
-                        $dosageId = $dosageCache[$dosageForm];
-                    } else {
-                        // Use firstOrCreate for better performance
-                        $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
-                        $dosageId = $dosageModel->id;
-                        
-                        // Cache the dosage ID
-                        $dosageCache[$dosageForm] = $dosageId;
-                    }
-                }
-
-                // Create product record using the model to trigger the boot method
-                try {
-                    Product::create([
-                        'name' => $itemName,
-                        'category_id' => $categoryId,
-                        'dosage_id' => $dosageId,
-                        'movement' => 'Slow Moving', // Default movement value
-                        'is_active' => true, // Default value
-                    ]);
-                    
-                    // Increment imported count only if creation is successful
-                    $this->importedCount++;
-                } catch (\Exception $e) {
-                    $this->errors[] = "Failed to create product '{$itemName}': {$e->getMessage()}";
-                    $this->skippedCount++;
-                    continue;
-                }
-
-                // Log progress for large imports
-                if ($this->importedCount % 500 === 0) {
-                    Log::info("Processed {$this->importedCount} products so far");
+            // Find or create category if provided
+            $categoryId = null;
+            if ($category) {
+                if (isset($this->categoryCache[$category])) {
+                    $categoryId = $this->categoryCache[$category];
+                } else {
+                    $categoryModel = Category::firstOrCreate(
+                        ['name' => $category],
+                        ['is_active' => true]
+                    );
+                    $categoryId = $categoryModel->id;
+                    $this->categoryCache[$category] = $categoryId;
                 }
             }
-            
-            // Log final processing count
-            Log::info("Processed final batch, total: {$this->importedCount} products");
-            
-            DB::commit();
+
+            // Find or create dosage form if provided
+            $dosageId = null;
+            if ($dosageForm) {
+                if (isset($this->dosageCache[$dosageForm])) {
+                    $dosageId = $this->dosageCache[$dosageForm];
+                } else {
+                    $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
+                    $dosageId = $dosageModel->id;
+                    $this->dosageCache[$dosageForm] = $dosageId;
+                }
+            }
+
+            $this->incrementImported();
+
+            // Return new Product model instance
+            return new Product([
+                'name' => $itemName,
+                'category_id' => $categoryId,
+                'dosage_id' => $dosageId,
+                'movement' => 'Slow Moving', // Default movement value
+                'is_active' => true, // Default value
+            ]);
+
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Product import error: ' . $e->getMessage());
-            $this->errors[] = "Import failed: " . $e->getMessage();
+            Log::error('Import error: ' . $e->getMessage());
+            $this->addError("Failed to process row: {$e->getMessage()}");
+            $this->incrementSkipped();
+            return null;
         }
     }
 
-    public function getImportedCount()
+    /**
+     * Validation rules
+     */
+    public function rules(): array
     {
-        return $this->importedCount;
+        return [
+            'item_description' => 'required|string',
+            'category' => 'nullable|string',
+            'dosage_form' => 'nullable|string',
+        ];
     }
 
-    public function getSkippedCount()
+    /**
+     * Custom validation messages
+     */
+    public function customValidationMessages()
     {
-        return $this->skippedCount;
+        return [
+            'item_description.required' => 'Item description is required',
+        ];
     }
 
-    public function getErrors()
+    /**
+     * Define the chunk size for reading the Excel file
+     */
+    public function chunkSize(): int
     {
-        return $this->errors;
+        return 100; // Process 100 rows at a time for better memory management
+    }
+
+    /**
+     * Define the batch size for database inserts
+     */
+    public function batchSize(): int
+    {
+        return 50; // Insert 50 records at a time
+    }
+
+    /**
+     * Get the import ID
+     */
+    public function getImportId(): string
+    {
+        return $this->importId;
+    }
+
+    /**
+     * Increment imported count in cache
+     */
+    protected function incrementImported(): void
+    {
+        Cache::increment("import_{$this->importId}_imported");
+    }
+
+    /**
+     * Increment skipped count in cache
+     */
+    protected function incrementSkipped(): void
+    {
+        Cache::increment("import_{$this->importId}_skipped");
+    }
+
+    /**
+     * Add error to cache
+     */
+    protected function addError(string $error): void
+    {
+        $errors = Cache::get("import_{$this->importId}_errors", []);
+        $errors[] = $error;
+        Cache::put("import_{$this->importId}_errors", $errors, now()->addHours(24));
+    }
+
+    /**
+     * Get imported count from cache
+     */
+    public function getImportedCount(): int
+    {
+        return (int) Cache::get("import_{$this->importId}_imported", 0);
+    }
+
+    /**
+     * Get skipped count from cache
+     */
+    public function getSkippedCount(): int
+    {
+        return (int) Cache::get("import_{$this->importId}_skipped", 0);
+    }
+
+    /**
+     * Get errors from cache
+     */
+    public function getErrors(): array
+    {
+        return Cache::get("import_{$this->importId}_errors", []);
+    }
+
+    /**
+     * Clean up after import
+     */
+    public function __destruct()
+    {
+        // Clean up the stored file
+        if ($this->filePath && file_exists($this->filePath)) {
+            unlink($this->filePath);
+        }
     }
 }

@@ -16,6 +16,8 @@ use Illuminate\Validation\Rule;
 use Throwable;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProductsImport;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -200,46 +202,27 @@ class ProductController extends Controller
         ]);
 
         try {
-            // Start database transaction
-            DB::beginTransaction();
+            $file = $request->file('file');
             
-            // Create a new instance of ProductsImport
-            $import = new ProductsImport();
+            // Create a new instance of ProductsImport with the file path
+            $import = new ProductsImport($file->getRealPath());
             
-            // Get the file extension to determine how to process it
-            $extension = $request->file('file')->getClientOriginalExtension();
+            // Queue the import
+            $import->queue($file)->chain([
+                // You can add additional jobs to run after the import is complete
+            ]);
             
-            // Try to use ZipArchive if available, but don't require it
-            if (!class_exists('ZipArchive')) {
-                logger()->warning('ZipArchive extension not available. Using alternative import method.');
-            }
-            
-            // Import the Excel file
-            Excel::import($import, $request->file('file'));
-            
-            // Commit the transaction if everything is successful
-            DB::commit();
-
-            // Get import statistics
-            $importedCount = $import->getImportedCount();
-            $skippedCount = $import->getSkippedCount();
-            $errors = $import->getErrors();
-
             return response()->json([
                 'success' => true,
-                'message' => "Successfully imported {$importedCount} products. Skipped {$skippedCount} products.",
-                'imported' => $importedCount,
-                'skipped' => $skippedCount,
-                'errors' => $errors
+                'message' => 'Import has been queued successfully. You will be notified when it completes.',
+                'import_id' => $import->getImportId()
             ]);
-        } catch (\Throwable $e) {
-            // Rollback the transaction in case of error
-            DB::rollBack();
             
-            logger()->info('Excel import error: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Excel import error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error importing products: ' . $e->getMessage()
+                'message' => 'Error queuing import: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -253,6 +236,33 @@ class ProductController extends Controller
             return response()->json($product->is_active ? 'Product activated successfully.' : 'Product deactivated successfully.', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Check the status of a queued import
+     */
+    public function checkImportStatus($importId)
+    {
+        try {
+            $imported = Cache::get("import_{$importId}_imported", 0);
+            $skipped = Cache::get("import_{$importId}_skipped", 0);
+            $errors = Cache::get("import_{$importId}_errors", []);
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'imported' => $imported,
+                    'skipped' => $skipped,
+                    'errors' => $errors,
+                    'completed' => $imported > 0 || $skipped > 0 // Simple way to check if processing has started
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking import status: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
