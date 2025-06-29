@@ -605,7 +605,7 @@ async function reviewPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.visit(route('supplies.index'));
     } catch (error) {
         console.error('Error reviewing PO:', error);
         Swal.fire({
@@ -647,7 +647,7 @@ async function approvePO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.visit(route('supplies.index'));
     } catch (error) {
         console.error('Error approving PO:', error);
         Swal.fire({
@@ -699,7 +699,7 @@ async function rejectPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.visit(route('supplies.index'));
     } catch (error) {
         console.error('Error rejecting PO:', error);
         Swal.fire({
@@ -731,17 +731,63 @@ async function submitForm() {
         return;
     }
 
+    // Validate items
+    const invalidItems = form.value.items.filter(item => !item.product_id || !item.quantity || !item.unit_cost);
+    if (invalidItems.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Warning',
+            text: 'Please fill in all required fields for each item (Product, Quantity, and Unit Cost)'
+        });
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: 'Update Purchase Order',
+        text: 'Are you sure you want to update this purchase order?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, update it!'
+    });
+
+    if (!result.isConfirmed) return;
+
     isSubmitting.value = true;
 
     try {
-        await axios.put(route('purchase-orders.update', form.value.id), form.value);
+        const response = await axios.put(route('supplies.updatePO', form.value.id), form.value);
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Purchase order has been updated successfully',
+            confirmButtonColor: '#3085d6'
+        });
+        
         router.visit(route('supplies.index'));
     } catch (error) {
         console.error('Error updating PO:', error);
+        let errorMessage = 'Failed to update purchase order';
+        
+        if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.response?.data) {
+            // Handle validation errors
+            const validationErrors = error.response.data;
+            if (typeof validationErrors === 'object') {
+                errorMessage = Object.values(validationErrors).flat().join('\n');
+            } else {
+                errorMessage = validationErrors;
+            }
+        }
+        
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Failed to update purchase order'
+            text: errorMessage,
+            confirmButtonColor: '#3085d6'
         });
     } finally {
         isSubmitting.value = false;

@@ -1263,7 +1263,7 @@ class SupplyController extends Controller
             $validated = $request->validate([
                 'supplier_id' => 'required|exists:suppliers,id',
                 'po_number' => 'required',
-                'items' => 'required|array|min:1',
+                'items' => 'required|array|min:1',                
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.unit_cost' => 'required|numeric|min:0',
                 'items.*.quantity' => 'required|integer|min:1',
