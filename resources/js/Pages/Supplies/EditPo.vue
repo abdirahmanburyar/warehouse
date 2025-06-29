@@ -490,7 +490,6 @@ const props = defineProps({
     error: String
 });
 
-const selectedSupplier = ref(null);
 const form = ref({
     id: props.po?.id,
     supplier_id: props.po?.supplier_id,

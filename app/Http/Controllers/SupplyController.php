@@ -1262,21 +1262,35 @@ class SupplyController extends Controller
         try {
             $validated = $request->validate([
                 'supplier_id' => 'required|exists:suppliers,id',
-                'po_number' => 'required',
+                'po_number' => 'required|string',
+                'original_po_no' => 'nullable|string',
+                'po_date' => 'required|date',
                 'items' => 'required|array|min:1',                
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.unit_cost' => 'required|numeric|min:0',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.total_cost' => 'required|numeric|min:0',
+                'items.*.uom' => 'nullable|string',
+                'notes' => 'nullable|string'
             ]);
 
             return DB::transaction(function () use ($validated, $id) {
                 $po = PurchaseOrder::findOrFail($id);
                 
+                // Allow updates for pending, reviewed, and approved statuses
+                $allowedStatuses = ['pending', 'reviewed', 'approved'];
+                if (!in_array($po->status, $allowedStatuses)) {
+                    throw new \Exception('Purchase order cannot be updated in its current status.');
+                }
+                
                 // Update PO details
                 $po->update([
                     'po_number' => $validated['po_number'],
                     'supplier_id' => $validated['supplier_id'],
+                    'original_po_no' => $validated['original_po_no'],
+                    'po_date' => $validated['po_date'],
+                    'notes' => $validated['notes'],
+                    'updated_by' => auth()->id()
                 ]);
 
                 // Delete existing items
@@ -1291,14 +1305,21 @@ class SupplyController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_cost' => $item['unit_cost'],
                         'total_cost' => $item['total_cost'],
+                        'uom' => $item['uom'] ?? null,
+                        'edited_by' => auth()->id()
                     ]);
                 }
 
-                return response()->json('Purchase order updated successfully', 200);
+                return response()->json([
+                    'message' => 'Purchase order updated successfully',
+                    'purchase_order' => $po->fresh()->load('items.product', 'supplier')
+                ], 200);
             });
 
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => $th->getMessage()
+            ], 500);
         }
     }
 

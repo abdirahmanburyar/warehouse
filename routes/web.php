@@ -266,6 +266,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/purchase_orders/{id}/review', [SupplyController::class, 'reviewPO'])->middleware(PermissionMiddleware::class . ':supply.review')->name('supplies.reviewPO');
         Route::post('/purchase_orders/{id}/approve', [SupplyController::class, 'approvePO'])->middleware(PermissionMiddleware::class . ':supply.approve')->name('supplies.approvePO');
         Route::post('/purchase_orders/{id}/reject', [SupplyController::class, 'rejectPO'])->middleware(PermissionMiddleware::class . ':supply.reject')->name('supplies.rejectPO');
+        Route::put('/purchase_orders/{id}/update', [SupplyController::class, 'updatePurchaseOrder'])->middleware(PermissionMiddleware::class . ':supply.edit')->name('supplies.updatePO');
 
         Route::post('/packing-list/review', [SupplyController::class, 'reviewPK'])->middleware(PermissionMiddleware::class . ':supply.review')->name('supplies.reviewPK');
         Route::post('/packing-list/approve', [SupplyController::class, 'approvePK'])->middleware(PermissionMiddleware::class . ':supply.approve')->name('supplies.approvePK');
