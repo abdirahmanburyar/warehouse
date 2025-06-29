@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\EligibleItem;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 
-class ProcessEligibleItemImport implements ShouldQueue
+class EligibleItemImport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

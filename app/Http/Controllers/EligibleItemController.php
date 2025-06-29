@@ -13,6 +13,7 @@ use App\Jobs\ImportEligibleItemsJob;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Jobs\ProcessEligibleItemImport;
+use App\Imports\EligibleItemImport;
 
 class EligibleItemController extends Controller
 {
@@ -183,7 +184,7 @@ class EligibleItemController extends Controller
             $fullPath = storage_path('app/public/' . $filePath);
 
             // Dispatch job to process the file
-            ProcessEligibleItemImport::dispatch($fullPath, $importId);
+            EligibleItemImport::dispatch($fullPath, $importId);
 
             // Clean up the temporary file
             if (file_exists($tempFile)) {
