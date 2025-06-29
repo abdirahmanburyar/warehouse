@@ -716,6 +716,12 @@ const uploadFile = async () => {
     formData.append("file", selectedFile.value);
 
     try {
+        console.log('Uploading file:', {
+            name: selectedFile.value.name,
+            size: selectedFile.value.size,
+            type: selectedFile.value.type
+        });
+
         const response = await axios.post(
             route("products.import-excel"),
             formData,
@@ -723,24 +729,45 @@ const uploadFile = async () => {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    console.log('Upload progress:', percentCompleted + '%');
+                }
             }
         );
+
+        console.log('Upload response:', response.data);
 
         if (response.data.success) {
             // Remove loading toast
             toast.dismiss(loadingToast);
-            toast.success("Import started. You will be notified of progress.");
+            
+            if (response.data.data) {
+                const { imported, skipped, total_rows } = response.data.data;
+                toast.success(`Import completed: ${imported} imported, ${skipped} skipped out of ${total_rows} rows`);
+            } else {
+                toast.success("Import completed successfully");
+            }
 
-            // Start polling for status
-            const importId = response.data.import_id;
-            pollImportStatus(importId);
+            // Start polling for status if import_id is provided
+            if (response.data.import_id) {
+                pollImportStatus(response.data.import_id);
+            }
 
             closeUploadModal();
         } else {
+            toast.dismiss(loadingToast);
             toast.error(response.data.message || "Failed to start import");
         }
     } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to start import");
+        console.error('Upload error:', error);
+        toast.dismiss(loadingToast);
+        
+        const errorMessage = error.response?.data?.message 
+            || error.message 
+            || "Failed to start import";
+            
+        toast.error(errorMessage);
     } finally {
         isUploading.value = false;
     }

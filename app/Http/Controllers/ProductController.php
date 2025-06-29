@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Jobs\ProcessProductImport;
 
 class ProductController extends Controller
 {
@@ -197,32 +198,67 @@ class ProductController extends Controller
      */
     public function importExcel(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls'
-        ]);
-
         try {
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file was uploaded'
+                ], 422);
+            }
+
             $file = $request->file('file');
             
-            // Create a new instance of ProductsImport with the file path
-            $import = new ProductsImport($file->getRealPath());
+            // Validate file
+            if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
+                ], 422);
+            }
+
+            // Create directory if it doesn't exist
+            $uploadPath = public_path('excel-imports');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            // Generate unique filename and import ID
+            $importId = uniqid();
+            $filename = $importId . '.' . $file->getClientOriginalExtension();
             
-            // Queue the import
-            $import->queue($file)->chain([
-                // You can add additional jobs to run after the import is complete
+            // Move file to public directory
+            $file->move($uploadPath, $filename);
+            $filePath = $uploadPath . '/' . $filename;
+
+            Log::info('File uploaded successfully', [
+                'original_name' => $file->getClientOriginalName(),
+                'stored_name' => $filename,
+                'path' => $filePath
             ]);
-            
+
+            // Initialize cache values
+            Cache::put("import_{$importId}_imported", 0, now()->addHours(1));
+            Cache::put("import_{$importId}_skipped", 0, now()->addHours(1));
+            Cache::put("import_{$importId}_errors", [], now()->addHours(1));
+
+            // Dispatch the import job
+            ProcessProductImport::dispatch($filePath, $importId);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Import has been queued successfully. You will be notified when it completes.',
-                'import_id' => $import->getImportId()
+                'message' => 'Import started successfully',
+                'import_id' => $importId
             ]);
-            
+
         } catch (\Exception $e) {
-            Log::error('Excel import error: ' . $e->getMessage());
+            Log::error('Import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error queuing import: ' . $e->getMessage()
+                'message' => 'Import failed: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -27,7 +27,6 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LiquidateDisposalController;
 use App\Http\Controllers\ConsumptionUploadController;
-use App\Http\Controllers\ProductUploadController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
@@ -215,7 +214,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{product}/edit', [ProductController::class, 'edit'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.edit');
         Route::put('/{product}', [ProductController::class, 'update'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':product.delete')->name('products.destroy');
-        Route::post('/import-excel', [ProductUploadController::class, 'upload'])->name('products.import-excel');
+        Route::post('/import-excel', [ProductController::class, 'importExcel'])->name('products.import-excel');
         Route::get('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.toggle-status');
         Route::get('/import-status/{importId}', [ProductController::class, 'checkImportStatus'])
             ->name('products.import-status');
