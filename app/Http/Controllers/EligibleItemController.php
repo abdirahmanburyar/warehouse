@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use App\Jobs\ImportEligibleItemsJob;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\ProcessEligibleItemImport;
 
 class EligibleItemController extends Controller
 {
@@ -153,36 +154,63 @@ class EligibleItemController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls'
-        ]);
-
+        $tempFile = null;
         try {
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file was uploaded'
+                ], 422);
+            }
+
             $file = $request->file('file');
+            $tempFile = $file->getPathname(); // Get temporary file path
             
-            // Ensure temp directory exists
-            Storage::makeDirectory('temp');
+            // Validate file
+            if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
+                ], 422);
+            }
+
+            // Generate a unique import ID
+            $importId = uniqid('import_');
             
-            // Store file in storage/app/temp
-            $path = $file->store('temp');
-            $fullPath = storage_path('app/' . $path);
-            
+            // Store file in public/excel-imports directory
+            $fileName = $importId . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('excel-imports', $fileName, 'public');
+            $fullPath = storage_path('app/public/' . $filePath);
+
             // Dispatch job to process the file
-            ImportEligibleItemsJob::dispatch($fullPath);
+            ProcessEligibleItemImport::dispatch($fullPath, $importId);
+
+            // Clean up the temporary file
+            if (file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
 
             return response()->json([
-                'message' => 'File uploaded successfully. Eligible items will be imported in the background.'
+                'success' => true,
+                'message' => 'File uploaded successfully. Import is being processed in the background.',
+                'import_id' => $importId
             ]);
 
         } catch (\Exception $e) {
+            // Clean up temporary file if it exists
+            if ($tempFile && file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+
             logger()->error('Import error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
             return response()->json([
-                'error' => true,
+                'success' => false,
                 'message' => 'Import failed: ' . $e->getMessage()
-            ], 422);
+            ], 500);
         }
     }
 }
