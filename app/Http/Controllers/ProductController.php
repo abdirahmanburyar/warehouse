@@ -198,6 +198,7 @@ class ProductController extends Controller
      */
     public function importExcel(Request $request)
     {
+        $originalFile = null;
         try {
             if (!$request->hasFile('file')) {
                 return response()->json([
@@ -207,6 +208,7 @@ class ProductController extends Controller
             }
 
             $file = $request->file('file');
+            $originalFile = $file->getRealPath(); // Store original file path
             
             // Validate file
             if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
@@ -244,6 +246,11 @@ class ProductController extends Controller
             // Dispatch the import job
             ProcessProductImport::dispatch($filePath, $importId);
 
+            // Delete the original uploaded file
+            if ($originalFile && file_exists($originalFile)) {
+                unlink($originalFile);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Import started successfully',
@@ -255,6 +262,11 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Clean up original file in case of error
+            if ($originalFile && file_exists($originalFile)) {
+                unlink($originalFile);
+            }
 
             return response()->json([
                 'success' => false,
