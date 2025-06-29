@@ -39,7 +39,7 @@
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <Link :href="route('supplies.index')" :disabled="isSubmitting" class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                        Cancel
+                        Exit
                     </Link>
                     <button type="submit" :disable="isSubmitting" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                         {{ isSubmitting ? 'Creating...' : 'Create Supplier' }} 

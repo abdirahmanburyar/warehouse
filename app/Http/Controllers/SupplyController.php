@@ -1420,8 +1420,26 @@ class SupplyController extends Controller
     }
 
     public function show(Request $request){
+        $query = Supplier::query();
+        if($request->filled('search')){
+            $query->where('name', 'like', '%' . $request->search . '%') 
+                ->orWhere('contact_person', 'like', '%' . $request->search . '%')
+                ->orWhere('email', 'like', '%' . $request->search . '%')
+                ->orWhere('phone', 'like', '%' . $request->search . '%')
+                ->orWhere('address', 'like', '%' . $request->search . '%');
+        }
+
+        if($request->filled('status') && $request->status != 'all'){
+            $query->where('status', $request->status);
+        }
+
+        $supplier = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $supplier->setPath(url()->current());
+
         return inertia('Supplies/Show', [
-            'suppliers' => Supplier::get()
+            'suppliers' => SupplierResource::collection($supplier),
+            'filters' => $request->only('search', 'per_page', 'status')
         ]);
     }
 
