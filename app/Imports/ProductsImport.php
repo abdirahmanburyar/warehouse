@@ -13,6 +13,8 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +30,7 @@ class ProductsImport extends DefaultValueBinder implements
     WithCustomValueBinder,
     ShouldQueue
 {
-    use Importable;
+    use Importable, Queueable, SerializesModels;
 
     protected $importedCount = 0;
     protected $skippedCount = 0;
