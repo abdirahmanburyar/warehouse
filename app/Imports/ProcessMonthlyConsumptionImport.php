@@ -86,13 +86,11 @@ class ProcessMonthlyConsumptionImport
                     // Handle headers
                     if (!$headers) {
                         $headers = array_map('strtolower', array_map('trim', $values));
-                        Log::info('Found headers:', ['headers' => $headers]);
 
                         // Find item description column
                         foreach ($headers as $index => $header) {
                             if (in_array($header, $this->itemDescriptionHeaders)) {
                                 $itemDescriptionIndex = $index;
-                                Log::info('Found item description column:', ['header' => $header, 'index' => $index]);
                                 break;
                             }
                         }
@@ -101,17 +99,11 @@ class ProcessMonthlyConsumptionImport
                         foreach ($headers as $index => $header) {
                             if (in_array($header, $this->quantityHeaders)) {
                                 $quantityIndex = $index;
-                                Log::info('Found quantity column:', ['header' => $header, 'index' => $index]);
                                 break;
                             }
                         }
 
                         if ($itemDescriptionIndex === null || $quantityIndex === null) {
-                            Log::error('Required columns not found:', [
-                                'found_headers' => $headers,
-                                'expected_description' => $this->itemDescriptionHeaders,
-                                'expected_quantity' => $this->quantityHeaders
-                            ]);
                             throw new \Exception('Required columns not found in Excel file. Please ensure the file has "Item Description" and "Quantity" columns.');
                         }
                         continue;
@@ -130,11 +122,6 @@ class ProcessMonthlyConsumptionImport
                         continue;
                     }
 
-                    Log::info('Processing row:', [
-                        'description' => $description,
-                        'quantity' => $quantity
-                    ]);
-
                     // Find product by description
                     $product = Product::where('name', $description)
                         ->first();
@@ -142,7 +129,6 @@ class ProcessMonthlyConsumptionImport
                     if (!$product) {
                         $this->errors[] = "Product not found: {$description}";
                         $this->skippedCount++;
-                        Log::warning('Product not found:', ['description' => $description]);
                         continue;
                     }
 
@@ -180,13 +166,6 @@ class ProcessMonthlyConsumptionImport
             // Clean up the file
             $this->cleanupFile();
 
-            Log::info('Monthly consumption import completed', [
-                'import_id' => $this->importId,
-                'imported' => $this->importedCount,
-                'skipped' => $this->skippedCount,
-                'errors' => $this->errors
-            ]);
-
             return [
                 'imported' => $this->importedCount,
                 'skipped' => $this->skippedCount,
@@ -199,18 +178,10 @@ class ProcessMonthlyConsumptionImport
                 try {
                     $this->reader->close();
                 } catch (\Exception $closeException) {
-                    Log::error('Error closing reader', [
-                        'error' => $closeException->getMessage()
-                    ]);
+                   
                 }
                 $this->reader = null;
             }
-
-            Log::error('Monthly consumption import failed', [
-                'import_id' => $this->importId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             // Clean up the file
             $this->cleanupFile();
@@ -238,10 +209,7 @@ class ProcessMonthlyConsumptionImport
                 }
                 sleep($retryDelay);
             } catch (\Exception $e) {
-                Log::warning("Failed to delete file on attempt " . ($i + 1), [
-                    'file' => $this->filePath,
-                    'error' => $e->getMessage()
-                ]);
+               
                 if ($i < $maxRetries - 1) {
                     sleep($retryDelay);
                 }
