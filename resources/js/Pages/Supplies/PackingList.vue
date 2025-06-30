@@ -9,7 +9,7 @@
         Back to Supplies
         </Link>
 
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="bg-white rounded-lg shadow mb-6">
             <div class="grid grid-cols-1 gap-6">
                 <div class="w-[400px] mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -88,42 +88,38 @@
               <!-- halkaan ku past karee -->
                  <!-- Items List -->
                  <div class="mt-4 w-full">
-                    <table class="w-full table-fixed whitespace-nowrap"
+                    <table class="min-w-full divide-y divide-gray-200 table-auto"
                         v-if="!isLoading && form">
                         <colgroup>
-                            <col class="w-12">
+                            <col class="w-8">
                             <col class="w-48">
-                            <col class="w-[150px]">
+                            <col class="w-[120px]">
                             <col class="w-[200px]">
                             <col class="w-48">
-                            <col class="w-48">
                             <col class="w-32">
-                            <col class="w-32">
-                            <col class="w-32">
+                            <col class="w-28">
                         </colgroup>
                         <thead class="bg-gray-50 border border-black">
                             <tr>
                                 <th
-                                    class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10">
+                                    class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10 w-8">
                                     #
                                 </th>
                                 <th
-                                    class="text-left text-xs text-black capitalize sticky left-12 bg-gray-50 z-10">
+                                    class="text-left text-xs text-black capitalize sticky left-8 bg-gray-50 z-10 w-48">
                                     Item</th>
                                 <th class="text-left text-xs text-black capitalize">
                                     Qty</th>
                                 <th class="text-left text-xs text-black capitalize">
-                                    S. Location</th>
+                                    Warehouse</th>
                                 <th class="text-left text-xs text-black capitalize">
                                    St. Locations</th>
                                 <th class="text-left text-xs text-black capitalize">
                                     Item Detail</th>
                                 <th class="text-left text-xs text-black capitalize">
-                                    Unit Cost</th>
+                                    Cost (Unit/Total)</th>
                                 <th class="text-left text-xs text-black capitalize">
-                                    Total Cost</th>
-                                <th class="text-left text-xs text-black capitalize">
-                                    Fullfillment Rate</th>
+                                    Fullfillment</th>
                             </tr>
                         </thead>
                         <tbody class="text-xs">
@@ -133,9 +129,19 @@
                                 { 'border-red-500 border-2': item.hasError },
                                 { 'bg-red-50/20': item.hasError }
                             ]" :data-row="index + 1">
-                                <td :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'text-sm text-gray-500 align-top pt-4 sticky left-0 z-10']">{{ index + 1 }}</td>
-                                <td
-                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'sticky left-[40px] z-10']">
+                                <td :class="['text-sm text-gray-500 align-middle sticky left-0 z-10 bg-white w-8',
+                                    { 'border-green-600 border-2': item.status === 'approved' },
+                                    { 'border-yellow-500 border-2': item.status === 'reviewed' },
+                                    { 'border-black border': !item.status || item.status === 'pending' }
+                                ]">
+                                    {{ index + 1 }}
+                                </td>
+                                <td class="sticky left-8 z-10 bg-white whitespace-normal break-words w-48"
+                                    :class="{
+                                        'border-green-600 border-2': item.status === 'approved',
+                                        'border-yellow-500 border-2': item.status === 'reviewed',
+                                        'border-black border': !item.status || item.status === 'pending'
+                                    }">
                                     <div class="flex flex-col">
                                         {{ item.product?.name }}
                                         <span>UoM:  <input type="text" v-model="item.uom" readonly class="border-0"/></span>
@@ -200,44 +206,49 @@
                                         </template>
                                     </Multiselect>
                                 </td>
-                                <td
-                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                    <div class="flex flex-col">
+                                <td class="px-1 py-1"
+                                    :class="{ 'border-green-600 border-2': item.status === 'approved', 'border-yellow-500 border-2': item.status === 'reviewed', 'border-black border': !item.status || item.status === 'pending' }">
+                                    <div class="space-y-1">
                                         <div>
-                                            <label for="batch_number" class="text-xs">Batch Number</label>
+                                            <label class="text-[10px] text-gray-500 block">Batch</label>
                                             <input type="text" v-model="item.batch_number" required
                                                 :disabled="item.status === 'approved'"
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded">
                                         </div>
                                         <div>
-                                            <label for="expire_date" class="text-xs">Expire Date</label>
+                                            <label class="text-[10px] text-gray-500 block">Expiry</label>
                                             <input type="date" :value="formatDateForInput(item.expire_date)" required
                                                 @input="item.expire_date = $event.target.value"
                                                 :min="moment().add(6, 'months').format('YYYY-MM-DD')"
                                                 :disabled="item.status === 'approved'"
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded">
                                         </div>
                                         <div>
-                                            <label for="barcode" class="text-xs">Barcode</label>
+                                            <label class="text-[10px] text-gray-500 block">Barcode</label>
                                             <input type="text" v-model="item.barcode" required
                                                 :disabled="item.status === 'approved'"
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm">
+                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded">
                                         </div>
                                     </div>
                                 </td>
-                                <td
-                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                    {{ Number(item.unit_cost).toLocaleString('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }) }}
-                                </td>
-                                <td
-                                    :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }, 'px-3 py-2']">
-                                    {{ Number(item.total_cost).toLocaleString('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }) }}
+                                <td class="px-2 py-2 whitespace-nowrap"
+                                    :class="{ 'border-green-600 border-2': item.status === 'approved', 'border-yellow-500 border-2': item.status === 'reviewed', 'border border-black': !item.status || item.status === 'pending' }">
+                                    <div class="flex flex-col space-y-1">
+                                        <div class="text-sm">
+                                            <span class="text-gray-500 text-xs">Unit: </span>
+                                            {{ Number(item.unit_cost).toLocaleString('en-US', {
+                                                style: 'currency',
+                                                currency: 'USD'
+                                            }) }}
+                                        </div>
+                                        <div class="text-sm">
+                                            <span class="text-gray-500 text-xs">Total: </span>
+                                            {{ Number(item.total_cost).toLocaleString('en-US', {
+                                                style: 'currency',
+                                                currency: 'USD'
+                                            }) }}
+                                        </div>
+                                    </div>
                                 </td>
                                 <td
                                     :class="[{ 'border-green-600 border-2': item.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'text-left']">
