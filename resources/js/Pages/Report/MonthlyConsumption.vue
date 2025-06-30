@@ -146,15 +146,6 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    UOM
-                                </th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Batch #
-                                </th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Expiry Date
-                                </th>
                                 <!-- Month columns -->
                                 <th v-for="month in sortedMonths" :key="month"
                                     class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -173,15 +164,6 @@
                                 </td>
                                 <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
                                     {{ row.product_name }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
-                                    {{ row.uom }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
-                                    {{ row.batch_number }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
-                                    {{ formatExpiryDate(row.expiry_date) }}
                                 </td>
                                 <!-- Month columns with consumption values -->
                                 <td v-for="month in sortedMonths" :key="month"
