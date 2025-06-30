@@ -785,12 +785,7 @@ function exportToExcel() {
         // Prepare the header row with average columns
         const excelHeaderRow = [
             'SN',
-            'Product Name', 
-            'Category',
-            'UOM',
-            'Batch Number',
-            'Barcode',
-            'Expiry Date'
+            'ITEMS DESCRIPTION'
         ];
 
         // Add month headers and average headers
@@ -799,12 +794,17 @@ function exportToExcel() {
         if (monthsToUse.length === 0) {
             // If no months data, use the sorted months from computed property
             sortedMonths.value.forEach((month, index) => {
+                // Format month as MMM-YYYY (e.g., NOV-2024)
+                const monthDate = new Date(month);
+                const monthStr = monthDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                const yearStr = monthDate.getFullYear();
+                
                 // Add regular month header
-                excelHeaderRow.push(`Consumption ${formatMonthShort(month)}`);
+                excelHeaderRow.push(`${monthStr}-${yearStr}`);
                 
                 // Add average header after every 3 months
                 if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('3-Month AMC');
+                    excelHeaderRow.push('AMC');
                 }
             });
             
@@ -815,12 +815,17 @@ function exportToExcel() {
         } else {
             // Use the provided months
             monthsToUse.forEach((month, index) => {
+                // Format month as MMM-YYYY (e.g., NOV-2024)
+                const monthDate = new Date(month);
+                const monthStr = monthDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                const yearStr = monthDate.getFullYear();
+                
                 // Add regular month header
-                excelHeaderRow.push(`Consumption ${formatMonthShort(month)}`);
+                excelHeaderRow.push(`${monthStr}-${yearStr}`);
                 
                 // Add average header after every 3 months
                 if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('3-Month AMC');
+                    excelHeaderRow.push('AMC');
                 }
             });
             
@@ -838,12 +843,7 @@ function exportToExcel() {
         filteredPivotTableData.value.forEach(row => {
             const dataRow = [
                 rowNumber++,
-                row.product_name || 'N/A',
-                row.category || 'N/A',
-                row.uom || 'N/A',
-                row.batch_number || 'N/A',
-                row.barcode || 'N/A',
-                row.expiry_date || 'N/A'
+                row.product_name || 'N/A'
             ];
 
             // Add month values and average values
