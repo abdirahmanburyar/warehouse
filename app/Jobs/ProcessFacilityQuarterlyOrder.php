@@ -176,16 +176,17 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
             return;
         }
 
-        // Create order item
+        // Create order item with calculated quantities
         $orderItem = OrderItem::create([
             'order_id' => $order->id,
             'product_id' => $product->id,
-            'quantity' => $neededQuantity,
-            'quantity_on_order' => 0,
-            'soh' => $soh,
-            'amc' => $amc,
-            'quantity_to_release' => 0,
-            'no_of_days' => 120
+            'quantity' => $neededQuantity,       // Actual needed quantity from formula
+            'quantity_on_order' => 0,            // Will be updated during order processing
+            'soh' => $soh,                       // Current stock on hand
+            'amc' => $amc,                       // Average Monthly Consumption
+            'quantity_to_release' => $neededQuantity, // Set equal to needed quantity
+            'no_of_days' => (int) $amc,          // Set equal to AMC value
+            'days' => (int) $amc                 // Also set days field to AMC value
         ]);
 
         // Process inventory allocation in a separate job
