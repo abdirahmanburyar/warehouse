@@ -4,7 +4,7 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-[100px]">
             <div class=" bg-white border-b border-gray-200">
                 <div class="flex justify-between mb-4">
-                    <h1 class="text-sm font-semibold text-gray-900 mb-6">Monthly Consumption Report</h1>
+                    <h1 class="text-xs text-gray-900">Monthly Consumption Report</h1>
                     <div class="flex space-x-2">
                         <button 
                             @click="exportToExcel" 
