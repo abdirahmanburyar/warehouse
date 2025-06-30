@@ -146,7 +146,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-[80px]">
             <!-- Orders Table -->
             <div class="lg:col-span-10 text-xs">
                 <div>
