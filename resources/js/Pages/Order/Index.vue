@@ -159,37 +159,37 @@
                                 <tr>
                                     <!-- Checkbox column removed -->
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Order Number
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Facility
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Order Type
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Order Date
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Expected Date
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Handled By
                                     </th>
                                     <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider"
+                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
                                     >
                                         Status
                                     </th>
@@ -199,7 +199,7 @@
                                 <tr v-if="orders.data?.length === 0">
                                     <td
                                         colspan="7"
-                                        class="px-2 py-2 text-center text-sm text-black border-b border-grey-500"
+                                        class="px-2 py-2 text-center text-sm text-black border border-black"
                                     >
                                         No orders found
                                     </td>
@@ -207,7 +207,7 @@
                                 <tr
                                     v-for="order in orders.data"
                                     :key="order.id"
-                                    class="border-b border-grey-500"
+                                    class=""
                                     :class="{
                                         'hover:bg-gray-50': true,
                                         'text-red-500':
@@ -215,7 +215,7 @@
                                     }"
                                 >
                                     <!-- Checkbox cell removed -->
-                                    <td class="px-2 py-2 whitespace-nowrap">
+                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
                                         <div class="text-xs text-gray-900">
                                             <Link
                                                 :href="
@@ -228,36 +228,36 @@
                                             >
                                         </div>
                                     </td>
-                                    <td class="px-2 py-2 whitespace-nowrap">
+                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
                                         <div class="text-xs text-gray-900">
                                             {{ order.facility?.name }}
                                         </div>
                                     </td>
                                     <td
-                                        class="px-2 py-2 whitespace-nowrap text-xs text-black"
+                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
                                     >
                                         {{ order.order_type }}
                                     </td>
 
                                     <td
-                                        class="px-2 py-2 whitespace-nowrap text-xs text-black"
+                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
                                     >
                                         {{ formatDate(order.order_date) }}
                                     </td>
                                     <td
-                                        class="px-2 py-2 whitespace-nowrap text-xs text-black"
+                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
                                     >
                                         {{ formatDate(order.expected_date) }}
                                     </td>
                                     <td
-                                        class="px-2 py-2 whitespace-nowrap text-xs text-black"
+                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
                                     >
                                         {{
                                             order.facility?.handledby?.name ||
                                             "Not assigned"
                                         }}
                                     </td>
-                                    <td class="px-2 py-2 whitespace-nowrap">
+                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <!-- Status Progress Icons - Only show actions taken -->
                                             <div
