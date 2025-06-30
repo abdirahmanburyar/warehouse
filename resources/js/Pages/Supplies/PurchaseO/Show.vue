@@ -28,7 +28,7 @@
                 </div>
 
                 <!-- Vendor and Ship To -->
-                <div class="grid grid-cols-2 gap-8 mb-2">
+                <div class="grid grid-cols-3 gap-8 mb-2">
                     <!-- Vendor Info -->
                     <div class="border rounded">
                         <div class="bg-[#4472C4] text-white px-4 py-2 font-bold">
@@ -79,6 +79,44 @@
                             <p class="font-medium text-sm">
                                 Status:
                                 <span :class="getStatusClass()">{{ props.po.status }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Approval Info -->
+                    <div class="border rounded">
+                        <div class="bg-[#4472C4] text-white px-4 py-2 font-bold">
+                            Approval Information
+                        </div>
+                        <div class="p-4 font-medium space-y-1">
+                            <template v-if="props.po.reviewed_by">
+                                <p class="text-sm">
+                                    Reviewed By: {{ props.po.reviewed_by.name }}
+                                </p>
+                                <p class="text-sm">
+                                    Reviewed At: {{ formatDate(props.po.reviewed_at) }}
+                                </p>
+                            </template>
+                            <template v-if="props.po.approved_by">
+                                <p class="text-sm">
+                                    Approved By: {{ props.po.approved_by.name }}
+                                </p>
+                                <p class="text-sm">
+                                    Approved At: {{ formatDate(props.po.approved_at) }}
+                                </p>
+                            </template>
+                            <template v-if="props.po.rejected_by">
+                                <p class="text-sm">
+                                    Rejected By: {{ props.po.rejected_by.name }}
+                                </p>
+                                <p class="text-sm">
+                                    Rejected At: {{ formatDate(props.po.rejected_at) }}
+                                </p>
+                                <p class="text-sm text-red-600">
+                                    Reason: {{ props.po.rejection_reason }}
+                                </p>
+                            </template>
+                            <p v-if="!props.po.reviewed_by && !props.po.approved_by && !props.po.rejected_by" class="text-sm text-gray-500 italic">
+                                No approval information available
                             </p>
                         </div>
                     </div>
