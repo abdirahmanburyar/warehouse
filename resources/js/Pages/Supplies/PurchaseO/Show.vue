@@ -29,7 +29,6 @@
                     </h1>
                 </div>
 
-
                 <!-- Vendor and Ship To -->
                 <div class="grid grid-cols-2 gap-8 mb-8">
                     <!-- Vendor Info -->
@@ -57,7 +56,7 @@
                             </p>
                         </div>
                     </div>
-                    <!-- Ship To Info -->
+                    <!-- Purchase Order Info -->
                     <div class="border rounded">
                         <div
                             class="bg-[#4472C4] text-white px-4 py-2 font-bold"
@@ -82,6 +81,10 @@
                                     props.po.original_po_no ||
                                     "N/A"
                                 }}
+                            </p>
+                            <p class="font-medium text-sm">
+                                Status: 
+                                <span :class="getStatusClass()">{{ props.po.status }}</span>
                             </p>
                         </div>
                     </div>
@@ -174,114 +177,198 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Column: Status & Notes -->
-            <div class="space-y-6">
-                <!-- Status Information -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">Status Information</h3>
-                        <span :class="getStatusClass()">{{ props.po.status }}</span>
-                    </div>
-                    <div class="space-y-4">
-                        <div v-if="props.po.reviewed_by">
-                            <p class="text-sm font-medium text-gray-500">
-                                Reviewed By
-                            </p>
-                            <p class="mt-1 text-sm text-gray-900">
-                                {{ props.po.reviewedBy?.name }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                {{ formatDate(props.po.reviewed_at) }}
-                            </p>
-                        </div>
-                        <div v-if="props.po.approved_by">
-                            <p class="text-sm font-medium text-gray-500">
-                                Approved By
-                            </p>
-                            <p class="mt-1 text-sm text-gray-900">
-                                {{ props.po.approvedBy?.name }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                {{ formatDate(props.po.approved_at) }}
-                            </p>
-                        </div>
-                        <div v-if="props.po.rejected_by">
-                            <p class="text-sm font-medium text-gray-500">
-                                Rejected By
-                            </p>
-                            <p class="mt-1 text-sm text-gray-900">
-                                {{ props.po.rejectedBy?.name }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                {{ formatDate(props.po.rejected_at) }}
-                            </p>
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ props.po.rejection_reason }}
-                            </p>
-                        </div>
+                <!-- Status Timeline -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Purchase Order Timeline</h3>
+                    <div class="flow-root">
+                        <ul role="list" class="-mb-8">
+                            <!-- Created -->
+                            <li>
+                                <div class="relative pb-8">
+                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                    <div class="relative flex space-x-3">
+                                        <div>
+                                            <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
+                                                <DocumentIcon class="h-5 w-5 text-white" />
+                                            </span>
+                                        </div>
+                                        <div class="flex-1 flex-cols space-x-4 pt-1.5">
+                                            <div>
+                                                <p class="text-sm text-gray-500">Created by <span class="font-medium text-gray-900">{{ props.po.creator?.name || 'System' }}</span></p>
+                                            </div>
+                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                                                <time :datetime="props.po.created_at">{{ formatDate(props.po.created_at) }}</time>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Reviewed -->
+                            <li v-if="props.po.reviewed_by">
+                                <div class="relative pb-8">
+                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                    <div class="relative flex space-x-3">
+                                        <div>
+                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
+                                                <EyeIcon class="h-5 w-5 text-white" />
+                                            </span>
+                                        </div>
+                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                                            <div>
+                                                <p class="text-sm text-gray-500">Reviewed by <span class="font-medium text-gray-900">{{ props.po.reviewed_by.name }}</span></p>
+                                            </div>
+                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                                                <time :datetime="props.po.reviewed_at">{{ formatDate(props.po.reviewed_at) }}</time>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Approved -->
+                            <li v-if="props.po.approved_by">
+                                <div class="relative pb-8">
+                                    <span v-if="props.po.rejected_by" class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                    <div class="relative flex space-x-3">
+                                        <div>
+                                            <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
+                                                <CheckIcon class="h-5 w-5 text-white" />
+                                            </span>
+                                        </div>
+                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                                            <div>
+                                                <p class="text-sm text-gray-500">Approved by <span class="font-medium text-gray-900">{{ props.po.approved_by.name }}</span></p>
+                                            </div>
+                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                                                <time :datetime="props.po.approved_at">{{ formatDate(props.po.approved_at) }}</time>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Rejected -->
+                            <li v-if="props.po.rejected_by">
+                                <div class="relative pb-8">
+                                    <div class="relative flex space-x-3">
+                                        <div>
+                                            <span class="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center ring-8 ring-white">
+                                                <XMarkIcon class="h-5 w-5 text-white" />
+                                            </span>
+                                        </div>
+                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                                            <div>
+                                                <p class="text-sm text-gray-500">Rejected by <span class="font-medium text-gray-900">{{ props.po.rejected_by.name }}</span></p>
+                                                <p class="mt-2 text-sm text-red-600">{{ props.po.rejection_reason }}</p>
+                                            </div>
+                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                                                <time :datetime="props.po.rejected_at">{{ formatDate(props.po.rejected_at) }}</time>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
                 <!-- Notes -->
-                <div
-                    v-if="props.po.notes"
-                    class="bg-white rounded-lg shadow p-6"
-                >
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        Notes
-                    </h3>
-                    <p class="text-sm text-gray-600 whitespace-pre-wrap" v-html="props.po.notes">
-                    </p>
+                <div v-if="props.po.notes" class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Notes</h3>
+                    <div class="prose prose-sm max-w-none">
+                        <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ props.po.notes }}</p>
+                    </div>
                 </div>
 
                 <!-- Documents -->
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        Attached Documents
-                    </h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Attached Documents</h3>
+                        <span class="text-sm text-gray-500">{{ props.po.documents.length }} document(s)</span>
+                    </div>
                     <div v-if="props.po.documents.length" class="space-y-3">
-                        <div
-                            v-for="doc in props.po.documents"
-                            :key="doc.id"
-                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
-                        >
+                        <div v-for="doc in props.po.documents" :key="doc.id"
+                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150">
                             <div class="flex items-center space-x-3">
                                 <DocumentIcon class="h-5 w-5 text-gray-400" />
                                 <div>
-                                    <p
-                                        class="text-sm font-medium text-gray-900"
-                                    >
-                                        {{ doc.file_name }}
-                                    </p>
+                                    <p class="text-sm font-medium text-gray-900">{{ doc.file_name }}</p>
                                     <p class="text-xs text-gray-500">
-                                        {{ formatDate(doc.uploaded_at) }} ·
-                                        {{ doc.document_type }}
+                                        {{ formatDate(doc.created_at) }}
+                                        <span class="text-gray-400">·</span>
+                                        <span class="text-gray-500">Uploaded by {{ doc.uploader?.name }}</span>
                                     </p>
                                 </div>
                             </div>
-                            <a
-                                :href="doc.file_path"
-                                target="_blank"
-                                class="inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
-                            >
-                                <EyeIcon class="h-4 w-4 mr-1" />
-                                View
-                            </a>
+                            <div class="flex items-center space-x-2">
+                                <a :href="doc.file_path" target="_blank"
+                                    class="inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                    <EyeIcon class="h-4 w-4 mr-1" />
+                                    View
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <div v-else class="text-sm text-gray-500">
-                        No documents attached
+                    <div v-else class="text-sm text-gray-500 text-center py-8">
+                        <DocumentIcon class="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p>No documents attached</p>
                     </div>
-                    <form @submit.prevent="submitForm" class="mt-8">
-                        <input type="file" accept="application/pdf" @change="onFileChange" class="w-full px-3 py-2 border-0 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
-                        <button type="submit" :disabled="isUploading" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                            {{ isUploading ? 'Uploading...' : 'Upload'}}
-                        </button>
-                    </form>                   
                 </div>
             </div>
+            <!-- Approval Modal -->
+            <Modal v-if="showApprovalModal" @close="showApprovalModal = false">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <CheckIcon class="h-6 w-6 text-green-600" />
+                    </div>
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900">Approve Purchase Order</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">Are you sure you want to approve this purchase order? This action cannot be undone.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="approvePurchaseOrder"
+                        class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">
+                        Approve
+                    </button>
+                    <button type="button" @click="showApprovalModal = false"
+                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                        Cancel
+                    </button>
+                </div>
+            </Modal>
+
+            <!-- Reject Modal -->
+            <Modal v-if="showRejectModal" @close="showRejectModal = false">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <XMarkIcon class="h-6 w-6 text-red-600" />
+                    </div>
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900">Reject Purchase Order</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">Please provide a reason for rejecting this purchase order.</p>
+                            <textarea v-model="rejectionReason" rows="3"
+                                class="mt-3 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                                placeholder="Enter rejection reason..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="rejectPurchaseOrder" :disabled="!rejectionReason.trim()"
+                        class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto">
+                        Reject
+                    </button>
+                    <button type="button" @click="showRejectModal = false"
+                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                        Cancel
+                    </button>
+                </div>
+            </Modal>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -289,80 +376,114 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { jsPDF } from "jspdf";
 import moment from "moment";
 import autoTable from "jspdf-autotable";
-import {useToast} from "vue-toastification";
+import { useToast } from "vue-toastification";
 import axios from "axios";
+import Modal from "@/Components/Modal.vue";
 import {
     ArrowLeftIcon,
     DocumentArrowDownIcon,
     DocumentIcon,
     EyeIcon,
+    CheckIcon,
+    XMarkIcon,
+    ArrowDownTrayIcon,
+    ArrowUpTrayIcon,
 } from "@heroicons/vue/24/outline";
+
+const SpinnerIcon = {
+    template: `
+        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+    `
+};
 
 const props = defineProps({
     po: {
-        required: true,
         type: Object,
+        required: true
     },
+    can: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
 const toast = useToast();
+const showApprovalModal = ref(false);
+const showRejectModal = ref(false);
+const rejectionReason = ref('');
+const document = ref(null);
+const isUploading = ref(false);
+
+const canApprove = computed(() => props.can.approve && props.po.status === 'pending');
+const canReject = computed(() => props.can.reject && props.po.status === 'pending');
+const canUpload = computed(() => props.can.upload_documents);
 
 const getStatusClass = () => {
     const classes = "px-3 py-1 rounded-full text-sm font-medium";
     switch (props.po.status) {
         case "pending":
             return `${classes} bg-yellow-100 text-yellow-800`;
+        case "reviewed":
+            return `${classes} bg-blue-100 text-blue-800`;
         case "approved":
             return `${classes} bg-green-100 text-green-800`;
         case "rejected":
             return `${classes} bg-red-100 text-red-800`;
+        case "completed":
+            return `${classes} bg-gray-100 text-gray-800`;
         default:
             return `${classes} bg-gray-100 text-gray-800`;
     }
 };
 
 const calculateTotal = () => {
-    return props.po.items.reduce((sum, item) => sum + item.total_cost, 0);
+    return props.po.items.reduce((sum, item) => sum + (item.total_cost || 0), 0);
 };
 
 const formatDate = (date) => {
-    return moment(date).format('DD/MM/YYYY')
+    if (!date) return "N/A";
+    return moment(date).format("DD/MM/YYYY HH:mm");
 };
 
 const formatNumber = (number) => {
     return new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-    }).format(number);
+    }).format(number || 0);
 };
 
-const document = ref(null);
-
-function onFileChange(e) {
-    document.value = e.target.files[0];
+async function approvePurchaseOrder() {
+    try {
+        await axios.post(route('supplies.approve', props.po.id));
+        showApprovalModal.value = false;
+        toast.success('Purchase order approved successfully');
+        router.reload();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to approve purchase order');
+    }
 }
 
-const isUploading = ref(false);
+async function rejectPurchaseOrder() {
+    if (!rejectionReason.value.trim()) return;
 
-async function submitForm(){
-    isUploading.value = true;
-    const formData = new FormData();
-    formData.append('document', document.value);
-    await axios.post(route('supplies.uploadDocument', props.po.id), formData)
-        .then(response => {
-            isUploading.value = false;
-            toast.success('Document uploaded successfully');
-            document.value = null;
-            router.reload();
-        })
-        .catch(error => {
-            isUploading.value = false;
-            toast.error(error.response.data);
+    try {
+        await axios.post(route('supplies.reject', props.po.id), {
+            reason: rejectionReason.value
         });
+        showRejectModal.value = false;
+        rejectionReason.value = '';
+        toast.success('Purchase order rejected successfully');
+        router.reload();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to reject purchase order');
+    }
 }
 
 const downloadPdf = async () => {
@@ -425,7 +546,8 @@ const downloadPdf = async () => {
     doc.text([
         `P.O. No: ${props.po.po_number}`,
         `P.O. Date: ${formatDate(props.po.po_date)}`,
-        `Original P.O. No: ${props.po.original_po_no || 'N/A'}`
+        `Original P.O. No: ${props.po.original_po_no || 'N/A'}`,
+        `Status: ${props.po.status.toUpperCase()}`
     ], rightCol + 10, yPos, { lineHeightFactor: 1.5 });
 
     // Items Table
@@ -439,7 +561,7 @@ const downloadPdf = async () => {
             lineWidth: 0.5,
         },
         headStyles: {
-            fillColor: [68, 114, 196], // Navy blue color from screenshot
+            fillColor: [68, 114, 196],
             textColor: 255,
             fontSize: 9,
             fontStyle: "bold",
@@ -456,21 +578,6 @@ const downloadPdf = async () => {
                 { content: "TOTAL COST", styles: { halign: "right" } },
             ],
         ],
-        columns: [
-            { dataKey: "product" },
-            { dataKey: "uom" },
-            { dataKey: "quantity" },
-            { dataKey: "unitCost" },
-            { dataKey: "total" },
-        ],
-        columnStyles: {
-            product: { cellWidth: "auto" },
-            uom: { cellWidth: 40, halign: "center" },
-            quantity: { cellWidth: 40, halign: "center" },
-            unitCost: { cellWidth: 60, halign: "right" },
-            total: { cellWidth: 60, halign: "right" },
-        },
-        // Generate table data with empty rows
         body: [
             ...props.po.items.map(item => ({
                 product: item.product.name,
@@ -488,103 +595,45 @@ const downloadPdf = async () => {
                 total: "",
             })),
         ],
-        tableLineWidth: 0.5,
-        tableLineColor: [211, 211, 211], // Light gray for grid lines
-        styles: {
-            lineColor: [211, 211, 211],
-            lineWidth: 0.5,
-        },
         foot: [
             [
-                {
-                    content: "TOTAL",
-                    colSpan: 4,
-                    styles: { halign: "right", fontStyle: "bold" },
-                },
-                {
-                    content: formatNumber(calculateTotal()),
-                    styles: { halign: "right", fontStyle: "bold" },
-                },
+                { content: "TOTAL", colSpan: 4, styles: { halign: "right", fontStyle: "bold" } },
+                { content: formatNumber(calculateTotal()), styles: { halign: "right", fontStyle: "bold" } },
             ],
         ],
-        footStyles: {
-            fontSize: 9,
-            cellPadding: 4,
-        },
     });
 
-    // Notes section
-    const finalY = doc.lastAutoTable.finalY || 240;
-    let currentY = finalY + 40;
+    // Add approval information
+    yPos = doc.lastAutoTable.finalY + 30;
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text("Approval Information", 40, yPos);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    yPos += 20;
 
+    const approvalInfo = [
+        `Created by: ${props.po.creator?.name || 'System'} at ${formatDate(props.po.created_at)}`,
+        props.po.reviewed_by ? `Reviewed by: ${props.po.reviewed_by.name} at ${formatDate(props.po.reviewed_at)}` : null,
+        props.po.approved_by ? `Approved by: ${props.po.approved_by.name} at ${formatDate(props.po.approved_at)}` : null,
+        props.po.rejected_by ? `Rejected by: ${props.po.rejected_by.name} at ${formatDate(props.po.rejected_at)}` : null,
+    ].filter(Boolean);
+
+    doc.text(approvalInfo, 40, yPos, { lineHeightFactor: 1.5 });
+
+    // Notes section if exists
     if (props.po.notes) {
-        // Draw notes box
-        doc.setDrawColor(68, 114, 196);
-        doc.rect(40, currentY, pageWidth - 80, 100);
-        doc.setFillColor(68, 114, 196);
-        doc.rect(40, currentY, pageWidth - 80, 25, 'F');
-        doc.setTextColor(255);
-        doc.setFontSize(12);
-        doc.text('Notes', 50, currentY + 17);
-
-        // Notes content
-        doc.setTextColor(0);
+        yPos = doc.lastAutoTable.finalY + 100;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text("Notes", 40, yPos);
+        doc.setFont(undefined, 'normal');
         doc.setFontSize(9);
-        const splitNotes = doc.splitTextToSize(props.po.notes, pageWidth - 100);
-        doc.text(splitNotes, 50, currentY + 40);
-        currentY += 120;
-    }
-
-    // Status section
-    doc.setFontSize(12);
-    currentY += 20;
-
-    // Draw status boxes side by side
-    const statusBoxWidth = (pageWidth - 80 - 20) / 2; // 20px gap between boxes
-    const statusBoxHeight = 80;
-
-    // Reviewed by box
-    if (props.po.reviewed_by) {
-        doc.setDrawColor(68, 114, 196);
-        doc.rect(40, currentY, statusBoxWidth, statusBoxHeight);
-        doc.setFillColor(68, 114, 196);
-        doc.rect(40, currentY, statusBoxWidth, 25, 'F');
-        doc.setTextColor(255);
-        doc.text('Reviewed By', 50, currentY + 17);
-
-        // Reviewer details
-        doc.setTextColor(0);
-        doc.setFontSize(9);
-        doc.text([
-            props.po.reviewedBy?.name || 'N/A',
-            formatDate(props.po.reviewed_at)
-        ], 50, currentY + 45, { lineHeightFactor: 1.5 });
-    }
-
-    // Approved by box
-    if (props.po.approved_by) {
-        const approvalX = pageWidth - 40 - statusBoxWidth;
-        doc.setDrawColor(68, 114, 196);
-        doc.rect(approvalX, currentY, statusBoxWidth, statusBoxHeight);
-        doc.setFillColor(68, 114, 196);
-        doc.rect(approvalX, currentY, statusBoxWidth, 25, 'F');
-        doc.setTextColor(255);
-        doc.text('Approved By', approvalX + 10, currentY + 17);
-
-        // Approver details
-        doc.setTextColor(0);
-        doc.setFontSize(9);
-        doc.text([
-            props.po.approvedBy?.name || 'N/A',
-            formatDate(props.po.approved_at)
-        ], approvalX + 10, currentY + 45, { lineHeightFactor: 1.5 });
+        yPos += 20;
+        doc.text(props.po.notes, 40, yPos);
     }
 
     // Save the PDF
-    const filename = `purchase_order_${props.po.po_number.replace(
-        /[^a-zA-Z0-9]/g,
-        "_"
-    )}.pdf`;
-    doc.save(filename);
+    doc.save(`${props.po.po_number}.pdf`);
 };
 </script>

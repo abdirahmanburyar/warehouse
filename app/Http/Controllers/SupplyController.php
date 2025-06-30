@@ -110,7 +110,7 @@ class SupplyController extends Controller
     }
 
     public function showPO(Request $request, $id){
-        $po = PurchaseOrder::with('items.product','supplier','documents','approvedBy','rejectedBy','reviewedBy')->find($id);
+        $po = PurchaseOrder::with('items.product','supplier','documents.uploader','creator','approvedBy','rejectedBy','reviewedBy')->find($id);
         return inertia("Supplies/PurchaseO/Show", [
             'po' => $po
         ]);
