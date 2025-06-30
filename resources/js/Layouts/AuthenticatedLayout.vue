@@ -431,12 +431,12 @@
                 <div
                     class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 text-xs"
                 >
-                    <div class="container mx-auto py-2">
-                        <div class="flex justify-center items-center gap-4">
+                    <div class="container mx-auto text-xs py-2">
+                        <div class="flex justify-center text-xs items-center gap-4">
                             <img
                                 src="/assets/images/vista.png"
                                 alt="Vista"
-                                class="w-[80px]"
+                                class="w-[50px]"
                             />
                             <span class="flex items-center text-gray-400"
                                 >|</span
