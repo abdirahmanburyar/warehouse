@@ -126,9 +126,9 @@ class SupplyController extends Controller
 
     public function newPackingList(Request $request){
         $purchaseOrders = PurchaseOrder::where('status', 'approved')
-            ->whereHas('packingLists', function($query){
-                $query->whereIn('status', ['pending', 'reviewed']);
-            })
+            // ->whereHas('packingLists', function($query){
+            //     $query->whereIn('status', ['pending', 'reviewed']);
+            // })
             ->select('id','po_number','supplier_id','po_date','po_number','status')
             ->with(['supplier'])
             ->get();
