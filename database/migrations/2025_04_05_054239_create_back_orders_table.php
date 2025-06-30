@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->text('notes')->nullable();
             $table->enum('status', ['pending','approved','rejected','reviewed', 'completed'])->default('pending');
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('reviewed_by')->nullable()->constrained('users');
             $table->timestamp('reviewed_at')->nullable();
