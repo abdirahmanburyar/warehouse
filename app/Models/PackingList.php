@@ -23,9 +23,16 @@ class PackingList extends Model
         'approved_at',
         'approved_by',
     ];
+
     public function items(){
         return $this->hasMany(PackingListItem::class, 'packing_list_id');
     }
+
+    public function documents()
+    {
+        return $this->hasMany(PKDocument::class);
+    }
+
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');

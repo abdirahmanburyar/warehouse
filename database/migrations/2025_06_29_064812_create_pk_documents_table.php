@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pk_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('purchase_order_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('packing_list_id')->constrained()->cascadeOnDelete();
             $table->string('document_type');
             $table->string('file_name');
             $table->string('file_path');

@@ -116,6 +116,14 @@ class SupplyController extends Controller
         ]);
     }
 
+    // showPackingList
+    public function showPackingList(Request $request, $id){
+        $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy')->find($id);
+        return inertia("Supplies/PackingList/Show", [
+            'packingList' => $packingList
+        ]);
+    }
+
     public function newPackingList(Request $request){
         $purchaseOrders = PurchaseOrder::where('status', 'approved')
             ->whereHas('packingLists', function($query){
@@ -1840,6 +1848,50 @@ class SupplyController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error deleting difference: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function uploadPackingListDocument(Request $request, $id)
+    {
+        try {
+            $packingList = PackingList::find($id);
+            if (!$packingList) {
+                return response()->json('Packing list not found', 404);
+            }
+
+            $request->validate([
+                'document' => 'required|file|mimes:pdf'
+            ],[
+                'document.required' => 'Document is required',
+                'document.file' => 'Document must be a file',
+                'document.mimes' => 'Document must be a PDF file'
+            ]);
+
+            $index = $packingList->documents()->count() + 1;
+            $file = $request->file('document');
+            $fileName = 'packing_list_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('attachments/packing_lists'), $fileName);
+
+            $document = $packingList->documents()->create([
+                'packing_list_id' => $packingList->id,
+                'document_type' => 'packing_list',
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => '/attachments/packing_lists/' . $fileName,
+                'mime_type' => $file->getClientMimeType(),
+                'file_size' => filesize(public_path('attachments/packing_lists/' . $fileName)),
+                'uploaded_by' => auth()->id()
+            ]);
+
+            // Load the uploader relationship
+            $document->load('uploader:id,name');
+
+            return response()->json([
+                'message' => 'Document uploaded successfully',
+                'document' => $document
+            ], 200);
+
+        } catch (\Throwable $th) {
+            return response()->json('Upload failed: ' . $th->getMessage(), 500);
         }
     }
 }

@@ -291,6 +291,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // back-order.dispose
         // Route::get('/dispose', [SupplyController::class, 'dispose'])->name('back-order.dispose');
+        Route::get('/packing-list/{id}/show', [SupplyController::class, 'showPackingList'])->name('supplies.packing-list.show');
+
+        // Add new route for packing list document upload
+        Route::post('/packing-list/{id}/upload-document', [SupplyController::class, 'uploadPackingListDocument'])
+            ->name('supplies.packing-list.uploadDocument');
 
     });
 

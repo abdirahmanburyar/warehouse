@@ -317,58 +317,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Approval Modal -->
-            <Modal v-if="showApprovalModal" @close="showApprovalModal = false">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <CheckIcon class="h-6 w-6 text-green-600" />
-                    </div>
-                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                        <h3 class="text-base font-semibold leading-6 text-gray-900">Approve Purchase Order</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">Are you sure you want to approve this purchase order? This action cannot be undone.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <button type="button" @click="approvePurchaseOrder"
-                        class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">
-                        Approve
-                    </button>
-                    <button type="button" @click="showApprovalModal = false"
-                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                        Cancel
-                    </button>
-                </div>
-            </Modal>
-
-            <!-- Reject Modal -->
-            <Modal v-if="showRejectModal" @close="showRejectModal = false">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <XMarkIcon class="h-6 w-6 text-red-600" />
-                    </div>
-                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                        <h3 class="text-base font-semibold leading-6 text-gray-900">Reject Purchase Order</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">Please provide a reason for rejecting this purchase order.</p>
-                            <textarea v-model="rejectionReason" rows="3"
-                                class="mt-3 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
-                                placeholder="Enter rejection reason..."></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <button type="button" @click="rejectPurchaseOrder" :disabled="!rejectionReason.trim()"
-                        class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto">
-                        Reject
-                    </button>
-                    <button type="button" @click="showRejectModal = false"
-                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                        Cancel
-                    </button>
-                </div>
-            </Modal>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -419,11 +367,7 @@ const showApprovalModal = ref(false);
 const showRejectModal = ref(false);
 const rejectionReason = ref('');
 const document = ref(null);
-const isUploading = ref(false);
 
-const canApprove = computed(() => props.can.approve && props.po.status === 'pending');
-const canReject = computed(() => props.can.reject && props.po.status === 'pending');
-const canUpload = computed(() => props.can.upload_documents);
 
 const getStatusClass = () => {
     const classes = "px-3 py-1 rounded-full text-sm font-medium";
