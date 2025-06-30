@@ -740,58 +740,6 @@ function calculateAverage(row) {
     return Math.round((sum / monthValues.length) * 100) / 100;
 }
 
-// Calculate total for a row
-function calculateRowTotal(row) {
-    return props.months.reduce((total, month) => {
-        return total + (parseInt(row[month]) || 0);
-    }, 0);
-}
-
-// Calculate average consumption for three months
-function calculateThreeMonthAverage(row, currentIndex) {
-    // Get the three months we need to average
-    const startIndex = currentIndex - 2;
-    const months = props.months.slice(startIndex, currentIndex + 1);
-
-    // Calculate the sum of these three months
-    let sum = 0;
-    let count = 0;
-
-    months.forEach(month => {
-        const value = parseInt(row[month] || 0);
-        sum += value;
-        count++;
-    });
-
-    // Calculate and format the average
-    const average = count > 0 ? sum / count : 0;
-    return average.toFixed(1);
-}
-
-// Calculate average for remaining months (when not divisible by 3)
-function calculateRemainingMonthsAverage(row) {
-    const remainingCount = props.months.length % 3;
-    if (remainingCount === 0) return 0;
-
-    // Get the remaining months
-    const startIndex = props.months.length - remainingCount;
-    const months = props.months.slice(startIndex);
-
-    // Calculate the sum of these months
-    let sum = 0;
-    let count = 0;
-
-    months.forEach(month => {
-        const value = parseInt(row[month] || 0);
-        sum += value;
-        count++;
-    });
-
-    // Calculate and format the average
-    const average = count > 0 ? sum / count : 0;
-    return average.toFixed(1);
-}
-
 // Export data to Excel
 function exportToExcel() {
     try {
@@ -805,7 +753,6 @@ function exportToExcel() {
                 headerRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
             });
         }
-        const totalColumns = headerRow.length;
 
         // Add facility information if available
         if (facilityInfo.value && Object.keys(facilityInfo.value).length > 0) {
@@ -836,7 +783,15 @@ function exportToExcel() {
         }
 
         // Prepare the header row with average columns
-        const excelHeaderRow = ['SN', 'Items', 'UOM', 'Batch Number', 'Barcode'];
+        const excelHeaderRow = [
+            'SN',
+            'Product Name', 
+            'Category',
+            'UOM',
+            'Batch Number',
+            'Barcode',
+            'Expiry Date'
+        ];
 
         // Add month headers and average headers
         const monthsToUse = props.months || [];
@@ -845,11 +800,11 @@ function exportToExcel() {
             // If no months data, use the sorted months from computed property
             sortedMonths.value.forEach((month, index) => {
                 // Add regular month header
-                excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
+                excelHeaderRow.push(`Consumption ${formatMonthShort(month)}`);
                 
                 // Add average header after every 3 months
                 if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('AMC');
+                    excelHeaderRow.push('3-Month AMC');
                 }
             });
             
@@ -861,11 +816,11 @@ function exportToExcel() {
             // Use the provided months
             monthsToUse.forEach((month, index) => {
                 // Add regular month header
-                excelHeaderRow.push(`${formatMonthShort(month)}-${formatYear(month)}`);
+                excelHeaderRow.push(`Consumption ${formatMonthShort(month)}`);
                 
                 // Add average header after every 3 months
                 if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('AMC');
+                    excelHeaderRow.push('3-Month AMC');
                 }
             });
             
@@ -882,11 +837,13 @@ function exportToExcel() {
         let rowNumber = 1;
         filteredPivotTableData.value.forEach(row => {
             const dataRow = [
-                rowNumber++, 
+                rowNumber++,
                 row.product_name || 'N/A',
+                row.category || 'N/A',
                 row.uom || 'N/A',
                 row.batch_number || 'N/A',
-                row.barcode || 'N/A'
+                row.barcode || 'N/A',
+                row.expiry_date || 'N/A'
             ];
 
             // Add month values and average values
