@@ -131,6 +131,7 @@ class SupplyController extends Controller
             // })
             ->select('id','po_number','supplier_id','po_date','po_number','status')
             ->with(['supplier'])
+            ->latest()
             ->get();
         $warehouses = Warehouse::select('id', 'name')->get();
         return inertia("Supplies/PackingList", [
