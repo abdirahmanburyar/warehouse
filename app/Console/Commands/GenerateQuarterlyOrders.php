@@ -37,23 +37,27 @@ class GenerateQuarterlyOrders extends Command
         4 => '01-10',
     ];
 
-    private function getMonthsInQuarter($movement): int
-    {
-        return match($movement) {
-            'Fast Moving' => 3,
-            'Slow Moving' => 4,
-            default => 4
-        };
-    }
-
     public function handle()
     {
         $this->info('Starting quarterly order generation...');
 
-        // Get target quarter and year
         $today = now();
-        $targetQuarter = $this->argument('quarter') ?? ceil($today->month / 3);
-        $year = $this->argument('year') ?? $today->year;
+        
+        // If quarter and year are not provided, calculate the next quarter
+        if (!$this->argument('quarter') && !$this->argument('year')) {
+            $currentQuarter = ceil($today->month / 3);
+            $targetQuarter = $currentQuarter % 4 + 1; // Next quarter (1-4)
+            $year = $today->year;
+            
+            // If we're in Q4, increment the year
+            if ($currentQuarter === 4) {
+                $year++;
+            }
+        } else {
+            // Use provided quarter and year if specified
+            $targetQuarter = $this->argument('quarter') ?? ceil($today->month / 3);
+            $year = $this->argument('year') ?? $today->year;
+        }
 
         $this->info("Generating orders for Q{$targetQuarter} {$year}");
 

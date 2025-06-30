@@ -56,9 +56,13 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
     /**
      * Calculate the number of months needed for AMC based on movement type.
      */
-    protected function getMonthsInQuarter(string $movementType): int
+    private function getMonthsInQuarter($movement): int
     {
-        return $movementType === 'slow' ? 4 : 3;
+        return match($movement) {
+            'Fast Moving' => 3,
+            'Slow Moving' => 4,
+            default => 4
+        };
     }
 
     /**
@@ -124,8 +128,9 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
             return;
         }
 
-        // Calculate AMC
-        $monthsNeeded = $this->getMonthsInQuarter($product->movement_type);
+        // Calculate AMC with null check for movement
+        $movement = $product->movement ?? 'Fast Moving'; // Default to 'Fast Moving' if movement is null
+        $monthsNeeded = $this->getMonthsInQuarter($movement);
         $monthsInQuarter = 3; // Standard quarter length
 
         // Get the previous months for AMC calculation
@@ -179,7 +184,6 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
             'quantity_on_order' => 0,
             'soh' => $soh,
             'amc' => $amc,
-            'uom' => $product->uom,
             'quantity_to_release' => 0,
             'no_of_days' => 120
         ]);
