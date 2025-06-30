@@ -9,7 +9,7 @@
         Back to Supplies
         </Link>
         <!-- Supplier Selection -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="mb-[80px]">
             <div class="grid grid-cols-1 gap-6">
 
                 <div v-if="form" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4">
@@ -37,32 +37,46 @@
                     <span>No P.O Data found</span>
                 </div>
                 <!-- Items List -->
-                <table class="table w-full" v-if="!isLoading && form">
-                    <thead class="bg-gray-50 border border-blck">
-                        <tr>
-                            <th
-                                class="w-[40px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">
-                                #
-                            </th>
-                            <th
-                                class="w-[400px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase sticky left-[40px]  bg-gray-50 z-10">
-                                Item</th>
-                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Qty</th>
-                            <th class="min-w-[180px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Warehouse</th>
-                            <th class="min-w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Locations</th>
-                            <th class="w-[200px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Item Detail</th>
-                            <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Unit Cost</th>
-                            <th class="w-[120px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Total Cost</th>
-                            <th class="w-[110px] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                Fullfillment Rate</th>
-                        </tr>
-                    </thead>
+                <div class="overflow-auto">
+                    <table class="w-full table-sm">
+                        <colgroup>
+                            <col class="w-8" />
+                            <col class="w-48" />
+                            <col class="w-[120px]" />
+                            <col class="w-48" />
+                            <col class="w-48" />
+                            <col class="w-48" />
+                            <col class="w-32" />
+                            <col class="w-24" />
+                        </colgroup>
+                        <thead style="background-color: #eef1f8" class="rounded-t-xl">
+                            <tr>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    #
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Item
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Qty
+                                </th>
+                                <th class="w-48 px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Warehouse
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Storage Location
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Item Detail
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Cost (Unit/Total)
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-black capitalize tracking-wider">
+                                    Fulfillment Rate
+                                </th>
+                            </tr>
+                        </thead>
                     <tbody>
                         <tr v-for="(item, index) in form.items" :key="index" :class="[
                             'hover:bg-gray-50',
@@ -75,7 +89,7 @@
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-black border': !item.status || item.status === 'pending' }, 'px-3 py-2 sticky left-[40px] z-10']">
                                 <div class="flex flex-col">
                                     {{ item.product?.name }}
-                                    <span>UoM: <input type="text" v-model="item.uom" class="border-0" /></span>
+                                    <span>UoM: {{ item.uom }}</span>
                                 </div>
                             </td>
                             <td
@@ -159,17 +173,22 @@
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
-                                {{ Number(item.unit_cost).toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }) }}
-                            </td>
-                            <td
-                                :class="[{ 'border-green-600 border-2': props.packing_list.status === 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border border-black': !item.status || item.status === 'pending' }]">
-                                {{ Number(item.total_cost).toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }) }}
+                                <div class="flex flex-col space-y-1">
+                                    <div class="text-sm">
+                                        <span class="text-gray-500 text-xs">Unit: </span>
+                                        {{ Number(item.unit_cost).toLocaleString('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }) }}
+                                    </div>
+                                    <div class="text-sm">
+                                        <span class="text-gray-500 text-xs">Total: </span>
+                                        {{ Number(item.total_cost).toLocaleString('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }) }}
+                                    </div>
+                                </div>
                             </td>
                             <td
                                 :class="[{ 'border-green-600 border-2': props.packing_list.status == 'approved' }, { 'border-yellow-500 border-2': item.status === 'reviewed' }, { 'border-gray-500 border': !item.status || item.status === 'pending' }, 'px-3 py-2 text-left']">
@@ -188,6 +207,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div> <!-- Close overflow-auto div -->
                 <!-- Footer -->
                 <div class="border-t border-gray-200 px-3 py-4">
                     <div class="flex justify-end items-center">
@@ -203,11 +223,24 @@
                     </div>
                 </div>
 
+                <div
+                    class="mt-4 bg-gray-50 rounded-lg p-4"
+                >
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Memo</h3>
+                    <textarea
+                        v-model="form.notes"
+                        rows="3"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        placeholder="Enter memo or additional notes here..."
+                    ></textarea>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="flex flex-col items-center mb-[100px]">
                     <div class="flex justify-end space-x-3">
                         <div class="mt-6 flex justify-end gap-x-4">
-                            <button type="button" @click="reviewPackingList" :class="[
+                            <div class="flex flex-col">
+                                <button type="button" @click="reviewPackingList" :class="[
                                 'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                                 hasReviewedItems || hasAllApproved
                                     ? 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -228,6 +261,12 @@
                                 {{ isReviewing && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems ||
                                     hasAllApproved) ? 'Reviewed on ' + formatDate(props.packing_list.reviewed_at) : 'Review') }}
                             </button>
+                            <span>
+                                By {{ props.packing_list.reviewed_by?.name }}
+                            </span>
+                            </div>
+
+                            <div class="flex flex-col">
                             <button type="button" @click="approvePackingList" :class="[
                                 'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
                                 hasAllApproved
@@ -254,10 +293,14 @@
                                 {{ isApproving && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved on ' +
                                     formatDate(props.packing_list.approved_at) : 'Approve') }}
                             </button>
+                            <span>
+                                By {{ props.packing_list.approved_by?.name }}
+                            </span>
+                            </div>
                             <button type="button" @click="router.visit(route('supplies.index'))"
                                 :disabled="isSubmitting"
                                 class="inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50 shadow-sm transition-all duration-200 ease-in-out">
-                                Back
+                                Exit
                             </button>
                             <button v-if="!hasAllApproved" type="button" @click="submit"
                                 class="flex justify-center items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"

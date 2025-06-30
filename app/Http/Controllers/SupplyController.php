@@ -1491,7 +1491,11 @@ class SupplyController extends Controller
             'items.product:id,name',
             'items.purchaseOrderItem:id,quantity',
             'items.differences',
-            'purchaseOrder.supplier'
+            'purchaseOrder.supplier',
+            'approvedBy:id,name',
+            'confirmedBy:id,name',
+            'reviewedBy:id,name',
+            'rejectedBy:id,name',
         ])
         ->find($id);
 
