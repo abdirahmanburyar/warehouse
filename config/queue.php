@@ -43,6 +43,18 @@ return [
             'after_commit' => false,
         ],
 
+        'quarterly-orders' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'quarterly-orders',
+            'retry_after' => 600, // 10 minutes
+            'after_commit' => false,
+            'timeout' => 300, // 5 minutes
+            'block_for' => 5, // Wait 5 seconds for a job
+            'retry_on_lock_timeout' => true,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),

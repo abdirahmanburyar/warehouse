@@ -12,19 +12,21 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\EligibleItem;
 use App\Models\InventoryAllocation;
+use App\Models\FacilityInventoryItem;
+use App\Models\MonthlyConsumptionItem;
+use App\Models\InventoryItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Bus;
 
 class ProcessFacilityQuarterlyOrder implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $facility;
+    protected $facilityId;
     protected $targetQuarter;
     protected $year;
-    protected $orderStartDate;
-    protected $today;
 
     /**
      * The number of times the job may be attempted.
@@ -36,33 +38,18 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
     /**
      * The number of seconds to wait before retrying the job.
      *
-     * @var int
+     * @var array
      */
     public $backoff = [60, 180, 300]; // 1 min, 3 mins, 5 mins
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Facility $facility, int $targetQuarter, int $year, Carbon $orderStartDate, Carbon $today)
+    public function __construct(int $facilityId, int $targetQuarter, int $year)
     {
-        $this->facility = $facility;
+        $this->facilityId = $facilityId;
         $this->targetQuarter = $targetQuarter;
         $this->year = $year;
-        $this->orderStartDate = $orderStartDate;
-        $this->today = $today;
-        $this->onQueue('quarterly-orders');
-    }
-
-    /**
-     * Calculate the number of months needed for AMC based on movement type.
-     */
-    private function getMonthsInQuarter($movement): int
-    {
-        return match($movement) {
-            'Fast Moving' => 3,
-            'Slow Moving' => 4,
-            default => 4
-        };
     }
 
     /**
@@ -70,127 +57,102 @@ class ProcessFacilityQuarterlyOrder implements ShouldQueue
      */
     public function handle()
     {
-        Log::info("Processing quarterly order for facility", [
-            'facility_id' => $this->facility->id,
-            'facility_name' => $this->facility->name,
-            'quarter' => $this->targetQuarter,
-            'year' => $this->year
-        ]);
-
-        DB::beginTransaction();
         try {
-            // Create the order
-            $timestamp = now()->format('His');
-            $order = Order::create([
-                'facility_id' => $this->facility->id,
-                'created_by' => $this->facility->user_id,
-                'order_number' => "OR-{$this->targetQuarter}-{$this->year}-{$timestamp}-" . str_pad($this->facility->id, 4, '0', STR_PAD_LEFT),
-                'order_type' => 'quarterly',
-                'status' => 'pending',
-                'order_date' => $this->orderStartDate,
-                'expected_date' => $this->orderStartDate->copy()->addDays(7),
-            ]);
+            Log::info("Starting quarterly order processing for facility {$this->facilityId}");
 
-            // Get eligible items for the facility
-            $eligibleItems = EligibleItem::where('facility_type', $this->facility->facility_type)
-                ->with('product')
-                ->get();
+            // Get facility
+            $facility = DB::table('facilities')
+                ->where('id', $this->facilityId)
+                ->where('is_active', true)
+                ->first();
 
-            foreach ($eligibleItems as $eligibleItem) {
-                $this->processEligibleItem($order, $eligibleItem);
+            if (!$facility) {
+                Log::error("Facility {$this->facilityId} not found or not active");
+                return;
             }
 
-            DB::commit();
-            Log::info("Successfully processed quarterly order", [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number
+            // Create order
+            $timestamp = now()->format('His');
+            $orderNumber = "OR-{$this->targetQuarter}-{$this->year}-{$timestamp}-" . str_pad($facility->id, 4, '0', STR_PAD_LEFT);
+            
+            DB::beginTransaction();
+            
+            $orderId = DB::table('orders')->insertGetId([
+                'facility_id' => $facility->id,
+                'order_number' => $orderNumber,
+                'order_type' => 'quarterly-'.$this->targetQuarter,
+                'status' => 'pending',
+                'order_date' => Carbon::create($this->year, ($this->targetQuarter - 1) * 3 + 1, 1),
+                'expected_date' => Carbon::create($this->year, ($this->targetQuarter - 1) * 3 + 1, 1)->addDays(7),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+            
+            DB::commit();
+            
+            Log::info("Created order: {$orderNumber} with ID: {$orderId}");
+
+            // Get eligible items in chunks
+            $chunkSize = 10;
+            $chunks = [];
+            
+            DB::table('eligible_items')
+                ->where('facility_type', $facility->facility_type)
+                ->join('products', 'eligible_items.product_id', '=', 'products.id')
+                ->select('eligible_items.*', 'products.id as product_id')
+                ->orderBy('eligible_items.id')
+                ->chunk($chunkSize, function($items) use ($orderId, $facility, &$chunks) {
+                    $chunks[] = new ProcessQuarterlyOrderItems($orderId, $facility->id, $items->toArray());
+                });
+
+            Log::info("Created " . count($chunks) . " job chunks for order {$orderNumber}");
+
+            // Dispatch chunks in smaller batches to avoid lock timeouts
+            $batchGroups = array_chunk($chunks, 2); // Process 2 chunks at a time
+            
+            foreach ($batchGroups as $groupIndex => $batchChunks) {
+                $maxRetries = 3;
+                $attempt = 0;
+                $batch = null;
+
+                while ($attempt < $maxRetries && !$batch) {
+                    try {
+                        if ($attempt > 0) {
+                            sleep(pow(2, $attempt)); // Exponential backoff
+                            Log::info("Retrying batch group " . ($groupIndex + 1) . " (attempt {$attempt})");
+                        }
+
+                        $batch = Bus::batch($batchChunks)
+                            ->name("quarterly-order-{$orderNumber}-group-" . ($groupIndex + 1))
+                            ->allowFailures()
+                            ->onQueue('quarterly-orders')
+                            ->dispatch();
+
+                        Log::info("Successfully queued batch group " . ($groupIndex + 1) . " with ID: " . $batch->id);
+                        
+                        // Small delay between batch groups
+                        if ($groupIndex < count($batchGroups) - 1) {
+                            sleep(1);
+                        }
+                        
+                        break;
+
+                    } catch (\Exception $e) {
+                        $attempt++;
+                        if ($attempt >= $maxRetries) {
+                            Log::error("Failed to create batch group " . ($groupIndex + 1) . " after {$maxRetries} attempts: " . $e->getMessage());
+                            throw $e;
+                        }
+                    }
+                }
+            }
+
+            Log::info("Successfully queued all job batches for order {$orderNumber}");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error processing quarterly order for facility", [
-                'facility_id' => $this->facility->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error("Error processing quarterly order for facility {$this->facilityId}: " . $e->getMessage());
             throw $e;
         }
-    }
-
-    /**
-     * Process a single eligible item for the order.
-     */
-    protected function processEligibleItem(Order $order, EligibleItem $eligibleItem)
-    {
-        $product = $eligibleItem->product;
-        if (!$product) {
-            Log::warning("Product not found for eligible item", ['eligible_item_id' => $eligibleItem->id]);
-            return;
-        }
-
-        // Calculate AMC with null check for movement
-        $movement = $product->movement ?? 'Fast Moving'; // Default to 'Fast Moving' if movement is null
-        $monthsNeeded = $this->getMonthsInQuarter($movement);
-        $monthsInQuarter = 3; // Standard quarter length
-
-        // Get the previous months for AMC calculation
-        $months = [];
-        $currentDate = $this->today->copy();
-        for ($i = 0; $i < $monthsNeeded; $i++) {
-            $months[] = $currentDate->format('Y-m');
-            $currentDate->subMonth();
-        }
-
-        // Get consumption data
-        $consumptionData = DB::table('monthly_consumption_reports')
-            ->join('monthly_consumption_items', 'monthly_consumption_reports.id', '=', 'monthly_consumption_items.parent_id')
-            ->where('monthly_consumption_reports.facility_id', $this->facility->id)
-            ->where('monthly_consumption_items.product_id', $product->id)
-            ->whereIn('monthly_consumption_reports.month_year', $months)
-            ->select('monthly_consumption_reports.month_year', 'monthly_consumption_items.quantity')
-            ->get();
-
-        // Calculate AMC
-        $totalConsumption = $consumptionData->sum('quantity');
-        $monthsWithData = $consumptionData->count();
-        $amc = $monthsWithData > 0 ? $totalConsumption / $monthsWithData : 10; // Default AMC if no data
-
-        // Get current stock on hand
-        $soh = DB::table('facility_inventories')
-            ->join('facility_inventory_items', 'facility_inventories.id', '=', 'facility_inventory_items.facility_inventory_id')
-            ->where('facility_inventories.facility_id', $this->facility->id)
-            ->where('facility_inventories.product_id', $product->id)
-            ->sum('facility_inventory_items.quantity');
-
-        // Calculate needed quantity
-        $neededQuantity = ($amc * $monthsInQuarter) - $soh;
-        $neededQuantity = max(0, ceil($neededQuantity));
-
-        if ($neededQuantity <= 0) {
-            Log::info("No need for product", [
-                'product_id' => $product->id,
-                'product_name' => $product->name,
-                'amc' => $amc,
-                'soh' => $soh
-            ]);
-            return;
-        }
-
-        // Create order item with calculated quantities
-        $orderItem = OrderItem::create([
-            'order_id' => $order->id,
-            'product_id' => $product->id,
-            'quantity' => $neededQuantity,       // Actual needed quantity from formula
-            'quantity_on_order' => 0,            // Will be updated during order processing
-            'soh' => $soh,                       // Current stock on hand
-            'amc' => $amc,                       // Average Monthly Consumption
-            'quantity_to_release' => $neededQuantity, // Set equal to needed quantity
-            'no_of_days' => (int) $amc,          // Set equal to AMC value
-            'days' => (int) $amc                 // Also set days field to AMC value
-        ]);
-
-        // Process inventory allocation in a separate job
-        ProcessInventoryAllocation::dispatch($orderItem, $neededQuantity)
-            ->onQueue('inventory-allocation');
     }
 } 

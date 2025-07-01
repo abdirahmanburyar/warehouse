@@ -25,6 +25,7 @@ class Order extends Model
         'order_date',
         'expected_date',
         'dispatched_by',
+        'created_by',
         'approved_by',
         'approved_at',
         'rejected_by',
