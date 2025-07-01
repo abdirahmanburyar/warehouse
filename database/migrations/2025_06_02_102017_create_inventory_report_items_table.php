@@ -27,7 +27,7 @@ return new class extends Migration
             $table->integer('closing_balance')->default(0);
             $table->integer('total_closing_balance')->default(0);
             $table->integer('average_monthly_consumption')->default(0);
-            $table->varchar('months_of_stock')->nullable();
+            $table->string('months_of_stock')->nullable();
             $table->integer('quantity_in_pipeline')->default(0);
             $table->double('unit_cost')->default(0);
             $table->double('total_cost')->default(0);

@@ -45,6 +45,7 @@ use App\Jobs\ImportIssueQuantityJob;
 use App\Imports\IssueQuantitiyImport;
 use App\Models\FacilityMonthlyReport;
 use App\Jobs\ProcessIssueQuantityImport;
+use App\Exports\WarehouseMonthlyReportExport;
 
 class ReportController extends Controller
 {
@@ -547,9 +548,6 @@ class ReportController extends Controller
      */
     protected function getInventoryReportData(Request $request, $monthYear)
     {
-        $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
-        
         // Get or create the inventory report
         $inventoryReport = InventoryReport::firstOrCreate(
             ['month_year' => $monthYear],
@@ -560,107 +558,13 @@ class ReportController extends Controller
             ]
         );
 
-        // Get all products with their inventory data
-        $products = Product::with(['inventories' => function($query) {
-            $query->with(['items' => function($q) {
-                $q->where('quantity', '>', 0)
-                  ->with('warehouse');
-            }]);
-        }])->get();
-
-        $reportItems = [];
-        
-        foreach ($products as $product) {
-            // Calculate beginning balance from previous month
-            $beginningBalance = $this->getBeginningBalance($product, $startDate);
-            
-            // Get received and issued quantities for the current month
-            $receivedQuantity = $this->getReceivedQuantity($product, $startDate, $endDate);
-            $issuedQuantity = $this->getIssuedQuantity($product, $startDate, $endDate);
-            
-            // Calculate closing balance
-            $closingBalance = $beginningBalance + $receivedQuantity - $issuedQuantity;
-            
-            // Get current inventory items for the product
-            $currentInventory = $product->inventories->sum(function($inventory) {
-                return $inventory->items->sum('quantity');
-            });
-            
-            // Get or create the report item
-            $reportItem = $inventoryReport->items()->updateOrCreate(
-                ['product_id' => $product->id],
-                [
-                    'uom' => $product->unit_of_measure,
-                    'beginning_balance' => $beginningBalance,
-                    'received_quantity' => $receivedQuantity,
-                    'issued_quantity' => $issuedQuantity,
-                    'closing_balance' => $closingBalance,
-                    'current_balance' => $currentInventory,
-                    'average_monthly_consumption' => $this->calculateAverageMonthlyConsumption($product, $startDate),
-                ]
-            );
-            
-            $reportItems[] = $reportItem;
-        }
-        
-        return $inventoryReport->items()->with('product')->get();
-    }
-    
-    /**
-     * Get beginning balance for a product at the start of the reporting period
-     */
-    protected function getBeginningBalance($product, $startDate)
-    {
-        // Get the previous month's closing balance if it exists
-        $previousMonth = $startDate->copy()->subMonth();
-        $previousReport = InventoryReport::where('month_year', $previousMonth->format('Y-m'))
-            ->first();
-            
-        if ($previousReport) {
-            $previousItem = $previousReport->items()->where('product_id', $product->id)->first();
-            if ($previousItem) {
-                return $previousItem->closing_balance;
-            }
-        }
-        
-        // If no previous report, return 0 as beginning balance
-        return 0;
-    }
-    
-    /**
-     * Get total received quantity for a product within the reporting period
-     */
-    protected function getReceivedQuantity($product, $startDate, $endDate)
-    {
-        return ReceivedQuantityItem::where('product_id', $product->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('quantity');
-    }
-    
-    /**
-     * Get total issued quantity for a product within the reporting period
-     */
-    protected function getIssuedQuantity($product, $startDate, $endDate)
-    {
-        return IssueQuantityItem::where('product_id', $product->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('quantity');
-    }
-    
-    /**
-     * Calculate average monthly consumption for a product
-     */
-    protected function calculateAverageMonthlyConsumption($product, $endDate)
-    {
-        // Get consumption data for the past 6 months
-        $startDate = $endDate->copy()->subMonths(6);
-        
-        $totalConsumption = IssueQuantityItem::where('product_id', $product->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('quantity');
-            
-        // Calculate average over 6 months
-        return $totalConsumption / 6;
+        // Return items with product relationship - no need for complex calculations
+        return $inventoryReport->items()
+            ->with(['product' => function($query) {
+                $query->select('id', 'name', 'category_id')
+                    ->with('category:id,name');
+            }])
+            ->get();
     }
 
     public function warehouseMonthlyReport(Request $request)
@@ -680,8 +584,6 @@ class ReportController extends Controller
                     ]
                 );
                 
-            logger()->info($inventoryReport);
-            
             // Always load data without pagination
             $reportData = $this->getInventoryReportData($request, $monthYear);
             
@@ -896,6 +798,41 @@ class ReportController extends Controller
         } catch (\Throwable $th) {
             Log::error('Approve Report Error: ' . $th->getMessage());
             return response()->json(['message' => 'Failed to approve report.'], 500);
+        }
+    }
+
+    /**
+     * Reject inventory report
+     */
+    public function rejectInventoryReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month_year' => 'required|string',
+                'reason' => 'nullable|string|max:500',
+            ]);
+
+            $inventoryReport = InventoryReport::where('month_year', $request->month_year)->firstOrFail();
+
+            if ($inventoryReport->status !== 'under_review') {
+                return response()->json(['message' => 'Only reports under review can be rejected.'], 403);
+            }
+
+            $inventoryReport->update([
+                'status' => 'rejected',
+                'rejected_by' => auth()->id(),
+                'rejected_at' => now(),
+                'rejection_reason' => $request->reason,
+            ]);
+
+            return response()->json([
+                'message' => 'Report rejected successfully.',
+                'status' => 'rejected'
+            ]);
+
+        } catch (\Throwable $th) {
+            Log::error('Reject Report Error: ' . $th->getMessage());
+            return response()->json(['message' => 'Failed to reject report.'], 500);
         }
     }
 
@@ -1184,5 +1121,22 @@ class ReportController extends Controller
 
         return Excel::download(new OrderExport($filters), 'orders_' . $filters['month_year'] . '.xlsx');
     }
-    
+
+    /**
+     * Export warehouse monthly report to Excel
+     */
+    public function exportToExcel($monthYear, Request $request)
+    {
+        try {
+            $reportData = $this->getInventoryReportData($request, $monthYear);
+            
+            $filename = "warehouse_monthly_report_{$monthYear}.xlsx";
+            
+            return Excel::download(new WarehouseMonthlyReportExport($reportData, $monthYear), $filename);
+            
+        } catch (\Throwable $th) {
+            Log::error('Export Error: ' . $th->getMessage());
+            return back()->with('error', 'Failed to export report: ' . $th->getMessage());
+        }
+    }
 }
