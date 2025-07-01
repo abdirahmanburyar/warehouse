@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('inventory_report_id')->constrained('inventory_reports')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products');
-            $table->string('uom');
+            $table->string('uom')->nullable();
             $table->string('batch_number')->nullable();
             $table->date('expiry_date')->nullable();
             $table->integer('beginning_balance')->default(0);

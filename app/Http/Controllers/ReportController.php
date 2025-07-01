@@ -538,13 +538,149 @@ class ReportController extends Controller
         ]);
     }
     
+    /**
+     * Generate inventory report data for the given month and year
+     *
+     * @param Request $request
+     * @param string $monthYear Format: Y-m
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    protected function getInventoryReportData(Request $request, $monthYear)
+    {
+        $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+        
+        // Get or create the inventory report
+        $inventoryReport = InventoryReport::firstOrCreate(
+            ['month_year' => $monthYear],
+            [
+                'status' => 'generated',
+                'generated_by' => auth()->id(),
+                'generated_at' => now(),
+            ]
+        );
+
+        // Get all products with their inventory data
+        $products = Product::with(['inventories' => function($query) {
+            $query->with(['items' => function($q) {
+                $q->where('quantity', '>', 0)
+                  ->with('warehouse');
+            }]);
+        }])->get();
+
+        $reportItems = [];
+        
+        foreach ($products as $product) {
+            // Calculate beginning balance from previous month
+            $beginningBalance = $this->getBeginningBalance($product, $startDate);
+            
+            // Get received and issued quantities for the current month
+            $receivedQuantity = $this->getReceivedQuantity($product, $startDate, $endDate);
+            $issuedQuantity = $this->getIssuedQuantity($product, $startDate, $endDate);
+            
+            // Calculate closing balance
+            $closingBalance = $beginningBalance + $receivedQuantity - $issuedQuantity;
+            
+            // Get current inventory items for the product
+            $currentInventory = $product->inventories->sum(function($inventory) {
+                return $inventory->items->sum('quantity');
+            });
+            
+            // Get or create the report item
+            $reportItem = $inventoryReport->items()->updateOrCreate(
+                ['product_id' => $product->id],
+                [
+                    'uom' => $product->unit_of_measure,
+                    'beginning_balance' => $beginningBalance,
+                    'received_quantity' => $receivedQuantity,
+                    'issued_quantity' => $issuedQuantity,
+                    'closing_balance' => $closingBalance,
+                    'current_balance' => $currentInventory,
+                    'average_monthly_consumption' => $this->calculateAverageMonthlyConsumption($product, $startDate),
+                ]
+            );
+            
+            $reportItems[] = $reportItem;
+        }
+        
+        return $inventoryReport->items()->with('product')->get();
+    }
+    
+    /**
+     * Get beginning balance for a product at the start of the reporting period
+     */
+    protected function getBeginningBalance($product, $startDate)
+    {
+        // Get the previous month's closing balance if it exists
+        $previousMonth = $startDate->copy()->subMonth();
+        $previousReport = InventoryReport::where('month_year', $previousMonth->format('Y-m'))
+            ->first();
+            
+        if ($previousReport) {
+            $previousItem = $previousReport->items()->where('product_id', $product->id)->first();
+            if ($previousItem) {
+                return $previousItem->closing_balance;
+            }
+        }
+        
+        // If no previous report, return 0 as beginning balance
+        return 0;
+    }
+    
+    /**
+     * Get total received quantity for a product within the reporting period
+     */
+    protected function getReceivedQuantity($product, $startDate, $endDate)
+    {
+        return ReceivedQuantityItem::where('product_id', $product->id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('quantity');
+    }
+    
+    /**
+     * Get total issued quantity for a product within the reporting period
+     */
+    protected function getIssuedQuantity($product, $startDate, $endDate)
+    {
+        return IssueQuantityItem::where('product_id', $product->id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('quantity');
+    }
+    
+    /**
+     * Calculate average monthly consumption for a product
+     */
+    protected function calculateAverageMonthlyConsumption($product, $endDate)
+    {
+        // Get consumption data for the past 6 months
+        $startDate = $endDate->copy()->subMonths(6);
+        
+        $totalConsumption = IssueQuantityItem::where('product_id', $product->id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('quantity');
+            
+        // Calculate average over 6 months
+        return $totalConsumption / 6;
+    }
+
     public function warehouseMonthlyReport(Request $request)
     {
         try {
             $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
             
             // Get inventory report status
-            $inventoryReport = InventoryReport::with('submittedBy', 'reviewedBy', 'approvedBy', 'rejectedBy')->where('month_year', $monthYear)->first();
+            $inventoryReport = InventoryReport::with('submittedBy', 'reviewedBy', 'approvedBy', 'rejectedBy')
+                ->where('month_year', $monthYear)
+                ->firstOrCreate(
+                    ['month_year' => $monthYear],
+                    [
+                        'status' => 'generated',
+                        'generated_by' => auth()->id(),
+                        'generated_at' => now(),
+                    ]
+                );
+                
+            logger()->info($inventoryReport);
             
             // Always load data without pagination
             $reportData = $this->getInventoryReportData($request, $monthYear);
@@ -571,7 +707,8 @@ class ReportController extends Controller
             
         } catch (\Throwable $th) {
             Log::error('Warehouse Monthly Report Error: ' . $th->getMessage());
-            return back()->with('error', 'Failed to load report page. Please try again.');
+            Log::error($th->getTraceAsString());
+            return back()->with('error', 'Failed to load report page: ' . $th->getMessage());
         }
     }
 

@@ -98,6 +98,21 @@ class Product extends Model
         return $this->hasMany(EligibleItem::class);
     }
 
+    /**
+     * Get the inventory items for the product.
+     */
+    public function inventoryItems()
+    {
+        return $this->hasManyThrough(
+            InventoryItem::class,
+            Inventory::class,
+            'product_id', // Foreign key on inventories table
+            'inventory_id', // Foreign key on inventory_items table
+            'id', // Local key on products table
+            'id' // Local key on inventories table
+        );
+    }
+
     public function facilityInventories(){
         return $this->hasMany(FacilityInventory::class);
     }

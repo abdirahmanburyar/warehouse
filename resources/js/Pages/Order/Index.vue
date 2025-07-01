@@ -379,11 +379,13 @@
                             </tbody>
                         </table>
                     </div>
+                   <div class="mt-4 flex justify-end ">
                     <TailwindPagination
                         :data="props.orders"
                         :limit="2"
                         @pagination-change-page="getResult"
                     />
+                   </div>
                 </div>
             </div>
             <!-- Status Statistics -->
