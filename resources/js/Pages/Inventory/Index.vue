@@ -36,7 +36,7 @@ const location = ref(props.filters.location);
 const dosage = ref(props.filters.dosage);
 const category = ref(props.filters.category);
 const warehouse = ref(props.filters.warehouse);
-const per_page = ref(props.filters.per_page);
+const per_page = ref(props.filters.per_page || 25);
 const loadedLocation = ref([]);
 const isSubmitting = ref(false);
 
@@ -482,240 +482,221 @@ function getResults(page = 1) {
                     >
                         <thead class="bg-gray-100">
                             <tr class="divide-x divide-gray-300">
-                                <th class="px-3 py-2">Item</th>
-                                <th class="px-3 py-2">Category</th>
-                                <th class="px-3 py-2">UoM</th>
-                                <th class="px-3 py-2 text-center">
+                                <th class="px-3 py-2" rowspan="2">Item</th>
+                                <th class="px-3 py-2" rowspan="2">Category</th>
+                                <th class="px-3 py-2" rowspan="2">UoM</th>
+                                <th class="px-3 py-2 text-center" colspan="5">
                                     Item Details
                                 </th>
-                                <th class="px-3 py-2">Total Qty on Hand</th>
-                                <th class="px-3 py-2">Reorder Level</th>
-                                <th class="px-3 py-2">Status</th>
-                                <th class="px-3 py-2">Actions</th>
+                                <th class="px-3 py-2" rowspan="2">Total Qty on Hand</th>
+                                <th class="px-3 py-2" rowspan="2">Reorder Level</th>
+                                <th class="px-3 py-2" rowspan="2">Status</th>
+                                <th class="px-3 py-2" rowspan="2">Actions</th>
+                            </tr>
+                            <tr class="bg-gray-50 divide-x divide-gray-300">
+                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
+                                    QTY
+                                </th>
+                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
+                                    Batch Number
+                                </th>
+                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
+                                    Expiry Date
+                                </th>
+                                <th class="px-2 py-1 text-xs border border-gray-300 text-left w-32">
+                                    Location
+                                </th>
+                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
+                                    Status
+                                </th>
                             </tr>
                         </thead>
 
                         <tbody class="divide-y divide-gray-200">
-                            <tr
-                                v-for="inventory in props.inventories.data"
-                                :key="inventory.id"
-                                class="divide-x divide-gray-300"
-                            >
-                                <td class="px-3 py-2 font-medium text-gray-800">
-                                    {{ inventory.product.name }}
-                                </td>
-
-                                <td class="px-3 py-2 text-gray-700">
-                                    {{ inventory.product.category.name }}
-                                </td>
-
-                                <td class="px-3 py-2 text-gray-700">
-                                    {{ inventory.product.items[0].uom }}
-                                </td>
-
-                                <!-- Nested Table for Item Details -->
-                                <td>
-                                    <table
-                                        class="w-full text-xs border border-gray-300"
-                                    >
-                                        <thead class="bg-gray-50">
-                                            <tr class="text-gray-600">
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    QTY
-                                                </th>
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    Batch
-                                                </th>
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    Expiry
-                                                </th>
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    Location
-                                                </th>
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    Status
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr
-                                                v-for="item in inventory.items"
-                                                :key="item.id"
-                                                class="bg-white even:bg-gray-50"
-                                            >
-                                                <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    {{ item.quantity }}
-                                                </td>
-                                                <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    {{ item.batch_number }}
-                                                </td>
-                                                <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    {{ formatDate(item.expiry_date) }}
-                                                </td>
-                                                <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    <div
-                                                        class="text-xs flex flex-col space-y-0.5"
-                                                    >
-                                                        <span
-                                                            class="text-xs"
-                                                            >WH:
-                                                            {{
-                                                                item.warehouse
-                                                                    ?.name
-                                                            }}</span
-                                                        >
-                                                        <span
-                                                            class="text-xs"
-                                                            >LC:
-                                                            {{
-                                                                item.location
-                                                            }}</span
-                                                        >
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    <div
-                                                        v-if="isExpiringSoon(item)"
-                                                        class="flex flex-col items-center"
-                                                    >
-                                                        <img
-                                                            src="/assets/images/soon_expire.png"
-                                                            title="Expire soon"
-                                                            class="w-6 h-6"
-                                                            alt="Expire soon"
-                                                        />
-                                                    </div>
-                                                    <div
-                                                        v-if="isExpired(item)"
-                                                        class="flex flex-col items-center"
-                                                    >
-                                                        <img
-                                                            src="/assets/images/expired_stock.png"
-                                                            title="Expired"
-                                                            class="w-6 h-6"
-                                                            alt="Expired"
-                                                        />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </td>
-
-                                <td class="px-3 py-2 text-gray-800">
-                                    {{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}
-                                </td>
-
-                                <td class="px-3 py-2 text-gray-800">
-                                    {{ inventory.reorder_level }}
-                                </td>
-
-                                <td class="px-3 py-2">
-                                    <div class="flex items-center space-x-2">
-                                        <div
-                                            v-if="isLowStock(inventory)"
-                                            class="flex items-center"
-                                        >
-                                            <img
-                                                src="/assets/images/low_stock.png"
-                                                title="Low Stock"
-                                                class="w-6 h-6"
-                                                alt="Low Stock"
-                                            />
-                                        </div>
-
-                                        <div
-                                            v-if="isOutOfStock(inventory)"
-                                            class="flex items-center"
-                                        >
-                                            <img
-                                                src="/assets/images/out_stock.png"
-                                                title="Out of Stock"
-                                                class="w-6 h-6"
-                                                alt="Out of Stock"
-                                            />
-                                        </div>
-                                        <div
-                                            v-if="
-                                                !isLowStock(inventory) &&
-                                                !isOutOfStock(inventory)
-                                            "
-                                            class="flex items-center"
-                                        >
-                                            <img
-                                                src="/assets/images/in_stock.png"
-                                                title="In Stock"
-                                                class="w-6 h-6"
-                                                alt="In Stock"
-                                            />
-                                        </div>
-                                    </div>
-                                </td>
-                                <td
-                                    class="px-3 py-4 whitespace-nowrap text-sm font-medium"
+                            <template v-for="inventory in props.inventories.data" :key="inventory.id">
+                                <tr
+                                    v-for="(item, itemIndex) in inventory.items"
+                                    :key="`${inventory.id}-${item.id}`"
+                                    class="divide-x divide-gray-300 hover:bg-gray-50 transition-colors duration-150"
                                 >
-                                    <div class="flex items-center space-x-3">
-                                        <div v-if="isLowStock(inventory)">
-                                            <img src="/assets/images/reorder_status.png" alt="Reorder Status" class="w-6 h-6" title="Reorder Status">
+                                    <!-- Show inventory details only on first row for this inventory -->
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 font-medium text-gray-800 align-top"
+                                    >
+                                        {{ inventory.product.name }}
+                                    </td>
+
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 text-gray-700 align-top"
+                                    >
+                                        {{ inventory.product.category.name }}
+                                    </td>
+
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 text-gray-700 align-top"
+                                    >
+                                        {{ inventory.items[0].uom }}
+                                    </td>
+
+                                    <!-- Item Details Columns (like Transfer/Show.vue) -->
+                                    <!-- Quantity -->
+                                    <td
+                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
+                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
+                                    >
+                                        {{ item.quantity }}
+                                    </td>
+
+                                    <!-- Batch Number -->
+                                    <td
+                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
+                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
+                                    >
+                                        {{ item.batch_number }}
+                                    </td>
+
+                                    <!-- Expiry Date -->
+                                    <td
+                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
+                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
+                                    >
+                                        {{ formatDate(item.expiry_date) }}
+                                    </td>
+
+                                    <!-- Location -->
+                                    <td
+                                        class="px-2 py-1 text-xs border border-gray-300 text-left w-32"
+                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
+                                    >
+                                        <div class="text-xs flex flex-col space-y-0.5">
+                                            <span class="text-xs">WH: {{ item.warehouse?.name }}</span>
+                                            <span class="text-xs">LC: {{ item.location }}</span>
                                         </div>
-                                        <Link
-                                            :href="route('supplies.purchase_order')"
-                                            v-if="inventory.quantity > inventory.reorder_level"
-                                            class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                class="h-5 w-5"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                    </td>
+
+                                    <!-- Status Icons -->
+                                    <td class="px-2 py-1 text-xs border border-gray-300 text-left">
+                                        <div class="flex items-center">
+                                            <div v-if="isExpiringSoon(item)" class="mr-1">
+                                                <img
+                                                    src="/assets/images/soon_expire.png"
+                                                    title="Expire soon"
+                                                    class="w-5 h-5"
+                                                    alt="Expire soon"
                                                 />
-                                            </svg>
-                                        </Link>
-                                    </div>
-                                </td>
-                            </tr>
+                                            </div>
+                                            <div v-if="isExpired(item)">
+                                                <img
+                                                    src="/assets/images/expired_stock.png"
+                                                    title="Expired"
+                                                    class="w-5 h-5"
+                                                    alt="Expired"
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Total Qty on Hand (only on first row) -->
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 text-gray-800 align-top"
+                                    >
+                                        {{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}
+                                    </td>
+
+                                    <!-- Reorder Level (only on first row) -->
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 text-gray-800 align-top"
+                                    >
+                                        {{ inventory.reorder_level }}
+                                    </td>
+
+                                    <!-- Status (only on first row) -->
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-2 align-top"
+                                    >
+                                        <div class="flex items-center space-x-2">
+                                            <div v-if="isLowStock(inventory)" class="flex items-center">
+                                                <img
+                                                    src="/assets/images/low_stock.png"
+                                                    title="Low Stock"
+                                                    class="w-6 h-6"
+                                                    alt="Low Stock"
+                                                />
+                                            </div>
+
+                                            <div v-if="isOutOfStock(inventory)" class="flex items-center">
+                                                <img
+                                                    src="/assets/images/out_stock.png"
+                                                    title="Out of Stock"
+                                                    class="w-6 h-6"
+                                                    alt="Out of Stock"
+                                                />
+                                            </div>
+                                            <div
+                                                v-if="!isLowStock(inventory) && !isOutOfStock(inventory)"
+                                                class="flex items-center"
+                                            >
+                                                <img
+                                                    src="/assets/images/in_stock.png"
+                                                    title="In Stock"
+                                                    class="w-6 h-6"
+                                                    alt="In Stock"
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Actions (only on first row) -->
+                                    <td
+                                        v-if="itemIndex === 0"
+                                        :rowspan="inventory.items.length"
+                                        class="px-3 py-4 whitespace-nowrap text-sm font-medium align-top"
+                                    >
+                                        <div class="flex items-center space-x-3">
+                                            <div v-if="isLowStock(inventory)">
+                                                <img
+                                                    src="/assets/images/reorder_status.png"
+                                                    alt="Reorder Status"
+                                                    class="w-6 h-6"
+                                                    title="Reorder Status"
+                                                />
+                                            </div>
+                                            <Link
+                                                :href="route('supplies.purchase_order')"
+                                                v-if="inventory.quantity > inventory.reorder_level"
+                                                class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-5 w-5"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                    />
+                                                </svg>
+                                            </Link>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
 
