@@ -68,24 +68,24 @@
             <div class="grid grid-cols-12 gap-4">
                 <!-- LEFT COLUMN: Table (8/12) -->
                 <div class="col-span-12 md:col-span-9 overflow-auto">
-                    <table class="min-w-full">
+                    <table class="min-w-full border border-collapse border-black">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Product</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Quantity</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Expiry Date</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Days Until Expiry</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Status</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase">Action</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Product</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Quantity</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Expiry Date</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Days Until Expiry</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Status</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="item in props.inventories.data" :key="item.id"
                                 :class="{ 'bg-yellow-50': item.expiring_soon }">
-                                <td class="p-2 text-xs text-gray-900">{{ item.product?.name }}</td>
-                                <td class="p-2 text-xs text-gray-500">{{ item.quantity }}</td>
-                                <td class="p-2 text-xs text-gray-500">{{ formatDate(item.expiry_date) }}</td>
-                                <td class="p-2">
+                                <td class="p-2 text-xs text-gray-900 border border-black">{{ item.product?.name }}</td>
+                                <td class="p-2 text-xs text-gray-500 border border-black">{{ item.quantity }}</td>
+                                <td class="p-2 text-xs text-gray-500 border border-black">{{ formatDate(item.expiry_date) }}</td>
+                                <td class="p-2 border border-black">
                                     <div :class="{
                                         'text-xs font-medium': true,
                                         'text-red-600': item.days_until_expiry <= 30,
@@ -95,7 +95,7 @@
                                         {{ item.days_until_expiry }} days
                                     </div>
                                 </td>
-                                <td class="p-2">
+                                <td class="p-2 border border-black">
                                     <span v-if="item.expired"
                                         class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium bg-red-100 text-red-800">
                                         Expired
@@ -109,7 +109,7 @@
                                         Expiring Soon
                                     </span>
                                 </td>
-                                <td class="p-2 whitespace-nowrap text-xs text-gray-500">
+                                <td class="p-2 whitespace-nowrap text-xs text-gray-500 border border-black">
                                     <template v-if="item.expired">
                                         <button class="text-red-600 hover:text-red-900"
                                             @click="disposeItem(item)">
