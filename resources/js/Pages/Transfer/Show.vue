@@ -629,8 +629,14 @@
                                         Category
                                     </th>
                                     <th
+                                        class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                        rowspan="2"
+                                    >
+                                        UoM
+                                    </th>
+                                    <th
                                         class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
-                                        colspan="5"
+                                        colspan="4"
                                     >
                                         Item Details
                                     </th>
@@ -669,11 +675,6 @@
                                     <th
                                         class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
                                     >
-                                        UoM
-                                    </th>
-                                    <th
-                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
-                                    >
                                         QTY
                                     </th>
                                     <th
@@ -708,6 +709,8 @@
                                     >
                                         <!-- Item Name -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-left text-black align-top"
                                         >
                                             {{ item.product?.name || "N/A" }}
@@ -715,6 +718,8 @@
 
                                         <!-- Category -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-left text-black align-top"
                                         >
                                             {{
@@ -723,11 +728,13 @@
                                             }}
                                         </td>
 
-                                        <!-- UoM (Allocation) -->
+                                        <!-- UoM Column -->
                                         <td
-                                            class="px-2 py-1 text-xs border border-black text-center text-black"
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
+                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top"
                                         >
-                                            {{ allocation.uom || "N/A" }}
+                                            {{ item.inventory_allocations?.[0]?.uom || "N/A" }}
                                         </td>
 
                                         <!-- Quantity -->
@@ -778,6 +785,8 @@
 
                                         <!-- Total Quantity per Unit -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
                                             {{ item.quantity_per_unit || 0 }}
@@ -785,6 +794,8 @@
 
                                         <!-- Reason for Transfer -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
                                             {{
@@ -795,6 +806,8 @@
 
                                         <!-- Quantity to Transfer -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
                                             <input
@@ -803,7 +816,7 @@
                                                     item.quantity_to_release
                                                 "
                                                 @keyup.enter="
-                                                    updateQuantity(item)
+                                                    updateQuantity(item, index)
                                                 "
                                                 class="w-20 text-center border border-black rounded px-2 py-1 text-sm"
                                             />
@@ -816,6 +829,8 @@
 
                                         <!-- Received Quantity -->
                                         <td
+                                            v-if="allocIndex === 0"
+                                            :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top"
                                         >
                                             <input
@@ -2190,16 +2205,16 @@ const removeItem = (index) => {
 };
 
 // update quantity
-const isUpading = ref(false);
-async function updateQuantity(item, type) {
-    isUpading.value = true;
+const isUpading = ref([]);
+async function updateQuantity(item, index) {
+    isUpading.value[index] = true;
     await axios
         .post(route("transfers.update-quantity"), {
             item_id: item.id,
             quantity: item.quantity_to_release,
         })
         .then((response) => {
-            isUpading.value = false;
+            isUpading.value[index] = false;
             Swal.fire({
                 title: "Success!",
                 text: response.data,
@@ -2210,7 +2225,7 @@ async function updateQuantity(item, type) {
             });
         })
         .catch((error) => {
-            isUpading.value = false;
+            isUpading.value[index] = false;
             console.log(error);
             toast.error(error.response?.data || "Failed to update quantity");
         });
