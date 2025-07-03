@@ -484,6 +484,7 @@ function getResults(page = 1) {
                             <tr class="divide-x divide-gray-300">
                                 <th class="px-3 py-2">Item</th>
                                 <th class="px-3 py-2">Category</th>
+                                <th class="px-3 py-2">UoM</th>
                                 <th class="px-3 py-2 text-center">
                                     Item Details
                                 </th>
@@ -508,6 +509,10 @@ function getResults(page = 1) {
                                     {{ inventory.product.category.name }}
                                 </td>
 
+                                <td class="px-3 py-2 text-gray-700">
+                                    {{ inventory.product.items[0].uom }}
+                                </td>
+
                                 <!-- Nested Table for Item Details -->
                                 <td>
                                     <table
@@ -515,11 +520,6 @@ function getResults(page = 1) {
                                     >
                                         <thead class="bg-gray-50">
                                             <tr class="text-gray-600">
-                                                <th
-                                                    class="border border-gray-300"
-                                                >
-                                                    UoM
-                                                </th>
                                                 <th
                                                     class="border border-gray-300"
                                                 >
@@ -553,14 +553,6 @@ function getResults(page = 1) {
                                                 :key="item.id"
                                                 class="bg-white even:bg-gray-50"
                                             >
-                                            <td
-                                                    :class="[
-                                                        'border border-gray-300 px-2',
-                                                        isExpired(item) ? 'border border-red-500 text-red-500' : ''
-                                                    ]"
-                                                >
-                                                    {{ item.uom }}
-                                                </td>
                                                 <td
                                                     :class="[
                                                         'border border-gray-300 px-2',
