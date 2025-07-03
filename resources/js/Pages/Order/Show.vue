@@ -530,7 +530,7 @@
                                 updateQuantity(item, 'quantity_to_release')
                             "
                             :readonly="
-                                isUpading || props.order.status != 'pending'
+                                isUpading[index] || props.order.status != 'pending'
                             "
                             class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
                         />
@@ -547,13 +547,13 @@
                             type="number"
                             placeholder="0"
                             v-model="item.days"
-                            @keydown.enter="updateQuantity(item, 'days')"
+                            @keydown.enter="updateQuantity(item, 'days', index)"
                             :readonly="
-                                isUpading || props.order.status != 'pending'
+                                isUpading[index] || props.order.status != 'pending'
                             "
                             class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
                         />
-                        <span v-if="isUpading" class="text-green-500 text-md"
+                        <span v-if="isUpading[index]" class="text-green-500 text-md"
                             >Updating...</span
                         >
                         <button
@@ -1489,9 +1489,9 @@ const statusOrder = [
 ];
 
 // update quantity
-const isUpading = ref(false);
-async function updateQuantity(item, type) {
-    isUpading.value = true;
+const isUpading = ref([]);
+async function updateQuantity(item, type, index) {
+    isUpading.value[index] = true;
     await axios
         .post(route("orders.update-quantity"), {
             item_id: item.id,
@@ -1500,7 +1500,7 @@ async function updateQuantity(item, type) {
             type,
         })
         .then((response) => {
-            isUpading.value = false;
+            isUpading.value[index] = false;
             Swal.fire({
                 title: "Success!",
                 text: response.data,
@@ -1511,7 +1511,7 @@ async function updateQuantity(item, type) {
             });
         })
         .catch((error) => {
-            isUpading.value = false;
+            isUpading.value[index] = false;
             console.log(error);
             toast.error(error.response?.data || "Failed to update quantity");
         });

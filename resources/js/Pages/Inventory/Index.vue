@@ -482,16 +482,16 @@ function getResults(page = 1) {
                     >
                         <thead class="bg-gray-100">
                             <tr class="divide-x divide-gray-300">
-                                <th class="px-3 py-2" rowspan="2">Item</th>
-                                <th class="px-3 py-2" rowspan="2">Category</th>
-                                <th class="px-3 py-2" rowspan="2">UoM</th>
-                                <th class="px-3 py-2 text-center" colspan="5">
+                                <th class="px-3 py-2 text-xs" rowspan="2">Item</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">Category</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">UoM</th>
+                                <th class="px-3 py-2 text-xs text-center" colspan="5">
                                     Item Details
                                 </th>
-                                <th class="px-3 py-2" rowspan="2">Total Qty on Hand</th>
-                                <th class="px-3 py-2" rowspan="2">Reorder Level</th>
-                                <th class="px-3 py-2" rowspan="2">Status</th>
-                                <th class="px-3 py-2" rowspan="2">Actions</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">Total Qty on Hand</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">Reorder Level</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">Status</th>
+                                <th class="px-3 py-2 text-xs" rowspan="2">Actions</th>
                             </tr>
                             <tr class="bg-gray-50 divide-x divide-gray-300">
                                 <th class="px-2 py-1 text-xs border border-gray-300 text-left">
@@ -523,7 +523,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 font-medium text-gray-800 align-top"
+                                        class="px-3 py-2 text-xs font-medium text-gray-800 align-top"
                                     >
                                         {{ inventory.product.name }}
                                     </td>
@@ -531,7 +531,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-gray-700 align-top"
+                                        class="px-3 py-2 text-xs text-gray-700 align-top"
                                     >
                                         {{ inventory.product.category.name }}
                                     </td>
@@ -539,7 +539,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-gray-700 align-top"
+                                        class="px-3 py-2 text-xs text-gray-700 align-top"
                                     >
                                         {{ inventory.items[0].uom }}
                                     </td>
@@ -606,7 +606,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-gray-800 align-top"
+                                        class="px-3 py-2 text-xs text-gray-800 align-top"
                                     >
                                         {{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}
                                     </td>
@@ -615,7 +615,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-gray-800 align-top"
+                                        class="px-3 py-2 text-xs text-gray-800 align-top"
                                     >
                                         {{ inventory.reorder_level }}
                                     </td>
@@ -624,7 +624,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-2 align-top"
+                                        class="px-3 py-2 text-xs align-top"
                                     >
                                         <div class="flex items-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
@@ -662,7 +662,7 @@ function getResults(page = 1) {
                                     <td
                                         v-if="itemIndex === 0"
                                         :rowspan="inventory.items.length"
-                                        class="px-3 py-4 whitespace-nowrap text-sm font-medium align-top"
+                                        class="px-3 py-4 whitespace-nowrap text-xs font-medium align-top"
                                     >
                                         <div class="flex items-center space-x-3">
                                             <div v-if="isLowStock(inventory)">
