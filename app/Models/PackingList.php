@@ -30,7 +30,7 @@ class PackingList extends Model
 
     public function documents()
     {
-        return $this->hasMany(PKDocument::class);
+        return $this->hasMany(PkDocument::class);
     }
 
     public function purchaseOrder()
