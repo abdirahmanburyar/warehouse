@@ -439,218 +439,216 @@
                 <tr class="bg-gray-50">
                     <th
                         class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         Item
                     </th>
                     <th
                         class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         Category
                     </th>
                     <th
                         class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
+                    >
+                        UoM
+                    </th>
+                    <th
+                        class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         AMC
                     </th>
                     <th
                         class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         No. of Days
                     </th>
                     <th
                         class="px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         Ordered Quantity
                     </th>
                     <th
                         class="w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black"
+                        rowspan="2"
                     >
                         Quantity to release
                     </th>
                     <th
                         class="px-2 py-2 text-center text-xs text-black capitalize border border-black"
+                        colspan="4"
                     >
                         Item Detail
+                    </th>
+                </tr>
+                <tr class="bg-gray-50">
+                    <th class="px-2 py-1 text-xs border border-black text-left">
+                        QTY
+                    </th>
+                    <th class="px-2 py-1 text-xs border border-black text-left">
+                        Batch Number
+                    </th>
+                    <th class="px-2 py-1 text-xs border border-black text-left">
+                        Expiry Date
+                    </th>
+                    <th class="px-2 py-1 text-xs border border-black text-left w-32">
+                        Location
                     </th>
                 </tr>
             </thead>
 
             <tbody>
-                <tr
-                    v-for="(item, index) in form"
-                    :key="item.id"
-                    class="hover:bg-gray-50 transition-colors duration-150"
-                >
-                    <td
-                        class="px-3 py-3 text-xs text-gray-900 border border-black"
+                <template v-for="(item, index) in form" :key="item.id">
+                    <tr
+                        v-for="(inv, invIndex) in item.inventory_allocations || [{}]"
+                        :key="`${item.id}-${inv.id || invIndex}`"
+                        class="hover:bg-gray-50 transition-colors duration-150"
                     >
-                        {{ item.product?.name }}
-                    </td>
-                    <td
-                        class="px-3 py-3 text-xs text-gray-900 border border-black"
-                    >
-                        {{ item.product?.category?.name }}
-                    </td>
-                    <td
-                        class="px-3 py-3 text-xs text-gray-900 border border-black"
-                    >
-                        <div class="flex flex-col space-y-1 text-xs">
-                            <div class="flex">
-                                <span class="font-medium w-12">SOH:</span>
-                                <span>{{ item.soh }}</span>
-                            </div>
-                            <div class="flex">
-                                <span class="font-medium w-12">AMC:</span>
-                                <span>{{ item.amc || 0 }}</span>
-                            </div>
-                            <div class="flex">
-                                <span class="font-medium w-12">QOO:</span>
-                                <span>{{ item.quantity_on_order }}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td
-                        class="px-3 py-3 text-sm text-gray-900 border border-black"
-                    >
-                        {{ item.no_of_days }}/30
-                    </td>
-                    <td
-                        class="px-3 py-3 text-lg text-center text-black border border-black"
-                    >
-                        {{ item.quantity }}
-                    </td>
-                    <td
-                        class="px-3 py-3 text-xs text-gray-900 border border-black"
-                    >
-                        <input
-                            type="number"
-                            placeholder="0"
-                            v-model="item.quantity_to_release"
-                            @keydown.enter="
-                                updateQuantity(item, 'quantity_to_release', index)
-                            "
-                            :readonly="
-                                isUpading[index] || props.order.status != 'pending'
-                            "
-                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
-                        />
-                        <label for="received_quantity">Received Quantity</label>
-                        <input
-                            type="number"
-                            placeholder="0"
-                            v-model="item.received_quantity"
-                            readonly
-                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
-                        />
-                        <label for="days">No. of Days</label>
-                        <input
-                            type="number"
-                            placeholder="0"
-                            v-model="item.days"
-                            @keydown.enter="updateQuantity(item, 'days', index)"
-                            :readonly="
-                                isUpading[index] || props.order.status != 'pending'
-                            "
-                            class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
-                        />
-                        <span v-if="isUpading[index]" class="text-green-500 text-md"
-                            >Updating...</span
+                        <!-- Show item details only on first row for this item -->
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
                         >
-                        <button
-                            @click="showBackOrderModal(item)"
-                            v-if="
-                                item.inventory_allocations &&
-                                item.inventory_allocations.some(
-                                    (a) => a.back_order?.length > 0
-                                )
-                            "
-                            class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1"
+                            {{ item.product?.name }}
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
                         >
-                            Show Back Order
-                        </button>
-                    </td>
-                    <td class="text-xs text-gray-900 border border-black">
-                        <table class="min-w-full border border-black">
-                            <thead>
-                                <tr>
-                                    <th
-                                        class="text-xs border border-black px-2 py-1"
-                                    >
-                                        QTY
-                                    </th>
-                                    <th
-                                        class="text-xs border border-black px-2 py-1"
-                                    >
-                                        Uom
-                                    </th>
-                                    <th
-                                        class="text-xs border border-black px-2 py-1"
-                                    >
-                                        Batch Number
-                                    </th>
-                                    <th
-                                        class="text-xs border border-black px-2 py-1"
-                                    >
-                                        Expiry Date
-                                    </th>
-                                    <th
-                                        class="text-xs border border-black px-2 py-1"
-                                    >
-                                        S. Location
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white">
-                                <tr
-                                    v-for="inv in item.inventory_allocations"
-                                    :key="inv.id"
-                                    class="hover:bg-gray-100"
-                                >
-                                    <td
-                                        class="px-2 py-1 text-xs border border-black"
-                                    >
-                                        {{ inv.allocated_quantity }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-1 text-xs border border-black"
-                                    >
-                                        {{ inv.uom }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-1 text-xs border border-black"
-                                    >
-                                        {{ inv.batch_number }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-1 text-xs border border-black"
-                                    >
-                                        {{
-                                            moment(inv.expiry_date).format(
-                                                "DD/MM/YYYY"
-                                            )
-                                        }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-1 text-xs border border-black"
-                                    >
-                                        <div class="flex flex-col">
-                                            <span
-                                                >WH:
-                                                {{ inv.warehouse?.name }}</span
-                                            >
-                                            <span
-                                                >LC:
-                                                {{
-                                                    inv.location?.location
-                                                }}</span
-                                            >
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
+                            {{ item.product?.category?.name }}
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
+                        >
+                            {{ item.inventory_allocations?.[0]?.uom || 'N/A' }}
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
+                        >
+                            <div class="flex flex-col space-y-1 text-xs">
+                                <div class="flex">
+                                    <span class="font-medium text-xs w-12">SOH:</span>
+                                    <span>{{ item.soh }}</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="font-medium text-xs w-12">AMC:</span>
+                                    <span>{{ item.amc || 0 }}</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="font-medium text-xs w-12">QOO:</span>
+                                    <span>{{ item.quantity_on_order }}</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
+                        >
+                            {{ item.no_of_days }}/30
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-center text-black border border-black align-top"
+                        >
+                            {{ item.quantity }}
+                        </td>
+
+                        <td
+                            v-if="invIndex === 0"
+                            :rowspan="item.inventory_allocations?.length || 1"
+                            class="px-3 py-3 text-xs text-gray-900 border border-black align-top"
+                        >
+                            <input
+                                type="number"
+                                placeholder="0"
+                                v-model="item.quantity_to_release"
+                                @keydown.enter="
+                                    updateQuantity(item, 'quantity_to_release', index)
+                                "
+                                :readonly="
+                                    isUpading[index] || props.order.status != 'pending'
+                                "
+                                class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                            />
+                            <label for="received_quantity">Received Quantity</label>
+                            <input
+                                type="number"
+                                placeholder="0"
+                                v-model="item.received_quantity"
+                                readonly
+                                class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                            />
+                            <label for="days">No. of Days</label>
+                            <input
+                                type="number"
+                                placeholder="0"
+                                v-model="item.days"
+                                @keydown.enter="updateQuantity(item, 'days', index)"
+                                :readonly="
+                                    isUpading[index] || props.order.status != 'pending'
+                                "
+                                class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
+                            />
+                            <span v-if="isUpading[index]" class="text-green-500 text-md"
+                                >Updating...</span
+                            >
+                            <button
+                                @click="showBackOrderModal(item)"
+                                v-if="
+                                    item.inventory_allocations &&
+                                    item.inventory_allocations.some(
+                                        (a) => a.back_order?.length > 0
+                                    )
+                                "
+                                class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1"
+                            >
+                                Show Back Order
+                            </button>
+                        </td>
+
+                        <!-- Item Details Columns (like Transfer/Show.vue and Inventory/Index.vue) -->
+                        <!-- Quantity -->
+                        <td class="px-2 py-1 text-xs border border-black text-left">
+                            {{ inv.allocated_quantity || '' }}
+                        </td>
+
+                        <!-- Batch Number -->
+                        <td class="px-2 py-1 text-xs border border-black text-left">
+                            {{ inv.batch_number || '' }}
+                        </td>
+
+                        <!-- Expiry Date -->
+                        <td class="px-2 py-1 text-xs border border-black text-left">
+                            {{ inv.expiry_date ? moment(inv.expiry_date).format("DD/MM/YYYY") : '' }}
+                        </td>
+
+                        <!-- Location -->
+                        <td class="px-2 py-1 text-xs border border-black text-left w-32">
+                            <div v-if="inv.warehouse || inv.location" class="flex flex-col text-xs">
+                                <span v-if="inv.warehouse">WH: {{ inv.warehouse?.name }}</span>
+                                <span v-if="inv.location">LC: {{ inv.location?.location }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
 
