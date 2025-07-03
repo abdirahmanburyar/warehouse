@@ -527,7 +527,7 @@
                             placeholder="0"
                             v-model="item.quantity_to_release"
                             @keydown.enter="
-                                updateQuantity(item, 'quantity_to_release')
+                                updateQuantity(item, 'quantity_to_release', index)
                             "
                             :readonly="
                                 isUpading[index] || props.order.status != 'pending'
@@ -1491,6 +1491,7 @@ const statusOrder = [
 // update quantity
 const isUpading = ref([]);
 async function updateQuantity(item, type, index) {
+    console.log(index);
     isUpading.value[index] = true;
     await axios
         .post(route("orders.update-quantity"), {
