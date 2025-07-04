@@ -57,6 +57,7 @@
                         :show-labels="false"
                         :allow-empty="true"
                         :disabled="region == null"
+                        :select="handleDistrictSelect"
                         placeholder="Select District"
                     >
                     </Multiselect>
@@ -793,7 +794,6 @@ import axios from "axios";
 const props = defineProps({
     orders: Object,
     filters: Object,
-    facilities: Array,
     stats: Object,
     regions: Array,
 });
@@ -809,6 +809,19 @@ async function handleRegionSelect(option) {
     district.value = null;
     districts.value = [];
     await loadDistrict();
+}
+
+const facilities = ref([]);
+
+async function handleDistrictSelect(option) {
+        if (!option) {
+            facility.value = null;
+            facilities.value = [];
+            return;
+    }
+    facility.value = null;
+    facilities.value = [];
+    await loadFacility();
 }
 
 // Fixed order types
@@ -901,6 +914,19 @@ async function loadDistrict() {
         .post(route("districts.get-districts"), { region: region.value })
         .then((response) => {
             districts.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+async function loadFacility() {
+    facility.value = null;
+    facilities.value = [];
+    await axios
+        .post(route("facilities.get-facilities"), { district: district.value })
+        .then((response) => {
+            facilities.value = response.data;
         })
         .catch((error) => {
             console.log(error);

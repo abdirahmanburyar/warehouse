@@ -109,7 +109,7 @@ class OrderController extends Controller
         }
         
         if($request->filled('orderType')){
-            $query->where('order_type', $request->orderType);
+            $query->where('order_type', 'like', "%{$request->orderType}%");
         }
         
         $query->with(['facility.handledby:id,name', 'user']);

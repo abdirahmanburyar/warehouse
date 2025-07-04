@@ -365,6 +365,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         
         // 'order.update-quantity
         Route::post('/update-quantity', [OrderController::class, 'updateQuantity'])->name('orders.update-quantity');
+
     });
 
     // Transfer Management Routes
@@ -468,6 +469,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{facility}/inventory', [FacilityController::class, 'inventory'])->name('facilities.inventory');
         Route::get('/{facility}/dispence', [FacilityController::class, 'dispence'])->name('facilities.dispence');
         Route::get('/{facility}/expiry', [FacilityController::class, 'expiry'])->name('facilities.expiry');
+
+        // get facilities
+        Route::post('/get-facilities', [FacilityController::class, 'getFacilities'])->name('facilities.get-facilities');
     });
 
     // District Management Routes
