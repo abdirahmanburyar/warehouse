@@ -2,9 +2,20 @@
     <AuthenticatedLayout :title="'Logistic Companies'" description="Manage your logistic partners" img="/assets/images/settings.png">
         <div class="flex justify-between items-center mb-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Logistics Companies</h2>
-            <button @click="openModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                <i class="fas fa-plus mr-2"></i> Add Company
-            </button>
+            <div class="flex space-x-4">
+                <Link 
+                    :href="route('settings.drivers.index')" 
+                    class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    <i class="fas fa-users mr-2"></i> Drivers
+                </Link>
+                <button 
+                    @click="openModal()" 
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    <i class="fas fa-plus mr-2"></i> Add Company
+                </button>
+            </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -53,22 +64,32 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <button 
-                                        @click="confirmToggleStatus(company, index)"
-                                        class="transition-colors duration-150"
-                                        title="Toggle Status"
-                                        :disabled="isTogglingStatus[index]"
+                                    <span 
+                                        :class="[
+                                            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                            company.is_active 
+                                                ? 'bg-green-100 text-green-800' 
+                                                : 'bg-red-100 text-red-800'
+                                        ]"
                                     >
-                                        <i class="fas fa-toggle-on text-lg" 
-                                           :class="[
-                                               company.is_active ? 'text-green-500' : 'text-gray-400',
-                                               { 'animate-pulse': isTogglingStatus[index] }
-                                           ]"
-                                        ></i>
-                                    </button>
+                                        {{ company.is_active ? 'Active' : 'Inactive' }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex space-x-3">
+                                        <button 
+                                            @click="confirmToggleStatus(company, index)"
+                                            class="transition-colors duration-150"
+                                            title="Toggle Status"
+                                            :disabled="isTogglingStatus[index]"
+                                        >
+                                            <i class="fas fa-toggle-on text-lg" 
+                                               :class="[
+                                                   company.is_active ? 'text-green-500' : 'text-gray-400',
+                                                   { 'animate-pulse': isTogglingStatus[index] }
+                                               ]"
+                                            ></i>
+                                        </button>
                                         <button 
                                             @click="openModal(company)" 
                                             class="text-blue-600 hover:text-blue-900 transition-colors duration-150"
@@ -192,6 +213,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import Swal from 'sweetalert2';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     companies: {
