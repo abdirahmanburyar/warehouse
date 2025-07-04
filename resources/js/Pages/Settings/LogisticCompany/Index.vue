@@ -54,16 +54,17 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
-                                        @click="toggleStatus(company)"
-                                        :class="[
-                                            'px-3 py-1 rounded text-sm font-semibold transition-colors duration-150',
-                                            company.is_active 
-                                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                                : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                        ]"
+                                        @click="confirmToggleStatus(company, index)"
+                                        class="transition-colors duration-150"
+                                        title="Toggle Status"
+                                        :disabled="isTogglingStatus[index]"
                                     >
-                                        <i :class="['fas', company.is_active ? 'fa-check-circle' : 'fa-times-circle', 'mr-1']"></i>
-                                        {{ company.is_active ? 'Active' : 'Inactive' }}
+                                        <i class="fas fa-toggle-on text-lg" 
+                                           :class="[
+                                               company.is_active ? 'text-green-500' : 'text-gray-400',
+                                               { 'animate-pulse': isTogglingStatus[index] }
+                                           ]"
+                                        ></i>
                                     </button>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -235,8 +236,6 @@ const form = ref({
     is_active: true
 });
 
-
-
 const openModal = (company = null) => {
     if (company) {
         form.value = { ...company };
@@ -268,34 +267,34 @@ const closeModal = () => {
 };
 
 const isLoading = ref(false);
-    const submit = async () => {
-        isLoading.value = true;
-        await axios.post(route('settings.logistics.companies.store'), form.value)
-            .then(response => {
-                isLoading.value = false;
-                closeModal();
-                Swal.fire({
-                    title: 'Success!',
-                    text: response.data,
-                    icon: 'success',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#3085d6',
-                });
-                reloadCompanies();
-            })
-            .catch(error => {
-                isLoading.value = false;
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.response?.data || 'Something went wrong',
-                    icon: 'error',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#3085d6',
-                });
+const submit = async () => {
+    isLoading.value = true;
+    await axios.post(route('settings.logistics.companies.store'), form.value)
+        .then(response => {
+            isLoading.value = false;
+            closeModal();
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
             });
+            reloadCompanies();
+        })
+        .catch(error => {
+            isLoading.value = false;
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        });
 };
 
-const confirmDelete = (company) => {
+const confirmDelete = (company, index) => {
     Swal.fire({
         title: 'Are you sure?',
         text: `Do you want to delete ${company.name}?`,
@@ -307,57 +306,81 @@ const confirmDelete = (company) => {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            deleteCompany(company);
+            deleteCompany(company, index);
         }
     });
 };
+
 const isDeleting = ref([]);
-const deleteCompany = async (company) => {
+const deleteCompany = async (company, index) => {
     isDeleting.value[index] = true;
-        await axios.delete(route('settings.logistics.companies.destroy', company.id))
+    await axios.delete(route('settings.logistics.companies.destroy', company.id))
         .then(response => {
             isDeleting.value[index] = false;
-        Swal.fire({
-            title: 'Deleted!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+            Swal.fire({
+                title: 'Deleted!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
             });
             reloadCompanies();
         })
         .catch((error) => {
             isDeleting.value[index] = false;
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
         });
+};
+
+const isTogglingStatus = ref([]);
+
+const confirmToggleStatus = (company, index) => {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to ${company.is_active ? 'deactivate' : 'activate'} company ${company.name}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            toggleStatus(company, index);
+        }
     });
 };
 
-const toggleStatus = async (company) => {
-    try {
-        const response = await axios.patch(route('settings.logistics.companies.toggle-status', company.id));
-        Swal.fire({
-            title: 'Success!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+const toggleStatus = async (company, index) => {
+    isTogglingStatus.value[index] = true;
+    await axios.put(route('settings.logistics.companies.toggle-status', company.id))
+        .then(response => {
+            isTogglingStatus.value[index] = false;
+            reloadCompanies();
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        })
+        .catch(error => {
+            isTogglingStatus.value[index] = false;
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
         });
-        reloadCompanies();
-    } catch (error) {
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
-    }
 };
 
 </script>
