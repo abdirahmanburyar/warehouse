@@ -57,7 +57,7 @@
                         :show-labels="true"
                         :allow-empty="true"
                         :disabled="region == null"
-                        :select="handleDistrictSelect"
+                        @select="handleDistrictSelect"
                         placeholder="Select District"
                     >
                     </Multiselect>
