@@ -1,10 +1,29 @@
 <template>
     <AuthenticatedLayout :title="'Drivers'" description="Manage your drivers" img="/assets/images/settings.png">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Drivers</h2>
-            <button @click="openModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                <i class="fas fa-plus mr-2"></i> Add Driver
-            </button>
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center space-x-4">
+                <Link 
+                    :href="route('settings.index')" 
+                    class="text-gray-500 hover:text-gray-700 transition-colors duration-150"
+                >
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </Link>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Drivers</h2>
+            </div>
+            <div class="flex space-x-4">
+                <Link 
+                    :href="route('settings.logistics.companies.index')" 
+                    class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    <i class="fas fa-building mr-2"></i> Companies
+                </Link>
+                <button 
+                    @click="openModal()" 
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    <i class="fas fa-plus mr-2"></i> Add Driver
+                </button>
+            </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -290,6 +309,7 @@ import Swal from 'sweetalert2';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     drivers: {

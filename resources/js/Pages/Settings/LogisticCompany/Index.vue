@@ -1,7 +1,15 @@
 <template>
     <AuthenticatedLayout :title="'Logistic Companies'" description="Manage your logistic partners" img="/assets/images/settings.png">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Logistics Companies</h2>
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center space-x-4">
+                <Link 
+                    :href="route('settings.index')" 
+                    class="text-gray-500 hover:text-gray-700 transition-colors duration-150"
+                >
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </Link>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Logistics Companies</h2>
+            </div>
             <div class="flex space-x-4">
                 <Link 
                     :href="route('settings.drivers.index')" 
