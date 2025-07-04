@@ -898,8 +898,6 @@ function reloadOrder() {
     if (dateFrom.value) query.dateFrom = dateFrom.value;
     if (dateTo.value) query.dateTo = dateTo.value;
     if (region.value) {
-        delete query.district;
-        delete query.facility;
         query.region = region.value;
     }
 
