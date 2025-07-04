@@ -444,48 +444,80 @@
             </table>
 
             <!-- dispatch information -->
-            <div v-if="props.order.status == 'dispatched'">
-                <h1 class="mt-3 font-bold">Dispatch Note (Driver Handover Record)</h1>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
-                    <div v-for="dispatch in props.order.dispatch" :key="dispatch.id"
-                        class="bg-white rounded-lg shadow-lg">
-                        <div class="p-5">
-                            <!-- Header -->
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-lg font-semibold text-gray-800">
-                                    Order #{{ props.order.order_number }}
-                                </h3>
-                                <span class="text-sm text-gray-500">
-                                    {{
-                                        new Date(
-                                            dispatch.created_at
-                                        ).toLocaleDateString()
-                                    }}
-                                </span>
-                            </div>
+            <div v-if="props.order.status === 'dispatched' && props.order.dispatch?.length > 0" class="mt-8 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        Dispatch Information
+                    </h2>
+                </div>
 
-                            <!-- Driver Info -->
-                            <div class="text-sm text-gray-600 space-y-1 mb-4">
-                                <p>
-                                    <span class="font-medium text-gray-700">Driver:</span>
-                                    {{ dispatch.driver_name }}
-                                </p>
-                                <p>
-                                    <span class="font-medium text-gray-700">Phone:</span>
-                                    {{ dispatch.driver_number }}
-                                </p>
-                                <p>
-                                    <span class="font-medium text-gray-700">Plate #:</span>
-                                    {{ dispatch.plate_number }}
-                                </p>
+                <div class="bg-white rounded-lg shadow-lg divide-y divide-gray-200">
+                    <div v-for="dispatch in props.order.dispatch" :key="dispatch.id" class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Driver & Company Info -->
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Driver Information</h3>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <UserIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-900">{{ dispatch.driver.name }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <IdentificationIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">ID: {{ dispatch.driver.driver_id }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <PhoneIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">{{ dispatch.driver_number }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Logistics Company</h3>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <BuildingOfficeIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-900">{{ dispatch.logistic_company.name }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <EnvelopeIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">{{ dispatch.logistic_company.email }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <UserIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">Contact: {{ dispatch.logistic_company.incharge_person }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <PhoneIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">{{ dispatch.logistic_company.incharge_phone }}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Dispatch Details -->
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm">
-                                    <span class="text-gray-500">Cartons</span>
-                                    <div class="font-semibold text-gray-800">
-                                        {{ dispatch.no_of_cartoons }}
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Dispatch Details</h3>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <CalendarIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-900">{{ moment(dispatch.dispatch_date).format('MMMM D, YYYY') }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <TruckIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">Vehicle Plate: {{ dispatch.plate_number }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <ArchiveBoxIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">{{ dispatch.no_of_cartoons }} Cartons</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <ClockIcon class="w-4 h-4 text-gray-400 mr-2" />
+                                            <span class="text-sm text-gray-600">Dispatched on {{ moment(dispatch.created_at).format('MMMM D, YYYY h:mm A') }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -912,64 +944,279 @@
                         Dispatch Information
                     </h2>
 
-                     
-                    <div class="mb-4">
-                        <label for="driver_name" class="block text-sm font-medium text-gray-700 mb-1">
-                            Dispatch Date
-                        </label>
-                        <input id="dispatch_date" type="date" v-model="dispatchForm.dispatch_date" required
-                            placeholder="Enter dispatch date"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
-                    <div class="mb-4">
-                        <label for="driver_name" class="block text-sm font-medium text-gray-700 mb-1">
-                            Driver Name
-                        </label>
-                        <input id="driver_name" type="text" v-model="dispatchForm.driver_name" required
-                            placeholder="Enter driver name"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
+                    <form @submit.prevent="createDispatch" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Driver</label>
+                            <Multiselect
+                                v-model="dispatchForm.driver"
+                                :options="driverOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                placeholder="Select Driver"
+                                track-by="id"
+                                label="name"
+                                @select="handleDriverSelect"
+                                :class="{ 'border-red-500': dispatchErrors.driver_id }"
+                            >
+                                <template v-slot:option="{ option }">
+                                    <div
+                                        :class="{
+                                            'add-new-option': option.isAddNew,
+                                        }"
+                                    >
+                                        <span
+                                            v-if="option.isAddNew"
+                                            class="text-indigo-600 font-medium"
+                                        >+ Add New Driver</span>
+                                        <span v-else>
+                                            {{ option.name }}
+                                            <span v-if="option.company" class="text-gray-500 text-sm">
+                                                ({{ option.company.name }})
+                                            </span>
+                                        </span>
+                                    </div>
+                                </template>
+                            </Multiselect>
+                            <p v-if="dispatchErrors.driver_id" class="mt-1 text-sm text-red-600">{{ dispatchErrors.driver_id[0] }}</p>
+                        </div>
 
-                    <!-- Driver Phone Number -->
-                    <div class="mb-4">
-                        <label for="driver_number" class="block text-sm font-medium text-gray-700 mb-1">
-                            Driver Phone Number
-                        </label>
-                        <input id="driver_number" type="tel" v-model="dispatchForm.driver_number"
-                            placeholder="Enter driver phone number"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Dispatch Date</label>
+                            <input 
+                                type="date" 
+                                v-model="dispatchForm.dispatch_date"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': dispatchErrors.dispatch_date }"
+                            >
+                            <p v-if="dispatchErrors.dispatch_date" class="mt-1 text-sm text-red-600">{{ dispatchErrors.dispatch_date[0] }}</p>
+                        </div>
 
-                    <!-- Vehicle Plate Number -->
-                    <div class="mb-4">
-                        <label for="plate_number" class="block text-sm font-medium text-gray-700 mb-1">
-                            Vehicle Plate Number
-                        </label>
-                        <input id="plate_number" type="text" v-model="dispatchForm.plate_number"
-                            placeholder="Enter plate number"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Number of Cartons</label>
+                            <input 
+                                type="number" 
+                                v-model="dispatchForm.no_of_cartoons"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': dispatchErrors.no_of_cartoons }"
+                            >
+                            <p v-if="dispatchErrors.no_of_cartoons" class="mt-1 text-sm text-red-600">{{ dispatchErrors.no_of_cartoons[0] }}</p>
+                        </div>
 
-                    <!-- Number of Cartons -->
-                    <div class="mb-6">
-                        <label for="no_of_cartoons" class="block text-sm font-medium text-gray-700 mb-1">
-                            No. of Cartons
-                        </label>
-                        <input id="no_of_cartoons" type="number" min="0" v-model="dispatchForm.no_of_cartoons"
-                            placeholder="Enter number of cartons"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Driver Phone</label>
+                            <input 
+                                type="text" 
+                                v-model="dispatchForm.driver_number"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': dispatchErrors.driver_number }"
+                            >
+                            <p v-if="dispatchErrors.driver_number" class="mt-1 text-sm text-red-600">{{ dispatchErrors.driver_number[0] }}</p>
+                        </div>
 
-                    <!-- Actions -->
-                    <div class="flex justify-end space-x-3">
-                        <button @click="showDispatchForm = false" :disabled="isSaving"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                            Cancel
-                        </button>
-                        <button @click="createDispatch" :disabled="isSaving"
-                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
-                            {{ isSaving ? "Processing..." : "Save and Dispatch" }}
-                        </button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Vehicle Plate Number</label>
+                            <input 
+                                type="text" 
+                                v-model="dispatchForm.plate_number"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': dispatchErrors.plate_number }"
+                            >
+                            <p v-if="dispatchErrors.plate_number" class="mt-1 text-sm text-red-600">{{ dispatchErrors.plate_number[0] }}</p>
+                        </div>
+
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button 
+                                type="button" 
+                                @click="showDispatchForm = false" 
+                                :disabled="isSaving"
+                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-150"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                :disabled="isSaving"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150 flex items-center"
+                            >
+                                <span v-if="isSaving" class="mr-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                                {{ isSaving ? 'Creating...' : 'Save and Dispatch' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+
+            <Modal :show="showDriverModal" @close="closeDriverModal">
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Add New Driver</h2>
+
+                    <div class="mt-6">
+                        <form @submit.prevent="submitDriver" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Driver ID</label>
+                                <input 
+                                    type="text" 
+                                    v-model="driverForm.driver_id" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': driverErrors.driver_id }"
+                                >
+                                <p v-if="driverErrors.driver_id" class="mt-1 text-sm text-red-600">{{ driverErrors.driver_id[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Name</label>
+                                <input 
+                                    type="text" 
+                                    v-model="driverForm.name" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': driverErrors.name }"
+                                >
+                                <p v-if="driverErrors.name" class="mt-1 text-sm text-red-600">{{ driverErrors.name[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                <input 
+                                    type="text" 
+                                    v-model="driverForm.phone" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': driverErrors.phone }"
+                                >
+                                <p v-if="driverErrors.phone" class="mt-1 text-sm text-red-600">{{ driverErrors.phone[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Company</label>
+                                <Multiselect
+                                    v-model="driverForm.company"
+                                    :options="companyOptions"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Company"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleCompanySelect"
+                                    :class="{ 'border-red-500': driverErrors.logistic_company_id }"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div
+                                            :class="{
+                                                'add-new-option': option.isAddNew,
+                                            }"
+                                        >
+                                            <span
+                                                v-if="option.isAddNew"
+                                                class="text-indigo-600 font-medium"
+                                            >+ Add New Company</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                                <p v-if="driverErrors.logistic_company_id" class="mt-1 text-sm text-red-600">{{ driverErrors.logistic_company_id[0] }}</p>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button 
+                                    type="button" 
+                                    @click="closeDriverModal" 
+                                    :disabled="isSubmittingDriver"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-150"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    :disabled="isSubmittingDriver"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150 flex items-center"
+                                >
+                                    <span v-if="isSubmittingDriver" class="mr-2">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </span>
+                                    {{ isSubmittingDriver ? 'Creating...' : 'Create' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal :show="showCompanyModal" @close="closeCompanyModal">
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Add New Company</h2>
+
+                    <div class="mt-6">
+                        <form @submit.prevent="submitCompany" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Name</label>
+                                <input 
+                                    type="text" 
+                                    v-model="companyForm.name" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': companyErrors.name }"
+                                >
+                                <p v-if="companyErrors.name" class="mt-1 text-sm text-red-600">{{ companyErrors.name[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Email</label>
+                                <input 
+                                    type="email" 
+                                    v-model="companyForm.email" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': companyErrors.email }"
+                                >
+                                <p v-if="companyErrors.email" class="mt-1 text-sm text-red-600">{{ companyErrors.email[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                <input 
+                                    type="text" 
+                                    v-model="companyForm.phone" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': companyErrors.phone }"
+                                >
+                                <p v-if="companyErrors.phone" class="mt-1 text-sm text-red-600">{{ companyErrors.phone[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Address</label>
+                                <textarea 
+                                    v-model="companyForm.address" 
+                                    rows="3"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': companyErrors.address }"
+                                ></textarea>
+                                <p v-if="companyErrors.address" class="mt-1 text-sm text-red-600">{{ companyErrors.address[0] }}</p>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button 
+                                    type="button" 
+                                    @click="closeCompanyModal" 
+                                    :disabled="isSubmittingCompany"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-150"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    :disabled="isSubmittingCompany"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150 flex items-center"
+                                >
+                                    <span v-if="isSubmittingCompany" class="mr-2">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </span>
+                                    {{ isSubmittingCompany ? 'Creating...' : 'Create' }}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </Modal>
@@ -986,12 +1233,22 @@ import {
     EnvelopeIcon,
     PhoneIcon,
     MapPinIcon,
+    UserIcon,
+    IdentificationIcon,
+    CalendarIcon,
+    TruckIcon,
+    ArchiveBoxIcon,
+    ClockIcon,
+    PrinterIcon
 } from "@heroicons/vue/24/outline";
 import Swal from "sweetalert2";
 import axios from "axios";
 import moment from "moment";
 import Modal from "@/Components/Modal.vue";
 import { useToast } from "vue-toastification";
+import Multiselect from 'vue-multiselect';
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const toast = useToast();
 
@@ -1002,19 +1259,45 @@ const props = defineProps({
     },
     error: String,
     products: Array,
+    drivers: Array,
+    companyOptions: Array,
 });
 
 const showModal = ref(false);
 const selectedBackOrder = ref(null);
 const showDispatchForm = ref(false);
+const showDriverModal = ref(false);
+const showCompanyModal = ref(false);
+const isSubmittingDriver = ref(false);
+const isSubmittingCompany = ref(false);
+const driverForm = ref({
+    driver_id: '',
+    name: '',
+    phone: '',
+    logistic_company_id: '',
+    company: null,
+    is_active: true
+});
 
-// Function to show the back order modal
-const showBackOrderModal = (item) => {
-    console.log(item);
-    selectedBackOrder.value = null;
-    showModal.value = true;
-    selectedBackOrder.value = item?.inventory_allocations;
-};
+const dispatchForm = ref({
+    driver: null,
+    dispatch_date: '',
+    no_of_cartoons: '',
+    driver_number: '',
+    plate_number: '',
+    logistic_company_id: ''
+});
+
+const companyForm = ref({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    is_active: true
+});
+
+const driverErrors = ref({});
+const companyErrors = ref({});
 
 const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800 rounded-full font-bold",
@@ -1078,40 +1361,79 @@ async function updateQuantity(item, type, index) {
         });
 }
 
-const dispatchForm = ref({
-    driver_name: "",
-    dispatch_date: moment().format("YYYY-MM-DD"),
-    driver_number: "",
-    plate_number: "",
-    no_of_cartoons: "",
-    order_id: props.order?.id,
-    status: "Dispatched",
-});
-
 const isSaving = ref(false);
+const dispatchErrors = ref({});
 
-async function createDispatch() {
-    isSaving.value = true;
-    await axios
-        .post(route("orders.dispatch-info"), dispatchForm.value)
-        .then((response) => {
-            isSaving.value = false;
-            showDispatchForm.value = false;
-            Swal.fire({
-                title: "Success!",
-                text: response.data,
-                icon: "success",
-                confirmButtonText: "OK",
-            }).then(() => {
-                router.get(route("orders.show", props.order?.id));
+const createDispatch = async () => {
+        isSaving.value = true;
+        dispatchErrors.value = {};
+        
+        console.log('Dispatch form data:', dispatchForm.value); // Debug form data
+
+        // Validate form data before submission
+        if (!dispatchForm.value.driver) {
+            console.error('Driver not selected');
+            dispatchErrors.value.driver_id = ['Please select a driver'];
+            return;
+        }
+
+        const formData = {
+            order_id: props.order.id,
+            driver_id: dispatchForm.value.driver?.id,
+            logistic_company_id: dispatchForm.value.logistic_company_id,
+            dispatch_date: dispatchForm.value.dispatch_date,
+            driver_number: dispatchForm.value.driver_number,
+            plate_number: dispatchForm.value.plate_number,
+            no_of_cartoons: dispatchForm.value.no_of_cartoons,
+            status: 'dispatched'
+        };
+
+         await axios.post(route('orders.dispatch-info'), formData)
+            .then((response) => {
+                console.log(response.data);
+                showDispatchForm.value = false;
+                dispatchForm.value = {
+                    driver: null,
+                    dispatch_date: '',
+                    no_of_cartoons: '',
+                    driver_number: '',
+                    plate_number: '',
+                    logistic_company_id: ''
+                };
+        
+                Swal.fire({
+                    title: 'Success!',
+                    text: response.data,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#3085d6',
+                }).then(() => {
+                    router.get(route("orders.show", props.order.id));
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+                if (error.response?.status === 422) {
+                    console.log('Validation errors:', error.response.data.errors); // Debug validation errors
+                    dispatchErrors.value = error.response.data.errors;
+                    toast.error('Please check the form for errors');
+                } else {
+                    console.error('Error details:', {
+                        status: error.response?.status,
+                        data: error.response?.data,
+                        message: error.message
+                    }); // Debug detailed error info
+                    
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.response?.data?.message || error.message || 'Something went wrong',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6',
+                    });
+                }
             });
-        })
-        .catch((error) => {
-            isSaving.value = false;
-            console.log(error);
-            toast.error(error.response?.data || "Failed to create dispatch");
-        });
-}
+};
 
 const isType = ref([]);
 // Function to change order status
@@ -1182,4 +1504,210 @@ const getStatusProgress = (currentStatus) => {
 };
 
 const statusProgress = computed(() => getStatusProgress(props.order.status));
+
+const driverOptions = computed(() => {
+    const options = props.drivers.map(driver => ({
+        id: driver.id,
+        name: driver.name,
+        phone: driver.phone,
+        company: driver.company,
+        isAddNew: false
+    }));
+    
+    // Add the "Add New" option at the end
+    options.push({
+        id: 'new',
+        name: 'Add New Driver',
+        isAddNew: true
+    });
+    
+    return options;
+});
+
+const handleDriverSelect = (selected) => {
+    if (selected && selected.isAddNew) {
+        // Reset the selection
+        dispatchForm.value.driver = null;
+        dispatchForm.value.driver_number = '';
+        dispatchForm.value.logistic_company_id = '';
+        // Open the driver modal
+        openDriverModal();
+    } else if (selected) {
+        // Set the driver info
+        dispatchForm.value.driver = selected;
+        dispatchForm.value.driver_number = selected.phone;
+        dispatchForm.value.logistic_company_id = selected.company?.id;
+    } else {
+        // Clear the driver info if deselected
+        dispatchForm.value.driver = null;
+        dispatchForm.value.driver_number = '';
+        dispatchForm.value.logistic_company_id = '';
+    }
+};
+
+const openDriverModal = () => {
+    driverForm.value = {
+        driver_id: '',
+        name: '',
+        phone: '',
+        logistic_company_id: '',
+        company: null,
+        is_active: true
+    };
+    showDriverModal.value = true;
+};
+
+const closeDriverModal = () => {
+    showDriverModal.value = false;
+    driverForm.value = {
+        driver_id: '',
+        name: '',
+        phone: '',
+        logistic_company_id: '',
+        company: null,
+        is_active: true
+    };
+    driverErrors.value = {};
+};
+
+const submitDriver = async () => {
+    try {
+        isSubmittingDriver.value = true;
+        driverErrors.value = {};
+        
+        const response = await axios.post(route('settings.drivers.store'), driverForm.value);
+        
+        // Create a new driver option
+        const newDriver = {
+            id: response.data.id,
+            name: driverForm.value.name,
+            phone: driverForm.value.phone,
+            company: driverForm.value.company,
+            isAddNew: false
+        };
+        
+        // Add the new driver to the options
+        props.drivers.push(newDriver);
+        
+        // Select the new driver
+        dispatchForm.value.driver = newDriver;
+        dispatchForm.value.driver_number = newDriver.phone;
+        dispatchForm.value.logistic_company_id = newDriver.company?.id;
+        
+        closeDriverModal();
+        Swal.fire({
+            title: 'Success!',
+            text: response.data.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3085d6',
+        });
+    } catch (error) {
+        if (error.response?.status === 422) {
+            driverErrors.value = error.response.data.errors;
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        }
+    } finally {
+        isSubmittingDriver.value = false;
+    }
+};
+
+const handleCompanySelect = (selected) => {
+    if (selected && selected.isAddNew) {
+        // Reset the selection
+        driverForm.value.company = null;
+        // Open the company modal
+        openCompanyModal();
+    } else if (selected) {
+        // Set the company info
+        driverForm.value.logistic_company_id = selected.id;
+    }
+};
+
+const openCompanyModal = () => {
+    // Reset the company form
+    companyForm.value = {
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        is_active: true
+    };
+    showCompanyModal.value = true;
+};
+
+const closeCompanyModal = () => {
+    showCompanyModal.value = false;
+    companyForm.value = {
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        is_active: true
+    };
+    companyErrors.value = {};
+};
+
+const submitCompany = async () => {
+    try {
+        isSubmittingCompany.value = true;
+        companyErrors.value = {};
+        
+        const response = await axios.post(route('settings.companies.store'), companyForm.value);
+        
+        // Create a new company option
+        const newCompany = {
+            id: response.data.id,
+            name: companyForm.value.name,
+            isAddNew: false
+        };
+        
+        // Add the new company to the options
+        props.companyOptions.push(newCompany);
+        
+        // Select the new company
+        driverForm.value.company = newCompany;
+        driverForm.value.logistic_company_id = newCompany.id;
+        
+        closeCompanyModal();
+        Swal.fire({
+            title: 'Success!',
+            text: response.data.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3085d6',
+        });
+    } catch (error) {
+        if (error.response?.status === 422) {
+            companyErrors.value = error.response.data.errors;
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        }
+    } finally {
+        isSubmittingCompany.value = false;
+    }
+};
+
+const printDispatchNote = (dispatch) => {
+    // Implement print functionality
+    console.log('Printing dispatch note:', dispatch);
+};
+
+const trackDispatch = (dispatch) => {
+    // Implement tracking functionality
+    console.log('Tracking dispatch:', dispatch);
+};
 </script>

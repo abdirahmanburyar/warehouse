@@ -17,6 +17,8 @@ use App\Models\IssuedQuantity;
 use App\Http\Resources\OrderResource;
 use App\Events\InventoryUpdated;
 use App\Models\Region;
+use App\Models\Driver;
+use App\Models\LogisticCompany;
 
 // Laravel Core
 use Illuminate\Http\Request;
@@ -233,23 +235,25 @@ class OrderController extends Controller
 
 
     public function dispatchInfo(Request $request){
-        
         try {
             return DB::transaction(function() use ($request){
                 $request->validate([
-                    'dispatch_date',
-                    'driver_name',
-                    'driver_number',
-                    'place_number',
-                    'no_of_cartoons',
-                    'order_id',
-                    'status'
+                    'dispatch_date' => 'required|date',
+                    'driver_id' => 'required|exists:drivers,id',
+                    'driver_number' => 'required|string',
+                    'plate_number' => 'required|string',
+                    'no_of_cartoons' => 'required|numeric',
+                    'order_id' => 'required|exists:orders,id',
+                    'logistic_company_id' => 'required|exists:logistic_companies,id',
+                    'status' => 'required|string'
                 ]);
+
                 $order = Order::with('dispatch')->find($request->order_id);
                 $order->dispatch()->create([
                     'order_id' => $request->order_id,
                     'dispatch_date' => $request->dispatch_date,
-                    'driver_name' => $request->driver_name,
+                    'driver_id' => $request->driver_id,
+                    'logistic_company_id' => $request->logistic_company_id,
                     'driver_number' => $request->driver_number,
                     'plate_number' => $request->plate_number,
                     'no_of_cartoons' => $request->no_of_cartoons,
@@ -1126,7 +1130,7 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $order = Order::where('orders.id', $id)
-                ->with(['items.product.category','dispatch', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'])
+                ->with(['items.product.category','dispatch.driver','dispatch.logistic_company', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'])
                 ->first();
 
             // Get items with SOH using subquery
@@ -1148,8 +1152,32 @@ class OrderController extends Controller
             $order->items = $items;
             $products = Product::select('id','name')->get();
             
+            // Get drivers with their companies
+            $drivers = Driver::with('company')->where('is_active', true)->get();
+            
+            // Get all companies for the driver form
+            $companyOptions = LogisticCompany::where('is_active', true)
+                ->get()
+                ->map(function($company) {
+                    return [
+                        'id' => $company->id,
+                        'name' => $company->name,
+                        'isAddNew' => false
+                    ];
+                })
+                ->push([
+                    'id' => 'new',
+                    'name' => 'Add New Company',
+                    'isAddNew' => true
+                ]);
+            
             DB::commit();
-            return inertia("Order/Show", ['order' => $order, 'products' => $products]);
+            return inertia("Order/Show", [
+                'order' => $order, 
+                'products' => $products,
+                'drivers' => $drivers,
+                'companyOptions' => $companyOptions
+            ]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return inertia("Order/Show", ['error' =>  $th->getMessage()]);

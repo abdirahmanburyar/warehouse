@@ -2133,6 +2133,90 @@
                 </div>
             </div>
         </Modal>
+
+        <!-- Dispatch Information -->
+        <div v-if="props.transfer.status === 'dispatched' && props.transfer.dispatch_info?.length > 0" class="mt-8 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Dispatch Information
+                </h2>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg divide-y divide-gray-200">
+                <div v-for="dispatch in props.transfer.dispatch_info" :key="dispatch.id" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Driver Info -->
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500 mb-1">Driver Information</h3>
+                                <div class="space-y-2">
+                                    <div class="flex items-center">
+                                        <UserIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.driver.name }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <PhoneIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.driver.phone }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <TruckIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.plate_number }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Company Info -->
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500 mb-1">Logistics Company</h3>
+                                <div class="space-y-2">
+                                    <div class="flex items-center">
+                                        <BuildingOfficeIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.logistic_company.name }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <UserIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.logistic_company.incharge_person }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <PhoneIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                        <span class="text-gray-900">{{ dispatch.logistic_company.incharge_phone }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Details -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Dispatch Date</span>
+                                <div class="flex items-center mt-1">
+                                    <CalendarIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                    <span class="text-gray-900">{{ moment(dispatch.dispatch_date).format('DD/MM/YYYY') }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Number of Cartons</span>
+                                <div class="flex items-center mt-1">
+                                    <CubeIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                    <span class="text-gray-900">{{ dispatch.no_of_cartoons }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Created At</span>
+                                <div class="flex items-center mt-1">
+                                    <ClockIcon class="w-5 h-5 text-gray-400 mr-2" />
+                                    <span class="text-gray-900">{{ moment(dispatch.created_at).format('DD/MM/YYYY HH:mm') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -2145,6 +2229,15 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useToast } from "vue-toastification";
 import Modal from "@/Components/Modal.vue";
+import { 
+    UserIcon, 
+    PhoneIcon, 
+    TruckIcon, 
+    BuildingOfficeIcon,
+    CalendarIcon,
+    CubeIcon,
+    ClockIcon
+} from '@heroicons/vue/24/outline';
 
 const toast = useToast();
 const page = usePage();
