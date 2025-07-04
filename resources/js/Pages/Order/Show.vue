@@ -588,14 +588,14 @@
                                 "
                                 class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
                             />
-                            <label for="received_quantity">Received Quantity</label>
+                            <!-- <label for="received_quantity">Received Quantity</label>
                             <input
                                 type="number"
                                 placeholder="0"
                                 v-model="item.received_quantity"
                                 readonly
                                 class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
-                            />
+                            /> -->
                             <label for="days">No. of Days</label>
                             <input
                                 type="number"
@@ -709,42 +709,15 @@
             </div>
         </div>
 
-        <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+        <!-- Order Status Actions -->
+        <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
                 Order Status Actions
             </h3>
-            <div class="flex justify-center items-center mb-6">
+            <div class="flex items-start mb-6">
                 <!-- Status Action Buttons -->
-                <div class="flex flex-wrap items-center justify-center gap-4">
-                    <!-- Pending status indicator -->
-                    <div class="relative">
-                        <div class="flex flex-col">
-                            <button
-                                :class="[
-                                    props.order.status === 'pending'
-                                        ? 'bg-green-500 hover:bg-green-600'
-                                        : statusOrder.indexOf(props.order.status) >
-                                          statusOrder.indexOf('pending')
-                                    ? 'bg-green-500'
-                                    : 'bg-gray-300 cursor-not-allowed',
-                            ]"
-                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
-                            disabled
-                        >
-                            <img
-                                src="/assets/images/pending.png"
-                                class="w-5 h-5 mr-2"
-                                alt="Pending"
-                            />
-                            <span class="text-sm font-bold text-white"
-                                >Pending since {{ moment(props.order.created_at).format('DD/MM/YYYY HH:mm') }}</span
-                            >
-                        </button>
-                        </div>
-                        <span v-show="props.order?.user" class="text-sm text-gray-600">
-                            By {{ props.order.user?.name || 'System' }}
-                        </span>
-                    </div>
+                <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
+                    <!-- Pending status indicator removed by the Dr Mutax -->
                     <!-- Review button -->
                     <div class="relative">
                         <div class="flex flex-col">
@@ -778,12 +751,15 @@
                             <span class="text-sm font-bold text-white">{{
                                 statusOrder.indexOf(props.order.status) >
                                 statusOrder.indexOf("pending")
-                                    ? "Reviewed on" + moment(props.order.reviewed_at).format('DD/MM/YYYY HH:mm')
+                                    ? "Reviewed"
                                     : isType["is_reviewing"]
                                     ? "Please Wait..."
                                     : "Review"
                             }}</span>
                         </button>
+                        <span v-show="props.order?.reviewed_at" class="text-sm text-gray-600">
+                           On {{ moment(props.order?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
                         <span v-show="props.order?.reviewed_by" class="text-sm text-gray-600">
                            By {{ props.order?.reviewed_by?.name }}
                         </span>
@@ -852,11 +828,14 @@
                                 <span class="text-sm font-bold text-white">{{
                                     statusOrder.indexOf(props.order.status) >
                                     statusOrder.indexOf("reviewed")
-                                        ? "Approved on" + moment(props.order?.approved_at).format('DD/MM/YYYY HH:mm')
+                                        ? "Approved"
                                         :  isType["is_approve"] ? "Please Wait..." : "Approve"
                                 }}</span>
                             </template>
                         </button>
+                        <span v-show="props.order?.approved_by" class="text-sm text-gray-600">
+                            On {{ moment(props.order?.approved_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
                         <span v-show="props.order?.approved_by" class="text-sm text-gray-600">
                            By {{ props.order?.approved_by?.name }}
                         </span>
@@ -925,11 +904,14 @@
                                 <span class="text-sm font-bold text-white">{{
                                     statusOrder.indexOf(props.order.status) >
                                     statusOrder.indexOf("approved")
-                                        ? "Processed on " + moment(props.order?.processed_at).format('DD/MM/YYYY HH:mm')
+                                        ? "Processed"
                                         : isType['is_process'] ? "Please Wait..." : "Process"
                                 }}</span>
                             </template>
                         </button>
+                        <span v-show="props.order?.processed_by" class="text-sm text-gray-600">
+                            On {{ moment(props.order?.processed_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
                         <span v-show="props.order?.processed_by" class="text-sm text-gray-600">
                             By {{ props.order?.processed_by?.name }}
                         </span>
@@ -992,11 +974,14 @@
                                 <span class="text-sm font-bold text-white">{{
                                     statusOrder.indexOf(props.order.status) >
                                     statusOrder.indexOf("in_process")
-                                        ? "Dispatched on " + moment(props.order.dispatched_at).format('DD/MM/YYYY HH:mm')
+                                        ? "Dispatched"
                                         : isType['is_dispatch'] ? "Please Wait..." : "Dispatch"
                                 }}</span>
                             </template>
                         </button>
+                        <span v-show="props.order?.dispatched_at" class="text-sm text-gray-600">
+                            On {{ moment(props.order?.dispatched_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
                         <span v-show="props.order?.dispatched_by" class="text-sm text-gray-600">
                             By {{ props.order?.dispatched_by?.name }}
                         </span>
@@ -1008,93 +993,99 @@
                     </div>
 
                     <!-- Order Delivery Indicators -->
-                    <div class="flex flex-col gap-4 sm:flex-row">
-                        <!-- Delivered Status -->
-                        <div class="relative">
-                            <div class="flex flex-col">
-                            <button
-                                :class="[
-                                    props.order.status === 'dispatched'
-                                        ? 'bg-yellow-500 hover:bg-yellow-600'
-                                        : statusOrder.indexOf(
-                                              props.order.status
-                                          ) > statusOrder.indexOf('dispatched')
-                                        ? 'bg-green-500'
-                                        : 'bg-gray-300 cursor-not-allowed',
-                                ]"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
-                                disabled
-                            >
-                                <img
-                                    src="/assets/images/delivery.png"
-                                    class="w-5 h-5 mr-2"
-                                    alt="dispatched"
-                                />
-                                <span class="text-sm font-bold text-white">
-                                    {{
-                                        statusOrder.indexOf(
-                                            props.order.status
-                                        ) > statusOrder.indexOf("dispatched")
-                                            ? "Delivered on " + moment(props.order.delivered_at).format('DD/MM/YYYY HH:mm')
-                                            : "Waiting to be Delivered"
-                                    }}
-                                </span>
-                            </button>
-                            <span v-show="props.order?.delivered_by" class="text-sm text-gray-600">
-                                By {{ props.order?.delivered_by?.name }}
-                            </span> 
-                            </div>
-
-                            <!-- Pulse Indicator if currently at this status -->
-                            <div
-                                v-if="props.order.status === 'dispatched'"
-                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
-                            ></div>
+                    <!-- Delivered Status -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                        <button
+                            :class="[
+                                props.order.status === 'dispatched'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : statusOrder.indexOf(
+                                          props.order.status
+                                      ) > statusOrder.indexOf('dispatched')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                            disabled
+                        >
+                            <img
+                                src="/assets/images/delivery.png"
+                                class="w-5 h-5 mr-2"
+                                alt="dispatched"
+                            />
+                            <span class="text-sm font-bold text-white">
+                                {{
+                                    statusOrder.indexOf(
+                                        props.order.status
+                                    ) > statusOrder.indexOf("dispatched")
+                                        ? "Delivered"
+                                        : "Waiting to be Delivered"
+                                }}
+                            </span>
+                        </button>
+                        <span v-show="props.order?.delivered_at" class="text-sm text-gray-600">
+                            On {{ moment(props.order?.delivered_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
+                        <span v-show="props.order?.delivered_by" class="text-sm text-gray-600">
+                            By {{ props.order?.delivered_by?.name }}
+                        </span> 
                         </div>
 
-                        <!-- Received Status -->
-                        <div class="relative">
-                            <div class="flex flex-col">
-                            <button
-                                :class="[
-                                    props.order.status === 'delivered'
-                                        ? 'bg-yellow-400'
-                                        : statusOrder.indexOf(
-                                              props.order.status
-                                          ) > statusOrder.indexOf('delivered')
-                                        ? 'bg-green-500'
-                                        : 'bg-gray-300 cursor-not-allowed',
-                                ]"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
-                                disabled
-                            >
-                                <img
-                                    src="/assets/images/received.png"
-                                    class="w-5 h-5 mr-2"
-                                    alt="Received"
-                                />
-                                <span class="text-sm font-bold text-white">
-                                    {{
-                                        statusOrder.indexOf(
-                                            props.order.status
-                                        ) > statusOrder.indexOf("received")
-                                            ? "Waiting to be Received"
-                                            : "Received on " + moment(props.order.received_at).format('DD/MM/YYYY HH:mm')
-                                    }}
-                                </span>
-                            </button>
-                            <span v-show="props.order?.received_by" class="text-sm text-gray-600">
-                                By {{ props.order?.received_by?.name }}
-                            </span> 
-                            </div>
-
-                            <!-- Pulse Indicator if currently at this status -->
-                            <div
-                                v-if="props.order.status === 'delivered'"
-                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
-                            ></div>
-                        </div>
+                        <!-- Pulse Indicator if currently at this status -->
+                        <div
+                            v-if="props.order.status === 'dispatched'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
                     </div>
+
+                    <!-- Received Status -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                        <button
+                            :class="[
+                                props.order.status === 'delivered'
+                                    ? 'bg-yellow-400'
+                                    : statusOrder.indexOf(
+                                          props.order.status
+                                      ) > statusOrder.indexOf('delivered')
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 cursor-not-allowed',
+                            ]"
+                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                            disabled
+                        >
+                            <img
+                                src="/assets/images/received.png"
+                                class="w-5 h-5 mr-2"
+                                alt="Received"
+                            />
+                            <span class="text-sm font-bold text-white">
+                                {{
+                                    statusOrder.indexOf(
+                                        props.order.status
+                                    ) > statusOrder.indexOf("received")
+                                        ? "Waiting to be Received"
+                                        : "Received"
+                                }}
+                            </span>
+                        </button>
+                        <span v-show="props.order?.received_at" class="text-sm text-gray-600">
+                            On {{ moment(props.order?.received_at).format('DD/MM/YYYY HH:mm') }}
+                        </span>
+                        <span v-show="props.order?.received_by" class="text-sm text-gray-600">
+                            By {{ props.order?.received_by?.name }}
+                        </span> 
+                        </div>
+
+                        <!-- Pulse Indicator if currently at this status -->
+                        <div
+                            v-if="props.order.status === 'delivered'"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"
+                        ></div>
+                    </div>
+                    <!-- <div class="flex flex-col gap-6 sm:flex-row">
+                    </div> -->
 
                     <!-- Reject button (only available for pending status) -->
                     <div
