@@ -575,8 +575,8 @@ function getResults(page = 1) {
                                         :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
                                     >
                                         <div class="text-xs flex flex-col space-y-0.5">
-                                            <span class="text-xs">WH: {{ item.warehouse?.name }}</span>
-                                            <span class="text-xs">LC: {{ item.location }}</span>
+                                            <!-- <span class="text-xs">WH: {{ item.warehouse?.name }}</span> -->
+                                             {{ item.location }}
                                         </div>
                                     </td>
 

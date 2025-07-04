@@ -33,6 +33,8 @@ use Illuminate\Support\Facades\Broadcast;
 use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use Spatie\Permission\Middleware\PermissionMiddleware;
+use App\Http\Controllers\LogisticCompanyController;
+use App\Http\Controllers\DriverController;
 
 // Welcome route - accessible without authentication
 
@@ -111,6 +113,25 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/users/bulk-status', [UserController::class, 'bulkToggleStatus'])
             ->middleware(PermissionMiddleware::class . ':user.edit')
             ->name('users.bulk-status');
+    });
+
+    // Logistics Management Routes
+    Route::prefix('settings')->group(function () {
+        // Logistic Companies
+        Route::prefix('logistics')->group(function () {
+            Route::get('/companies', [LogisticCompanyController::class, 'index'])->name('settings.logistics.companies.index');
+            Route::post('/companies', [LogisticCompanyController::class, 'store'])->name('settings.logistics.companies.store');
+            Route::delete('/companies/{company}', [LogisticCompanyController::class, 'destroy'])->name('settings.logistics.companies.destroy');
+            Route::put('/companies/{company}/toggle-status', [LogisticCompanyController::class, 'toggleStatus'])->name('settings.logistics.companies.toggle-status');
+        });
+
+        // Drivers
+        Route::prefix('drivers')->group(function () {
+            Route::get('/', [DriverController::class, 'index'])->name('settings.drivers.index');
+            Route::post('/', [DriverController::class, 'store'])->name('settings.drivers.store');
+            Route::delete('/{driver}', [DriverController::class, 'destroy'])->name('settings.drivers.destroy');
+            Route::put('/{driver}/toggle-status', [DriverController::class, 'toggleStatus'])->name('settings.drivers.toggle-status');
+        });
     });
 
     // Role Management Routes

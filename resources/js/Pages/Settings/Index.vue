@@ -22,6 +22,23 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Logistics Management -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Logistics Management</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">Transportation</h3>
+                            <ul class="space-y-2">
+                                <li><Link :href="route('settings.logistics.companies.index')" class="text-gray-600 hover:text-indigo-600">Logistic Companies</Link></li>
+                                <li><Link :href="route('settings.drivers.index')" class="text-gray-600 hover:text-indigo-600">Manage Drivers</Link></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
