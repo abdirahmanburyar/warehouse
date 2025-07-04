@@ -66,11 +66,12 @@
                 <div class="w-full">
                     <Multiselect
                         v-model="facility"
-                        :options="props.facilities"
+                        :options="facilities"
                         :searchable="true"
                         :close-on-select="true"
                         :show-labels="false"
                         :allow-empty="true"
+                        :disabled="district == null"
                         placeholder="Select Facility"
                     >
                     </Multiselect>
