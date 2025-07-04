@@ -237,6 +237,7 @@ class OrderController extends Controller
         try {
             return DB::transaction(function() use ($request){
                 $request->validate([
+                    'dispatch_date',
                     'driver_name',
                     'driver_number',
                     'place_number',
@@ -247,6 +248,7 @@ class OrderController extends Controller
                 $order = Order::with('dispatch')->find($request->order_id);
                 $order->dispatch()->create([
                     'order_id' => $request->order_id,
+                    'dispatch_date' => $request->dispatch_date,
                     'driver_name' => $request->driver_name,
                     'driver_number' => $request->driver_number,
                     'plate_number' => $request->plate_number,

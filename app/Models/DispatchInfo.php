@@ -9,6 +9,7 @@ class DispatchInfo extends Model
     protected $fillable = [
         'order_id',
         'transfer_id',
+        'dispatch_date',
         'driver_name',
         'no_of_cartoons',
         'driver_number',
