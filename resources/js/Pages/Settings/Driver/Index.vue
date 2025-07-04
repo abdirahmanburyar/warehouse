@@ -39,7 +39,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="driver in props.drivers.data" :key="driver.id">
+                            <tr v-for="(driver, index) in props.drivers.data" :key="driver.id">
                                 <td class="px-6 py-4 whitespace-nowrap">{{ driver.driver_id }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ driver.name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ driver.phone }}</td>
@@ -73,11 +73,11 @@
                                             <i class="fas fa-edit text-lg"></i>
                                         </button>
                                         <button 
-                                            @click="confirmDelete(driver)" 
+                                            @click="confirmDelete(driver, index)" 
                                             class="text-red-600 hover:text-red-900 transition-colors duration-150"
                                             title="Delete Driver"
                                         >
-                                            <i class="fas fa-trash-alt text-lg"></i>
+                                            <i class="fas fa-trash-alt text-lg" :class="{ 'animate-pulse': isDeleting[index] }"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -197,7 +197,9 @@
                                 type="text" 
                                 v-model="companyForm.name" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': errors.name }"
                             >
+                            <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
                         </div>
 
                         <div>
@@ -206,7 +208,9 @@
                                 type="email" 
                                 v-model="companyForm.email" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': errors.email }"
                             >
+                            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
                         </div>
 
                         <div>
@@ -215,7 +219,9 @@
                                 v-model="companyForm.address" 
                                 rows="3"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': errors.address }"
                             ></textarea>
+                            <p v-if="errors.address" class="mt-1 text-sm text-red-600">{{ errors.address }}</p>
                         </div>
 
                         <div>
@@ -224,7 +230,9 @@
                                 type="text" 
                                 v-model="companyForm.incharge_person" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': errors.incharge_person }"
                             >
+                            <p v-if="errors.incharge_person" class="mt-1 text-sm text-red-600">{{ errors.incharge_person }}</p>
                         </div>
 
                         <div>
@@ -233,22 +241,29 @@
                                 type="text" 
                                 v-model="companyForm.incharge_phone" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                :class="{ 'border-red-500': errors.incharge_phone }"
                             >
+                            <p v-if="errors.incharge_phone" class="mt-1 text-sm text-red-600">{{ errors.incharge_phone }}</p>
                         </div>
 
                         <div class="mt-6 flex justify-end space-x-3">
                             <button 
                                 type="button" 
                                 @click="closeCompanyModal" 
+                                :disabled="isSubmitting"
                                 class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-150"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit" 
-                                class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-150"
+                                :disabled="isSubmitting"
+                                class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-150 flex items-center"
                             >
-                                Create
+                                <span v-if="isSubmitting" class="mr-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                                {{ isSubmitting ? 'Creating...' : 'Create' }}
                             </button>
                         </div>
                     </form>
@@ -379,6 +394,14 @@ const closeModal = () => {
 };
 
 const openCompanyModal = () => {
+    companyForm.value = {
+        name: '',
+        email: '',
+        address: '',
+        incharge_person: '',
+        incharge_phone: '',
+        is_active: true
+    };
     showCompanyModal.value = true;
 };
 
@@ -413,6 +436,8 @@ function reloadDrivers() {
 }
 
 const idDriverSubmiting = ref(false);
+const errors = ref({});
+const isSubmitting = ref(false);
 
 const submit = async () => {
     idDriverSubmiting.value = true;
@@ -444,8 +469,13 @@ const submit = async () => {
 
 const submitCompany = async () => {
     try {
-        const response = await axios.post(route('settings.drivers.companies.store'), companyForm.value);
-        closeCompanyModal();
+        errors.value = {};
+        isSubmitting.value = true;
+        
+        console.log('Submitting company data:', companyForm.value);
+        
+        const response = await axios.post(route('settings.logistics.companies.store'), companyForm.value);
+        console.log('Response:', response.data);
         
         // Create a new company option and select it
         const newCompany = {
@@ -458,6 +488,8 @@ const submitCompany = async () => {
         form.value.company = newCompany;
         form.value.logistic_company_id = newCompany.id;
         
+        // Close modal and show success message
+        closeCompanyModal();
         Swal.fire({
             title: 'Success!',
             text: response.data.message,
@@ -466,20 +498,55 @@ const submitCompany = async () => {
             confirmButtonColor: '#3085d6',
         });
         
-        // Reload the page to get updated company list but keep the form open
-        router.reload({ only: ['companies'] });
+        // Reload only the companies data
+        router.get(
+            route('settings.drivers.index'),
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['companies']
+            }
+        );
     } catch (error) {
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
+        console.error('Error details:', error);
+        console.error('Response data:', error.response?.data);
+        console.error('Response status:', error.response?.status);
+        
+        if (error.response?.status === 422) {
+            errors.value = error.response.data.errors;
+            Swal.fire({
+                title: 'Validation Error',
+                text: 'Please check the form for errors',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        } else {
+            let errorMessage = 'Something went wrong';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (typeof error.response?.data === 'string') {
+                errorMessage = error.response.data;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            Swal.fire({
+                title: 'Error!',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        }
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
-const confirmDelete = (driver) => {
+
+const confirmDelete = (driver, index) => {
     Swal.fire({
         title: 'Are you sure?',
         text: `Do you want to delete driver ${driver.name}?`,
@@ -491,36 +558,41 @@ const confirmDelete = (driver) => {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            deleteDriver(driver);
+            deleteDriver(driver, index);
         }
     });
 };
 
-const deleteDriver = async (driver) => {
-    try {
-        const response = await axios.delete(route('settings.logistics.drivers.destroy', driver.id));
-        Swal.fire({
-            title: 'Deleted!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+const isDeleting = ref([]);
+const deleteDriver = async (driver, index) => {
+    isDeleting.value[index] = true;
+    await axios.delete(route('settings.drivers.destroy', driver.id))
+        .then(response => {
+            isDeleting.value[index] = false;
+            reloadDrivers();
+            Swal.fire({
+                title: 'Deleted!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        })
+        .catch(error => {
+            isDeleting.value[index] = false;
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
         });
-        router.reload();
-    } catch (error) {
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
-    }
 };
 
 const toggleStatus = async (driver) => {
     try {
-        const response = await axios.patch(route('settings.logistics.drivers.toggle-status', driver.id));
+        const response = await axios.patch(route('settings.drivers.toggle-status', driver.id));
         Swal.fire({
             title: 'Success!',
             text: response.data,
