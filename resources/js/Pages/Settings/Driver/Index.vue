@@ -59,11 +59,17 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex space-x-3">
                                         <button 
-                                            @click="toggleStatus(driver)" 
-                                            class="text-yellow-600 hover:text-yellow-900 transition-colors duration-150"
+                                            @click="confirmToggleStatus(driver, index)" 
+                                            class="transition-colors duration-150"
                                             title="Toggle Status"
+                                            :disabled="isTogglingStatus[index]"
                                         >
-                                            <i class="fas fa-toggle-on text-lg"></i>
+                                            <i class="fas fa-toggle-on text-lg" 
+                                               :class="[
+                                                   driver.is_active ? 'text-green-500' : 'text-gray-400',
+                                                   { 'animate-pulse': isTogglingStatus[index] }
+                                               ]"
+                                            ></i>
                                         </button>
                                         <button 
                                             @click="openModal(driver)" 
@@ -590,26 +596,48 @@ const deleteDriver = async (driver, index) => {
         });
 };
 
-const toggleStatus = async (driver) => {
-    try {
-        const response = await axios.patch(route('settings.drivers.toggle-status', driver.id));
-        Swal.fire({
-            title: 'Success!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+const isTogglingStatus = ref([]);
+const confirmToggleStatus = (driver, index) => {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to ${driver.is_active ? 'deactivate' : 'activate'} driver ${driver.name}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            toggleStatus(driver, index);
+        }
+    });
+};
+
+const toggleStatus = async (driver, index) => {
+    isTogglingStatus.value[index] = true;
+    await axios.put(route('settings.drivers.toggle-status', driver.id))
+        .then(response => {
+            isTogglingStatus.value[index] = false;
+            reloadDrivers();
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        })
+        .catch(error => {
+            isTogglingStatus.value[index] = false;
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
         });
-        router.reload();
-    } catch (error) {
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
-    }
 };
 
 const handlePageChange = (page) => {
@@ -617,66 +645,3 @@ const handlePageChange = (page) => {
 };
 
 </script>
-
-<style scoped>
-.fa-edit {
-    color: #3b82f6;
-}
-.fa-trash-alt {
-    color: #ef4444;
-}
-.fa-toggle-on {
-    color: #eab308;
-}
-
-/* Multiselect Styles */
-::v-deep .multiselect {
-    min-height: 44px;
-    border-radius: 0.375rem;
-}
-
-::v-deep .multiselect__tags {
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    border-color: #D1D5DB;
-}
-
-::v-deep .multiselect__placeholder {
-    margin-bottom: 0;
-    padding-top: 0;
-}
-
-::v-deep .multiselect__input {
-    margin-bottom: 0;
-}
-
-::v-deep .multiselect__single {
-    margin-bottom: 0;
-}
-
-::v-deep .multiselect__content-wrapper {
-    border-radius: 0.375rem;
-    border-color: #D1D5DB;
-}
-
-::v-deep .multiselect__option {
-    min-height: 40px;
-    padding: 0.75rem;
-}
-
-::v-deep .multiselect__option--highlight {
-    background: #EEF2FF;
-    color: #4F46E5;
-}
-
-::v-deep .multiselect__option--selected {
-    background: #C7D2FE;
-    color: #4F46E5;
-    font-weight: 600;
-}
-
-.add-new-option {
-    padding: 0.5rem 0;
-}
-</style>
