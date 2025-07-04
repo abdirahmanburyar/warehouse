@@ -134,25 +134,32 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Company</label>
-                            <div class="flex space-x-2">
-                                <select 
-                                    v-model="form.logistic_company_id" 
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                >
-                                    <option value="">Select Company</option>
-                                    <option v-for="company in props.companies" :key="company.id" :value="company.id">
-                                        {{ company.name }}
-                                    </option>
-                                </select>
-                                <button 
-                                    type="button"
-                                    @click="openCompanyModal"
-                                    class="mt-1 px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-150"
-                                    title="Add New Company"
-                                >
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
+                            <Multiselect
+                                v-model="form.company"
+                                :options="companyOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                placeholder="Select Company"
+                                track-by="id"
+                                label="name"
+                                @select="handleCompanySelect"
+                            >
+                                <template v-slot:option="{ option }">
+                                    <div
+                                        :class="{
+                                            'add-new-option': option.isAddNew,
+                                        }"
+                                    >
+                                        <span
+                                            v-if="option.isAddNew"
+                                            class="text-indigo-600 font-medium"
+                                        >+ Add New Company</span>
+                                        <span v-else>{{ option.name }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
                         </div>
 
                         <div class="mt-6 flex justify-end space-x-3">
@@ -252,13 +259,16 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import Swal from 'sweetalert2';
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const props = defineProps({
     drivers: {
@@ -287,6 +297,7 @@ const form = ref({
     name: '',
     phone: '',
     logistic_company_id: '',
+    company: null,
     is_active: true
 });
 
@@ -299,12 +310,46 @@ const companyForm = ref({
     is_active: true
 });
 
+const companyOptions = computed(() => {
+    const options = props.companies.map(company => ({
+        id: company.id,
+        name: company.name,
+        isAddNew: false
+    }));
+    
+    // Add the "Add New" option at the end
+    options.push({
+        id: 'new',
+        name: 'Add New Company',
+        isAddNew: true
+    });
+    
+    return options;
+});
+
+const handleCompanySelect = (selected) => {
+    if (selected && selected.isAddNew) {
+        // Reset the selection
+        form.value.company = null;
+        form.value.logistic_company_id = '';
+        // Open the company modal
+        openCompanyModal();
+    } else if (selected) {
+        // Set the company ID for the driver form
+        form.value.logistic_company_id = selected.id;
+    }
+};
 
 const openModal = (driver = null) => {
     if (driver) {
         form.value = { 
             ...driver,
-            logistic_company_id: driver.company?.id
+            logistic_company_id: driver.company?.id,
+            company: driver.company ? {
+                id: driver.company.id,
+                name: driver.company.name,
+                isAddNew: false
+            } : null
         };
     } else {
         form.value = {
@@ -313,6 +358,7 @@ const openModal = (driver = null) => {
             name: '',
             phone: '',
             logistic_company_id: '',
+            company: null,
             is_active: true
         };
     }
@@ -327,6 +373,7 @@ const closeModal = () => {
         name: '',
         phone: '',
         logistic_company_id: '',
+        company: null,
         is_active: true
     };
 };
@@ -397,16 +444,30 @@ const submit = async () => {
 
 const submitCompany = async () => {
     try {
-        const response = await axios.post(route('settings.logistics.companies.store'), companyForm.value);
+        const response = await axios.post(route('settings.drivers.companies.store'), companyForm.value);
         closeCompanyModal();
+        
+        // Create a new company option and select it
+        const newCompany = {
+            id: response.data.company_id,
+            name: companyForm.value.name,
+            isAddNew: false
+        };
+        
+        // Set both the company object and ID
+        form.value.company = newCompany;
+        form.value.logistic_company_id = newCompany.id;
+        
         Swal.fire({
             title: 'Success!',
-            text: response.data,
+            text: response.data.message,
             icon: 'success',
             confirmButtonText: 'OK',
             confirmButtonColor: '#3085d6',
         });
-        router.reload();
+        
+        // Reload the page to get updated company list but keep the form open
+        router.reload({ only: ['companies'] });
     } catch (error) {
         Swal.fire({
             title: 'Error!',
@@ -483,7 +544,6 @@ const handlePageChange = (page) => {
     props.filters.page = page;
 };
 
-
 </script>
 
 <style scoped>
@@ -495,5 +555,56 @@ const handlePageChange = (page) => {
 }
 .fa-toggle-on {
     color: #eab308;
+}
+
+/* Multiselect Styles */
+::v-deep .multiselect {
+    min-height: 44px;
+    border-radius: 0.375rem;
+}
+
+::v-deep .multiselect__tags {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border-color: #D1D5DB;
+}
+
+::v-deep .multiselect__placeholder {
+    margin-bottom: 0;
+    padding-top: 0;
+}
+
+::v-deep .multiselect__input {
+    margin-bottom: 0;
+}
+
+::v-deep .multiselect__single {
+    margin-bottom: 0;
+}
+
+::v-deep .multiselect__content-wrapper {
+    border-radius: 0.375rem;
+    border-color: #D1D5DB;
+}
+
+::v-deep .multiselect__option {
+    min-height: 40px;
+    padding: 0.75rem;
+}
+
+::v-deep .multiselect__option--highlight {
+    background: #EEF2FF;
+    color: #4F46E5;
+}
+
+::v-deep .multiselect__option--selected {
+    background: #C7D2FE;
+    color: #4F46E5;
+    font-weight: 600;
+}
+
+.add-new-option {
+    padding: 0.5rem 0;
 }
 </style>
