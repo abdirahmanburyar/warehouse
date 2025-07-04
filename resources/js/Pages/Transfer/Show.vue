@@ -34,7 +34,7 @@
                                     v-else-if="
                                         props.transfer.status === 'reviewed'
                                     "
-                                    src="/assets/images/reviewed.png"
+                                    src="/assets/images/review.png"
                                     class="w-4 h-4"
                                     alt="Reviewed"
                                 />
@@ -989,44 +989,6 @@
                     <div
                         class="flex flex-wrap items-center justify-center gap-4"
                     >
-                        <!-- Pending status indicator -->
-                        <div class="relative">
-                            <div class="flex flex-col">
-                                <button
-                                    :class="[
-                                        props.transfer.status === 'pending'
-                                            ? 'bg-green-500 hover:bg-green-600'
-                                            : statusOrder.indexOf(
-                                                  props.transfer.status
-                                              ) > statusOrder.indexOf('pending')
-                                            ? 'bg-green-500'
-                                            : 'bg-gray-300 cursor-not-allowed',
-                                    ]"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
-                                    disabled
-                                >
-                                    <img
-                                        src="/assets/images/pending.png"
-                                        class="w-5 h-5 mr-2"
-                                        alt="Pending"
-                                    />
-                                    <span class="text-sm font-bold text-white"
-                                        >Pending since
-                                        {{
-                                            moment(
-                                                props.transfer.created_at
-                                            ).format("DD/MM/YYYY HH:mm")
-                                        }}</span
-                                    >
-                                </button>
-                            </div>
-                            <span
-                                v-show="props.transfer?.user"
-                                class="text-sm text-gray-600"
-                            >
-                                By {{ props.transfer.user?.name || "System" }}
-                            </span>
-                        </div>
                         <!-- Review button -->
                         <div class="relative">
                             <div class="flex flex-col">
@@ -1065,10 +1027,7 @@
                                             statusOrder.indexOf(
                                                 props.transfer.status
                                             ) > statusOrder.indexOf("pending")
-                                                ? "Reviewed on" +
-                                                  moment(
-                                                      props.transfer.reviewed_at
-                                                  ).format("DD/MM/YYYY HH:mm")
+                                                ? "Reviewed"
                                                 : isType["is_reviewing"]
                                                 ? "Please Wait..."
                                                 : props.transfer.status ===
@@ -1078,6 +1037,12 @@
                                         }}</span
                                     >
                                 </button>
+                                <span
+                                    v-show="props.transfer?.reviewed_at"
+                                    class="text-sm text-gray-600"
+                                >
+                                    On {{ moment(props.transfer?.reviewed_at).format("DD/MM/YYYY HH:mm") }}
+                                </span>
                                 <span
                                     v-show="props.transfer?.reviewed_by"
                                     class="text-sm text-gray-600"
@@ -1156,13 +1121,7 @@
                                                     props.transfer.status
                                                 ) >
                                                 statusOrder.indexOf("reviewed")
-                                                    ? "Approved on" +
-                                                      moment(
-                                                          props.transfer
-                                                              ?.approved_at
-                                                      ).format(
-                                                          "DD/MM/YYYY HH:mm"
-                                                      )
+                                                    ? "Approved"
                                                     : isType["is_approve"]
                                                     ? "Please Wait..."
                                                     : props.transfer.status ===
@@ -1174,6 +1133,12 @@
                                         >
                                     </template>
                                 </button>
+                                <span
+                                    v-show="props.transfer?.approved_at"
+                                    class="text-sm text-gray-600"
+                                >
+                                    On {{ moment(props.transfer?.approved_at).format("DD/MM/YYYY HH:mm") }}
+                                </span>
                                 <span
                                     v-show="props.transfer?.approved_by"
                                     class="text-sm text-gray-600"
@@ -1252,13 +1217,7 @@
                                                     props.transfer.status
                                                 ) >
                                                 statusOrder.indexOf("approved")
-                                                    ? "Processed by" +
-                                                      moment(
-                                                          props.transfer
-                                                              ?.processed_at
-                                                      ).format(
-                                                          "DD/MM/YYYY HH:mm"
-                                                      )
+                                                    ? "Processed"
                                                     : isType["is_process"]
                                                     ? "Please Wait..."
                                                     : props.transfer.status ===
@@ -1270,6 +1229,12 @@
                                         >
                                     </template>
                                 </button>
+                                <span
+                                    v-show="props.transfer?.processed_at"
+                                    class="text-sm text-gray-600"
+                                >
+                                    On {{ moment(props.transfer?.processed_at).format("DD/MM/YYYY HH:mm") }}
+                                </span>
                                 <span
                                     v-show="props.transfer?.processed_by"
                                     class="text-sm text-gray-600"
@@ -1346,13 +1311,7 @@
                                                 statusOrder.indexOf(
                                                     "in_process"
                                                 )
-                                                    ? "Dispatched on " +
-                                                      moment(
-                                                          props.transfer
-                                                              .dispatched_at
-                                                      ).format(
-                                                          "DD/MM/YYYY HH:mm"
-                                                      )
+                                                    ? "Dispatched"
                                                     : isType["is_dispatch"]
                                                     ? "Please Wait..."
                                                     : props.transfer.status ===
@@ -1364,6 +1323,12 @@
                                         >
                                     </template>
                                 </button>
+                                <span
+                                    v-show="props.transfer?.dispatched_at"
+                                    class="text-sm text-gray-600"
+                                >
+                                    On {{ moment(props.transfer?.dispatched_at).format("DD/MM/YYYY HH:mm") }}
+                                </span>
                                 <span
                                     v-show="props.transfer?.dispatched_by"
                                     class="text-sm text-gray-600"
@@ -1452,13 +1417,7 @@
                                                     statusOrder.indexOf(
                                                         "dispatched"
                                                     )
-                                                        ? "Delivered on " +
-                                                          moment(
-                                                              props.transfer
-                                                                  .delivered_at
-                                                          ).format(
-                                                              "DD/MM/YYYY HH:mm"
-                                                          )
+                                                        ? "Delivered"
                                                         : isType["is_deliver"]
                                                         ? "Please Wait..."
                                                         : props.transfer
@@ -1471,6 +1430,12 @@
                                             </span>
                                         </template>
                                     </button>
+                                    <span
+                                        v-show="props.transfer?.delivered_at"
+                                        class="text-sm text-gray-600"
+                                    >
+                                        On {{ moment(props.transfer?.delivered_at).format("DD/MM/YYYY HH:mm") }}
+                                    </span>
                                     <span
                                         v-show="props.transfer?.delivered_by"
                                         class="text-sm text-gray-600"
@@ -1562,13 +1527,7 @@
                                                     statusOrder.indexOf(
                                                         "delivered"
                                                     )
-                                                        ? "Received on " +
-                                                          moment(
-                                                              props.transfer
-                                                                  .received_at
-                                                          ).format(
-                                                              "DD/MM/YYYY HH:mm"
-                                                          )
+                                                        ? "Received"
                                                         : isType["is_receive"]
                                                         ? "Please Wait..."
                                                         : props.transfer
@@ -1581,6 +1540,12 @@
                                             </span>
                                         </template>
                                     </button>
+                                    <span
+                                        v-show="props.transfer?.received_at"
+                                        class="text-sm text-gray-600"
+                                    >
+                                        On {{ moment(props.transfer?.received_at).format("DD/MM/YYYY HH:mm") }}
+                                    </span>
                                     <span
                                         v-show="props.transfer?.received_by"
                                         class="text-sm text-gray-600"
