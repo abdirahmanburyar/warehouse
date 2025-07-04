@@ -172,8 +172,9 @@ class FacilityController extends Controller
 
     public function getFacilities(Request $request){
         try {
-            $facilities = Facility::where('district', 'like', "%{$request->district}%")->get();
-        return response()->json($facilities);
+            $facilities = Facility::where('district', $request->district)->get();
+            logger()->info($facilities);
+        return response()->json($facilities, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

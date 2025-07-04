@@ -39,7 +39,7 @@
                         :options="props.regions"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="false"
+                        :show-labels="true"
                         :allow-empty="true"
                         @select="handleRegionSelect"
                         placeholder="Select Region"
@@ -54,7 +54,7 @@
                         :options="districts"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="false"
+                        :show-labels="true"
                         :allow-empty="true"
                         :disabled="region == null"
                         :select="handleDistrictSelect"
@@ -69,7 +69,7 @@
                         :options="facilities"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="false"
+                        :show-labels="true"
                         :allow-empty="true"
                         :disabled="district == null"
                         placeholder="Select Facility"
@@ -84,7 +84,7 @@
                         :options="orderTypes"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="false"
+                        :show-labels="true"
                         :allow-empty="true"
                         placeholder="Select Order Type"
                     >
@@ -815,10 +815,10 @@ async function handleRegionSelect(option) {
 const facilities = ref([]);
 
 async function handleDistrictSelect(option) {
-        if (!option) {
-            facility.value = null;
-            facilities.value = [];
-            return;
+    if (!option) {
+        facility.value = null;
+        facilities.value = [];
+        return;
     }
     facility.value = null;
     facilities.value = [];
@@ -863,27 +863,7 @@ const dateTo = ref(props.filters?.dateTo);
 const per_page = ref(props.filters.per_page || 25);
 const region = ref(props.filters?.region);
 
-function reloadOrder() {
-    const query = {};
 
-    // Only add non-empty values to the query
-    if (search.value) query.search = search.value;
-    if (facility.value) query.facility = facility.value;
-    if (currentStatus.value) query.currentStatus = currentStatus.value;
-    if (orderType.value) query.orderType = orderType.value;
-    if (per_page.value) query.per_page = per_page.value;
-    if (props.filters.page) query.page = props.filters.page;
-    if (district.value) query.district = district.value;
-    if (dateFrom.value) query.dateFrom = dateFrom.value;
-    if (dateTo.value) query.dateTo = dateTo.value;
-    if (region.value) query.region = region.value;
-
-    router.get(route("orders.index"), query, {
-        preserveScroll: true,
-        preserveState: true,
-        only: ["orders", "stats"],
-    });
-}
 
 // Watch for filter changes
 watch(
@@ -903,6 +883,32 @@ watch(
         reloadOrder();
     }
 );
+
+function reloadOrder() {
+    const query = {};
+
+    // Only add non-empty values to the query
+    if (search.value) query.search = search.value;
+    if (facility.value) query.facility = facility.value;
+    if (currentStatus.value) query.currentStatus = currentStatus.value;
+    if (orderType.value) query.orderType = orderType.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (props.filters.page) query.page = props.filters.page;
+    if (district.value) query.district = district.value;
+    if (dateFrom.value) query.dateFrom = dateFrom.value;
+    if (dateTo.value) query.dateTo = dateTo.value;
+    if (region.value) {
+        delete query.district;
+        delete query.facility;
+        query.region = region.value;
+    }
+
+    router.get(route("orders.index"), query, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ["orders", "stats"],
+    });
+}
 
 function getResult(page = 1) {
     props.filters.page = page;
@@ -924,6 +930,7 @@ async function loadDistrict() {
 async function loadFacility() {
     facility.value = null;
     facilities.value = [];
+    console.log(district.value);
     await axios
         .post(route("facilities.get-facilities"), { district: district.value })
         .then((response) => {
