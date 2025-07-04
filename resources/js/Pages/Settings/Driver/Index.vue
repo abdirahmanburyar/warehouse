@@ -10,13 +10,19 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
                 <!-- Search Bar -->
-                <div class="mb-4">
+                <div class="mb-4 flex justify-between items-center">
                     <input 
                         type="text" 
                         v-model="search" 
                         placeholder="Search drivers..." 
                         class="w-full sm:w-1/3 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
+                    <select v-model="per_page" @change="props.filters.page = 1" class="w-[200px] rounded-3xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
                 </div>
 
                 <!-- Table -->
@@ -153,15 +159,17 @@
                             <button 
                                 type="button" 
                                 @click="closeModal" 
+                                :disabled="idDriverSubmiting"
                                 class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-150"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit" 
+                                :disabled="idDriverSubmiting"
                                 class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150"
                             >
-                                {{ form.id ? 'Update' : 'Create' }}
+                                {{ form.id ? idDriverSubmiting ? 'Updating...' : 'Update' : idDriverSubmiting ? 'Creating...' : 'Create' }}
                             </button>
                         </div>
                     </form>
@@ -247,15 +255,31 @@
 import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { debounce } from 'lodash';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import Swal from 'sweetalert2';
 
+const props = defineProps({
+    drivers: {
+        type: Object,
+        required: true,
+    },
+    companies: {
+        type: Array,
+        required: true
+    },
+    filters: {
+        type: Object,
+        required: true
+    }
+});
+
 const showDriverModal = ref(false);
 const showCompanyModal = ref(false);
-const search = ref('');
+const search = ref(props.filters.search || '');
+const per_page = ref(props.filters.per_page || 25);
+const company = ref(props.filters.company || '');
 
 const form = ref({
     id: null,
@@ -275,16 +299,6 @@ const companyForm = ref({
     is_active: true
 });
 
-const props = defineProps({
-    drivers: {
-        type: Object,
-        required: true,
-    },
-    companies: {
-        type: Array,
-        required: true
-    }
-});
 
 const openModal = (driver = null) => {
     if (driver) {
@@ -333,27 +347,52 @@ const closeCompanyModal = () => {
     };
 };
 
+watch([
+    () => search.value,
+    () => props.filters.page,
+    () => props.filters.per_page,
+    () => props.filters.company,
+], () => {
+    reloadDrivers();
+});
+function reloadDrivers() {
+    const query = {}
+    if (search.value) query.search = search.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (company.value) query.company = company.value;
+    if (props.filters.page) query.page = props.filters.page;
+
+    router.get(route('settings.drivers.index'), query, { preserveState: true, preserveScroll: true, only: ['drivers'] });
+}
+
+const idDriverSubmiting = ref(false);
+
 const submit = async () => {
-    try {
-        const response = await axios.post(route('settings.logistics.drivers.store'), form.value);
-        closeModal();
-        Swal.fire({
-            title: 'Success!',
-            text: response.data,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
+    idDriverSubmiting.value = true;
+    await axios.post(route('settings.drivers.store'), form.value)
+        .then(response => {
+            idDriverSubmiting.value = false;
+            closeModal();
+            reloadDrivers();
+            Swal.fire({
+                title: 'Success!',
+                text: response.data,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
+        })
+        .catch(error => {
+            idDriverSubmiting.value = false;
+            Swal.fire({
+                title: 'Error!',
+                text: error.response?.data || 'Something went wrong',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+            });
         });
-        router.reload();
-    } catch (error) {
-        Swal.fire({
-            title: 'Error!',
-            text: error.response?.data || 'Something went wrong',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
-    }
+       
 };
 
 const submitCompany = async () => {
@@ -441,28 +480,10 @@ const toggleStatus = async (driver) => {
 };
 
 const handlePageChange = (page) => {
-    router.get(route('settings.logistics.drivers.index'), { 
-        page: page,
-        search: search.value,
-        per_page: props.drivers.per_page 
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['drivers']
-    });
+    props.filters.page = page;
 };
 
-watch(search, debounce((value) => {
-    router.get(route('settings.logistics.drivers.index'), { 
-        search: value,
-        page: 1,
-        per_page: props.drivers.per_page 
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['drivers']
-    });
-}, 300));
+
 </script>
 
 <style scoped>
