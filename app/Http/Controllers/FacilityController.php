@@ -172,8 +172,20 @@ class FacilityController extends Controller
 
     public function getFacilities(Request $request){
         try {
-            $facilities = Facility::where('district', $request->district)->pluck('name')->toArray();
-        return response()->json($facilities, 200);
+            $query = Facility::query();
+            
+            // Filter by region if provided
+            if ($request->filled('region') && $request->region !== null) {
+                $query->where('region', $request->region);
+            }
+            
+            // Filter by district if provided (more specific than region)
+            if ($request->filled('district') && $request->district !== null) {
+                $query->where('district', $request->district);
+            }
+            
+            $facilities = $query->pluck('name')->toArray();
+            return response()->json($facilities, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }

@@ -655,6 +655,11 @@ if (props.filters.direction_tab) {
     currentDirectionTab.value = props.filters.direction_tab;
 }
 
+// Initialize facilities and warehouses on page load if region or district is pre-selected
+if (region.value || district.value) {
+    loadFacilitiesAndWarehouses();
+}
+
 // Watch for direction tab changes to reset transfer_type filter
 watch(currentDirectionTab, async (newDirection, oldDirection) => {
     if (newDirection !== oldDirection) {
@@ -667,9 +672,21 @@ watch(currentDirectionTab, async (newDirection, oldDirection) => {
         to_facility.value = null;
         
         // Reload facilities and warehouses for new direction
-        if (district.value) {
-            await loadFacilitiesAndWarehouses();
-        }
+        await loadFacilitiesAndWarehouses();
+    }
+});
+
+// Watch for region changes to reload facilities and warehouses
+watch(region, async (newRegion, oldRegion) => {
+    if (newRegion !== oldRegion) {
+        await loadFacilitiesAndWarehouses();
+    }
+});
+
+// Watch for district changes to reload facilities and warehouses
+watch(district, async (newDistrict, oldDistrict) => {
+    if (newDistrict !== oldDistrict) {
+        await loadFacilitiesAndWarehouses();
     }
 });
 
@@ -689,9 +706,8 @@ watch(transfer_type, async (newType, oldType) => {
         }
         
         // Reload facilities and warehouses based on new transfer type
-        if (district.value) {
-            await loadFacilitiesAndWarehouses();
-        }
+        // Always load when transfer type changes, even without district
+        await loadFacilitiesAndWarehouses();
     }
 });
 
@@ -763,17 +779,36 @@ const districts = ref([]);
 
 async function handleRegionSelect(option) {
     if (!option) {
+        // Clear everything when region is deselected
         district.value = null;
         districts.value = [];
-        // Clear facilities and warehouses
         facilities.value = [];
         warehouses.value = [];
+        // Clear all dependent filters
+        facility.value = null;
+        warehouse.value = null;
+        from_warehouse.value = null;
+        to_warehouse.value = null;
+        from_facility.value = null;
+        to_facility.value = null;
         return;
     }
+    
+    // Clear district and reload
     district.value = null;
     districts.value = [];
+    // Clear specific filters
+    facility.value = null;
+    warehouse.value = null;
+    from_warehouse.value = null;
+    to_warehouse.value = null;
+    from_facility.value = null;
+    to_facility.value = null;
+    
+    // Load districts for the selected region
     await loadDistrict();
-    await loadFacilitiesAndWarehouses();
+    
+    // Facilities and warehouses will be loaded automatically by the region watcher
 }
 
 const facilities = ref([]);
@@ -781,15 +816,27 @@ const warehouses = ref([]);
 
 async function handleDistrictSelect(option) {
     if (!option) {
+        // Clear specific filters when district is deselected
         facility.value = null;
-        facilities.value = [];
-        warehouses.value = [];
+        warehouse.value = null;
+        from_warehouse.value = null;
+        to_warehouse.value = null;
+        from_facility.value = null;
+        to_facility.value = null;
+        
+        // Facilities and warehouses will be loaded automatically by the district watcher
         return;
     }
+    
+    // Clear specific filters when district changes
     facility.value = null;
-    facilities.value = [];
-    warehouses.value = [];
-    await loadFacilitiesAndWarehouses();
+    warehouse.value = null;
+    from_warehouse.value = null;
+    to_warehouse.value = null;
+    from_facility.value = null;
+    to_facility.value = null;
+    
+    // Facilities and warehouses will be loaded automatically by the district watcher
 }
 
 async function loadDistrict() {
@@ -807,22 +854,27 @@ async function loadDistrict() {
 }
 
 async function loadFacilitiesAndWarehouses() {
-    if (!district.value) {
-        facilities.value = [];
-        warehouses.value = [];
-        return;
-    }
+    // Load facilities and warehouses regardless of district
+    // If district is null, load all facilities/warehouses
+    // If district is selected, load only for that district
 
     // Determine what to load based on transfer_type
     const needsFacilities = shouldLoadFacilities();
     const needsWarehouses = shouldLoadWarehouses();
 
+
+
     // Load facilities if needed
     if (needsFacilities) {
         try {
-            const response = await axios.post(route("facilities.get-facilities"), { 
-                district: district.value 
-            });
+            const payload = {};
+            if (region.value) {
+                payload.region = region.value;
+            }
+            if (district.value) {
+                payload.district = district.value;
+            }
+            const response = await axios.post(route("facilities.get-facilities"), payload);
             facilities.value = response.data;
         } catch (error) {
             console.log(error);
@@ -836,9 +888,14 @@ async function loadFacilitiesAndWarehouses() {
     // Load warehouses if needed
     if (needsWarehouses) {
         try {
-            const response = await axios.post(route("warehouses.get-warehouses"), { 
-                district: district.value 
-            });
+            const payload = {};
+            if (region.value) {
+                payload.region = region.value;
+            }
+            if (district.value) {
+                payload.district = district.value;
+            }
+            const response = await axios.post(route("warehouses.get-warehouses"), payload);
             warehouses.value = response.data;
         } catch (error) {
             console.log(error);
@@ -851,19 +908,17 @@ async function loadFacilitiesAndWarehouses() {
 }
 
 function shouldLoadFacilities() {
-    if (!transfer_type.value) {
-        return true; // Load all when no specific type selected
-    }
-    
-    return transfer_type.value && transfer_type.value.includes('Facility');
+    // Load facilities if no transfer type selected OR if transfer type involves facilities
+    return !transfer_type.value || 
+           transfer_type.value.includes('Facility') || 
+           transfer_type.value === 'Warehouse to Facility';
 }
 
 function shouldLoadWarehouses() {
-    if (!transfer_type.value) {
-        return true; // Load all when no specific type selected
-    }
-    
-    return transfer_type.value && transfer_type.value.includes('Warehouse');
+    // Load warehouses if no transfer type selected OR if transfer type involves warehouses
+    return !transfer_type.value || 
+           transfer_type.value.includes('Warehouse') || 
+           transfer_type.value === 'Facility to Warehouse';
 }
 
 </script>

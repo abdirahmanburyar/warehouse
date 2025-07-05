@@ -257,15 +257,7 @@ class TransferController extends Controller
 
        
 
-        if($request->filled('transfer_type') && $request->transfer_type == 'Facility'){
-            $query->whereHas('toFacility')
-            ->whereHas('fromFacility');
-        }
 
-        if($request->filled('transfer_type') && $request->transfer_type == 'Warehouse'){
-            $query->whereHas('toWarehouse')
-            ->whereHas('fromWarehouse');
-        }
 
         if ($request->filled('date_from') && !$request->filled('date_to')) {
             $dateFrom = Carbon::parse($request->date_from)->format('Y-m-d');
@@ -278,45 +270,84 @@ class TransferController extends Controller
             $query->whereBetween('transfer_date', [$dateFrom, $dateTo]);
         }
 
-        // Specific source/destination filtering
+        // Region filtering - more targeted approach
+        if ($request->filled('region')) {
+            $query->where(function($q) use ($request) {
+                $q->whereHas('fromWarehouse', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('toWarehouse', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('fromFacility', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('toFacility', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                });
+            });
+        }
+
+        // District filtering - more targeted approach
+        if ($request->filled('district')) {
+            $query->where(function($q) use ($request) {
+                $q->whereHas('fromWarehouse', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('toWarehouse', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('fromFacility', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('toFacility', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                });
+            });
+        }
+
+        // Specific source/destination filtering (using warehouse/facility names)
         if ($request->filled('from_warehouse')) {
-            $query->where('from_warehouse_id', $request->from_warehouse);
+            $warehouse = Warehouse::where('name', $request->from_warehouse)->first();
+            if ($warehouse) {
+                $query->where('from_warehouse_id', $warehouse->id);
+            }
         }
         
         if ($request->filled('to_warehouse')) {
-            $query->where('to_warehouse_id', $request->to_warehouse);
+            $warehouse = Warehouse::where('name', $request->to_warehouse)->first();
+            if ($warehouse) {
+                $query->where('to_warehouse_id', $warehouse->id);
+            }
         }
         
         if ($request->filled('from_facility')) {
-            $query->where('from_facility_id', $request->from_facility);
+            $facility = Facility::where('name', $request->from_facility)->first();
+            if ($facility) {
+                $query->where('from_facility_id', $facility->id);
+            }
         }
         
         if ($request->filled('to_facility')) {
-            $query->where('to_facility_id', $request->to_facility);
+            $facility = Facility::where('name', $request->to_facility)->first();
+            if ($facility) {
+                $query->where('to_facility_id', $facility->id);
+            }
         }
 
-        if($request->filled('region')){
-            $query->whereHas('fromWarehouse', function($q) use ($request) {
-                $q->where('region', $request->region);
-            })->orWhereHas('toWarehouse', function($q) use ($request) {
-                $q->where('region', $request->region);
-            })->orWhereHas('fromFacility', function($q) use ($request) {
-                $q->where('region', $request->region);
-            })->orWhereHas('toFacility', function($q) use ($request) {
-                $q->where('region', $request->region);
-            });
+        // General facility/warehouse filtering (used when no specific transfer type is selected)
+        if ($request->filled('facility')) {
+            $facility = Facility::where('name', $request->facility)->first();
+            if ($facility) {
+                $query->where(function($q) use ($facility) {
+                    $q->where('from_facility_id', $facility->id)
+                      ->orWhere('to_facility_id', $facility->id);
+                });
+            }
         }
 
-        if($request->filled('district')){
-            $query->whereHas('fromWarehouse', function($q) use ($request) {
-                $q->where('district', $request->district);
-            })->orWhereHas('toWarehouse', function($q) use ($request) {
-                $q->where('district', $request->district);
-            })->orWhereHas('fromFacility', function($q) use ($request) {
-                $q->where('district', $request->district);
-            })->orWhereHas('toFacility', function($q) use ($request) {
-                $q->where('district', $request->district);
-            });
+        if ($request->filled('warehouse')) {
+            $warehouse = Warehouse::where('name', $request->warehouse)->first();
+            if ($warehouse) {
+                $query->where(function($q) use ($warehouse) {
+                    $q->where('from_warehouse_id', $warehouse->id)
+                      ->orWhere('to_warehouse_id', $warehouse->id);
+                });
+            }
         }
 
 
@@ -328,8 +359,97 @@ class TransferController extends Controller
 
         logger()->info($transfers);
         
-        // Get all transfers for statistics (unfiltered)
-        $allTransfers = Transfer::all();
+        // Get context-aware statistics based on user's warehouse and direction tab
+        $statisticsQuery = Transfer::query();
+        
+        // Apply same direction filtering to statistics as main query
+        if ($request->filled('direction_tab')) {
+            if ($request->direction_tab === 'in') {
+                $statisticsQuery->where('to_warehouse_id', $currentWarehouse?->id);
+            } elseif ($request->direction_tab === 'out') {
+                $statisticsQuery->where('from_warehouse_id', $currentWarehouse?->id);
+            } elseif ($request->direction_tab === 'other') {
+                $statisticsQuery->where('from_warehouse_id', '!=', $currentWarehouse?->id)
+                               ->where('to_warehouse_id', '!=', $currentWarehouse?->id);
+            }
+        }
+        
+        // Apply region/district filtering to statistics if present
+        if ($request->filled('region')) {
+            $statisticsQuery->where(function($q) use ($request) {
+                $q->whereHas('fromWarehouse', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('toWarehouse', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('fromFacility', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                })->orWhereHas('toFacility', function($subQ) use ($request) {
+                    $subQ->where('region', $request->region);
+                });
+            });
+        }
+        
+        if ($request->filled('district')) {
+            $statisticsQuery->where(function($q) use ($request) {
+                $q->whereHas('fromWarehouse', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('toWarehouse', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('fromFacility', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                })->orWhereHas('toFacility', function($subQ) use ($request) {
+                    $subQ->where('district', $request->district);
+                });
+            });
+        }
+        
+        // Apply transfer type filtering to statistics
+        if ($request->filled('transfer_type')) {
+            switch ($request->transfer_type) {
+                case 'Warehouse to Warehouse':
+                    $statisticsQuery->whereNotNull('from_warehouse_id')
+                          ->whereNotNull('to_warehouse_id');
+                    break;
+        
+                case 'Facility to Facility':
+                    $statisticsQuery->whereNotNull('from_facility_id')
+                          ->whereNotNull('to_facility_id');
+                    break;
+        
+                case 'Facility to Warehouse':
+                    $statisticsQuery->whereNotNull('from_facility_id')
+                          ->whereNotNull('to_warehouse_id');
+                    break;
+        
+                case 'Warehouse to Facility':
+                    $statisticsQuery->whereNotNull('from_warehouse_id')
+                          ->whereNotNull('to_facility_id');
+                    break;
+            }
+        }
+
+        // Apply general facility/warehouse filtering to statistics
+        if ($request->filled('facility')) {
+            $facility = Facility::where('name', $request->facility)->first();
+            if ($facility) {
+                $statisticsQuery->where(function($q) use ($facility) {
+                    $q->where('from_facility_id', $facility->id)
+                      ->orWhere('to_facility_id', $facility->id);
+                });
+            }
+        }
+
+        if ($request->filled('warehouse')) {
+            $warehouse = Warehouse::where('name', $request->warehouse)->first();
+            if ($warehouse) {
+                $statisticsQuery->where(function($q) use ($warehouse) {
+                    $q->where('from_warehouse_id', $warehouse->id)
+                      ->orWhere('to_warehouse_id', $warehouse->id);
+                });
+            }
+        }
+        
+        $allTransfers = $statisticsQuery->get();
         $total = $allTransfers->count();
         $approvedCount = $allTransfers->whereIn('status', ['approved'])->count();
         $reviewedCount = $allTransfers->whereIn('status', ['reviewed'])->count();
@@ -384,7 +504,24 @@ class TransferController extends Controller
             'transfers' => TransferResource::collection($transfers),
             'statistics' => $statistics,
             'locations' => $locations,
-            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district','direction_tab','transfer_type','from_warehouse','to_warehouse','from_facility','to_facility']),
+            'filters' => $request->only([
+                'search', 
+                'facility', 
+                'warehouse', 
+                'date_from', 
+                'date_to', 
+                'tab',
+                'per_page',
+                'page',
+                'region',
+                'district',
+                'direction_tab',
+                'transfer_type',
+                'from_warehouse',
+                'to_warehouse',
+                'from_facility',
+                'to_facility'
+            ]),
             'regions' => Region::pluck('name')->toArray()
         ]);
     }

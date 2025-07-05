@@ -163,8 +163,20 @@ class WarehouseController extends Controller
 
     public function getWarehousesPluck(Request $request){
         try {
-            $warehouses = Warehouse::where('district', $request->district)->pluck('name')->toArray();
-        return response()->json($warehouses, 200);
+            $query = Warehouse::query();
+            
+            // Filter by region if provided
+            if ($request->filled('region') && $request->region !== null) {
+                $query->where('region', $request->region);
+            }
+            
+            // Filter by district if provided (more specific than region)
+            if ($request->filled('district') && $request->district !== null) {
+                $query->where('district', $request->district);
+            }
+            
+            $warehouses = $query->pluck('name')->toArray();
+            return response()->json($warehouses, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
