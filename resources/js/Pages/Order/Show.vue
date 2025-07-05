@@ -599,10 +599,10 @@
                                     " :disabled="isType['is_approve'] ||
                                         props.order.status !== 'reviewed'
                                         " :class="[
-                                        props.order.status == 'rejected' ? 'bg-red-500 hover:bg-red-600' : props.order.status == 'reviewed'
+                                        props.order.status == 'reviewed'
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(props.order.status) >
-                                            statusOrder.indexOf('reviewed') || statusOrder.indexOf('rejected')
+                                            statusOrder.indexOf('reviewed')
                                             ? 'bg-green-500'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
@@ -813,7 +813,7 @@
                         </div>
 
                         <!-- Rejected button -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status == 'reviewed' || props.order.status == 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="
                                     changeStatus(
@@ -846,8 +846,7 @@
                                     <template v-else>
                                         <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Rejected" />
                                         <span class="text-sm font-bold text-white">{{
-                                            statusOrder.indexOf(props.order.status) >
-                                                statusOrder.indexOf("reviewed")
+                                            props.order.status == 'rejected'
                                                 ? "Rejected"
                                                 : isType["is_reject"] ? "Please Wait..." : "Reject"
                                         }}</span>
@@ -863,6 +862,7 @@
                             <div v-if="props.order.status === 'reviewed'"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
+
                          <!-- Restore button -->
                          <div class="relative" v-if="props.order.status === 'rejected'">
                             <div class="flex flex-col">
@@ -1383,7 +1383,6 @@ const formatDate = (date) => {
 const statusOrder = [
     "pending",
     "reviewed",
-    "rejected",
     "approved",
     "in_process",
     "dispatched",
