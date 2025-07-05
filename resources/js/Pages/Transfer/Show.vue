@@ -470,7 +470,7 @@
                             <tbody>
                                 <template v-for="(item, index) in form" :key="item.id">
                         <!-- Show allocations if they exist, otherwise show one row with main item data -->
-                        <tr v-for="(allocIndex, index) in (item.inventory_allocations?.length > 0 ? item.inventory_allocations : [{}])"
+                        <tr v-for="(allocation, allocIndex) in (item.inventory_allocations?.length > 0 ? item.inventory_allocations : [{}])"
                                         :key="`${item.id}-${allocIndex}`"
                                         class="hover:bg-gray-50 transition-colors duration-150 border-b border-black">
                                         <!-- Item Name -->
