@@ -397,7 +397,7 @@ class OrderController extends Controller
                         InventoryItem::create([
                             'product_id'   => $allocation->product_id,
                             'warehouse_id' => $allocation->warehouse_id,
-                            'location_id'  => $allocation->location_id,
+                            'location'     => $allocation->location,
                             'batch_number' => $allocation->batch_number,
                             'uom'          => $allocation->uom,
                             'barcode'      => $allocation->barcode,
@@ -461,7 +461,7 @@ class OrderController extends Controller
                         $orderItem->inventory_allocations()->create([
                             'product_id'       => $inventory->product_id,
                             'warehouse_id'     => $inventory->warehouse_id,
-                            'location_id'      => $inventory->location_id,
+                            'location'         => $inventory->location,
                             'batch_number'     => $inventory->batch_number,
                             'uom'              => $inventory->uom,
                             'barcode'          => $inventory->barcode ?? null,
@@ -542,7 +542,7 @@ class OrderController extends Controller
                     InventoryItem::create([
                         'product_id'   => $allocation->product_id,
                         'warehouse_id' => $allocation->warehouse_id,
-                        'location_id'  => $allocation->location_id,
+                        'location'     => $allocation->location,
                         'batch_number' => $allocation->batch_number,
                         'uom'          => $allocation->uom,
                         'barcode'      => $allocation->barcode,
@@ -582,7 +582,7 @@ class OrderController extends Controller
                     $orderItem->inventory_allocations()->create([
                         'product_id'       => $inventory->product_id,
                         'warehouse_id'     => $inventory->warehouse_id,
-                        'location_id'      => $inventory->location_id,
+                        'location'         => $inventory->location,
                         'batch_number'     => $inventory->batch_number,
                         'uom'              => $inventory->uom,
                         'barcode'          => $inventory->barcode ?? null,
@@ -741,7 +741,7 @@ class OrderController extends Controller
                                 InventoryItem::create([
                                     'product_id' => $allocation->product_id,
                                     'warehouse_id' => $allocation->warehouse_id,
-                                    'location_id' => $allocation->location_id,
+                                    'location' => $allocation->location,
                                     'batch_number' => $allocation->batch_number,
                                     'uom' => $allocation->uom,
                                     'barcode' => $allocation->barcode,
