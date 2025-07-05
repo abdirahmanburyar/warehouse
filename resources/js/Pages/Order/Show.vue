@@ -415,7 +415,7 @@
                             /> -->
                                 <label for="days">No. of Days</label>
                                 <input type="number" placeholder="0" v-model="item.days"
-                                    @input="updateQuantity(item, 'days', index)" :readonly="isUpading[index] || props.order.status != 'pending'
+                                    :input="updateQuantity(item, 'days', index)" :readonly="isUpading[index] || props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
