@@ -312,7 +312,7 @@
                                                         order.status ===
                                                         'rejected'
                                                     "
-                                                    src="/assets/images/rejected.svg"
+                                                    src="/assets/images/rejected.png"
                                                     class="w-6 h-6"
                                                     alt="Rejected"
                                                     title="Rejected"
