@@ -337,8 +337,10 @@ class OrderController extends Controller
                 'type'     => 'required|in:quantity_to_release,days',
             ]);
     
-            $orderItem = OrderItem::findOrFail($request->item_id);
+
+            $orderItem = OrderItem::find($request->item_id);
             $order = $orderItem->order;
+            
 
             if($orderItem->quantity <= 0) {
                 $orderItem->quantity = $request->quantity;
@@ -354,6 +356,7 @@ class OrderController extends Controller
             $originalQuantity = $orderItem->quantity > 0 ? $orderItem->quantity : $request->quantity;
             $originalDays = $orderItem->no_of_days > 0 ? $orderItem->no_of_days : 1;
             $dailyUsageRate = $originalQuantity / $originalDays;
+            
     
             // Calculate new quantity and days
             if ($request->type === 'days') {
@@ -367,7 +370,7 @@ class OrderController extends Controller
             }
     
             $oldQuantityToRelease = $orderItem->quantity_to_release ?? 0;
-    
+            
             // Case 1: Decrease
             if ($newQuantityToRelease < $oldQuantityToRelease) {
                 $quantityToRemove = $oldQuantityToRelease - $newQuantityToRelease;
@@ -423,11 +426,13 @@ class OrderController extends Controller
             if ($newQuantityToRelease > $oldQuantityToRelease) {
                 $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
                 $remainingToAllocate = $quantityToAdd;
-    
+                
                 $inventoryItems = InventoryItem::where('product_id', $orderItem->product_id)
                     ->where('quantity', '>', 0)
                     ->orderBy('expiry_date', 'asc')
                     ->get();
+                    
+
     
                 if ($inventoryItems->isEmpty()) {
                     DB::rollBack();
@@ -438,6 +443,8 @@ class OrderController extends Controller
                     if ($remainingToAllocate <= 0) break;
     
                     $allocQty = min($inventory->quantity, $remainingToAllocate);
+                    
+    
     
                     $existingAllocation = $orderItem->inventory_allocations()
                         ->where('batch_number', $inventory->batch_number)
@@ -445,9 +452,11 @@ class OrderController extends Controller
                         ->first();
     
                     if ($existingAllocation) {
+                       
                         $existingAllocation->allocated_quantity += $allocQty;
                         $existingAllocation->save();
                     } else {
+                       
                         $orderItem->inventory_allocations()->create([
                             'product_id'       => $inventory->product_id,
                             'warehouse_id'     => $inventory->warehouse_id,
@@ -467,6 +476,8 @@ class OrderController extends Controller
                     $inventory->quantity -= $allocQty;
                     $inventory->save();
                     $remainingToAllocate -= $allocQty;
+                    
+                   
                 }
     
                 // Final adjustment
@@ -493,12 +504,15 @@ class OrderController extends Controller
                 }
     
                 if ($remainingToAllocate > 0) {
+                   
                     DB::rollBack();
                     return response()->json('Insufficient inventory. Could only allocate ' . ($quantityToAdd - $remainingToAllocate) . ' out of ' . $quantityToAdd, 500);
                 }
     
                 $orderItem->quantity_to_release = $newQuantityToRelease;
                 $orderItem->save();
+                
+               
     
                 event(new InventoryUpdated());
     
@@ -506,9 +520,99 @@ class OrderController extends Controller
                 return response()->json('Quantity to release updated successfully', 200);
             }
     
-            // No change
+            // Case 3: Always recalculate and reallocate quantities
+           
+            
+            // Clear all existing allocations and restore inventory
+            $existingAllocations = $orderItem->inventory_allocations()->get();
+            
+            foreach ($existingAllocations as $allocation) {
+                // Restore inventory
+                $inventory = InventoryItem::where('product_id', $allocation->product_id)
+                    ->where('warehouse_id', $allocation->warehouse_id)
+                    ->where('batch_number', $allocation->batch_number)
+                    ->where('expiry_date', $allocation->expiry_date)
+                    ->first();
+                
+                if ($inventory) {
+                    $inventory->quantity += $allocation->allocated_quantity;
+                    $inventory->save();
+                } else {
+                    InventoryItem::create([
+                        'product_id'   => $allocation->product_id,
+                        'warehouse_id' => $allocation->warehouse_id,
+                        'location_id'  => $allocation->location_id,
+                        'batch_number' => $allocation->batch_number,
+                        'uom'          => $allocation->uom,
+                        'barcode'      => $allocation->barcode,
+                        'expiry_date'  => $allocation->expiry_date,
+                        'quantity'     => $allocation->allocated_quantity
+                    ]);
+                }
+                
+               
+                
+                $allocation->delete();
+            }
+            
+            // Now create fresh allocations for the required quantity
+            if ($newQuantityToRelease > 0) {
+                $remainingToAllocate = $newQuantityToRelease;
+                
+                $inventoryItems = InventoryItem::where('product_id', $orderItem->product_id)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('expiry_date', 'asc')
+                    ->get();
+                    
+               
+                
+                if ($inventoryItems->isEmpty()) {
+                    DB::rollBack();
+                    return response()->json('No inventory available for this product', 500);
+                }
+                
+                foreach ($inventoryItems as $inventory) {
+                    if ($remainingToAllocate <= 0) break;
+                    
+                    $allocQty = min($inventory->quantity, $remainingToAllocate);
+                    
+                   
+                    
+                    $orderItem->inventory_allocations()->create([
+                        'product_id'       => $inventory->product_id,
+                        'warehouse_id'     => $inventory->warehouse_id,
+                        'location_id'      => $inventory->location_id,
+                        'batch_number'     => $inventory->batch_number,
+                        'uom'              => $inventory->uom,
+                        'barcode'          => $inventory->barcode ?? null,
+                        'expiry_date'      => $inventory->expiry_date,
+                        'allocated_quantity' => $allocQty,
+                        'allocation_type'  => $order->order_type,
+                        'unit_cost'        => $inventory->unit_cost,
+                        'total_cost'       => $inventory->unit_cost * $allocQty,
+                        'notes'            => 'Fresh allocation from inventory ID: ' . $inventory->id
+                    ]);
+                    
+                    $inventory->quantity -= $allocQty;
+                    $inventory->save();
+                    $remainingToAllocate -= $allocQty;
+                    
+                   
+                }
+                
+                if ($remainingToAllocate > 0) {
+                    DB::rollBack();
+                    return response()->json('Insufficient inventory. Could only allocate ' . ($newQuantityToRelease - $remainingToAllocate) . ' out of ' . $newQuantityToRelease, 500);
+                }
+            }
+            
+            $orderItem->quantity_to_release = $newQuantityToRelease;
+            $orderItem->save();           
+            
+            event(new InventoryUpdated());
+            
             DB::commit();
-            return response()->json('No change in quantity to release', 200);
+            return response()->json('Quantities recalculated and allocated successfully', 200);
     
         } catch (\Throwable $th) {
             DB::rollBack();

@@ -290,6 +290,7 @@
             </div>
             <!-- Order Items Table -->
             <h2 class="text-xs text-gray-900 mb-4">Order Items</h2>
+            {{ form }}
             <table class="min-w-full border border-black border-collapse">
                 <thead class="bg-blue-500">
                     <tr class="bg-gray-50">
@@ -336,27 +337,35 @@
                 </thead>
 
                 <tbody>
+                    <!-- Debug Info -->
+                    <tr v-if="form.length === 0">
+                        <td colspan="11" class="px-3 py-3 text-center text-gray-500">
+                            No items found. Form length: {{ form.length }}, Order items: {{ props.order.items?.length || 0 }}
+                        </td>
+                    </tr>
+                    
                     <template v-for="(item, index) in form" :key="item.id">
-                        <tr v-for="(inv, invIndex) in item.inventory_allocations || [{}]"
+                        <!-- Show allocations if they exist, otherwise show one row with main item data -->
+                        <tr v-for="(inv, invIndex) in (item.inventory_allocations?.length > 0 ? item.inventory_allocations : [{}])"
                             :key="`${item.id}-${inv.id || invIndex}`"
                             class="hover:bg-gray-50 transition-colors duration-150">
                             <!-- Show item details only on first row for this item -->
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 {{ item.product?.name }}
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 {{ item.product?.category?.name }}
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.inventory_allocations?.[0]?.uom || 'N/A' }}
+                                {{ item.inventory_allocations?.[0]?.uom || item.uom || 'N/A' }}
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 <div class="flex flex-col space-y-1 text-xs">
                                     <div class="flex">
@@ -374,17 +383,17 @@
                                 </div>
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 {{ item.no_of_days }}/30
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-center text-black border border-black align-top">
                                 {{ item.quantity }}
                             </td>
 
-                            <td v-if="invIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
+                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 <input type="number" placeholder="0" v-model="item.quantity_to_release" @keydown.enter="
                                     updateQuantity(item, 'quantity_to_release', index)
@@ -433,9 +442,8 @@
 
                             <!-- Location -->
                             <td class="px-2 py-1 text-xs border border-black text-left w-32">
-                                <div v-if="inv.warehouse || inv.location" class="flex flex-col text-xs">
-                                    <span v-if="inv.warehouse">WH: {{ inv.warehouse?.name }}</span>
-                                    <span v-if="inv.location">LC: {{ inv.location?.location }}</span>
+                                <div class="flex flex-col text-xs">
+                                    <span v-if="inv.location">{{ inv }}</span>
                                 </div>
                             </td>
                         </tr>
@@ -1311,11 +1319,14 @@ const statusClasses = {
         "bg-green-100 text-green-800 rounded-full font-bold flex items-center",
 };
 
-const form = ref([]);
 const isLoading = ref(false);
+const form = ref([]);
 
 onMounted(() => {
-    form.value = props.order.items || [];
+    console.log('Order data:', props.order);
+    console.log('Order items:', props.order.items);
+    form.value = props.order.items;
+    console.log('Form value after mount:', form.value);
 });
 
 const formatDate = (date) => {

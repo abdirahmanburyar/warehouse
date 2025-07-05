@@ -234,9 +234,7 @@ class TransferController extends Controller
         }
         
 
-        if($request->filled('date_from') && !$request->filled('date_to')){
-            $query->whereDate('transfer_date', $request->date_from);
-        }
+       
 
         if($request->filled('transfer_type') && $request->transfer_type == 'Facility'){
             $query->whereHas('toFacility')
@@ -247,10 +245,16 @@ class TransferController extends Controller
             $query->whereHas('toWarehouse')
             ->whereHas('fromWarehouse');
         }
+
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $dateFrom = Carbon::parse($request->date_from)->format('Y-m-d');
+            $query->whereDate('transfer_date', $dateFrom);
         
-        // Filter by date range
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
+        } elseif ($request->filled('date_from') && $request->filled('date_to')) {
+            $dateFrom = Carbon::parse($request->date_from)->format('Y-m-d');
+            $dateTo = Carbon::parse($request->date_to)->format('Y-m-d');
+        
+            $query->whereBetween('transfer_date', [$dateFrom, $dateTo]);
         }
 
         if($request->filled('region')){
@@ -283,6 +287,8 @@ class TransferController extends Controller
         $transfers = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
         $transfers->setPath(url()->current()); // Force Laravel to use full URLs
+
+        logger()->info($transfers);
         
         // Get all transfers for statistics (unfiltered)
         $allTransfers = Transfer::all();

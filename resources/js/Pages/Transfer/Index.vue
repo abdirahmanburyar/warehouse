@@ -66,10 +66,12 @@
                     <div class="flex items-center gap-2 w-full">
                         <input type="date" v-model="date_from"
                             class="border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            @change="date_to = null"
                             placeholder="From Date" />
                             <span>To</span>
                         <input type="date" v-model="date_to"
                             class="border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            :min="date_from"
                             placeholder="To Date" />
                     </div>
                 </div>
@@ -168,9 +170,7 @@
                                 </td>
                                 <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{
-                                        new Date(
-                                            transfer.transfer_date
-                                        ).toLocaleDateString()
+                                        moment(transfer.transfer_date).format('DD/MM/YYYY')
                                     }}
                                 </td>
 
@@ -479,6 +479,7 @@ import "@/Components/multiselect.css";
 import { TailwindPagination } from "laravel-vue-pagination";
 import axios from "axios";
 import { useToast } from "vue-toastification";
+import moment from "moment";
 
 const toast = useToast();
 const props = defineProps({
@@ -558,7 +559,14 @@ function reloadTransfer() {
     const query = {};
     if (search.value) query.search = search.value;
     if (region.value) query.region = region.value;
-    if (district.value) query.district = district.value;
+    if (district.value){
+        query.district = district.value;
+        query.facility = null;
+        query.warehouse = null;
+    }else if(district.value == null && region.value == null){
+        delete query.facility;
+        delete query.warehouse;
+    }
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
     if (currentTab.value) query.tab = currentTab.value;
@@ -571,7 +579,6 @@ function reloadTransfer() {
     router.get(route("transfers.index"), query, {
         preserveState: true,
         preserveScroll: true,
-        replace: true,
         only: ["transfers"],
     });
 }
