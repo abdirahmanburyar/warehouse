@@ -450,7 +450,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
          Route::post('/delete-back-order', [TransferController::class, 'deleteBackOrder'])->name('transfers.delete-back-order');
           // change transfer status
           Route::post('/change-status', [TransferController::class, 'changeStatus'])->name('transfers.change-status');
-
+          
+          // restore transfer
+          Route::post('/restore-transfer', [TransferController::class, 'restoreTransfer'])->name('transfers.restore-transfer');
 
           Route::post('/dispatch-info', [TransferController::class, 'dispatchInfo'])->name('transfers.dispatch-info');
 

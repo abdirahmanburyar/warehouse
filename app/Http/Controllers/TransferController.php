@@ -490,7 +490,7 @@ class TransferController extends Controller
             'items.inventory_allocations.location',
             'dispatchInfo.driver',
             'dispatchInfo.logistic_company',
-            'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
+            'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy','rejectedBy'
         ])->first();
 
 
@@ -1450,7 +1450,7 @@ class TransferController extends Controller
             
             $request->validate([
                 'transfer_id' => 'required|exists:transfers,id',
-                'status' => 'required|string|in:pending,reviewed,approved,in_process,dispatched,delivered,received'
+                'status' => 'required|string|in:pending,reviewed,approved,in_process,dispatched,delivered,received,rejected'
             ]);
 
             $transfer = Transfer::with('items.inventory_allocations.back_order')->find($request->transfer_id);
@@ -1459,7 +1459,7 @@ class TransferController extends Controller
             $user = auth()->user();
 
             // Define status progression order
-            $statusOrder = ['pending', 'reviewed', 'approved', 'in_process', 'dispatched', 'delivered', 'received'];
+            $statusOrder = ['pending', 'reviewed', 'approved', 'in_process', 'dispatched', 'delivered', 'received','rejected'];
             $currentStatusIndex = array_search($transfer->status, $statusOrder);
             $newStatusIndex = array_search($newStatus, $statusOrder);
 
@@ -1536,6 +1536,103 @@ class TransferController extends Controller
                     $transfer->delivered_by = $user->id;
                     break;
 
+                case 'rejected':
+                    if ($transfer->status !== 'reviewed') {
+                        DB::rollBack();
+                        return response()->json('Transfer must be reviewed to reject', 400);
+                    }
+                    $transfer->rejected_at = now();
+                    $transfer->rejected_by = $user->id;
+                    
+                    // Rollback all the inventory allocations
+                    foreach ($transfer->items as $transferItem) {
+                        foreach ($transferItem->inventory_allocations as $allocation) {
+                            // Determine if source is warehouse or facility
+                            if ($transfer->from_warehouse_id) {
+                                // Source is warehouse - restore to warehouse inventory
+                                $inventoryItem = InventoryItem::where('product_id', $allocation->product_id)
+                                    ->where('warehouse_id', $transfer->from_warehouse_id)
+                                    ->where('batch_number', $allocation->batch_number)
+                                    ->where('expiry_date', $allocation->expiry_date)
+                                    ->first();
+
+                                if ($inventoryItem) {
+                                    // Add back the allocated quantity
+                                    $inventoryItem->quantity += $allocation->allocated_quantity;
+                                    $inventoryItem->save();
+                                } else {
+                                    // Create new inventory item if it doesn't exist
+                                    InventoryItem::create([
+                                        'product_id' => $allocation->product_id,
+                                        'warehouse_id' => $transfer->from_warehouse_id,
+                                        'location_id' => $allocation->location_id,
+                                        'batch_number' => $allocation->batch_number,
+                                        'uom' => $allocation->uom,
+                                        'barcode' => $allocation->barcode,
+                                        'expiry_date' => $allocation->expiry_date,
+                                        'quantity' => $allocation->allocated_quantity,
+                                        'unit_cost' => $allocation->unit_cost ?? 0,
+                                        'total_cost' => ($allocation->unit_cost ?? 0) * $allocation->allocated_quantity,
+                                    ]);
+                                }
+                            } else if ($transfer->from_facility_id) {
+                                // Source is facility - restore to facility inventory
+                                $facilityInventory = FacilityInventory::where('facility_id', $transfer->from_facility_id)
+                                    ->where('product_id', $allocation->product_id)
+                                    ->first();
+
+                                if ($facilityInventory) {
+                                    $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
+                                        ->where('batch_number', $allocation->batch_number)
+                                        ->where('expiry_date', $allocation->expiry_date)
+                                        ->first();
+
+                                    if ($facilityInventoryItem) {
+                                        // Add back the allocated quantity
+                                        $facilityInventoryItem->quantity += $allocation->allocated_quantity;
+                                        $facilityInventoryItem->save();
+                                    } else {
+                                        // Create new facility inventory item if it doesn't exist
+                                        FacilityInventoryItem::create([
+                                            'facility_inventory_id' => $facilityInventory->id,
+                                            'product_id' => $allocation->product_id,
+                                            'batch_number' => $allocation->batch_number,
+                                            'uom' => $allocation->uom,
+                                            'barcode' => $allocation->barcode,
+                                            'expiry_date' => $allocation->expiry_date,
+                                            'quantity' => $allocation->allocated_quantity,
+                                            'unit_cost' => $allocation->unit_cost ?? 0,
+                                            'total_cost' => ($allocation->unit_cost ?? 0) * $allocation->allocated_quantity,
+                                        ]);
+                                    }
+                                } else {
+                                    // Create new facility inventory if it doesn't exist
+                                    $facilityInventory = FacilityInventory::create([
+                                        'facility_id' => $transfer->from_facility_id,
+                                        'product_id' => $allocation->product_id,
+                                    ]);
+
+                                    FacilityInventoryItem::create([
+                                        'facility_inventory_id' => $facilityInventory->id,
+                                        'product_id' => $allocation->product_id,
+                                        'batch_number' => $allocation->batch_number,
+                                        'uom' => $allocation->uom,
+                                        'barcode' => $allocation->barcode,
+                                        'expiry_date' => $allocation->expiry_date,
+                                        'quantity' => $allocation->allocated_quantity,
+                                        'unit_cost' => $allocation->unit_cost ?? 0,
+                                        'total_cost' => ($allocation->unit_cost ?? 0) * $allocation->allocated_quantity,
+                                    ]);
+                                }
+                            }
+                        }
+                        
+                        // Delete all inventory allocations for this transfer item
+                        $transferItem->inventory_allocations()->delete();
+                    }
+                    
+                    break;
+
                 case 'received':
                     // Can be done by to warehouse/facility staff
                     if ($user->warehouse_id !== $transfer->to_warehouse_id && 
@@ -1604,6 +1701,15 @@ class TransferController extends Controller
                     // Update transfer status to received
                     $transfer->received_at = Carbon::now();
                     $transfer->received_by = auth()->user()->id;
+                    break;
+
+                case 'rejected':
+                    if ($transfer->status !== 'reviewed') {
+                        DB::rollBack();
+                        return response()->json('Transfer must be reviewed to reject', 400);
+                    }
+                    $transfer->rejected_at = now();
+                    $transfer->rejected_by = $user->id;
                     break;
 
                 default:
@@ -1759,4 +1865,19 @@ class TransferController extends Controller
         }
     }
     
+    public function restoreTransfer(Request $request)
+    {
+        try {
+            $transfer = Transfer::find($request->transfer_id);
+            $transfer->status = 'pending';
+            $transfer->rejected_at = null;
+            $transfer->rejected_by = null;
+            $transfer->reviewed_at = null;
+            $transfer->reviewed_by = null;
+            $transfer->save();
+            return response()->json('Transfer restored successfully.', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 }

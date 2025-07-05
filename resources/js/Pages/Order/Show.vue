@@ -293,6 +293,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Order Items Table -->
             <h2 class="text-xs text-gray-900 mb-4">Order Items</h2>
             <table class="min-w-full border border-black border-collapse">
@@ -414,7 +415,7 @@
                             /> -->
                                 <label for="days">No. of Days</label>
                                 <input type="number" placeholder="0" v-model="item.days"
-                                    @keydown.enter="updateQuantity(item, 'days', index)" :readonly="isUpading[index] || props.order.status != 'pending'
+                                    @input="updateQuantity(item, 'days', index)" :readonly="isUpading[index] || props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
@@ -1428,7 +1429,6 @@ const restoreOrder = async () => {
 // update quantity
 const isUpading = ref([]);
 async function updateQuantity(item, type, index) {
-    console.log(index);
     isUpading.value[index] = true;
     await axios
         .post(route("orders.update-quantity"), {
@@ -1439,14 +1439,14 @@ async function updateQuantity(item, type, index) {
         })
         .then((response) => {
             isUpading.value[index] = false;
-            Swal.fire({
-                title: "Success!",
-                text: response.data,
-                icon: "success",
-                confirmButtonText: "OK",
-            }).then(() => {
-                router.get(route("orders.show", props.order.id));
-            });
+            // Swal.fire({
+            //     title: "Success!",
+            //     text: response.data,
+            //     icon: "success",
+            //     confirmButtonText: "OK",
+            // }).then(() => {
+            //     router.get(route("orders.show", props.order.id));
+            // });
         })
         .catch((error) => {
             isUpading.value[index] = false;
