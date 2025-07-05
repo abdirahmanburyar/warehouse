@@ -549,7 +549,7 @@
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-center text-black align-top">
                                             <input type="number" v-model="item.quantity_to_release
-                                                " @keyup.enter="
+                                                " @input="
                                                     updateQuantity(item, index)
                                                     "
                                                 class="w-20 text-center border border-black rounded px-2 py-1 text-sm" />
@@ -1862,15 +1862,9 @@ async function updateQuantity(item, index) {
             item_id: item.id,
             quantity: item.quantity_to_release,
         })
-        .then((response) => {
+        .then(() => {
             isUpading.value[index] = false;
-            Swal.fire({
-                title: "Success!",
-                text: response.data,
-                icon: "success",
-                confirmButtonText: "OK",
-            }).then(() => {
-                router.get(route("transfers.show", props.transfer.id));
+            router.get(route("transfers.show", props.transfer.id), {}, {
             });
         })
         .catch((error) => {

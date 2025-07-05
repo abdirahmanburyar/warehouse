@@ -20,7 +20,8 @@ class InventoryAllocation extends Model
         'unit_cost',
         'total_cost',
         'notes',
-        'uom'
+        'uom',
+        'transfer_reason'
     ];
 
     public function product(){

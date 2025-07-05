@@ -20,8 +20,9 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->date('expiry_date');
             $table->integer('allocated_quantity');
-            $table->double('unit_cost');
-            $table->double('total_cost');
+            $table->string('transfer_reason')->nullable();
+            $table->double('unit_cost')->nullable();
+            $table->double('total_cost')->nullable();
             $table->string('allocation_type'); // quarterly, emergency, etc.
             $table->text('notes')->nullable();
             $table->timestamps();

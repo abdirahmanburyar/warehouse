@@ -3,7 +3,6 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { ref, computed, watch } from "vue";
 import { router } from "@inertiajs/vue3";
 import InputLabel from "@/Components/InputLabel.vue";
-import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
@@ -60,6 +59,7 @@ const form = ref({
             quantity: 0,
             available_quantity: 0,
             details: [],
+            transfer_reason: "",
         },
     ],
 });
@@ -104,6 +104,7 @@ const handleSourceSelect = async (selected) => {
             expiry_date: null,
             uom: "",
             available_quantity: 0,
+            transfer_reason: "",
         },
     ];
 
@@ -313,9 +314,40 @@ watch(destinationType, (newValue) => {
 const submit = async () => {
     loading.value = true;
 
-    console.log(form.value);
+    // Validate that at least one item has quantity to transfer
+    const hasItemsToTransfer = form.value.items.some(item => 
+        item.details.some(detail => 
+            parseFloat(detail.quantity_to_transfer) > 0
+        )
+    );
+
+    if (!hasItemsToTransfer) {
+        loading.value = false;
+        Swal.fire({
+            title: "No Items to Transfer",
+            text: "Please specify quantities to transfer for at least one item.",
+            icon: "warning",
+            confirmButtonColor: "#4F46E5",
+        });
+        return;
+    }
+
+    // Filter out items with no quantity to transfer
+    const filteredItems = form.value.items.filter(item => 
+        item.product_id && item.details.some(detail => 
+            parseFloat(detail.quantity_to_transfer) > 0
+        )
+    );
+
+    const submitData = {
+        ...form.value,
+        items: filteredItems
+    };
+
+    console.log("Submitting data:", submitData);
+    
     await axios
-        .post(route("transfers.store"), form.value)
+        .post(route("transfers.store"), submitData)
         .then((response) => {
             loading.value = false;
             Swal.fire({
@@ -355,13 +387,20 @@ async function handleProductSelect(index, selected) {
                 isLoading.value[index] = false;
                 console.log(response.data);
 
-                item.details = response.data;
+                // Initialize quantity_to_transfer for each detail item
+                item.details = response.data.map(detail => ({
+                    ...detail,
+                    quantity_to_transfer: 0,
+                    transfer_reason: ''
+                }));
+                
                 item.available_quantity = response.data?.reduce(
                     (sum, item) => sum + item.quantity,
                     0
                 );
                 item.product = selected;
                 item.product_id = selected.id;
+                item.quantity = 0; // Reset main quantity
                 addNewItem();
             })
             .catch((error) => {
@@ -386,6 +425,21 @@ async function handleProductSelect(index, selected) {
     }
 }
 
+// Function to update main item quantity based on detail quantities
+function updateItemQuantity(index) {
+    const item = form.value.items[index];
+    const totalQuantity = item.details.reduce((sum, detail) => {
+        return sum + (parseFloat(detail.quantity_to_transfer) || 0);
+    }, 0);
+    
+    item.quantity = totalQuantity;
+    
+    // Clear any existing quantity errors
+    if (errors.value[`item_${index}_quantity`]) {
+        errors.value[`item_${index}_quantity`] = null;
+    }
+}
+
 function addNewItem() {
     form.value.items.push({
         id: null,
@@ -394,6 +448,7 @@ function addNewItem() {
         available_quantity: 0,
         quantity: 0,
         details: [],
+        transfer_reason: "",
     });
 }
 
@@ -425,6 +480,15 @@ function checkQuantity(index) {
 
 function formatDate(date) {
     return moment(date).format("DD/MM/YYYY");
+}
+
+// Function to check if date is expiring soon (within 6 months)
+function isExpiringSoon(expiryDate) {
+    if (!expiryDate) return false;
+    const today = moment();
+    const expiry = moment(expiryDate);
+    const monthsDiff = expiry.diff(today, 'months');
+    return monthsDiff <= 6 && monthsDiff >= 0;
 }
 </script>
 
@@ -622,217 +686,176 @@ function formatDate(date) {
                         </div>
                         <!-- here for items -->
                     </div>
+                    <!-- here for items -->
 
-                    <div class="mb-4">
-                        <table class="min-w-full">
-                            <thead class="w-full bg-gray-50">
-                                <tr>
-                                    <th
-                                        class="w-[400px] text-left text-xs font-medium text-gray-500 border border-black uppercase"
-                                    >
-                                        Item
+                    <div class="mb-4 overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr class="bg-gray-50">
+                                    <th class="min-w-[120px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Item Name
                                     </th>
-                                    <th
-                                        class="w-[300px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
-                                    >
-                                        Item Information
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Category
                                     </th>
-                                    <th
-                                        class="w-[100px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
-                                    >
-                                        Available quantity
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        UoM
                                     </th>
-                                    <th
-                                        class="w-[200px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
-                                    >
-                                        Quantity to release
+                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" rowspan="2">
+                                        Total Quantity on Hand Per Unit
                                     </th>
-                                    <th
-                                        class="w-[70px] text-left text-xs font-medium text-gray-500 uppercase border border-black tracking-wider"
-                                    >
-                                        Actions
+                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" colspan="4">
+                                        Item details
+                                    </th>
+                                    
+                                    <th class="min-w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Reasons for Transfers
+                                    </th>
+                                    <th class="min-w-[110px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Quantity to be transferred
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Total Quantity to be transferred
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Action
+                                    </th>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        QTY
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Batch Number
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Expiry Date
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Location
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <!-- Inventory Items rows -->
-                                <tr
-                                    v-for="(item, index) in form.items"
-                                    :key="index"
-                                    class="hover:bg-gray-50"
-                                >
-                                    <td class="border border-black">
-                                        <Multiselect
-                                            v-model="item.product"
-                                            :value="item.product_id"
-                                            :options="availableInventories"
-                                            placeholder="Search for an item..."
-                                            required
-                                            track-by="id"
-                                            label="name"
-                                            :searchable="true"
-                                            :allow-empty="true"
-                                            :loading="isLoading[index]"
-                                            @select="
-                                                handleProductSelect(
-                                                    index,
-                                                    $event
-                                                )
-                                            "
-                                        />
-                                    </td>
-                                    <td
-                                        class="whitespace-nowrap border border-black text-sm text-black"
-                                    >
-                                        <table
-                                            class="w-full text-xs border border-black"
-                                        >
-                                            <thead class="bg-gray-50">
-                                                <tr class="text-gray-600">
-                                                    <th
-                                                        class="border border-black"
-                                                    >
-                                                        UoM
-                                                    </th>
-                                                    <th
-                                                        class="border border-black"
-                                                    >
-                                                        QTY
-                                                    </th>
-                                                    <th
-                                                        class="border border-black"
-                                                    >
-                                                        Batch
-                                                    </th>
-                                                    <th
-                                                        class="border border-black"
-                                                    >
-                                                        Expiry
-                                                    </th>
-                                                    <th
-                                                        class="border border-black"
-                                                    >
-                                                        Location
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr
-                                                    v-for="detail in item?.details"
-                                                    :key="detail.id"
-                                                    class="bg-white even:bg-gray-50"
-                                                >
-                                                    <td
-                                                        class="border border-black"
-                                                    >
-                                                        {{ detail.uom }}
-                                                    </td>
-                                                    <td
-                                                        class="border border-black"
-                                                    >
-                                                        {{ detail.quantity }}
-                                                    </td>
-                                                    <td
-                                                        class="border border-black"
-                                                    >
-                                                        {{
-                                                            detail.batch_number
-                                                        }}
-                                                    </td>
-                                                    <td
-                                                        class="border border-black"
-                                                    >
-                                                        {{
-                                                            formatDate(
-                                                                detail.expiry_date
-                                                            )
-                                                        }}
-                                                    </td>
-                                                    <td
-                                                        class="border border-black"
-                                                    >
-                                                        <div
-                                                            class="text-xs flex flex-col space-y-0.5"
-                                                        >
-                                                            <span
-                                                                class="text-xs"
-                                                                >WH:
-                                                                {{
-                                                                    detail
-                                                                        .warehouse
-                                                                        ?.name
-                                                                }}</span
-                                                            >
-                                                            <span
-                                                                class="text-xs"
-                                                                >LC:
-                                                                {{
-                                                                    detail.location
-                                                                }}</span
-                                                            >
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
 
-                                    <td
-                                        class="whitespace-nowrap border border-black text-center text-sm text-black"
-                                    >
-                                        {{ item.available_quantity }}
-                                    </td>
-                                    <td
-                                        class="whitespace-nowrap border border-black text-sm text-black"
-                                    >
-                                        <input
-                                            type="text"
-                                            v-model.number="item.quantity"
-                                            required
-                                            :class="[
-                                                'w-full text-sm',
-                                                errors[`item_${index}_quantity`]
-                                                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                                    : '',
-                                            ]"
-                                            min="1"
-                                            :max="item.available_quantity"
-                                            :disabled="!item.product?.id"
-                                            placeholder="0"
-                                            @input="
-                                                checkQuantity(index);
-                                                errors[
-                                                    `item_${index}_quantity`
-                                                ] = null;
-                                            "
-                                        />
-                                    </td>
-                                    <td
-                                        class="whitespace-nowrap border border-black text-sm text-gray-500"
-                                    >
-                                        <button
-                                            type="button"
-                                            @click="removeItem(index)"
-                                            class="text-red-600 hover:text-red-900"
-                                            :disabled="form.items.length <= 1"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                class="h-5 w-5"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            <tbody>
+                                <template v-for="(item, index) in form.items" :key="index">
+                                    <!-- Show details if they exist, otherwise show one row with main item data -->
+                                    <tr v-for="(detail, detailIndex) in (item.details?.length > 0 ? item.details : [{}])"
+                                        :key="`${index}-${detail.id || detailIndex}`"
+                                        class="hover:bg-gray-50 transition-colors duration-150">
+                                        
+                                        <!-- Item Name - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="min-w-[200px] px-3 py-3 text-xs text-gray-900 border border-black align-top">
+                                            <div class="w-full">
+                                                <Multiselect
+                                                    v-model="item.product"
+                                                    :value="item.product_id"
+                                                    :options="availableInventories"
+                                                    placeholder="Search for an item..."
+                                                    required
+                                                    track-by="id"
+                                                    label="name"
+                                                    :searchable="true"
+                                                    :allow-empty="true"
+                                                    :loading="isLoading[index]"
+                                                    @select="handleProductSelect(index, $event)"
                                                 />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
+                                            </div>
+                                        </td>
+
+                                        <!-- Category - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                            {{ item.product?.category?.name || '' }}
+                                        </td>
+
+                                        <!-- UoM - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                            {{ item.details?.[0]?.uom || '' }}
+                                        </td>
+
+                                        <!-- Total Quantity on Hand Per Unit - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black">
+                                            {{ item.available_quantity || 0 }}
+                                        </td>
+
+                                        <!-- Item Details Columns -->
+                                        <!-- Quantity -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.quantity || '' }}
+                                        </td>
+
+                                        <!-- Batch Number -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.batch_number || '' }}
+                                        </td>
+
+                                        <!-- Expiry Date -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center" :class="{ 'text-red-600': detail.expiry_date && isExpiringSoon(detail.expiry_date) }">
+                                            {{ detail.expiry_date ? formatDate(detail.expiry_date) : '' }}
+                                        </td>
+
+                                        <!-- Location -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.location || '' }}
+                                        </td>
+
+                                        <!-- Reasons for Transfers - only on first row for this item -->
+                                        <td 
+                                            class="px-3 min-w-[120px] py-3 text-xs border border-black text-center">
+                                            <select
+                                                v-model="item.transfer_reason"
+                                                class="w-full text-xs border rounded px-2 py-1 resize-none"
+                                                rows="3"
+                                                placeholder="Enter transfer reason..."
+                                            >
+                                                <option value="Soon to expire">Soon to expire</option>
+                                                <option value="Replenishment">Replenishment</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </td>
+
+                                        <!-- Quantity to be transferred - per detail -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            <input
+                                                v-if="item.product && detail.quantity"
+                                                type="number"
+                                                v-model.number="detail.quantity_to_transfer"
+                                                :max="detail.quantity"
+                                                min="0"
+                                                class="w-full text-xs border rounded px-2 py-1 text-center"
+                                                placeholder="0"
+                                                @input="updateItemQuantity(index)"
+                                            />
+                                        </td>
+
+                                        <!-- Total Quantity to be transferred - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black align-top">
+                                            <div class="text-sm font-medium text-blue-600" v-if="item.product">
+                                                {{ item.quantity || 0 }}
+                                            </div>
+                                        </td>
+
+                                        <!-- Action - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black align-top">
+                                            <button
+                                                type="button"
+                                                @click="removeItem(index)"
+                                                class="text-red-600 hover:text-red-800"
+                                                :disabled="form.items.length <= 1"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>

@@ -365,6 +365,10 @@ class TransferController extends Controller
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|integer',
                 'items.*.quantity' => 'required|integer|min:1',
+                'items.*.details' => 'required|array',
+                'items.*.details.*.quantity_to_transfer' => 'required|integer|min:1',
+                'items.*.details.*.id' => 'required|integer',
+                'items.*.transfer_reason' => 'nullable|string',
                 'notes' => 'nullable|string',
                 'transfer_type' => 'required|string'
             ]);
@@ -383,28 +387,6 @@ class TransferController extends Controller
             $transfer = Transfer::create($transferData);
     
             foreach ($request->items as $item) {
-                $remainingQty = $item['quantity'];
-                $sourceId = $request->source_id;
-
-                if ($request->source_type === 'warehouse') {
-                    $inventories = InventoryItem::where('product_id', $item['product_id'])
-                        ->where('warehouse_id', $sourceId)
-                        ->with('product:id,name')
-                        ->where('quantity', '>', 0)
-                        ->where('expiry_date', '>', \Carbon\Carbon::now())
-                        ->orderBy('expiry_date', 'asc')
-                        ->get();
-                } else {
-                    $inventories = FacilityInventoryItem::where('product_id', $item['product_id'])
-                        ->whereHas('inventory', function($query) use ($request) {
-                            $query->where('facility_id', $request->source_id);
-                        })
-                        ->where('quantity', '>', 0)
-                        ->where('expiry_date', '>', \Carbon\Carbon::now())
-                        ->orderBy('expiry_date', 'asc')
-                        ->get();
-                }
-
                 // Calculate total quantity on hand for this product (excluding expired)
                 $warehouseQuantity = InventoryItem::where('product_id', $item['product_id'])
                     ->where('quantity', '>', 0)
@@ -426,33 +408,47 @@ class TransferController extends Controller
                     'quantity_per_unit' => $totalQuantityOnHand // Save total quantity on hand at time of transfer creation
                 ]);
 
-                // Process each inventory item to fulfill the transfer quantity
-                foreach ($inventories as $inventory) {
-                    if ($remainingQty <= 0) break;
+                // Process each detail item with specific quantities to transfer
+                foreach ($item['details'] as $detail) {
+                    $quantityToTransfer = $detail['quantity_to_transfer'];
+                    
+                    if ($quantityToTransfer <= 0) continue;
 
-                    $deductQty = min($remainingQty, $inventory->quantity);
+                    // Find the specific inventory item by ID
+                    if ($request->source_type === 'warehouse') {
+                        $inventoryItem = InventoryItem::find($detail['id']);
+                    } else {
+                        $inventoryItem = FacilityInventoryItem::find($detail['id']);
+                    }
+
+                    if (!$inventoryItem) {
+                        throw new \Exception("Inventory item with ID {$detail['id']} not found");
+                    }
+
+                    // Verify we have enough quantity
+                    if ($quantityToTransfer > $inventoryItem->quantity) {
+                        throw new \Exception("Insufficient quantity. Available: {$inventoryItem->quantity}, Requested: {$quantityToTransfer}");
+                    }
                     
                     // Create inventory allocation record for detailed tracking
                     $transferItem->inventory_allocations()->create([
                         'product_id' => $item['product_id'],
-                        'warehouse_id' => $request->source_type === 'warehouse' ? $sourceId : null,
-                        'location' => $inventory->location,
-                        'batch_number' => $inventory->batch_number,
-                        'expiry_date' => $inventory->expiry_date,
-                        'allocated_quantity' => $deductQty,
-                        'uom' => $inventory->uom,
-                        'barcode' => $inventory->barcode,
+                        'warehouse_id' => $request->source_type === 'warehouse' ? $request->source_id : null,
+                        'location' => $inventoryItem->location,
+                        'batch_number' => $inventoryItem->batch_number,
+                        'expiry_date' => $inventoryItem->expiry_date,
+                        'allocated_quantity' => $quantityToTransfer,
+                        'uom' => $inventoryItem->uom,
+                        'barcode' => $inventoryItem->barcode,
                         'allocation_type' => 'transfer',
-                        'unit_cost' => $inventory->unit_cost ?? 0,
-                        'total_cost' => $deductQty * ($inventory->unit_cost ?? 0),
+                        'unit_cost' => $inventoryItem->unit_cost ?? 0,
+                        'total_cost' => $quantityToTransfer * ($inventoryItem->unit_cost ?? 0),
+                        'transfer_reason' => $item['transfer_reason'] ?? null,
                     ]);
 
                     // Deduct from source inventory
-                    $inventory->quantity -= $deductQty;
-                    $inventory->save();
-
-                    // Update remaining quantity needed
-                    $remainingQty -= $deductQty;
+                    $inventoryItem->quantity -= $quantityToTransfer;
+                    $inventoryItem->save();
                 }
         
             }
