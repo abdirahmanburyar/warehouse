@@ -588,6 +588,8 @@ async function handleRegionSelect(option) {
     district.value = null;
     districts.value = [];
     await loadDistrict();
+    await loadFacility();
+    await loadWarehouse();
 }
 
 const facilities = ref([]);
