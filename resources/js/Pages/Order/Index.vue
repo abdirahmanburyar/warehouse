@@ -6,7 +6,7 @@
         img="/assets/images/orders.png"
     >
         <!-- Filters Section -->
-        <div class="bg-white mb-6 p-4 text-xs">
+        <div class="bg-white mb-2 text-xs">
             <div
                 class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-5"
             >
@@ -39,7 +39,6 @@
                         :options="props.regions"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="true"
                         :allow-empty="true"
                         @select="handleRegionSelect"
                         placeholder="Select Region"
@@ -54,9 +53,7 @@
                         :options="districts"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="true"
                         :allow-empty="true"
-                        :disabled="region == null"
                         @select="handleDistrictSelect"
                         placeholder="Select District"
                     >
@@ -69,9 +66,7 @@
                         :options="facilities"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="true"
                         :allow-empty="true"
-                        :disabled="district == null"
                         placeholder="Select Facility"
                     >
                     </Multiselect>
@@ -84,7 +79,6 @@
                         :options="orderTypes"
                         :searchable="true"
                         :close-on-select="true"
-                        :show-labels="true"
                         :allow-empty="true"
                         placeholder="Select Order Type"
                     >
@@ -125,11 +119,11 @@
                         v-for="tab in statusTabs"
                         :key="tab.value"
                         @click="currentStatus = tab.value"
-                        class="whitespace-nowrap py-4 px-1 border-b-4 font-bold text-xs"
+                        class="whitespace-nowrap py-4 px-1 font-bold text-xs"
                         :class="[
                             currentStatus === tab.value
-                                ? `border-${tab.color}-500 text-${tab.color}-600`
-                                : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300',
+                                ? 'border-b-4 border-green-500 text-green-600'
+                                : 'border-b-4 border-transparent text-black hover:text-gray-700 hover:border-gray-300',
                         ]"
                     >
                         {{ tab.label }}
@@ -782,15 +776,13 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import { TailwindPagination } from "laravel-vue-pagination";
 import moment from "moment";
 import axios from "axios";
-
-// No longer using bulk actions
 
 const props = defineProps({
     orders: Object,
@@ -800,19 +792,32 @@ const props = defineProps({
 });
 
 const districts = ref([]);
+const facilities = ref([]);
+
+// Debounce setup
+let searchTimeout = null;
 
 async function handleRegionSelect(option) {
     if (!option) {
         district.value = null;
         districts.value = [];
+        facility.value = null;
+        facilities.value = [];
         return;
     }
-    district.value = null;
-    districts.value = [];
+    
+    // Smart validation - clear district if it doesn't belong to selected region
+    if (district.value && districts.value.length > 0) {
+        const districtExists = districts.value.some(d => d.value === district.value);
+        if (!districtExists) {
+            district.value = null;
+        }
+    }
+    
+    facility.value = null;
+    facilities.value = [];
     await loadDistrict();
 }
-
-const facilities = ref([]);
 
 async function handleDistrictSelect(option) {
     if (!option) {
@@ -820,8 +825,15 @@ async function handleDistrictSelect(option) {
         facilities.value = [];
         return;
     }
-    facility.value = null;
-    facilities.value = [];
+    
+    // Smart validation - clear facility if it doesn't belong to selected district
+    if (facility.value && facilities.value.length > 0) {
+        const facilityExists = facilities.value.some(f => f.value === facility.value);
+        if (!facilityExists) {
+            facility.value = null;
+        }
+    }
+    
     await loadFacility();
 }
 
@@ -836,7 +848,8 @@ const totalOrders = computed(() => {
         props.stats.approved +
         props.stats.in_process +
         props.stats.dispatched +
-        props.stats.received
+        props.stats.received +
+        props.stats.rejected
     );
 });
 
@@ -854,7 +867,7 @@ const statusTabs = [
 
 // Filter states
 const search = ref(props.filters.search);
-const currentStatus = ref(props.filters.currentStatus);
+const currentStatus = ref(props.filters.currentStatus || null); // Default to "All Orders" (null)
 const facility = ref(props.filters?.facility);
 const orderType = ref(props.filters?.orderType);
 const district = ref(props.filters?.district);
@@ -863,12 +876,42 @@ const dateTo = ref(props.filters?.dateTo);
 const per_page = ref(props.filters.per_page || 25);
 const region = ref(props.filters?.region);
 
+// Initialize data on page load
+onMounted(async () => {
+    // Load districts if region is already selected
+    if (region.value) {
+        await loadDistrict();
+    }
+    
+    // Load facilities if district is already selected
+    if (district.value) {
+        await loadFacility();
+    }
+});
 
+// Cleanup on unmount
+onBeforeUnmount(() => {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+});
 
-// Watch for filter changes
+// Watch for filter changes with debouncing for search
+watch(
+    () => search.value,
+    () => {
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        searchTimeout = setTimeout(() => {
+            reloadOrder();
+        }, 500);
+    }
+);
+
+// Watch for other filter changes (no debouncing needed)
 watch(
     [
-        () => search.value,
         () => currentStatus.value,
         () => facility.value,
         () => orderType.value,
@@ -913,30 +956,27 @@ function getResult(page = 1) {
 }
 
 async function loadDistrict() {
-    district.value = null;
-    districts.value = [];
-    await axios
-        .post(route("districts.get-districts"), { region: region.value })
-        .then((response) => {
-            districts.value = response.data;
-        })
-        .catch((error) => {
-            console.log(error);
+    try {
+        const response = await axios.post(route("districts.get-districts"), { 
+            region: region.value 
         });
+        districts.value = response.data;
+    } catch (error) {
+        console.log(error);
+        districts.value = [];
+    }
 }
 
 async function loadFacility() {
-    facility.value = null;
-    facilities.value = [];
-    console.log(district.value);
-    await axios
-        .post(route("facilities.get-facilities"), { district: district.value })
-        .then((response) => {
-            facilities.value = response.data;
-        })
-        .catch((error) => {
-            console.log(error);
+    try {
+        const response = await axios.post(route("facilities.get-facilities"), { 
+            district: district.value 
         });
+        facilities.value = response.data;
+    } catch (error) {
+        console.log(error);
+        facilities.value = [];
+    }
 }
 
 const formatDate = (date) => {
