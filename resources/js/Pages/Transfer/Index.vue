@@ -3,15 +3,40 @@
         img="/assets/images/transfer.png">
         
         <!-- Transfer Direction Tabs (Very Top Level) -->
-        <div class="border-b border-gray-200 mb-6">
-            <nav class="-mb-px flex space-x-8">
+        <div class="mb-8">
+            <nav class="flex space-x-1 bg-gray-100 p-1 rounded-xl">
                 <button v-for="tab in transferDirectionTabs" :key="tab.value" @click="currentDirectionTab = tab.value"
-                    class="whitespace-nowrap py-4 px-6 border-b-4 font-bold text-lg" :class="[
+                    class="relative whitespace-nowrap py-3 px-6 font-semibold text-lg flex items-center gap-3 rounded-lg transition-all duration-300 ease-in-out" :class="[
                         currentDirectionTab === tab.value
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300',
+                            ? 'bg-white text-blue-600 shadow-lg shadow-blue-100 ring-1 ring-blue-200'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/50',
                     ]">
-                    {{ tab.label }}
+                    <!-- Tab Icons -->
+                    <div class="flex items-center justify-center w-6 h-6 rounded-full transition-all duration-300" :class="[
+                        currentDirectionTab === tab.value 
+                            ? 'bg-blue-100' 
+                            : 'bg-gray-200 group-hover:bg-gray-300'
+                    ]">
+                        <svg v-if="tab.value === 'other'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                        </svg>
+                        <svg v-else-if="tab.value === 'in'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
+                                d="M7 16l-4-4m0 0l4-4m-4 4h18"/>
+                        </svg>
+                        <svg v-else-if="tab.value === 'out'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
+                                d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </div>
+                    
+                    <span class="tracking-wide">{{ tab.label }}</span>
+                    
+                    <!-- Active indicator -->
+                    <div v-if="currentDirectionTab === tab.value" 
+                        class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-600 rounded-full">
+                    </div>
                 </button>
             </nav>
         </div>
