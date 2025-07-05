@@ -174,8 +174,9 @@
             <div class="w-[300px]">
             <select
                 v-model="status"
-                class="w-[200px] rounded-3xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                class="w-[200px] border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
             >
+                <option value="">All</option>
                 <option value="1">Active</option>
                 <option value="0">Inactive</option>
             </select>
@@ -249,31 +250,37 @@
                         <tr>
                             <th
                                 style="color: #495fa7"
-                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize tracking-wider"
                             >
                                 Item Name
                             </th>
                             <th
                                 style="color: #495fa7"
-                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize tracking-wider"
                             >
                                 Category
                             </th>
                             <th
                                 style="color: #495fa7"
-                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize tracking-wider"
                             >
                                 Dosage Form
                             </th>
                             <th
                                 style="color: #495fa7"
-                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize w-[150px]"
+                            >
+                                Eligibility Level
+                            </th>
+                            <th
+                                style="color: #495fa7"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize tracking-wider"
                             >
                                 Status
                             </th>
                             <th
                                 style="color: #495fa7"
-                                class="p-5 text-left text-sm font-bold text-gray-700 uppercase tracking-wider"
+                                class="p-2 text-left text-sm font-bold text-gray-700 capitalize tracking-wider"
                             >
                                 Action
                             </th>
@@ -300,9 +307,14 @@
                             >
                                 {{ product.dosage?.name || "N/A" }}
                             </td>
-                            <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-500">
-                                {{ product.reorder_level || '0' }}
-                            </td> -->
+                            <td class="w-[150px] px-4 py-4 text-sm text-start text-gray-500">
+                                <span v-if="product.eligible && product.eligible.length > 0">
+                                    <template v-for="(item, index) in product.eligible" :key="index">
+                                        {{ item.facility_type }}<template v-if="index < product.eligible.length - 1">, </template><br v-if="(index + 1) % 2 === 0 && index < product.eligible.length - 1">
+                                    </template>
+                                </span>
+                                <span v-else>N/A</span>
+                            </td>
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <span
@@ -419,6 +431,34 @@
                         </button>
                     </div>
 
+                    <!-- Download Template Section -->
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 class="text-sm font-medium text-green-800 mb-2">
+                            Need a template?
+                        </h4>
+                        <p class="text-sm text-green-700 mb-3">
+                            Download our template to see the correct format for uploading products.
+                        </p>
+                        <button
+                            @click="downloadTemplate"
+                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 mr-2"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            Download Template
+                        </button>
+                    </div>
+
                     <div class="mb-4">
                         <p class="text-sm text-gray-600 mb-2">
                             Upload an Excel file (.xlsx, .xls) with the
@@ -461,7 +501,7 @@
                                 Click to select or drag and drop file here
                             </p>
                             <p class="text-xs text-gray-500 mt-1">
-                                .xlsx and .csv files are supported
+                                .xlsx files are supported
                             </p>
                         </div>
 
@@ -872,6 +912,46 @@ const confirmToggleStatus = (product) => {
             }
         }
     });
+};
+
+// Download template function
+const downloadTemplate = () => {
+    // Create a proper Excel file using HTML table format that Excel can interpret
+    const headers = ['item description', 'category', 'dosage form'];
+    
+    // Create an HTML table that Excel can open as XLSX
+    const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetSource HRef="sheet001.htm"/></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        </head>
+        <body>
+            <table>
+                <tr>
+                    ${headers.map(header => `<th>${header}</th>`).join('')}
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+    
+    // Create blob with proper Excel MIME type
+    const blob = new Blob([htmlContent], { 
+        type: 'application/vnd.ms-excel' 
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'products_import_template.xlsx');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Empty template downloaded successfully!');
 };
 
 </script>

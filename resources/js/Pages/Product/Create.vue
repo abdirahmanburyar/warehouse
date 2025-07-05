@@ -63,20 +63,6 @@
                                 </template>
                             </Multiselect>
                         </div>
-
-                        <!-- Movement -->
-                        <div>
-                            <InputLabel for="movement" value="Pattern of Product" />
-                            <select
-                                id="movement"
-                                v-model="form.movement"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            >
-                                <option value="">Select Movement</option>
-                                <option value="Fast Moving">Fast Moving</option>
-                                <option value="Slow Moving">Slow Moving</option>
-                            </select>
-                        </div>
                     </div>
 
                     <!-- Facility Types Multiselect -->
@@ -231,7 +217,6 @@ const props = defineProps({
 const form = ref({
     id: null,
     name: '',
-    movement: '',
     category_id: '',
     dosage_id: '',
     category: null,

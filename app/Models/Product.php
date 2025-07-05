@@ -26,7 +26,7 @@ class Product extends Model
         'name',
         'category_id',
         'dosage_id',
-        'movement',
+        // 'movement',
         'is_active',
     ];
 

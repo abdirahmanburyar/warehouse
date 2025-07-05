@@ -270,6 +270,7 @@ class OrderController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+    
     public function destroy(Order $order)
     {
         try {

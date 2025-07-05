@@ -161,4 +161,13 @@ class WarehouseController extends Controller
         }
     }
 
+    public function getWarehousesPluck(Request $request){
+        try {
+            $warehouses = Warehouse::where('district', $request->district)->pluck('name')->toArray();
+        return response()->json($warehouses, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
 }

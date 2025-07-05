@@ -138,7 +138,6 @@ class ProductsImport
             'name' => $itemName,
             'category_id' => $categoryId,
             'dosage_id' => $dosageId,
-            'movement' => 'Slow Moving',
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),

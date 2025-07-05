@@ -1,18 +1,13 @@
 <template>
-    <AuthenticatedLayout
-        title="Optimize Your Transfers"
-        description="Moving Supplies, Bridging needs"
-        img="/assets/images/transfer.png"
-    >
+    <AuthenticatedLayout title="Optimize Your Transfers" description="Moving Supplies, Bridging needs"
+        img="/assets/images/transfer.png">
         <!-- Header Section -->
         <div class="flex flex-col space-y-6">
             <!-- Buttons First -->
             <div class="flex items-center justify-end">
                 <!-- New Transfer -->
-                <button
-                    @click="router.visit(route('transfers.create'))"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
+                <button @click="router.visit(route('transfers.create'))"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     New Transfer
                 </button>
             </div>
@@ -22,106 +17,66 @@
                 <div class="grid grid-cols-4 gap-3">
                     <!-- Search -->
                     <div class="relative">
-                        <input
-                            type="text"
-                            v-model="search"
+                        <input type="text" v-model="search"
                             class="pl-10 pr-4 py-2 border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Search a Transfer"
-                        />
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                        >
-                            <svg
-                                class="h-5 w-5 text-gray-400"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
+                            placeholder="Search a Transfer" />
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
+                    </div>
+                    <div class="w-full">
+                        <Multiselect v-model="region" :options="props.regions" :searchable="true"
+                            :close-on-select="true" :show-labels="true" :allow-empty="true" @select="handleRegionSelect"
+                            placeholder="Select Region">
+                        </Multiselect>
+                    </div>
+                    <!-- District Filter -->
+                    <div>
+                        <Multiselect v-model="district" :options="districts" :searchable="true" :close-on-select="true"
+                            :show-labels="true" :allow-empty="true" :disabled="region == null"
+                            @select="handleDistrictSelect" placeholder="Select District">
+                        </Multiselect>
                     </div>
 
                     <!-- warehouse or facility selection -->
                     <div>
-                        <Multiselect
-                            v-model="transfer_type"
-                            :options="facilityType"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :show-labels="false"
-                            placeholder="All Transfer Type"
-                            class=""
-                        >
+                        <Multiselect v-model="transfer_type" :options="facilityType" :searchable="true"
+                            :allow-empty="true" :show-labels="false" placeholder="All Transfer Type" class="">
                         </Multiselect>
                     </div>
 
                     <!-- Facility Selector -->
                     <div>
-                        <Multiselect
-                            v-model="facility"
-                            :options="props.facilities"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :show-labels="false"
-                            placeholder="All Facilities"
-                            class=""
-                        >
+                        <Multiselect v-model="facility" :options="facilities" :searchable="true" :allow-empty="true"
+                            :show-labels="false" placeholder="All Facilities" class="">
                         </Multiselect>
                     </div>
 
                     <!-- Warehouse Selector -->
                     <div>
-                        <Multiselect
-                            v-model="warehouse"
-                            :options="props.warehouses"
-                            :close-on-select="true"
-                            :clear-on-select="false"
-                            :preserve-search="true"
-                            placeholder="All Warehouses"
-                            class=""
-                            :preselect-first="false"
-                        >
+                        <Multiselect v-model="warehouse" :options="warehouses" :close-on-select="true"
+                            :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" class=""
+                            :preselect-first="false">
                         </Multiselect>
                     </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div>
-                        <label for="date_from">From Date</label>
-                        <input
-                            type="date"
-                            v-model="date_from"
+                    <div class="flex items-center gap-2 w-full">
+                        <input type="date" v-model="date_from"
                             class="border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="From Date"
-                        />
-                    </div>
-
-                    <!-- To Date -->
-                    <div>
-                        <label for="date_to">To Date</label>
-                        <input
-                            type="date"
-                            v-model="date_to"
+                            placeholder="From Date" />
+                            <span>To</span>
+                        <input type="date" v-model="date_to"
                             class="border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="To Date"
-                        />
+                            placeholder="To Date" />
                     </div>
                 </div>
 
                 <div class="flex justify-end mt-2">
-                    <select
-                        class="rounded-3xl"
-                        name="per_page"
-                        id="per_page"
-                        @change="props.filters.page = 1"
-                        v-model="per_page"
-                    >
+                    <select class="rounded-3xl" name="per_page" id="per_page" @change="props.filters.page = 1"
+                        v-model="per_page">
                         <option value="2">2 per page</option>
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
@@ -133,17 +88,12 @@
             <!-- Status Tabs -->
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8">
-                    <button
-                        v-for="tab in statusTabs"
-                        :key="tab.value"
-                        @click="currentTab = tab.value"
-                        class="whitespace-nowrap py-4 px-3 border-b-4 font-bold text-xs"
-                        :class="[
+                    <button v-for="tab in statusTabs" :key="tab.value" @click="currentTab = tab.value"
+                        class="whitespace-nowrap py-4 px-3 border-b-4 font-bold text-xs" :class="[
                             currentTab === tab.value
                                 ? 'border-green-500 text-green-600'
                                 : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300',
-                        ]"
-                    >
+                        ]">
                         {{ tab.label }}
                     </button>
                 </nav>
@@ -158,72 +108,45 @@
                     <table class="min-w-full">
                         <thead>
                             <tr>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     Transfer ID
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     Date
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     From
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     To
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     Transfer Type
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     Items
                                 </th>
-                                <th
-                                    scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider"
-                                >
+                                <th scope="col"
+                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
                                     Status
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="">
                             <tr v-if="props.transfers.data.length === 0">
-                                <td
-                                    colspan="7"
-                                    class="text-center text-black py-4 border border-black"
-                                >
-                                    <div
-                                        class="flex flex-col items-center justify-center"
-                                    >
-                                        <svg
-                                            class="w-12 h-12 text-gray-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                            ></path>
+                                <td colspan="7" class="text-center text-black py-4 border border-black">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                            </path>
                                         </svg>
                                         <p class="mt-2 text-xs font-medium">
                                             No transfer data available
@@ -235,26 +158,15 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr
-                                v-for="transfer in props.transfers.data"
-                                :key="transfer.id"
-                                class="hover:bg-gray-50 border-b border border-black"
-                            >
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs font-medium text-black"
-                                >
-                                    <Link
-                                        :href="
-                                            route('transfers.show', transfer.id)
-                                        "
-                                        class="hover:underline text-blue-500"
-                                    >
-                                        {{ transfer.transferID }}
+                            <tr v-for="transfer in props.transfers.data" :key="transfer.id"
+                                class="hover:bg-gray-50 border-b border border-black">
+                                <td class="px-2 py-1 whitespace-nowrap text-xs font-medium text-black">
+                                    <Link :href="route('transfers.show', transfer.id)
+                                        " class="hover:underline text-blue-500">
+                                    {{ transfer.transferID }}
                                     </Link>
                                 </td>
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black"
-                                >
+                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{
                                         new Date(
                                             transfer.transfer_date
@@ -262,30 +174,22 @@
                                     }}
                                 </td>
 
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black"
-                                >
+                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{
                                         transfer.from_warehouse?.name ||
                                         transfer.from_facility?.name
                                     }}
                                 </td>
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black"
-                                >
+                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{
                                         transfer.to_warehouse?.name ||
                                         transfer.to_facility?.name
                                     }}
                                 </td>
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black"
-                                >
+                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{ transfer.transfer_type }}
                                 </td>
-                                <td
-                                    class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black"
-                                >
+                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
                                     {{ transfer.items_count }}
                                 </td>
                                 <td class="px-2 py-1 text-xs text-black border border-black">
@@ -294,130 +198,84 @@
                                         <div class="flex items-center gap-2">
                                             <!-- Show status progression up to current status - icons with labels -->
                                             <!-- Always show pending as it's the initial state -->
-                                            <div
-                                                class="flex items-center gap-1"
-                                            >
-                                                <img
-                                                    src="/assets/images/pending.png"
-                                                    class="w-8 h-8"
-                                                    alt="Pending"
-                                                    title="Pending"
-                                                />
+                                            <div class="flex items-center gap-1">
+                                                <img src="/assets/images/pending.png" class="w-8 h-8" alt="Pending"
+                                                    title="Pending" />
                                             </div>
 
                                             <!-- Show approved if status is approved or further -->
-                                            <template
-                                                v-if="
-                                                    [
-                                                        'approved',
-                                                        'in_process',
-                                                        'dispatched',
-                                                        'transferred',
-                                                        'delivered',
-                                                        'received',
-                                                    ].includes(
-                                                        transfer.status?.toLowerCase()
-                                                    )
-                                                "
-                                            >
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <img
-                                                        src="/assets/images/approved.png"
-                                                        class="w-8 h-8"
-                                                        alt="Approved"
-                                                        title="Approved"
-                                                    />
+                                            <template v-if="
+                                                [
+                                                    'approved',
+                                                    'in_process',
+                                                    'dispatched',
+                                                    'transferred',
+                                                    'delivered',
+                                                    'received',
+                                                ].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/approved.png" class="w-8 h-8"
+                                                        alt="Approved" title="Approved" />
                                                 </div>
                                             </template>
 
                                             <!-- Show processed if status is in_process or further -->
-                                            <template
-                                                v-if="
-                                                    [
-                                                        'in_process',
-                                                        'dispatched',
-                                                        'transferred',
-                                                        'delivered',
-                                                        'received',
-                                                    ].includes(
-                                                        transfer.status?.toLowerCase()
-                                                    )
-                                                "
-                                            >
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <img
-                                                        src="/assets/images/inprocess.png"
-                                                        class="w-8 h-8"
-                                                        alt="Processed"
-                                                        title="Processed"
-                                                    />
+                                            <template v-if="
+                                                [
+                                                    'in_process',
+                                                    'dispatched',
+                                                    'transferred',
+                                                    'delivered',
+                                                    'received',
+                                                ].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/inprocess.png" class="w-8 h-8"
+                                                        alt="Processed" title="Processed" />
                                                 </div>
                                             </template>
 
                                             <!-- Show dispatched if status is dispatched or further -->
-                                            <template
-                                                v-if="
-                                                    [
-                                                        'dispatched',
-                                                        'transferred',
-                                                        'delivered',
-                                                        'received',
-                                                    ].includes(
-                                                        transfer.status?.toLowerCase()
-                                                    )
-                                                "
-                                            >
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <img
-                                                        src="/assets/images/dispatch.png"
-                                                        class="w-8 h-8"
-                                                        alt="Dispatched"
-                                                        title="Dispatched"
-                                                    />
+                                            <template v-if="
+                                                [
+                                                    'dispatched',
+                                                    'transferred',
+                                                    'delivered',
+                                                    'received',
+                                                ].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/dispatch.png" class="w-8 h-8"
+                                                        alt="Dispatched" title="Dispatched" />
                                                 </div>
                                             </template>
                                             <!-- Show received if status is received -->
-                                            <template
-                                                v-if="
-                                                    ['received'].includes(
-                                                        transfer.status?.toLowerCase()
-                                                    )
-                                                "
-                                            >
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <img
-                                                        src="/assets/images/received.png"
-                                                        class="w-8 h-8"
-                                                        alt="Received"
-                                                        title="Received"
-                                                    />
+                                            <template v-if="
+                                                ['received'].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/received.png" class="w-8 h-8"
+                                                        alt="Received" title="Received" />
                                                 </div>
                                             </template>
 
                                             <!-- Show rejected if status is rejected (special case) -->
-                                            <template
-                                                v-if="
-                                                    transfer.status?.toLowerCase() ===
-                                                    'rejected'
-                                                "
-                                            >
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <img
-                                                        src="/assets/images/rejected.png"
-                                                        class="w-8 h-8"
-                                                        alt="Rejected"
-                                                        title="Rejected"
-                                                    />
+                                            <template v-if="
+                                                transfer.status?.toLowerCase() ===
+                                                'rejected'
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/rejected.png" class="w-8 h-8"
+                                                        alt="Rejected" title="Rejected" />
                                                 </div>
                                             </template>
                                         </div>
@@ -428,11 +286,7 @@
                     </table>
                 </div>
                 <div class="mt-3 flex justify-end items-center">
-                    <TailwindPagination
-                        :data="props.transfers"
-                        :limit="2"
-                        @pagination-change-page="getResults"
-                    />
+                    <TailwindPagination :data="props.transfers" :limit="2" @pagination-change-page="getResults" />
                 </div>
             </div>
 
@@ -443,29 +297,19 @@
                     <div class="flex justify-between gap-1">
                         <!-- Pending -->
                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-amber-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/pending_small.png"
-                                        class="h-8 w-8 object-contain"
-                                        alt="Pending"
-                                    />
+                            <div class="h-[250px] w-8 bg-amber-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/pending_small.png" class="h-8 w-8 object-contain"
+                                        alt="Pending" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             props.statistics.pending
                                                 .percentage + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.pending.percentage
                                         }}%
@@ -473,39 +317,26 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >Pending</span
-                                >
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Pending</span>
                             </div>
                         </div>
 
-                         <!-- Reviewed -->
-                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-blue-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/review.png"
-                                        class="h-8 w-6 object-contain"
-                                        alt="Reviewed"
-                                    />
+                        <!-- Reviewed -->
+                        <div class="flex flex-col items-center">
+                            <div class="h-[250px] w-8 bg-blue-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/review.png" class="h-8 w-6 object-contain"
+                                        alt="Reviewed" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             props.statistics.reviewed
                                                 .percentage + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.reviewed
                                                 .percentage
@@ -514,39 +345,26 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >Reviewed</span
-                                >
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Reviewed</span>
                             </div>
                         </div>
 
                         <!-- Approved -->
                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-blue-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/approved_small.png"
-                                        class="h-8 w-8 object-contain"
-                                        alt="Approved"
-                                    />
+                            <div class="h-[250px] w-8 bg-blue-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/approved_small.png" class="h-8 w-8 object-contain"
+                                        alt="Approved" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             props.statistics.approved
                                                 .percentage + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.approved
                                                 .percentage
@@ -555,39 +373,26 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >Approved</span
-                                >
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Approved</span>
                             </div>
                         </div>
 
                         <!-- In Process -->
                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-slate-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/inprocess.png"
-                                        class="h-8 w-8 object-contain"
-                                        alt="In Process"
-                                    />
+                            <div class="h-[250px] w-8 bg-slate-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/inprocess.png" class="h-8 w-8 object-contain"
+                                        alt="In Process" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-600 to-slate-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-600 to-slate-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             props.statistics.in_process
                                                 .percentage + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.in_process
                                                 .percentage
@@ -596,39 +401,26 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >In Process</span
-                                >
+                                <span class="font-medium text-gray-900" style="font-size: 10px; font-weight: bold">In
+                                    Process</span>
                             </div>
                         </div>
 
                         <!-- Dispatched -->
                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-purple-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/dispatch.png"
-                                        class="h-8 w-8 object-contain"
-                                        alt="Dispatched"
-                                    />
+                            <div class="h-[250px] w-8 bg-purple-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/dispatch.png" class="h-8 w-8 object-contain"
+                                        alt="Dispatched" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-purple-600 to-purple-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-purple-600 to-purple-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             (props.statistics.dispatched
                                                 ?.percentage || 0) + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.dispatched
                                                 ?.percentage || 0
@@ -637,39 +429,26 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >Dispatched</span
-                                >
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Dispatched</span>
                             </div>
                         </div>
 
                         <!-- Received -->
                         <div class="flex flex-col items-center">
-                            <div
-                                class="h-[250px] w-8 bg-emerald-50 relative overflow-hidden shadow-md rounded-2xl"
-                            >
-                                <div
-                                    class="absolute top-0 inset-x-0 flex justify-center pt-2"
-                                >
-                                    <img
-                                        src="/assets/images/received.png"
-                                        class="h-8 w-8 object-contain"
-                                        alt="Received"
-                                    />
+                            <div class="h-[250px] w-8 bg-emerald-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/received.png" class="h-8 w-8 object-contain"
+                                        alt="Received" />
                                 </div>
-                                <div
-                                    class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-500"
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-500"
                                     :style="{
                                         height:
                                             (props.statistics.received
                                                 ?.percentage || 0) + '%',
-                                    }"
-                                >
+                                    }">
                                     <div
-                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide"
-                                    >
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
                                         {{
                                             props.statistics.received
                                                 ?.percentage || 0
@@ -678,11 +457,8 @@
                                 </div>
                             </div>
                             <div class="mt-3 text-center">
-                                <span
-                                    class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold"
-                                    >Received</span
-                                >
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Received</span>
                             </div>
                         </div>
 
@@ -701,6 +477,7 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import { TailwindPagination } from "laravel-vue-pagination";
+import axios from "axios";
 
 const props = defineProps({
     transfers: {
@@ -716,15 +493,11 @@ const props = defineProps({
             rejected: { count: 0, percentage: 0 },
         }),
     },
-    facilities: {
-        type: Array,
-        default: () => [],
-    },
-    warehouses: {
-        type: Array,
-        default: () => [],
-    },
     filters: Object,
+    regions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const currentTab = ref("all");
@@ -747,6 +520,8 @@ const statusTabs = [
 ];
 
 const search = ref(props.filters.search);
+const region = ref(props.filters.region);
+const district = ref(props.filters.district);
 const per_page = ref(props.filters.per_page || 25);
 const facility = ref(props.filters.facility);
 const warehouse = ref(props.filters.warehouse);
@@ -757,6 +532,8 @@ const transfer_type = ref(props.filters.transfer_type);
 watch(
     [
         () => search.value,
+        () => region.value,
+        () => district.value,
         () => per_page.value,
         () => facility.value,
         () => props.filters.page,
@@ -778,6 +555,8 @@ function getResults(page = 1) {
 function reloadTransfer() {
     const query = {};
     if (search.value) query.search = search.value;
+    if (region.value) query.region = region.value;
+    if (district.value) query.district = district.value;
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
     if (currentTab.value) query.tab = currentTab.value;
@@ -794,4 +573,75 @@ function reloadTransfer() {
         only: ["transfers"],
     });
 }
+
+
+const districts = ref([]);
+
+async function handleRegionSelect(option) {
+    if (!option) {
+        district.value = null;
+        districts.value = [];
+        return;
+    }
+    district.value = null;
+    districts.value = [];
+    await loadDistrict();
+}
+
+const facilities = ref([]);
+const warehouses = ref([]);
+
+async function handleDistrictSelect(option) {
+    if (!option) {
+        facility.value = null;
+        facilities.value = [];
+        return;
+    }
+    facility.value = null;
+    facilities.value = [];
+    await loadFacility();
+    await loadWarehouse();
+}
+
+async function loadDistrict() {
+    district.value = null;
+    districts.value = [];
+    await axios
+        .post(route("districts.get-districts"), { region: region.value })
+        .then((response) => {
+            districts.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+async function loadFacility() {
+    facility.value = null;
+    facilities.value = [];
+    console.log(district.value);
+    await axios
+        .post(route("facilities.get-facilities"), { district: district.value })
+        .then((response) => {
+            facilities.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+async function loadWarehouse() {
+    facility.value = null;
+    facilities.value = [];
+    console.log(district.value);
+    await axios
+        .post(route("warehouses.get-warehouses"), { district: district.value })
+        .then((response) => {
+            facilities.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
 </script>

@@ -27,7 +27,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'dosage'])->latest();
+        $query = Product::with(['category', 'dosage','eligible'])->latest();
 
         // Search functionality
         if ($request->filled('search')) {
@@ -129,7 +129,7 @@ class ProductController extends Controller
                 ],
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                'movement' => 'required|string',
+                // 'movement' => 'required|string',
                 'facility_types' => 'nullable|array'
             ]);
     
@@ -142,7 +142,7 @@ class ProductController extends Controller
                     'name' => $request->name,
                     'category_id' => $request->category_id,
                     'dosage_id' => $request->dosage_id,
-                    'movement' => $request->movement,
+                    // 'movement' => $request->movement,
                 ]);
             }else{
                 $product = Product::create([

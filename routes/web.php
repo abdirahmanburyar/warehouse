@@ -200,6 +200,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
             // delete warehouse
             Route::get('/{id}/toggle-status', 'toggleStatus')->name('inventories.warehouses.toggle-status');
+            Route::post('/get-warehouses', 'getWarehousesPluck')->name('warehouses.get-warehouses');
 
         });
 
@@ -449,6 +450,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
 
           Route::post('/dispatch-info', [TransferController::class, 'dispatchInfo'])->name('transfers.dispatch-info');
+
+            // Add routes for drivers and logistics companies
+            Route::get('/get-drivers', [TransferController::class, 'getDrivers'])->name('transfers.get-drivers');
+            Route::get('/get-logistic-companies', [TransferController::class, 'getLogisticCompanies'])->name('transfers.get-logistic-companies');
+            Route::post('/add-driver', [TransferController::class, 'addDriver'])->name('transfers.add-driver');
 
             // receivedQuantity
             Route::post('/update-received-quantity', [TransferController::class, 'receivedQuantity'])->name('transfers.receivedQuantity');

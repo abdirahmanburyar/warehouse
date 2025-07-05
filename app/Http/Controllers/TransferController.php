@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\IssuedQuantity;
 use App\Models\Disposal;
 use App\Models\BackOrderHistory;
+use App\Models\Region;
 use App\Models\BackOrder;
 use App\Models\InventoryItem;
 use App\Models\Liquidate;
@@ -27,6 +28,8 @@ use Illuminate\Support\Facades\Notification;
 use App\Notifications\TransferCreated;
 use App\Events\TransferStatusChanged;
 use App\Events\InventoryUpdated;
+use App\Models\Driver;
+use App\Models\LogisticCompany;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\TransferResource;
 
@@ -171,7 +174,7 @@ class TransferController extends Controller
         }
     }
 
-        public function index(Request $request)
+    public function index(Request $request)
     {
         // Start building the query
         $query = Transfer::query();
@@ -249,6 +252,32 @@ class TransferController extends Controller
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
         }
+
+        if($request->filled('region')){
+            $query->whereHas('fromWarehouse', function($q) use ($request) {
+                $q->where('region', $request->region);
+            })->orWhereHas('toWarehouse', function($q) use ($request) {
+                $q->where('region', $request->region);
+            })->orWhereHas('fromFacility', function($q) use ($request) {
+                $q->where('region', $request->region);
+            })->orWhereHas('toFacility', function($q) use ($request) {
+                $q->where('region', $request->region);
+            });
+        }
+
+        if($request->filled('district')){
+            $query->whereHas('fromWarehouse', function($q) use ($request) {
+                $q->where('district', $request->district);
+            })->orWhereHas('toWarehouse', function($q) use ($request) {
+                $q->where('district', $request->district);
+            })->orWhereHas('fromFacility', function($q) use ($request) {
+                $q->where('district', $request->district);
+            })->orWhereHas('toFacility', function($q) use ($request) {
+                $q->where('district', $request->district);
+            });
+        }
+
+
         
         // Execute the query
         $transfers = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
@@ -305,17 +334,14 @@ class TransferController extends Controller
         ];
         
         // Get data for filter dropdowns
-        $facilities = Facility::pluck('name')->toArray();
-        $warehouses = Warehouse::pluck('name')->toArray();
         $locations = DB::table('locations')->select('id', 'location')->orderBy('location')->get();
 
         return inertia('Transfer/Index', [
             'transfers' => TransferResource::collection($transfers),
             'statistics' => $statistics,
-            'facilities' => $facilities,
-            'warehouses' => $warehouses,
             'locations' => $locations,
-            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae'])
+            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district']),
+            'regions' => Region::pluck('name')->toArray()
         ]);
     }
 
@@ -456,11 +482,35 @@ class TransferController extends Controller
             'toFacility',
             'dispatchInfo',
             'items.inventory_allocations.location',
+            'dispatchInfo.driver',
+            'dispatchInfo.logistic_company',
             'items.inventory_allocations.back_order','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'
         ])->first();
 
+
+        // Get drivers with their companies
+        $drivers = Driver::with('company')->where('is_active', true)->get();
+            
+        // Get all companies for the driver form
+        $companyOptions = LogisticCompany::where('is_active', true)
+            ->get()
+            ->map(function($company) {
+                return [
+                    'id' => $company->id,
+                    'name' => $company->name,
+                    'isAddNew' => false
+                ];
+            })
+            ->push([
+                'id' => 'new',
+                'name' => 'Add New Company',
+                'isAddNew' => true
+            ]);
+
         return inertia('Transfer/Show', [
-            'transfer' => $transfer
+            'transfer' => $transfer,
+            'drivers' => $drivers,
+            'companyOptions' => $companyOptions
         ]);
        } catch (\Throwable $th) {
         logger()->error($th->getMessage());
@@ -1346,22 +1396,27 @@ class TransferController extends Controller
         }
     }
 
+
     public function dispatchInfo(Request $request){
-        
         try {
             return DB::transaction(function() use ($request){
                 $request->validate([
-                    'driver_name',
-                    'driver_number',
-                    'place_number',
-                    'no_of_cartoons',
-                    'transfer_id',
-                    'status'
+                    'dispatch_date' => 'required|date',
+                    'driver_id' => 'required|exists:drivers,id',
+                    'driver_number' => 'required|string',
+                    'plate_number' => 'required|string',
+                    'no_of_cartoons' => 'required|numeric',
+                    'transfer_id' => 'required|exists:transfers,id',
+                    'logistic_company_id' => 'required|exists:logistic_companies,id',
+                    'status' => 'required|string'
                 ]);
-                $transfer = Transfer::with('dispatchInfo')->where('id',$request->transfer_id)->first();
+
+                $transfer = Transfer::with('dispatchInfo')->find($request->transfer_id);
                 $transfer->dispatchInfo()->create([
                     'transfer_id' => $request->transfer_id,
-                    'driver_name' => $request->driver_name,
+                    'dispatch_date' => $request->dispatch_date,
+                    'driver_id' => $request->driver_id,
+                    'logistic_company_id' => $request->logistic_company_id,
                     'driver_number' => $request->driver_number,
                     'plate_number' => $request->plate_number,
                     'no_of_cartoons' => $request->no_of_cartoons,

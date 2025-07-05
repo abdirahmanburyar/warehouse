@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('name');
             $table->foreignIdFor(Category::class)->nullable()->constrained()->nullOnDelete();
             $table->unsignedBigInteger('dosage_id')->nullable();
-            $table->string('movement');
+            // $table->string('movement');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
