@@ -400,9 +400,8 @@
 
                             <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                <input type="number" placeholder="0" v-model="item.quantity_to_release" @keyup="
-                                    updateQuantity(item, 'quantity_to_release', index)
-                                    " :readonly="isUpading[index] || props.order.status != 'pending'
+                                <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
+                                    updateQuantity(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <!-- <label for="received_quantity">Received Quantity</label>
@@ -415,7 +414,7 @@
                             /> -->
                                 <label for="days">No. of Days</label>
                                 <input type="number" placeholder="0" v-model="item.days"
-                                    @keyup="updateQuantity(item, 'days', index)" :readonly="isUpading[index] || props.order.status != 'pending'
+                                    @input="updateQuantity(item, 'days', index)" :readonly="props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
@@ -1447,8 +1446,8 @@ async function updateQuantity(item, type, index) {
             // }).then(() => {
                 // });
             router.get(route("orders.show", props.order.id), {}, {
-                preserveState: false,
-                preserveScroll: false,
+                preserveState: true,
+                preserveScroll: true,
             });
         })
         .catch((error) => {
