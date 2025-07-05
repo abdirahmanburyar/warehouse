@@ -13,6 +13,7 @@ class DispatchInfo extends Model
         'driver_id',
         'dispatch_date',
         'no_of_cartoons',
+        'received_cartoons',
         'driver_number',
         'plate_number',
     ];

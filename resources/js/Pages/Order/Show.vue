@@ -45,11 +45,8 @@
                                     class="w-4 h-4" alt="Received" />
 
                                 <!-- Rejected Icon -->
-                                <svg v-else-if="props.order.status === 'rejected'" class="w-4 h-4 text-red-700"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                                <img v-else-if="props.order.status === 'rejected'" src="/assets/images/rejected.png"
+                                class="w-4 h-4" alt="Rejected" />
                             </span>
                             {{ props.order.status.toUpperCase() }}
                         </span>
@@ -123,7 +120,15 @@
             </div>
 
             <!-- Status Stage Timeline -->
-            <div class="col-span-2 mb-6">
+             <div v-if="props.order.status == 'rejected'">
+                <div class="flex flex-col items-center">
+                    <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10 bg-white border-red-500">
+                        <img src="/assets/images/rejected.png" class="w-7 h-7" alt="Rejected" />
+                    </div>
+                    <h1 class="mt-3 text-2xl text-red-600 font-bold ">Rejected</h1>
+                </div>
+             </div>
+            <div v-else class="col-span-2 mb-6">
                 <div class="relative">
                     <!-- Timeline Track Background -->
                     <div class="absolute top-7 left-0 right-0 h-2 bg-gray-200 z-0"></div>
@@ -303,7 +308,7 @@
                             UoM
                         </th>
                         <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            AMC
+                            Facility Inventory Data
                         </th>
                         <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
                             No. of Days
@@ -384,7 +389,7 @@
 
                             <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.no_of_days }}/30
+                                {{ item.no_of_days }}
                             </td>
 
                             <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
@@ -568,7 +573,7 @@
                                             ? "Reviewed"
                                             : isType["is_reviewing"]
                                                 ? "Please Wait..."
-                                                : "Review"
+                                                : props.order.status == 'rejected' ? "Reviewed" : "Review"
                                     }}</span>
                                 </button>
                                 <span v-show="props.order?.reviewed_at" class="text-sm text-gray-600">
@@ -583,7 +588,7 @@
                         </div>
 
                         <!-- Approved button -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="
                                     changeStatus(
@@ -594,10 +599,10 @@
                                     " :disabled="isType['is_approve'] ||
                                         props.order.status !== 'reviewed'
                                         " :class="[
-                                    props.order.status == 'reviewed'
+                                        props.order.status == 'rejected' ? 'bg-red-500 hover:bg-red-600' : props.order.status == 'reviewed'
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(props.order.status) >
-                                            statusOrder.indexOf('reviewed')
+                                            statusOrder.indexOf('reviewed') || statusOrder.indexOf('rejected')
                                             ? 'bg-green-500'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
@@ -635,7 +640,7 @@
                         </div>
 
                         <!-- Process button -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="
                                     changeStatus(
@@ -687,7 +692,7 @@
                         </div>
 
                         <!-- Dispatch button -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="showDispatchForm = true" :disabled="isType['is_dispatch'] ||
                                     props.order.status !== 'in_process'
@@ -734,7 +739,7 @@
 
                         <!-- Order Delivery Indicators -->
                         <!-- Delivered Status -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button :class="[
                                     props.order.status === 'dispatched'
@@ -771,7 +776,7 @@
                         </div>
 
                         <!-- Received Status -->
-                        <div class="relative">
+                        <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button :class="[
                                     props.order.status === 'delivered'
@@ -788,9 +793,9 @@
                                         {{
                                             statusOrder.indexOf(
                                                 props.order.status
-                                            ) > statusOrder.indexOf("received")
-                                                ? "Waiting to be Received"
-                                                : "Received"
+                                            ) > statusOrder.indexOf("delivered")
+                                            ? "Received"
+                                            : "Waiting to be Received"
                                         }}
                                     </span>
                                 </button>
@@ -806,48 +811,92 @@
                             <div v-if="props.order.status === 'delivered'"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
-                        <!-- <div class="flex flex-col gap-6 sm:flex-row">
-                    </div> -->
 
-                        <!-- Reject button (only available for pending status) -->
-                        <div class="relative" v-if="props.order.status === 'pending'">
-                            <button @click="
-                                changeStatus(
-                                    props.order.id,
-                                    'rejected',
-                                    'is_reject'
-                                )
-                                " :disabled="isType['is_reject'] || isLoading"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white bg-red-600 hover:bg-red-700 min-w-[160px]">
-                                <svg v-if="isType['is_reject']" class="animate-spin h-5 w-5 mr-2"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4">
-                                    </circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
-                                <template v-else>
-                                    <svg class="w-5 h-5 mr-2 text-white" fill="none" stroke="currentColor"
+                        <!-- Rejected button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="
+                                    changeStatus(
+                                        props.order.id,
+                                        'rejected',
+                                        'is_reject'
+                                    )
+                                    " :disabled="isType['is_reject'] ||
+                                        props.order.status !== 'reviewed'
+                                        " :class="[
+                                    props.order.status == 'reviewed'
+                                        ? 'bg-red-500 hover:bg-red-600'
+                                        : statusOrder.indexOf(props.order.status) >
+                                            statusOrder.indexOf('reviewed')
+                                            ? 'bg-red-500'
+                                            : 'bg-gray-300 cursor-not-allowed',
+                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="
+                                        isLoading &&
+                                        props.order.status === 'reviewed'
+                                    " class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4">
+                                        </circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
                                     </svg>
-                                    <span class="text-sm font-bold text-white">Reject</span>
-                                </template>
-                            </button>
+                                    <template v-else>
+                                        <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Rejected" />
+                                        <span class="text-sm font-bold text-white">{{
+                                            statusOrder.indexOf(props.order.status) >
+                                                statusOrder.indexOf("reviewed")
+                                                ? "Rejected"
+                                                : isType["is_reject"] ? "Please Wait..." : "Reject"
+                                        }}</span>
+                                    </template>
+                                </button>
+                                <span v-show="props.order?.rejected_at" class="text-sm text-gray-600">
+                                    On {{ moment(props.order?.rejected_at).format('DD/MM/YYYY HH:mm') }}
+                                </span>
+                                <span v-show="props.order?.rejected_by" class="text-sm text-gray-600">
+                                    By {{ props.order?.rejected_by?.name }}
+                                </span>
+                            </div>
+                            <div v-if="props.order.status === 'reviewed'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
-
-                        <!-- Status indicator for rejected status -->
-                        <div v-if="props.order.status === 'rejected'"
-                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-100 text-red-800 min-w-[160px]">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span class="text-sm font-bold">Rejected</span>
+                         <!-- Restore button -->
+                         <div class="relative" v-if="props.order.status === 'rejected'">
+                            <div class="flex flex-col">
+                                <button @click="
+                                    restoreOrder(
+                                        props.order.id,
+                                        'reviewed',
+                                        'is_restore'
+                                    )
+                                    " :disabled="isRestoring ||
+                                        props.order.status !== 'rejected'
+                                        " class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-green-500">
+                                    <svg v-if="
+                                        isLoading &&
+                                        props.order.status === 'rejected'
+                                    " class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4">
+                                        </circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    <template v-else>
+                                        <img src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
+                                        <span class="text-sm font-bold text-white">{{ isRestoring ? "Restoring..." : "Restore Order"  }}</span>
+                                    </template>
+                                </button>
+                            </div>
+                            <div v-if="props.order.status === 'rejected'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
+                                                  
                     </div>
                 </div>
             </div>
@@ -1334,12 +1383,48 @@ const formatDate = (date) => {
 const statusOrder = [
     "pending",
     "reviewed",
+    "rejected",
     "approved",
     "in_process",
     "dispatched",
     "delivered",
     "received",
 ];
+
+const isRestoring = ref(false);
+const restoreOrder = async () => {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to restore the order?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+    })
+    .then(async (result) => {
+        if (result.isConfirmed) {
+            isRestoring.value = true;
+            await axios.post(route("orders.restore-order"), {
+                order_id: props.order.id,
+            })
+                .then((response) => {
+                    isRestoring.value = false;
+                    Swal.fire({
+                        title: "Success!",
+                        text: response.data,
+                        icon: "success",
+                        confirmButtonText: "OK",
+                    }).then(() => {
+                        router.get(route("orders.show", props.order.id));
+                    });
+                })
+                .catch((error) => {
+                    isRestoring.value = false;
+                    console.log(error);
+                    toast.error(error.response?.data || "Failed to restore order");
+                });
+        }
+    });
+};
 
 // update quantity
 const isUpading = ref([]);
@@ -1449,6 +1534,72 @@ const isType = ref([]);
 // Function to change order status
 const changeStatus = (orderId, newStatus, type) => {
     console.log(orderId, newStatus, type);
+    
+    // Special handling for approve action - check if quantity_to_release is 0
+    if (newStatus === 'approved') {
+        const totalQuantityToRelease = form.value.reduce((total, item) => {
+            return total + (parseFloat(item.quantity_to_release) || 0);
+        }, 0);
+        
+        if (totalQuantityToRelease === 0) {
+            Swal.fire({
+                title: "No Quantity to Release",
+                text: "There is no quantity release for the current order. Do you want to proceed? Proceeding will lead to rejection of the order.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Proceed (Reject Order)",
+                cancelButtonText: "Cancel"
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // Set loading state
+                    isType.value[type] = true;
+
+                    await axios
+                        .post(route("orders.change-status"), {
+                            order_id: orderId,
+                            status: 'rejected',
+                        })
+                        .then((response) => {
+                            // Reset loading state
+                            isType.value[type] = false;
+
+                            Swal.fire({
+                                title: "Updated!",
+                                text: "Order status has been updated to rejected.",
+                                icon: "success",
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000,
+                            }).then(() => {
+                                // Reload the page to show the updated status
+                                router.get(route("orders.show", props.order.id));
+                            });
+                        })
+                        .catch((error) => {
+                            // Reset loading state
+                            isType.value[type] = false;
+
+                            Swal.fire({
+                                title: "Error!",
+                                text:
+                                    error.response?.data ||
+                                    "Failed to update order status",
+                                icon: "error",
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000,
+                            });
+                        });
+                }
+            });
+            return; // Exit early to prevent normal approval flow
+        }
+    }
+    
     Swal.fire({
         title: "Are you sure?",
         text: `Do you want to change the order status to ${newStatus}?`,

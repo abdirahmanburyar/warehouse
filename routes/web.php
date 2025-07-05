@@ -376,6 +376,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/change-status', [OrderController::class, 'changeStatus'])->name('orders.change-status');
         Route::post('/reject', [OrderController::class, 'rejectOrder']);
 
+        // restore order
+        Route::post('/restore-order', [OrderController::class, 'restoreOrder'])->name('orders.restore-order');
+
         Route::get('/create', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');

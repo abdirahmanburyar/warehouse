@@ -826,7 +826,7 @@ async function handleDistrictSelect(option) {
 }
 
 // Fixed order types
-const orderTypes = ["Quarterly", "Replenishment"];
+const orderTypes = ["All", "Quarterly", "Replenishment"];
 
 // Compute total orders
 const totalOrders = computed(() => {

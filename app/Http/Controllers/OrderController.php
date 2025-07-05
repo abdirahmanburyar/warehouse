@@ -11,6 +11,7 @@ use App\Models\Warehouse;
 use App\Models\Inventory;
 use App\Models\District;
 use App\Models\InventoryItem;
+use App\Models\InventoryAllocation;
 // App Events and Resources
 use App\Events\OrderEvent;
 use App\Models\IssuedQuantity;
@@ -110,7 +111,7 @@ class OrderController extends Controller
             });
         }
         
-        if($request->filled('orderType')){
+        if($request->filled('orderType') && $request->orderType !== 'All'){
             $query->where('order_type', 'like', "%{$request->orderType}%");
         }
         
@@ -649,15 +650,15 @@ class OrderController extends Controller
             // Validate request
             $validated = $request->validate([
                 'order_id' => 'required|exists:orders,id',
-                'status' => ['required', Rule::in(['reviewed','approved', 'in_process', 'dispatched'])]
+                'status' => ['required', Rule::in(['reviewed','approved', 'in_process', 'dispatched','rejected'])]
             ]);
 
             $order = Order::with('items.inventory_allocations')->find($request->order_id);
 
             // Define allowed transitions
             $allowedTransitions = [
-                'pending' => ['reviewed'],
-                'reviewed' => ['approved'],
+                'pending' => ['reviewed', 'rejected'],
+                'reviewed' => ['approved', 'rejected'],
                 'approved' => ['in_process'],
                 'in_process' => ['dispatched'],
                 'rejected' => ['approved'] // Allow rejected orders to be approved
@@ -692,6 +693,12 @@ class OrderController extends Controller
                         $updates['rejected_by'] = null;
                         $updates['rejected_at'] = null;
                     }
+                    if($order->status === 'rejected'){
+
+                        
+                        // $updates['rejected_by'] = null;
+                        // $updates['rejected_at'] = null;
+                    }
                     // issued quantity - history
                    foreach($order->items as $item){
                         foreach($item['inventory_allocations'] as $allocation){
@@ -709,6 +716,46 @@ class OrderController extends Controller
                                 'total_cost' => $allocation['total_cost'] ?? 0,
                             ]);
                         }
+                    }
+                    break;
+                case 'rejected':
+                    $updates['rejected_at'] = $now;
+                    $updates['rejected_by'] = $userId;
+                    
+                    // Rollback inventory allocations back to inventory
+                    foreach($order->items as $item) {
+                        foreach($item->inventory_allocations as $allocation) {
+                            // Find the corresponding inventory item
+                            $inventoryItem = InventoryItem::where('product_id', $allocation->product_id)
+                                ->where('warehouse_id', $allocation->warehouse_id)
+                                ->where('batch_number', $allocation->batch_number)
+                                ->where('expiry_date', $allocation->expiry_date)
+                                ->first();
+                            
+                            if ($inventoryItem) {
+                                // Restore the quantity back to inventory
+                                $inventoryItem->quantity += $allocation->allocated_quantity;
+                                $inventoryItem->save();
+                            } else {
+                                // Create new inventory item if it doesn't exist
+                                InventoryItem::create([
+                                    'product_id' => $allocation->product_id,
+                                    'warehouse_id' => $allocation->warehouse_id,
+                                    'location_id' => $allocation->location_id,
+                                    'batch_number' => $allocation->batch_number,
+                                    'uom' => $allocation->uom,
+                                    'barcode' => $allocation->barcode,
+                                    'expiry_date' => $allocation->expiry_date,
+                                    'quantity' => $allocation->allocated_quantity,
+                                    'unit_cost' => $allocation->unit_cost ?? 0,
+                                    'total_cost' => $allocation->total_cost ?? 0,
+                                    'notes' => 'Restored from rejected order allocation'
+                                ]);
+                            }
+                        }
+                        
+                        // Delete all inventory allocations for this order item
+                        $item->inventory_allocations()->delete();
                     }
                     break;
                 case 'in_process':
@@ -1235,7 +1282,7 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $order = Order::where('orders.id', $id)
-                ->with(['items.product.category','dispatch.driver','dispatch.logistic_company', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy'])
+                ->with(['items.product.category','dispatch.driver','dispatch.logistic_company', 'items.inventory_allocations.warehouse', 'items.inventory_allocations.location','items.inventory_allocations.back_order', 'facility', 'user','reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy','rejectedBy'])
                 ->first();
 
             // Get items with SOH using subquery
@@ -1398,4 +1445,19 @@ class OrderController extends Controller
         ]);
     }
     
+    public function restoreOrder(Request $request)
+    {
+        try {
+            $order = Order::find($request->order_id);
+            $order->status = 'pending';
+            $order->rejected_at = null;
+            $order->rejected_by = null;
+            $order->reviewed_at = null;
+            $order->reviewed_by = null;
+            $order->save();
+            return response()->json('Order restored successfully.', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
 }
