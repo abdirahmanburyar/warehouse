@@ -45,14 +45,14 @@
                     </div>
                     <div class="w-full">
                         <Multiselect v-model="region" :options="props.regions" :searchable="true"
-                            :close-on-select="true" :show-labels="true" :allow-empty="true" @select="handleRegionSelect"
+                            :close-on-select="true" :show-labels="false" :allow-empty="true" @select="handleRegionSelect"
                             placeholder="Select Region">
                         </Multiselect>
                     </div>
                     <!-- District Filter -->
                     <div>
                         <Multiselect v-model="district" :options="districts" :searchable="true" :close-on-select="true"
-                            :show-labels="true" :allow-empty="true" :disabled="region == null"
+                            :show-labels="false" :allow-empty="true"
                             @select="handleDistrictSelect" placeholder="Select District">
                         </Multiselect>
                     </div>
@@ -133,7 +133,7 @@
                         <!-- Warehouse Selector -->
                         <div>
                             <Multiselect v-model="warehouse" :options="warehouses" :close-on-select="true"
-                                :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" class=""
+                                :clear-on-select="false" :preserve-search="true" :show-labels="false" placeholder="All Warehouses" class=""
                                 :preselect-first="false">
                             </Multiselect>
                         </div>
@@ -655,7 +655,8 @@ if (props.filters.direction_tab) {
     currentDirectionTab.value = props.filters.direction_tab;
 }
 
-// Initialize facilities and warehouses on page load if region or district is pre-selected
+// Initialize districts and facilities/warehouses on page load
+loadDistrict(); // Load all districts or region-filtered districts
 if (region.value || district.value) {
     loadFacilitiesAndWarehouses();
 }
@@ -676,9 +677,24 @@ watch(currentDirectionTab, async (newDirection, oldDirection) => {
     }
 });
 
-// Watch for region changes to reload facilities and warehouses
+// Watch for region changes to reload districts and facilities/warehouses
 watch(region, async (newRegion, oldRegion) => {
     if (newRegion !== oldRegion) {
+        // Reload districts based on new region (or all districts if region is null)
+        await loadDistrict();
+        
+        // Check if current district is still valid for the new region
+        // If region is cleared, keep district as is
+        // If region is selected, check if district belongs to that region
+        if (newRegion && district.value) {
+            // Wait for districts to load, then check if current district is still valid
+            setTimeout(() => {
+                if (!districts.value.includes(district.value)) {
+                    district.value = null;
+                }
+            }, 100);
+        }
+        
         await loadFacilitiesAndWarehouses();
     }
 });
@@ -778,26 +794,7 @@ function reloadTransfer() {
 const districts = ref([]);
 
 async function handleRegionSelect(option) {
-    if (!option) {
-        // Clear everything when region is deselected
-        district.value = null;
-        districts.value = [];
-        facilities.value = [];
-        warehouses.value = [];
-        // Clear all dependent filters
-        facility.value = null;
-        warehouse.value = null;
-        from_warehouse.value = null;
-        to_warehouse.value = null;
-        from_facility.value = null;
-        to_facility.value = null;
-        return;
-    }
-    
-    // Clear district and reload
-    district.value = null;
-    districts.value = [];
-    // Clear specific filters
+    // Clear region-dependent filters
     facility.value = null;
     warehouse.value = null;
     from_warehouse.value = null;
@@ -805,30 +802,14 @@ async function handleRegionSelect(option) {
     from_facility.value = null;
     to_facility.value = null;
     
-    // Load districts for the selected region
-    await loadDistrict();
-    
-    // Facilities and warehouses will be loaded automatically by the region watcher
+    // Districts and facilities/warehouses will be reloaded automatically by the region watcher
 }
 
 const facilities = ref([]);
 const warehouses = ref([]);
 
 async function handleDistrictSelect(option) {
-    if (!option) {
-        // Clear specific filters when district is deselected
-        facility.value = null;
-        warehouse.value = null;
-        from_warehouse.value = null;
-        to_warehouse.value = null;
-        from_facility.value = null;
-        to_facility.value = null;
-        
-        // Facilities and warehouses will be loaded automatically by the district watcher
-        return;
-    }
-    
-    // Clear specific filters when district changes
+    // Clear specific filters when district changes or is deselected
     facility.value = null;
     warehouse.value = null;
     from_warehouse.value = null;
@@ -840,10 +821,10 @@ async function handleDistrictSelect(option) {
 }
 
 async function loadDistrict() {
-    district.value = null;
-    districts.value = [];
     await axios
-        .post(route("districts.get-districts"), { region: region.value })
+        .post(route("districts.get-districts"), { 
+            region: region.value || null 
+        })
         .then((response) => {
             districts.value = response.data;
         })

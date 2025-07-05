@@ -54,7 +54,14 @@ class DistrictController extends Controller
     public function getDistricts(Request $request)
     {
         try {
-            $districts = District::where('region', $request->region)->pluck('name')->toArray();
+            $query = District::query();
+            
+            // Only filter by region if it's provided and not null
+            if ($request->filled('region') && $request->region !== null) {
+                $query->where('region', $request->region);
+            }
+            
+            $districts = $query->pluck('name')->toArray();
             return response()->json($districts, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
