@@ -1436,15 +1436,8 @@ async function updateQuantity(item, type, index) {
             days: item.days,
             type,
         })
-        .then((response) => {
+        .then(() => {
             isUpading.value[index] = false;
-            // Swal.fire({
-            //     title: "Success!",
-            //     text: response.data,
-            //     icon: "success",
-            //     confirmButtonText: "OK",
-            // }).then(() => {
-                // });
             router.get(route("orders.show", props.order.id), {}, {
                 preserveScroll: true,
             });
