@@ -425,7 +425,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/receive-back-order', [TransferController::class, 'receiveBackOrder'])->name('transfers.receiveBackOrder');
         
         // delete transfer item
-        Route::get('/items/{id}', [TransferController::class, 'destroyItem'])->name('transfers.items.destroy');
+        // destroyItem route removed
 
         // update transfer item quantity
         Route::post('/update-item', [TransferController::class, 'updateItem'])->name('transfers.update-item');
@@ -447,7 +447,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
          Route::post('/save-back-orders', [TransferController::class, 'saveBackOrders'])->name('transfers.save-back-orders');
          
          // delete transfer back order
-         Route::post('/delete-back-order', [TransferController::class, 'deleteBackOrder'])->name('transfers.delete-back-order');
+         // deleteBackOrder route removed
           // change transfer status
           Route::post('/change-status', [TransferController::class, 'changeStatus'])->name('transfers.change-status');
           

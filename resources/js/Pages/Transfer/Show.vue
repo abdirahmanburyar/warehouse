@@ -52,9 +52,9 @@
                     </div>
                 </div>
 
-                <!-- Transfer ID and Date -->
+                <!-- Transfer ID, Date, and Type -->
                 <div class="mb-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <span class="text-sm text-gray-500">Transfer ID:</span>
                             <span class="ml-2 font-semibold">#{{ props.transfer.transferID }}</span>
@@ -66,6 +66,12 @@
                                     "DD/MM/YYYY"
                                 )
                             }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500">Transfer Type:</span>
+                            <span class="ml-2 font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                {{ props.transfer.transfer_type || 'N/A' }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -401,71 +407,76 @@
                 </div>
 
                 <!-- Transfer Items Table -->
-                <div class="mb-6 bg-white rounded-lg shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        Transfer Items
-                    </h3>
+                <div class="mb-8">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Transfer Items</h3>
+                            <p class="text-gray-600 text-sm">Detailed breakdown of items being transferred</p>
+                        </div>
+                    </div>
 
-                    <div class="overflow-auto">
-                        <table class="min-w-full border border-collapse border-black">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Item Name
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Category
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        UoM
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
-                                        colspan="4">
-                                        Item Details
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Total Quantity on Hand Per Unit
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Reasons for Transfers
-                                    </th>
-                                    <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Quantity to be transferred
-                                    </th>
-                                    <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
-                                        rowspan="2">
-                                        Received Quantity
-                                    </th>
-                                    <th class="px-1 py-1 text-xs border border-black text-center text-black font-semibold"
-                                        rowspan="2">
-                                        Action
-                                    </th>
-                                </tr>
-                                <tr class="bg-gray-50">
-                                    <th
-                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
-                                        QTY
-                                    </th>
-                                    <th
-                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
-                                        Batch Number
-                                    </th>
-                                    <th
-                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
-                                        Expiry Date
-                                    </th>
-                                    <th
-                                        class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
-                                        Location
-                                    </th>
-                                </tr>
-                            </thead>
+                    <div class="bg-white shadow-xl border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border border-collapse border-black">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Item Name
+                                        </th>
+                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Category
+                                        </th>
+                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            UoM
+                                        </th>
+                                        <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
+                                            colspan="4">
+                                            Item Details
+                                        </th>
+                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Total Quantity on Hand Per Unit
+                                        </th>
+                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Transfer Reason
+                                        </th>
+                                        <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Quantity to Transfer
+                                        </th>
+                                        <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
+                                            rowspan="2">
+                                            Received Quantity
+                                        </th>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <th
+                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                            QTY
+                                        </th>
+                                        <th
+                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                            Batch Number
+                                        </th>
+                                        <th
+                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                            Expiry Date
+                                        </th>
+                                        <th
+                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                            Location
+                                        </th>
+                                    </tr>
+                                </thead>
 
                             <tbody>
                                 <template v-for="(item, index) in form" :key="item.id">
@@ -536,81 +547,55 @@
                                             {{ item.quantity_per_unit || 0 }}
                                         </td>
 
-                                        <!-- Reason for Transfer -->
-                                        <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                                            {{
-                                                props.transfer.transfer_type ||
-                                                "N/A"
-                                            }}
+                                        <!-- Transfer Reason - per allocation -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                            {{ allocation.transfer_reason || "N/A" }}
                                         </td>
 
-                                        <!-- Quantity to Transfer -->
-                                        <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                                            <input type="number" v-model="item.quantity_to_release
-                                                " @input="
-                                                    updateQuantity(item, index)
-                                                    "
-                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm" />
-                                            <span v-if="isUpading[index]" class="text-green-600">Updating...</span>
+                                        <!-- Quantity to Transfer - per allocation -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                            <div class="flex flex-col items-center gap-1">
+                                                <span class="font-medium">{{ allocation.allocated_quantity || 0 }}</span>
+                                                <!-- v-if="props.transfer.status === 'pending' && allocation.id" -->
+                                                <input 
+                                                    :readonly="props.transfer.status === 'approved'"
+                                                    type="number" 
+                                                    :placeholder="allocation.allocated_quantity || 0"
+                                                    min="1"
+                                                    class="w-full text-center border border-black px-1 py-1 text-xs" 
+                                                    @input="handleQuantityInput($event, allocation)"
+                                                />
+                                                <span class="text-xs text-gray-500" v-if="isUpdatingQuantity[allocation.id]">
+                                                    Updating...
+                                                </span>
+                                            </div>
                                         </td>
 
-                                        <!-- Received Quantity -->
-                                        <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top">
-                                            <input type="number" v-model="item.received_quantity" @keyup.enter="
-                                                receivedQty(item, index)
-                                                " :readonly="props.transfer
-                                                    .to_warehouse_id == null ||
-                                                    props.transfer.status == 'received'
-                                                    " :max="item.quantity_to_release ||
-                                                        0
-                                                        " min="0" @input="
-                                                        validateReceivedQuantity(
-                                                            item
-                                                        )
-                                                        " :id="`received-quantity-${index}`"
-                                                class="w-20 text-center border border-black rounded px-2 py-1 text-sm" />
-                                            <span class="text-green-600" v-if="isSavingQty[index]">Updating...</span>
-                                            <button v-if="
-                                                (item.quantity_to_release ||
-                                                    0) >
-                                                (item.received_quantity ||
-                                                    0)
-                                            " @click="
-                                                showBackOrderModal(item)
-                                                "
+                                        <!-- Received Quantity - per allocation -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                            <input 
+                                                type="number" 
+                                                v-model="allocation.received_quantity" 
+                                                :readonly="props.transfer.to_warehouse_id == null || props.transfer.status == 'received'"
+                                                :max="allocation.allocated_quantity || 0"
+                                                min="0"
+                                                @input="validateAllocationReceivedQuantity(allocation)"
+                                                class="w-20 text-center border border-black px-2 py-1 text-sm" 
+                                            />
+                                            <button 
+                                                v-if="(allocation.allocated_quantity || 0) > (allocation.received_quantity || 0)"
+                                                @click="showBackOrderModal(item, allocation)"
                                                 class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block">
                                                 Back Order
-                                            </button>
-                                        </td>
-
-                                        <!-- Action -->
-                                        <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations
-                                            ?.length || 1
-                                            " class="px-2 py-1 text-xs border border-black text-center align-top">
-                                            <button v-if="
-                                                props.transfer.status ===
-                                                'pending'
-                                            " @click="removeItem(index)"
-                                                class="text-red-600 hover:text-red-800 transition-colors"
-                                                title="Delete item">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                    </path>
-                                                </svg>
                                             </button>
                                         </td>
                                     </tr>
                                 </template>
                             </tbody>
-                        </table>
-                    </div>
-                </div>
+                                                            </table>
+                                </div>
+                            </div>
+                        </div>
             </div>
 
             <!-- dispatch information -->
@@ -1313,7 +1298,7 @@
                 <!-- Modal Content -->
                 <div class="p-6">
                     <!-- Product Information -->
-                    <div v-if="selectedBackOrderItem" class="mb-6 bg-gray-50 p-4 rounded-lg">
+                    <div v-if="selectedBackOrderItem && selectedBackOrderAllocation" class="mb-6 bg-gray-50 p-4 rounded-lg">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
@@ -1335,45 +1320,58 @@
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    Quantity to Release
+                                    Batch Number
                                 </p>
                                 <p class="text-sm text-gray-900">
-                                    {{
-                                        selectedBackOrderItem.quantity_to_release
-                                    }}
+                                    {{ selectedBackOrderAllocation.batch_number || 'N/A' }}
                                 </p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    Received Quantity
+                                    Expiry Date
                                 </p>
                                 <p class="text-sm text-gray-900">
-                                    {{
-                                        selectedBackOrderItem.received_quantity ||
-                                        0
-                                    }}
+                                    {{ selectedBackOrderAllocation.expiry_date ? moment(selectedBackOrderAllocation.expiry_date).format('DD/MM/YYYY') : 'N/A' }}
                                 </p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    {{ props.transfer.transfer_type }}
+                                    Quantity to Transfer (This Batch)
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedBackOrderAllocation.allocated_quantity || 0 }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">
+                                    Received Quantity (This Batch)
+                                </p>
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedBackOrderAllocation.received_quantity || 0 }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">
+                                    Missing Quantity (This Batch)
                                 </p>
                                 <p class="text-sm font-bold text-red-600">
                                     {{
                                         getMissingQuantity(
-                                            selectedBackOrderItem
+                                            selectedBackOrderItem,
+                                            selectedBackOrderAllocation
                                         )
                                     }}
                                 </p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">
-                                    Existing Back Orders
+                                    Existing Back Orders (This Batch)
                                 </p>
                                 <p class="text-sm text-gray-900">
                                     {{
                                         getExistingBackOrders(
-                                            selectedBackOrderItem
+                                            selectedBackOrderItem,
+                                            selectedBackOrderAllocation
                                         )
                                     }}
                                 </p>
@@ -1398,8 +1396,8 @@
                             Missing, Damaged, Lost, Expired, or Low Quality. You
                             can add multiple entries to account for different
                             issue types. The total of all entries should equal
-                            the missing quantity ({{
-                                getMissingQuantity(selectedBackOrderItem)
+                            the missing quantity for this batch ({{
+                                getMissingQuantity(selectedBackOrderItem, selectedBackOrderAllocation)
                             }}).
                         </p>
                     </div>
@@ -1417,7 +1415,7 @@
                         </div>
 
                         <!-- Table -->
-                        <div class="overflow-x-auto">
+                        <div class="overflow-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -1441,7 +1439,8 @@
                                             <input type="number" v-model="row.quantity"
                                                 class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                                 min="1" :max="getMissingQuantity(
-                                                    selectedBackOrderItem
+                                                    selectedBackOrderItem,
+                                                    selectedBackOrderAllocation
                                                 )
                                                     " @input="
                                                         validateBackOrderQuantities
@@ -1767,7 +1766,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { router, Head, usePage } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import moment from "moment";
@@ -1810,9 +1809,12 @@ const form = ref([]);
 const isLoading = ref(false);
 const showModal = ref(false);
 const selectedBackOrderItem = ref(null);
+const selectedBackOrderAllocation = ref(null);
 const backOrderRows = ref([]);
 const backOrderError = ref("");
 const isDeleting = ref([]);
+const isUpdatingQuantity = ref({});
+const updateQuantityTimeouts = ref({});
 
 onMounted(() => {
     form.value = props.transfer.items || [];
@@ -1824,6 +1826,13 @@ watch(
         form.value = newItems || [];
     }
 );
+
+onBeforeUnmount(() => {
+    // Clear all pending timeouts to prevent memory leaks
+    Object.values(updateQuantityTimeouts.value).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+    });
+});
 
 // Status styling
 const statusClasses = computed(() => ({
@@ -1845,56 +1854,34 @@ const isExpiringItem = (expiryDate) => {
     return daysUntilExpiry <= 30; // Consider items expiring within 30 days as expiring
 };
 
-const removeItem = (index) => {
-    if (
-        confirm("Are you sure you want to remove this item from the transfer?")
-    ) {
-        form.value.splice(index, 1);
+// removeItem function removed
+
+// Validate allocation received quantity
+const validateAllocationReceivedQuantity = (allocation) => {
+    if (allocation.received_quantity > allocation.allocated_quantity) {
+        allocation.received_quantity = allocation.allocated_quantity;
     }
 };
 
-// update quantity
-const isUpading = ref([]);
-async function updateQuantity(item, index) {
-    isUpading.value[index] = true;
-    await axios
-        .post(route("transfers.update-quantity"), {
-            item_id: item.id,
-            quantity: item.quantity_to_release,
-        })
-        .then(() => {
-            isUpading.value[index] = false;
-            router.get(route("transfers.show", props.transfer.id), {}, {
-            });
-        })
-        .catch((error) => {
-            isUpading.value[index] = false;
-            console.log(error);
-            toast.error(error.response?.data || "Failed to update quantity");
-        });
-}
-
-const showBackOrderModal = (item) => {
+const showBackOrderModal = (item, allocation) => {
     selectedBackOrderItem.value = null;
+    selectedBackOrderAllocation.value = null;
     showModal.value = true;
     selectedBackOrderItem.value = item;
+    selectedBackOrderAllocation.value = allocation;
     backOrderRows.value = [];
     isDeleting.value = []; // Reset deleting states
 
-    // Load existing backorders from inventory allocations
-    if (item.inventory_allocations) {
-        item.inventory_allocations.forEach((allocation) => {
-            if (allocation.back_order && allocation.back_order.length > 0) {
-                allocation.back_order.forEach((backOrder) => {
-                    backOrderRows.value.push({
-                        id: backOrder.id, // Include ID for existing backorders
-                        quantity: backOrder.quantity,
-                        status: backOrder.type,
-                        note: backOrder.notes || "",
-                    });
-                    isDeleting.value.push(false); // Initialize deleting state for each row
-                });
-            }
+    // Load existing backorders from this specific allocation only
+    if (allocation && allocation.back_order && allocation.back_order.length > 0) {
+        allocation.back_order.forEach((backOrder) => {
+            backOrderRows.value.push({
+                id: backOrder.id, // Include ID for existing backorders
+                quantity: backOrder.quantity,
+                status: backOrder.type,
+                note: backOrder.notes || "",
+            });
+            isDeleting.value.push(false); // Initialize deleting state for each row
         });
     }
 
@@ -1904,27 +1891,100 @@ const showBackOrderModal = (item) => {
     }
 };
 
-const validateReceivedQuantity = (item) => {
-    if (item.received_quantity > item.quantity_to_release) {
-        item.received_quantity = item.quantity_to_release;
+const getMissingQuantity = (item, allocation = null) => {
+    if (allocation) {
+        // Calculate missing quantity for specific allocation
+        const transferred = allocation.allocated_quantity || 0;
+        const received = allocation.received_quantity || 0;
+        return transferred - received;
+    } else {
+        // Calculate total transferred and received from all allocations (legacy support)
+        let totalTransferred = 0;
+        let totalReceived = 0;
+        
+        if (item.inventory_allocations) {
+            item.inventory_allocations.forEach(allocation => {
+                totalTransferred += allocation.allocated_quantity || 0;
+                totalReceived += allocation.received_quantity || 0;
+            });
+        }
+        
+        return totalTransferred - totalReceived;
     }
 };
 
-const getMissingQuantity = (item) => {
-    return item.quantity_to_release - item.received_quantity;
+const getExistingBackOrders = (item, allocation = null) => {
+    if (allocation) {
+        // Count back orders for specific allocation
+        return allocation.back_order ? allocation.back_order.length : 0;
+    } else {
+        // Count all back orders for the item (legacy support)
+        if (!item || !item.inventory_allocations) return 0;
+
+        let totalBackOrders = 0;
+        item.inventory_allocations.forEach((allocation) => {
+            if (allocation.back_order && allocation.back_order.length > 0) {
+                totalBackOrders += allocation.back_order.length;
+            }
+        });
+
+        return totalBackOrders;
+    }
 };
 
-const getExistingBackOrders = (item) => {
-    if (!item || !item.inventory_allocations) return 0;
+const handleQuantityInput = (event, allocation) => {
+    // Clear existing timeout for this allocation
+    if (updateQuantityTimeouts.value[allocation.id]) {
+        clearTimeout(updateQuantityTimeouts.value[allocation.id]);
+    }
 
-    let totalBackOrders = 0;
-    item.inventory_allocations.forEach((allocation) => {
-        if (allocation.back_order && allocation.back_order.length > 0) {
-            totalBackOrders += allocation.back_order.length;
-        }
+    // Set new timeout with 500ms delay
+    updateQuantityTimeouts.value[allocation.id] = setTimeout(() => {
+        updateQuantity(event, allocation);
+    }, 500);
+};
+
+const updateQuantity = async (event, allocation) => {
+    const newQuantity = parseInt(event.target.value);
+    
+    if (!newQuantity || newQuantity <= 0) {
+        toast.error("Please enter a valid quantity");
+        // Reset input to original quantity
+        event.target.value = allocation.allocated_quantity;
+        return;
+    }
+
+    // if (newQuantity === allocation.allocated_quantity) {
+    //     toast.info("No change in quantity");
+    //     return;
+    // }
+
+    // Check if transfer is eligible for updates
+    if (!['pending', 'reviewed'].includes(props.transfer.status)) {
+        toast.error("Cannot update quantity for transfers that are not in pending status");
+        // Reset input to original quantity
+        event.target.value = allocation.allocated_quantity;
+        return;
+    }
+
+    isUpdatingQuantity.value[allocation.id] = true;
+
+    await axios.post(route("transfers.update-quantity"), {
+        allocation_id: allocation.id,
+        quantity: newQuantity,
+    })
+    .then(() => {
+        isUpdatingQuantity.value[allocation.id] = false;
+        // Reload the page to show updated values with preserveScroll
+        router.get(route("transfers.show", props.transfer.id), {}, {preserveScroll: true});
+    })
+    .catch((error) => {
+        isUpdatingQuantity.value[allocation.id] = false;
+        console.error(error);
+        toast.error(error.response?.data || "Failed to update quantity");
+        // Reset input to original quantity on error
+        event.target.value = allocation.allocated_quantity;
     });
-
-    return totalBackOrders;
 };
 
 const addBackOrderRow = () => {
@@ -1936,32 +1996,8 @@ const addBackOrderRow = () => {
     isDeleting.value.push(false); // Initialize deleting state for new row
 };
 
-const removeBackOrderRow = async (index) => {
-    const row = backOrderRows.value[index];
-
-    // If the row has an ID, it's an existing backorder - delete from database
-    if (row.id) {
-        // Set loading state for this specific row
-        isDeleting.value[index] = true;
-
-        try {
-            await axios.post(route("transfers.delete-back-order"), {
-                backorder_id: row.id,
-            });
-            toast.success("Backorder record deleted");
-        } catch (error) {
-            console.error("Error deleting backorder:", error);
-            toast.error(
-                error.response?.data?.error || "Failed to delete backorder"
-            );
-            return; // Don't remove from frontend if backend deletion failed
-        } finally {
-            // Clear loading state for this row
-            isDeleting.value[index] = false;
-        }
-    }
-
-    // Remove from frontend array
+const removeBackOrderRow = (index) => {
+    // Remove from frontend array only (backend delete functionality removed)
     backOrderRows.value.splice(index, 1);
 
     // Also remove the corresponding isDeleting entry to keep arrays in sync
@@ -1973,8 +2009,8 @@ const validateBackOrderQuantities = () => {
         (total, row) => total + row.quantity,
         0
     );
-    if (totalQuantity > getMissingQuantity(selectedBackOrderItem.value)) {
-        backOrderError.value = "Total quantity exceeds missing quantity";
+    if (totalQuantity > getMissingQuantity(selectedBackOrderItem.value, selectedBackOrderAllocation.value)) {
+        backOrderError.value = "Total quantity exceeds missing quantity for this batch";
     } else {
         backOrderError.value = "";
     }
@@ -1987,13 +2023,13 @@ const totalBackOrderQuantity = computed(() => {
 const canAddMoreRows = computed(() => {
     return (
         totalBackOrderQuantity.value <
-        getMissingQuantity(selectedBackOrderItem.value)
+        getMissingQuantity(selectedBackOrderItem.value, selectedBackOrderAllocation.value)
     );
 });
 
 const remainingToAllocate = computed(() => {
     return (
-        getMissingQuantity(selectedBackOrderItem.value) -
+        getMissingQuantity(selectedBackOrderItem.value, selectedBackOrderAllocation.value) -
         totalBackOrderQuantity.value
     );
 });
@@ -2039,6 +2075,7 @@ const saveBackOrders = async () => {
     await axios
         .post(route("transfers.save-back-orders"), {
             item_id: selectedBackOrderItem.value.id,
+            allocation_id: selectedBackOrderAllocation.value.id,
             back_orders: backOrderRows.value,
         })
         .then((response) => {

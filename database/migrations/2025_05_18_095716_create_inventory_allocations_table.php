@@ -25,6 +25,7 @@ return new class extends Migration
             $table->double('total_cost')->nullable();
             $table->string('allocation_type'); // quarterly, emergency, etc.
             $table->text('notes')->nullable();
+            $table->integer('update_quantity')->default(0);
             $table->timestamps();
         });
     }

@@ -19,6 +19,7 @@ use App\Models\BackOrderHistory;
 use App\Models\Region;
 use App\Models\BackOrder;
 use App\Models\InventoryItem;
+use App\Models\InventoryAllocation;
 use App\Models\Liquidate;
 use App\Models\ReceivedQuantity;
 use Carbon\Carbon;
@@ -540,26 +541,7 @@ class TransferController extends Controller
     /**
      * Delete a transfer item
      */
-    public function destroyItem($id)
-    {
-        try {
-            $transferItem = TransferItem::findOrFail($id);
-            
-            // Check if the transfer is in a state where items can be deleted
-            $transfer = Transfer::findOrFail($transferItem->transfer_id);
-            
-            if (!in_array($transfer->status, ['pending', 'draft'])) {
-                return response()->json('Cannot delete items from a transfer that is not in pending or draft status', 500);
-            }
-            
-            // Delete the transfer item
-            $transferItem->delete();
-            
-            return response()->json('Transfer item deleted successfully');
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-        }
-    }
+    // destroyItem method removed
 
     // get transfer source imventory
     public function getSourceInventoryDetail(Request $request)
@@ -915,6 +897,7 @@ class TransferController extends Controller
 
             $request->validate([
                 'item_id' => 'required|exists:transfer_items,id',
+                'allocation_id' => 'required|exists:inventory_allocations,id',
                 'back_orders' => 'required|array',
                 'back_orders.*.quantity' => 'required|integer|min:1',
                 'back_orders.*.status' => 'required|string|in:Missing,Damaged,Lost,Expired,Low quality',
@@ -926,6 +909,7 @@ class TransferController extends Controller
             ]);
 
             $transferItem = TransferItem::findOrFail($request->item_id);
+            $allocation = InventoryAllocation::findOrFail($request->allocation_id);
             $transfer = $transferItem->transfer;
 
             // Verify user has permission to save back orders for this transfer
@@ -933,57 +917,38 @@ class TransferController extends Controller
                 return response()->json('Cannot save back orders for transfers with this status', 400);
             }
 
-            // Calculate missing quantity
-            $missingQuantity = $transferItem->quantity_to_release - ($transferItem->received_quantity ?? 0);
+            // Calculate missing quantity for this specific allocation
+            $missingQuantity = $allocation->allocated_quantity - ($allocation->received_quantity ?? 0);
             
-            // Validate total back order quantity doesn't exceed missing quantity
+            // Validate total back order quantity doesn't exceed missing quantity for this allocation
             $totalBackOrderQuantity = collect($request->back_orders)->sum('quantity');
             if ($totalBackOrderQuantity > $missingQuantity) {
-                return response()->json('Total back order quantity cannot exceed missing quantity', 400);
+                return response()->json('Total back order quantity cannot exceed missing quantity for this batch', 400);
             }
 
-            // Clear existing backorders for this transfer item to prevent duplicates
-            FacilityBackorder::where('transfer_item_id', $transferItem->id)->delete();
+            // Clear existing backorders for this specific allocation to prevent duplicates
+            FacilityBackorder::where('inventory_allocation_id', $allocation->id)->delete();
 
-            // Get existing allocations to find where to create back orders
-            $allocations = $transferItem->inventory_allocations()
-                ->orderBy('expiry_date', 'asc')
-                ->get();
-
-            $remainingToAllocate = $totalBackOrderQuantity;
-            
             foreach ($request->back_orders as $backOrderData) {
-                $quantityForThisStatus = $backOrderData['quantity'];
-                $tempRemaining = $quantityForThisStatus;
-
-                foreach ($allocations as $allocation) {
-                    if ($tempRemaining <= 0) break;
-
-                    $quantityToAllocateFromThisAllocation = min($tempRemaining, $allocation->allocated_quantity);
-
-                    // Create back order record using updateOrCreate for safety
-                    FacilityBackorder::updateOrCreate([
-                        'inventory_allocation_id' => $allocation->id,
-                        'transfer_item_id' => $transferItem->id,
-                        'product_id' => $transferItem->product_id,
-                        'type' => $backOrderData['status'],
-                    ], [
-                        'quantity' => $quantityToAllocateFromThisAllocation,
-                        'notes' => $backOrderData['note'] ?? null,
-                        'status' => 'pending',
-                        'created_by' => auth()->id(),
-                        'updated_by' => auth()->id(),
-                    ]);
-
-                    $tempRemaining -= $quantityToAllocateFromThisAllocation;
-                }
+                // Create back order record for this specific allocation
+                FacilityBackorder::create([
+                    'inventory_allocation_id' => $allocation->id,
+                    'transfer_item_id' => $transferItem->id,
+                    'product_id' => $transferItem->product_id,
+                    'quantity' => $backOrderData['quantity'],
+                    'type' => $backOrderData['status'],
+                    'notes' => $backOrderData['note'] ?? null,
+                    'status' => 'pending',
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
             }
 
-            // Update transfer item received quantity to reflect what was actually received
+            // Update allocation received quantity to reflect what was actually received
             // (This helps track the progress and shows the shortfall)
-            $actualReceivedQuantity = $transferItem->quantity_to_release - $totalBackOrderQuantity;
-            $transferItem->received_quantity = max($transferItem->received_quantity ?? 0, $actualReceivedQuantity);
-            $transferItem->save();
+            $actualReceivedQuantity = $allocation->allocated_quantity - $totalBackOrderQuantity;
+            $allocation->received_quantity = max($allocation->received_quantity ?? 0, $actualReceivedQuantity);
+            $allocation->save();
 
             // Update transfer status if needed
             $this->updateTransferStatusIfNeeded($transfer);
@@ -1066,173 +1031,123 @@ class TransferController extends Controller
             DB::beginTransaction();
 
             $request->validate([
-                'item_id'  => 'required|exists:transfer_items,id',
-                'quantity' => 'required|numeric'
+                'allocation_id' => 'required|exists:inventory_allocations,id',
+                'quantity' => 'required|numeric|min:1'
             ]);
 
-            $transferItem = TransferItem::findOrFail($request->item_id);
+            $allocation = InventoryAllocation::find($request->allocation_id);
+            $transferItem = $allocation->transfer_item;
             $transfer = $transferItem->transfer;
 
-            if($transferItem->quantity <= 0) {
-                $transferItem->quantity = $request->quantity;
-                $transferItem->save();
-                $transferItem->refresh();
-            }
-
-            if (!in_array($transfer->status, ['pending'])) {
+            if (!in_array($transfer->status, ['pending', 'reviewed'])) {
                 return response()->json('Cannot update quantity for transfers that are not in pending status', 500);
             }
 
             // Use the requested quantity directly for transfers
-            $newQuantityToRelease = (int) ceil($request->quantity);
-            $oldQuantityToRelease = $transferItem->quantity_to_release ?? 0;
+            $newAllocatedQuantity = (int) ceil($request->quantity);
+            $oldAllocatedQuantity = $allocation->allocated_quantity ?? 0;
 
             // Determine source type (warehouse or facility)
             $isFromWarehouse = !empty($transfer->from_warehouse_id);
             $sourceId = $transfer->from_warehouse_id ?? $transfer->from_facility_id;
 
-            // Case 1: Decrease
-            if ($newQuantityToRelease < $oldQuantityToRelease) {
-                $quantityToRemove = $oldQuantityToRelease - $newQuantityToRelease;
-                $remainingToRemove = $quantityToRemove;
+            // Calculate quantity difference
+            $quantityDifference = $newAllocatedQuantity - $oldAllocatedQuantity;
 
-                $allocations = $transferItem->inventory_allocations()->orderBy('expiry_date', 'desc')->get();
+            if ($quantityDifference == 0) {
+                DB::commit();
+                return response()->json('No change in allocated quantity', 200);
+            }
 
-                foreach ($allocations as $allocation) {
-                    if ($remainingToRemove <= 0) break;
+            // Case 1: Decrease allocation
+            if ($quantityDifference < 0) {
+                $quantityToRestore = abs($quantityDifference);
 
-                    if ($isFromWarehouse) {
-                        // Handle warehouse inventory
-                        $inventory = InventoryItem::where('product_id', $allocation->product_id)
-                            ->where('warehouse_id', $allocation->warehouse_id)
+                if ($isFromWarehouse) {
+                    // Handle warehouse inventory - restore quantity back to inventory
+                    $inventory = InventoryItem::where('product_id', $allocation->product_id)
+                        ->where('warehouse_id', $allocation->warehouse_id)
+                        ->where('batch_number', $allocation->batch_number)
+                        ->where('expiry_date', $allocation->expiry_date)
+                        ->first();
+
+                    if ($inventory) {
+                        $inventory->quantity += $quantityToRestore;
+                        $inventory->save();
+                    } else {
+                        InventoryItem::create([
+                            'product_id'   => $allocation->product_id,
+                            'warehouse_id' => $allocation->warehouse_id,
+                            'location_id'  => $allocation->location_id,
+                            'batch_number' => $allocation->batch_number,
+                            'uom'          => $allocation->uom,
+                            'barcode'      => $allocation->barcode,
+                            'expiry_date'  => $allocation->expiry_date,
+                            'quantity'     => $quantityToRestore
+                        ]);
+                    }
+                } else {
+                    // Handle facility inventory - restore quantity back to facility
+                    $facilityInventory = FacilityInventory::where('facility_id', $sourceId)
+                        ->where('product_id', $allocation->product_id)
+                        ->first();
+
+                    if ($facilityInventory) {
+                        $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
                             ->where('batch_number', $allocation->batch_number)
                             ->where('expiry_date', $allocation->expiry_date)
                             ->first();
 
-                        $restoreQty = min($allocation->allocated_quantity, $remainingToRemove);
-
-                        if ($inventory) {
-                            $inventory->quantity += $restoreQty;
-                            $inventory->save();
+                        if ($facilityInventoryItem) {
+                            $facilityInventoryItem->quantity += $quantityToRestore;
+                            $facilityInventoryItem->save();
                         } else {
-                            InventoryItem::create([
-                                'product_id'   => $allocation->product_id,
-                                'warehouse_id' => $allocation->warehouse_id,
-                                'location_id'  => $allocation->location_id,
+                            FacilityInventoryItem::create([
+                                'facility_inventory_id' => $facilityInventory->id,
                                 'batch_number' => $allocation->batch_number,
                                 'uom'          => $allocation->uom,
                                 'barcode'      => $allocation->barcode,
                                 'expiry_date'  => $allocation->expiry_date,
-                                'quantity'     => $restoreQty
+                                'quantity'     => $quantityToRestore
                             ]);
                         }
-                    } else {
-                        // Handle facility inventory
-                        $facilityInventory = FacilityInventory::where('facility_id', $sourceId)
-                            ->where('product_id', $allocation->product_id)
-                            ->first();
-
-                        if ($facilityInventory) {
-                            $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
-                                ->where('batch_number', $allocation->batch_number)
-                                ->where('expiry_date', $allocation->expiry_date)
-                                ->first();
-
-                            $restoreQty = min($allocation->allocated_quantity, $remainingToRemove);
-
-                            if ($facilityInventoryItem) {
-                                $facilityInventoryItem->quantity += $restoreQty;
-                                $facilityInventoryItem->save();
-                            } else {
-                                FacilityInventoryItem::create([
-                                    'facility_inventory_id' => $facilityInventory->id,
-                                    'batch_number' => $allocation->batch_number,
-                                    'uom'          => $allocation->uom,
-                                    'barcode'      => $allocation->barcode,
-                                    'expiry_date'  => $allocation->expiry_date,
-                                    'quantity'     => $restoreQty
-                                ]);
-                            }
-                        }
-                    }
-
-                    if ($allocation->allocated_quantity <= $remainingToRemove) {
-                        $remainingToRemove -= $allocation->allocated_quantity;
-                        $allocation->delete();
-                    } else {
-                        $allocation->allocated_quantity -= $remainingToRemove;
-                        $allocation->save();
-                        $remainingToRemove = 0;
                     }
                 }
 
-                $transferItem->quantity_to_release = $newQuantityToRelease;
+                $allocation->allocated_quantity = $newAllocatedQuantity;
+                $allocation->save();
+
+                // Update transfer item total quantity
+                $transferItem->quantity_to_release = $transferItem->inventory_allocations()->sum('allocated_quantity');
                 $transferItem->save();
 
                 DB::commit();
-                return response()->json('Quantity to release decreased successfully', 200);
+                return response()->json('Allocation quantity decreased successfully', 200);
             }
 
-            // Case 2: Increase
-            if ($newQuantityToRelease > $oldQuantityToRelease) {
-                $quantityToAdd = $newQuantityToRelease - $oldQuantityToRelease;
-                $remainingToAllocate = $quantityToAdd;
+            // Case 2: Increase allocation
+            if ($quantityDifference > 0) {
+                $quantityToAllocate = $quantityDifference;
 
                 if ($isFromWarehouse) {
-                    // Handle warehouse inventory
-                    $inventoryItems = InventoryItem::where('product_id', $transferItem->product_id)
-                        ->where('warehouse_id', $sourceId)
-                        ->where('quantity', '>', 0)
-                        ->where(function($query) {
-                            $query->where('expiry_date', '>', \Carbon\Carbon::now())
-                                  ->orWhereNull('expiry_date');
-                        })
-                        ->orderBy('expiry_date', 'asc')
-                        ->get();
+                    // Handle warehouse inventory - check if sufficient inventory is available
+                    $inventory = InventoryItem::where('product_id', $allocation->product_id)
+                        ->where('warehouse_id', $allocation->warehouse_id)
+                        ->where('batch_number', $allocation->batch_number)
+                        ->where('expiry_date', $allocation->expiry_date)
+                        ->first();
 
-                    if ($inventoryItems->isEmpty()) {
+                    if (!$inventory || $inventory->quantity < $quantityToAllocate) {
                         DB::rollBack();
-                        return response()->json('No inventory available for this product in the warehouse', 500);
+                        return response()->json('Insufficient inventory available for this batch', 500);
                     }
 
-                    foreach ($inventoryItems as $inventory) {
-                        if ($remainingToAllocate <= 0) break;
-
-                        $allocQty = min($inventory->quantity, $remainingToAllocate);
-
-                        $existingAllocation = $transferItem->inventory_allocations()
-                            ->where('batch_number', $inventory->batch_number)
-                            ->where('expiry_date', $inventory->expiry_date)
-                            ->first();
-
-                        if ($existingAllocation) {
-                            $existingAllocation->allocated_quantity += $allocQty;
-                            $existingAllocation->save();
-                        } else {
-                            $transferItem->inventory_allocations()->create([
-                                'product_id'       => $inventory->product_id,
-                                'warehouse_id'     => $inventory->warehouse_id,
-                                'location_id'      => $inventory->location_id,
-                                'batch_number'     => $inventory->batch_number,
-                                'uom'              => $inventory->uom,
-                                'barcode'          => $inventory->barcode ?? null,
-                                'expiry_date'      => $inventory->expiry_date,
-                                'allocated_quantity' => $allocQty,
-                                'allocation_type'  => $transfer->transfer_type,
-                                'unit_cost'        => $inventory->unit_cost,
-                                'total_cost'       => $inventory->unit_cost * $allocQty,
-                                'notes'            => 'Allocated from warehouse inventory ID: ' . $inventory->id
-                            ]);
-                        }
-
-                        $inventory->quantity -= $allocQty;
-                        $inventory->save();
-                        $remainingToAllocate -= $allocQty;
-                    }
+                    $inventory->quantity -= $quantityToAllocate;
+                    $inventory->save();
                 } else {
-                    // Handle facility inventory
+                    // Handle facility inventory - check if sufficient inventory is available
                     $facilityInventory = FacilityInventory::where('facility_id', $sourceId)
-                        ->where('product_id', $transferItem->product_id)
+                        ->where('product_id', $allocation->product_id)
                         ->first();
 
                     if (!$facilityInventory) {
@@ -1240,114 +1155,32 @@ class TransferController extends Controller
                         return response()->json('No inventory available for this product in the facility', 500);
                     }
 
-                    $facilityInventoryItems = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
-                        ->where('quantity', '>', 0)
-                        ->where(function($query) {
-                            $query->where('expiry_date', '>', \Carbon\Carbon::now())
-                                  ->orWhereNull('expiry_date');
-                        })
-                        ->orderBy('expiry_date', 'asc')
-                        ->get();
+                    $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
+                        ->where('batch_number', $allocation->batch_number)
+                        ->where('expiry_date', $allocation->expiry_date)
+                        ->first();
 
-                    if ($facilityInventoryItems->isEmpty()) {
+                    if (!$facilityInventoryItem || $facilityInventoryItem->quantity < $quantityToAllocate) {
                         DB::rollBack();
-                        return response()->json('No inventory available for this product in the facility', 500);
+                        return response()->json('Insufficient inventory available for this batch', 500);
                     }
 
-                    foreach ($facilityInventoryItems as $facilityItem) {
-                        if ($remainingToAllocate <= 0) break;
-
-                        $allocQty = min($facilityItem->quantity, $remainingToAllocate);
-
-                        $existingAllocation = $transferItem->inventory_allocations()
-                            ->where('batch_number', $facilityItem->batch_number)
-                            ->where('expiry_date', $facilityItem->expiry_date)
-                            ->first();
-
-                        if ($existingAllocation) {
-                            $existingAllocation->allocated_quantity += $allocQty;
-                            $existingAllocation->save();
-                        } else {
-                            $transferItem->inventory_allocations()->create([
-                                'product_id'       => $facilityInventory->product_id,
-                                'facility_id'      => $sourceId,
-                                'batch_number'     => $facilityItem->batch_number,
-                                'uom'              => $facilityItem->uom,
-                                'barcode'          => $facilityItem->barcode ?? null,
-                                'expiry_date'      => $facilityItem->expiry_date,
-                                'allocated_quantity' => $allocQty,
-                                'allocation_type'  => $transfer->transfer_type,
-                                'unit_cost'        => 0, // Facility items might not have unit cost
-                                'total_cost'       => 0,
-                                'notes'            => 'Allocated from facility inventory ID: ' . $facilityItem->id
-                            ]);
-                        }
-
-                        $facilityItem->quantity -= $allocQty;
-                        $facilityItem->save();
-                        $remainingToAllocate -= $allocQty;
-                    }
+                    $facilityInventoryItem->quantity -= $quantityToAllocate;
+                    $facilityInventoryItem->save();
                 }
 
-                // Final adjustment
-                $totalAllocated = $transferItem->inventory_allocations()->sum('allocated_quantity');
-                if ($totalAllocated < $newQuantityToRelease) {
-                    $difference = $newQuantityToRelease - $totalAllocated;
-                    $lastAllocation = $transferItem->inventory_allocations()->latest()->first();
+                $allocation->allocated_quantity = $newAllocatedQuantity;
+                $allocation->save();
 
-                    if ($lastAllocation) {
-                        $lastAllocation->allocated_quantity += $difference;
-                        $lastAllocation->save();
-
-                        if ($isFromWarehouse) {
-                            $inventory = InventoryItem::where('product_id', $lastAllocation->product_id)
-                                ->where('warehouse_id', $lastAllocation->warehouse_id)
-                                ->where('batch_number', $lastAllocation->batch_number)
-                                ->where('expiry_date', $lastAllocation->expiry_date)
-                                ->first();
-
-                            if ($inventory) {
-                                $inventory->quantity -= $difference;
-                                $inventory->save();
-                            }
-                        } else {
-                            $facilityInventory = FacilityInventory::where('facility_id', $sourceId)
-                                ->where('product_id', $lastAllocation->product_id)
-                                ->first();
-
-                            if ($facilityInventory) {
-                                $facilityItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
-                                    ->where('batch_number', $lastAllocation->batch_number)
-                                    ->where('expiry_date', $lastAllocation->expiry_date)
-                                    ->first();
-
-                                if ($facilityItem) {
-                                    $facilityItem->quantity -= $difference;
-                                    $facilityItem->save();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if ($remainingToAllocate > 0) {
-                    DB::rollBack();
-                    $sourceType = $isFromWarehouse ? 'warehouse' : 'facility';
-                    return response()->json("Insufficient inventory in {$sourceType}. Could only allocate " . ($quantityToAdd - $remainingToAllocate) . ' out of ' . $quantityToAdd, 500);
-                }
-
-                $transferItem->quantity_to_release = $newQuantityToRelease;
+                // Update transfer item total quantity
+                $transferItem->quantity_to_release = $transferItem->inventory_allocations()->sum('allocated_quantity');
                 $transferItem->save();
 
                 event(new InventoryUpdated());
 
                 DB::commit();
-                return response()->json('Quantity to release updated successfully', 200);
+                return response()->json('Allocation quantity increased successfully', 200);
             }
-
-            // No change
-            DB::commit();
-            return response()->json('No change in quantity to release', 200);
 
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -1355,34 +1188,7 @@ class TransferController extends Controller
         }
     }
     
-    /**
-     * Delete a specific back order record
-     */
-    public function deleteBackOrder(Request $request)
-    {
-        try {
-            $request->validate([
-                'backorder_id' => 'required|exists:facility_backorders,id',
-            ]);
-
-            $backorder = FacilityBackorder::findOrFail($request->backorder_id);
-            $transferItem = $backorder->transferItem;
-            
-            // Verify user has permission to delete back orders for this transfer
-            if (!in_array($transferItem->transfer->status, ['pending', 'shipped', 'received'])) {
-                return response()->json(['error' => 'Cannot delete back orders for transfers with this status'], 400);
-            }
-
-            $backorder->delete();
-
-            event(new InventoryUpdated());
-
-            return response()->json('Back order deleted successfully', 200);
-
-        } catch (\Throwable $th) {
-            return response()->json(['error' => $th->getMessage()], 500);
-        }
-    }
+    // deleteBackOrder method removed
 
         
     public function receivedQuantity(Request $request){
