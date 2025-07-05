@@ -400,7 +400,7 @@
 
                             <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                <input type="number" placeholder="0" v-model="item.quantity_to_release" @keydown.enter="
+                                <input type="number" placeholder="0" v-model="item.quantity_to_release" @keyup="
                                     updateQuantity(item, 'quantity_to_release', index)
                                     " :readonly="isUpading[index] || props.order.status != 'pending'
                                         "
