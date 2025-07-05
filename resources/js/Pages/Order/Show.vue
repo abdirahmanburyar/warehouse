@@ -1447,7 +1447,7 @@ async function updateQuantity(item, type, index) {
             // }).then(() => {
                 // });
             router.get(route("orders.show", props.order.id), {}, {
-                preserveState: false,
+                preserveState: true,
                 preserveScroll: false,
             });
         })
