@@ -478,7 +478,9 @@ import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import { TailwindPagination } from "laravel-vue-pagination";
 import axios from "axios";
+import { useToast } from "vue-toastification";
 
+const toast = useToast();
 const props = defineProps({
     transfers: {
         type: Object,
@@ -613,6 +615,7 @@ async function loadDistrict() {
         })
         .catch((error) => {
             console.log(error);
+            toast.error(error.response.data || "Failed to load districts");
         });
 }
 
@@ -627,20 +630,22 @@ async function loadFacility() {
         })
         .catch((error) => {
             console.log(error);
+            toast.error(error.response.data || "Failed to load facilities");
         });
 }
 
 async function loadWarehouse() {
     facility.value = null;
-    facilities.value = [];
+    warehouses.value = [];
     console.log(district.value);
     await axios
         .post(route("warehouses.get-warehouses"), { district: district.value })
         .then((response) => {
-            facilities.value = response.data;
+            warehouses.value = response.data;
         })
         .catch((error) => {
             console.log(error);
+            toast.error(error.response.data || "Failed to load warehouses");
         });
 }
 
