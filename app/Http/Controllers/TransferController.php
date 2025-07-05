@@ -278,6 +278,23 @@ class TransferController extends Controller
             $query->whereBetween('transfer_date', [$dateFrom, $dateTo]);
         }
 
+        // Specific source/destination filtering
+        if ($request->filled('from_warehouse')) {
+            $query->where('from_warehouse_id', $request->from_warehouse);
+        }
+        
+        if ($request->filled('to_warehouse')) {
+            $query->where('to_warehouse_id', $request->to_warehouse);
+        }
+        
+        if ($request->filled('from_facility')) {
+            $query->where('from_facility_id', $request->from_facility);
+        }
+        
+        if ($request->filled('to_facility')) {
+            $query->where('to_facility_id', $request->to_facility);
+        }
+
         if($request->filled('region')){
             $query->whereHas('fromWarehouse', function($q) use ($request) {
                 $q->where('region', $request->region);
@@ -367,7 +384,7 @@ class TransferController extends Controller
             'transfers' => TransferResource::collection($transfers),
             'statistics' => $statistics,
             'locations' => $locations,
-            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district','direction_tab']),
+            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district','direction_tab','transfer_type','from_warehouse','to_warehouse','from_facility','to_facility']),
             'regions' => Region::pluck('name')->toArray()
         ]);
     }

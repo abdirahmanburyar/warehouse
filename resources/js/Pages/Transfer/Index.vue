@@ -64,20 +64,80 @@
                         </Multiselect>
                     </div>
 
-                    <!-- Facility Selector -->
-                    <div>
-                        <Multiselect v-model="facility" :options="facilities" :searchable="true" :allow-empty="true"
-                            :show-labels="false" placeholder="All Facilities" class="">
-                        </Multiselect>
-                    </div>
+                    <!-- Dynamic Source/Destination filters based on transfer_type -->
+                    <!-- Warehouse to Warehouse -->
+                    <template v-if="transfer_type === 'Warehouse to Warehouse'">
+                        <div>
+                            <Multiselect v-model="from_warehouse" :options="warehouses" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="From Warehouse" class="">
+                            </Multiselect>
+                        </div>
+                        <div>
+                            <Multiselect v-model="to_warehouse" :options="warehouses" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="To Warehouse" class="">
+                            </Multiselect>
+                        </div>
+                    </template>
 
-                    <!-- Warehouse Selector -->
-                    <div>
-                        <Multiselect v-model="warehouse" :options="warehouses" :close-on-select="true"
-                            :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" class=""
-                            :preselect-first="false">
-                        </Multiselect>
-                    </div>
+                    <!-- Facility to Warehouse -->
+                    <template v-else-if="transfer_type === 'Facility to Warehouse'">
+                        <div>
+                            <Multiselect v-model="from_facility" :options="facilities" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="From Facility" class="">
+                            </Multiselect>
+                        </div>
+                        <div>
+                            <Multiselect v-model="to_warehouse" :options="warehouses" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="To Warehouse" class="">
+                            </Multiselect>
+                        </div>
+                    </template>
+
+                    <!-- Warehouse to Facility -->
+                    <template v-else-if="transfer_type === 'Warehouse to Facility'">
+                        <div>
+                            <Multiselect v-model="from_warehouse" :options="warehouses" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="From Warehouse" class="">
+                            </Multiselect>
+                        </div>
+                        <div>
+                            <Multiselect v-model="to_facility" :options="facilities" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="To Facility" class="">
+                            </Multiselect>
+                        </div>
+                    </template>
+
+                    <!-- Facility to Facility -->
+                    <template v-else-if="transfer_type === 'Facility to Facility'">
+                        <div>
+                            <Multiselect v-model="from_facility" :options="facilities" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="From Facility" class="">
+                            </Multiselect>
+                        </div>
+                        <div>
+                            <Multiselect v-model="to_facility" :options="facilities" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="To Facility" class="">
+                            </Multiselect>
+                        </div>
+                    </template>
+
+                    <!-- Default filters when no specific transfer_type is selected -->
+                    <template v-else>
+                        <!-- Facility Selector -->
+                        <div>
+                            <Multiselect v-model="facility" :options="facilities" :searchable="true" :allow-empty="true"
+                                :show-labels="false" placeholder="All Facilities" class="">
+                            </Multiselect>
+                        </div>
+
+                        <!-- Warehouse Selector -->
+                        <div>
+                            <Multiselect v-model="warehouse" :options="warehouses" :close-on-select="true"
+                                :clear-on-select="false" :preserve-search="true" placeholder="All Warehouses" class=""
+                                :preselect-first="false">
+                            </Multiselect>
+                        </div>
+                    </template>
                     <div class="flex items-center gap-2 w-full">
                         <input type="date" v-model="date_from"
                             class="border border-gray-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -485,7 +545,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { router, Link } from "@inertiajs/vue3";
 import Multiselect from "vue-multiselect";
@@ -521,12 +581,39 @@ const props = defineProps({
 
 const currentTab = ref("all");
 const currentDirectionTab = ref("other");
-const facilityType = [
+
+// Base facility types
+const allFacilityTypes = [
     "Warehouse to Warehouse",
-    "Facility to Facility",
+    "Facility to Facility", 
     "Facility to Warehouse",
     "Warehouse to Facility",
 ];
+
+// Direction-specific transfer types
+const getTransferTypesForDirection = (direction) => {
+    switch(direction) {
+        case 'in':
+            // In Transfers: transfers coming TO user's warehouse
+            return [
+                "Facility to Warehouse",
+                "Warehouse to Warehouse"
+            ];
+        case 'out':
+            // Out Transfers: transfers going FROM user's warehouse
+            return [
+                "Warehouse to Facility",
+                "Warehouse to Warehouse"
+            ];
+        case 'other':
+        default:
+            // Other Transfers: all types
+            return allFacilityTypes;
+    }
+};
+
+// Reactive transfer types based on current direction
+const facilityType = computed(() => getTransferTypesForDirection(currentDirectionTab.value));
 
 // Transfer Direction Tabs (Top Level)
 const transferDirectionTabs = [
@@ -557,10 +644,56 @@ const date_from = ref(props.filters.date_from);
 const date_to = ref(props.filters.date_to);
 const transfer_type = ref(props.filters.transfer_type);
 
+// New specific source/destination filters
+const from_warehouse = ref(props.filters.from_warehouse);
+const to_warehouse = ref(props.filters.to_warehouse);
+const from_facility = ref(props.filters.from_facility);
+const to_facility = ref(props.filters.to_facility);
+
 // Initialize direction tab from filters
 if (props.filters.direction_tab) {
     currentDirectionTab.value = props.filters.direction_tab;
 }
+
+// Watch for direction tab changes to reset transfer_type filter
+watch(currentDirectionTab, async (newDirection, oldDirection) => {
+    if (newDirection !== oldDirection) {
+        // Clear transfer_type when direction changes since available options change
+        transfer_type.value = null;
+        // Clear specific source/destination filters
+        from_warehouse.value = null;
+        to_warehouse.value = null;
+        from_facility.value = null;
+        to_facility.value = null;
+        
+        // Reload facilities and warehouses for new direction
+        if (district.value) {
+            await loadFacilitiesAndWarehouses();
+        }
+    }
+});
+
+// Watch for transfer_type changes to reset specific filters and reload data
+watch(transfer_type, async (newType, oldType) => {
+    if (newType !== oldType) {
+        // Clear specific source/destination filters when transfer type changes
+        from_warehouse.value = null;
+        to_warehouse.value = null;
+        from_facility.value = null;
+        to_facility.value = null;
+        
+        // Clear general filters when using specific transfer types
+        if (newType) {
+            facility.value = null;
+            warehouse.value = null;
+        }
+        
+        // Reload facilities and warehouses based on new transfer type
+        if (district.value) {
+            await loadFacilitiesAndWarehouses();
+        }
+    }
+});
 
 watch(
     [
@@ -576,6 +709,10 @@ watch(
         () => date_from.value,
         () => date_to.value,
         () => transfer_type.value,
+        () => from_warehouse.value,
+        () => to_warehouse.value,
+        () => from_facility.value,
+        () => to_facility.value,
     ],
     () => {
         reloadTransfer();
@@ -607,6 +744,12 @@ function reloadTransfer() {
     if (date_from.value) query.date_from = date_from.value;
     if (date_to.value) query.date_to = date_to.value;
     if (transfer_type.value) query.transfer_type = transfer_type.value;
+    
+    // Add specific source/destination filters
+    if (from_warehouse.value) query.from_warehouse = from_warehouse.value;
+    if (to_warehouse.value) query.to_warehouse = to_warehouse.value;
+    if (from_facility.value) query.from_facility = from_facility.value;
+    if (to_facility.value) query.to_facility = to_facility.value;
 
     router.get(route("transfers.index"), query, {
         preserveState: true,
@@ -622,13 +765,15 @@ async function handleRegionSelect(option) {
     if (!option) {
         district.value = null;
         districts.value = [];
+        // Clear facilities and warehouses
+        facilities.value = [];
+        warehouses.value = [];
         return;
     }
     district.value = null;
     districts.value = [];
     await loadDistrict();
-    await loadFacility();
-    await loadWarehouse();
+    await loadFacilitiesAndWarehouses();
 }
 
 const facilities = ref([]);
@@ -638,12 +783,13 @@ async function handleDistrictSelect(option) {
     if (!option) {
         facility.value = null;
         facilities.value = [];
+        warehouses.value = [];
         return;
     }
     facility.value = null;
     facilities.value = [];
-    await loadFacility();
-    await loadWarehouse();
+    warehouses.value = [];
+    await loadFacilitiesAndWarehouses();
 }
 
 async function loadDistrict() {
@@ -660,34 +806,64 @@ async function loadDistrict() {
         });
 }
 
-async function loadFacility() {
-    facility.value = null;
-    facilities.value = [];
-    console.log(district.value);
-    await axios
-        .post(route("facilities.get-facilities"), { district: district.value })
-        .then((response) => {
+async function loadFacilitiesAndWarehouses() {
+    if (!district.value) {
+        facilities.value = [];
+        warehouses.value = [];
+        return;
+    }
+
+    // Determine what to load based on transfer_type
+    const needsFacilities = shouldLoadFacilities();
+    const needsWarehouses = shouldLoadWarehouses();
+
+    // Load facilities if needed
+    if (needsFacilities) {
+        try {
+            const response = await axios.post(route("facilities.get-facilities"), { 
+                district: district.value 
+            });
             facilities.value = response.data;
-        })
-        .catch((error) => {
+        } catch (error) {
             console.log(error);
-            toast.error(error.response.data || "Failed to load facilities");
-        });
+            toast.error(error.response?.data || "Failed to load facilities");
+            facilities.value = [];
+        }
+    } else {
+        facilities.value = [];
+    }
+
+    // Load warehouses if needed
+    if (needsWarehouses) {
+        try {
+            const response = await axios.post(route("warehouses.get-warehouses"), { 
+                district: district.value 
+            });
+            warehouses.value = response.data;
+        } catch (error) {
+            console.log(error);
+            toast.error(error.response?.data || "Failed to load warehouses");
+            warehouses.value = [];
+        }
+    } else {
+        warehouses.value = [];
+    }
 }
 
-async function loadWarehouse() {
-    facility.value = null;
-    warehouses.value = [];
-    console.log(district.value);
-    await axios
-        .post(route("warehouses.get-warehouses"), { district: district.value })
-        .then((response) => {
-            warehouses.value = response.data;
-        })
-        .catch((error) => {
-            console.log(error);
-            toast.error(error.response.data || "Failed to load warehouses");
-        });
+function shouldLoadFacilities() {
+    if (!transfer_type.value) {
+        return true; // Load all when no specific type selected
+    }
+    
+    return transfer_type.value && transfer_type.value.includes('Facility');
+}
+
+function shouldLoadWarehouses() {
+    if (!transfer_type.value) {
+        return true; // Load all when no specific type selected
+    }
+    
+    return transfer_type.value && transfer_type.value.includes('Warehouse');
 }
 
 </script>
