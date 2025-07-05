@@ -290,7 +290,6 @@
             </div>
             <!-- Order Items Table -->
             <h2 class="text-xs text-gray-900 mb-4">Order Items</h2>
-            {{ form }}
             <table class="min-w-full border border-black border-collapse">
                 <thead class="bg-blue-500">
                     <tr class="bg-gray-50">
