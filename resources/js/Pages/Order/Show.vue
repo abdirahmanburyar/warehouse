@@ -1446,10 +1446,7 @@ async function updateQuantity(item, type, index) {
             //     confirmButtonText: "OK",
             // }).then(() => {
                 // });
-            router.get(route("orders.show", props.order.id), {}, {
-                preserveState: true,
-                preserveScroll: false,
-            });
+            router.get(route("orders.show", props.order.id), {});
         })
         .catch((error) => {
             isUpading.value[index] = false;
