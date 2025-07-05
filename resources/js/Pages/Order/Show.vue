@@ -948,7 +948,7 @@
             <Modal :show="showDispatchForm" @close="showDispatchForm = false">
                 <div class="p-6 bg-white rounded-md shadow-md">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">
-                        Dispatch Information
+                        Dispatch Note (Driver Handover Log)
                     </h2>
 
                     <form @submit.prevent="createDispatch" class="space-y-4">
