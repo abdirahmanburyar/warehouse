@@ -953,7 +953,6 @@
 
                     <form @submit.prevent="createDispatch" class="space-y-4">
                         <div>
-                            {{ driverOptions }}
                             <label class="block text-sm font-medium text-gray-700">Driver</label>
                             <Multiselect
                                 v-model="dispatchForm.driver"
