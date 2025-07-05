@@ -446,9 +446,7 @@
 
                             <!-- Location -->
                             <td class="px-2 py-1 text-xs border border-black text-left w-32">
-                                <div class="flex flex-col text-xs">
-                                    <span v-if="inv.location">{{ inv }}</span>
-                                </div>
+                                <div class="flex flex-col text-xs">{{ inv.location }}</div>
                             </td>
                         </tr>
                     </template>
