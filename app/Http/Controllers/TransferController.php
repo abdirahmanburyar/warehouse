@@ -184,8 +184,28 @@ class TransferController extends Controller
             ->withCount('items')
             ->latest('created_at');
         
+        // Get current user context
+        $currentUser = auth()->user();
+        $currentWarehouse = $currentUser->warehouse;
+        $currentFacility = $currentUser->facility_id;
+        
         // Apply filters
-        // Filter by tab/status
+        // Filter by transfer direction (top level tab)
+        if ($request->filled('direction_tab')) {
+            if ($request->direction_tab === 'in') {
+                // In Transfers: where user's warehouse is the destination
+                $query->where('to_warehouse_id', $currentWarehouse?->id);
+            } elseif ($request->direction_tab === 'out') {
+                // Out Transfers: where user's warehouse is the source
+                $query->where('from_warehouse_id', $currentWarehouse?->id);
+            } elseif ($request->direction_tab === 'other') {
+                // Other Transfers: where user's warehouse is neither source nor destination
+                $query->where('from_warehouse_id', '!=', $currentWarehouse?->id)
+                      ->where('to_warehouse_id', '!=', $currentWarehouse?->id);
+            }
+        }
+        
+        // Filter by status (second level tab)
         if ($request->filled('tab') && $request->tab !== 'all') {
             $query->where('status', $request->tab);
         }
@@ -347,7 +367,7 @@ class TransferController extends Controller
             'transfers' => TransferResource::collection($transfers),
             'statistics' => $statistics,
             'locations' => $locations,
-            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district']),
+            'filters' => $request->only(['search', 'facility', 'warehouse', 'date_from', 'date_to', 'tab','per_page','pgae','region','district','direction_tab']),
             'regions' => Region::pluck('name')->toArray()
         ]);
     }

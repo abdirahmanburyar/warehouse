@@ -1,6 +1,21 @@
 <template>
     <AuthenticatedLayout title="Optimize Your Transfers" description="Moving Supplies, Bridging needs"
         img="/assets/images/transfer.png">
+        
+        <!-- Transfer Direction Tabs (Very Top Level) -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8">
+                <button v-for="tab in transferDirectionTabs" :key="tab.value" @click="currentDirectionTab = tab.value"
+                    class="whitespace-nowrap py-4 px-6 border-b-4 font-bold text-lg" :class="[
+                        currentDirectionTab === tab.value
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300',
+                    ]">
+                    {{ tab.label }}
+                </button>
+            </nav>
+        </div>
+
         <!-- Header Section -->
         <div class="flex flex-col space-y-6">
             <!-- Buttons First -->
@@ -12,7 +27,7 @@
                 </button>
             </div>
 
-            <!-- Filters Section -->
+            <!-- Filters Section (Direction-specific filters can be added here) -->
             <div class="mb-4">
                 <div class="grid grid-cols-4 gap-3">
                     <!-- Search -->
@@ -87,7 +102,7 @@
                 </div>
             </div>
 
-            <!-- Status Tabs -->
+            <!-- Status Tabs (Second Level) -->
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8">
                     <button v-for="tab in statusTabs" :key="tab.value" @click="currentTab = tab.value"
@@ -496,6 +511,7 @@ const props = defineProps({
             rejected: { count: 0, percentage: 0 },
         }),
     },
+
     filters: Object,
     regions: {
         type: Array,
@@ -504,13 +520,22 @@ const props = defineProps({
 });
 
 const currentTab = ref("all");
+const currentDirectionTab = ref("other");
 const facilityType = [
     "Warehouse to Warehouse",
     "Facility to Facility",
     "Facility to Warehouse",
     "Warehouse to Facility",
 ];
-// Status configuration
+
+// Transfer Direction Tabs (Top Level)
+const transferDirectionTabs = [
+    { value: "other", label: "Other Transfers", color: "blue" },
+    { value: "in", label: "In Transfers", color: "green" },
+    { value: "out", label: "Out Transfers", color: "purple" },
+];
+
+// Status configuration (Second Level)
 const statusTabs = [
     { value: "all", label: "All Transfers", color: "blue" },
     { value: "pending", label: "Pending", color: "yellow" },
@@ -532,6 +557,11 @@ const date_from = ref(props.filters.date_from);
 const date_to = ref(props.filters.date_to);
 const transfer_type = ref(props.filters.transfer_type);
 
+// Initialize direction tab from filters
+if (props.filters.direction_tab) {
+    currentDirectionTab.value = props.filters.direction_tab;
+}
+
 watch(
     [
         () => search.value,
@@ -541,6 +571,7 @@ watch(
         () => facility.value,
         () => props.filters.page,
         () => currentTab.value,
+        () => currentDirectionTab.value,
         () => warehouse.value,
         () => date_from.value,
         () => date_to.value,
@@ -570,6 +601,7 @@ function reloadTransfer() {
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
     if (currentTab.value) query.tab = currentTab.value;
+    if (currentDirectionTab.value) query.direction_tab = currentDirectionTab.value;
     if (facility.value) query.facility = facility.value;
     if (warehouse.value) query.warehouse = warehouse.value;
     if (date_from.value) query.date_from = date_from.value;
