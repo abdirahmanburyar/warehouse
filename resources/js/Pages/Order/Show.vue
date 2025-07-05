@@ -401,7 +401,7 @@
                             <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
                                 class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
                                 <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
-                                    updateQuantity(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'
+                                    handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <!-- <label for="received_quantity">Received Quantity</label>
@@ -414,7 +414,7 @@
                             /> -->
                                 <label for="days">No. of Days</label>
                                 <input type="number" placeholder="0" v-model="item.days"
-                                    @input="updateQuantity(item, 'days', index)" :readonly="props.order.status != 'pending'
+                                    @input="handleQuantityInput(item, 'days', index)" :readonly="props.order.status != 'pending'
                                         "
                                     class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
                                 <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
@@ -1281,7 +1281,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, h } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref, h } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { router, Link } from "@inertiajs/vue3";
 import {
@@ -1425,8 +1425,30 @@ const restoreOrder = async () => {
     });
 };
 
-// update quantity
+// update quantity with debouncing
 const isUpading = ref([]);
+const updateQuantityTimeouts = ref({});
+
+// Cleanup on unmount
+onBeforeUnmount(() => {
+    Object.values(updateQuantityTimeouts.value).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+    });
+});
+
+// Debounced input handler
+const handleQuantityInput = (item, type, index) => {
+    const timeoutKey = `${item.id}-${type}-${index}`;
+    
+    if (updateQuantityTimeouts.value[timeoutKey]) {
+        clearTimeout(updateQuantityTimeouts.value[timeoutKey]);
+    }
+    
+    updateQuantityTimeouts.value[timeoutKey] = setTimeout(() => {
+        updateQuantity(item, type, index);
+    }, 500);
+};
+
 async function updateQuantity(item, type, index) {
     isUpading.value[index] = true;
     await axios
