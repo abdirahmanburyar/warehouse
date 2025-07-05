@@ -368,11 +368,16 @@ class TransferController extends Controller
                 'items.*.details' => 'required|array',
                 'items.*.details.*.quantity_to_transfer' => 'required|integer|min:1',
                 'items.*.details.*.id' => 'required|integer',
-                'items.*.transfer_reason' => 'nullable|string',
+                'items.*.details.*.transfer_reason' => 'nullable|string',
                 'notes' => 'nullable|string',
-                'transfer_type' => 'required|string'
+                'transfer_type' => 'nullable|string'
             ]);
     
+            // Determine transfer type based on source and destination types
+            $sourceTypeFormatted = ucfirst($request->source_type);
+            $destinationTypeFormatted = ucfirst($request->destination_type);
+            $automaticTransferType = "{$sourceTypeFormatted} to {$destinationTypeFormatted}";
+
             $transferData = [
                 'transferID' => $request->transferID,
                 'transfer_date' => $request->transfer_date,
@@ -380,7 +385,7 @@ class TransferController extends Controller
                 'from_facility_id' => $request->source_type === 'facility' ? $request->source_id : null,
                 'to_warehouse_id' => $request->destination_type === 'warehouse' ? $request->destination_id : null,
                 'to_facility_id' => $request->destination_type === 'facility' ? $request->destination_id : null,
-                'transfer_type' => $request->transfer_type,
+                'transfer_type' => $automaticTransferType,
                 'created_by' => auth()->id(),
             ];
     
@@ -443,7 +448,7 @@ class TransferController extends Controller
                         'allocation_type' => 'transfer',
                         'unit_cost' => $inventoryItem->unit_cost ?? 0,
                         'total_cost' => $quantityToTransfer * ($inventoryItem->unit_cost ?? 0),
-                        'transfer_reason' => $item['transfer_reason'] ?? null,
+                        'transfer_reason' => $detail['transfer_reason'] ?? null,
                     ]);
 
                     // Deduct from source inventory

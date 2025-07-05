@@ -48,20 +48,18 @@ const form = ref({
     source_id: null,
     destination_type: "warehouse",
     destination_id: null,
-    transfer_date: moment().format("YYYY-MM-DD"),
+        transfer_date: moment().format("YYYY-MM-DD"),
     transferID: props.transferID,
-    transfer_type: "",
     items: [
-        {
-            id: null,
-            product_id: "",
-            product: null,
-            quantity: 0,
-            available_quantity: 0,
-            details: [],
-            transfer_reason: "",
-        },
-    ],
+            {
+                id: null,
+                product_id: "",
+                product: null,
+                quantity: 0,
+                available_quantity: 0,
+                details: [],
+            },
+        ],
 });
 
 const errors = ref({});
@@ -104,7 +102,6 @@ const handleSourceSelect = async (selected) => {
             expiry_date: null,
             uom: "",
             available_quantity: 0,
-            transfer_reason: "",
         },
     ];
 
@@ -343,8 +340,6 @@ const submit = async () => {
         ...form.value,
         items: filteredItems
     };
-
-    console.log("Submitting data:", submitData);
     
     await axios
         .post(route("transfers.store"), submitData)
@@ -387,7 +382,7 @@ async function handleProductSelect(index, selected) {
                 isLoading.value[index] = false;
                 console.log(response.data);
 
-                // Initialize quantity_to_transfer for each detail item
+                // Initialize quantity_to_transfer and transfer_reason for each detail item
                 item.details = response.data.map(detail => ({
                     ...detail,
                     quantity_to_transfer: 0,
@@ -455,7 +450,6 @@ function addNewItem() {
             available_quantity: 0,
             quantity: 0,
             details: [],
-            transfer_reason: "",
         });
     } 
 }
@@ -506,441 +500,438 @@ function isExpiringSoon(expiryDate) {
         description="Moving Supplies, Bridging needs"
         img="/assets/images/transfer.png"
     >
-        <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-            <div class="max-w-7xl mx-auto">
-                <!-- Header Section -->
-                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 mb-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h1 class="text-3xl font-bold text-gray-900">Create Transfer</h1>
-                                <p class="text-gray-600 mt-1">Transfer inventory items between locations</p>
-                            </div>
+        <div class="bg-gradient-to-br to-blue-50 mb-[80px]">
+            <!-- Header Section -->
+            <div class="bg-white mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
                         </div>
-                        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl">
-                            <div class="text-sm font-medium">Transfer ID</div>
-                            <div class="text-lg font-bold">{{ props.transferID }}</div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Create Transfer</h1>
+                            <p class="text-gray-600 mt-1">Transfer inventory items between locations</p>
                         </div>
                     </div>
-                    
-                    <!-- Info Alert -->
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
-                        <div class="flex items-start space-x-3">
-                            <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-blue-800 font-medium">Transfer Instructions</p>
-                                <p class="text-blue-700 text-sm mt-1">
-                                    Select source and destination locations, then choose inventory items to transfer. 
-                                    Specify the exact quantity for each batch and provide a transfer reason.
-                                </p>
-                            </div>
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl">
+                        <div class="text-sm font-medium">Transfer ID</div>
+                        <div class="text-lg font-bold">{{ props.transferID }}</div>
+                    </div>
+                </div>
+                
+                <!-- Info Alert -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-blue-800 font-medium">Transfer Instructions</p>
+                            <p class="text-blue-700 text-sm mt-1">
+                                Select source and destination locations, then choose inventory items to transfer. 
+                                Specify the exact quantity for each batch and provide a transfer reason.
+                            </p>
                         </div>
                     </div>
                 </div>
-                <!-- Form Section -->
-                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-                    <form @submit.prevent="submit" class="space-y-8">
-                        <!-- Transfer Date -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="md:col-span-1">
-                                <label for="transfer_date" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Transfer Date
+            </div>
+            <!-- Form Section -->
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+                <form @submit.prevent="submit" class="space-y-8">
+                    <!-- Transfer Date -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-1">
+                            <label for="transfer_date" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Transfer Date
+                            </label>
+                            <input
+                                type="date"
+                                v-model="form.transfer_date"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Source and Destination Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Source Section -->
+                        <div class="space-y-6">
+                            <div class="flex items-center space-x-2 mb-4">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Transfer From</h3>
+                            </div>
+                            
+                            <!-- Source Type Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Source Type</label>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200" 
+                                           :class="sourceType === 'warehouse' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
+                                        <input
+                                            type="radio"
+                                            v-model="sourceType"
+                                            value="warehouse"
+                                            class="sr-only"
+                                        />
+                                        <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
+                                             :class="sourceType === 'warehouse' ? 'border-blue-500' : 'border-gray-400'">
+                                            <div v-if="sourceType === 'warehouse'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        </div>
+                                        <span class="font-medium">Warehouse</span>
+                                    </label>
+                                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                                           :class="sourceType === 'facility' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
+                                        <input
+                                            type="radio"
+                                            v-model="sourceType"
+                                            value="facility"
+                                            class="sr-only"
+                                        />
+                                        <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
+                                             :class="sourceType === 'facility' ? 'border-blue-500' : 'border-gray-400'">
+                                            <div v-if="sourceType === 'facility'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        </div>
+                                        <span class="font-medium">Facility</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Source Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Source {{ sourceType === 'warehouse' ? 'Warehouse' : 'Facility' }}
                                 </label>
-                                <input
-                                    type="date"
-                                    v-model="form.transfer_date"
-                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Source and Destination Grid -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <!-- Source Section -->
-                            <div class="space-y-6">
-                                <div class="flex items-center space-x-2 mb-4">
-                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                        </svg>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-gray-900">Transfer From</h3>
-                                </div>
-                                
-                                <!-- Source Type Selection -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">Source Type</label>
-                                    <div class="flex space-x-4">
-                                        <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200" 
-                                               :class="sourceType === 'warehouse' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
-                                            <input
-                                                type="radio"
-                                                v-model="sourceType"
-                                                value="warehouse"
-                                                class="sr-only"
-                                            />
-                                            <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
-                                                 :class="sourceType === 'warehouse' ? 'border-blue-500' : 'border-gray-400'">
-                                                <div v-if="sourceType === 'warehouse'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            </div>
-                                            <span class="font-medium">Warehouse</span>
-                                        </label>
-                                        <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                                               :class="sourceType === 'facility' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
-                                            <input
-                                                type="radio"
-                                                v-model="sourceType"
-                                                value="facility"
-                                                class="sr-only"
-                                            />
-                                            <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
-                                                 :class="sourceType === 'facility' ? 'border-blue-500' : 'border-gray-400'">
-                                                <div v-if="sourceType === 'facility'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            </div>
-                                            <span class="font-medium">Facility</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Source Selection -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Select Source {{ sourceType === 'warehouse' ? 'Warehouse' : 'Facility' }}
-                                    </label>
-                                    <Multiselect
-                                        v-model="selectedSource"
-                                        :options="sourceOptions"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        :placeholder="`Select source ${sourceType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                        track-by="id"
-                                        label="name"
-                                        @select="handleSourceSelect"
-                                        :class="{ 'border-red-500': errors.source_id }"
-                                        @open="errors.source_id = null"
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <span>{{ option.name }}</span>
-                                        </template>
-                                    </Multiselect>
-                                    <InputError :message="errors.source_id" class="mt-2" />
-                                </div>
-                            </div>
-
-                            <!-- Destination Section -->
-                            <div class="space-y-6">
-                                <div class="flex items-center space-x-2 mb-4">
-                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h14m-6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                        </svg>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-gray-900">Transfer To</h3>
-                                </div>
-                                
-                                <!-- Destination Type Selection -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">Destination Type</label>
-                                    <div class="flex space-x-4">
-                                        <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                                               :class="destinationType === 'warehouse' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
-                                            <input
-                                                type="radio"
-                                                v-model="destinationType"
-                                                value="warehouse"
-                                                class="sr-only"
-                                            />
-                                            <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
-                                                 :class="destinationType === 'warehouse' ? 'border-blue-500' : 'border-gray-400'">
-                                                <div v-if="destinationType === 'warehouse'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            </div>
-                                            <span class="font-medium">Warehouse</span>
-                                        </label>
-                                        <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                                               :class="destinationType === 'facility' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
-                                            <input
-                                                type="radio"
-                                                v-model="destinationType"
-                                                value="facility"
-                                                class="sr-only"
-                                            />
-                                            <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
-                                                 :class="destinationType === 'facility' ? 'border-blue-500' : 'border-gray-400'">
-                                                <div v-if="destinationType === 'facility'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            </div>
-                                            <span class="font-medium">Facility</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Destination Selection -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Select Destination {{ destinationType === 'warehouse' ? 'Warehouse' : 'Facility' }}
-                                    </label>
-                                    <Multiselect
-                                        v-model="selectedDestination"
-                                        :options="filteredDestinationOptions"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        :placeholder="`Select destination ${destinationType === 'warehouse' ? 'warehouse' : 'facility'}`"
-                                        track-by="id"
-                                        label="name"
-                                        @select="handleDestinationSelect"
-                                        required
-                                        :class="{ 'border-red-500': errors.destination_id }"
-                                        @open="errors.destination_id = null"
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <span>{{ option.name }}</span>
-                                        </template>
-                                    </Multiselect>
-                                    <InputError :message="errors.destination_id" class="mt-2" />
-                                </div>
-                            </div>
-                                                 </div>
-
-                        <!-- Items Table Section -->
-                        <div class="mb-4 overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
-                                    <tr class="bg-gray-50">
-                                        <th class="min-w-[120px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Item Name
-                                        </th>
-                                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Category
-                                        </th>
-                                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            UoM
-                                        </th>
-                                        <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" rowspan="2">
-                                            Total Quantity on Hand Per Unit
-                                        </th>
-                                        <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" colspan="4">
-                                            Item details
-                                        </th>
-                                        
-                                        <th class="min-w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Reasons for Transfers
-                                        </th>
-                                        <th class="min-w-[110px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Quantity to be transferred
-                                        </th>
-                                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Total Quantity to be transferred
-                                        </th>
-                                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                                            Action
-                                        </th>
-                                    </tr>
-                                    <tr class="bg-gray-50">
-                                        <th class="px-2 py-1 text-xs border border-black text-left">
-                                            QTY
-                                        </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left">
-                                            Batch Number
-                                        </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left">
-                                            Expiry Date
-                                        </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left">
-                                            Location
-                                        </th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    <template v-for="(item, index) in form.items" :key="index">
-                                        <!-- Show details if they exist, otherwise show one row with main item data -->
-                                        <tr v-for="(detail, detailIndex) in (item.details?.length > 0 ? item.details : [{}])"
-                                            :key="`${index}-${detail.id || detailIndex}`"
-                                            class="hover:bg-gray-50 transition-colors duration-150">
-                                            
-                                            <!-- Item Name - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="min-w-[200px] px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                                <div class="w-full">
-                                                    <Multiselect
-                                                        v-model="item.product"
-                                                        :value="item.product_id"
-                                                        :options="availableInventories"
-                                                        placeholder="Search for an item..."
-                                                        required
-                                                        track-by="id"
-                                                        label="name"
-                                                        :searchable="true"
-                                                        :allow-empty="true"
-                                                        :loading="isLoading[index]"
-                                                        @select="handleProductSelect(index, $event)"
-                                                    />
-                                                </div>
-                                            </td>
-
-                                            <!-- Category - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
-                                                {{ item.product?.category?.name || '' }}
-                                            </td>
-
-                                            <!-- UoM - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
-                                                {{ item.details?.[0]?.uom || '' }}
-                                            </td>
-
-                                            <!-- Total Quantity on Hand Per Unit - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="px-3 py-3 text-xs text-center border border-black">
-                                                {{ item.available_quantity || 0 }}
-                                            </td>
-
-                                            <!-- Item Details Columns -->
-                                            <!-- Quantity -->
-                                            <td class="px-2 py-1 text-xs border border-black text-center">
-                                                {{ detail.quantity || '' }}
-                                            </td>
-
-                                            <!-- Batch Number -->
-                                            <td class="px-2 py-1 text-xs border border-black text-center">
-                                                {{ detail.batch_number || '' }}
-                                            </td>
-
-                                            <!-- Expiry Date -->
-                                            <td class="px-2 py-1 text-xs border border-black text-center" :class="{ 'text-red-600': detail.expiry_date && isExpiringSoon(detail.expiry_date) }">
-                                                {{ detail.expiry_date ? formatDate(detail.expiry_date) : '' }}
-                                            </td>
-
-                                            <!-- Location -->
-                                            <td class="px-2 py-1 text-xs border border-black text-center">
-                                                {{ detail.location || '' }}
-                                            </td>
-
-                                            <!-- Reasons for Transfers - only on first row for this item -->
-                                            <td 
-                                                class="px-3 min-w-[120px] py-3 text-xs border border-black text-center">
-                                                <select
-                                                    v-model="item.transfer_reason"
-                                                    class="w-full text-xs border rounded px-2 py-1 resize-none"
-                                                    rows="3"
-                                                    placeholder="Enter transfer reason..."
-                                                >
-                                                    <option value="Soon to expire">Soon to expire</option>
-                                                    <option value="Replenishment">Replenishment</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                            </td>
-
-                                            <!-- Quantity to be transferred - per detail -->
-                                            <td class="px-2 py-1 text-xs border border-black text-center">
-                                                <input
-                                                    v-if="item.product && detail.quantity"
-                                                    type="number"
-                                                    v-model.number="detail.quantity_to_transfer"
-                                                    :max="detail.quantity"
-                                                    min="0"
-                                                    class="w-full text-xs border rounded px-2 py-1 text-center"
-                                                    placeholder="0"
-                                                    @input="updateItemQuantity(index)"
-                                                />
-                                            </td>
-
-                                            <!-- Total Quantity to be transferred - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="px-3 py-3 text-xs text-center border border-black align-top">
-                                                <div class="text-sm font-medium text-blue-600" v-if="item.product">
-                                                    {{ item.quantity || 0 }}
-                                                </div>
-                                            </td>
-
-                                            <!-- Action - only on first row for this item -->
-                                            <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
-                                                class="px-3 py-3 text-xs text-center border border-black align-top">
-                                                <button
-                                                    type="button"
-                                                    @click="removeItem(index)"
-                                                    class="text-red-600 hover:text-red-800"
-                                                    :disabled="form.items.length <= 1"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex items-center justify-between pt-8 border-t border-gray-200">
-                            <button
-                                type="button"
-                                @click="addNewItem"
-                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                            >
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                                Add Another Item
-                            </button>
-                            <div class="flex items-center space-x-4">
-                                <SecondaryButton
-                                    :href="route('transfers.index')"
-                                    as="a"
-                                    :disabled="loading"
-                                    class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200"
-                                    :class="{
-                                        'opacity-50 cursor-not-allowed': loading,
-                                    }"
+                                <Multiselect
+                                    v-model="selectedSource"
+                                    :options="sourceOptions"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    :placeholder="`Select source ${sourceType === 'warehouse' ? 'warehouse' : 'facility'}`"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleSourceSelect"
+                                    :class="{ 'border-red-500': errors.source_id }"
+                                    @open="errors.source_id = null"
                                 >
-                                    Cancel
-                                </SecondaryButton>
-                                <PrimaryButton :disabled="loading" class="relative px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
-                                    <span v-if="loading" class="absolute left-3">
-                                        <svg
-                                            class="animate-spin h-5 w-5 text-white"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                class="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                stroke-width="4"
-                                            ></circle>
-                                            <path
-                                                class="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                    </span>
-                                    <span :class="{ 'pl-7': loading }">{{
-                                        loading ? "Processing..." : "Create Transfer"
-                                    }}</span>
-                                </PrimaryButton>
+                                    <template v-slot:option="{ option }">
+                                        <span>{{ option.name }}</span>
+                                    </template>
+                                </Multiselect>
+                                <InputError :message="errors.source_id" class="mt-2" />
                             </div>
                         </div>
-                    </form>
-                </div>
+
+                        <!-- Destination Section -->
+                        <div class="space-y-6">
+                            <div class="flex items-center space-x-2 mb-4">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h14m-6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Transfer To</h3>
+                            </div>
+                            
+                            <!-- Destination Type Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Destination Type</label>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                                           :class="destinationType === 'warehouse' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
+                                        <input
+                                            type="radio"
+                                            v-model="destinationType"
+                                            value="warehouse"
+                                            class="sr-only"
+                                        />
+                                        <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
+                                             :class="destinationType === 'warehouse' ? 'border-blue-500' : 'border-gray-400'">
+                                            <div v-if="destinationType === 'warehouse'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        </div>
+                                        <span class="font-medium">Warehouse</span>
+                                    </label>
+                                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                                           :class="destinationType === 'facility' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300'">
+                                        <input
+                                            type="radio"
+                                            v-model="destinationType"
+                                            value="facility"
+                                            class="sr-only"
+                                        />
+                                        <div class="w-4 h-4 rounded-full border-2 mr-2 flex items-center justify-center"
+                                             :class="destinationType === 'facility' ? 'border-blue-500' : 'border-gray-400'">
+                                            <div v-if="destinationType === 'facility'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        </div>
+                                        <span class="font-medium">Facility</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Destination Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Destination {{ destinationType === 'warehouse' ? 'Warehouse' : 'Facility' }}
+                                </label>
+                                <Multiselect
+                                    v-model="selectedDestination"
+                                    :options="filteredDestinationOptions"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    :placeholder="`Select destination ${destinationType === 'warehouse' ? 'warehouse' : 'facility'}`"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleDestinationSelect"
+                                    required
+                                    :class="{ 'border-red-500': errors.destination_id }"
+                                    @open="errors.destination_id = null"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <span>{{ option.name }}</span>
+                                    </template>
+                                </Multiselect>
+                                <InputError :message="errors.destination_id" class="mt-2" />
+                            </div>
+                        </div>
+                                             </div>
+
+                    <!-- Items Table Section -->
+                    <div class="mb-4 overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr class="bg-gray-50">
+                                    <th class="min-w-[120px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Item Name
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Category
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        UoM
+                                    </th>
+                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" rowspan="2">
+                                        Total Quantity on Hand Per Unit
+                                    </th>
+                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" colspan="4">
+                                        Item details
+                                    </th>
+                                    
+                                    <th class="min-w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Reasons for Transfers
+                                    </th>
+                                    <th class="min-w-[110px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Quantity to be transferred
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Total Quantity to be transferred
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                        Action
+                                    </th>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        QTY
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Batch Number
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Expiry Date
+                                    </th>
+                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                        Location
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <template v-for="(item, index) in form.items" :key="index">
+                                    <!-- Show details if they exist, otherwise show one row with main item data -->
+                                    <tr v-for="(detail, detailIndex) in (item.details?.length > 0 ? item.details : [{}])"
+                                        :key="`${index}-${detail.id || detailIndex}`"
+                                        class="hover:bg-gray-50 transition-colors duration-150">
+                                        
+                                        <!-- Item Name - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="min-w-[200px] px-3 py-3 text-xs text-gray-900 border border-black align-top">
+                                            <div class="w-full">
+                                                <Multiselect
+                                                    v-model="item.product"
+                                                    :value="item.product_id"
+                                                    :options="availableInventories"
+                                                    placeholder="Search for an item..."
+                                                    required
+                                                    track-by="id"
+                                                    label="name"
+                                                    :searchable="true"
+                                                    :allow-empty="true"
+                                                    :loading="isLoading[index]"
+                                                    @select="handleProductSelect(index, $event)"
+                                                />
+                                            </div>
+                                        </td>
+
+                                        <!-- Category - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                            {{ item.product?.category?.name || '' }}
+                                        </td>
+
+                                        <!-- UoM - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                            {{ item.details?.[0]?.uom || '' }}
+                                        </td>
+
+                                        <!-- Total Quantity on Hand Per Unit - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black">
+                                            {{ item.available_quantity || 0 }}
+                                        </td>
+
+                                        <!-- Item Details Columns -->
+                                        <!-- Quantity -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.quantity || '' }}
+                                        </td>
+
+                                        <!-- Batch Number -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.batch_number || '' }}
+                                        </td>
+
+                                        <!-- Expiry Date -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center" :class="{ 'text-red-600': detail.expiry_date && isExpiringSoon(detail.expiry_date) }">
+                                            {{ detail.expiry_date ? formatDate(detail.expiry_date) : '' }}
+                                        </td>
+
+                                        <!-- Location -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            {{ detail.location || '' }}
+                                        </td>
+
+                                        <!-- Reasons for Transfers - per detail -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            <select
+                                                v-if="item.product && detail.quantity"
+                                                v-model="detail.transfer_reason"
+                                                class="w-full text-xs border rounded px-2 py-1"
+                                            >
+                                                <option value="">Select reason...</option>
+                                                <option value="Soon to expire">Soon to expire</option>
+                                                <option value="Replenishment">Replenishment</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </td>
+
+                                        <!-- Quantity to be transferred - per detail -->
+                                        <td class="px-2 py-1 text-xs border border-black text-center">
+                                            <input
+                                                v-if="item.product && detail.quantity"
+                                                type="number"
+                                                v-model.number="detail.quantity_to_transfer"
+                                                :max="detail.quantity"
+                                                min="0"
+                                                class="w-full text-xs border rounded px-2 py-1 text-center"
+                                                placeholder="0"
+                                                @input="updateItemQuantity(index)"
+                                            />
+                                        </td>
+
+                                        <!-- Total Quantity to be transferred - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black">
+                                            <div class="text-sm font-medium text-blue-600" v-if="item.product">
+                                                {{ item.quantity || 0 }}
+                                            </div>
+                                        </td>
+
+                                        <!-- Action - only on first row for this item -->
+                                        <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
+                                            class="px-3 py-3 text-xs text-center border border-black">
+                                            <button
+                                                type="button"
+                                                @click="removeItem(index)"
+                                                class="text-red-600 hover:text-red-800"
+                                                :disabled="form.items.length <= 1"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-8 border-t border-gray-200">
+                        <button
+                            type="button"
+                            @click="addNewItem"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Another Item
+                        </button>
+                        <div class="flex items-center space-x-4">
+                            <SecondaryButton
+                                :href="route('transfers.index')"
+                                as="a"
+                                :disabled="loading"
+                                class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200"
+                                :class="{
+                                    'opacity-50 cursor-not-allowed': loading,
+                                }"
+                            >
+                                Cancel
+                            </SecondaryButton>
+                            <PrimaryButton :disabled="loading" class="relative px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                                <span v-if="loading" class="absolute left-3">
+                                    <svg
+                                        class="animate-spin h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                </span>
+                                <span :class="{ 'pl-7': loading }">{{
+                                    loading ? "Processing..." : "Create Transfer"
+                                }}</span>
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </AuthenticatedLayout>
