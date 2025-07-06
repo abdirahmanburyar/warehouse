@@ -395,13 +395,6 @@ class SupplyController extends Controller
                 'packing_list_id' => 'nullable',
                 'packing_list_number' => 'nullable|string',
                 'purchase_order_id' => 'nullable',
-                'purchase_order_number' => 'nullable|string',
-                'supplier_id' => 'nullable',
-                'supplier_name' => 'nullable|string',
-                'barcode' => 'nullable|string',
-                'batch_number' => 'nullable|string',
-                'uom' => 'nullable|string',
-                'cost_per_unit' => 'nullable|numeric',
                 'total_cost' => 'nullable|numeric',
             ]);
             
@@ -410,6 +403,7 @@ class SupplyController extends Controller
             
             // Find the packing list difference record
             $packingListDiff = PackingListDifference::with('packingListItem')->find($request->id);
+            $packingListItem = PackingListItem::find($request->packing_listitem_id);
             
             if (!$packingListDiff) {
                 return response()->json([
@@ -436,23 +430,23 @@ class SupplyController extends Controller
             \App\Models\ReceivedBackorder::create([
                 'product_id' => $request->product_id,
                 'received_by' => auth()->id(),
-                'barcode' => $request->barcode,
-                'batch_number' => $request->batch_number,
-                'uom' => $request->uom,
+                'barcode' => $packingListItem->barcode ?? null,
+                'batch_number' => $packingListItem->batch_number ?? null,
+                'uom' => $packingListItem->uom ?? null,
                 'received_at' => now(),
                 'quantity' => $receivedQuantity,
                 'status' => 'pending',
                 'type' => $request->status ? strtolower($request->status) : 'backorder',
-                'unit_cost' => $request->cost_per_unit,
-                'total_cost' => $request->total_cost,
-                'note' => "Received from Back Order: {$request->packing_list_number}\nPurchase Order: {$request->purchase_order_number}\nSupplier: {$request->supplier_name}",
+                'unit_cost' => $packingListItem->unit_cost ?? 0,
+                'total_cost' => $packingListItem->unit_cost * $request->quantity ?? 0,
+                'note' => "Received from Back Order: {$request->packing_list_number}",
                 'back_order_id' => $request->id,
                 'packing_list_id' => $request->packing_list_id,
                 'packing_list_number' => $request->packing_list_number,
                 'purchase_order_id' => $request->purchase_order_id,
-                'purchase_order_number' => $request->purchase_order_number,
-                'supplier_id' => $request->supplier_id,
-                'supplier_name' => $request->supplier_name,
+                'purchase_order_number' => null, // Not provided in request
+                'supplier_id' => null, // Not provided in request
+                'supplier_name' => null, // Not provided in request
             ]);
             
             // Handle the packing list difference record based on remaining quantity

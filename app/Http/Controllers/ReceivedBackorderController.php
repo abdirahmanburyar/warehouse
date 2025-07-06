@@ -353,13 +353,30 @@ class ReceivedBackorderController extends Controller
                 $mainInventory->increment('quantity', $receivedBackorder->quantity);
                 $mainInventory->save();
                 
+                // Get warehouse_id from packing list item if available
+                $warehouseId = null;
+                if ($receivedBackorder->packing_list_id) {
+                    $packingListItem = PackingListItem::where('packing_list_id', $receivedBackorder->packing_list_id)
+                        ->where('product_id', $receivedBackorder->product_id)
+                        ->first();
+                    if ($packingListItem) {
+                        $warehouseId = $packingListItem->warehouse_id;
+                    }
+                }
+                
+                // Fallback to first warehouse if not found in packing list
+                if (!$warehouseId) {
+                    $defaultWarehouse = Warehouse::first();
+                    $warehouseId = $defaultWarehouse ? $defaultWarehouse->id : 1;
+                }
+                
                 $inventory = InventoryItem::create([
                     'inventory_id' => $mainInventory->id,
                     'quantity' => $receivedBackorder->quantity,
                     'batch_number' => $receivedBackorder->batch_number,
                     'expiry_date' => $receivedBackorder->expire_date,
                     'barcode' => $receivedBackorder->barcode,
-                    'warehouse_id' => null, // Will be set based on location if needed
+                    'warehouse_id' => $warehouseId,
                     'location' => $receivedBackorder->location,
                     'unit_cost' => $receivedBackorder->unit_cost,
                     'total_cost' => $receivedBackorder->total_cost,
