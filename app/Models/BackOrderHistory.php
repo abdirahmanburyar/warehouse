@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\PackingList;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\BackOrder;
 
 class BackOrderHistory extends Model
 {
@@ -22,7 +23,10 @@ class BackOrderHistory extends Model
         'status',
         'action',
         'note',
-        'performed_by'
+        'performed_by',
+        'batch_number',
+        'expiry_date',
+        'back_order_id',
     ];
 
     public function packingList(): BelongsTo
@@ -43,5 +47,10 @@ class BackOrderHistory extends Model
     public function performer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'performed_by');
+    }
+
+    public function backOrder(): BelongsTo
+    {
+        return $this->belongsTo(BackOrder::class);
     }
 }

@@ -29,6 +29,20 @@
                             </span>
                         </div>
                     </div>
+                    <!-- Parent-level Attachments -->
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700">Back Order Attachments (PDF files)</label>
+                        <input type="file" multiple accept=".pdf" @change="handleParentAttachments" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                        <div v-if="parentAttachments.length > 0" class="mt-2">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                            <ul class="space-y-2">
+                                <li v-for="(file, index) in parentAttachments" :key="index" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                                    <span>{{ file.name }}</span>
+                                    <button type="button" @click="removeParentAttachment(index)" class="text-red-500 hover:text-red-700">Remove</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-4 flex flex-col">
@@ -334,6 +348,7 @@ import { useToast } from 'vue-toastification';
 const selectedPo = ref(null);
 const items = ref([]);
 const backOrderInfo = ref(null);
+const parentAttachments = ref([]);
 
 const toast = useToast();
 
@@ -674,5 +689,13 @@ const submitDisposal = async () => {
             });
         });
 };
+
+function handleParentAttachments(e) {
+    parentAttachments.value = Array.from(e.target.files || []);
+}
+
+function removeParentAttachment(index) {
+    parentAttachments.value.splice(index, 1);
+}
 
 </script>

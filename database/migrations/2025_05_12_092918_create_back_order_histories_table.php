@@ -17,10 +17,13 @@ return new class extends Migration
             $table->foreignId('transfer_id')->constrained('transfers')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+            $table->foreignId('back_order_id')->nullable()->constrained('back_orders')->onDelete('cascade');
             $table->integer('quantity');
             $table->string('status'); // Missing, Damaged, etc.
             $table->text('note')->nullable();
             $table->foreignId('performed_by')->constrained('users')->onDelete('cascade');
+            $table->string('batch_number')->nullable();
+            $table->date('expiry_date')->nullable();
             $table->timestamps();
         });
     }

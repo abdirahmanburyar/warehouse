@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('total_quantity')->default(0);
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();
+            $table->json('attach_documents')->nullable();
             $table->text('source_type')->nullable();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('cascade');

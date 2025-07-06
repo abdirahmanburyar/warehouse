@@ -521,7 +521,7 @@ class SupplyController extends Controller
     }
 
     public function backOrder(Request $request){
-        $packingList = PackingList::whereHas('items.differences')->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
+        $packingList = PackingList::where('status', 'approved')->whereHas('items.differences')->select('id','packing_list_number')->with('purchaseOrder:id,po_number')->get();
         return inertia("Supplies/BackOrder", [
             'packingList' => $packingList
         ]);
@@ -1932,5 +1932,22 @@ class SupplyController extends Controller
         } catch (\Throwable $th) {
             return response()->json('Upload failed: ' . $th->getMessage(), 500);
         }
+    }
+
+    public function listBackOrders()
+    {
+        $backOrders = \App\Models\BackOrder::with([
+            'packingList.purchaseOrder.supplier',
+            'creator',
+        ])->get();
+        return response()->json($backOrders);
+    }
+
+    public function getBackOrderHistories($backOrderId)
+    {
+        $histories = \App\Models\BackOrderHistory::with(['product', 'performer'])
+            ->where('back_order_id', $backOrderId)
+            ->get();
+        return response()->json($histories);
     }
 }

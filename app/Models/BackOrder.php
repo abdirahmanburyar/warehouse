@@ -16,6 +16,8 @@ class BackOrder extends Model
         'total_quantity',
         'status',
         'notes',
+        'source_type',
+        'attach_documents',
         'created_by',
         'updated_by'
     ];
@@ -24,6 +26,7 @@ class BackOrder extends Model
         'back_order_date' => 'date',
         'total_items' => 'integer',
         'total_quantity' => 'integer',
+        'attach_documents' => 'array',
     ];
 
     public function packingList(): BelongsTo
@@ -44,6 +47,11 @@ class BackOrder extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function histories(): HasMany
+    {
+        return $this->hasMany(BackOrderHistory::class);
     }
 
     /**

@@ -319,6 +319,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/packing-list/{id}/upload-document', [SupplyController::class, 'uploadPackingListDocument'])
             ->name('supplies.packing-list.uploadDocument');
 
+        Route::get('/back-orders/list', [\App\Http\Controllers\SupplyController::class, 'listBackOrders'])->name('supplies.backOrders.list');
+        Route::get('/back-orders/{id}/histories', [\App\Http\Controllers\SupplyController::class, 'getBackOrderHistories'])->name('supplies.backOrders.histories');
+
     });
 
     Route::controller(LiquidateDisposalController::class)
