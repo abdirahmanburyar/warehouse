@@ -185,22 +185,38 @@ class SupplyController extends Controller
                 'product_id' => 'required|exists:products,id',
                 'packing_listitem_id' => 'required|exists:packing_list_items,id',
                 'quantity' => 'required|integer|min:1',
+                'original_quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
+                'packing_list_id' => 'required|exists:packing_lists,id',
+                'packing_list_number' => 'nullable|string',
+                'purchase_order_id' => 'nullable',
                 'note' => 'nullable|string|max:255',
                 'type' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
+                'back_order_id' => 'required|exists:back_orders,id',
             ]);
             
             // Start a database transaction
             DB::beginTransaction();
             
-            // Get the packing list item to include its number in the note
-            $packingListItem = PackingListItem::with('packingList')->find($request->packing_listitem_id);
-            $packingListNumber = $packingListItem ? $packingListItem->packingList->packing_list_number : 'Unknown';
+            // Find the packing list difference record
+            $packingListDiff = PackingListDifference::with('packingListItem')->find($request->id);
+            $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            
+            if (!$packingListDiff) {
+                return response()->json([
+                    'message' => 'Back order item not found'
+                ], 404);
+            }
+            
+            // Calculate the remaining quantity
+            $liquidatedQuantity = $request->quantity;
+            $originalQuantity = $request->original_quantity;
+            $remainingQuantity = $originalQuantity - $liquidatedQuantity;
             
             // Generate note based on condition and source
-            $note = "PL ($packingListNumber) - {$request->status}";
+            $note = "PL ({$request->packing_list_number}) - {$request->status}";
             if ($request->note) {
                 $note .= " - {$request->note}";
             }
@@ -220,15 +236,30 @@ class SupplyController extends Controller
                     ];
                 }
             }
-
-            $item = PackingListDifference::where('id', $request->id)->with('packingListItem')->first();
+            
+            // Create a record in BackOrderHistory for the liquidated items
+            $backOrderHistory = BackOrderHistory::create([
+                'packing_list_id' => $packingListItem->packing_list_id,
+                'product_id' => $packingListItem->product_id,
+                'quantity' => $liquidatedQuantity,
+                'status' => 'Liquidated',
+                'note' => $request->note ?? 'Liquidated by ' . auth()->user()->name,
+                'performed_by' => auth()->user()->id,
+                'barcode' => $packingListItem->barcode,
+                'batch_number' => $packingListItem->batch_number,
+                'expiry_date' => $packingListItem->expire_date,
+                'back_order_id' => $request->back_order_id,
+                'uom' => $packingListItem->uom,
+                'unit_cost' => $packingListItem->unit_cost,
+                'total_cost' => $packingListItem->unit_cost * $liquidatedQuantity,
+            ]);
             
             // Create a new liquidation record
             $liquidate = Liquidate::create([
                 'product_id' => $request->product_id,
                 'liquidated_by' => auth()->id(),
                 'liquidated_at' => Carbon::now(),
-                'quantity' => $request->quantity,
+                'quantity' => $liquidatedQuantity,
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
                 'type' => $request->type,
@@ -237,36 +268,26 @@ class SupplyController extends Controller
                 'batch_number' => $packingListItem->batch_number,
                 'uom' => $packingListItem->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
-                'back_order_id' => $item->back_order_id,
+                'back_order_id' => $request->back_order_id,
             ]);
             
-            // Find and delete the record from PackingListDifference table
-            if ($item) {
-                // Create a record in BackOrderHistory before deleting
-                BackOrderHistory::create([
-                    'packing_list_id' => $packingListItem->packing_list_id,
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'status' => 'Liquidated',
-                    'note' => $request->note ?? 'Liquidated by ' . auth()->user()->name,
-                    'performed_by' => auth()->id()
-                ]);
-                
-                // // Delete the record
-                // if ($item->quantity == $request->quantity) {
-                // } else {
-                //     $item->decrement('quantity', $request->quantity);
-                // }
-                $item->update([
-                    'finalized' => 'Liquidated'
-                ]);
+            // Handle the packing list difference record based on remaining quantity
+            if ($remainingQuantity <= 0) {
+                // If nothing remains, delete the record
+                $packingListDiff->delete();
+            } else {
+                // If some items remain, update the quantity
+                $packingListDiff->quantity = $remainingQuantity;
+                $packingListDiff->save();
             }
             
             // Commit the transaction
             DB::commit();
             
             return response()->json([
-                'message' => 'Item has been liquidated successfully',
+                'message' => "Successfully liquidated {$liquidatedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
+                'liquidated_quantity' => $liquidatedQuantity,
+                'remaining_quantity' => $remainingQuantity,
                 'liquidate' => $liquidate
             ], 200);
             
