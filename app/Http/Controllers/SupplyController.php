@@ -118,7 +118,7 @@ class SupplyController extends Controller
 
     // showPackingList
     public function showPackingList(Request $request, $id){
-        $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy')->find($id);
+        $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy','backOrder')->find($id);
         return inertia("Supplies/PackingList/Show", [
             'packingList' => $packingList
         ]);
@@ -148,7 +148,7 @@ class SupplyController extends Controller
             $results = PackingListDifference::whereNull('finalized')->whereHas('packingListItem', function($query) use ($id) {
                 $query->where('packing_list_id', $id);
             })
-                ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number')
+                ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number','backOrder:id,back_order_number,back_order_date,status')
                 ->get();
 
             return response()->json($results, 200);
@@ -771,7 +771,8 @@ class SupplyController extends Controller
                                 [
                                     'product_id' => $item['product_id'],
                                     'quantity' => $diff['quantity'],
-                                    'status' => $diff['status']
+                                    'status' => $diff['status'],
+                                    'notes' => $diff['notes'] ?? null,
                                 ]
                             );
                         }
@@ -1571,6 +1572,33 @@ class SupplyController extends Controller
                     'confirmed_at' => now(),
                 ]);
 
+                // Check if any items have differences to determine if we need a BackOrder
+                $hasBackOrderItems = collect($request->items)
+                    ->filter(function($item) {
+                        return !empty($item['differences']);
+                    })
+                    ->isNotEmpty();
+
+                $backOrder = null;
+                if ($hasBackOrderItems) {
+                    // Create or update parent BackOrder
+                    $backOrder = BackOrder::firstOrCreate(
+                        ['packing_list_id' => $packingList->id],
+                        [
+                            'back_order_date' => now()->toDateString(),
+                            'created_by' => auth()->id(),
+                            'status' => 'pending',
+                            'source_type' => 'packing_list'
+                        ]
+                    );
+                } else {
+                    // If no differences, delete existing BackOrder if exists
+                    $existingBackOrder = BackOrder::where('packing_list_id', $packingList->id)->first();
+                    if ($existingBackOrder) {
+                        $existingBackOrder->delete(); // This will cascade delete differences
+                    }
+                }
+
                 // Update each item
                 foreach($request->items as $item) {
                     $packingListItem = $packingList->items()->findOrFail($item['id']);
@@ -1601,9 +1629,10 @@ class SupplyController extends Controller
                                 ->updateOrCreate(
                                     ['id' => $diff['id'] ?? null],
                                     [
+                                        'back_order_id' => $backOrder->id,
                                         'quantity' => $diff['quantity'],
                                         'status' => $diff['status'],
-                                        'note' => $diff['note'] ?? null,
+                                        'notes' => $diff['notes'] ?? null,
                                         'product_id' => $item['product_id']
                                     ]
                                 );
@@ -1615,6 +1644,11 @@ class SupplyController extends Controller
                             ->whereIn('id', array_diff($existingDiffIds, $newDiffIds))
                             ->delete();
                     }
+                }
+
+                // Update BackOrder totals if it exists
+                if ($backOrder) {
+                    $backOrder->updateTotals();
                 }
 
                 return response()->json('Packing list updated successfully', 200);

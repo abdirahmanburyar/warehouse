@@ -31,7 +31,7 @@
                 </div>
 
                 <!-- Info Cards -->
-                <div class="grid grid-cols-3 gap-8 mb-8">
+                <div class="grid grid-cols-4 gap-8 mb-8">
                     <!-- Basic Info -->
                     <div class="border rounded">
                         <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
@@ -112,6 +112,35 @@
                             </template>
                             <p v-if="!props.packingList.confirmed_by && !props.packingList.reviewed_by && !props.packingList.approved_by" class="text-xs text-gray-500 italic">
                                 No approval information available
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Back Order Info -->
+                    <div class="border rounded">
+                        <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
+                            Back Order Information
+                        </div>
+                        <div class="p-4 font-medium space-y-1">
+                            <template v-if="props.packingList.back_order">
+                                <p class="text-xs">
+                                    Back Order #: {{ props.packingList.back_order.back_order_number }}
+                                </p>
+                                <p class="text-xs">
+                                    Date: {{ formatDate(props.packingList.back_order.back_order_date) }}
+                                </p>
+                                <p class="text-xs">
+                                    Total Items: {{ props.packingList.back_order.total_items }}
+                                </p>
+                                <p class="text-xs">
+                                    Total Quantity: {{ props.packingList.back_order.total_quantity }}
+                                </p>
+                                <p class="text-xs">
+                                    Status: <span :class="[getBackOrderStatusClass(), 'status-badge']">{{ props.packingList.back_order.status }}</span>
+                                </p>
+                            </template>
+                            <p v-else class="text-xs text-gray-500 italic">
+                                No back order information available
                             </p>
                         </div>
                     </div>
@@ -379,6 +408,16 @@ const getStatusClass = () => {
         rejected: 'bg-red-100 text-red-800'
     }
     return `${classes[props.packingList.status] || ''} px-2 py-1 rounded-full text-xs font-medium`
+}
+
+const getBackOrderStatusClass = () => {
+    const classes = {
+        pending: 'bg-yellow-100 text-yellow-800',
+        processing: 'bg-blue-100 text-blue-800',
+        completed: 'bg-green-100 text-green-800',
+        cancelled: 'bg-red-100 text-red-800'
+    }
+    return `${classes[props.packingList.back_order?.status] || ''} px-2 py-1 rounded-full text-xs font-medium`
 }
 
 const handleFileUpload = async (event) => {

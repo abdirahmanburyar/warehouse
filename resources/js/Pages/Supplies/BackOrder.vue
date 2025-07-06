@@ -10,6 +10,27 @@
 
             <div class="mt-6" v-if="selectedPo">
                 <h3 class="text-lg font-medium text-gray-900">Back Order Items</h3>
+                
+                <!-- Back Order Information Card -->
+                <div class="mt-4 bg-white border border-gray-200 rounded-lg shadow-sm p-6" v-if="backOrderInfo">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Back Order Number</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ backOrderInfo.back_order_number }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Back Order Date</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ moment(backOrderInfo.back_order_date).format('DD/MM/YYYY') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Status</p>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getBackOrderStatusClass(backOrderInfo.status)">
+                                {{ backOrderInfo.status }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mt-4 flex flex-col">
                     <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                         <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -180,7 +201,7 @@
                     <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
                     <input type="file" ref="attachments" @change="(e) => handleFileChange('liquidate', e)"
                         class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        multiple accept=".pdf" required>
+                        multiple accept=".pdf">
                 </div>
 
                 <!-- Selected Files Preview -->
@@ -262,7 +283,7 @@
                     <label class="block text-sm font-medium text-gray-700">Attachments (PDF files)</label>
                     <input type="file" ref="attachments" @change="(e) => handleFileChange('dispose', e)"
                         class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        multiple accept=".pdf" required>
+                        multiple accept=".pdf">
                 </div>
 
                 <!-- Selected Files Preview -->
@@ -312,7 +333,7 @@ import { useToast } from 'vue-toastification';
 // Component state
 const selectedPo = ref(null);
 const items = ref([]);
-
+const backOrderInfo = ref(null);
 
 const toast = useToast();
 
@@ -361,6 +382,21 @@ const getAvailableActions = (status) => {
     if (status === 'Expired') return ['Receive', 'Dispose'];
     if (status === 'Low quality') return ['Receive', 'Dispose'];
     return [];
+};
+
+const getBackOrderStatusClass = (status) => {
+    switch (status) {
+        case 'pending':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'processing':
+            return 'bg-blue-100 text-blue-800';
+        case 'completed':
+            return 'bg-green-100 text-green-800';
+        case 'cancelled':
+            return 'bg-red-100 text-red-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
 };
 
 const isLoading = ref(false);
@@ -474,6 +510,7 @@ const receiveItems = async (item) => {
 const handlePoChange = async (po) => {
     if (!po) {
         items.value = [];
+        backOrderInfo.value = null;
         return;
     }
     isLoading.value = true;
@@ -486,9 +523,18 @@ const handlePoChange = async (po) => {
             items.value = response.data.sort((a, b) =>
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
+
+            // Extract back order information from the first item (all items should have the same back order)
+            if (items.value.length > 0 && items.value[0].back_order) {
+                backOrderInfo.value = items.value[0].back_order;
+            } else {
+                backOrderInfo.value = null;
+            }
         })
         .catch((error) => {
             isLoading.value = false;
+            items.value = [];
+            backOrderInfo.value = null;
             toast.error(error.response?.data || 'Failed to fetch back order items')
         });
 };

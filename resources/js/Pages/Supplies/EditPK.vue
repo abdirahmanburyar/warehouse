@@ -420,7 +420,7 @@
                                     <span>{{ row.finalized }}</span>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <input type="text" v-model="row.note" :disabled="props.packing_list.status == 'approved'"
+                                    <input type="text" v-model="row.notes" :disabled="props.packing_list.status == 'approved'"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 </td>
                                 <td class="px-3 py-2">
@@ -726,7 +726,7 @@ function openBackOrderModal(index) {
             id: null,
             quantity: 0,
             status: 'Missing',
-            note: ''
+            notes: ''
         }];
 
     showBackOrderModal.value = true;
@@ -752,13 +752,13 @@ const syncBackOrdersWithDifferences = () => {
     // Filter out rows with zero quantity
     const validRows = backOrderRows.value.filter(row => parseInt(row.quantity) > 0);
 
-    // Update the differences array
-    selectedItem.value.differences = validRows.map(row => ({
-        id: row.id,
-        quantity: parseInt(row.quantity),
-        status: row.status,
-        note: row.note
-    }));
+            // Update the differences array
+        selectedItem.value.differences = validRows.map(row => ({
+            id: row.id,
+            quantity: parseInt(row.quantity),
+            status: row.status,
+            notes: row.notes
+        }));
 
     const itemIndex = form.value.items.findIndex(item => item === selectedItem.value);
     if (itemIndex === -1) return;
@@ -768,7 +768,7 @@ const syncBackOrdersWithDifferences = () => {
         id: row.id ?? null,
         quantity: parseInt(row.quantity) || 0,
         status: row.status,
-        note: row.note
+        notes: row.notes
     }));
 };
 
@@ -1025,7 +1025,7 @@ const addBackOrderRow = () => {
         id: null,
         quantity: 0,
         status: 'Missing',
-        note: ''
+        notes: ''
     });
 };
 

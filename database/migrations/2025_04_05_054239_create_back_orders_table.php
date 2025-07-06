@@ -13,20 +13,16 @@ return new class extends Migration
     {
         Schema::create('back_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('purchase_order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('type'); // damaged, missing
-            $table->integer('quantity');
+            $table->string('back_order_number')->unique();
+            $table->foreignId('packing_list_id')->constrained()->onDelete('cascade');
+            $table->date('back_order_date');
+            $table->integer('total_items')->default(0);
+            $table->integer('total_quantity')->default(0);
+            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();
-            $table->enum('status', ['pending','approved','rejected','reviewed', 'completed'])->default('pending');
-            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('cascade');
+            $table->text('source_type')->nullable();
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('cascade');
-            $table->foreignId('reviewed_by')->nullable()->constrained('users');
-            $table->timestamp('reviewed_at')->nullable();
-            $table->foreignId('rejected_by')->nullable()->constrained('users');
-            $table->timestamp('rejected_at')->nullable();
-            $table->foreignId('approved_by')->nullable()->constrained('users');
-            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
     }
@@ -36,6 +32,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // ignore foreign key constraints
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('back_orders');
+        Schema::enableForeignKeyConstraints();
     }
 };

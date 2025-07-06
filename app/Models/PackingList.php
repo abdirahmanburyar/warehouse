@@ -38,6 +38,11 @@ class PackingList extends Model
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
+    public function backOrder()
+    {
+        return $this->hasOne(BackOrder::class);
+    }
+
     public function confirmedBy()
     {
         return $this->belongsTo(User::class, 'confirmed_by');

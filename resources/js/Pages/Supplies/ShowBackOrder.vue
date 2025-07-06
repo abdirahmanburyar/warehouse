@@ -42,7 +42,7 @@
                                     {{ item.status }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.note || '-' }}</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.notes || '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ new
                                 Date(item.created_at).toLocaleDateString() }}</td>
                         </tr>

@@ -732,7 +732,7 @@
                                         <td class="px-3 py-2">
                                             <input
                                                 type="text"
-                                                v-model="row.note"
+                                                v-model="row.notes"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                                 placeholder="Enter note..."
                                             />
@@ -1309,7 +1309,7 @@ function openBackOrderModal(index) {
                       id: null,
                       quantity: 0,
                       status: "Missing",
-                      note: "",
+                      notes: "",
                   },
               ];
 
@@ -1419,7 +1419,7 @@ const addBackOrderRow = () => {
         id: null,
         quantity: 0,
         status: status,
-        note: "",
+        notes: "",
     });
 
     // Sync after adding row
@@ -1531,7 +1531,7 @@ const syncBackOrdersWithDifferences = () => {
             id: row.id ?? null,
             quantity: parseInt(row.quantity) || 0,
             status: row.status,
-            note: row.note,
+            notes: row.notes,
         })
     );
 };

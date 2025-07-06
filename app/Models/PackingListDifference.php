@@ -13,11 +13,12 @@ class PackingListDifference extends Model
 
     protected $fillable = [
         'packing_listitem_id',
+        'back_order_id',
         'product_id',
         'quantity',
         'finalized',
         'status',
-        'note'
+        'notes'
     ];
 
     public function packingListItem()
@@ -30,5 +31,8 @@ class PackingListDifference extends Model
         return $this->belongsTo(Product::class);
     }
 
-    
+    public function backOrder()
+    {
+        return $this->belongsTo(BackOrder::class);
+    }
 }
