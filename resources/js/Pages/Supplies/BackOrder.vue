@@ -41,6 +41,19 @@
                                     <button type="button" @click="removeParentAttachment(index)" class="text-red-500 hover:text-red-700">Remove</button>
                                 </li>
                             </ul>
+                            <button type="button" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center justify-center" @click="uploadParentAttachments" :disabled="isUploading">
+                                <span v-if="isUploading" class="loader mr-2"></span>
+                                <span>{{ isUploading ? 'Uploading...' : 'Upload' }}</span>
+                            </button>
+                        </div>
+                        <div v-if="backOrderInfo.attach_documents && backOrderInfo.attach_documents.length" class="mt-2">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Uploaded Files:</h4>
+                            <ul class="space-y-2">
+                                <li v-for="(doc, i) in backOrderInfo.attach_documents" :key="i" class="flex items-center justify-between text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                                    <a :href="doc.path" target="_blank" class="text-blue-600 underline">{{ doc.name }}</a>
+                                    <button type="button" @click="deleteParentAttachment(doc.path)" class="text-red-500 hover:text-red-700">Delete</button>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -698,4 +711,77 @@ function removeParentAttachment(index) {
     parentAttachments.value.splice(index, 1);
 }
 
+const isUploading = ref(false);
+
+async function uploadParentAttachments() {
+    if (!backOrderInfo.value || parentAttachments.value.length === 0) return;
+    const result = await Swal.fire({
+        title: 'Upload Attachments?',
+        text: 'Are you sure you want to upload these attachments to the back order?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, upload!'
+    });
+    if (!result.isConfirmed) return;
+    isUploading.value = true;
+    const formData = new FormData();
+    parentAttachments.value.forEach(file => formData.append('attachments[]', file));
+    try {
+        const { data } = await axios.post(route('supplies.backOrders.uploadAttachment', backOrderInfo.value.id), formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        parentAttachments.value = [];
+        if (backOrderInfo.value.attach_documents) {
+            backOrderInfo.value.attach_documents = data.files;
+        }
+        toast.success(data.message);
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to upload attachments');
+    } finally {
+        isUploading.value = false;
+    }
+}
+
+async function deleteParentAttachment(filePath) {
+    const result = await Swal.fire({
+        title: 'Delete Attachment?',
+        text: 'Are you sure you want to delete this attachment? This cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+    try {
+        const { data } = await axios.delete(route('supplies.backOrders.deleteAttachment', backOrderInfo.value.id), {
+            data: { file_path: filePath }
+        });
+        if (backOrderInfo.value.attach_documents) {
+            backOrderInfo.value.attach_documents = data.files;
+        }
+        toast.success(data.message);
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to delete attachment');
+    }
+}
+
 </script>
+
+<style>
+.loader {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>

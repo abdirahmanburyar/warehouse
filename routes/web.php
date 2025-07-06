@@ -321,6 +321,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         Route::get('/back-orders/list', [\App\Http\Controllers\SupplyController::class, 'listBackOrders'])->name('supplies.backOrders.list');
         Route::get('/back-orders/{id}/histories', [\App\Http\Controllers\SupplyController::class, 'getBackOrderHistories'])->name('supplies.backOrders.histories');
+        Route::post('/back-orders/{id}/attachments', [\App\Http\Controllers\SupplyController::class, 'uploadBackOrderAttachment'])->name('supplies.backOrders.uploadAttachment');
+        Route::delete('/back-orders/{id}/attachments', [\App\Http\Controllers\SupplyController::class, 'deleteBackOrderAttachment'])->name('supplies.backOrders.deleteAttachment');
 
     });
 

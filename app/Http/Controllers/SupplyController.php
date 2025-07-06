@@ -1950,4 +1950,50 @@ class SupplyController extends Controller
             ->get();
         return response()->json($histories);
     }
+
+    public function uploadBackOrderAttachment(Request $request, $backOrderId)
+    {
+        $request->validate([
+            'attachments' => 'required|array',
+            'attachments.*' => 'file|mimes:pdf|max:10240', // 10MB max per file
+        ]);
+
+        $backOrder = \App\Models\BackOrder::findOrFail($backOrderId);
+        $existing = $backOrder->attach_documents ?? [];
+        $newFiles = [];
+        foreach ($request->file('attachments') as $file) {
+            $fileName = 'backorder_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('attachments/backorders'), $fileName);
+            $newFiles[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => '/attachments/backorders/' . $fileName,
+                'type' => $file->getClientMimeType(),
+                'size' => filesize(public_path('attachments/backorders/' . $fileName)),
+                'uploaded_at' => now()->toDateTimeString()
+            ];
+        }
+        $backOrder->attach_documents = array_merge($existing, $newFiles);
+        $backOrder->save();
+        return response()->json(['message' => 'Attachments uploaded successfully', 'files' => $backOrder->attach_documents]);
+    }
+
+    public function deleteBackOrderAttachment(Request $request, $backOrderId)
+    {
+        $request->validate(['file_path' => 'required|string']);
+        $backOrder = \App\Models\BackOrder::findOrFail($backOrderId);
+        $files = $backOrder->attach_documents ?? [];
+        $files = array_filter($files, function($file) use ($request) {
+            if ($file['path'] === $request->file_path) {
+                $fullPath = public_path($file['path']);
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+                return false;
+            }
+            return true;
+        });
+        $backOrder->attach_documents = array_values($files);
+        $backOrder->save();
+        return response()->json(['message' => 'Attachment deleted successfully', 'files' => $backOrder->attach_documents]);
+    }
 }
