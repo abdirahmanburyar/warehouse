@@ -13,7 +13,7 @@
                         <th class="px-4 py-2 border border-gray-300">Supplier Name</th>
                         <th class="px-4 py-2 border border-gray-300">Reported By</th>
                         <th class="px-4 py-2 border border-gray-300">Note & Attachment</th>
-                        <th class="px-4 py-2 border border-gray-300">Status</th>
+                        <!-- <th class="px-4 py-2 border border-gray-300">Status</th> -->
                         <th class="px-4 py-2 border border-gray-300">Action</th>
                     </tr>
                 </thead>
@@ -62,11 +62,11 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 py-2 border border-gray-300">
+                        <!-- <td class="px-4 py-2 border border-gray-300">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="statusClass(order.status)">
                                 {{ order.status }}
                             </span>
-                        </td>
+                        </td> -->
                         <td class="px-4 py-2 border border-gray-300">
                             <!-- Actions (e.g., view, edit, export) -->
                             <button class="text-indigo-600 hover:text-indigo-900" @click="openHistoryModal(order)">View History</button>
@@ -90,7 +90,7 @@
                             <th class="px-4 py-2 border border-gray-300">QTY</th>
                             <th class="px-4 py-2 border border-gray-300">Backorder reason</th>
                             <th class="px-4 py-2 border border-gray-300">Note & Attachment</th>
-                            <!-- <th class="px-4 py-2 border border-gray-300">Status</th> -->
+                            <th class="px-4 py-2 border border-gray-300">Status</th>
                             <th class="px-4 py-2 border border-gray-300">Action</th>
                         </tr>
                     </thead>
@@ -101,7 +101,7 @@
                             <td class="px-4 py-2 border border-gray-300">{{ formatDate(history.expiry_date) }}</td>
                             <td class="px-4 py-2 border border-gray-300">{{ history.batch_number }}</td>
                             <td class="px-4 py-2 border border-gray-300">{{ history.quantity }}</td>
-                            <!-- <td class="px-4 py-2 border border-gray-300">{{ history.status }}</td> -->
+                            <td class="px-4 py-2 border border-gray-300">{{ history.status }}</td>
                             <td class="px-4 py-2 border border-gray-300">
                                 <div v-if="history.attach_documents && history.attach_documents.length">
                                     <div class="relative">
