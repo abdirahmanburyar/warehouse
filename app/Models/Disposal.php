@@ -86,4 +86,12 @@ class Disposal extends Model
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }
+
+    /**
+     * Get the back order that owns the disposal record
+     */
+    public function backOrder(): BelongsTo
+    {
+        return $this->belongsTo(BackOrder::class);
+    }
 }

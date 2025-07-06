@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Disposal;
 use App\Models\Liquidate;
 use App\Models\Product;
+use App\Models\Warehouse;
+use App\Models\Facility;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\DisposalResource;
 use App\Http\Resources\LiquidateResource;
@@ -18,7 +20,8 @@ class LiquidateDisposalController extends Controller
             'disposedBy',
             'approvedBy',
             'reviewedBy',
-            'rejectedBy'
+            'rejectedBy',
+            'backOrder'
         ])
         ->whereIn('status', ['pending', 'reviewed'])
         ->latest('disposal_id');
@@ -33,14 +36,47 @@ class LiquidateDisposalController extends Controller
                 });
         }
 
+        // Filter by warehouse (applied to reported_by field)
+        if ($request->has('warehouse_id') && $request->warehouse_id) {
+            $disposals->whereHas('disposedBy.warehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse_id);
+            });
+        }
+
+        // Filter by facility (applied to reported_by field)
+        if ($request->has('facility_id') && $request->facility_id) {
+            $disposals->whereHas('disposedBy.facility', function ($q) use ($request) {
+                $q->where('name', $request->facility_id);
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            if ($request->status === 'pending') {
+                $disposals->whereNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
+            } elseif ($request->status === 'reviewed') {
+                $disposals->whereNotNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
+            } elseif ($request->status === 'approved') {
+                $disposals->whereNotNull('approved_at');
+            } elseif ($request->status === 'rejected') {
+                $disposals->whereNotNull('rejected_at');
+            }
+        }
+
         $disposals = $disposals->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
         $disposals->setPath(url()->current()); // Force Laravel to use full URLs
         
+        // Get warehouses and facilities for filters
+        $warehouses = Warehouse::pluck('name')->toArray();
+        $facilities = Facility::pluck('name')->toArray();
+        
         return inertia('LiquidateDisposal/Disposal', [
             'disposals' => DisposalResource::collection($disposals),
-            'filters' => $request->only('search', 'per_page', 'page'),
+            'filters' => $request->only('search', 'per_page', 'page', 'warehouse_id', 'facility_id', 'status'),
+            'warehouses' => $warehouses,
+            'facilities' => $facilities,
         ]);
     }
 
@@ -66,14 +102,46 @@ class LiquidateDisposalController extends Controller
                 });
         }
 
+        // Filter by warehouse (applied to reported_by field)
+        if ($request->has('warehouse') && $request->warehouse) {
+            $liquidates->whereHas('liquidatedBy.warehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse);
+            });
+        }
+
+        // Filter by facility (applied to reported_by field)
+        if ($request->has('facility') && $request->facility) {
+            $liquidates->whereHas('liquidatedBy.facility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            if ($request->status === 'pending') {
+                $liquidates->whereNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
+            } elseif ($request->status === 'reviewed') {
+                $liquidates->whereNotNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
+            } elseif ($request->status === 'approved') {
+                $liquidates->whereNotNull('approved_at');
+            } elseif ($request->status === 'rejected') {
+                $liquidates->whereNotNull('rejected_at');
+            }
+        }
+
         $liquidates = $liquidates->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $liquidates->setPath(url()->current()); // Force Laravel to use full URLs
 
+        // Get warehouses and facilities for filters
+        $warehouses = Warehouse::pluck('name')->toArray();
+        $facilities = Facility::pluck('name')->toArray();
         
         return inertia('LiquidateDisposal/Liquidate', [
             'liquidates' => LiquidateResource::collection($liquidates),
-            'filters' => $request->only('search', 'per_page', 'page'),
+            'filters' => $request->only('search', 'per_page', 'page', 'warehouse', 'facility', 'status'),
+            'warehouses' => $warehouses,
+            'facilities' => $facilities,
         ]);
     }
     
