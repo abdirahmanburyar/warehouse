@@ -27,10 +27,10 @@
                         <select v-model="type"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                             <option value="">All Types</option>
-                            <option value="backorder">Back Order</option>
-                            <option value="return">Return</option>
+                            <option value="missing">Missing</option>
                             <option value="damaged">Damaged</option>
                             <option value="expired">Expired</option>
+                            <option value="low quality">Low Quality</option>
                         </select>
                     </div>
                     <div class="flex-1 mx-2">
