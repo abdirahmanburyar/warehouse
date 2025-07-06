@@ -736,6 +736,28 @@ class SupplyController extends Controller
                     ]
                 );
 
+                // Check if any items have differences to determine if we need a BackOrder
+                $hasBackOrderItems = collect($request->items)
+                    ->filter(function($item) {
+                        return !empty($item['differences']);
+                    })
+                    ->isNotEmpty();
+
+                $backOrder = null;
+                if ($hasBackOrderItems) {
+                    // Create or update parent BackOrder
+                    $backOrder = BackOrder::firstOrCreate(
+                        ['packing_list_id' => $packingList->id],
+                        [
+                            'back_order_date' => now()->toDateString(),
+                            'created_by' => auth()->id(),
+                            'status' => 'pending',
+                            'source_type' => 'packing_list',
+                            'reported_by' => auth()->user()->load('warehouse')->warehouse->name ?? 'Unknown Warehouse'
+                        ]
+                    );
+                }
+
                 // Process each item
                 foreach($request->items as $item) {
                     // Create or update packing list item
@@ -765,6 +787,7 @@ class SupplyController extends Controller
                             $packingListItem->differences()->updateOrCreate(
                                 ['id' => $diff['id'] ?? null],
                                 [
+                                    'back_order_id' => $backOrder->id,
                                     'product_id' => $item['product_id'],
                                     'quantity' => $diff['quantity'],
                                     'status' => $diff['status'],
@@ -778,6 +801,11 @@ class SupplyController extends Controller
                             ->where('product_id', $item['product_id'])
                             ->delete();
                     }
+                }
+
+                // Update BackOrder totals if it exists
+                if ($backOrder) {
+                    $backOrder->updateTotals();
                 }
 
                 return response()->json('Packing list created successfully', 200);
