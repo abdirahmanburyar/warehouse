@@ -115,7 +115,6 @@
                 </div>
 
                 <!-- Received Back Orders Table -->
-                 {{ receivedBackorders.data }}
                 <div class="px-2 mb-6">
                     <div class="bg-white shadow-sm rounded-lg overflow-hidden">
                         <div class="overflow-x-auto">
@@ -133,6 +132,12 @@
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Quantity
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Batch Number
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Expiry Date
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Received Date
@@ -168,6 +173,12 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ receivedBackorder.quantity }} {{ receivedBackorder.uom }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ receivedBackorder.batch_number }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ receivedBackorder.expiry_date }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ formatDate(receivedBackorder.received_at) }}
