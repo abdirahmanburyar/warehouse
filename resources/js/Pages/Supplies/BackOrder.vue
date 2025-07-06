@@ -589,11 +589,13 @@ const submitLiquidation = async () => {
     formData.append('product_id', selectedItem.value.product.id);
     formData.append('packing_list_id', selectedItem.value.packing_list.id);
     formData.append('purchase_order_id', selectedPo.value?.id);
-    formData.append('quantity', liquidateForm.value.quantity);
+    formData.append('quantity', liquidateForm.value.quantity);  
     formData.append('original_quantity', selectedItem.value.quantity);
     formData.append('status', selectedItem.value.status);
     formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
+    formData.append('packing_list_id', liquidateForm.value.packing_list_id);
+    formData.append('packing_listitem_id', liquidateForm.value.packing_list_id);
     
     // Get back_order_id from backOrderInfo or from the item itself
     const backOrderId = backOrderInfo.value?.id || selectedItem.value.back_order_id;
@@ -644,6 +646,8 @@ const submitLiquidation = async () => {
 const handleAction = async (action, item) => {
     console.log(item);
     selectedItem.value = item;
+    console.log(selectedItem.value);
+    console.log(backOrderInfo.value);
 
     switch (action) {
         case 'Receive':
@@ -654,7 +658,8 @@ const handleAction = async (action, item) => {
             liquidateForm.value = {
                 quantity: item.quantity,
                 note: '',
-                attachments: []
+                attachments: [],
+                ...item
             };
             showLiquidateModal.value = true;
             break;
@@ -663,7 +668,8 @@ const handleAction = async (action, item) => {
             disposeForm.value = {
                 quantity: item.quantity,
                 note: '',
-                attachments: []
+                attachments: [],
+                ...item
             };
             showDisposeModal.value = true;
             break;

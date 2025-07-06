@@ -183,7 +183,7 @@ class SupplyController extends Controller
             $validated = $request->validate([
                 'id' => 'required|exists:packing_list_differences,id',
                 'product_id' => 'required|exists:products,id',
-                'packing_list_id' => 'required|exists:packing_lists,id',
+                'packing_listitem_id' => 'required|exists:packing_list_items,id',
                 'quantity' => 'required|integer|min:1',
                 'status' => 'required|string',
                 'note' => 'nullable|string|max:255',
@@ -195,9 +195,9 @@ class SupplyController extends Controller
             // Start a database transaction
             DB::beginTransaction();
             
-            // Get the packing list to include its number in the note
-            $packingList = PackingList::find($request->packing_list_id);
-            $packingListNumber = $packingList ? $packingList->packing_list_number : 'Unknown';
+            // Get the packing list item to include its number in the note
+            $packingListItem = PackingListItem::with('packingList')->find($request->packing_listitem_id);
+            $packingListNumber = $packingListItem ? $packingListItem->packingList->packing_list_number : 'Unknown';
             
             // Generate note based on condition and source
             $note = "PL ($packingListNumber) - {$request->status}";
@@ -232,10 +232,10 @@ class SupplyController extends Controller
                 'status' => 'pending', // Default status is pending
                 'note' => $note,
                 'type' => $request->type,
-                'barcode' => $item->packingListItem->barcode,
-                'expire_date' => $item->packingListItem->expire_date,
-                'batch_number' => $item->packingListItem->batch_number,
-                'uom' => $item->packingListItem->uom,
+                'barcode' => $packingListItem->barcode,
+                'expire_date' => $packingListItem->expire_date,
+                'batch_number' => $packingListItem->batch_number,
+                'uom' => $packingListItem->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
                 'back_order_id' => $item->back_order_id,
             ]);
@@ -244,7 +244,7 @@ class SupplyController extends Controller
             if ($item) {
                 // Create a record in BackOrderHistory before deleting
                 BackOrderHistory::create([
-                    'packing_list_id' => $request->packing_list_id,
+                    'packing_list_id' => $packingListItem->packing_list_id,
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'status' => 'Liquidated',
