@@ -6,30 +6,30 @@
             <table class="min-w-full border border-gray-300 text-xs">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-2 border border-gray-300">SN</th>
-                        <th class="px-4 py-2 border border-gray-300">Backorder ID</th>
-                        <th class="px-4 py-2 border border-gray-300">Backorder Date</th>
-                        <th class="px-4 py-2 border border-gray-300">Packing list Number</th>
-                        <th class="px-4 py-2 border border-gray-300">Supplier Name</th>
-                        <th class="px-4 py-2 border border-gray-300">Reported By</th>
-                        <th class="px-4 py-2 border border-gray-300">Note & Attachment</th>
-                        <!-- <th class="px-4 py-2 border border-gray-300">Status</th> -->
-                        <th class="px-4 py-2 border border-gray-300">Action</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">SN</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Backorder ID</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Backorder Date</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Packing list Number</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Supplier Name</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Reported By</th>
+                        <th class="px-4 text-left py-2 border border-gray-300">Note & Attachment</th>
+                        <!-- <th class="px-4 text-left py-2 border border-gray-300">Status</th> -->
+                        <th class="px-4 text-left py-2 border border-gray-300">Action</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white">
                     <tr v-for="(order, idx) in backOrders" :key="order.id">
-                        <td class="px-4 py-2 border border-gray-300">{{ idx + 1 }}</td>
-                        <td class="px-4 py-2 border border-gray-300">
+                        <td class="px-4 text-left py-2 border border-gray-300">{{ idx + 1 }}</td>
+                        <td class="px-4 text-left py-2 border border-gray-300">
                             <button class="text-blue-600 underline" @click="openHistoryModal(order)">
                                 {{ order.back_order_number }}
                             </button>
                         </td>
-                        <td class="px-4 py-2 border border-gray-300">{{ formatDate(order.back_order_date) }}</td>
-                        <td class="px-4 py-2 border border-gray-300">{{ order.packing_list?.packing_list_number }}</td>
-                        <td class="px-4 py-2 border border-gray-300">{{ order.packing_list?.purchase_order?.supplier?.name || '-' }}</td>
-                        <td class="px-4 py-2 border border-gray-300">{{ order.reported_by || '-' }}</td>
-                        <td class="px-4 py-2 border border-gray-300">
+                        <td class="px-4 text-left py-2 border border-gray-300">{{ formatDate(order.back_order_date) }}</td>
+                        <td class="px-4 text-left py-2 border border-gray-300">{{ order.packing_list?.packing_list_number }}</td>
+                        <td class="px-4 text-left py-2 border border-gray-300">{{ order.packing_list?.purchase_order?.supplier?.name || '-' }}</td>
+                        <td class="px-4 text-left py-2 border border-gray-300">{{ order.reported_by || '-' }}</td>
+                        <td class="px-4 text-left py-2 border border-gray-300">
                             <div v-if="order.attach_documents && order.attach_documents.length">
                                 <div class="relative">
                                     <button @click.stop="toggleDropdown(order.id)" class="text-blue-600 underline">
@@ -62,12 +62,12 @@
                                 </div>
                             </div>
                         </td>
-                        <!-- <td class="px-4 py-2 border border-gray-300">
+                        <!-- <td class="px-4 text-left py-2 border border-gray-300">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="statusClass(order.status)">
                                 {{ order.status }}
                             </span>
                         </td> -->
-                        <td class="px-4 py-2 border border-gray-300">
+                        <td class="px-4 text-left py-2 border border-gray-300">
                             <!-- Actions (e.g., view, edit, export) -->
                             <button class="text-indigo-600 hover:text-indigo-900" @click="openHistoryModal(order)">View History</button>
                         </td>
