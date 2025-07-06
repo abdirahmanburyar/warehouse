@@ -74,6 +74,7 @@
                                 <th class="p-2 text-left text-xs font-medium uppercase border border-black">Product</th>
                                 <th class="p-2 text-left text-xs font-medium uppercase border border-black">Quantity</th>
                                 <th class="p-2 text-left text-xs font-medium uppercase border border-black">Batch Number</th>
+                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Location</th>
                                 <th class="p-2 text-left text-xs font-medium uppercase border border-black">Expiry Date</th>
                                 <th class="p-2 text-left text-xs font-medium uppercase border border-black">Days Until Expiry</th>
                                 <th class="p-2 w-[150px] text-left text-xs font-medium uppercase border border-black">Status</th>
@@ -81,34 +82,38 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in props.inventories.data" :key="item.id">
+                            <tr v-for="item in props.inventories.data" :key="item.id" 
+                                :class="{
+                                    'bg-orange-50': !item.expired && item.days_until_expiry > 180 && item.days_until_expiry <= 365,
+                                    'bg-pink-50': !item.expired && item.days_until_expiry <= 180 && item.days_until_expiry > 0,
+                                    'bg-gray-50': item.expired
+                                }">
                                 <td class="p-2 text-xs text-gray-900 border border-black">{{ item.product?.name }}</td>
                                 <td class="p-2 text-xs text-gray-500 border border-black">{{ item.quantity }}</td>
                                 <td class="p-2 text-xs text-gray-500 border border-black">{{ item.batch_number }}</td>
+                                <td class="p-2 text-xs text-gray-500 border border-black">{{ item.location || 'N/A' }}</td>
                                 <td class="p-2 text-xs text-gray-500 border border-black">{{ formatDate(item.expiry_date) }}</td>
                                 <td class="p-2 border border-black">
                                     <div :class="{
                                         'text-xs font-medium': true,
-                                        'text-red-600': item.expired,
-                                        'text-blue-600': item.days_until_expiry < 180 && item.days_until_expiry >= 365,
-                                        'text-yellow-50': item.days_until_expiry <= 180
+                                        'text-gray-600': item.expired,
+                                        'text-orange-600': !item.expired && item.days_until_expiry > 180 && item.days_until_expiry <= 365,
+                                        'text-pink-600': !item.expired && item.days_until_expiry <= 180 && item.days_until_expiry > 0
                                     }">
                                         {{ item.days_until_expiry }} days
                                     </div>
                                 </td>
                                 <td class="p-2 border border-black">
                                     <span v-if="item.expired"
-                                        :class="{ 'bg-red-50': item.expired }"
-                                        class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium text-white">
+                                        class="p-[5px] rounded-xl inline-flex items-center bg-gray-600 text-xs font-medium text-white">
                                         Expired
                                     </span>
-                                    <span v-else-if="item.days_until_expiry >= 180"
-                                    class="p-[5px] rounded-xl inline-flex items-center bg-yellow-600 text-xs font-medium">
-                                    Expiring Very Soon
-                                </span>
-                                <span v-else
-                                    :class="{ 'bg-blue-500': item.days_until_expiry > 180 && item.days_until_expiry <= 365 }"
-                                        class="p-[5px] rounded-xl inline-flex items-center text-xs font-medium text-white">
+                                    <span v-else-if="item.days_until_expiry <= 180 && item.days_until_expiry > 0"
+                                        class="p-[5px] rounded-xl inline-flex items-center bg-pink-500 text-xs font-medium text-white">
+                                        Expiring Very Soon
+                                    </span>
+                                    <span v-else-if="item.days_until_expiry > 180 && item.days_until_expiry <= 365"
+                                        class="p-[5px] rounded-xl inline-flex items-center bg-orange-400 text-xs font-medium text-white">
                                         Expiring Soon
                                     </span>
                                 </td>
