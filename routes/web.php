@@ -27,6 +27,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LiquidateDisposalController;
 use App\Http\Controllers\ConsumptionUploadController;
+use App\Http\Controllers\ReceivedBackorderController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
@@ -323,6 +324,21 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/back-orders/{id}/histories', [\App\Http\Controllers\SupplyController::class, 'getBackOrderHistories'])->name('supplies.backOrders.histories');
         Route::post('/back-orders/{id}/attachments', [\App\Http\Controllers\SupplyController::class, 'uploadBackOrderAttachment'])->name('supplies.backOrders.uploadAttachment');
         Route::delete('/back-orders/{id}/attachments', [\App\Http\Controllers\SupplyController::class, 'deleteBackOrderAttachment'])->name('supplies.backOrders.deleteAttachment');
+
+        // Received Back Order Routes
+        Route::get('/received-backorder', [ReceivedBackorderController::class, 'index'])->name('supplies.received-backorder.index');
+        Route::get('/received-backorder/create', [ReceivedBackorderController::class, 'create'])->name('supplies.received-backorder.create');
+        Route::post('/received-backorder', [ReceivedBackorderController::class, 'store'])->name('supplies.received-backorder.store');
+        Route::get('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'show'])->name('supplies.received-backorder.show');
+        Route::get('/received-backorder/{receivedBackorder}/edit', [ReceivedBackorderController::class, 'edit'])->name('supplies.received-backorder.edit');
+        Route::put('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'update'])->name('supplies.received-backorder.update');
+        Route::delete('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'destroy'])->name('supplies.received-backorder.destroy');
+        
+        // Received Back Order Action Routes
+        Route::post('/received-backorder/{receivedBackorder}/review', [ReceivedBackorderController::class, 'review'])->name('supplies.received-backorder.review');
+        Route::post('/received-backorder/{receivedBackorder}/approve', [ReceivedBackorderController::class, 'approve'])->name('supplies.received-backorder.approve');
+        Route::post('/received-backorder/{receivedBackorder}/reject', [ReceivedBackorderController::class, 'reject'])->name('supplies.received-backorder.reject');
+        Route::delete('/received-backorder/{receivedBackorder}/attachments', [ReceivedBackorderController::class, 'deleteAttachment'])->name('supplies.received-backorder.deleteAttachment');
 
     });
 

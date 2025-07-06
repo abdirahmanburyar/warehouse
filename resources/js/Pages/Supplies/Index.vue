@@ -38,6 +38,11 @@
                                         role="menuitem">
                                         View Back Order
                                     </a>
+                                    <a @click="router.visit(route('supplies.received-backorder.index'))"
+                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        role="menuitem">
+                                        Received Back order
+                                    </a>
                                 </div>
                             </div>
                         </transition>
