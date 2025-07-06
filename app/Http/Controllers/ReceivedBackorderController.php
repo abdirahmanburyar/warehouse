@@ -8,6 +8,10 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Location;
 use App\Models\Facility;
+use App\Models\Inventory;
+use App\Models\InventoryItem;
+use App\Models\ReceivedQuantity;
+use App\Models\PackingListItem;
 use App\Http\Resources\ReceivedBackorderResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -313,6 +317,15 @@ class ReceivedBackorderController extends Controller
         try {
             DB::beginTransaction();
 
+            // Log the received back order data for debugging
+            \Log::info('Approving received back order:', [
+                'id' => $receivedBackorder->id,
+                'product_id' => $receivedBackorder->product_id,
+                'quantity' => $receivedBackorder->quantity,
+                'batch_number' => $receivedBackorder->batch_number,
+                'status' => $receivedBackorder->status
+            ]);
+
             // Update the received back order status
             $receivedBackorder->update([
                 'status' => 'approved',
@@ -322,16 +335,17 @@ class ReceivedBackorderController extends Controller
             ]);
 
             // Update inventory with the received items
-            $inventory = \App\Models\InventoryItem::where('product_id', $receivedBackorder->product_id)
+            $inventory = InventoryItem::where('product_id', $receivedBackorder->product_id)
                 ->where('batch_number', $receivedBackorder->batch_number)
                 ->first();
             
             if ($inventory) {
                 $inventory->increment('quantity', $receivedBackorder->quantity);
                 $inventory->save();
+                \Log::info('Updated existing inventory item', ['inventory_id' => $inventory->id]);
             } else {
                 // Create a new inventory record if it doesn't exist
-                $mainInventory = \App\Models\Inventory::firstOrCreate([
+                $mainInventory = Inventory::firstOrCreate([
                     'product_id' => $receivedBackorder->product_id,
                 ], [
                     'quantity' => 0,
@@ -339,7 +353,7 @@ class ReceivedBackorderController extends Controller
                 $mainInventory->increment('quantity', $receivedBackorder->quantity);
                 $mainInventory->save();
                 
-                $inventory = \App\Models\InventoryItem::create([
+                $inventory = InventoryItem::create([
                     'inventory_id' => $mainInventory->id,
                     'quantity' => $receivedBackorder->quantity,
                     'batch_number' => $receivedBackorder->batch_number,
@@ -352,10 +366,11 @@ class ReceivedBackorderController extends Controller
                     'uom' => $receivedBackorder->uom,
                     'status' => 'active'
                 ]);
+                \Log::info('Created new inventory item', ['inventory_id' => $inventory->id]);
             }
 
             // Create received quantity record
-            \App\Models\ReceivedQuantity::create([
+            $receivedQuantity = ReceivedQuantity::create([
                 'quantity' => $receivedBackorder->quantity,
                 'received_by' => auth()->id(),
                 'received_at' => now(),
@@ -370,25 +385,33 @@ class ReceivedBackorderController extends Controller
                 'unit_cost' => $receivedBackorder->unit_cost,
                 'total_cost' => $receivedBackorder->total_cost
             ]);
+            \Log::info('Created received quantity record', ['received_quantity_id' => $receivedQuantity->id]);
 
             // Update the packing list quantity if packing_list_id exists
             if ($receivedBackorder->packing_list_id) {
-                $packingList = \App\Models\PackingListItem::where('packing_list_id', $receivedBackorder->packing_list_id)
+                $packingList = PackingListItem::where('packing_list_id', $receivedBackorder->packing_list_id)
                     ->where('product_id', $receivedBackorder->product_id)
                     ->first();
                 
                 if ($packingList) {
                     $packingList->increment('quantity', $receivedBackorder->quantity);
                     $packingList->save();
+                    \Log::info('Updated packing list item', ['packing_list_item_id' => $packingList->id]);
                 }
             }
 
             DB::commit();
+            \Log::info('Successfully approved received back order', ['received_backorder_id' => $receivedBackorder->id]);
 
             return back()->with('success', 'Received backorder approved successfully and inventory updated.');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Failed to approve received back order', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->with('error', 'Failed to approve received backorder: ' . $e->getMessage());
         }
     }
