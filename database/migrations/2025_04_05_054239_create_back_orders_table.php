@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('packing_list_id')->constrained()->onDelete('cascade');
             $table->date('back_order_date');
             $table->integer('total_items')->default(0);
+            // reported by [warehouse_id, facility_id]
+            $table->string('reported_by')->nullable();
             $table->integer('total_quantity')->default(0);
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();

@@ -19,7 +19,8 @@ class BackOrder extends Model
         'source_type',
         'attach_documents',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'reported_by'
     ];
 
     protected $casts = [

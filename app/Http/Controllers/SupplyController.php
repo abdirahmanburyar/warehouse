@@ -1555,7 +1555,8 @@ class SupplyController extends Controller
                             'back_order_date' => now()->toDateString(),
                             'created_by' => auth()->id(),
                             'status' => 'pending',
-                            'source_type' => 'packing_list'
+                            'source_type' => 'packing_list',
+                            'reported_by' => auth()->user()->load('warehouse')->warehouse->name ?? 'Unknown Warehouse'
                         ]
                     );
                 } else {

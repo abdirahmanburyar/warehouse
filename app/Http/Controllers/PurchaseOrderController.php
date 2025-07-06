@@ -233,7 +233,7 @@ class PurchaseOrderController extends Controller
                 'items' => 'required|array',
                 'items.*.id' => 'nullable|exists:back_orders,id',
                 'items.*.purchase_order_id' => 'nullable|exists:purchase_orders,id',
-                'items.*.type' => 'required|string|in:damaged,missing',
+                'items.*.type' => 'required|string',
                 'items.*.quantity' => 'required|integer|min:0',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.notes' => 'nullable|string'
