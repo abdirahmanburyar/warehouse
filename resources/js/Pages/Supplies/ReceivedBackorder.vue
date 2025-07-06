@@ -115,6 +115,7 @@
                 </div>
 
                 <!-- Received Back Orders Table -->
+                 {{ receivedBackorders.data }}
                 <div class="px-2 mb-6">
                     <div class="bg-white shadow-sm rounded-lg overflow-hidden">
                         <div class="overflow-x-auto">

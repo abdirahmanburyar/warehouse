@@ -133,6 +133,7 @@ class WarehouseController extends Controller
     {
         try {
             $warehouses = Warehouse::where('status', 'active')
+                ->where('id', auth()->user()->warehouse_id)
                 ->orderBy('name')
                 ->get()
                 ->map(function($warehouse) {
