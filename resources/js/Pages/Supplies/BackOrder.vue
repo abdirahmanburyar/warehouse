@@ -16,7 +16,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <p class="text-sm font-medium text-gray-500">Back Order Number</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ backOrderInfo }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ backOrderInfo.back_order_number }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Back Order Date</p>
