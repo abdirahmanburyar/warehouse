@@ -498,30 +498,48 @@ const receiveItems = async (item) => {
                 return false;
             }
 
-            // Redirect to ReceivedBackorder create page with pre-filled data
-            const params = new URLSearchParams({
-                product_id: item.product.id,
-                product_name: item.product.name,
-                product_id_code: item.product.productID,
-                barcode: item.packing_list?.barcode || '',
-                batch_number: item.packing_list?.batch_number || '',
-                quantity: num,
-                uom: item.packing_list?.uom || '',
-                type: item.status.toLowerCase(),
-                back_order_id: item.id,
-                packing_list_id: item.packing_list?.id || '',
-                packing_list_number: item.packing_list?.packing_list_number || '',
-                purchase_order_id: selectedPo.value?.id || '',
-                purchase_order_number: selectedPo.value?.purchase_order_number || '',
-                supplier_id: selectedPo.value?.supplier?.id || '',
-                supplier_name: selectedPo.value?.supplier?.name || '',
-                cost_per_unit: item.packing_list?.cost_per_unit || 0,
-                total_cost: (item.packing_list?.cost_per_unit || 0) * num,
-                received_at: new Date().toISOString().split('T')[0]
-            });
-
-            window.location.href = route('supplies.received-backorder.create') + '?' + params.toString();
-            return true;
+            try {
+                isLoading.value = true;
+                await axios.post(route('back-order.receive'), {
+                    id: item.id,
+                    product_id: item.product.id,
+                    packing_listitem_id: item.packing_listitem_id,
+                    quantity: num,
+                    original_quantity: item.quantity,
+                    status: item.status,
+                    packing_list_id: item.packing_list?.id,
+                    packing_list_number: item.packing_list?.packing_list_number,
+                    purchase_order_id: selectedPo.value?.id,
+                    purchase_order_number: selectedPo.value?.purchase_order_number,
+                    supplier_id: selectedPo.value?.supplier?.id,
+                    supplier_name: selectedPo.value?.supplier?.name,
+                    barcode: item.packing_list?.barcode,
+                    batch_number: item.packing_list?.batch_number,
+                    uom: item.packing_list?.uom,
+                    cost_per_unit: item.packing_list?.cost_per_unit,
+                    total_cost: (item.packing_list?.cost_per_unit || 0) * num
+                })
+                    .then(response => {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#10B981',
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Failed to receive items:', error);
+                        Swal.showValidationMessage(error.response?.data?.message || 'Failed to receive items');
+                    });
+                await handlePoChange(selectedPo.value);
+                return true;
+            } catch (error) {
+                console.error('Failed to receive items:', error);
+                Swal.showValidationMessage(error.response?.data?.message || 'Failed to receive items');
+                return false;
+            } finally {
+                isLoading.value = false;
+            }
         },
         allowOutsideClick: () => !Swal.isLoading()
     });

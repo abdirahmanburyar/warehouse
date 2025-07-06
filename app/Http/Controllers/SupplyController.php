@@ -391,6 +391,18 @@ class SupplyController extends Controller
                 'packing_listitem_id' => 'required|exists:packing_list_items,id',
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
+                'status' => 'nullable|string',
+                'packing_list_id' => 'nullable',
+                'packing_list_number' => 'nullable|string',
+                'purchase_order_id' => 'nullable',
+                'purchase_order_number' => 'nullable|string',
+                'supplier_id' => 'nullable',
+                'supplier_name' => 'nullable|string',
+                'barcode' => 'nullable|string',
+                'batch_number' => 'nullable|string',
+                'uom' => 'nullable|string',
+                'cost_per_unit' => 'nullable|numeric',
+                'total_cost' => 'nullable|numeric',
             ]);
             
             // Start a database transaction
@@ -420,76 +432,28 @@ class SupplyController extends Controller
                 'performed_by' => auth()->id()
             ]);
             
-            // Update inventory with the received items
-            $inventory = InventoryItem::where('product_id', $request->product_id)
-                ->where('batch_number', $packingListDiff->packingListItem->batch_number)
-                ->first();
-            
-            if ($inventory) {
-                $inventory->increment('quantity', $receivedQuantity);
-                $inventory->save();
-                ReceivedQuantity::create([
-                    'quantity' => $receivedQuantity,
-                    'received_by' => auth()->id(),
-                    'received_at' => now(),
-                    'transfer_id' => null,
-                    'product_id' => $inventory->product_id,
-                    'packing_list_id' => $packingListDiff->packingListItem->packing_list_id,
-                    'uom' => $inventory->uom,
-                    'barcode' => $inventory->barcode,
-                    'batch_number' => $inventory->batch_number,
-                    'warehouse_id' => $inventory->warehouse_id,
-                    'expiry_date' => $inventory->expire_date,
-                    'unit_cost' => $inventory->unit_cost,
-                    'total_cost' => $inventory->unit_cost * $receivedQuantity
-                ]);
-            } else {
-                // Create a new inventory record if it doesn't exist
-                $inventory = Inventory::firstOrCreate([
-                    'product_id' => $request->product_id,
-                ], [
-                    'quantity' => 0,
-                ]);
-                $inventory->increment('quantity', $receivedQuantity);
-                $inventory->save();
-                
-                $inventory = InventoryItem::create([
-                    'inventory_id' => $inventory->id,
-                    'quantity' => $receivedQuantity,
-                    'batch_number' => $packingListDiff->packingListItem->batch_number,
-                    'expiry_date' => $packingListDiff->packingListItem->expire_date,
-                    'barcode' => $packingListDiff->packingListItem->barcode,
-                    'warehouse_id' => $packingListDiff->packingListItem->warehouse_id,
-                    'location' => $packingListDiff->packingListItem->location,
-                    'unit_cost' => $packingListDiff->packingListItem->unit_cost,
-                    'total_cost' => $packingListDiff->packingListItem->unit_cost * $receivedQuantity,
-                    'uom' => $packingListDiff->packingListItem->uom,
-                    'status' => 'active'
-                ]);
-                ReceivedQuantity::create([
-                    'quantity' => $receivedQuantity,
-                    'received_by' => auth()->id(),
-                    'received_at' => now(),
-                    'transfer_id' => null,
-                    'product_id' => $inventory->product_id,
-                    'packing_list_id' => $validated['packing_list_id'],
-                    'uom' => $inventory->uom,
-                    'warehouse_id' => $inventory->warehouse_id,
-                    'barcode' => $inventory->barcode,
-                    'batch_number' => $inventory->batch_number,
-                    'expiry_date' => $inventory->expire_date,
-                    'unit_cost' => $inventory->unit_cost,
-                    'total_cost' => $inventory->unit_cost * $receivedQuantity
-                ]);
-            }
-            
-            // Update the packing list quantity
-            $packingList = PackingListItem::find($request->packing_listitem_id);
-            if ($packingList) {
-                // Add the received quantity to the packing list quantity
-                $packingList->quantity += $receivedQuantity;
-                $packingList->save();
-            }
+            // Create a received back order record (pending approval)
+            \App\Models\ReceivedBackorder::create([
+                'product_id' => $request->product_id,
+                'received_by' => auth()->id(),
+                'barcode' => $request->barcode,
+                'batch_number' => $request->batch_number,
+                'uom' => $request->uom,
+                'received_at' => now(),
+                'quantity' => $receivedQuantity,
+                'status' => 'pending',
+                'type' => $request->status ? strtolower($request->status) : 'backorder',
+                'unit_cost' => $request->cost_per_unit,
+                'total_cost' => $request->total_cost,
+                'note' => "Received from Back Order: {$request->packing_list_number}\nPurchase Order: {$request->purchase_order_number}\nSupplier: {$request->supplier_name}",
+                'back_order_id' => $request->id,
+                'packing_list_id' => $request->packing_list_id,
+                'packing_list_number' => $request->packing_list_number,
+                'purchase_order_id' => $request->purchase_order_id,
+                'purchase_order_number' => $request->purchase_order_number,
+                'supplier_id' => $request->supplier_id,
+                'supplier_name' => $request->supplier_name,
+            ]);
             
             // Handle the packing list difference record based on remaining quantity
             if ($remainingQuantity <= 0) {
@@ -505,7 +469,7 @@ class SupplyController extends Controller
             DB::commit();
             
             return response()->json([
-                'message' => "Successfully received {$receivedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
+                'message' => "Successfully created received back order for {$receivedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
                 'received_quantity' => $receivedQuantity,
                 'remaining_quantity' => $remainingQuantity
             ], 200);

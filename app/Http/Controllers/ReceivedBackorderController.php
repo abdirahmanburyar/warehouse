@@ -310,14 +310,87 @@ class ReceivedBackorderController extends Controller
             'note' => 'nullable|string',
         ]);
 
-        $receivedBackorder->update([
-            'status' => 'approved',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-            'note' => $validated['note'] ?? $receivedBackorder->note,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return back()->with('success', 'Received backorder approved successfully.');
+            // Update the received back order status
+            $receivedBackorder->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+                'note' => $validated['note'] ?? $receivedBackorder->note,
+            ]);
+
+            // Update inventory with the received items
+            $inventory = \App\Models\InventoryItem::where('product_id', $receivedBackorder->product_id)
+                ->where('batch_number', $receivedBackorder->batch_number)
+                ->first();
+            
+            if ($inventory) {
+                $inventory->increment('quantity', $receivedBackorder->quantity);
+                $inventory->save();
+            } else {
+                // Create a new inventory record if it doesn't exist
+                $mainInventory = \App\Models\Inventory::firstOrCreate([
+                    'product_id' => $receivedBackorder->product_id,
+                ], [
+                    'quantity' => 0,
+                ]);
+                $mainInventory->increment('quantity', $receivedBackorder->quantity);
+                $mainInventory->save();
+                
+                $inventory = \App\Models\InventoryItem::create([
+                    'inventory_id' => $mainInventory->id,
+                    'quantity' => $receivedBackorder->quantity,
+                    'batch_number' => $receivedBackorder->batch_number,
+                    'expiry_date' => $receivedBackorder->expire_date,
+                    'barcode' => $receivedBackorder->barcode,
+                    'warehouse_id' => null, // Will be set based on location if needed
+                    'location' => $receivedBackorder->location,
+                    'unit_cost' => $receivedBackorder->unit_cost,
+                    'total_cost' => $receivedBackorder->total_cost,
+                    'uom' => $receivedBackorder->uom,
+                    'status' => 'active'
+                ]);
+            }
+
+            // Create received quantity record
+            \App\Models\ReceivedQuantity::create([
+                'quantity' => $receivedBackorder->quantity,
+                'received_by' => auth()->id(),
+                'received_at' => now(),
+                'transfer_id' => null,
+                'product_id' => $receivedBackorder->product_id,
+                'packing_list_id' => $receivedBackorder->packing_list_id,
+                'uom' => $receivedBackorder->uom,
+                'barcode' => $receivedBackorder->barcode,
+                'batch_number' => $receivedBackorder->batch_number,
+                'warehouse_id' => $inventory->warehouse_id,
+                'expiry_date' => $receivedBackorder->expire_date,
+                'unit_cost' => $receivedBackorder->unit_cost,
+                'total_cost' => $receivedBackorder->total_cost
+            ]);
+
+            // Update the packing list quantity if packing_list_id exists
+            if ($receivedBackorder->packing_list_id) {
+                $packingList = \App\Models\PackingListItem::where('packing_list_id', $receivedBackorder->packing_list_id)
+                    ->where('product_id', $receivedBackorder->product_id)
+                    ->first();
+                
+                if ($packingList) {
+                    $packingList->increment('quantity', $receivedBackorder->quantity);
+                    $packingList->save();
+                }
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Received backorder approved successfully and inventory updated.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to approve received backorder: ' . $e->getMessage());
+        }
     }
 
     /**
