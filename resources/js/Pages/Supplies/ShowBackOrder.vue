@@ -90,7 +90,7 @@
                             <th class="px-4 py-2 border border-gray-300">QTY</th>
                             <th class="px-4 py-2 border border-gray-300">Backorder reason</th>
                             <th class="px-4 py-2 border border-gray-300">Note & Attachment</th>
-                            <th class="px-4 py-2 border border-gray-300">Status</th>
+                            <!-- <th class="px-4 py-2 border border-gray-300">Status</th> -->
                             <th class="px-4 py-2 border border-gray-300">Action</th>
                         </tr>
                     </thead>
@@ -101,7 +101,7 @@
                             <td class="px-4 py-2 border border-gray-300">{{ formatDate(history.expiry_date) }}</td>
                             <td class="px-4 py-2 border border-gray-300">{{ history.batch_number }}</td>
                             <td class="px-4 py-2 border border-gray-300">{{ history.quantity }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ history.status }}</td>
+                            <!-- <td class="px-4 py-2 border border-gray-300">{{ history.status }}</td> -->
                             <td class="px-4 py-2 border border-gray-300">
                                 <div v-if="history.attach_documents && history.attach_documents.length">
                                     <div class="relative">
