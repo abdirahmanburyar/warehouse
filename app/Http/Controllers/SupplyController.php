@@ -237,6 +237,8 @@ class SupplyController extends Controller
                 'batch_number' => $item->packingListItem->batch_number,
                 'uom' => $item->packingListItem->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+                'reported_by' => auth()->user()->load('warehouse')->warehouse->name ?? 'Unknown Warehouse',
+                'back_order_id' => $item->back_order_id,
             ]);
             
             // Find and delete the record from PackingListDifference table

@@ -290,6 +290,8 @@ function getResults(page = 1) {
                         <th class="min-w-[300px] px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Item Info</th>
                         <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Liquidated At</th>
                         <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Type</th>
+                        <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Back Order ID</th>
+                        <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Reported By</th>
                         <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Source and Reason</th>
                         <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Attachments</th>
                         <th class="px-2 py-1 text-xs border-r border-gray-300 text-left text-black">Status</th>
@@ -298,7 +300,7 @@ function getResults(page = 1) {
                 </thead>
                 <tbody>
                     <tr v-if="props.liquidates.data.length === 0">
-                        <td colspan="10" class="px-2 py-1 text-center text-gray-500">No liquidation records found</td>
+                        <td colspan="12" class="px-2 py-1 text-center text-gray-500">No liquidation records found</td>
                     </tr>
                     <tr v-for="(liquidate, index) in props.liquidates.data" :key="liquidate.id"
                         class="border-b border-gray-300">
@@ -324,6 +326,12 @@ function getResults(page = 1) {
                         </td>
                         <td class="px-2 py-1 text-xs border-r border-gray-300">
                             {{ liquidate.type || 'N/A' }}
+                        </td>
+                        <td class="px-2 py-1 text-xs border-r border-gray-300">
+                            {{ liquidate.back_order_id || 'N/A' }}
+                        </td>
+                        <td class="px-2 py-1 text-xs border-r border-gray-300">
+                            {{ liquidate.reported_by || 'N/A' }}
                         </td>
                         <td class="px-2 py-1 text-xs border-r border-gray-300">
                             <div class="flex flex-col">

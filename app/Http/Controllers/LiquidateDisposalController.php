@@ -50,7 +50,8 @@ class LiquidateDisposalController extends Controller
             'liquidatedBy',
             'approvedBy',
             'reviewedBy',
-            'rejectedBy'
+            'rejectedBy',
+            'backOrder'
         ])
         ->whereIn('status', ['pending', 'reviewed'])
         ->latest('liquidate_id');

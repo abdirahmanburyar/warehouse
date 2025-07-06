@@ -44,6 +44,8 @@ class Liquidate extends Model
         'rejected_at',
         'rejection_reason',
         'attachments',
+        'reported_by',
+        'back_order_id',
     ];
 
     /**
@@ -84,5 +86,13 @@ class Liquidate extends Model
     public function rejectedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    /**
+     * Get the back order associated with this liquidation
+     */
+    public function backOrder(): BelongsTo
+    {
+        return $this->belongsTo(BackOrder::class);
     }
 }
