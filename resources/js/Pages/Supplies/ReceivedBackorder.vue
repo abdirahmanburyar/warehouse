@@ -182,10 +182,6 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
-                                                <Link :href="route('supplies.received-backorder.show', receivedBackorder.id)"
-                                                    class="text-indigo-600 hover:text-indigo-900">
-                                                    View
-                                                </Link>
                                                 <button v-if="receivedBackorder.status === 'pending'" @click="reviewReceivedBackorder(receivedBackorder)"
                                                     class="text-blue-600 hover:text-blue-900">
                                                     Review
