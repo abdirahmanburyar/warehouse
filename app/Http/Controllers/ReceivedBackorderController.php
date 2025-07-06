@@ -81,7 +81,7 @@ class ReceivedBackorderController extends Controller
     {
         $products = Product::select('id', 'name', 'productID')->get();
         $warehouses = Warehouse::select('id', 'name')->get();
-        $locations = Location::select('id', 'name')->get();
+        $locations = Location::select('id', 'location')->get();
         $facilities = Facility::select('id', 'name')->get();
 
         return Inertia::render('Supplies/ReceivedBackorder/Create', [
@@ -181,7 +181,7 @@ class ReceivedBackorderController extends Controller
     {
         $products = Product::select('id', 'name', 'productID')->get();
         $warehouses = Warehouse::select('id', 'name')->get();
-        $locations = Location::select('id', 'name')->get();
+        $locations = Location::select('id', 'location')->get();
         $facilities = Facility::select('id', 'name')->get();
 
         return Inertia::render('Supplies/ReceivedBackorder/Edit', [

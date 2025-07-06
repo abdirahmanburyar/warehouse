@@ -123,8 +123,8 @@
                                 <select v-model="form.location"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     <option value="">Select Location</option>
-                                    <option v-for="location in locations" :key="location.id" :value="location.name">
-                                        {{ location.name }}
+                                    <option v-for="location in locations" :key="location.id" :value="location.location">
+                                        {{ location.location }}
                                     </option>
                                 </select>
                                 <div v-if="errors.location" class="text-red-500 text-sm mt-1">{{ errors.location }}</div>
