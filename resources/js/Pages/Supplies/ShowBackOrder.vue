@@ -61,7 +61,6 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2">SN</th>
-                            <th class="px-4 py-2">Backorder ID</th>
                             <th class="px-4 py-2">Item Name</th>
                             <th class="px-4 py-2">Expiry Date</th>
                             <th class="px-4 py-2">Batch Number</th>
@@ -75,7 +74,6 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="(history, idx) in histories" :key="history.id">
                             <td class="px-4 py-2">{{ idx + 1 }}</td>
-                            <td class="px-4 py-2">{{ history.back_order_id }}</td>
                             <td class="px-4 py-2">{{ history.product?.name }}</td>
                             <td class="px-4 py-2">{{ formatDate(history.expiry_date) }}</td>
                             <td class="px-4 py-2">{{ history.batch_number }}</td>
