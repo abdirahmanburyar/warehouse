@@ -44,7 +44,6 @@ class Liquidate extends Model
         'rejected_at',
         'rejection_reason',
         'attachments',
-        'reported_by',
         'back_order_id',
     ];
 
