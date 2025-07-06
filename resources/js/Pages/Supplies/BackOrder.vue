@@ -590,13 +590,10 @@ const submitLiquidation = async () => {
     formData.append('purchase_order_id', selectedPo.value?.id);
     formData.append('quantity', liquidateForm.value.quantity);
     formData.append('original_quantity', selectedItem.value.quantity);
-    formData.append('barcode', selectedItem.value.packing_list.barcode);
-    formData.append('expire_date', selectedItem.value.packing_list.expire_date);
-    formData.append('batch_number', selectedItem.value.packing_list.batch_number);
-    formData.append('uom', selectedItem.value.packing_list.uom);
     formData.append('status', selectedItem.value.status);
     formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
+    formData.append('back_order_id', backOrderInfo.value.id);
 
     // Append each attachment
     for (let i = 0; i < liquidateForm.value.attachments.length; i++) {
