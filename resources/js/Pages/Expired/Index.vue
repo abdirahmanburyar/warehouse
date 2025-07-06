@@ -82,12 +82,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in props.inventories.data" :key="item.id" 
-                                :class="{
-                                    'bg-orange-50': !item.expired && item.days_until_expiry > 180 && item.days_until_expiry <= 365,
-                                    'bg-pink-50': !item.expired && item.days_until_expiry <= 180 && item.days_until_expiry > 0,
-                                    'bg-gray-50': item.expired
-                                }">
+                            <tr v-for="item in props.inventories.data" :key="item.id">
                                 <td class="p-2 text-xs text-gray-900 border border-black">{{ item.product?.name }}</td>
                                 <td class="p-2 text-xs text-gray-500 border border-black">{{ item.quantity }}</td>
                                 <td class="p-2 text-xs text-gray-500 border border-black">{{ item.batch_number }}</td>
