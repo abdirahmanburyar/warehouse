@@ -131,7 +131,7 @@ class SupplyController extends Controller
             ->with(['supplier'])
             ->latest()
             ->get();
-        $warehouses = Warehouse::select('id', 'name')->get();
+        $warehouses = Warehouse::where('id', auth()->user()->warehouse_id)->select('id', 'name')->get();
         return inertia("Supplies/PackingList", [
             'purchaseOrders' => $purchaseOrders,
             'warehouses' => $warehouses,
