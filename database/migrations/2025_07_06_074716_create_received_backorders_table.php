@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->string('status');
             $table->string('type');
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->string('location')->nullable();
             $table->string('facility')->nullable();
             $table->string('warehouse')->nullable();

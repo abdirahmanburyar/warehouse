@@ -392,10 +392,11 @@ class SupplyController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
                 'status' => 'nullable|string',
-                'packing_list_id' => 'nullable',
+                'packing_list_id' => 'required|exists:packing_lists,id',
                 'packing_list_number' => 'nullable|string',
                 'purchase_order_id' => 'nullable',
                 'total_cost' => 'nullable|numeric',
+                'back_order_id' => 'required|exists:back_orders,id',
             ]);
             
             // Start a database transaction
@@ -417,19 +418,26 @@ class SupplyController extends Controller
             $remainingQuantity = $originalQuantity - $receivedQuantity;
             
             // Create a record in BackOrderHistory for the received items
-            BackOrderHistory::create([
-                'packing_list_id' => $packingListDiff->packing_list_id,
-                'product_id' => $packingListDiff->product_id,
+            $backOrderHistory = BackOrderHistory::create([
+                'packing_list_id' => $packingListItem->packing_list_id,
+                'product_id' => $packingListItem->product_id,
                 'quantity' => $receivedQuantity,
                 'status' => 'Received',
-                'note' => $request->note ?? 'Received by ' . auth()->user()->name,
-                'performed_by' => auth()->id()
+                'note' => "Received from Back Order: {$request->packing_list_number}",
+                'performed_by' => auth()->user()->id,
+                'barcode' => $packingListItem->barcode,
+                'batch_number' => $packingListItem->batch_number,
+                'expiry_date' => $packingListItem->expire_date,
+                'back_order_id' => $request->back_order_id,
+                'uom' => $packingListItem->uom,
+                'unit_cost' => $packingListItem->unit_cost,
+                'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
             ]);
             
             // Create a received back order record (pending approval)
             \App\Models\ReceivedBackorder::create([
                 'product_id' => $request->product_id,
-                'received_by' => auth()->id(),
+                'received_by' => auth()->user()->id,
                 'barcode' => $packingListItem->barcode ?? null,
                 'batch_number' => $packingListItem->batch_number ?? null,
                 'uom' => $packingListItem->uom ?? null,
@@ -439,8 +447,9 @@ class SupplyController extends Controller
                 'type' => $request->status ? strtolower($request->status) : 'backorder',
                 'unit_cost' => $packingListItem->unit_cost ?? 0,
                 'total_cost' => $packingListItem->unit_cost * $request->quantity ?? 0,
+                'warehouse_id' => $packingListItem->warehouse_id ?? null,
                 'note' => "Received from Back Order: {$request->packing_list_number}",
-                'back_order_id' => $request->id,
+                'back_order_id' => $request->back_order_id,
                 'packing_list_id' => $request->packing_list_id,
                 'packing_list_number' => $request->packing_list_number,
                 'purchase_order_id' => $request->purchase_order_id,

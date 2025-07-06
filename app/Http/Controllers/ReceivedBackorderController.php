@@ -317,15 +317,6 @@ class ReceivedBackorderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Log the received back order data for debugging
-            logger()->info('Approving received back order:', [
-                'id' => $receivedBackorder->id,
-                'product_id' => $receivedBackorder->product_id,
-                'quantity' => $receivedBackorder->quantity,
-                'batch_number' => $receivedBackorder->batch_number,
-                'status' => $receivedBackorder->status
-            ]);
-
             // Update the received back order status
             $receivedBackorder->update([
                 'status' => 'approved',

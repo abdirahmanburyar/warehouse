@@ -22,6 +22,7 @@ class ReceivedBackorder extends Model
         'quantity',
         'status',
         'type',
+        'warehouse_id',
         'location',
         'facility',
         'warehouse',

@@ -16,7 +16,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <p class="text-sm font-medium text-gray-500">Back Order Number</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ backOrderInfo.back_order_number }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ backOrderInfo }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Back Order Date</p>
@@ -502,6 +502,7 @@ const receiveItems = async (item) => {
                 isLoading.value = true;
                 await axios.post(route('back-order.receive'), {
                     id: item.id,
+                    back_order_id: backOrderInfo.value.id,
                     product_id: item.product.id,
                     packing_listitem_id: item.packing_listitem_id,
                     quantity: num,
