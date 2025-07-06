@@ -168,7 +168,7 @@ const handleSubmit = async () => {
                     icon: "success",
                     confirmButtonText: "OK",
                 }).then(() => {
-                    router.visit(route("expired.index"));
+                    router.get(route('expired.index'), {}, {preserveScroll: true});
                 });
             })
             .catch((error) => {
@@ -468,17 +468,17 @@ const handleSubmit = async () => {
 
                     <!-- Action Buttons -->
                     <div class="flex items-center justify-between pt-8 border-t border-gray-200">
-                        <SecondaryButton
-                            :href="route('expired.index')"
-                            as="a"
+                        <button
+                            type="button"
+                            @click="router.visit(route('expired.index'))"
                             :disabled="loading"
                             class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200"
                             :class="{
                                 'opacity-50 cursor-not-allowed': loading,
                             }"
                         >
-                            Cancel
-                        </SecondaryButton>
+                            Exit
+                        </button>
                         <PrimaryButton 
                             :disabled="loading" 
                             class="relative px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
