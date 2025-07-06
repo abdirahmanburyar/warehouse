@@ -372,7 +372,7 @@ class SupplyController extends Controller
             if ($packingListDiff) {
                 // Create a record in BackOrderHistory
                 BackOrderHistory::create([
-                    'packing_list_id' => $packingListDiff->packing_list_id,
+                    'packing_list_id' => $item->packing_list_id, // Use packing_list_id from the PackingListItem
                     'product_id' => $packingListDiff->product_id,
                     'quantity' => $request->quantity,
                     'status' => 'Disposed',
