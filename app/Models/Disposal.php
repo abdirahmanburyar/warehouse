@@ -43,8 +43,8 @@ class Disposal extends Model
         'facility',
         'warehouse',
         'unit_cost',
-        'tota_cost',
-        'attachments',
+        'total_cost',
+        'back_order_id',
     ];
 
     /**

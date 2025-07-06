@@ -313,6 +313,7 @@ class SupplyController extends Controller
                 'quantity' => "required|min:1",
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
+                'back_order_id' => 'nullable|exists:back_orders,id',
             ]);
 
             
@@ -324,7 +325,7 @@ class SupplyController extends Controller
             $packingListNumber = $item ? $item->packingList->packing_list_number : 'Unknown';
             
             // Generate note based on condition and source
-            $note = "FROM PACKING LIST";
+            $note = "PL ({$packingListNumber}) - {$request->type}";
             if ($request->note && $request->note !== 'undefined' && trim($request->note) !== '') {
                 $note .= " - {$request->note}";
             }
@@ -333,7 +334,7 @@ class SupplyController extends Controller
             $attachments = [];
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $index => $file) {
-                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
+                    $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
                     $file->move(public_path('attachments/disposals'), $fileName);
                     $attachments[] = [
                         'name' => $file->getClientOriginalName(),
@@ -345,7 +346,7 @@ class SupplyController extends Controller
                 }
             }
             
-            // Create a new liquidation record
+            // Create a new disposal record
             $disposal = Disposal::create([
                 'product_id' => $item->product_id,
                 'disposed_by' => auth()->id(),
@@ -358,27 +359,35 @@ class SupplyController extends Controller
                 'location' => $item->location,
                 'barcode' => $item->barcode,
                 'unit_cost' => $item->unit_cost,
-                'tota_cost' => $item->unit_cost * $request->quantity,
+                'total_cost' => $item->unit_cost * $request->quantity,
                 'expire_date' => $item->expire_date,
                 'batch_number' => $item->batch_number,
                 'uom' => $item->uom,
                 'attachments' => !empty($attachments) ? json_encode($attachments) : null,
+                'back_order_id' => $request->back_order_id,
             ]);
             
-            // Find and delete the record from PackingListDifference table
+            // Find and update the record from PackingListDifference table
             $packingListDiff = PackingListDifference::find($request->id);
             if ($packingListDiff) {
-                // Create a record in BackOrderHistory before deleting
+                // Create a record in BackOrderHistory
                 BackOrderHistory::create([
                     'packing_list_id' => $packingListDiff->packing_list_id,
                     'product_id' => $packingListDiff->product_id,
                     'quantity' => $request->quantity,
                     'status' => 'Disposed',
                     'note' => $request->note ?? 'Disposed by ' . auth()->user()->name,
-                    'performed_by' => auth()->id()
+                    'performed_by' => auth()->id(),
+                    'back_order_id' => $request->back_order_id,
+                    'barcode' => $item->barcode,
+                    'batch_number' => $item->batch_number,
+                    'expiry_date' => $item->expire_date,
+                    'uom' => $item->uom,
+                    'unit_cost' => $item->unit_cost,
+                    'total_cost' => $item->unit_cost * $request->quantity,
                 ]);
                 
-                // Delete the record
+                // Mark the record as finalized (disposed) - this removes it from the back order list
                 $packingListDiff->update([
                     'finalized' => 'Disposed'
                 ]);

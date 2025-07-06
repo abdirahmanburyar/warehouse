@@ -336,7 +336,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="inline-flex justify-center rounded-md border border-transparent bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                         :disabled="isSubmitting">
                         {{ isSubmitting ? 'Disposing...' : 'Dispose' }}
                     </button>
@@ -685,6 +685,12 @@ const submitDisposal = async () => {
     formData.append('type', selectedItem.value.status);
     formData.append('quantity', selectedItem.value.quantity);
     formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
+
+    // Get back_order_id from backOrderInfo or from the item itself
+    const backOrderId = backOrderInfo.value?.id || selectedItem.value.back_order_id;
+    if (backOrderId) {
+        formData.append('back_order_id', backOrderId);
+    }
 
     // Append each attachment
     for (let i = 0; i < disposeForm.value.attachments.length; i++) {
