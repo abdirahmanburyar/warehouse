@@ -186,10 +186,6 @@
                                                     class="text-indigo-600 hover:text-indigo-900">
                                                     View
                                                 </Link>
-                                                <Link :href="route('supplies.received-backorder.edit', receivedBackorder.id)"
-                                                    class="text-green-600 hover:text-green-900">
-                                                    Edit
-                                                </Link>
                                                 <button v-if="receivedBackorder.status === 'pending'" @click="reviewReceivedBackorder(receivedBackorder)"
                                                     class="text-blue-600 hover:text-blue-900">
                                                     Review
@@ -201,10 +197,6 @@
                                                 <button v-if="receivedBackorder.status === 'pending' || receivedBackorder.status === 'reviewed'" @click="rejectReceivedBackorder(receivedBackorder)"
                                                     class="text-red-600 hover:text-red-900">
                                                     Reject
-                                                </button>
-                                                <button @click="deleteReceivedBackorder(receivedBackorder)"
-                                                    class="text-red-600 hover:text-red-900">
-                                                    Delete
                                                 </button>
                                             </div>
                                         </td>
@@ -314,37 +306,6 @@ const typeClass = (type) => {
         default:
             return 'bg-gray-100 text-gray-800';
     }
-};
-
-const deleteReceivedBackorder = (receivedBackorder) => {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: `Do you want to delete received back order ${receivedBackorder.received_backorder_number}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(route('supplies.received-backorder.destroy', receivedBackorder.id), {
-                onSuccess: () => {
-                    Swal.fire(
-                        'Deleted!',
-                        'Received back order has been deleted.',
-                        'success'
-                    );
-                },
-                onError: (errors) => {
-                    Swal.fire(
-                        'Error!',
-                        errors.message || 'Failed to delete received back order.',
-                        'error'
-                    );
-                }
-            });
-        }
-    });
 };
 
 const reviewReceivedBackorder = (receivedBackorder) => {
