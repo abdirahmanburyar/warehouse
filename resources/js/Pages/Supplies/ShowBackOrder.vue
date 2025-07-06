@@ -83,26 +83,25 @@
                 <table class="min-w-full border border-gray-300 text-xs">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 border border-gray-300">SN</th>
-                            <th class="px-4 py-2 border border-gray-300">Item Name</th>
-                            <th class="px-4 py-2 border border-gray-300">Expiry Date</th>
-                            <th class="px-4 py-2 border border-gray-300">Batch Number</th>
-                            <th class="px-4 py-2 border border-gray-300">QTY</th>
-                            <th class="px-4 py-2 border border-gray-300">Backorder reason</th>
-                            <th class="px-4 py-2 border border-gray-300">Note & Attachment</th>
-                            <th class="px-4 py-2 border border-gray-300">Status</th>
-                            <th class="px-4 py-2 border border-gray-300">Action</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">SN</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Item Name</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Expiry Date</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Batch Number</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">QTY</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Backorder reason</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Note & Attachment</th>
+                            <th class="px-4 text-left py-2 border border-gray-300">Status</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white">
                         <tr v-for="(history, idx) in histories" :key="history.id">
-                            <td class="px-4 py-2 border border-gray-300">{{ idx + 1 }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ history.product?.name }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ formatDate(history.expiry_date) }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ history.batch_number }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ history.quantity }}</td>
-                            <td class="px-4 py-2 border border-gray-300">{{ history.status }}</td>
-                            <td class="px-4 py-2 border border-gray-300">
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ idx + 1 }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ history.product?.name }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ formatDate(history.expiry_date) }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ history.batch_number }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ history.quantity }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">{{ history.status }}</td>
+                            <td class="px-4 text-left py-2 border border-gray-300">
                                 <div v-if="history.attach_documents && history.attach_documents.length">
                                     <div class="relative">
                                         <button @click.stop="toggleHistoryDropdown(history.id)" class="text-blue-600 underline">
@@ -139,9 +138,6 @@
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="statusClass(history.status)">
                                     {{ history.status }}
                                 </span>
-                            </td>
-                            <td class="px-4 py-2 border border-gray-300">
-                                <!-- Actions (e.g., view, download attachment) -->
                             </td>
                         </tr>
                     </tbody>
