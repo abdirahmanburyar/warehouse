@@ -587,15 +587,13 @@ const submitLiquidation = async () => {
     console.log(selectedItem.value);
     formData.append('id', selectedItem.value.id);
     formData.append('product_id', selectedItem.value.product.id);
-    formData.append('packing_list_id', selectedItem.value.packing_list.id);
     formData.append('purchase_order_id', selectedPo.value?.id);
     formData.append('quantity', liquidateForm.value.quantity);  
     formData.append('original_quantity', selectedItem.value.quantity);
     formData.append('status', selectedItem.value.status);
     formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
-    formData.append('packing_list_id', liquidateForm.value.packing_list_id);
-    formData.append('packing_listitem_id', liquidateForm.value.packing_list_id);
+    formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
     
     // Get back_order_id from backOrderInfo or from the item itself
     const backOrderId = backOrderInfo.value?.id || selectedItem.value.back_order_id;
