@@ -383,6 +383,7 @@ const groupedItems = computed(() => {
                 packing_listitem_id: item.packing_listitem_id,
                 packing_list: item.packing_list_item.packing_list,
                 created_at: item.created_at,
+                back_order_id: item.back_order_id,
                 rows: [{
                     quantity: item.quantity,
                     status: item.status,
@@ -593,7 +594,12 @@ const submitLiquidation = async () => {
     formData.append('status', selectedItem.value.status);
     formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
-    formData.append('back_order_id', backOrderInfo.value.id);
+    
+    // Get back_order_id from backOrderInfo or from the item itself
+    const backOrderId = backOrderInfo.value?.id || selectedItem.value.back_order_id;
+    if (backOrderId) {
+        formData.append('back_order_id', backOrderId);
+    }
 
     // Append each attachment
     for (let i = 0; i < liquidateForm.value.attachments.length; i++) {
