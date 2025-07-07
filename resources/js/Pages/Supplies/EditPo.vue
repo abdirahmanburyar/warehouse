@@ -173,7 +173,7 @@
             </div>
 
             <!-- Items Section -->
-            <div class="bg-white rounded-xl overflow-hidden">
+            <div class="bg-white ">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div class="flex items-center justify-between">
                         <div>
@@ -194,12 +194,12 @@
                 </div>
 
                 <!-- Items Table -->
-                <div class="overflow-x-auto">
+                <div class="">
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">#</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Item</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200" style="width: 350px;">Item</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Quantity</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Unit</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Unit Cost</th>
@@ -212,7 +212,7 @@
                                 class="hover:bg-gray-50 transition-colors duration-150"
                                 :class="{ 'opacity-75': form.approved_at }">
                                 <td class="px-4 py-3 text-sm text-gray-500 border-r border-gray-200">{{ index + 1 }}</td>
-                                <td class="px-4 py-3 border-r border-gray-200">
+                                <td class="px-4 py-3 border-r border-gray-200" style="width: 350px;">
                                     <Multiselect 
                                         v-model="item.product" 
                                         :value="item.product_id"
@@ -750,7 +750,9 @@ async function submitForm() {
         return;
     }
 
-    if (form.value.items.length === 0) {
+    // Filter out items with no product_id
+    const filteredItems = form.value.items.filter(item => item.product_id);
+    if (filteredItems.length === 0) {
         Swal.fire({
             icon: 'warning',
             title: 'Warning',
@@ -759,8 +761,8 @@ async function submitForm() {
         return;
     }
 
-    // Validate items
-    const invalidItems = form.value.items.filter(item => !item.product_id || !item.quantity || !item.unit_cost);
+    // Validate only items with product_id
+    const invalidItems = filteredItems.filter(item => !item.uom || !item.quantity || !item.unit_cost);
     if (invalidItems.length > 0) {
         Swal.fire({
             icon: 'warning',
@@ -785,20 +787,19 @@ async function submitForm() {
     isSubmitting.value = true;
 
     try {
-        const response = await axios.put(route('supplies.updatePO', form.value.id), form.value);
-        
+        // Send only filtered items
+        const payload = { ...form.value, items: filteredItems };
+        const response = await axios.put(route('supplies.updatePO', form.value.id), payload);
         await Swal.fire({
             icon: 'success',
             title: 'Success',
             text: 'Purchase order has been updated successfully',
             confirmButtonColor: '#3085d6'
         });
-        
         router.visit(route('supplies.index'));
     } catch (error) {
         console.error('Error updating PO:', error);
         let errorMessage = 'Failed to update purchase order';
-        
         if (error.response?.data?.message) {
             errorMessage = error.response.data.message;
         } else if (error.response?.data) {
@@ -810,7 +811,6 @@ async function submitForm() {
                 errorMessage = validationErrors;
             }
         }
-        
         Swal.fire({
             icon: 'error',
             title: 'Error',
