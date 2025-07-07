@@ -337,7 +337,7 @@ onMounted(() => {
                 <div class="flex items-center space-x-4">
                     <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-3 py-1.5 rounded-lg shadow-sm">
                         <div class="text-xs font-medium">Total Records</div>
-                        <div class="text-lg font-bold">{{ props.receivedBackorders.total || 0 }}</div>
+                        <div class="text-lg font-bold">{{ props.stats.total || 0 }}</div>
                     </div>
                 </div>
             </div>
