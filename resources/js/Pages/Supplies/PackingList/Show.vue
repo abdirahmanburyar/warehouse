@@ -1,391 +1,263 @@
 <template>
-    <AuthenticatedLayout :title="props.packingList.packing_list_number" description="Packing List Details" img="/assets/images/orders.png">
+    <AuthenticatedLayout
+        title="Packing Lists"
+        description="Manage and view all packing lists"
+        img="/assets/images/orders.png"
+    >
         <Head>
-            <title>{{ props.packingList.packing_list_number }}</title>
+            <title>Packing Lists</title>
         </Head>
-        
-        <div class="flex justify-end space-x-4 mb-4 px-4 no-print">
-            <Link
-                :href="route('supplies.index')"
-                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-                <ArrowLeftIcon class="-ml-1 mr-2 h-5 w-5 text-gray-500" />
-                Back to List
-            </Link>
-            <button
-                @click="handlePrint"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-                <PrinterIcon class="-ml-1 mr-2 h-5 w-5" />
-                Print
-            </button>
-        </div>
 
-        <div id="printable-content" class="bg-white mb-[100px]">
-            <div class="p-8">
-                <!-- Header -->
-                <div class="text-center mb-8">
-                    <h1 class="text-sm font-bold text-[#4472C4] tracking-wide">
-                        PACKING LIST
-                    </h1>
-                </div>
-
-                <!-- Info Cards -->
-                <div class="grid grid-cols-4 gap-8 mb-8">
-                    <!-- Basic Info -->
-                    <div class="border rounded">
-                        <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
-                            Packing List Information
-                        </div>
-                        <div class="p-4 font-medium space-y-1">
-                            <p class="font-medium text-xs">
-                                Packing List No: {{ props.packingList.packing_list_number }}
-                            </p>
-                            <p class="text-xs">
-                                Reference No: {{ props.packingList.ref_no }}
-                            </p>
-                            <p class="text-xs">
-                                Date: {{ formatDate(props.packingList.pk_date) }}
-                            </p>
-                            <p class="text-xs">
-                                Status: <span :class="[getStatusClass(), 'status-badge']">{{ props.packingList.status }}</span>
-                            </p>
-                        </div>
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </div>
-
-                    <!-- Purchase Order Info -->
-                    <div class="border rounded">
-                        <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
-                            Purchase Order Information
-                        </div>
-                        <div class="p-4 font-medium space-y-1">
-                            <p class="text-xs">
-                                PO Number: {{ props.packingList.purchase_order.po_number }}
-                            </p>
-                            <p class="text-xs">
-                                Original PO No: {{ props.packingList.purchase_order.original_po_no }}
-                            </p>
-                            <p class="text-xs">
-                                PO Date: {{ formatDate(props.packingList.purchase_order.po_date) }}
-                            </p>
-                            <p class="text-xs">
-                                Supplier: {{ props.packingList.purchase_order.supplier.name }}
-                            </p>
-                            <p class="text-xs">
-                                Contact Person: {{ props.packingList.purchase_order.supplier.contact_person }}
-                            </p>
-                            <p class="text-xs">
-                                Phone: {{ props.packingList.purchase_order.supplier.phone }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Approval Info -->
-                    <div class="border rounded">
-                        <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
-                            Approval Information
-                        </div>
-                        <div class="p-4 font-medium space-y-1">
-                            <template v-if="props.packingList.confirmed_by">
-                                <p class="text-xs">
-                                    Confirmed By: {{ props.packingList.confirmed_by.name }}
-                                </p>
-                                <p class="text-xs">
-                                    Confirmed At: {{ formatDate(props.packingList.confirmed_at) }}
-                                </p>
-                            </template>
-                            <template v-if="props.packingList.reviewed_by">
-                                <p class="text-xs">
-                                    Reviewed By: {{ props.packingList.reviewed_by.name }}
-                                </p>
-                                <p class="text-xs">
-                                    Reviewed At: {{ formatDate(props.packingList.reviewed_at) }}
-                                </p>
-                            </template>
-                            <template v-if="props.packingList.approved_by">
-                                <p class="text-xs">
-                                    Approved By: {{ props.packingList.approved_by.name }}
-                                </p>
-                                <p class="text-xs">
-                                    Approved At: {{ formatDate(props.packingList.approved_at) }}
-                                </p>
-                            </template>
-                            <p v-if="!props.packingList.confirmed_by && !props.packingList.reviewed_by && !props.packingList.approved_by" class="text-xs text-gray-500 italic">
-                                No approval information available
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Back Order Info -->
-                    <div class="border rounded">
-                        <div class="bg-[#4472C4] text-white px-4 py-2 text-xs font-bold">
-                            Back Order Information
-                        </div>
-                        <div class="p-4 font-medium space-y-1">
-                            <template v-if="props.packingList.back_order">
-                                <p class="text-xs">
-                                    Back Order #: {{ props.packingList.back_order.back_order_number }}
-                                </p>
-                                <p class="text-xs">
-                                    Date: {{ formatDate(props.packingList.back_order.back_order_date) }}
-                                </p>
-                                <p class="text-xs">
-                                    Total Items: {{ props.packingList.back_order.total_items }}
-                                </p>
-                                <p class="text-xs">
-                                    Total Quantity: {{ props.packingList.back_order.total_quantity }}
-                                </p>
-                                <p class="text-xs">
-                                    Status: <span :class="[getBackOrderStatusClass(), 'status-badge']">{{ props.packingList.back_order.status }}</span>
-                                </p>
-                            </template>
-                            <p v-else class="text-xs text-gray-500 italic">
-                                No back order information available
-                            </p>
-                        </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Packing Lists</h1>
+                        <p class="text-blue-100">Manage and track all packing list activities</p>
                     </div>
                 </div>
-
-                <!-- Items Table -->
-                <div class="border rounded mb-8">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-left w-[35%]">
-                                    Item
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-20">
-                                    Category
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-20">
-                                    Dosage Form
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-16">
-                                    UOM
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-24">
-                                    Barcode
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-24">
-                                    Batch No.
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-center w-20">
-                                    Quantity
-                                </th>
-                                <th class="bg-[#4472C4] text-white border-r font-bold text-right w-24">
-                                    Unit Cost
-                                </th>
-                                <th class="bg-[#4472C4] text-white font-bold text-right w-24">
-                                    Total Cost
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="item in props.packingList.items" :key="item.id" class="border-b">
-                                <td class="p-2 border-r">{{ item.product.name }}</td>
-                                <td class="p-2 border-r text-center">{{ item.product?.category?.name }}</td>
-                                <td class="p-2 border-r text-center">{{ item.product?.dosage?.name }}</td>
-                                <td class="p-2 border-r text-center">{{ item.uom }}</td>
-                                <td class="p-2 border-r text-center">{{ item.barcode }}</td>
-                                <td class="p-2 border-r text-center">{{ item.batch_number }}</td>
-                                <td class="p-2 border-r text-center">{{ item.quantity }}</td>
-                                <td class="p-2 border-r text-right">${{ formatNumber(item.unit_cost) }}</td>
-                                <td class="p-2 text-right">${{ formatNumber(item.total_cost) }}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr class="border-t">
-                                <td colspan="8" class="p-2 text-right font-bold">Total Cost:</td>
-                                <td class="p-2 text-right font-bold">
-                                    ${{ formatNumber(calculateTotalCost()) }}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <!-- Status Timeline -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6 timeline">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Packing List Timeline</h3>
-                    <div class="flow-root">
-                        <ul role="list" class="-mb-8">
-
-                            <!-- Confirmed -->
-                            <li v-if="props.packingList.confirmed_by">
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <CheckCircleIcon class="h-5 w-5 text-white" />
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-500">Confirmed by <span class="font-medium text-gray-900">{{ props.packingList.confirmed_by.name }}</span></p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                                                <time :datetime="props.packingList.confirmed_at">{{ formatDate(props.packingList.confirmed_at) }}</time>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            <!-- Reviewed -->
-                            <li v-if="props.packingList.reviewed_by">
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center ring-8 ring-white">
-                                                <EyeIcon class="h-5 w-5 text-white" />
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-500">Reviewed by <span class="font-medium text-gray-900">{{ props.packingList.reviewed_by.name }}</span></p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                                                <time :datetime="props.packingList.reviewed_at">{{ formatDate(props.packingList.reviewed_at) }}</time>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            <!-- Approved -->
-                            <li v-if="props.packingList.approved_by">
-                                <div class="relative pb-8">
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
-                                                <CheckIcon class="h-5 w-5 text-white" />
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-500">Approved by <span class="font-medium text-gray-900">{{ props.packingList.approved_by.name }}</span></p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                                                <time :datetime="props.packingList.approved_at">{{ formatDate(props.packingList.approved_at) }}</time>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="flex items-center space-x-3">
+                    <Link
+                        :href="route('supplies.packing-list.create')"
+                        class="inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
+                    >
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        New Packing List
+                    </Link>
                 </div>
             </div>
         </div>
 
-        <!-- Documents section (not included in PDF) -->
-        <div class="bg-white rounded-lg shadow p-6 mb-[100px]">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Attached Documents</h3>
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-500">{{ props.packingList.documents.length }} document(s)</span>
-                    <button
-                        @click="$refs.fileInput.click()"
-                        :disabled="isUploading"
-                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        <!-- Filters Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <!-- Search -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input
+                            v-model="search"
+                            type="text"
+                            placeholder="Search packing list number, supplier..."
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+
+                <!-- Supplier Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+                    <Multiselect
+                        v-model="supplier"
+                        :options="props.suppliers"
+                        :searchable="true"
+                        :create-option="false"
+                        :show-labels="false"
+                        placeholder="Select supplier"
+                    ></Multiselect>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select
+                        v-model="filters.status"
+                        @change="props.filters.page = 1"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                        <DocumentPlusIcon v-if="!isUploading" class="h-5 w-5 mr-2" />
-                        <SpinnerIcon v-else class="animate-spin h-5 w-5 mr-2" />
-                        {{ isUploading ? 'Uploading...' : 'Upload Document' }}
-                    </button>
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <!-- Date From -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
                     <input
-                        type="file"
-                        ref="fileInput"
-                        @change="handleFileUpload"
-                        accept="application/pdf"
-                        class="hidden"
+                        v-model="filters.date_from"
+                        type="date"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+
+                <!-- Date To -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                    <input
+                        v-model="filters.date_to"
+                        type="date"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
             </div>
-            <div v-if="props.packingList.documents.length" class="space-y-3">
-                <div v-for="doc in props.packingList.documents" :key="doc.id"
-                    class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150">
-                    <div class="flex items-center space-x-3">
-                        <DocumentIcon class="h-5 w-5 text-gray-400" />
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ doc.file_name }}</p>
-                            <p class="text-xs text-gray-500">
-                                {{ formatDate(doc.created_at) }}
-                                <span class="text-gray-400">·</span>
-                                <span class="text-gray-500">Uploaded by {{ doc.uploader?.name }}</span>
-                            </p>
+        </div>
+
+        <!-- Packing Lists Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Packing Lists</h3>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <select
+                                v-model="per_page"
+                                @change="props.filters.page = 1"
+                                class="text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-[120px] border border-gray-300 rounded px-2 py-1"
+                            >
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
                         </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <a :href="doc.file_path" target="_blank"
-                            class="inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150">
-                            <EyeIcon class="h-4 w-4 mr-1" />
-                            View
-                        </a>
                     </div>
                 </div>
             </div>
-            <div v-else class="text-sm text-gray-500 text-center py-8">
-                <DocumentIcon class="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p>No documents attached</p>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Packing List
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Supplier
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Date
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Items
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Total Cost
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Fulfillment Rate
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="packingList in props.packingLists.data" :key="packingList.id" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                                <Link
+                                    :href="route('supplies.packing-list.edit', packingList.id)"
+                                    class="flex flex-col text-blue-600 hover:text-blue-500"
+                                >
+                                    <div class="text-sm font-medium text-blue-600">{{ packingList.packing_list_number }}</div>
+                                    <div class="text-sm text-blue-500">{{ packingList.ref_no }}</div>
+                                
+                                </Link>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                                <div class="text-sm text-gray-900">{{ packingList.purchase_order?.supplier?.name }}</div>
+                                <div class="text-sm text-gray-500">{{ packingList.purchase_order?.supplier?.contact_person }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                                {{ formatDate(packingList.pk_date) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                                {{ packingList.items?.length || 0 }} items
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                                ${{ formatNumber(calculateTotalCost(packingList)) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                                {{ packingList.fulfillment_rate }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                                <span :class="getStatusClasses(packingList.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+                                    {{ packingList.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-gray-200">
+                                <div class="flex items-center space-x-2">
+                                    <Link
+                                        :href="route('supplies.packing-list.show', packingList.id)"
+                                        class="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                                    >
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        View
+                                    </Link>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="props.packingLists.data.length === 0" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No packing lists found</h3>
+                <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or create a new packing list.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-end mt-2 p-4">
+                <TailwindPagination
+                :data="props.packingLists"
+                :limit="2"
+                @pagination-change-page="getResults"
+            />
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import moment from 'moment'
-import { 
-    ArrowLeftIcon, 
-    PrinterIcon,
-    DocumentIcon,
-    DocumentPlusIcon,
-    CheckCircleIcon,
-    EyeIcon,
-    CheckIcon
-} from '@heroicons/vue/24/outline'
-import SpinnerIcon from '@/Components/SpinnerIcon.vue'
-import { useToast } from 'vue-toastification';
-import axios from 'axios';
+import { TailwindPagination } from 'laravel-vue-pagination'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.css'
+import '@/Components/multiselect.css'
 
 const props = defineProps({
-    packingList: {
-        type: Object,
-        required: true
-    },
-    can: {
-        type: Object,
-        default: () => ({})
-    }
+    packingLists: Object,
+    suppliers: Array,
+    filters: Object
 })
 
-const toast = useToast()
-const printContent = ref(null)
-const fileInput = ref(null)
-const isUploading = ref(false)
+function getResults(page = 1) {
+    props.filters.page = page
+}
 
-const canUpload = computed(() => props.can.upload_documents)
-
-const handlePrint = () => {
-    const printContent = document.getElementById('printable-content');
-    const originalContents = document.body.innerHTML;
-    
-    document.body.innerHTML = printContent.innerHTML;
-    window.print();
-    document.body.innerHTML = originalContents;
-    
-    // Reinitialize Vue app after restoring content
-    window.location.reload();
-};
-
+// Methods
 const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return moment(date).format('DD/MM/YYYY HH:mm');
+    if (!date) return 'N/A'
+    return moment(date).format('DD/MM/YYYY')
 }
 
 const formatNumber = (number) => {
@@ -395,11 +267,12 @@ const formatNumber = (number) => {
     })
 }
 
-const calculateTotalCost = () => {
-    return props.packingList.items.reduce((total, item) => total + Number(item.total_cost), 0);
-};
+const calculateTotalCost = (packingList) => {
+    if (!packingList.items) return 0
+    return packingList.items.reduce((total, item) => total + Number(item.total_cost || 0), 0)
+}
 
-const getStatusClass = () => {
+const getStatusClasses = (status) => {
     const classes = {
         pending: 'bg-yellow-100 text-yellow-800',
         confirmed: 'bg-blue-100 text-blue-800',
@@ -407,105 +280,44 @@ const getStatusClass = () => {
         approved: 'bg-green-100 text-green-800',
         rejected: 'bg-red-100 text-red-800'
     }
-    return `${classes[props.packingList.status] || ''} px-2 py-1 rounded-full text-xs font-medium`
+    return classes[status] || 'bg-gray-100 text-gray-800'
 }
 
-const getBackOrderStatusClass = () => {
-    const classes = {
-        pending: 'bg-yellow-100 text-yellow-800',
-        processing: 'bg-blue-100 text-blue-800',
-        completed: 'bg-green-100 text-green-800',
-        cancelled: 'bg-red-100 text-red-800'
-    }
-    return `${classes[props.packingList.back_order?.status] || ''} px-2 py-1 rounded-full text-xs font-medium`
+const search = ref(props.filters.search);
+const per_page = ref(props.filters.per_page || 25);
+const supplier = ref(props.filters.supplier || '');
+const status = ref(props.filters.status || '');
+const date_from = ref(props.filters.date_from || '');
+const date_to = ref(props.filters.date_to || '');
+
+watch([
+    () => search.value,
+    () => supplier.value,
+    () => status.value,
+    () => date_from.value,
+    () => date_to.value,
+    () => per_page.value,
+    () => props.filters.page
+], () => {
+    updateURL();
+})
+
+const updateURL = () => {
+    const query = {}
+    
+    if (search.value) query.search = search.value
+    if (supplier.value) query.supplier = supplier.value
+    if (status.value) query.status = status.value
+    if (date_from.value) query.date_from = date_from.value
+    if (date_to.value) query.date_to = date_to.value
+    if (per_page.value) query.per_page = per_page.value
+    if (props.filters.page) query.page = props.filters.page
+
+    router.get(route('supplies.packing-list.showPK'), query, {
+        preserveScroll: true,
+        only: ['packingLists', 'filters']
+    })
 }
 
-const handleFileUpload = async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
 
-    if (file.type !== 'application/pdf') {
-        toast.error('Please select a PDF file')
-        return
-    }
-
-    const formData = new FormData()
-    formData.append('document', file)
-    isUploading.value = true
-
-    try {
-        const response = await axios.post(
-            `/supplies/packing-list/${props.packingList.id}/upload-document`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            }
-        )
-
-        if (response.status === 200) {
-            // Get the uploaded document details from response
-            const uploadedDoc = response.data.document
-            
-            // Add the new document to the list
-            props.packingList.documents.push({
-                id: uploadedDoc.id,
-                file_name: uploadedDoc.file_name,
-                file_path: uploadedDoc.file_path,
-                created_at: uploadedDoc.created_at,
-                uploader: {
-                    name: uploadedDoc.uploader.name
-                }
-            })
-
-            toast.success('Document uploaded successfully')
-            fileInput.value.value = '' // Clear the file input
-        }
-    } catch (error) {
-        toast.error(error.response?.data || 'Failed to upload document')
-    } finally {
-        isUploading.value = false
-    }
-}
 </script>
-
-<style>
-.status-badge {
-    @apply px-2 py-1 text-xs font-medium rounded-full;
-}
-
-@media print {
-    @page {
-        size: landscape;
-        margin: 0.5cm;
-    }
-    
-    body {
-        margin: 0;
-        padding: 0;
-    }
-    
-    .no-print, 
-    .timeline,
-    button,
-    a {
-        display: none !important;
-    }
-    
-    #printable-content {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    table {
-        page-break-inside: avoid;
-        width: 100% !important;
-    }
-    
-    * {
-        print-color-adjust: exact !important;
-        -webkit-print-color-adjust: exact !important;
-    }
-}
-</style>

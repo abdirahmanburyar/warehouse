@@ -12,6 +12,7 @@ use App\Models\IssuedQuantity;
 use App\Models\Location;
 use App\Models\PackingList;
 use App\Models\PackingListDifference;
+use App\Http\Resources\PackingListResource;
 use App\Models\PoDocument;
 use App\Models\PurchaseOrder;
 use App\Models\Warehouse;
@@ -120,6 +121,7 @@ class SupplyController extends Controller
 
     // showPackingList
     public function showPackingList(Request $request, $id){
+        
         $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy','backOrder')->find($id);
         return inertia("Supplies/PackingList/Show", [
             'packingList' => $packingList
@@ -1415,70 +1417,93 @@ class SupplyController extends Controller
     }
 
     public function showPK(Request $request){
-        $pk = PackingList::with(['items.product', 'items.differences', 'purchaseOrder.supplier'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('packing_list_number')
-            ->map(function ($group) {
-                $firstPL = $group->first();
-                
-                // Get all items across all packing lists in the group
-                $allItems = $group->flatMap(function($pl) {
-                    return $pl->items;
-                });
-                
-                // Count total items and unique products
-                $totalItems = $allItems->count();
-                $uniqueProductIds = $allItems->pluck('product_id')->unique()->count();
-                
-                // Calculate total received and original quantities
-                $totalReceivedQty = $allItems->sum('quantity');
-                $totalOriginalQty = $allItems->sum(function($item) {
-                    return $item->purchaseOrderItem ? $item->purchaseOrderItem->quantity : 0;
-                });
-                
-                // Calculate fulfillment rate
-                $fulfillmentRate = $totalOriginalQty > 0 ? ($totalReceivedQty / $totalOriginalQty) * 100 : 0;
-                
-                // Calculate total cost
-                $totalCost = $allItems->sum('total_cost');
-                
-                // Calculate average lead time
-                $avgLeadTime = $group->avg(function($pl) {
-                    if ($pl->confirmed_at) {
-                        return round(Carbon::parse($pl->confirmed_at)->diffInMonths(Carbon::now()), 1);
-                    }
-                    return 0;
-                });
-                
-                // Count total differences (issues)
-                $totalDifferences = $allItems->flatMap(function($item) {
-                    return $item->differences;
-                })->count();
+        $query = PackingList::with([
+            'items.product.category',
+            'items.product.dosage', 
+            'purchaseOrder.supplier',
+            'purchaseOrder.items',
+            'confirmedBy',
+            'approvedBy',
+            'rejectedBy',
+            'reviewedBy',
+            'backOrder'
+        ])
+        ->select('packing_lists.*')
+        ->selectRaw('
+            CASE 
+                WHEN (
+                    SELECT COALESCE(SUM(poi.quantity), 0) 
+                    FROM purchase_order_items poi 
+                    WHERE poi.purchase_order_id = packing_lists.purchase_order_id
+                ) > 0 
+                THEN CONCAT(
+                    ROUND(
+                        (
+                            SELECT COALESCE(SUM(pli.quantity), 0) 
+                            FROM packing_list_items pli 
+                            WHERE pli.packing_list_id = packing_lists.id
+                        ) / (
+                            SELECT COALESCE(SUM(poi.quantity), 0) 
+                            FROM purchase_order_items poi 
+                            WHERE poi.purchase_order_id = packing_lists.purchase_order_id
+                        ) * 100, 2
+                    ), "%"
+                )
+                ELSE "0%" 
+            END as fulfillment_rate
+        ');
 
-                return [
-                    'id' => $firstPL->id,
-                    'packing_list_number' => $firstPL->packing_list_number,
-                    'supplier' => $firstPL->purchaseOrder && $firstPL->purchaseOrder->supplier ? [
-                        'name' => $firstPL->purchaseOrder->supplier->name,
-                        'id' => $firstPL->purchaseOrder->supplier->id
-                    ] : null,
-                    'receiving_date' => $firstPL->created_at,
-                    'total_items' => $totalItems,
-                    'total_product_ids' => $uniqueProductIds,
-                    'total_cost' => $totalCost,
-                    'avg_lead_time' => $avgLeadTime > 0 ? $avgLeadTime . ' Months' : 'N/A',
-                    'fulfillment_rate' => round($fulfillmentRate, 2) . '%',
-                    'needs_back_order' => $totalDifferences > 0,
-                    'status' => $firstPL->status,
-                    'ref_no' => $firstPL->ref_no,
-                    'pk_date' => $firstPL->pk_date,
-                    'total_differences' => $totalDifferences
-                ];
+        // Apply filters
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('packing_list_number', 'like', '%' . $request->search . '%')
+                  ->orWhere('ref_no', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('purchaseOrder.supplier', function($sq) use ($request) {
+                      $sq->where('name', 'like', '%' . $request->search . '%');
+                  });
             });
+        }
 
-        return inertia('Supplies/ShowPK', [
-            'packing_list' => $pk
+        if ($request->filled('supplier')) {
+            $query->whereHas('purchaseOrder.supplier', function($q) use ($request) {
+                $q->where('id', $request->supplier);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('pk_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('pk_date', '<=', $request->date_to);
+        }
+
+        $packingLists = $query->orderBy('created_at', 'desc')->get();
+
+        // Calculate fulfillment rate for each packing list
+        $packingLists->each(function($packingList) {
+            $totalOrdered = $packingList->purchaseOrder->items->sum('quantity');
+            $totalReceived = $packingList->items->sum('quantity');
+            
+            if ($totalOrdered > 0) {
+                $fulfillmentRate = round(($totalReceived / $totalOrdered) * 100, 2);
+                $packingList->fulfillment_rate = $fulfillmentRate . '%';
+            } else {
+                $packingList->fulfillment_rate = '0%';
+            }
+        });
+
+        // Get all suppliers for the filter dropdown
+        $suppliers = Supplier::pluck('name')->toArray();
+
+        return inertia('Supplies/PackingList/Show', [
+            'packingLists' => PackingListResource::collection($packingLists),
+            'suppliers' => $suppliers,
+            'filters' => $request->only('search', 'supplier', 'status', 'date_from', 'date_to')
         ]);
     }
 
@@ -1735,6 +1760,27 @@ class SupplyController extends Controller
                 ]);
 
             return response()->json('Items have been reviewed successfully', 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function rejectPK(Request $request)
+    {
+        try {
+            $request->validate([
+                'id' => 'required',
+                'status' => 'required|in:rejected'
+            ]);
+
+            PackingList::where('id', $request->id)
+                ->update([
+                    'status' => $request->status,
+                    'rejected_by' => auth()->user()->id,
+                    'rejected_at' => now()
+                ]);
+
+            return response()->json('Items have been rejected successfully', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
