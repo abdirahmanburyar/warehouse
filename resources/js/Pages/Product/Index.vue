@@ -207,7 +207,7 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider w-[200px] max-w-[200px] border border-gray-200">
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider w-[350px] max-w-[350px] border border-gray-200">
                                 Item
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
