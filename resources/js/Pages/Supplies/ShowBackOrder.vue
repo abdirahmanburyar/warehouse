@@ -329,11 +329,11 @@ const openHistoryDropdowns = ref([]);
 const isLoadingHistories = ref(false);
 
 // Filter refs
-const search = ref(props.filters?.search || '');
-const warehouse = ref(props.filters?.warehouse || '');
-const facility = ref(props.filters?.facility || '');
-const supplier = ref(props.filters?.supplier || '');
-const per_page = ref(props.filters?.per_page || 25);
+const search = ref(props.filters.search);
+const warehouse = ref(props.filters.warehouse);
+const facility = ref(props.filters.facility);
+const supplier = ref(props.filters.supplier);
+const per_page = ref(props.filters.per_page || 25);
 
 
 

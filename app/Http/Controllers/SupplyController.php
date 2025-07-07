@@ -1524,6 +1524,11 @@ class SupplyController extends Controller
         if($request->filled('facility')){
             $query->where('reported_by', $request->facility);
         }
+        if($request->filled('supplier')){
+            $query->whereHas('packingList.purchaseOrder.supplier', function($q) use ($request){
+                $q->where('name', 'like', $request->supplier);
+            });
+        }
         // with
         $query = $query->with('packingList')->latest();
         $history = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
