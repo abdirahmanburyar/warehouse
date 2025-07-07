@@ -18,6 +18,8 @@ use App\Models\Warehouse;
 use App\Models\Product;
 use App\Models\PurchaseOrderItem;
 use App\Http\Resources\PurchaseOrderResource;
+use App\Http\Resources\BackOrderHistoryResource;
+use App\Models\Facility;
 use App\Models\Supply;
 use App\Models\SupplyItem;
 use App\Models\Supplier;
@@ -1505,9 +1507,35 @@ class SupplyController extends Controller
     }
 
     public function showBackOrder(Request $request){
-        $history = BackOrderHistory::with('packingList', 'product')->get();
+        $query = BackOrder::query();
+
+        logger()->info($request->all());
+
+        if($request->filled('search')){
+            $query->whereHas('packingList', function($q) use ($request){
+                $q->where('packing_list_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('ref_no', 'like', '%' . $request->search . '%');
+            })
+            ->orWhere('back_order_number', 'like', '%' . $request->search . '%');
+        }
+        if($request->filled('warehouse')){
+            $query->where('reported_by', $request->warehouse);
+        }
+        if($request->filled('facility')){
+            $query->where('reported_by', $request->facility);
+        }
+        // with
+        $query = $query->with('packingList')->latest();
+        $history = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $history->setPath(url()->current());
+
         return inertia('Supplies/ShowBackOrder', [
-            'history' => $history
+            'history' => BackOrderHistoryResource::collection($history),
+            'filters' => $request->only('search', 'per_page', 'warehouse', 'facility'),
+            'warehouses' => Warehouse::pluck('name')->toArray(),
+            'facilities' => Facility::pluck('name')->toArray(),
+            'suppliers' => Supplier::pluck('name')->toArray()
         ]);
     }
 
@@ -1972,10 +2000,14 @@ class SupplyController extends Controller
 
     public function getBackOrderHistories($backOrderId)
     {
-        $histories = \App\Models\BackOrderHistory::with(['product', 'performer'])
+        try {
+            $histories = BackOrderHistory::with(['product.dosage','product.category', 'performer'])
             ->where('back_order_id', $backOrderId)
             ->get();
-        return response()->json($histories);
+        return response()->json($histories, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
     }
 
     public function uploadBackOrderAttachment(Request $request, $backOrderId)
