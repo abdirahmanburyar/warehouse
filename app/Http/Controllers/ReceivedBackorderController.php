@@ -50,12 +50,13 @@ class ReceivedBackorderController extends Controller
             $query->where('type', $request->type);
         }
 
-        if ($request->filled('date_from')) {
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
             $query->where('received_at', '>=', $request->date_from);
         }
 
-        if ($request->filled('date_to')) {
-            $query->where('received_at', '<=', $request->date_to);
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->where('received_at', '<=', $request->date_to)
+                  ->where('received_at', '>=', $request->date_from);
         }
 
         // Filter by warehouse

@@ -205,6 +205,13 @@ watch([
     reloadPage();
 });
 
+// Watch date_from to validate date_to
+watch(() => date_from.value, (newDateFrom) => {
+    if (newDateFrom && date_to.value && newDateFrom > date_to.value) {
+        date_to.value = '';
+    }
+});
+
 function reloadPage() {
     const query = {};
     if (search.value) query.search = search.value;
@@ -453,6 +460,7 @@ onMounted(() => {
                         <input 
                             type="date" 
                             v-model="date_to"
+                            :min="date_from"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                     </div>
