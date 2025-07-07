@@ -1530,7 +1530,7 @@ class SupplyController extends Controller
             });
         }
         // with
-        $query = $query->with('packingList')->latest();
+        $query = $query->with('packingList.purchaseOrder.supplier')->latest();
         $history = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $history->setPath(url()->current());
