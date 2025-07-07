@@ -398,17 +398,7 @@
                                     form.rejected_at
                                 "
                             >
-                                <svg v-if="form.reviewed_at" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                <svg v-if="isProcessing.review" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
+                                <img src="/assets/images/review.png" alt="Review" class="h-5 w-5 object-contain" />
                                 {{ form.reviewed_at ? "Reviewed on " + formatDate(form.reviewed_at) : isProcessing.review ? "Processing..." : "Review" }}
                             </button>
                             <div v-if="form.reviewed_at" class="mt-2 text-left">
@@ -431,9 +421,7 @@
                                 ]"
                                 :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at"
                             >
-                                <CheckCircleIcon v-if="form.approved_at" class="h-4 w-4" />
-                                <ArrowPathIcon v-else-if="isProcessing.approve" class="h-4 w-4 animate-spin" />
-                                <CheckCircleIcon v-else class="h-4 w-4" />
+                                <img src="/assets/images/approved.png" alt="Approve" class="h-5 w-5 object-contain" />
                                 {{ form.approved_at ? 'Approved on ' + formatDate(form.approved_at) : isProcessing.approve ? 'Processing...' : 'Approve' }}
                             </button>
                             <div v-if="form.approved_at" class="mt-2 text-left">
@@ -466,19 +454,7 @@
                                     form.approved_at
                                 "
                             >
-                                <svg v-if="form.rejected_at" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <svg v-else-if="!form.reviewed_at" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4"></path>
-                                </svg>
-                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <svg v-if="isProcessing.reject" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
+                                <img src="/assets/images/rejected.png" alt="Reject" class="h-5 w-5 object-contain" />
                                 {{ form.rejected_at ? "Rejected on " + formatDate(form.rejected_at) : isProcessing.reject ? "Processing..." : "Reject" }}
                             </button>
                             <div v-if="form.rejected_at" class="mt-2 text-center">
