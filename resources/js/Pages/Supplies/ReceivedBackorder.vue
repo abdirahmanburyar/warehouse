@@ -205,9 +205,9 @@ watch([
     reloadPage();
 });
 
-// Watch date_from to validate date_to
+// Watch date_from to reset date_to
 watch(() => date_from.value, (newDateFrom) => {
-    if (newDateFrom && date_to.value && newDateFrom > date_to.value) {
+    if (newDateFrom) {
         date_to.value = '';
     }
 });
