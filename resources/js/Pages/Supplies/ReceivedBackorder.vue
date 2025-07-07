@@ -17,6 +17,8 @@ const props = defineProps({
     receivedBackorders: Object,
     filters: Object,
     stats: Object,
+    warehouses: Array,
+    facilities: Array,
 });
 
 const isReviewing = ref([]);
@@ -154,6 +156,24 @@ const status = ref(props.filters?.status || "");
 const type = ref(props.filters?.type || "");
 const date_from = ref(props.filters?.date_from || "");
 const date_to = ref(props.filters?.date_to || "");
+const warehouse = ref(props.filters?.warehouse || "");
+const facility = ref(props.filters?.facility || "");
+
+const facilityOptions = computed(() => {
+    const options = props.facilities?.map(name => ({
+        value: name,
+        label: name
+    })) || [];
+    return [{ value: "", label: 'All Facilities' }, ...options];
+});
+
+const warehouseOptions = computed(() => {
+    const options = props.warehouses?.map(name => ({
+        value: name,
+        label: name
+    })) || [];
+    return [{ value: "", label: 'All Warehouses' }, ...options];
+});
 
 const statusOptions = computed(() => [
     { value: "", label: 'All Statuses' },
@@ -178,6 +198,8 @@ watch([
     () => type.value,
     () => date_from.value,
     () => date_to.value,
+    () => warehouse.value,
+    () => facility.value,
     () => props.filters.page
 ], () => {
     reloadPage();
@@ -191,6 +213,8 @@ function reloadPage() {
     if (type.value) query.type = type.value;
     if (date_from.value) query.date_from = date_from.value;
     if (date_to.value) query.date_to = date_to.value;
+    if (warehouse.value) query.warehouse = warehouse.value;
+    if (facility.value) query.facility = facility.value;
     if (props.filters.page) query.page = props.filters.page;
     
     router.get(route('supplies.received-backorder.index'), query, {
@@ -280,6 +304,12 @@ onMounted(() => {
     Object.keys(groupedReceivedBackorders.value).forEach(key => {
         expandedGroups.value.add(key);
     });
+    
+    // Debug: Check if warehouses and facilities are being passed
+    console.log('Warehouses:', props.warehouses);
+    console.log('Facilities:', props.facilities);
+    console.log('Warehouse Options:', warehouseOptions.value);
+    console.log('Facility Options:', facilityOptions.value);
 });
 
 </script>
@@ -314,8 +344,8 @@ onMounted(() => {
 
             <!-- Search and Filter Section -->
             <div class="bg-white p-4 mb-4">
-                <!-- First Row: Search, Status, Type, Date From, Date To -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                <!-- First Row: Search, Warehouse, Facility (3 columns) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                     <!-- Search -->
                     <div class="lg:col-span-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Search Records</label>
@@ -334,6 +364,45 @@ onMounted(() => {
                         </div>
                     </div>
                     
+                    <!-- Warehouse Filter -->
+                    <div class="lg:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                        <Multiselect
+                            v-model="warehouse"
+                            :options="warehouseOptions"
+                            :searchable="true"
+                            :allow-empty="true"
+                            :multiple="false"
+                            :show-labels="false"
+                            placeholder="Filter by Warehouse"
+                            label="label"
+                            track-by="value"
+                            @select="() => {}"
+                            class="text-sm text-black"
+                        />
+                    </div>
+                    
+                    <!-- Facility Filter -->
+                    <div class="lg:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
+                        <Multiselect
+                            v-model="facility"
+                            :options="facilityOptions"
+                            :searchable="true"
+                            :allow-empty="true"
+                            :multiple="false"
+                            :show-labels="false"
+                            placeholder="Filter by Facility"
+                            label="label"
+                            track-by="value"
+                            @select="() => {}"
+                            class="text-sm text-black"
+                        />
+                    </div>
+                </div>
+                
+                <!-- Second Row: Status, Type, Date From, Date To (4 columns) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <!-- Status Filter -->
                     <div class="lg:col-span-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -389,7 +458,7 @@ onMounted(() => {
                     </div>
                 </div>
                 
-                <!-- Second Row: Per Page Filter (Right Aligned) -->
+                <!-- Third Row: Per Page Filter (Right Aligned) -->
                 <div class="flex justify-end">
                     <div class="w-48">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
@@ -488,6 +557,7 @@ onMounted(() => {
                         <col class="w-24">
                         <col class="w-28">
                         <col class="w-28">
+                        <col class="w-28">
                         <col class="w-24">
                         <col class="w-24">
                         <col class="w-24">
@@ -511,6 +581,9 @@ onMounted(() => {
                                 Expiry Date
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
+                                Received Date
+                            </th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
                                 Status
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
@@ -528,7 +601,7 @@ onMounted(() => {
                         <template v-for="(group, groupKey) in groupedReceivedBackorders" :key="groupKey">
                             <!-- Group Header Row -->
                             <tr class="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
-                                <td colspan="9" class="px-4 py-3">
+                                <td colspan="10" class="px-4 py-3">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <button 
@@ -601,9 +674,6 @@ onMounted(() => {
                                                 <div><span class="font-medium">Barcode:</span> {{ receivedBackorder.barcode || 'N/A' }}</div>
                                                 <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse }}</div>
                                                 <div v-if="receivedBackorder.location"><span class="font-medium">Location:</span> {{ receivedBackorder.location }}</div>
-                                                <div class="text-gray-500">
-                                                    {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
-                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -626,7 +696,14 @@ onMounted(() => {
                                     <!-- Expiry Date -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
                                         <div class="text-sm font-medium text-gray-900">
-                                            {{ receivedBackorder.expiry_date ? moment(receivedBackorder.expiry_date).format('DD/MM/YYYY') : 'N/A' }}
+                                            {{ receivedBackorder.expire_date ? moment(receivedBackorder.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Received Date -->
+                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
                                         </div>
                                     </td>
 

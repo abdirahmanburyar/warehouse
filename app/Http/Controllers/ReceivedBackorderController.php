@@ -35,6 +35,9 @@ class ReceivedBackorderController extends Controller
                   ->orWhere('batch_number', 'like', '%' . $request->search . '%')
                   ->orWhereHas('product', function ($productQuery) use ($request) {
                       $productQuery->where('name', 'like', '%' . $request->search . '%');
+                  })
+                  ->orWhereHas('backOrder', function ($backOrderQuery) use ($request) {
+                      $backOrderQuery->where('back_order_number', 'like', '%' . $request->search . '%');
                   });
             });
         }
@@ -55,6 +58,16 @@ class ReceivedBackorderController extends Controller
             $query->where('received_at', '<=', $request->date_to);
         }
 
+        // Filter by warehouse
+        if ($request->filled('warehouse') && $request->warehouse) {
+            $query->where('warehouse', $request->warehouse);
+        }
+
+        // Filter by facility
+        if ($request->filled('facility') && $request->facility) {
+            $query->where('facility', $request->facility);
+        }
+
         $receivedBackorders = $query->orderBy('created_at', 'desc')
             ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
@@ -71,10 +84,16 @@ class ReceivedBackorderController extends Controller
             'total_cost' => ReceivedBackorder::sum('total_cost'),
         ];
 
+        // Get warehouses and facilities for filters
+        $warehouses = Warehouse::pluck('name')->toArray();
+        $facilities = Facility::pluck('name')->toArray();
+
         return Inertia::render('Supplies/ReceivedBackorder', [
             'receivedBackorders' => ReceivedBackorderResource::collection($receivedBackorders),
-            'filters' => $request->only('search', 'status', 'type', 'date_from', 'date_to', 'per_page'),
+            'filters' => $request->only('search', 'status', 'type', 'date_from', 'date_to', 'per_page', 'warehouse', 'facility'),
             'stats' => $stats,
+            'warehouses' => $warehouses,
+            'facilities' => $facilities,
         ]);
     }
 

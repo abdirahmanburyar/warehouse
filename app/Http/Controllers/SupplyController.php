@@ -472,6 +472,7 @@ class SupplyController extends Controller
                 'expire_date' => $packingListItem->expire_date ?? null,
                 'uom' => $packingListItem->uom ?? null,
                 'received_at' => now(),
+                'reported_by' => auth()->user()->load('warehouse')->warehouse->name ?? 'Unknown Warehouse',
                 'quantity' => $receivedQuantity,
                 'status' => 'pending',
                 'type' => $request->status ? strtolower($request->status) : 'backorder',

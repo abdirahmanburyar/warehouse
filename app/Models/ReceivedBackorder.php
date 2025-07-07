@@ -27,6 +27,7 @@ class ReceivedBackorder extends Model
         'facility',
         'warehouse',
         'unit_cost',
+        'reported_by',
         'total_cost',
         'note',
         'reviewed_by',
