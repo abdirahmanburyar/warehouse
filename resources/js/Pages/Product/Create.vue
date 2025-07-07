@@ -1,73 +1,126 @@
 <template>
-    <AuthenticatedLayout title="Create Product">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create Product</h2>
-            <Link
-                :href="route('products.index')"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-            >
-                Back to List
-            </Link>
+    <AuthenticatedLayout title="Create Product" description="Add a new product to your inventory" img="/assets/images/products.png">
+        <!-- Header Section -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="flex items-center space-x-3 mb-1">
+                        <!-- Product Icon -->
+                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-400 to-indigo-500 rounded-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900">Create New Product</h1>
+                    </div>
+                    <p class="text-gray-600 text-sm">Add a new product to your inventory system</p>
+                </div>
+                <Link
+                    :href="route('products.index')"
+                    class="inline-flex items-center px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Products
+                </Link>
+            </div>
         </div>
 
-        <div class="overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 text-gray-900">
+        <!-- Form Section -->
+        <div class="mb-[100px]">
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Product Information</h3>
+                <p class="text-sm text-gray-500 mt-1">Fill in the details below to create a new product</p>
+            </div>
+            
+            <div>
                 <form @submit.prevent="submit" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Name -->
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 xs:grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- First Column - Product Name -->
                         <div>
-                            <InputLabel for="name" value="Product Name" />
+                            <InputLabel for="name" value="Product Name" class="text-sm font-medium text-gray-700 mb-2" />
                             <TextInput
                                 id="name"
                                 type="text"
-                                class="mt-1 block w-full"
+                                class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
                                 v-model="form.name"
                                 required
                                 autofocus
+                                placeholder="Enter product name"
                             />
                         </div>
 
-                        <!-- Category -->
-                        <div>
-                            <InputLabel for="category_id" value="Category" />
-                            <Multiselect v-model="form.category" :value="form.category_id" 
-                                :options="[ { id: 'new', name: '+ Add New Category', isAddNew: true}, ...props.categories.data]"
-                                :searchable="true" :close-on-select="true" :show-labels="false"
-                                :allow-empty="true" placeholder="Select Category" track-by="id" label="name"
-                                @select="handleCategorySelect">
-                                <template v-slot:option="{ option }">
-                                    <div :class="{ 'add-new-option': option.isAddNew }">
-                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
-                                            New Category</span>
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
-                        </div>
-                    </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Dosage -->
-                        <div>
-                            <InputLabel for="dosage_id" value="Dosage Form" />
-                            <Multiselect v-model="form.dosage" :value="form.dosage_id" 
-                                :options="[{ id: 'new', name: '+ Add New Dosage form', isAddNew: true }, ...props.dosages.data]"
-                                :searchable="true" :close-on-select="true" :show-labels="false"
-                                :allow-empty="true" placeholder="Select Dosage" track-by="id" label="name"
-                                @select="handleDosageSelect">
-                                <template v-slot:option="{ option }">
-                                    <div :class="{ 'add-new-option': option.isAddNew }">
-                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
-                                            New Dosage Form</span>
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
+                        <!-- Second Column - Category and Dosage Form -->
+                        <div class="space-y-6">
+                            <!-- Category -->
+                            <div>
+                                <InputLabel for="category_id" value="Category" class="text-sm font-medium text-gray-700 mb-2" />
+                                <Multiselect 
+                                    v-model="form.category" 
+                                    :value="form.category_id" 
+                                    :options="[ { id: 'new', name: '+ Add New Category', isAddNew: true}, ...props.categories.data]"
+                                    :searchable="true" 
+                                    :close-on-select="true" 
+                                    :show-labels="false"
+                                    :allow-empty="true" 
+                                    placeholder="Select Category" 
+                                    track-by="id" 
+                                    label="name"
+                                    class="text-sm"
+                                    @select="handleCategorySelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }" class="py-1">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium flex items-center">
+                                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                                Add New Category
+                                            </span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
+
+                            <!-- Dosage Form -->
+                            <div>
+                                <InputLabel for="dosage_id" value="Dosage Form" class="text-sm font-medium text-gray-700 mb-2" />
+                                <Multiselect 
+                                    v-model="form.dosage" 
+                                    :value="form.dosage_id" 
+                                    :options="[{ id: 'new', name: '+ Add New Dosage form', isAddNew: true }, ...props.dosages.data]"
+                                    :searchable="true" 
+                                    :close-on-select="true" 
+                                    :show-labels="false"
+                                    :allow-empty="true" 
+                                    placeholder="Select Dosage Form" 
+                                    track-by="id" 
+                                    label="name"
+                                    class="text-sm"
+                                    @select="handleDosageSelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }" class="py-1">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium flex items-center">
+                                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                                Add New Dosage Form
+                                            </span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Facility Types Multiselect -->
-                    <div class="col-span-2">
-                        <InputLabel for="facility_types" value="Applicable Facility Types" />
+                    <!-- Facility Types -->
+                    <div>
+                        <InputLabel for="facility_types" value="Applicable Facility Types" class="text-sm font-medium text-gray-700 mb-2" />
                         <Multiselect
                             v-model="form.facility_types"
                             :options="facilityTypes"
@@ -78,7 +131,7 @@
                             :preserve-search="true"
                             :show-labels="false"
                             placeholder="Select facility types"
-                            class="mt-1"
+                            class="text-sm"
                         >
                             <template v-slot:selection="{ values, search, isOpen }">
                                 <span class="multiselect__single" v-if="values.length && !isOpen">
@@ -86,12 +139,28 @@
                                 </span>
                             </template>
                         </Multiselect>
-                        <p class="text-sm text-gray-500 mt-1">Select the facility types where this product can be used</p>
+                        <p class="text-sm text-gray-500 mt-2 flex items-center">
+                            <svg class="h-4 w-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Select the facility types where this product can be used
+                        </p>
                     </div>
 
-                    <div class="flex items-center justify-end mt-4">
-                        <PrimaryButton class="ml-4" :disabled="processing">
-                            {{ processing ? "Creating..." : "Create Product"}}
+                    <!-- Submit Button -->
+                    <div class="flex items-center justify-end pt-6 border-t border-gray-200">
+                        <PrimaryButton 
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-sm" 
+                            :disabled="processing"
+                        >
+                            <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            {{ processing ? "Creating Product..." : "Create Product" }}
                         </PrimaryButton>
                     </div>
                 </form>
@@ -100,79 +169,121 @@
     </AuthenticatedLayout>
 
     <!-- Category Modal -->
-    <div v-if="showCategoryModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+    <div v-if="showCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showCategoryModal = false">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md" @click.stop>
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Create New Category</h3>
+                    <p class="text-sm text-gray-500 mt-1">Add a new product category</p>
+                </div>
+                <button
+                    @click="showCategoryModal = false"
+                    class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Category</h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <InputLabel for="new-category-name" value="Category Name" />
-                                    <TextInput
-                                        id="new-category-name"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="newCategory.name"
-                                        placeholder="Create new Category"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
+            <div class="p-6">
+                <div class="mb-4">
+                    <InputLabel for="new-category-name" value="Category Name" class="text-sm font-medium text-gray-700 mb-2" />
+                    <TextInput
+                        id="new-category-name"
+                        type="text"
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
+                        v-model="newCategory.name"
+                        placeholder="Enter category name"
+                        autofocus
+                    />
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="createNewCategory" :disabled="processing" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        {{processing ? 'Creating...' : 'Create'}}
-                    </button>
-                    <button @click="showCategoryModal = false" :disabled="processing" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button 
+                    @click="showCategoryModal = false" 
+                    :disabled="processing" 
+                    type="button" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    Cancel
+                </button>
+                <button 
+                    @click="createNewCategory" 
+                    :disabled="processing" 
+                    type="button" 
+                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    {{ processing ? 'Creating...' : 'Create Category' }}
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Dosage Modal -->
-    <div v-if="showDosageModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+    <div v-if="showDosageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showDosageModal = false">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md" @click.stop>
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Create New Dosage Form</h3>
+                    <p class="text-sm text-gray-500 mt-1">Add a new dosage form</p>
+                </div>
+                <button
+                    @click="showDosageModal = false"
+                    class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Dosage Form</h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <InputLabel for="new-dosage-name" value="Dosage Form Name" />
-                                    <TextInput
-                                        id="new-dosage-name"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        v-model="newDosage.name"
-                                        placeholder="Create new Dosage"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
+            <div class="p-6">
+                <div class="mb-4">
+                    <InputLabel for="new-dosage-name" value="Dosage Form Name" class="text-sm font-medium text-gray-700 mb-2" />
+                    <TextInput
+                        id="new-dosage-name"
+                        type="text"
+                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
+                        v-model="newDosage.name"
+                        placeholder="Enter dosage form name"
+                        autofocus
+                    />
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="createNewDosage" :disabled="processing" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        {{processing ? 'Creating...' : 'Create'}}
-                    </button>
-                    <button @click="showDosageModal = false" :disabled="processing" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Exit
-                    </button>
-                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button 
+                    @click="showDosageModal = false" 
+                    :disabled="processing" 
+                    type="button" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    Cancel
+                </button>
+                <button 
+                    @click="createNewDosage" 
+                    :disabled="processing" 
+                    type="button" 
+                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    {{ processing ? 'Creating...' : 'Create Dosage Form' }}
+                </button>
             </div>
         </div>
     </div>
