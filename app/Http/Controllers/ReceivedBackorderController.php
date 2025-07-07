@@ -60,12 +60,12 @@ class ReceivedBackorderController extends Controller
         }
 
         // Filter by warehouse
-        if ($request->filled('warehouse') && $request->warehouse) {
+        if ($request->filled('warehouse') && $request->warehouse != 'All Warehouses') {
             $query->where('reported_by', $request->warehouse);
         }
 
         // Filter by facility
-        if ($request->filled('facility') && $request->facility) {
+        if ($request->filled('facility') && $request->facility != 'All Facilities') {
             $query->where('reported_by', $request->facility);
         }
 
