@@ -2,6 +2,7 @@
     <AuthenticatedLayout
         title="Eligible Items"
         description="Manage product eligibility for facilities"
+        image="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"
     >
         <div class="mb-6">
             <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
