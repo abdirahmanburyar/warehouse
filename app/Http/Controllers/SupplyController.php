@@ -1532,7 +1532,7 @@ class SupplyController extends Controller
 
         return inertia('Supplies/ShowBackOrder', [
             'history' => BackOrderHistoryResource::collection($history),
-            'filters' => $request->only('search', 'per_page', 'warehouse', 'facility'),
+            'filters' => $request->only('search', 'per_page', 'warehouse', 'facility','supplier'),
             'warehouses' => Warehouse::pluck('name')->toArray(),
             'facilities' => Facility::pluck('name')->toArray(),
             'suppliers' => Supplier::pluck('name')->toArray()
