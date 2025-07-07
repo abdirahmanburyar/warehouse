@@ -301,7 +301,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { TailwindPagination } from 'laravel-vue-pagination';
 import Multiselect from "vue-multiselect";
@@ -361,11 +361,12 @@ function reloadBackOrders() {
     if (supplier.value) query.supplier = supplier.value;
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
+
+    console.log(query);
     
     router.get(route('supplies.showBackOrder'), query, {
-        preserveScroll: false,
-        preserveState: false,
-        only: ['history']
+        preserveScroll: true,
+        only: ['history', 'filters']
     });
 }
 
