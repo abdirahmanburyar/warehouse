@@ -1,18 +1,17 @@
 <template>
-
     <Head title="Purchase Orders" />
     <AuthenticatedLayout title="Manage Your Purchase Orders"
-        description="Ensuring an Optimcal Flow of Essentials Resource" img="/assets/images/supplies.png">
-        <div class="overflow-hidden mb-[80px]">
+        description="Ensuring an Optimal Flow of Essential Resources" img="/assets/images/supplies.png">
+        <div class="mb-[80px]">
             <div class="text-gray-900">
                 <!-- Action Buttons Row -->
-                <div class="flex flex-wrap items-center justify-end gap-2 px-2 mb-6">
+                <div class="flex flex-wrap items-center justify-end gap-3 mb-8">
                     <div class="relative inline-block text-left z-20" ref="backOrderDropdownRef">
                         <button type="button"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-3xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                            class="inline-flex items-center px-4 py-2.5 bg-green-600 border border-transparent rounded-3xl font-medium text-sm text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 shadow-sm"
                             id="back-order-menu" :aria-expanded="showBackOrderDropdown" aria-haspopup="true"
                             @click.stop="toggleBackOrderDropdown">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
@@ -25,23 +24,23 @@
                             leave-from-class="transform opacity-100 scale-100"
                             leave-to-class="transform opacity-0 scale-95">
                             <div v-if="showBackOrderDropdown"
-                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200"
                                 role="menu" aria-orientation="vertical" aria-labelledby="back-order-menu">
                                 <div class="py-1" role="none">
                                     <a @click="router.visit(route('supplies.back-order'))"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
                                         Back Order
                                     </a>
                                     <a @click="router.visit(route('supplies.showBackOrder'))"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
                                         View Back Order
                                     </a>
                                     <a @click="router.visit(route('supplies.received-backorder.index'))"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
-                                        Received Back order
+                                        Received Back Order
                                     </a>
                                 </div>
                             </div>
@@ -49,10 +48,10 @@
                     </div>
                     <div class="relative inline-block text-left z-20" ref="supplyDropdownRef">
                         <button type="button"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-3xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                            class="inline-flex items-center px-4 py-2.5 bg-green-600 border border-transparent rounded-3xl font-medium text-sm text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 shadow-sm"
                             id="supply-menu" :aria-expanded="showSupplyDropdown" aria-haspopup="true"
                             @click.stop="toggleSupplyDropdown">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
@@ -65,16 +64,16 @@
                             leave-from-class="transform opacity-100 scale-100"
                             leave-to-class="transform opacity-0 scale-95">
                             <div v-if="showSupplyDropdown"
-                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200"
                                 role="menu" aria-orientation="vertical" aria-labelledby="supply-menu">
                                 <div class="py-1" role="none">
                                     <a @click="router.get(route('supplies.packing-list'))"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
                                         Receive New PL
                                     </a>
                                     <a @click="router.get(route('supplies.packing-list.showPK'))"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
                                         View PL Lists
                                     </a>
@@ -84,19 +83,19 @@
                     </div>
 
                     <button @click="router.get(route('supplies.purchase_order'))"
-                        class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-3xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500 focus:bg-orange-500 active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                        class="inline-flex items-center px-4 py-2.5 bg-orange-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        Create new Purchase order
+                        Create New Purchase Order
                     </button>
                     <div class="relative inline-block text-left z-20" ref="dropdownRef">
                         <button type="button"
-                            class="px-4 py-2 bg-gray-800 text-white hover:bg-gray-700 transition-colors rounded-3xl duration-200 inline-flex items-center gap-2"
+                            class="inline-flex items-center px-4 py-2.5 bg-gray-800 text-white hover:bg-gray-700 transition-colors rounded-lg font-medium text-sm shadow-sm"
                             id="options-menu" :aria-expanded="showDropdown" aria-haspopup="true"
                             @click.stop="toggleDropdown">
-                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                 fill="currentColor">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -111,16 +110,16 @@
                             leave-from-class="transform opacity-100 scale-100"
                             leave-to-class="transform opacity-0 scale-95">
                             <div v-if="showDropdown"
-                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200"
                                 role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                                 <div class="py-1" role="none">
                                     <a @click="navigateToCreateSupplier"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors duration-150"
                                         role="menuitem">
                                         Create Supplier
                                     </a>
                                     <a href="#" @click="navigateToViewSupplier"
-                                        class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
                                         role="menuitem">
                                         View Suppliers
                                     </a>
@@ -131,125 +130,144 @@
                 </div>
 
                 <!-- Search and Filter Row -->
-                <div class="flex flex-wrap justify-between w-full px-2 mb-6">
-                    <div class="flex-1 mr-2 flex-grow-2"> <!-- Increased flex-grow for search -->
-                        <label for="search" class="text-xs font-medium text-gray-700">Search</label>
-                        <input type="text" v-model="search" placeholder="Search by PO number, supplier"
-                            class="w-[400px] rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                <div class="mb-3">
+                    <div class="">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <input type="text" v-model="search" placeholder="Search by PO number, supplier"
+                                        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label for="supplier" class="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+                                <Multiselect
+                                    v-model="supplier"
+                                    :options="props.suppliers"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Supplier"
+                                    class="text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <select v-model="status"
+                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                    <option value="">Filter by Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex-1 mx-2">
-                        <label for="supplier" class="text-xs font-medium text-gray-700">Supplier</label>
-                        <Multiselect
-                            v-model="supplier"
-                            :options="props.suppliers"
-                            :searchable="true"
-                            :close-on-select="true"
-                            :show-labels="false"
-                            :allow-empty="true"
-                            placeholder="Select Supplier"
-                        />
-                    </div>
-                    <div class="flex-1 ml-2">
-                        <label for="status" class="text-xs font-medium text-gray-700">Status</label>
-                        <select v-model="status"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="">Filter by Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-                    <div class="ml-2 w-[180px]"> <!-- Reduced width for per page -->
-                        <label for="per_page" class="text-xs font-medium text-gray-700">Per Page</label>
-                        <select v-model="per_page" @change="props.filters.page = 1"
-                            class="w-full rounded-3xl border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <option value="10">10 per page</option>
-                            <option value="25">25 per page</option>
-                            <option value="50">50 per page</option>
-                            <option value="100">100 per page</option>
-                        </select>
+                </div>
+
+                <!-- Per Page Row -->
+                <div class="mb-3">
+                    <div class="">
+                        <div class="flex items-center justify-end">
+                            <div class="w-48">
+                                <select v-model="per_page" @change="props.filters.page = 1"
+                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                    <option value="10">10 per page</option>
+                                    <option value="25">25 per page</option>
+                                    <option value="50">50 per page</option>
+                                    <option value="100">100 per page</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Status Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                    <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 shadow-sm border border-yellow-200 hover:shadow-md transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Supply Received</p>
-                                <p class="text-lg font-bold text-gray-800">{{ stats.total_items }}</p>
+                                <p class="text-xs font-semibold text-yellow-700 uppercase tracking-wider mb-2">Supply Received</p>
+                                <p class="text-2xl font-bold text-yellow-800">{{ stats.total_items }}</p>
                             </div>
-                            <div class="p-2 bg-yellow-50 rounded-lg">
-                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-3 bg-yellow-100 rounded-xl">
+                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-sm border border-green-200 hover:shadow-md transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Cost of Supplies</p>
-                                <p class="text-lg font-bold text-gray-800">{{ formatCurrency(stats.total_cost) }}</p>
+                                <p class="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2">Cost of Supplies</p>
+                                <p class="text-2xl font-bold text-green-800">{{ formatCurrency(stats.total_cost) }}</p>
                             </div>
-                            <div class="p-2 bg-green-50 rounded-lg">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-3 bg-green-100 rounded-xl">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 shadow-sm border border-orange-200 hover:shadow-md transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div class="w-full">
-                                <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-2">Lead Times</p>
-                                <div class="space-y-1">
+                                <p class="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-3">Lead Times</p>
+                                <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-[11px] font-medium text-gray-500">Max:</span>
-                                        <span class="text-sm font-bold text-gray-800">{{ stats.lead_times?.max }}</span>
+                                        <span class="text-xs font-medium text-orange-600">Max:</span>
+                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.max }}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-[11px] font-medium text-gray-500">Avg:</span>
-                                        <span class="text-sm font-bold text-gray-800">{{ stats.lead_times?.avg }}</span>
+                                        <span class="text-xs font-medium text-orange-600">Avg:</span>
+                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.avg }}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-[11px] font-medium text-gray-500">Min:</span>
-                                        <span class="text-sm font-bold text-gray-800">{{ stats.lead_times?.low }}</span>
+                                        <span class="text-xs font-medium text-orange-600">Min:</span>
+                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.low }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-2 bg-orange-50 rounded-lg ml-3">
-                                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-3 bg-orange-100 rounded-xl ml-4">
+                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 shadow-sm border border-teal-200 hover:shadow-md transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Back Orders</p>
-                                <p class="text-lg font-bold text-gray-800">{{ stats.back_orders }}</p>
+                                <p class="text-xs font-semibold text-teal-700 uppercase tracking-wider mb-2">Back Orders</p>
+                                <p class="text-2xl font-bold text-teal-800">{{ stats.back_orders }}</p>
                             </div>
-                            <div class="p-2 bg-teal-50 rounded-lg">
-                                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-3 bg-teal-100 rounded-xl">
+                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 shadow-sm border border-purple-200 hover:shadow-md transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Pending Orders</p>
-                                <p class="text-lg font-bold text-gray-800">{{ stats.pending_orders }}</p>
+                                <p class="text-xs font-semibold text-purple-700 uppercase tracking-wider mb-2">Pending Orders</p>
+                                <p class="text-2xl font-bold text-purple-800">{{ stats.pending_orders }}</p>
                             </div>
-                            <div class="p-2 bg-purple-50 rounded-lg">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-3 bg-purple-100 rounded-xl">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
@@ -258,88 +276,92 @@
                 </div>
 
                 <!-- Purchase Orders Table and Statistics Row -->
-                <div class="px-2 mb-6">
-                    <div class="grid grid-cols-12 gap-4">
+                <div class="mb-6">
+                    <div class="grid grid-cols-12 gap-6">
                         <!-- Table Column (10/12) -->
-                        <div class="col-span-10">
-                            <div class="relative">
-                                <div class="overflow-auto">
-                                    <table class="min-w-full text-left border border-black">
-                                        <thead class="bg-white sticky top-0 z-10">
-                                            <tr>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    SN#
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    PO Number
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    Supplier
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    P.O Date
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    Total Amount
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    Status
-                                                </th>
-                                                <th class="px-4 py-3 text-left align-middle text-blue-700 whitespace-nowrap font-bold text-xs text-black text-left border border-black" style="background: #F7F9FB;">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="(po, i) in props.purchaseOrders.data" :key="po.id" class="border border-black">
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-black text-left border border-black">{{ i + 1 }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-black text-left border border-black">
-                                                    <Link :href="route('supplies.editPO', po.id)"
-                                                        class="text-indigo-600 hover:text-indigo-900">
+                        <div class="col-span-12 lg:col-span-10">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border border-gray-300">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                SN#
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                PO Number
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                Supplier
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                P.O Date
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                Total Amount
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                Status
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white">
+                                        <tr v-for="(po, i) in props.purchaseOrders.data" :key="po.id" class="hover:bg-gray-50 transition-colors duration-150">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">
+                                                {{ i + 1 }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">
+                                                <Link :href="route('supplies.editPO', po.id)"
+                                                    class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                                                     {{ po.po_number }}
-                                                    </Link>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs text-black border border-black">
-                                                    {{ po.supplier?.name || 'No supplier' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs text-black text-left border border-black">
-                                                    {{ moment(po.po_date).format('DD/MM/YYYY') }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs text-black text-left border border-black">
-                                                    {{formatCurrency(po.items_sum_total_cost || 0)}}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-xs border border-black">
-                                                    <div class="flex items-center space-x-4">
-                                                        <!-- Always show Pending Icon (all statuses start as pending) -->
-                                                        <img src="/assets/images/pending.png" class="w-8 h-8"
-                                                            alt="Pending" />
-
-                                                        <img src="/assets/images/review.png" class="w-10 h-10" v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'"
+                                                </Link>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                                {{ po.supplier?.name || 'No supplier' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                                {{ moment(po.po_date).format('DD/MM/YYYY') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                                {{ formatCurrency(po.items_sum_total_cost || 0) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm border border-gray-300">
+                                                <div class="flex items-center space-x-2">
+                                                    <!-- Always show Pending Icon (all statuses start as pending) -->
+                                                    <img src="/assets/images/pending.png" class="w-6 h-6"
                                                         alt="Pending" />
 
-                                                        <!-- Show Approved Icon if status is approved -->
-                                                        <img v-if="po.status === 'approved'"
-                                                            src="/assets/images/approved.png" class="w-8 h-8"
-                                                            alt="Approved" />
+                                                    <img src="/assets/images/review.png" class="w-8 h-8" v-if="po.status === 'reviewed' || po.status === 'approved' || po.status === 'rejected'"
+                                                    alt="Pending" />
 
-                                                        <!-- Show Rejected Icon if status is rejected -->
-                                                        <svg v-if="po.status === 'rejected'"
-                                                            class="w-12 h-12 text-red-700" fill="none"
-                                                            stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                    </div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-left text-xs font-medium space-x-2 border border-black">
+                                                    <!-- Show Approved Icon if status is approved -->
+                                                    <img v-if="po.status === 'approved'"
+                                                        src="/assets/images/approved.png" class="w-6 h-6"
+                                                        alt="Approved" />
+
+                                                    <!-- Show Rejected Icon if status is rejected -->
+                                                    <svg v-if="po.status === 'rejected'"
+                                                        class="w-8 h-8 text-red-600" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-gray-300">
+                                                <div class="flex items-center space-x-3">
                                                     <button @click="router.visit(route('supplies.po-show', po.id))"
-                                                        class="text-gray-600 hover:text-gray-900">
-                                                        <EyeIcon class="h-5 w-5" />
+                                                        class="text-gray-600 hover:text-gray-900 transition-colors duration-200 p-1 rounded-md hover:bg-gray-100"
+                                                        title="View Purchase Order">
+                                                        <EyeIcon class="h-4 w-4" />
                                                     </button>
                                                     <button @click="router.visit(route('supplies.editPO', po.id))"
-                                                        class="text-indigo-600 hover:text-indigo-900">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                        class="text-blue-600 hover:text-blue-900 transition-colors duration-200 p-1 rounded-md hover:bg-blue-50"
+                                                        title="Edit Purchase Order">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
                                                             viewBox="0 0 20 20" fill="currentColor">
                                                             <path
                                                                 d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
@@ -349,42 +371,49 @@
                                                         </svg>
                                                     </button>
                                                     <button @click="confirmDelete(po.id)"
-                                                        class="text-red-600 hover:text-red-900">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                        class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-md hover:bg-red-50"
+                                                        title="Delete Purchase Order">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
                                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                                 stroke-width="2"
                                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="!purchaseOrders?.data?.length">
-                                                <td colspan="7" class="px-6 py-4 text-center text-gray-500 border border-black">
-                                                    No purchase orders found
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="!purchaseOrders?.data?.length">
+                                            <td colspan="7" class="px-6 py-12 text-center border border-gray-300">
+                                                <div class="text-center">
+                                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No purchase orders</h3>
+                                                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new purchase order.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="flex justify-end mt-3 mb-6">
+                            <div class="mt-6">
                                 <TailwindPagination
-                                :data="props.purchaseOrders"
-                                @pagination-change-page="getResults"
-                                :limit="2"
-                            />
+                                    :data="props.purchaseOrders"
+                                    @pagination-change-page="getResults"
+                                    :limit="2"
+                                />
                             </div>
                         </div>
 
                         <!-- Statistics Column (2/12) -->
-                        <div class="col-span-2">
-                            <div class="sticky top-4 bg-white p-4 h-full">
-                                <h3 class="text-xs font-bold text-gray-900 mb-6">Order Statistics</h3>
+                        <div class="col-span-12 lg:col-span-2">
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
+                                <h3 class="text-sm font-semibold text-gray-900 mb-6">Order Statistics</h3>
                                 <div class="space-y-8">
                                     <!-- Pending -->
                                     <div class="relative">
-                                        <div class="flex items-center mb-2">
+                                        <div class="flex items-center mb-3">
                                             <div class="w-16 h-16 relative mr-4">
                                                 <svg class="w-16 h-16 transform -rotate-90">
                                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0"
@@ -394,7 +423,7 @@
                                                         :stroke-dasharray="`${(stats.pending_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
                                                 </svg>
                                                 <div class="absolute inset-0 flex items-center justify-center">
-                                                    <span class="text-base font-bold text-yellow-600">{{
+                                                    <span class="text-sm font-bold text-yellow-600">{{
                                                         stats.total_orders > 0 ?
                                                             Math.round((stats.pending_orders / stats.total_orders) * 100) :
                                                         0 }}%</span>
@@ -403,14 +432,14 @@
                                             <div>
                                                 <div class="text-lg font-bold text-gray-900">{{ stats.pending_orders ||
                                                     0 }}</div>
-                                                <div class="text-base text-gray-600">Pending</div>
+                                                <div class="text-sm text-gray-600">Pending</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Reviewed -->
                                     <div class="relative">
-                                        <div class="flex items-center mb-2">
+                                        <div class="flex items-center mb-3">
                                             <div class="w-16 h-16 relative mr-4">
                                                 <svg class="w-16 h-16 transform -rotate-90">
                                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0"
@@ -420,7 +449,7 @@
                                                         :stroke-dasharray="`${(stats.reviewed_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
                                                 </svg>
                                                 <div class="absolute inset-0 flex items-center justify-center">
-                                                    <span class="text-base font-bold text-blue-600">{{
+                                                    <span class="text-sm font-bold text-blue-600">{{
                                                         stats.total_orders > 0 ?
                                                             Math.round((stats.reviewed_orders / stats.total_orders) * 100) :
                                                         0 }}%</span>
@@ -429,14 +458,14 @@
                                             <div>
                                                 <div class="text-lg font-bold text-gray-900">{{ stats.reviewed_orders ||
                                                     0 }}</div>
-                                                <div class="text-base text-gray-600">Reviewed</div>
+                                                <div class="text-sm text-gray-600">Reviewed</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Approved -->
                                     <div class="relative">
-                                        <div class="flex items-center mb-2">
+                                        <div class="flex items-center mb-3">
                                             <div class="w-16 h-16 relative mr-4">
                                                 <svg class="w-16 h-16 transform -rotate-90">
                                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0"
@@ -446,7 +475,7 @@
                                                         :stroke-dasharray="`${(stats.approved_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
                                                 </svg>
                                                 <div class="absolute inset-0 flex items-center justify-center">
-                                                    <span class="text-base font-bold text-green-600">{{
+                                                    <span class="text-sm font-bold text-green-600">{{
                                                         stats.total_orders > 0 ?
                                                             Math.round((stats.approved_orders / stats.total_orders) * 100) :
                                                         0 }}%</span>
@@ -455,14 +484,14 @@
                                             <div>
                                                 <div class="text-lg font-bold text-gray-900">{{ stats.approved_orders ||
                                                     0 }}</div>
-                                                <div class="text-base text-gray-600">Approved</div>
+                                                <div class="text-sm text-gray-600">Approved</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Rejected -->
                                     <div class="relative">
-                                        <div class="flex items-center mb-2">
+                                        <div class="flex items-center mb-3">
                                             <div class="w-16 h-16 relative mr-4">
                                                 <svg class="w-16 h-16 transform -rotate-90">
                                                     <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0"
@@ -472,7 +501,7 @@
                                                         :stroke-dasharray="`${(stats.rejected_orders / (stats.total_orders || 1)) * 175.9} 175.9`" />
                                                 </svg>
                                                 <div class="absolute inset-0 flex items-center justify-center">
-                                                    <span class="text-base font-bold text-red-600">{{ stats.total_orders
+                                                    <span class="text-sm font-bold text-red-600">{{ stats.total_orders
                                                         > 0 ?
                                                         Math.round((stats.rejected_orders / stats.total_orders) * 100) :
                                                         0 }}%</span>
@@ -481,12 +510,10 @@
                                             <div>
                                                 <div class="text-lg font-bold text-gray-900">{{ stats.rejected_orders ||
                                                     0 }}</div>
-                                                <div class="text-base text-gray-600">Rejected</div>
+                                                <div class="text-sm text-gray-600">Rejected</div>
                                             </div>
                                         </div>
                                     </div>
-
-
                                 </div>
                             </div>
                         </div>
