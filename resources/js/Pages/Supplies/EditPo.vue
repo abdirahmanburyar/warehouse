@@ -345,7 +345,7 @@
                                 Clear All
                             </button>
                         </div>
-                                                 <div class="bg-white rounded-lg p-4">
+                        <div class="bg-white rounded-lg p-4">
                              <div class="flex justify-between items-center">
                                  <span class="text-lg font-bold text-indigo-600">{{ formatCurrency(subtotal) }}</span>
                              </div>
