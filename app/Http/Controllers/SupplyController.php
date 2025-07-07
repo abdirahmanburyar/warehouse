@@ -469,6 +469,7 @@ class SupplyController extends Controller
                 'received_by' => auth()->user()->id,
                 'barcode' => $packingListItem->barcode ?? null,
                 'batch_number' => $packingListItem->batch_number ?? null,
+                'expire_date' => $packingListItem->expire_date ?? null,
                 'uom' => $packingListItem->uom ?? null,
                 'received_at' => now(),
                 'quantity' => $receivedQuantity,

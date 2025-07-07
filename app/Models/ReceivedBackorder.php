@@ -99,6 +99,14 @@ class ReceivedBackorder extends Model
     }
 
     /**
+     * Get the back order that owns the received backorder.
+     */
+    public function backOrder(): BelongsTo
+    {
+        return $this->belongsTo(BackOrder::class, 'back_order_id');
+    }
+
+    /**
      * Generate a unique received backorder number
      */
     public static function generateReceivedBackorderNumber(): string

@@ -25,7 +25,7 @@ class ReceivedBackorderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ReceivedBackorder::with(['product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy']);
+        $query = ReceivedBackorder::with(['product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy', 'backOrder']);
 
         // Apply filters
         if ($request->filled('search')) {
