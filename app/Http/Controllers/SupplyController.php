@@ -122,9 +122,11 @@ class SupplyController extends Controller
     // showPackingList
     public function showPackingList(Request $request, $id){
         
-        $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy','backOrder')->find($id);
-        return inertia("Supplies/PackingList/Show", [
-            'packingList' => $packingList
+        $packingList = PackingList::with('purchaseOrder.supplier','items.product.category','items.product.dosage','documents.uploader','confirmedBy','approvedBy','rejectedBy','reviewedBy','backOrder')
+        ->where('id', $id)
+        ->first();
+        return inertia("Supplies/ShowPK", [
+            'packing_list' => $packingList
         ]);
     }
 
