@@ -179,7 +179,6 @@ function addProductToList() {
     const hasEmptyProduct = form.value.products.some(item => item.product_id === null);
     
     if (hasEmptyProduct) {
-        toast.warning('Please select a product for the existing row before adding a new one');
         return;
     }
     
