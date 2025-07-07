@@ -417,6 +417,8 @@
                                         ? 'bg-green-50 text-green-700 border border-green-200'
                                         : isProcessing.approve
                                         ? 'bg-green-400 text-white cursor-wait'
+                                        : !form.reviewed_at
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                         : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
                                 ]"
                                 :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at"
