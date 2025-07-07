@@ -4,16 +4,16 @@
         img="images/assets/orders.png"
         description="Manage your packing list"
     >
+        <!-- Back Navigation -->
         <Link
             :href="route('supplies.packing-list.showPK')"
-            class="flex items-center text-gray-500 hover:text-gray-700 cursor-pointer mb-4"
+            class="inline-flex items-center text-gray-600 hover:text-indigo-600 transition-colors duration-200 group mb-6"
         >
             <svg
-                class="w-6 h-6 mr-2"
+                class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
             >
                 <path
                     stroke-linecap="round"
@@ -25,864 +25,509 @@
             Back to Supplies
         </Link>
 
-        <div class="mb-6">
-            <div class="grid grid-cols-1 gap-6">
-                <div class="w-[400px] mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Select P.O
-                    </label>
-                    <Multiselect
-                        v-model="form"
-                        :value="form?.purchase_order_id"
-                        :options="props.purchaseOrders"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        :allow-empty="true"
-                        placeholder="Select supplier"
-                        track-by="id"
-                        label="po_number"
-                        @select="handlePOSelect"
-                    >
-                    </Multiselect>
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Packing List</h1>
+                    <p class="text-gray-600 mt-1">Create and manage packing lists for received items</p>
                 </div>
-                <h2 class="text-lg font-medium text-gray-900 mb-4">
-                    Supplier Information
-                </h2>
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">Processing</div>
+                </div>
+            </div>
+        </div>
 
-                <!-- halkaan ku soo celi -->
-                <div
-                    v-if="isLoading"
-                    class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4"
+        <!-- Purchase Order Selection Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Purchase Order Selection
+            </h2>
+            <div class="max-w-md">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Purchase Order</label>
+                <Multiselect
+                    v-model="form"
+                    :value="form?.purchase_order_id"
+                    :options="props.purchaseOrders"
+                    :searchable="true"
+                    :close-on-select="true"
+                    :show-labels="false"
+                    :allow-empty="true"
+                    placeholder="Search and select purchase order..."
+                    track-by="id"
+                    label="po_number"
+                    class="multiselect-modern"
+                    @select="handlePOSelect"
                 >
-                    <div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-24 mb-3"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-32 mb-2"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-28"
-                        ></div>
+                </Multiselect>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoading" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div class="animate-pulse space-y-6">
+                <div class="h-6 bg-gray-200 rounded w-1/4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                    <div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-32 mb-3"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-40 mb-2"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-36 mb-2"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-44"
-                        ></div>
+                    <div class="space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                    <div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-36 mb-3"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-28 mb-2"
-                        ></div>
-                        <div
-                            class="h-4 bg-gray-200 rounded animate-pulse w-32"
-                        ></div>
+                    <div class="space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div
-                    v-else-if="!isLoading && form"
-                    class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4"
-                >
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-500">
-                            Supplier Details
-                        </h3>
-                        <p class="mt-1 text-sm text-gray-900">
-                            {{ form.supplier?.name }}
-                        </p>
-                        <p class="mt-1 text-sm text-gray-900">
-                            {{ form.supplier?.contact_person }}
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-500">
-                            Contact Information
-                        </h3>
-                        <p class="mt-1 text-sm text-gray-900">
+        <!-- Supplier Information Card -->
+        <div v-else-if="!isLoading && form" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Supplier Information
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-3">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Company Details</h3>
+                    <p class="text-base font-semibold text-gray-900">{{ form.supplier?.name }}</p>
+                    <p class="text-sm text-gray-600">{{ form.supplier?.contact_person }}</p>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Contact Information</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
                             {{ form.supplier?.email }}
-                        </p>
-                        <p class="mt-1 text-sm text-gray-900">
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
                             {{ form.supplier?.phone }}
-                        </p>
-                        <p class="mt-1 text-sm text-gray-900">
+                        </div>
+                        <div class="flex items-start text-sm text-gray-600">
+                            <svg class="w-4 h-4 mr-2 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            </svg>
                             {{ form.supplier?.address }}
-                        </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-500">
-                            Purchase Order Info
-                        </h3>
-                        <p class="mt-1 text-sm text-gray-900">
-                            PL No. #:
-                            <input
-                                type="text"
-                                v-model="form.packing_list_number"
-                                class="border-0"
-                            />
-                        </p>
-                        <p class="mt-1 text-sm text-gray-900">
-                            Ref. No. #:
-                            <input
-                                type="text"
-                                v-model="form.ref_no"
-                                class="border-0"
-                            />
-                        </p>
-                        <div class="mt-1 flex flex-col gap-2">
-                            <div class="flex items-center gap-2">
-                                <span>P.O Data:</span>
-                                {{ moment(form.po_date).format("DD/MM/YYYY") }}
+                </div>
+                <div class="space-y-3">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Packing List Details</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">PL Number:</span>
+                            <input type="text" v-model="form.packing_list_number"
+                                class="text-sm border-0 bg-transparent focus:ring-0 focus:border-b-2 focus:border-indigo-500"
+                                placeholder="Enter PL number" />
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">Reference No:</span>
+                            <input type="text" v-model="form.ref_no"
+                                class="text-sm border-0 bg-transparent focus:ring-0 focus:border-b-2 focus:border-indigo-500"
+                                placeholder="Enter reference" />
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">P.O Date:</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ moment(form.po_date).format("DD/MM/YYYY") }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">PL Date:</span>
+                            <input type="date" v-model="form.pk_date"
+                                class="text-sm border-0 bg-transparent focus:ring-0 focus:border-b-2 focus:border-indigo-500"
+                                :min="form.po_date" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Section -->
+        <div v-if="!isLoading && form" class="mt-4 w-full">
+            <table class="min-w-full divide-y divide-gray-200 table-auto">
+                <colgroup>
+                    <col class="w-8" />
+                    <col class="w-48" />
+                    <col class="w-[120px]" />
+                    <col class="w-[200px]" />
+                    <col class="w-48" />
+                    <col class="w-32" />
+                    <col class="w-28" />
+                </colgroup>
+                <thead class="bg-gray-50 border border-black">
+                    <tr>
+                        <th class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10 w-8">#</th>
+                        <th class="text-left text-xs text-black capitalize sticky left-8 bg-gray-50 z-10 w-48">Item</th>
+                        <th class="text-left text-xs text-black capitalize">Qty</th>
+                        <th class="text-left text-xs text-black capitalize">Warehouse</th>
+                        <th class="text-left text-xs text-black capitalize">Locations</th>
+                        <th class="text-left text-xs text-black capitalize">Item Detail</th>
+                        <th class="text-left text-xs text-black capitalize">Cost (Unit/Total)</th>
+                        <th class="text-left text-xs text-black capitalize">Fullfillment</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs">
+                    <tr v-for="(item, index) in form.items" :key="index"
+                        :class="[
+                            'hover:bg-gray-50',
+                            {
+                                'bg-red-50': hasIncompleteBackOrder(item),
+                            },
+                            {
+                                'border-red-500 border-2': item.hasError,
+                            },
+                            { 'bg-red-50/20': item.hasError },
+                        ]"
+                        :data-row="index + 1"
+                    >
+                        <td :class="[
+                            'text-sm text-gray-500 align-middle sticky left-0 z-10 bg-white w-8',
+                            {
+                                'border-green-600 border-2': item.status === 'approved',
+                            },
+                            {
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                            },
+                            {
+                                'border-black border': !item.status || item.status === 'pending',
+                            },
+                        ]">
+                            {{ index + 1 }}
+                        </td>
+                        <td class="sticky left-8 z-10 bg-white whitespace-normal break-words w-48"
+                            :class="{
+                                'border-green-600 border-2': item.status === 'approved',
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                                'border-black border': !item.status || item.status === 'pending',
+                            }">
+                            <div class="flex flex-col">
+                                {{ item.product?.name }}
+                                <span class="font-bold mt-2">UoM: {{ item.uom }}</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span>PL Data:</span>
-                                <input
-                                    type="date"
-                                    v-model="form.pk_date"
-                                    class="border-0"
-                                    :min="form.po_date"
-                                />
+                        </td>
+                        <td :class="[
+                            {
+                                'border-green-600 border-2': item.status === 'approved',
+                            },
+                            {
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                            },
+                            {
+                                'border-black border': !item.status || item.status === 'pending',
+                            },
+                            'px-3 py-2',
+                        ]">
+                            <div class="flex flex-col">
+                                <div>
+                                    <input type="number" v-model="item.quantity" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label for="received_quantity text-xs" class="text-xs">Received QTY</label>
+                                    <input type="number" v-model="item.received_quantity" required min="1"
+                                        :disabled="item.status == 'approved'"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm"
+                                        @input="handleReceivedQuantityChange(index)" />
+                                </div>
+                                <div>
+                                    <label for="mismatches" class="text-xs">Mismatches</label>
+                                    <input type="text" :value="calculateMismatches(item)" readonly
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm" />
+                                </div>
+                                <button v-if="calculateFulfillmentRate(item) < 100" @click="openBackOrderModal(index)"
+                                    class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                    Back Order
+                                </button>
+
+                                <!-- Add tooltip for incomplete back orders -->
+                                <div v-if="hasIncompleteBackOrder(item)"
+                                    class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                    Please record the mismatch
+                                </div>
                             </div>
+                        </td>
+                        <td :class="[
+                            {
+                                'border-green-600 border-2': item.status === 'approved',
+                            },
+                            {
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                            },
+                            {
+                                'border-black border': !item.status || item.status === 'pending',
+                            },
+                        ]">
+                            <Multiselect v-model="item.warehouse" :value="item.warehouse_id" :options="props.warehouses"
+                                :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
+                                placeholder="Select Warehouse" required track-by="id" :disabled="item.status === 'approved'"
+                                :append-to-body="true" label="name" @select="hadleWarehouseSelect(index, $event)">
+                            </Multiselect>
+                        </td>
+                        <td :class="[
+                            {
+                                'border-green-600 border-2': item.status === 'approved',
+                            },
+                            {
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                            },
+                            {
+                                'border-black border': !item.status || item.status === 'pending',
+                            },
+                        ]">
+                            <Multiselect v-model="item.location" :value="item.location_id" required
+                                :disabled="item.status === 'approved' || !item.warehouse_id"
+                                :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]" :searchable="true"
+                                :close-on-select="true" :show-labels="false" :allow-empty="true"
+                                placeholder="Select Location" @select="hadleLocationSelect(index, $event)">
+                                <template v-slot:option="{ option }">
+                                    <div :class="{ 'add-new-option': option.isAddNew }">
+                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                        <span v-else>{{ option.location }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
+                        </td>
+                        <td class="px-1 py-1" :class="{
+                            'border-green-600 border-2': item.status === 'approved',
+                            'border-yellow-500 border-2': item.status === 'reviewed',
+                            'border-black border': !item.status || item.status === 'pending',
+                        }">
+                            <div class="space-y-1">
+                                <div>
+                                    <label class="text-[10px] text-block">Batch</label>
+                                    <input type="text" v-model="item.batch_number" required
+                                        :disabled="item.status === 'approved'"
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-block">Expiry</label>
+                                    <input type="date" :value="formatDateForInput(item.expire_date)" required
+                                        @input="item.expire_date = $event.target.value"
+                                        :min="moment().add(6, 'months').format('YYYY-MM-DD')"
+                                        :disabled="item.status === 'approved'"
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-block">Barcode</label>
+                                    <input type="text" v-model="item.barcode" required
+                                        :disabled="item.status === 'approved'"
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap" :class="{
+                            'border-green-600 border-2': item.status === 'approved',
+                            'border-yellow-500 border-2': item.status === 'reviewed',
+                            'border border-black': !item.status || item.status === 'pending',
+                        }">
+                            <div class="flex flex-col space-y-1">
+                                <div class="text-sm">
+                                    <span class="text-gray-500 text-xs">Unit: </span>
+                                    {{ Number(item.unit_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-500 text-xs">Total: </span>
+                                    {{ Number(item.total_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
+                                </div>
+                            </div>
+                        </td>
+                        <td :class="[
+                            {
+                                'border-green-600 border-2': item.status === 'approved',
+                            },
+                            {
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                            },
+                            {
+                                'border-gray-500 border': !item.status || item.status === 'pending',
+                            },
+                            'text-left',
+                        ]">
+                            <div class="space-y-2">
+                                <div class="flex items-center flex-col">
+                                    <span>{{ calculateFulfillmentRate(item) }}%</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="form?.items?.length === 0">
+                        <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500">
+                            No items added. Click "Add Item" to start creating your purchase order.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Memo Field -->
+        <div v-if="!isLoading && form" class="mt-4 bg-gray-50 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Memo</h3>
+            <textarea v-model="form.notes" rows="3"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                placeholder="Enter memo or additional notes here..."></textarea>
+        </div>
+        <div v-else>
+            <span>No P.O Data found</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div v-if="!isLoading && form" class="flex justify-end space-x-3 mb-[80px]">
+            <Link :href="route('supplies.index')" :disabled="isSubmitting"
+                class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Exit
+            </Link>
+            <button @click="submit" :disabled="isSubmitting || !canSubmit" :title="submitButtonTitle"
+                class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ isSubmitting ? "Saving..." : "Save and Exit" }}
+            </button>
+        </div>
+
+        <!-- Back Order Modal -->
+        <Modal :show="showBackOrderModal" @close="attemptCloseModal" maxWidth="2xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Back Order Details</h2>
+                    <button @click="attemptCloseModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-200">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600 font-medium">Product:</span>
+                            <p class="text-gray-900 font-semibold">{{ selectedItem?.product?.name }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Expected:</span>
+                            <p class="text-gray-900 font-semibold">{{ selectedItem?.quantity }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Received:</span>
+                            <p class="text-gray-900 font-semibold">{{ selectedItem?.received_quantity || 0 }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Mismatches:</span>
+                            <p class="text-yellow-800 font-semibold">{{ actualMismatches }}</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- halkaan ku past karee -->
-                <!-- Items List -->
-                <div class="mt-4 w-full">
-                    <table
-                        class="min-w-full divide-y divide-gray-200 table-auto"
-                        v-if="!isLoading && form"
-                    >
-                        <colgroup>
-                            <col class="w-8" />
-                            <col class="w-48" />
-                            <col class="w-[120px]" />
-                            <col class="w-[200px]" />
-                            <col class="w-48" />
-                            <col class="w-32" />
-                            <col class="w-28" />
-                        </colgroup>
-                        <thead class="bg-gray-50 border border-black">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th
-                                    class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10 w-8"
-                                >
-                                    #
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize sticky left-8 bg-gray-50 z-10 w-48"
-                                >
-                                    Item
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    Qty
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    Warehouse
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    St. Locations
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    Item Detail
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    Cost (Unit/Total)
-                                </th>
-                                <th
-                                    class="text-left text-xs text-black capitalize"
-                                >
-                                    Fullfillment
-                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="text-xs">
-                            <tr
-                                v-for="(item, index) in form.items"
-                                :key="index"
-                                :class="[
-                                    'hover:bg-gray-50',
-                                    {
-                                        'bg-red-50':
-                                            hasIncompleteBackOrder(item),
-                                    },
-                                    {
-                                        'border-red-500 border-2':
-                                            item.hasError,
-                                    },
-                                    { 'bg-red-50/20': item.hasError },
-                                ]"
-                                :data-row="index + 1"
-                            >
-                                <td
-                                    :class="[
-                                        'text-sm text-gray-500 align-middle sticky left-0 z-10 bg-white w-8',
-                                        {
-                                            'border-green-600 border-2':
-                                                item.status === 'approved',
-                                        },
-                                        {
-                                            'border-yellow-500 border-2':
-                                                item.status === 'reviewed',
-                                        },
-                                        {
-                                            'border-black border':
-                                                !item.status ||
-                                                item.status === 'pending',
-                                        },
-                                    ]"
-                                >
-                                    {{ index + 1 }}
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="(row, index) in backOrderRows" :key="index" class="hover:bg-gray-50">
+                                <td class="px-4 py-3">
+                                    <input type="number" v-model="row.quantity" :disabled="row.finalized != null"
+                                        class="w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        min="0" />
                                 </td>
-                                <td
-                                    class="sticky left-8 z-10 bg-white whitespace-normal break-words w-48"
-                                    :class="{
-                                        'border-green-600 border-2':
-                                            item.status === 'approved',
-                                        'border-yellow-500 border-2':
-                                            item.status === 'reviewed',
-                                        'border-black border':
-                                            !item.status ||
-                                            item.status === 'pending',
-                                    }"
-                                >
-                                    <div class="flex flex-col">
-                                        {{ item.product?.name }}
-                                        <span
-                                            >UoM:
-                                            <input
-                                                type="text"
-                                                v-model="item.uom"
-                                                readonly
-                                                class="border-0"
-                                        /></span>
-                                    </div>
+                                <td class="px-4 py-3">
+                                    <select v-model="row.status"
+                                        class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                        <option v-for="status in [row.status, ...availableStatuses.filter((s) => s !== row.status)]"
+                                            :key="status" :value="status">
+                                            {{ status }}
+                                        </option>
+                                    </select>
                                 </td>
-                                <td
-                                    :class="[
-                                        {
-                                            'border-green-600 border-2':
-                                                item.status === 'approved',
-                                        },
-                                        {
-                                            'border-yellow-500 border-2':
-                                                item.status === 'reviewed',
-                                        },
-                                        {
-                                            'border-black border':
-                                                !item.status ||
-                                                item.status === 'pending',
-                                        },
-                                        'px-3 py-2',
-                                    ]"
-                                >
-                                    <div class="flex flex-col">
-                                        <div>
-                                            <input
-                                                type="number"
-                                                v-model="item.quantity"
-                                                readonly
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label
-                                                for="received_quantity"
-                                                class="text-xs"
-                                                >Received Quantity</label
-                                            >
-                                            <input
-                                                type="number"
-                                                v-model="item.received_quantity"
-                                                required
-                                                min="1"
-                                                :disabled="
-                                                    item.status == 'approved'
-                                                "
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm"
-                                                @input="
-                                                    handleReceivedQuantityChange(
-                                                        index
-                                                    )
-                                                "
-                                            />
-                                        </div>
-                                        <div>
-                                            <label
-                                                for="mismatches"
-                                                class="text-xs"
-                                                >Mismatches</label
-                                            >
-                                            <input
-                                                type="text"
-                                                :value="
-                                                    calculateMismatches(item)
-                                                "
-                                                readonly
-                                                class="block w-full text-left text-black focus:ring-0 sm:text-sm"
-                                            />
-                                        </div>
-                                        <button
-                                            v-if="
-                                                calculateFulfillmentRate(item) <
-                                                100
-                                            "
-                                            @click="openBackOrderModal(index)"
-                                            class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                        >
-                                            Back Order
-                                        </button>
-
-                                        <!-- Add tooltip for incomplete back orders -->
-                                        <div
-                                            v-if="hasIncompleteBackOrder(item)"
-                                            class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded"
-                                        >
-                                            Please record the mismatch
-                                        </div>
-                                    </div>
+                                <td class="px-4 py-3">
+                                    <input type="text" v-model="row.notes"
+                                        class="w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        placeholder="Enter note..." />
                                 </td>
-                                <td
-                                    :class="[
-                                        {
-                                            'border-green-600 border-2':
-                                                item.status === 'approved',
-                                        },
-                                        {
-                                            'border-yellow-500 border-2':
-                                                item.status === 'reviewed',
-                                        },
-                                        {
-                                            'border-black border':
-                                                !item.status ||
-                                                item.status === 'pending',
-                                        },
-                                    ]"
-                                >
-                                    <Multiselect
-                                        v-model="item.warehouse"
-                                        :value="item.warehouse_id"
-                                        :options="props.warehouses"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        placeholder="Select Warehouse"
-                                        required
-                                        track-by="id"
-                                        :disabled="item.status === 'approved'"
-                                        :append-to-body="true"
-                                        label="name"
-                                        @select="
-                                            hadleWarehouseSelect(index, $event)
-                                        "
-                                    >
-                                    </Multiselect>
-                                </td>
-                                <td
-                                    :class="[
-                                        {
-                                            'border-green-600 border-2':
-                                                item.status === 'approved',
-                                        },
-                                        {
-                                            'border-yellow-500 border-2':
-                                                item.status === 'reviewed',
-                                        },
-                                        {
-                                            'border-black border':
-                                                !item.status ||
-                                                item.status === 'pending',
-                                        },
-                                    ]"
-                                >
-                                    <Multiselect
-                                        v-model="item.location"
-                                        :value="item.location_id"
-                                        required
-                                        :disabled="
-                                            item.status === 'approved' ||
-                                            !item.warehouse_id
-                                        "
-                                        :options="[
-                                            ADD_NEW_LOCATION_OPTION,
-                                            ...loadedLocation,
-                                        ]"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        placeholder="Select Location"
-                                        @select="
-                                            hadleLocationSelect(index, $event)
-                                        "
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <div
-                                                :class="{
-                                                    'add-new-option':
-                                                        option.isAddNew,
-                                                }"
-                                            >
-                                                <span
-                                                    v-if="option.isAddNew"
-                                                    class="text-indigo-600 font-medium"
-                                                    >+ Add New Location</span
-                                                >
-                                                <span v-else>{{
-                                                    option.location
-                                                }}</span>
-                                            </div>
-                                        </template>
-                                    </Multiselect>
-                                </td>
-                                <td
-                                    class="px-1 py-1"
-                                    :class="{
-                                        'border-green-600 border-2':
-                                            item.status === 'approved',
-                                        'border-yellow-500 border-2':
-                                            item.status === 'reviewed',
-                                        'border-black border':
-                                            !item.status ||
-                                            item.status === 'pending',
-                                    }"
-                                >
-                                    <div class="space-y-1">
-                                        <div>
-                                            <label
-                                                class="text-[10px] text-gray-500 block"
-                                                >Batch</label
-                                            >
-                                            <input
-                                                type="text"
-                                                v-model="item.batch_number"
-                                                required
-                                                :disabled="
-                                                    item.status === 'approved'
-                                                "
-                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label
-                                                class="text-[10px] text-gray-500 block"
-                                                >Expiry</label
-                                            >
-                                            <input
-                                                type="date"
-                                                :value="
-                                                    formatDateForInput(
-                                                        item.expire_date
-                                                    )
-                                                "
-                                                required
-                                                @input="
-                                                    item.expire_date =
-                                                        $event.target.value
-                                                "
-                                                :min="
-                                                    moment()
-                                                        .add(6, 'months')
-                                                        .format('YYYY-MM-DD')
-                                                "
-                                                :disabled="
-                                                    item.status === 'approved'
-                                                "
-                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label
-                                                class="text-[10px] text-gray-500 block"
-                                                >Barcode</label
-                                            >
-                                            <input
-                                                type="text"
-                                                v-model="item.barcode"
-                                                required
-                                                :disabled="
-                                                    item.status === 'approved'
-                                                "
-                                                class="block w-full text-xs text-black focus:ring-0 p-1 border rounded"
-                                            />
-                                        </div>
-                                    </div>
-                                </td>
-                                <td
-                                    class="px-2 py-2 whitespace-nowrap"
-                                    :class="{
-                                        'border-green-600 border-2':
-                                            item.status === 'approved',
-                                        'border-yellow-500 border-2':
-                                            item.status === 'reviewed',
-                                        'border border-black':
-                                            !item.status ||
-                                            item.status === 'pending',
-                                    }"
-                                >
-                                    <div class="flex flex-col space-y-1">
-                                        <div class="text-sm">
-                                            <span class="text-gray-500 text-xs"
-                                                >Unit:
-                                            </span>
-                                            {{
-                                                Number(
-                                                    item.unit_cost
-                                                ).toLocaleString("en-US", {
-                                                    style: "currency",
-                                                    currency: "USD",
-                                                })
-                                            }}
-                                        </div>
-                                        <div class="text-sm">
-                                            <span class="text-gray-500 text-xs"
-                                                >Total:
-                                            </span>
-                                            {{
-                                                Number(
-                                                    item.total_cost
-                                                ).toLocaleString("en-US", {
-                                                    style: "currency",
-                                                    currency: "USD",
-                                                })
-                                            }}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td
-                                    :class="[
-                                        {
-                                            'border-green-600 border-2':
-                                                item.status === 'approved',
-                                        },
-                                        {
-                                            'border-yellow-500 border-2':
-                                                item.status === 'reviewed',
-                                        },
-                                        {
-                                            'border-gray-500 border':
-                                                !item.status ||
-                                                item.status === 'pending',
-                                        },
-                                        'text-left',
-                                    ]"
-                                >
-                                    <div class="space-y-2">
-                                        <div class="flex items-center flex-col">
-                                            <span
-                                                >{{
-                                                    calculateFulfillmentRate(
-                                                        item
-                                                    )
-                                                }}%</span
-                                            >
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="form?.items?.length === 0">
-                                <td
-                                    colspan="7"
-                                    class="px-3 py-4 text-center text-sm text-gray-500"
-                                >
-                                    No items added. Click "Add Item" to start
-                                    creating your purchase order.
+                                <td class="px-4 py-3">
+                                    <button @click="removeBackOrderRow(index, row)"
+                                        class="text-red-600 hover:text-red-800 transition-colors duration-150">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <!-- Memo Field -->
-                <div
-                    v-if="!isLoading && form"
-                    class="mt-4 bg-gray-50 rounded-lg p-4"
-                >
-                    <h3 class="text-sm font-medium text-gray-500 mb-2">Memo</h3>
-                    <textarea
-                        v-model="form.notes"
-                        rows="3"
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                        placeholder="Enter memo or additional notes here..."
-                    ></textarea>
-                </div>
-                <div v-else>
-                    <span>No P.O Data found</span>
-                </div>
 
-                <!-- Back Order Modal -->
-                <Modal
-                    :show="showBackOrderModal"
-                    @close="attemptCloseModal"
-                    maxWidth="2xl"
-                >
-                    <div class="p-6">
-                        <h2 class="text-lg font-medium text-gray-900 mb-4">
-                            Back Order Details
-                        </h2>
-
-                        <div class="mb-4 bg-gray-50 p-3 rounded">
-                            <p class="text-sm font-medium text-gray-600">
-                                Product: {{ selectedItem?.product?.name }}
-                            </p>
-                            <p class="text-sm font-medium text-gray-600">
-                                Expected Quantity: {{ selectedItem?.quantity }}
-                            </p>
-                            <p class="text-sm font-medium text-gray-600">
-                                Received Quantity:
-                                {{ selectedItem?.received_quantity || 0 }}
-                            </p>
-                            <p class="text-sm font-medium text-gray-600">
-                                Back Orders: {{ totalExistingDifferences }}
-                            </p>
-                            <p class="text-sm font-medium text-yellow-800">
-                                Actual Mismatches: {{ actualMismatches }}
-                            </p>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th
-                                            class="text-left text-xs font-medium text-gray-500 uppercase"
-                                        >
-                                            Quantity
-                                        </th>
-                                        <th
-                                            class="text-left text-xs font-medium text-gray-500 uppercase"
-                                        >
-                                            Status
-                                        </th>
-                                        <th
-                                            class="text-left text-xs font-medium text-gray-500 uppercase"
-                                        >
-                                            Note
-                                        </th>
-                                        <th
-                                            class="text-left text-xs font-medium text-gray-500 uppercase"
-                                        >
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody
-                                    class="bg-white divide-y divide-gray-200"
-                                >
-                                    <tr
-                                        v-for="(row, index) in backOrderRows"
-                                        :key="index"
-                                    >
-                                        <td class="px-3 py-2">
-                                            <input
-                                                type="number"
-                                                v-model="row.quantity"
-                                                :disabled="
-                                                    row.finalized != null
-                                                "
-                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                min="0"
-                                            />
-                                            <!-- min="0" @input="validateBackOrderQuantities"> -->
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <select
-                                                v-model="row.status"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                            >
-                                                <option
-                                                    v-for="status in [
-                                                        row.status,
-                                                        ...availableStatuses.filter(
-                                                            (s) =>
-                                                                s !== row.status
-                                                        ),
-                                                    ]"
-                                                    :key="status"
-                                                    :value="status"
-                                                >
-                                                    {{ status }}
-                                                </option>
-                                            </select>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <input
-                                                type="text"
-                                                v-model="row.notes"
-                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                placeholder="Enter note..."
-                                            />
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <button
-                                                @click="
-                                                    removeBackOrderRow(
-                                                        index,
-                                                        row
-                                                    )
-                                                "
-                                                class="text-red-600 hover:text-red-800"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    class="h-5 w-5"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mt-4 flex justify-between items-center">
-                            <div class="flex items-center gap-4">
-                                <button
-                                    @click="addBackOrderRow"
-                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    :disabled="!canAddMoreRows"
-                                >
-                                    Add Row
-                                </button>
-                                <div class="text-sm">
-                                    <span
-                                        :class="{
-                                            'text-green-600': isValidForSave,
-                                            'text-red-600': !isValidForSave,
-                                        }"
-                                    >
-                                        {{ totalBackOrderQuantity }}
-                                    </span>
-                                    <span class="text-gray-600">
-                                        /
-                                        {{
-                                            selectedItem?.quantity -
-                                            (selectedItem?.received_quantity ||
-                                                0)
-                                        }}
-                                        items recorded</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div>
-                                <PrimaryButton @click="attemptCloseModal"
-                                    >Save and Exit</PrimaryButton
-                                >
-                            </div>
+                <div class="mt-6 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <button @click="addBackOrderRow"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                            :disabled="!canAddMoreRows">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Row
+                        </button>
+                        <div class="text-sm">
+                            <span :class="{ 'text-green-600': isValidForSave, 'text-red-600': !isValidForSave }">
+                                {{ totalBackOrderQuantity }}
+                            </span>
+                            <span class="text-gray-600">
+                                / {{ selectedItem?.quantity - (selectedItem?.received_quantity || 0) }} items recorded
+                            </span>
                         </div>
                     </div>
-                </Modal>
-                <!-- New Location Modal -->
-                <Modal
-                    :show="showLocationModal"
-                    @close="showLocationModal = false"
-                >
-                    <div class="p-6">
-                        <h2 class="text-lg font-medium text-gray-900">
-                            Add New Location
-                        </h2>
-                        <div class="mt-6">
-                            <InputLabel
-                                for="new_location"
-                                value="Location Name"
-                            />
-                            <TextInput
-                                id="new_location"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="newLocation"
-                                required
-                            />
-                        </div>
-                        <div class="mt-6">
-                            <InputLabel for="warehouse_id" value="Warehouse" />
-                            <Multiselect
-                                v-model="selectedWarehouse"
-                                :options="props.warehouses"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="false"
-                                placeholder="Select Warehouse"
-                                track-by="id"
-                                label="name"
-                                required
-                            >
-                            </Multiselect>
-                        </div>
-                        <div class="mt-6 flex justify-end space-x-3">
-                            <SecondaryButton
-                                @click="showLocationModal = false"
-                                :disabled="isNewLocation"
-                                >Cancel
-                            </SecondaryButton>
-                            <PrimaryButton
-                                :disabled="isNewLocation || !selectedWarehouse"
-                                @click="createLocation"
-                                >{{
-                                    isNewLocation
-                                        ? "Waiting..."
-                                        : "Create new location"
-                                }}</PrimaryButton
-                            >
-                        </div>
-                    </div>
-                </Modal>
-                <div class="flex justify-end space-x-3">
-                    <Link
-                        :href="route('supplies.index')"
-                        :disabled="isSubmitting"
-                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Exit
-                    </Link>
-                    <button
-                        @click="submit"
-                        :disabled="isSubmitting || !canSubmit"
-                        :title="submitButtonTitle"
-                        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {{ isSubmitting ? "Saving..." : "Save and Exit" }}
-                    </button>
+                    <PrimaryButton @click="attemptCloseModal">Save and Exit</PrimaryButton>
                 </div>
             </div>
-        </div>
+        </Modal>
+
+        <!-- New Location Modal -->
+        <Modal :show="showLocationModal" @close="showLocationModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Add New Location</h2>
+                <div class="space-y-4">
+                    <div>
+                        <InputLabel for="new_location" value="Location Name" />
+                        <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
+                    </div>
+                    <div>
+                        <InputLabel for="warehouse_id" value="Warehouse" />
+                        <Multiselect v-model="selectedWarehouse" :options="props.warehouses" :searchable="true"
+                            :close-on-select="true" :show-labels="false" :allow-empty="false"
+                            placeholder="Select Warehouse" track-by="id" label="name" required class="multiselect-modern">
+                        </Multiselect>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation || !selectedWarehouse" @click="createLocation">
+                        {{ isNewLocation ? "Creating..." : "Create Location" }}
+                    </PrimaryButton>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
+
 <script setup>
 import { nextTick } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
