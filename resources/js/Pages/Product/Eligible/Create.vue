@@ -197,6 +197,9 @@ function handleSelectProduct(index, selected) {
     if (selected) {
         form.value.products[index].product_id = selected.id;
         form.value.products[index].product = selected;
+        
+        // Automatically add a new product row after selection
+        addProductToList();
     }
 }
 
@@ -208,21 +211,23 @@ const submit = async () => {
         return;
     }
     
-    if (form.value.products.length === 0) {
+    // Filter out products with null or empty product_id
+    const validProducts = form.value.products.filter(item => item.product_id !== null && item.product_id !== '');
+    
+    if (validProducts.length === 0) {
         toast.error('Please add at least one product');
-        return;
-    }
-
-    // Check if all products have been selected
-    const hasUnselectedProducts = form.value.products.some(item => item.product_id === null);
-    if (hasUnselectedProducts) {
-        toast.error('Please select all products before submitting');
         return;
     }
 
     processing.value = true;
     
-    await axios.post(route('products.eligible.store'), form.value)
+    // Create a copy of form data with only valid products
+    const submitData = {
+        ...form.value,
+        products: validProducts
+    };
+    
+    await axios.post(route('products.eligible.store'), submitData)
         .then((response) => {
             processing.value = false;
             Swal.fire({
