@@ -27,7 +27,7 @@ class CategoryController extends Controller
             });
         }
         
-        $categories = $query->paginate($request->input('per_page', 22), ['*'], 'page', $request->input('page', 1))
+        $categories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
     $categories->setPath(url()->current()); // Force Laravel to use full URLs
         
