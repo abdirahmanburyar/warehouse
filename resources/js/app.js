@@ -20,39 +20,7 @@ if (window.Echo) {
     console.log('🔄 Setting up Echo debugging for Reverb');
     
     // Debug Reverb connection
-    if (window.Echo.connector.reverb) {
-        window.Echo.connector.reverb.connection.bind('state_change', (states) => {
-            console.log(`🔌 Reverb connection state changed from ${states.previous} to ${states.current}`);
-        });
-        
-        window.Echo.connector.reverb.connection.bind('connected', () => {
-            console.log('✅ Reverb connected successfully');
-        });
-        
-        window.Echo.connector.reverb.connection.bind('error', (err) => {
-            console.error('❌ Reverb connection error:', err);
-        });
-        
-        // Debug all events (global listener)
-        // window.Echo.connector.reverb.bind_global((event, data) => {
-        //     console.log(`🌐 Global event received: ${event}`, data);
-        // });
-    } else {
-        console.log('⚠️ Reverb connector not available, using fallback debugging');
-        
-        // // Fallback debugging for any Echo connection
-        // window.Echo.connector.connection.bind('state_change', (states) => {
-        //     console.log(`🔌 Connection state changed from ${states.previous} to ${states.current}`);
-        // });
-        
-        // window.Echo.connector.connection.bind('connected', () => {
-        //     console.log('✅ Connection established successfully');
-        // });
-        
-        // window.Echo.connector.connection.bind('error', (err) => {
-        //     console.error('❌ Connection error:', err);
-        // });
-    }
+   
     
     // Note: Permission change events are now handled in AuthenticatedLayout.vue
     console.log('📝 Permission change events are now handled in AuthenticatedLayout.vue');
