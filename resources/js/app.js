@@ -60,15 +60,15 @@ setTimeout(() => {
                 zIndex: 9999
             });
             
-            // Assign the toast function to our global variable
-            window.$showToast = (options) => {
-                const { useToast } = Toast;
-                const toast = useToast();
-                toast(options.message, {
-                    type: options.type || 'default',
-                    timeout: options.duration || 5000
-                });
-            };
+            // // Assign the toast function to our global variable
+            // window.$showToast = (options) => {
+            //     const { useToast } = Toast;
+            //     const toast = useToast();
+            //     toast(options.message, {
+            //         type: options.type || 'default',
+            //         timeout: options.duration || 5000
+            //     });
+            // };
             
             return app
                 .use(plugin)
