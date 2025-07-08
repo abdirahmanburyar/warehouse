@@ -406,21 +406,18 @@ class ReceivedBackorderController extends Controller
             ]);
 
             // Verify facility inventory before commit
-            if ($receivedBackorder->order_id) {
-                $order = Order::find($receivedBackorder->order_id);
-                if ($order) {
-                    $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
-                        ->where('facility_id', $order->facility_id)
-                        ->first();
-                    
-                    if ($facilityInventory) {
-                        logger()->info('Facility inventory before commit', [
-                            'facility_inventory_id' => $facilityInventory->id,
-                            'quantity' => $facilityInventory->quantity
-                        ]);
-                    } else {
-                        logger()->warning('Facility inventory not found before commit');
-                    }
+            if ($receivedBackorder->facility_id) {
+                $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
+                    ->where('facility_id', $receivedBackorder->facility_id)
+                    ->first();
+                
+                if ($facilityInventory) {
+                    logger()->info('Facility inventory before commit', [
+                        'facility_inventory_id' => $facilityInventory->id,
+                        'quantity' => $facilityInventory->quantity
+                    ]);
+                } else {
+                    logger()->warning('Facility inventory not found before commit');
                 }
             }
 
@@ -428,21 +425,18 @@ class ReceivedBackorderController extends Controller
             logger()->info('Successfully approved received back order', ['received_backorder_id' => $receivedBackorder->id]);
 
             // Verify facility inventory after commit
-            if ($receivedBackorder->order_id) {
-                $order = Order::find($receivedBackorder->order_id);
-                if ($order) {
-                    $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
-                        ->where('facility_id', $order->facility_id)
-                        ->first();
-                    
-                    if ($facilityInventory) {
-                        logger()->info('Facility inventory after commit', [
-                            'facility_inventory_id' => $facilityInventory->id,
-                            'quantity' => $facilityInventory->quantity
-                        ]);
-                    } else {
-                        logger()->warning('Facility inventory not found after commit');
-                    }
+            if ($receivedBackorder->facility_id) {
+                $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
+                    ->where('facility_id', $receivedBackorder->facility_id)
+                    ->first();
+                
+                if ($facilityInventory) {
+                    logger()->info('Facility inventory after commit', [
+                        'facility_inventory_id' => $facilityInventory->id,
+                        'quantity' => $facilityInventory->quantity
+                    ]);
+                } else {
+                    logger()->warning('Facility inventory not found after commit');
                 }
             }
 
@@ -465,13 +459,13 @@ class ReceivedBackorderController extends Controller
     private function handleOrderInventory($receivedBackorder)
     {
         try {
-            // Get facility_id from the order
-            $order = Order::find($receivedBackorder->order_id);
-            if (!$order) {
-                throw new \Exception('Order not found for received backorder');
+            // Use facility_id directly from receivedBackorder
+            $facilityId = $receivedBackorder->facility_id;
+            
+            if (!$facilityId) {
+                throw new \Exception('No facility_id found in received backorder');
             }
 
-            $facilityId = $order->facility_id;
             logger()->info('Processing order inventory', [
                 'received_backorder_id' => $receivedBackorder->id,
                 'order_id' => $receivedBackorder->order_id,
@@ -508,13 +502,6 @@ class ReceivedBackorderController extends Controller
             logger()->info('Updated facility inventory quantity', [
                 'old_quantity' => $oldQuantity,
                 'new_quantity' => $newQuantity,
-                'added_quantity' => $receivedBackorder->quantity
-            ]);
-            
-            logger()->info('Updated facility inventory', [
-                'facility_inventory_id' => $facilityInventory->id,
-                'old_quantity' => $oldQuantity,
-                'new_quantity' => $facilityInventory->quantity,
                 'added_quantity' => $receivedBackorder->quantity
             ]);
 
