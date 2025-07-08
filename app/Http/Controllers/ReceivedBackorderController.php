@@ -782,21 +782,26 @@ class ReceivedBackorderController extends Controller
      */
     private function createFacilityInventoryMovement($receivedBackorder, $type)
     {
-        // Get facility_id from the order
-        $order = Order::find($receivedBackorder->order_id);
-        if (!$order) {
-            throw new \Exception('Order not found for received backorder');
-        }
+        // Use facility_id directly from receivedBackorder
+        $facilityId = $receivedBackorder->facility_id;
+        $orderId = $receivedBackorder->order_id;
+        $productId = $receivedBackorder->product_id;
 
-        $facilityId = $order->facility_id;
+        // Find the order item for this product/order
+        $orderItem = \App\Models\OrderItem::where('order_id', $orderId)
+            ->where('product_id', $productId)
+            ->first();
+        if (!$orderItem) {
+            throw new \Exception('OrderItem not found for order_id ' . $orderId . ' and product_id ' . $productId);
+        }
 
         // Create facility inventory movement record
         $movementData = [
             'facility_id' => $facilityId,
-            'product_id' => $receivedBackorder->product_id,
+            'product_id' => $productId,
             'source_type' => $type,
-            'source_id' => $receivedBackorder->order_id,
-            'source_item_id' => null, // Could be order_item_id if available
+            'source_id' => $orderId,
+            'source_item_id' => $orderItem->id,
             'facility_received_quantity' => $receivedBackorder->quantity,
             'batch_number' => $receivedBackorder->batch_number,
             'expiry_date' => $receivedBackorder->expire_date,
