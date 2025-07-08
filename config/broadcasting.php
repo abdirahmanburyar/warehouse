@@ -40,8 +40,8 @@ return [
             'scheme' => env('REVERB_SCHEME', 'http'),
             'path' => env('REVERB_PATH', '/api'),
             'options' => [
-                // 'cluster' => env('PUSHER_APP_CLUSTER'),
                 'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                'encrypted' => env('REVERB_SCHEME', 'http') === 'https',
             ],
         ],
 
@@ -62,6 +62,19 @@ return [
         'ably' => [
             'driver' => 'ably',
             'key' => env('ABLY_KEY'),
+        ],
+
+        'redis' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+        ],
+
+        'log' => [
+            'driver' => 'log',
+        ],
+
+        'null' => [
+            'driver' => 'null',
         ],
     ],
 ];

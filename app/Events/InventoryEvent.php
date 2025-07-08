@@ -38,9 +38,10 @@ class InventoryEvent implements ShouldBroadcast
             'channel' => 'inventory',
             'timestamp' => now()->toDateTimeString(),
             'broadcast_driver' => config('broadcasting.default'),
-            'pusher_config' => [
-                'key' => config('broadcasting.connections.pusher.key'),
-                'cluster' => config('broadcasting.connections.pusher.options.cluster')
+            'reverb_config' => [
+                'key' => config('broadcasting.connections.reverb.key'),
+                'host' => config('broadcasting.connections.reverb.host'),
+                'port' => config('broadcasting.connections.reverb.port')
             ]
         ]);
         
