@@ -34,9 +34,9 @@ if (window.Echo) {
         });
         
         // Debug all events (global listener)
-        window.Echo.connector.reverb.bind_global((event, data) => {
-            console.log(`🌐 Global event received: ${event}`, data);
-        });
+        // window.Echo.connector.reverb.bind_global((event, data) => {
+        //     console.log(`🌐 Global event received: ${event}`, data);
+        // });
     } else {
         console.log('⚠️ Reverb connector not available, using fallback debugging');
         
