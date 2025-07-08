@@ -23,6 +23,7 @@ class ReceivedBackorder extends Model
         'status',
         'type',
         'warehouse_id',
+        'facility_id',
         'location',
         'facility',
         'warehouse',
@@ -41,11 +42,15 @@ class ReceivedBackorder extends Model
         // Additional fields for back order integration
         'back_order_id',
         'packing_list_id',
+        'order_id',
+        'transfer_id',
         'packing_list_number',
         'purchase_order_id',
         'purchase_order_number',
         'supplier_id',
         'supplier_name',
+        'order_id',
+        'transfer_id'
     ];
 
     protected $casts = [
@@ -58,6 +63,16 @@ class ReceivedBackorder extends Model
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
     ];
+
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(Transfer::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
 
     /**
      * Get the product that owns the received backorder.

@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('back_order_number')->unique();
             $table->foreignId('packing_list_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('transfer_id')->constrained()->onDelete('cascade');
             $table->date('back_order_date');
             $table->integer('total_items')->default(0);
             // reported by [warehouse_id, facility_id]

@@ -32,6 +32,9 @@ return new class extends Migration
         Schema::create('packing_list_differences', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(PackingListItem::class, 'packing_listitem_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('order_item_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('transfer_item_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('back_order_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->integer('quantity');
             $table->string('finalized')->nullable();

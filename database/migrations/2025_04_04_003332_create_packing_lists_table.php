@@ -28,6 +28,28 @@ return new class extends Migration
             $table->timestamps();
         });
 
+
+        // 'packing_listitem_id',
+        // 'back_order_id',
+        // 'product_id',
+        // 'quantity',
+        // 'finalized',
+        // 'status',
+        // 'notes'
+
+        Schema::create('packing_list_differences', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('packing_listitem_id')->constrained();
+            $table->foreignId('inventory_allocation_id')->constrained();
+            $table->foreignId('back_order_id')->constrained();
+            $table->boolean('finalized')->default(false);
+            $table->foreignId('product_id')->constrained();
+            $table->integer('quantity');
+            $table->string('status');
+            $table->string('notes')->nullable();
+            $table->timestamps();
+        });
+
         
     }
 
@@ -37,6 +59,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('packing_list_differences');
-
+        Schema::dropIfExists('packing_lists');
     }
 };

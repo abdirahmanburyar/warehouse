@@ -13,6 +13,8 @@ class PackingListDifference extends Model
 
     protected $fillable = [
         'packing_listitem_id',
+        'order_item_id',
+        'transfer_item_id',
         'back_order_id',
         'product_id',
         'quantity',
@@ -24,6 +26,16 @@ class PackingListDifference extends Model
     public function packingListItem()
     {
         return $this->belongsTo(PackingListItem::class, 'packing_listitem_id');
+    }
+
+    public function orderItem()
+    {
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
+    }
+
+    public function transferItem()
+    {
+        return $this->belongsTo(TransferItem::class, 'transfer_item_id');
     }
 
     public function product()
