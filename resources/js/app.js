@@ -40,18 +40,18 @@ if (window.Echo) {
     } else {
         console.log('⚠️ Reverb connector not available, using fallback debugging');
         
-        // Fallback debugging for any Echo connection
-        window.Echo.connector.connection.bind('state_change', (states) => {
-            console.log(`🔌 Connection state changed from ${states.previous} to ${states.current}`);
-        });
+        // // Fallback debugging for any Echo connection
+        // window.Echo.connector.connection.bind('state_change', (states) => {
+        //     console.log(`🔌 Connection state changed from ${states.previous} to ${states.current}`);
+        // });
         
-        window.Echo.connector.connection.bind('connected', () => {
-            console.log('✅ Connection established successfully');
-        });
+        // window.Echo.connector.connection.bind('connected', () => {
+        //     console.log('✅ Connection established successfully');
+        // });
         
-        window.Echo.connector.connection.bind('error', (err) => {
-            console.error('❌ Connection error:', err);
-        });
+        // window.Echo.connector.connection.bind('error', (err) => {
+        //     console.error('❌ Connection error:', err);
+        // });
     }
     
     // Note: Permission change events are now handled in AuthenticatedLayout.vue
