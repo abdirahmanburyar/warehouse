@@ -15,17 +15,6 @@ window.$showToast = null;
 // Debug flag for permission events
 window.debugPermissionEvents = false;
 
-// Set up basic Echo debugging
-if (window.Echo) {
-    console.log('🔄 Setting up Echo debugging for Reverb');
-    
-    // Debug Reverb connection
-   
-    
-    // Note: Permission change events are now handled in AuthenticatedLayout.vue
-    console.log('📝 Permission change events are now handled in AuthenticatedLayout.vue');
-}
-
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // Create a splash screen element
