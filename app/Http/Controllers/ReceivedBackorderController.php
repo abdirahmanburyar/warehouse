@@ -340,7 +340,22 @@ class ReceivedBackorderController extends Controller
         ]);
 
         try {
+            // Test database connection
+            logger()->info('Testing database connection', [
+                'connection' => DB::connection()->getName(),
+                'database' => DB::connection()->getDatabaseName()
+            ]);
+
             DB::beginTransaction();
+
+            logger()->info('Starting backorder approval process', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'order_id' => $receivedBackorder->order_id,
+                'transfer_id' => $receivedBackorder->transfer_id,
+                'product_id' => $receivedBackorder->product_id,
+                'quantity' => $receivedBackorder->quantity,
+                'current_status' => $receivedBackorder->status
+            ]);
 
             // Update the received back order status
             $receivedBackorder->update([
@@ -352,16 +367,19 @@ class ReceivedBackorderController extends Controller
 
             // Determine if this is an order or transfer and handle inventory accordingly
             if ($receivedBackorder->order_id) {
+                logger()->info('Processing as order inventory');
                 // Handle ORDER - Use FacilityInventory and FacilityInventoryItem
                 $this->handleOrderInventory($receivedBackorder);
                 // Create facility inventory movement record for orders
                 $this->createFacilityInventoryMovement($receivedBackorder, 'order');
             } elseif ($receivedBackorder->transfer_id) {
+                logger()->info('Processing as transfer inventory');
                 // Handle TRANSFER - Determine if warehouse or facility and use appropriate inventory
                 $this->handleTransferInventory($receivedBackorder);
                 // Create appropriate movement record based on transfer destination
                 $this->createMovementRecord($receivedBackorder);
             } else {
+                logger()->info('Processing as warehouse inventory (fallback)');
                 // Fallback to original warehouse inventory logic
                 $this->handleWarehouseInventory($receivedBackorder);
                 // Create received quantity record for warehouse operations
@@ -381,8 +399,52 @@ class ReceivedBackorderController extends Controller
                 }
             }
 
+            // Final verification before commit
+            logger()->info('About to commit transaction', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'final_status' => $receivedBackorder->status
+            ]);
+
+            // Verify facility inventory before commit
+            if ($receivedBackorder->order_id) {
+                $order = Order::find($receivedBackorder->order_id);
+                if ($order) {
+                    $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
+                        ->where('facility_id', $order->facility_id)
+                        ->first();
+                    
+                    if ($facilityInventory) {
+                        logger()->info('Facility inventory before commit', [
+                            'facility_inventory_id' => $facilityInventory->id,
+                            'quantity' => $facilityInventory->quantity
+                        ]);
+                    } else {
+                        logger()->warning('Facility inventory not found before commit');
+                    }
+                }
+            }
+
             DB::commit();
             logger()->info('Successfully approved received back order', ['received_backorder_id' => $receivedBackorder->id]);
+
+            // Verify facility inventory after commit
+            if ($receivedBackorder->order_id) {
+                $order = Order::find($receivedBackorder->order_id);
+                if ($order) {
+                    $facilityInventory = FacilityInventory::where('product_id', $receivedBackorder->product_id)
+                        ->where('facility_id', $order->facility_id)
+                        ->first();
+                    
+                    if ($facilityInventory) {
+                        logger()->info('Facility inventory after commit', [
+                            'facility_inventory_id' => $facilityInventory->id,
+                            'quantity' => $facilityInventory->quantity
+                        ]);
+                    } else {
+                        logger()->warning('Facility inventory not found after commit');
+                    }
+                }
+            }
 
             return back()->with('success', 'Received backorder approved successfully and inventory updated.');
 
@@ -402,48 +464,109 @@ class ReceivedBackorderController extends Controller
      */
     private function handleOrderInventory($receivedBackorder)
     {
-        // Get facility_id from the order
-        $order = Order::find($receivedBackorder->order_id);
-        if (!$order) {
-            throw new \Exception('Order not found for received backorder');
-        }
+        try {
+            // Get facility_id from the order
+            $order = Order::find($receivedBackorder->order_id);
+            if (!$order) {
+                throw new \Exception('Order not found for received backorder');
+            }
 
-        $facilityId = $order->facility_id;
-
-        // Update or create facility inventory
-        $facilityInventory = FacilityInventory::firstOrCreate([
-            'product_id' => $receivedBackorder->product_id,
-            'facility_id' => $facilityId,
-        ], [
-            'quantity' => 0,
-        ]);
-
-        $facilityInventory->increment('quantity', $receivedBackorder->quantity);
-        $facilityInventory->save();
-
-        // Update or create facility inventory item
-        $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
-            ->where('batch_number', $receivedBackorder->batch_number)
-            ->first();
-
-        if ($facilityInventoryItem) {
-            $facilityInventoryItem->increment('quantity', $receivedBackorder->quantity);
-            $facilityInventoryItem->save();
-            logger()->info('Updated existing facility inventory item', ['facility_inventory_item_id' => $facilityInventoryItem->id]);
-        } else {
-            $facilityInventoryItem = FacilityInventoryItem::create([
-                'facility_inventory_id' => $facilityInventory->id,
+            $facilityId = $order->facility_id;
+            logger()->info('Processing order inventory', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'order_id' => $receivedBackorder->order_id,
+                'facility_id' => $facilityId,
                 'product_id' => $receivedBackorder->product_id,
-                'quantity' => $receivedBackorder->quantity,
-                'batch_number' => $receivedBackorder->batch_number,
-                'expiry_date' => $receivedBackorder->expire_date,
-                'barcode' => $receivedBackorder->barcode,
-                'uom' => $receivedBackorder->uom,
-                'unit_cost' => $receivedBackorder->unit_cost,
-                'total_cost' => $receivedBackorder->total_cost,
-                'notes' => 'Received from backorder'
+                'quantity' => $receivedBackorder->quantity
             ]);
-            logger()->info('Created new facility inventory item', ['facility_inventory_item_id' => $facilityInventoryItem->id]);
+
+            // Update or create facility inventory
+            logger()->info('Attempting to find or create facility inventory', [
+                'product_id' => $receivedBackorder->product_id,
+                'facility_id' => $facilityId
+            ]);
+
+            $facilityInventory = FacilityInventory::firstOrCreate([
+                'product_id' => $receivedBackorder->product_id,
+                'facility_id' => $facilityId,
+            ], [
+                'quantity' => 0,
+            ]);
+
+            logger()->info('Facility inventory found/created', [
+                'facility_inventory_id' => $facilityInventory->id,
+                'was_created' => $facilityInventory->wasRecentlyCreated,
+                'current_quantity' => $facilityInventory->quantity
+            ]);
+
+            $oldQuantity = $facilityInventory->quantity;
+            
+            // Use direct update instead of increment to ensure it works
+            $newQuantity = $oldQuantity + $receivedBackorder->quantity;
+            $facilityInventory->update(['quantity' => $newQuantity]);
+            
+            logger()->info('Updated facility inventory quantity', [
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $newQuantity,
+                'added_quantity' => $receivedBackorder->quantity
+            ]);
+            
+            logger()->info('Updated facility inventory', [
+                'facility_inventory_id' => $facilityInventory->id,
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $facilityInventory->quantity,
+                'added_quantity' => $receivedBackorder->quantity
+            ]);
+
+            // Update or create facility inventory item
+            $facilityInventoryItem = FacilityInventoryItem::where('facility_inventory_id', $facilityInventory->id)
+                ->where('batch_number', $receivedBackorder->batch_number)
+                ->first();
+
+            if ($facilityInventoryItem) {
+                $oldItemQuantity = $facilityInventoryItem->quantity;
+                $facilityInventoryItem->increment('quantity', $receivedBackorder->quantity);
+                $facilityInventoryItem->save();
+                logger()->info('Updated existing facility inventory item', [
+                    'facility_inventory_item_id' => $facilityInventoryItem->id,
+                    'old_quantity' => $oldItemQuantity,
+                    'new_quantity' => $facilityInventoryItem->quantity,
+                    'added_quantity' => $receivedBackorder->quantity
+                ]);
+            } else {
+                $facilityInventoryItem = FacilityInventoryItem::create([
+                    'facility_inventory_id' => $facilityInventory->id,
+                    'product_id' => $receivedBackorder->product_id,
+                    'quantity' => $receivedBackorder->quantity,
+                    'batch_number' => $receivedBackorder->batch_number,
+                    'expiry_date' => $receivedBackorder->expire_date,
+                    'barcode' => $receivedBackorder->barcode,
+                    'uom' => $receivedBackorder->uom,
+                    'unit_cost' => $receivedBackorder->unit_cost,
+                    'total_cost' => $receivedBackorder->total_cost,
+                    'notes' => 'Received from backorder'
+                ]);
+                logger()->info('Created new facility inventory item', [
+                    'facility_inventory_item_id' => $facilityInventoryItem->id,
+                    'quantity' => $facilityInventoryItem->quantity
+                ]);
+            }
+
+            // Verify the update was successful
+            $facilityInventory->refresh();
+            logger()->info('Final facility inventory verification', [
+                'facility_inventory_id' => $facilityInventory->id,
+                'final_quantity' => $facilityInventory->quantity,
+                'expected_quantity' => $oldQuantity + $receivedBackorder->quantity
+            ]);
+
+        } catch (\Exception $e) {
+            logger()->error('Error in handleOrderInventory', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 
