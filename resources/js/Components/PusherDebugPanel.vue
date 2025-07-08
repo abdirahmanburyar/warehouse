@@ -215,12 +215,13 @@ function testEvent() {
 function checkConnection() {
   addEvent('connection-check', { currentState: status.value });
   
-  if (!window.Echo?.connector?.pusher) {
-    error.value = 'Echo or Pusher not available';
+  if (!window.Echo?.connector?.connection) {
+    error.value = 'Reverb connection not available';
     return;
   }
   
-  const state = window.Echo.connector.pusher.connection.state;
+  const connection = window.Echo.connector.connection;
+  const state = connection.state || 'unknown';
   status.value = state;
   
   addEvent('connection-status', { 
@@ -231,7 +232,9 @@ function checkConnection() {
   
   if (state !== 'connected') {
     // Try to reconnect
-    window.Echo.connector.pusher.connect();
+    if (connection.connect) {
+      connection.connect();
+    }
   }
 }
 
@@ -253,33 +256,38 @@ onMounted(() => {
   }
   
   try {
-    pusherConnection.value = window.Echo.connector.pusher.connection;
+    // Reverb connection
+    if (!window.Echo.connector.connection) {
+      throw new Error('Reverb connection not found');
+    }
+    
+    pusherConnection.value = window.Echo.connector.connection;
     
     // Initial state
-    status.value = pusherConnection.value.state;
+    status.value = pusherConnection.value.state || 'unknown';
     
-    // Connection events
-    pusherConnection.value.bind('connecting', () => {
+    // Connection events for Reverb
+    pusherConnection.value.on('connecting', () => {
       status.value = 'connecting';
       addEvent('connecting');
     });
     
-    pusherConnection.value.bind('connected', () => {
+    pusherConnection.value.on('connected', () => {
       status.value = 'connected';
       addEvent('connected', { socketId: window.Echo.socketId() });
     });
     
-    pusherConnection.value.bind('disconnected', () => {
+    pusherConnection.value.on('disconnected', () => {
       status.value = 'disconnected';
       addEvent('disconnected');
     });
     
-    pusherConnection.value.bind('failed', () => {
+    pusherConnection.value.on('failed', () => {
       status.value = 'failed';
       addEvent('failed');
     });
     
-    pusherConnection.value.bind('error', (err) => {
+    pusherConnection.value.on('error', (err) => {
       status.value = 'error';
       error.value = err?.message || 'Unknown error';
       addEvent('error', { message: error.value });
@@ -320,13 +328,13 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // Clean up event listeners
+  // Clean up event listeners for Reverb
   if (pusherConnection.value) {
-    pusherConnection.value.unbind('connecting');
-    pusherConnection.value.unbind('connected');
-    pusherConnection.value.unbind('disconnected');
-    pusherConnection.value.unbind('failed');
-    pusherConnection.value.unbind('error');
+    pusherConnection.value.off('connecting');
+    pusherConnection.value.off('connected');
+    pusherConnection.value.off('disconnected');
+    pusherConnection.value.off('failed');
+    pusherConnection.value.off('error');
   }
   
   if (pusherChannel.value) {
