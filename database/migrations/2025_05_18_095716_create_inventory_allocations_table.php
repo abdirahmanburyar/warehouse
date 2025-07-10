@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->date('expiry_date');
             $table->integer('allocated_quantity');
+            $table->integer('received_quantity')->default(0);
             $table->string('transfer_reason')->nullable();
             $table->double('unit_cost')->nullable();
             $table->double('total_cost')->nullable();

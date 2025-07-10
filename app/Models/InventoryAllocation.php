@@ -16,6 +16,7 @@ class InventoryAllocation extends Model
         'batch_number',
         'expiry_date',
         'allocated_quantity',
+        'received_quantity',
         'allocation_type',
         'unit_cost',
         'total_cost',

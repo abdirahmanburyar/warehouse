@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\TransferItem;
 use App\Models\FacilityInventory;
 use App\Models\FacilityInventoryItem;
 use App\Models\Transfer;
@@ -340,22 +342,8 @@ class ReceivedBackorderController extends Controller
         ]);
 
         try {
-            // Test database connection
-            logger()->info('Testing database connection', [
-                'connection' => DB::connection()->getName(),
-                'database' => DB::connection()->getDatabaseName()
-            ]);
 
             DB::beginTransaction();
-
-            logger()->info('Starting backorder approval process', [
-                'received_backorder_id' => $receivedBackorder->id,
-                'order_id' => $receivedBackorder->order_id,
-                'transfer_id' => $receivedBackorder->transfer_id,
-                'product_id' => $receivedBackorder->product_id,
-                'quantity' => $receivedBackorder->quantity,
-                'current_status' => $receivedBackorder->status
-            ]);
 
             // Update the received back order status
             $receivedBackorder->update([
@@ -788,7 +776,7 @@ class ReceivedBackorderController extends Controller
         $productId = $receivedBackorder->product_id;
 
         // Find the order item for this product/order
-        $orderItem = \App\Models\OrderItem::where('order_id', $orderId)
+        $orderItem = OrderItem::where('order_id', $orderId)
             ->where('product_id', $productId)
             ->first();
         if (!$orderItem) {
@@ -872,13 +860,24 @@ class ReceivedBackorderController extends Controller
     {
         $facilityId = $transfer->to_facility_id;
 
+        // Find the transfer item for this product/transfer
+        $transferItem = TransferItem::where('transfer_id', $receivedBackorder->transfer_id)
+            ->where('product_id', $receivedBackorder->product_id)
+            ->first();
+        
+        if (!$transferItem) {
+            // If no transfer item found, use a default value or skip the movement record
+            logger()->warning('TransferItem not found for transfer_id ' . $receivedBackorder->transfer_id . ' and product_id ' . $receivedBackorder->product_id);
+            return;
+        }
+
         // Create facility inventory movement record
         $movementData = [
             'facility_id' => $facilityId,
             'product_id' => $receivedBackorder->product_id,
             'source_type' => 'transfer',
             'source_id' => $receivedBackorder->transfer_id,
-            'source_item_id' => null, // Could be transfer_item_id if available
+            'source_item_id' => $transferItem->id,
             'facility_received_quantity' => $receivedBackorder->quantity,
             'batch_number' => $receivedBackorder->batch_number,
             'expiry_date' => $receivedBackorder->expire_date,
