@@ -315,7 +315,8 @@ const groupedDisposals = computed(() => {
         if (!grouped[backOrderKey]) {
             grouped[backOrderKey] = {
                 back_order: disposal.back_order,
-                disposals: []
+                disposals: [],
+                source_type: disposal.facility ? 'facility' : 'warehouse'
             };
         }
         
@@ -353,11 +354,11 @@ onUnmounted(() => {
 
 const getStatusBadge = (disposal) => {
     if (disposal.approved_at) {
-        return { class: 'bg-green-100 text-green-800 border-green-200', text: 'Approved', icon: '/assets/images/approved.jpg' };
+        return { class: 'bg-green-100 text-green-800 border-green-200', text: 'Approved', icon: '✅' };
     } else if (disposal.rejected_at) {
-        return { class: 'bg-red-100 text-red-800 border-red-200', text: 'Rejected', icon: '/assets/images/rejected.jpg' };
+        return { class: 'bg-red-100 text-red-800 border-red-200', text: 'Rejected', icon: '❌' };
     } else if (disposal.reviewed_at) {
-        return { class: 'bg-blue-100 text-blue-800 border-blue-200', text: 'Reviewed', icon: '/assets/images/review.jpg' };
+        return { class: 'bg-blue-100 text-blue-800 border-blue-200', text: 'Reviewed', icon: '🔍' };
     } else {
         return { class: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'Pending', icon: '⏳' };
     }
@@ -494,7 +495,7 @@ const getTypeBadge = (type) => {
             </div>
 
             <!-- Modern Table Section -->
-            <div class="bg-white border border-gray-200 overflow-hidden">
+            <div class="bg-white border border-gray-200 mb-[100px]">
                 <div v-if="props.disposals.data.length === 0" class="text-center py-12">
                     <div class="mx-auto h-24 w-24 text-gray-400">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="h-full w-full">
@@ -505,7 +506,7 @@ const getTypeBadge = (type) => {
                     <p class="mt-2 text-gray-500">Try adjusting your search criteria or check back later.</p>
                 </div>
 
-                <div v-else class="overflow-x-auto">
+                <div v-else>
                     <table class="min-w-full border border-gray-300 table-fixed">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
@@ -524,6 +525,9 @@ const getTypeBadge = (type) => {
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300 w-28">
                                 Expiry Date
                             </th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300 w-20">
+                                Source
+                            </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300 w-24">
                                 Status
                             </th>
@@ -541,7 +545,7 @@ const getTypeBadge = (type) => {
                     <tbody class="bg-white divide-y divide-gray-200">
                         <template v-if="Object.keys(groupedDisposals).length === 0">
                             <tr>
-                                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                                <td colspan="10" class="px-4 py-8 text-center text-gray-500">
                                     No disposal records found
                                 </td>
                             </tr>
@@ -550,7 +554,7 @@ const getTypeBadge = (type) => {
                         <template v-for="(group, groupKey) in groupedDisposals" :key="groupKey">
                             <!-- Group Header -->
                             <tr class="bg-gray-50 hover:bg-gray-100 cursor-pointer" @click="toggleGroup(groupKey)">
-                                <td colspan="9" class="px-4 py-3">
+                                <td colspan="10" class="px-4 py-3">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <svg 
@@ -563,12 +567,21 @@ const getTypeBadge = (type) => {
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                             </svg>
                                             <div>
-                                                <span class="font-semibold text-gray-900">
-                                                    {{ group.back_order?.back_order_number || 'No Back Order' }}
-                                                </span>
-                                                <span class="text-sm text-gray-500 ml-2">
-                                                    ({{ group.disposals.length }} disposal{{ group.disposals.length !== 1 ? 's' : '' }})
-                                                </span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="font-semibold text-gray-900">
+                                                        {{ group.back_order?.back_order_number || 'No Back Order' }}
+                                                    </span>
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" 
+                                                          :class="group.source_type === 'facility' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'">
+                                                        {{ group.source_type === 'facility' ? 'Facility' : 'Warehouse' }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">
+                                                    {{ group.disposals.length }} disposal{{ group.disposals.length !== 1 ? 's' : '' }}
+                                                    <span v-if="group.back_order?.reported_by" class="ml-2">
+                                                        • {{ group.back_order.reported_by }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="text-sm text-gray-500">
@@ -596,6 +609,18 @@ const getTypeBadge = (type) => {
                                     </td>
                                     <td class="px-4 py-2 border-r border-gray-300 text-sm">
                                         {{ disposal.expire_date ? moment(disposal.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-300">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" 
+                                              :class="disposal.facility ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'">
+                                            {{ disposal.facility ? 'Facility' : 'Warehouse' }}
+                                        </span>
+                                        <div v-if="disposal.facility" class="text-xs text-gray-500 mt-1">
+                                            {{ disposal.facility }}
+                                        </div>
+                                        <div v-else-if="disposal.warehouse" class="text-xs text-gray-500 mt-1">
+                                            {{ disposal.warehouse }}
+                                        </div>
                                     </td>
                                     <td class="px-4 py-2 border-r border-gray-300">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border" :class="getStatusBadge(disposal).class">
@@ -636,7 +661,7 @@ const getTypeBadge = (type) => {
                                                     <h3 class="text-sm font-semibold text-gray-900">Attachments</h3>
                                                     <p class="text-xs text-gray-500 mt-1">Click to view or download files</p>
                                                 </div>
-                                                <div class="max-h-60 overflow-y-auto">
+                                                <div class="max-h-60">
                                                     <div 
                                                         v-for="(attachment, index) in parseAttachments(disposal.attachments)" 
                                                         :key="index"
