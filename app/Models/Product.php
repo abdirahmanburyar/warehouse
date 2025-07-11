@@ -28,6 +28,11 @@ class Product extends Model
         'dosage_id',
         // 'movement',
         'is_active',
+        'tracert_type'
+    ];
+
+    protected $casts = [
+        'tracert_type' => 'array',
     ];
 
     protected static function boot()

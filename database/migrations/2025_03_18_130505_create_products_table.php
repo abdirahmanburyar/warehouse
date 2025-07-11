@@ -19,6 +19,7 @@ return new class extends Migration
                 $table->integer('productID')->unique();
                 $table->string('name')->unique();
                 $table->foreignIdFor(Category::class)->cascadeOnDelete();
+                $table->json('tracert_type')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
             });

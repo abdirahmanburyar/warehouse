@@ -379,25 +379,6 @@
                 <div class="flex justify-start items-center mb-6">
                     <!-- Status Action Buttons -->
                     <div class="flex flex-wrap items-center justify-start gap-4">
-                        <!-- Pending status indicator -->
-                        <div class="relative">
-                            <div class="flex flex-col">
-                                <button :class="[
-                                    form.reviewed_at || form.approved_at || form.rejected_at
-                                        ? 'bg-green-500'
-                                        : 'bg-green-500 hover:bg-green-600'
-                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
-                                    disabled>
-                                    <img src="/assets/images/pending.png" class="w-5 h-5 mr-2" alt="Pending" />
-                                    <span class="text-sm font-bold text-white">Pending since {{
-                                        moment(props.po?.created_at).format('DD/MM/YYYY HH:mm') }}</span>
-                                </button>
-                            </div>
-                            <span v-show="props.po?.user" class="text-sm text-gray-600">
-                                By {{ props.po?.user?.name || 'System' }}
-                            </span>
-                        </div>
-
                         <!-- Review button -->
                         <div class="relative">
                             <div class="flex flex-col">
@@ -419,15 +400,12 @@
                                     "
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                    <span class="text-sm font-bold text-white">{{
-                                        form.reviewed_at
-                                            ? "Reviewed on " + moment(form.reviewed_at).format('DD/MM/YYYY HH:mm')
-                                            : "Waiting to be Reviewed"
-                                    }}</span>
+                                    <span class="text-sm font-bold text-white">Review</span>
                                 </button>
-                                <span v-show="form.reviewed_by" class="text-sm text-gray-600">
-                                    By {{ form.reviewed_by?.name }}
-                                </span>
+                                <div v-if="form.reviewed_at" class="mt-2 text-center">
+                                    <div class="text-xs text-gray-600">{{ moment(form.reviewed_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                    <div class="text-xs font-medium text-gray-700">By {{ form.reviewed_by?.name }}</div>
+                                </div>
                             </div>
                             <div v-if="!form.reviewed_at && !form.approved_at && !form.rejected_at"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -447,15 +425,12 @@
                                     :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at"
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                    <span class="text-sm font-bold text-white">{{
-                                        form.approved_at
-                                            ? "Approved on " + moment(form.approved_at).format('DD/MM/YYYY HH:mm')
-                                            : "Waiting to be Approved"
-                                    }}</span>
+                                    <span class="text-sm font-bold text-white">Approve</span>
                                 </button>
-                                <span v-show="form.approved_by" class="text-sm text-gray-600">
-                                    By {{ form.approved_by?.name }}
-                                </span>
+                                <div v-if="form.approved_at" class="mt-2 text-center">
+                                    <div class="text-xs text-gray-600">{{ moment(form.approved_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                    <div class="text-xs font-medium text-gray-700">By {{ form.approved_by?.name }}</div>
+                                </div>
                             </div>
                             <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -482,15 +457,12 @@
                                     "
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
-                                    <span class="text-sm font-bold text-white">{{
-                                        form.rejected_at
-                                            ? "Rejected on " + moment(form.rejected_at).format('DD/MM/YYYY HH:mm')
-                                            : "Waiting to be Rejected"
-                                    }}</span>
+                                    <span class="text-sm font-bold text-white">Reject</span>
                                 </button>
-                                <span v-show="form.rejected_by" class="text-sm text-gray-600">
-                                    By {{ form.rejected_by?.name }}
-                                </span>
+                                <div v-if="form.rejected_at" class="mt-2 text-center">
+                                    <div class="text-xs text-gray-600">{{ moment(form.rejected_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                    <div class="text-xs font-medium text-gray-700">By {{ form.rejected_by?.name }}</div>
+                                </div>
                             </div>
                             <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>

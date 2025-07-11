@@ -341,78 +341,100 @@
             <span>No P.O Data found</span>
         </div>
 
-        <!-- Action Buttons -->
-        <div v-if="form" class="flex justify-end space-x-3 mb-[80px]">
-            <!-- Review Button -->
-            <div class="flex flex-col items-start">
-                <button type="button" @click="reviewPackingList" :class="[
-                    'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
-                    hasReviewedItems || hasAllApproved
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
-                ]" :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review">
-                    <img src="/assets/images/review.png" alt="Review" class="w-5 h-5" />
-                    {{ isReviewing && !hasReviewedItems ? 'Reviewing...' : ((hasReviewedItems || hasAllApproved) ? 'Reviewed on ' + formatDate(props.packing_list.reviewed_at) : 'Review') }}
-                </button>
-                <span class="text-xs text-gray-500 mt-1" v-if="props.packing_list.reviewed_by">By {{ props.packing_list.reviewed_by?.name }}</span>
-            </div>
-            
-            <!-- Approve Button -->
-            <div class="flex flex-col items-center">
-                <button type="button" @click="approvePackingList" :class="[
-                    'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
-                    hasAllApproved
-                        ? 'bg-green-50 text-green-700 border border-green-200'
-                        : !hasReviewedItems
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-                ]" :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve">
-                    <img v-if="!hasAllApproved && hasReviewedItems" src="/assets/images/approved.png" alt="Approve" class="w-5 h-5" />
-                    
-                    {{ isApproving && !hasAllApproved ? 'Approving...' : (hasAllApproved ? 'Approved on ' + formatDate(props.packing_list.approved_at) : 'Approve') }}
-                </button>
-                <span class="text-xs text-gray-500 mt-1" v-if="props.packing_list.approved_by">By {{ props.packing_list.approved_by?.name }}</span>
-            </div>
-            
-            <!-- Reject Button -->
-                <div class="flex flex-col items-center">
-                <button type="button" @click="rejectPackingList" :class="[
-                    'inline-flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ease-in-out',
-                    hasRejected
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : !hasReviewedItems
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-red-500 text-white hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
-                ]" :disabled="isRejecting || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_reject">
-                    <img v-if="!hasRejected && hasReviewedItems" src="/assets/images/rejected.png" alt="Reject" class="w-5 h-5" />
-                    <svg v-else-if="hasRejected" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <svg v-else-if="!hasReviewedItems" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4"></path>
-                    </svg>
-                    {{ isRejecting && !hasRejected ? 'Rejecting...' : (hasRejected ? 'Rejected on ' + formatDate(props.packing_list.rejected_at) : 'Reject') }}
-                </button>
-                <span class="text-xs text-gray-500 mt-1" v-if="props.packing_list.rejected_by">By {{ props.packing_list.rejected_by?.name }}</span>
+        <!-- Packing List Status Actions -->
+        <div v-if="form" class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
+                Packing List Status Actions
+            </h3>
+            <div class="flex justify-start items-center mb-6">
+                <!-- Status Action Buttons -->
+                <div class="flex flex-wrap items-center justify-start gap-4">
+                    <!-- Review button -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                            <button @click="reviewPackingList"
+                                :class="[
+                                    hasReviewedItems || hasAllApproved
+                                        ? 'bg-green-500'
+                                        : 'bg-yellow-500 hover:bg-yellow-600'
+                                ]"
+                                :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
+                                <span class="text-sm font-bold text-white">Review</span>
+                            </button>
+                            <div v-if="props.packing_list.reviewed_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.reviewed_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.reviewed_by?.name }}</div>
+                            </div>
+                        </div>
+                        <div v-if="!hasReviewedItems && !hasAllApproved"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                    </div>
+
+                    <!-- Approve button -->
+                    <div class="relative">
+                        <div class="flex flex-col">
+                            <button @click="approvePackingList"
+                                :class="[
+                                    hasAllApproved
+                                        ? 'bg-green-500'
+                                        : !hasReviewedItems
+                                        ? 'bg-gray-300 cursor-not-allowed'
+                                        : 'bg-green-500 hover:bg-green-600'
+                                ]"
+                                :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
+                                <span class="text-sm font-bold text-white">Approve</span>
+                            </button>
+                            <div v-if="props.packing_list.approved_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.approved_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.approved_by?.name }}</div>
+                            </div>
+                        </div>
+                        <div v-if="hasReviewedItems && !hasAllApproved"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                    </div>
+
+                    <!-- Reject button -->
+                    <div class="relative" v-if="!hasAllApproved">
+                        <div class="flex flex-col">
+                            <button @click="rejectPackingList"
+                                :class="[
+                                    hasRejected
+                                        ? 'bg-red-500'
+                                        : !hasReviewedItems
+                                        ? 'bg-gray-300 cursor-not-allowed'
+                                        : 'bg-red-500 hover:bg-red-600'
+                                ]"
+                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_reject"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                                <span class="text-sm font-bold text-white">Reject</span>
+                            </button>
+                            <div v-if="props.packing_list.rejected_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.rejected_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.rejected_by?.name }}</div>
+                            </div>
+                        </div>
+                        <div v-if="hasReviewedItems && !hasAllApproved && !hasRejected"
+                            class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex flex-col items-center">
-               
-                
-               <Link :href="route('supplies.index')" :disabled="isSubmitting"
-                   class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                   Exit
-               </Link>
-           </div>
-            
-            <!-- Update Changes and Exit Buttons -->
-            <div class="flex flex-col items-center">
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-3">
+                <Link :href="route('supplies.index')" :disabled="isSubmitting"
+                    class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Exit
+                </Link>
                 <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting"
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isSubmitting ? "Updating..." : "Update Changes" }}
                 </button>
             </div>
-           
         </div>
 
         <!-- Back Order Modal -->

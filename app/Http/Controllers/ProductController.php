@@ -106,8 +106,18 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        // Load the product with its relationships
+        $product->load(['category', 'dosage', 'eligible']);
+        
+        // Get facility types from eligible items
+        $facilityTypes = $product->eligible->pluck('facility_type')->toArray();
+        
+        // Add facility_types to the product data
+        $productData = $product->toArray();
+        $productData['facility_types'] = $facilityTypes;
+        
         return Inertia::render('Product/Edit', [
-            'product' => $product,
+            'product' => $productData,
             'categories' => CategoryResource::collection(Category::all()),
             'dosages' => DosageResource::collection(Dosage::all())
         ]);
@@ -120,41 +130,29 @@ class ProductController extends Controller
     {
         try {
             $request->validate([
-                'id' => 'nullable|exists:products,id',
                 'name' => [
                     'required',
                     'string',
                     'max:255',
-                    $request->id ? Rule::unique('products', 'name')->ignore($request->id) : Rule::unique('products', 'name')
+                    Rule::unique('products', 'name')
                 ],
                 'category_id' => 'nullable|exists:categories,id',
                 'dosage_id' => 'nullable|exists:dosages,id',
-                // 'movement' => 'required|string',
-                'facility_types' => 'nullable|array'
+                'facility_types' => 'nullable|array',
+                'tracert_type' => 'nullable|string',
             ]);
     
             DB::beginTransaction();
     
-            // Create or update the product
-            $product = Product::find($request->id);
-            if($product){
-                $product->update([
-                    'name' => $request->name,
-                    'category_id' => $request->category_id,
-                    'dosage_id' => $request->dosage_id,
-                    // 'movement' => $request->movement,
-                ]);
-            }else{
-                $product = Product::create([
-                    'name' => $request->name,
-                    'category_id' => $request->category_id,
-                    'dosage_id' => $request->dosage_id,
-                    'movement' => $request->movement,
-                ]);
-            }
+            $product = Product::create([
+                'tracert_type' => $request->tracert_type,
+                'name' => $request->name,
+                'category_id' => $request->category_id,
+                'dosage_id' => $request->dosage_id,
+            ]);
     
-            // Only assign facility types for new products
-            if (!$request->id && !empty($request->facility_types)) {
+            // Assign facility types for new products
+            if (!empty($request->facility_types)) {
                 $facilityTypes = $request->facility_types;
     
                 if (in_array('All', $facilityTypes)) {
@@ -172,11 +170,73 @@ class ProductController extends Controller
     
             DB::commit();
     
-            return response()->json($request->id ? 'Product updated successfully.' : 'Product created successfully.', 200);
+            return response()->json('Product created successfully.', 200);
     
         } catch (Throwable $th) {
             DB::rollBack();
             logger()->error('Product store error', ['error' => $th->getMessage()]);
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Update the specified product in storage.
+     */
+    public function update(Request $request, Product $product)
+    {
+        try {
+            $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('products', 'name')->ignore($product->id)
+                ],
+                'category_id' => 'nullable|exists:categories,id',
+                'dosage_id' => 'nullable|exists:dosages,id',
+                'tracert_type' => 'nullable|string',
+                'facility_types' => 'nullable|array',
+            ]);
+    
+            DB::beginTransaction();
+    
+            $product->update([
+                'name' => $request->name,
+                'category_id' => $request->category_id,
+                'dosage_id' => $request->dosage_id,
+                'tracert_type' => $request->tracert_type,
+            ]);
+
+            // Handle facility types - remove existing and add new ones
+            if (isset($request->facility_types)) {
+                // Delete all existing eligible items for this product
+                $product->eligible()->delete();
+                
+                // Add new facility types if any are selected
+                if (!empty($request->facility_types)) {
+                    $facilityTypes = $request->facility_types;
+        
+                    if (in_array('All', $facilityTypes)) {
+                        // Replace "All" with all actual types
+                        $facilityTypes = ['Health Centre', 'Primary Health Unit', 'District Hospital', 'Regional Hospital'];
+                    }
+        
+                    foreach ($facilityTypes as $type) {
+                        EligibleItem::create([
+                            'product_id' => $product->id,
+                            'facility_type' => $type,
+                        ]);
+                    }
+                }
+            }
+    
+            DB::commit();
+    
+            return response()->json('Product updated successfully.', 200);
+    
+        } catch (Throwable $th) {
+            DB::rollBack();
+            logger()->error('Product update error', ['error' => $th->getMessage()]);
             return response()->json($th->getMessage(), 500);
         }
     }

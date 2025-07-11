@@ -8,6 +8,9 @@ use App\Models\Facility;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\PurchaseOrder;
+use App\Models\Product;
+use App\Models\InventoryItem;
+use App\Models\FacilityInventoryItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -181,8 +184,114 @@ class DashboardController extends Controller
             ],
         ];
         
+        // Get tracertable items data
+        $tracertableData = $this->getTracertableItemsData();
+        
         return inertia('Dashboard', [
-            'dashboardData' => $dashboardData
+            'dashboardData' => $dashboardData,
+            'tracertableData' => $tracertableData
         ]);
+    }
+
+    private function getTracertableItemsData()
+    {
+        // Get all tracertable products
+        $tracertableProducts = Product::whereNotNull('tracert_type')
+            ->where('tracert_type', '!=', '[]')
+            ->get();
+
+        // Get all facilities
+        $facilities = Facility::select('id', 'name')->get();
+
+        // Get all inventory items for these products
+        $inventoryItems = InventoryItem::whereIn('product_id', $tracertableProducts->pluck('id'))
+            ->get()
+            ->keyBy('product_id');
+
+        // Build warehouse items: one per tracertable product
+        $warehouseItems = $tracertableProducts->map(function ($product) use ($inventoryItems) {
+            $item = $inventoryItems->get($product->id);
+            return [
+                'id' => $item ? $item->id : 'virtual_' . $product->id,
+                'product_id' => $product->product_id,
+                'product_name' => $product->name,
+                'category_name' => optional($product->category)->name ?? 'Uncategorized',
+                'available_quantity' => $item ? $item->available_quantity : 0,
+            ];
+        });
+
+        // Get all facility inventory items for these products
+        $facilityInventoryItems = FacilityInventoryItem::whereIn('product_id', $tracertableProducts->pluck('id'))
+            ->get()
+            ->groupBy(function($item) {
+                return $item->product_id . '-' . $item->facility_id;
+            });
+
+        // Build facility items: one per tracertable product per facility
+        $facilityItems = collect();
+        foreach ($tracertableProducts as $product) {
+            foreach ($facilities as $facility) {
+                $key = $product->id . '-' . $facility->id;
+                $item = $facilityInventoryItems->get($key) ? $facilityInventoryItems->get($key)->first() : null;
+                $facilityItems->push([
+                    'id' => $item ? $item->id : 'virtual_' . $product->id . '_' . $facility->id,
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->name,
+                    'facility_name' => $facility->name,
+                    'available_quantity' => $item ? $item->available_quantity : 0,
+                ]);
+            }
+        }
+
+        // Prepare warehouse chart data
+        $warehouseChartData = $this->prepareWarehouseChartData($warehouseItems);
+
+        // Prepare facility chart data (top 10 facilities by total quantity)
+        $facilityChartData = $this->prepareFacilityChartData($facilityItems);
+
+        // Calculate summary statistics
+        $summary = [
+            'totalItems' => $tracertableProducts->count(),
+            'warehouseItems' => $warehouseItems->count(),
+            'facilityItems' => $facilityItems->count(),
+            'totalQuantity' => $warehouseItems->sum('available_quantity') + $facilityItems->sum('available_quantity'),
+        ];
+
+        return [
+            'summary' => $summary,
+            'warehouseItems' => $warehouseItems,
+            'facilityItems' => $facilityItems,
+            'facilities' => $facilities,
+            'warehouseChartData' => $warehouseChartData,
+            'facilityChartData' => $facilityChartData,
+        ];
+    }
+
+    private function prepareWarehouseChartData($warehouseItems)
+    {
+        $inStock = $warehouseItems->where('available_quantity', '>', 10)->count();
+        $lowStock = $warehouseItems->where('available_quantity', '>', 0)->where('available_quantity', '<=', 10)->count();
+        $outOfStock = $warehouseItems->where('available_quantity', '<=', 0)->count();
+
+        return [
+            'labels' => ['In Stock', 'Low Stock', 'Out of Stock'],
+            'data' => [$inStock, $lowStock, $outOfStock]
+        ];
+    }
+
+    private function prepareFacilityChartData($facilityItems)
+    {
+        // Group by facility and sum quantities
+        $facilityData = $facilityItems->groupBy('facility_name')
+            ->map(function ($items) {
+                return $items->sum('available_quantity');
+            })
+            ->sortDesc()
+            ->take(10); // Limit to top 10 facilities
+
+        return [
+            'labels' => $facilityData->keys()->toArray(),
+            'data' => $facilityData->values()->toArray()
+        ];
     }
 }

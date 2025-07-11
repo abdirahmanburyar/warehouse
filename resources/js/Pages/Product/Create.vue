@@ -53,7 +53,7 @@
                         </div>
 
                         <!-- Second Column - Category and Dosage Form -->
-                        <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Category -->
                             <div>
                                 <InputLabel for="category_id" value="Category" class="text-sm font-medium text-gray-700 mb-2" />
@@ -115,6 +115,34 @@
                                     </template>
                                 </Multiselect>
                             </div>
+                        </div>
+                        <!-- Tracert Type -->
+                        <div>
+                            <InputLabel for="tracert_type" value="Tracert Type" class="text-sm font-medium text-gray-700 mb-2" />
+                            <Multiselect
+                                v-model="form.tracert_type"
+                                :options="['Warehouse', 'Facility']"
+                                :multiple="true"
+                                :searchable="false"
+                                :close-on-select="false"
+                                :clear-on-select="false"
+                                :preserve-search="true"
+                                :show-labels="false"
+                                placeholder="Select tracert types"
+                                class="text-sm"
+                            >
+                                <template v-slot:selection="{ values, search, isOpen }">
+                                    <span class="multiselect__single" v-if="values.length && !isOpen">
+                                        {{ values.join(', ') }}
+                                    </span>
+                                </template>
+                            </Multiselect>
+                            <p class="text-sm text-gray-500 mt-2 flex items-center">
+                                <svg class="h-4 w-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Select where this product should be traced (optional)
+                            </p>
                         </div>
                     </div>
 
@@ -333,6 +361,7 @@ const form = ref({
     category: null,
     dosage: null,
     facility_types: [],
+    tracert_type: [],
 });
 
 const processing = ref(false);
@@ -350,13 +379,14 @@ const facilityTypes = ref([
 ]);
 
 const submit = async () => {
-    
     // Create a payload with the correct format
     const payload = {
         ...form.value,
         // Ensure we're sending the IDs, not the objects
         category_id: form.value.category?.id,
-        dosage_id: form.value.dosage?.id
+        dosage_id: form.value.dosage?.id,
+        // Convert tracert_type array to JSON string
+        tracert_type: form.value.tracert_type && form.value.tracert_type.length > 0 ? JSON.stringify(form.value.tracert_type) : null
     };
     console.log(payload);
     processing.value = true;
