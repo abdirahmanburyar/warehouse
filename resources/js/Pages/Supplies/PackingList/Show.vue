@@ -110,53 +110,53 @@
         </div>
 
         <!-- Packing Lists Table -->
-        <div class="mb-[80px]">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-tl-lg rounded-tr-lg">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">Packing Lists</h3>
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-2">
-                            <select
-                                v-model="per_page"
-                                @change="props.filters.page = 1"
-                                class="text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-[120px] border border-gray-300 rounded px-2 py-1"
-                            >
-                                <option value="10">10 per page</option>
-                                <option value="25">25 per page</option>
-                                <option value="50">50 per page</option>
-                                <option value="100">100 per page</option>
-                            </select>
-                        </div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-tl-lg rounded-tr-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Packing Lists</h3>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <select
+                            v-model="per_page"
+                            @change="props.filters.page = 1"
+                            class="text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-[120px] border border-gray-300 rounded px-2 py-1"
+                        >
+                            <option value="10">10 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
+                        </select>
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="mb-[80px]">
 
             <div class="overflow-auto">
                 <table class="w-full table-sm">
                     <thead style="background-color: #F4F7FB;">
                         <tr>
-                            <th class="text-left text-xs font-bold uppercase rounded-tl-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase rounded-tl-lg px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Packing List
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Supplier
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Date
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Items
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Total Cost
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Fulfillment Rate
                             </th>
-                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Status
                             </th>
-                            <th class="text-left text-xs font-bold uppercase rounded-tr-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            <th class="text-left text-xs font-bold uppercase rounded-tr-lg px-6 py-4" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                 Actions
                             </th>
                         </tr>

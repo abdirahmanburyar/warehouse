@@ -199,7 +199,7 @@
                                 style="height: 15px"
                             />
                         </div>
-                        <span class="menu-text">Liquidate & Disposal</span>
+                        <span class="menu-text">Wastages</span>
                     </div>
                 </Link>
 
