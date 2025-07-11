@@ -203,33 +203,60 @@ class DashboardController extends Controller
         // Get all facilities
         $facilities = Facility::select('id', 'name')->get();
 
-        // Get all inventory items for these products
-        $inventoryItems = InventoryItem::whereIn('product_id', $tracertableProducts->pluck('id'))
-            ->get()
-            ->keyBy('product_id');
-
-        // Build warehouse items: one per tracertable product
-        $warehouseItems = $tracertableProducts->map(function ($product) use ($inventoryItems) {
-            $item = $inventoryItems->get($product->id);
-            return [
-                'id' => $item ? $item->id : 'virtual_' . $product->id,
-                'product_id' => $product->product_id,
-                'product_name' => $product->name,
-                'category_name' => optional($product->category)->name ?? 'Uncategorized',
-                'available_quantity' => $item ? $item->available_quantity : 0,
-            ];
+        // Separate products by tracert_type
+        $warehouseProducts = $tracertableProducts->filter(function ($product) {
+            $tracertTypes = json_decode($product->tracert_type, true);
+            return is_array($tracertTypes) && in_array('Warehouse', $tracertTypes);
         });
 
-        // Get all facility inventory items for these products
-        $facilityInventoryItems = FacilityInventoryItem::whereIn('product_id', $tracertableProducts->pluck('id'))
+        $facilityProducts = $tracertableProducts->filter(function ($product) {
+            $tracertTypes = json_decode($product->tracert_type, true);
+            return is_array($tracertTypes) && in_array('Facility', $tracertTypes);
+        });
+
+        // Build warehouse items: only for products with "Warehouse" in tracert_type
+        $warehouseItems = collect();
+        foreach ($warehouseProducts as $product) {
+            // Get all inventory items for this product across all warehouses
+            $productInventoryItems = InventoryItem::where('product_id', $product->id)
+                ->with(['product.category', 'warehouse'])
+                ->get();
+            
+            if ($productInventoryItems->count() > 0) {
+                // If there are inventory items, show each warehouse
+                foreach ($productInventoryItems as $item) {
+                    $warehouseItems->push([
+                        'id' => $item->id,
+                        'product_id' => $product->product_id,
+                        'product_name' => $product->name,
+                        'category_name' => optional($product->category)->name ?? 'Uncategorized',
+                        'warehouse_name' => optional($item->warehouse)->name ?? 'Unknown Warehouse',
+                        'available_quantity' => $item->available_quantity ?? 0,
+                    ]);
+                }
+            } else {
+                // If no inventory items exist, create a virtual record
+                $warehouseItems->push([
+                    'id' => 'virtual_' . $product->id,
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->name,
+                    'category_name' => optional($product->category)->name ?? 'Uncategorized',
+                    'warehouse_name' => 'All Warehouses',
+                    'available_quantity' => 0,
+                ]);
+            }
+        }
+
+        // Get all facility inventory items for facility products
+        $facilityInventoryItems = FacilityInventoryItem::whereIn('product_id', $facilityProducts->pluck('id'))
             ->get()
             ->groupBy(function($item) {
                 return $item->product_id . '-' . $item->facility_id;
             });
 
-        // Build facility items: one per tracertable product per facility
+        // Build facility items: only for products with "Facility" in tracert_type
         $facilityItems = collect();
-        foreach ($tracertableProducts as $product) {
+        foreach ($facilityProducts as $product) {
             foreach ($facilities as $facility) {
                 $key = $product->id . '-' . $facility->id;
                 $item = $facilityInventoryItems->get($key) ? $facilityInventoryItems->get($key)->first() : null;

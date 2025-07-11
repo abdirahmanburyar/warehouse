@@ -100,7 +100,18 @@
                     />
                 </div>
             </div>
-            <div class="flex justify-end items-center">
+            <div class="flex justify-between items-center">
+                <!-- Icon Legend Button -->
+                <button
+                    @click="showIconLegend = true"
+                    class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Icon Legend
+                </button>
+                
                 <select
                     v-model="per_page"
                     @change="props.filters.page = 1"
@@ -142,238 +153,247 @@
             </div>
         </div>
 
+        <!-- Icon Legend Slideover -->
+        <div
+            v-if="showIconLegend"
+            class="fixed inset-0 overflow-hidden z-50"
+            aria-labelledby="slide-over-title"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div class="absolute inset-0 overflow-hidden">
+                <!-- Background overlay -->
+                <div
+                    class="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    @click="showIconLegend = false"
+                ></div>
+
+                <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
+                    <div class="w-screen max-w-md">
+                        <div class="h-full flex flex-col bg-white shadow-xl">
+                            <!-- Header -->
+                            <div class="px-4 py-6 bg-blue-50 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-lg font-medium text-blue-900" id="slide-over-title">
+                                        Order Status Icons Legend
+                                    </h2>
+                                    <button
+                                        @click="showIconLegend = false"
+                                        class="rounded-md text-blue-400 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <span class="sr-only">Close panel</span>
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="relative flex-1 px-4 sm:px-6 overflow-y-auto">
+                                <div class="space-y-6 py-6">
+                                    <div class="text-sm text-gray-600 mb-4">
+                                        <p>These icons represent the current status of each order in the workflow:</p>
+                                    </div>
+                                    
+                                    <!-- Icon Legend Items -->
+                                    <div class="space-y-4">
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/pending.png" class="w-8 h-8" alt="Pending" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Pending</h3>
+                                                <p class="text-sm text-gray-600">Order has been submitted and is awaiting review</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/review.png" class="w-8 h-8" alt="Reviewed" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Reviewed</h3>
+                                                <p class="text-sm text-gray-600">Order has been reviewed by management</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/approved.png" class="w-8 h-8" alt="Approved" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Approved</h3>
+                                                <p class="text-sm text-gray-600">Order has been approved for processing</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/rejected.png" class="w-8 h-8" alt="Rejected" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Rejected</h3>
+                                                <p class="text-sm text-gray-600">Order has been rejected and will not proceed</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/inprocess.png" class="w-8 h-8" alt="In Process" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">In Process</h3>
+                                                <p class="text-sm text-gray-600">Order is being prepared and processed</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/dispatch.png" class="w-8 h-8" alt="Dispatched" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Dispatched</h3>
+                                                <p class="text-sm text-gray-600">Order has been dispatched for delivery</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/delivery.png" class="w-8 h-8" alt="Delivered" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Delivered</h3>
+                                                <p class="text-sm text-gray-600">Order has been delivered to the facility</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/received.png" class="w-8 h-8" alt="Received" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Received</h3>
+                                                <p class="text-sm text-gray-600">Order has been received and confirmed by facility</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Workflow Information -->
+                                    <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                                        <h3 class="font-medium text-blue-900 mb-2">Order Workflow</h3>
+                                        <p class="text-sm text-blue-800">
+                                            Orders progress through these stages sequentially. Each icon represents a completed stage in the process.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-[80px]">
             <!-- Orders Table -->
             <div class="lg:col-span-10 text-xs">
                 <div>
                     <div class="overflow-auto">
                         <table class="w-full table-sm">
-                            <thead
-                                style="background-color: #eef1f8"
-                                class="rounded-t-xl"
-                            >
-                                <tr>
-                                    <!-- Checkbox column removed -->
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
+                                <thead style="background-color: #F4F7FB;">
+                                    <tr>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b rounded-tl-lg"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Order Number
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Facility
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Order Type
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Order Date
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Expected Date
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Handled By
+                                        </th>
+                                        <th
+                                            class="px-2 py-2 text-left text-xs font-bold uppercase border-b rounded-tr-lg"
+                                            style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                        >
+                                            Status
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white">
+                                    <tr v-if="orders.data?.length === 0">
+                                        <td
+                                            colspan="7"
+                                            class="px-2 py-2 text-center text-sm text-gray-600 border-b"
+                                            style="border-bottom: 1px solid #B7C6E6;"
+                                        >
+                                            No orders found
+                                        </td>
+                                    </tr>
+                                    <tr
+                                        v-for="order in orders.data"
+                                        :key="order.id"
+                                        class="border-b"
+                                        :class="{
+                                            'hover:bg-gray-50': true,
+                                            'text-red-500':
+                                                order.status === 'rejected',
+                                        }"
+                                        style="border-bottom: 1px solid #B7C6E6;"
                                     >
-                                        Order Number
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Facility
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Order Type
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Order Date
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Expected Date
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Handled By
-                                    </th>
-                                    <th
-                                        class="px-2 py-2 text-left text-xs font-medium text-black border border-black capitalize tracking-wider"
-                                    >
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white">
-                                <tr v-if="orders.data?.length === 0">
-                                    <td
-                                        colspan="7"
-                                        class="px-2 py-2 text-center text-sm text-black border border-black"
-                                    >
-                                        No orders found
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="order in orders.data"
-                                    :key="order.id"
-                                    class=""
-                                    :class="{
-                                        'hover:bg-gray-50': true,
-                                        'text-red-500':
-                                            order.status === 'rejected',
-                                    }"
-                                >
-                                    <!-- Checkbox cell removed -->
-                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
-                                        <div class="text-xs text-gray-900">
-                                            <Link
-                                                :href="
-                                                    route(
-                                                        'orders.show',
-                                                        order.id
-                                                    )
-                                                "
-                                                >{{ order.order_number }}</Link
-                                            >
-                                        </div>
-                                    </td>
-                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
-                                        <div class="text-xs text-gray-900">
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            <Link :href="route('orders.show', order.id)">{{ order.order_number }}</Link>
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                             {{ order.facility?.name }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
-                                    >
-                                        {{ order.order_type }}
-                                    </td>
-
-                                    <td
-                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
-                                    >
-                                        {{ formatDate(order.order_date) }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
-                                    >
-                                        {{ formatDate(order.expected_date) }}
-                                    </td>
-                                    <td
-                                        class="px-2 py-2 border border-black whitespace-nowrap text-xs text-black"
-                                    >
-                                        {{
-                                            order.facility?.handledby?.name ||
-                                            "Not assigned"
-                                        }}
-                                    </td>
-                                    <td class="px-2 py-2 border border-black whitespace-nowrap">
-                                        <div class="flex items-center gap-2">
-                                            <!-- Status Progress Icons - Only show actions taken -->
-                                            <div
-                                                class="flex items-center gap-1"
-                                            >
-                                                <!-- Always show pending as it's the initial state -->
-                                                <img
-                                                    src="/assets/images/pending.png"
-                                                    class="w-6 h-6"
-                                                    alt="pending"
-                                                    title="Pending"
-                                                />
-
-                                                <!-- Only show approved if status is approved or further -->
-                                                <img
-                                                    v-if="
-                                                        [
-                                                            'reviewed',
-                                                            'approved',
-                                                            'in_process',
-                                                            'dispatched',
-                                                            'delivered',
-                                                            'received',
-                                                        ].includes(order.status)
-                                                    "
-                                                    src="/assets/images/review.png"
-                                                    class="w-6 h-6"
-                                                    alt="Reviewed"
-                                                    title="Reviewed"
-                                                />
-                                                <!-- Only show approved if status is approved or further -->
-                                                <img
-                                                    v-if="
-                                                        [
-                                                            'approved',
-                                                            'in_process',
-                                                            'dispatched',
-                                                            'delivered',
-                                                            'received',
-                                                        ].includes(order.status)
-                                                    "
-                                                    src="/assets/images/approved.png"
-                                                    class="w-6 h-6"
-                                                    alt="Approved"
-                                                    title="Approved"
-                                                />
-                                                <!-- Only show rejected if status is rejected -->
-                                                <img
-                                                    v-if="
-                                                        order.status ===
-                                                        'rejected'
-                                                    "
-                                                    src="/assets/images/rejected.png"
-                                                    class="w-6 h-6"
-                                                    alt="Rejected"
-                                                    title="Rejected"
-                                                />
-
-                                                <!-- Only show in_process if status is in_process or further -->
-                                                <img
-                                                    v-if="
-                                                        [
-                                                            'in_process',
-                                                            'dispatched',
-                                                            'delivered',
-                                                            'received',
-                                                        ].includes(order.status)
-                                                    "
-                                                    src="/assets/images/inprocess.png"
-                                                    class="w-6 h-6"
-                                                    alt="In Process"
-                                                    title="In Process"
-                                                />
-
-                                                <!-- Only show dispatched if status is dispatched or further -->
-                                                <img
-                                                    v-if="
-                                                        [
-                                                            'dispatched',
-                                                            'delivered',
-                                                            'received',
-                                                        ].includes(order.status)
-                                                    "
-                                                    src="/assets/images/dispatch.png"
-                                                    class="w-6 h-6"
-                                                    alt="Dispatched"
-                                                    title="Dispatched"
-                                                />
-
-                                                <img
-                                                    v-if="
-                                                        [
-                                                            'delivered',
-                                                            'received',
-                                                        ].includes(order.status)
-                                                    "
-                                                    src="/assets/images/delivery.png"
-                                                    class="w-6 h-6"
-                                                    alt="Dispatched"
-                                                    title="Dispatched"
-                                                />
-
-                                                <!-- Only show received if status is received -->
-                                                <img
-                                                    v-if="
-                                                        ['received'].includes(
-                                                            order.status
-                                                        )
-                                                    "
-                                                    src="/assets/images/received.png"
-                                                    class="w-6 h-6"
-                                                    alt="Received"
-                                                    title="Received"
-                                                />
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            {{ order.order_type }}
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            {{ formatDate(order.order_date) }}
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            {{ formatDate(order.expected_date) }}
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            {{ order.facility?.handledby?.name || "Not assigned" }}
+                                        </td>
+                                        <td class="px-2 py-2 whitespace-nowrap border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                            <div class="flex items-center gap-2">
+                                                <!-- Status Progress Icons - Only show actions taken -->
+                                                <div class="flex items-center gap-1">
+                                                    <!-- Always show pending as it's the initial state -->
+                                                    <img src="/assets/images/pending.png" class="w-6 h-6" alt="pending" title="Pending" />
+                                                    <!-- Only show reviewed if status is reviewed or further -->
+                                                    <img v-if="['reviewed','approved','in_process','dispatched','delivered','received'].includes(order.status)" src="/assets/images/review.png" class="w-6 h-6" alt="Reviewed" title="Reviewed" />
+                                                    <!-- Only show approved if status is approved or further -->
+                                                    <img v-if="['approved','in_process','dispatched','delivered','received'].includes(order.status)" src="/assets/images/approved.png" class="w-6 h-6" alt="Approved" title="Approved" />
+                                                    <!-- Only show rejected if status is rejected -->
+                                                    <img v-if="order.status === 'rejected'" src="/assets/images/rejected.png" class="w-6 h-6" alt="Rejected" title="Rejected" />
+                                                    <!-- Only show in_process if status is in_process or further -->
+                                                    <img v-if="['in_process','dispatched','delivered','received'].includes(order.status)" src="/assets/images/inprocess.png" class="w-6 h-6" alt="In Process" title="In Process" />
+                                                    <!-- Only show dispatched if status is dispatched or further -->
+                                                    <img v-if="['dispatched','delivered','received'].includes(order.status)" src="/assets/images/dispatch.png" class="w-6 h-6" alt="Dispatched" title="Dispatched" />
+                                                    <img v-if="['delivered','received'].includes(order.status)" src="/assets/images/delivery.png" class="w-6 h-6" alt="Delivered" title="Delivered" />
+                                                    <!-- Only show received if status is received -->
+                                                    <img v-if="['received'].includes(order.status)" src="/assets/images/received.png" class="w-6 h-6" alt="Received" title="Received" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                     </div>
                    <div class="mt-4 flex justify-end ">
                     <TailwindPagination
@@ -875,6 +895,9 @@ const dateFrom = ref(props.filters?.dateFrom);
 const dateTo = ref(props.filters?.dateTo);
 const per_page = ref(props.filters.per_page || 25);
 const region = ref(props.filters?.region);
+
+// UI states
+const showIconLegend = ref(false);
 
 // Initialize data on page load
 onMounted(async () => {

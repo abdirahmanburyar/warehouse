@@ -4,9 +4,6 @@ import { Head, Link } from '@inertiajs/vue3';
 import { computed, ref, onMounted, watch } from 'vue';
 import ProductCategoriesChart from '@/Components/Charts/ProductCategoriesChart.vue';
 import Chart from 'chart.js/auto';
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
-import '@/Components/multiselect.css';
 import {
     BuildingOfficeIcon,
     UserGroupIcon,
@@ -127,7 +124,7 @@ const getProgressBarColor = (color) => {
 
 // Tracertable Items Dashboard
 const activeTab = ref('warehouse');
-const selectedFacility = ref(null);
+const selectedFacility = ref('');
 const warehouseChart = ref(null);
 const facilityChart = ref(null);
 let warehouseChartInstance = null;
@@ -195,29 +192,14 @@ const initFacilityChart = () => {
 
     if (!facilityChart.value) return;
 
-    // Use filtered data for the chart
-    const chartData = selectedFacility.value 
-        ? filteredFacilityItems.value 
-        : props.tracertableData.facilityItems || [];
-    
-    // Group by facility and sum quantities
-    const facilityData = chartData.reduce((acc, item) => {
-        acc[item.facility_name] = (acc[item.facility_name] || 0) + item.available_quantity;
-        return acc;
-    }, {});
-    
-    const sortedData = Object.entries(facilityData)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10); // Limit to top 10
-
     const ctx = facilityChart.value.getContext('2d');
     facilityChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: sortedData.map(([name]) => name),
+            labels: props.tracertableData.facilityChartData.labels || [],
             datasets: [{
                 label: 'Available Quantity',
-                data: sortedData.map(([, quantity]) => quantity),
+                data: props.tracertableData.facilityChartData.data || [],
                 backgroundColor: 'rgba(147, 51, 234, 0.8)',
                 borderColor: 'rgba(147, 51, 234, 1)',
                 borderWidth: 2,
@@ -280,15 +262,6 @@ watch(activeTab, (newTab) => {
     }
 });
 
-// Watch for facility selection changes
-watch(selectedFacility, () => {
-    if (activeTab.value === 'facilities' && facilityChart.value) {
-        setTimeout(() => {
-            initFacilityChart();
-        }, 100);
-    }
-});
-
 onMounted(() => {
     // Initialize charts after component is mounted
     setTimeout(() => {
@@ -299,19 +272,6 @@ onMounted(() => {
             initFacilityChart();
         }
     }, 100);
-});
-
-// Computed property to filter facility items based on selected facility
-const filteredFacilityItems = computed(() => {
-    if (!selectedFacility.value) {
-        return props.tracertableData.facilityItems || [];
-    }
-    
-    return (props.tracertableData.facilityItems || []).filter(item => {
-        // Find the facility by name and check if it matches the selected facility
-        const facility = props.tracertableData.facilities.find(f => f.name === item.facility_name);
-        return facility && facility.id === selectedFacility.value.value;
-    });
 });
 </script>
 
@@ -734,14 +694,10 @@ const filteredFacilityItems = computed(() => {
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <div class="flex items-center space-x-4">
                                 <label class="text-sm font-medium text-gray-700">Filter by Facility:</label>
-                                <Multiselect
-                                    v-model="selectedFacility"
-                                    :options="tracertableData.facilities.map(f => ({ value: f.id, label: f.name }))"
-                                    placeholder="Select a facility"
-                                    track-by="value"
-                                    label="label"
-                                    class="w-full"
-                                ></Multiselect>
+                                <select v-model="selectedFacility" class="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Facilities</option>
+                                    <option v-for="facility in tracertableData.facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option>
+                                </select>
                             </div>
                         </div>
 
@@ -769,7 +725,7 @@ const filteredFacilityItems = computed(() => {
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
-                                        <tr v-for="item in filteredFacilityItems" :key="item.id" class="hover:bg-gray-50">
+                                        <tr v-for="item in tracertableData.facilityItems" :key="item.id" class="hover:bg-gray-50">
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
                                                     <div class="flex-shrink-0 h-10 w-10">
@@ -802,7 +758,7 @@ const filteredFacilityItems = computed(() => {
                                                 </span>
                                             </td>
                                         </tr>
-                                        <tr v-if="filteredFacilityItems.length === 0">
+                                        <tr v-if="tracertableData.facilityItems.length === 0">
                                             <td colspan="4" class="px-6 py-4 text-center text-gray-500">No facility tracertable items found</td>
                                         </tr>
                                     </tbody>

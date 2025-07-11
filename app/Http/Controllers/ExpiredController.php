@@ -11,6 +11,7 @@ use App\Models\Transfer;
 use App\Models\Facility;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Models\Reason;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -212,7 +213,8 @@ class ExpiredController extends Controller
                 "inventory" => $inv,
                 'facilities' => $facilities,
                 'warehouses' => $warehouses,
-                'transferID' => $transferID
+                'transferID' => $transferID,
+                'reasons' => Reason::pluck('name')->toArray()
             ]);
         }
 

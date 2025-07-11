@@ -204,54 +204,43 @@
 
             <!-- Table -->
             <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider w-[350px] max-w-[350px] border border-gray-200">
-                                Item
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
-                                Category
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
-                                Dosage Form
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
-                                Eligibility Level
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
-                                Status
-                            </th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-200">
-                                Actions
-                            </th>
+                <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                    <thead>
+                        <tr style="background-color: #F4F7FB;">
+                            <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Category</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Dosage Form</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Eligibility Level</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Status</th>
+                            <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         <tr
                             v-for="product in products.data"
                             :key="product.id"
-                            class="hover:bg-gray-50 transition-colors duration-150"
+                            class="hover:bg-gray-50 transition-colors duration-150 border-b"
+                            style="border-bottom: 1px solid #B7C6E6;"
                         >
-                            <td class="px-6 py-4 w-[200px] max-w-[200px] border border-gray-200">
-                                <div class="text-sm font-medium text-gray-900 capitalize">
+                            <td class="px-3 py-2 w-[200px] max-w-[200px]">
+                                <div class="text-xs font-medium text-gray-800 capitalize">
                                     {{ product.name }}
                                 </div>
-                                <div class="text-sm text-gray-500 capitalize">
+                                <div class="text-xs text-gray-500 capitalize">
                                     ID: {{ product.productID || 'N/A' }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                            <td class="px-3 py-2 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {{ product.category?.name || "N/A" }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                            <td class="px-3 py-2 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     {{ product.dosage?.name || "N/A" }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">
+                            <td class="px-3 py-2 text-xs text-gray-800">
                                 <div v-if="product.eligible && product.eligible.length > 0" class="space-y-1">
                                     <span v-for="(item, index) in product.eligible" :key="index" class="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-md mr-1 mb-1">
                                         {{ item.facility_type }}
@@ -259,7 +248,7 @@
                                 </div>
                                 <span v-else class="text-gray-500">N/A</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                            <td class="px-3 py-2 whitespace-nowrap">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
                                     :class="{
@@ -274,7 +263,7 @@
                                     {{ product.is_active ? "Active" : "Inactive" }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center border border-gray-200">
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <Link
                                         :href="route('products.edit', product.id)"

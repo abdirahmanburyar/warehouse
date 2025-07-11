@@ -27,6 +27,10 @@ const props = defineProps({
         default: () => [],
     },
     transferID: String,
+    reasons: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const destinationType = ref("warehouse");
@@ -34,7 +38,12 @@ const loading = ref(false);
 const selectedDestination = ref(null);
 const quantityToTransfer = ref("");
 const transfer_date = ref(moment().format("YYYY-MM-DD"));
-const transfer_reason = ref("");
+const transfer_reason = ref(null);
+
+// Modal state for adding new reason
+const showAddReasonModal = ref(false);
+const newReasonName = ref("");
+const addingReason = ref(false);
 
 const form = ref({
     source_type: "warehouse", // Always warehouse for expired items
@@ -73,10 +82,31 @@ const filteredDestinationOptions = computed(() => {
     );
 });
 
+// Add "Add" option to reasons dropdown (first in the list)
+const reasonsWithAddOption = computed(() => {
+    return [
+        { name: '+ Add New Reason', isAddOption: true },
+        ...props.reasons.map(reason => ({ name: reason }))
+    ];
+});
+
 const handleDestinationSelect = (selected) => {
     form.value.destination_id = selected ? selected.id : null;
     selectedDestination.value = selected;
     errors.value.destination_id = null;
+};
+
+const handleReasonSelect = (selected) => {
+    if (selected && selected.isAddOption) {
+        // Open modal for adding new reason
+        openAddReasonModal();
+        // Reset the selection since we're opening modal
+        transfer_reason.value = null;
+    } else {
+        // Normal reason selection
+        transfer_reason.value = selected;
+        errors.value.transfer_reason = null;
+    }
 };
 
 const validateForm = () => {
@@ -107,7 +137,7 @@ const validateForm = () => {
     }
 
     // Validate transfer reason
-    if (!transfer_reason.value) {
+    if (!transfer_reason.value || !transfer_reason.value.name) {
         errors.value.transfer_reason = "Please select a transfer reason.";
         isValid = false;
     }
@@ -136,7 +166,7 @@ const handleSubmit = async () => {
     form.value.transfer_date = transfer_date.value;
     form.value.items[0].quantity = parseInt(quantityToTransfer.value);
     form.value.items[0].details[0].quantity_to_transfer = parseInt(quantityToTransfer.value);
-    form.value.items[0].details[0].transfer_reason = transfer_reason.value;
+    form.value.items[0].details[0].transfer_reason = transfer_reason.value ? transfer_reason.value.name : "";
 
     Swal.fire({
         title: "Confirm Transfer",
@@ -183,6 +213,41 @@ const handleSubmit = async () => {
             });
     });
 };
+
+// Function to handle adding new reason
+const handleAddReason = async () => {
+    if (!newReasonName.value.trim()) {
+        toast.error("Please enter a reason name");
+        return;
+    }
+
+    addingReason.value = true;
+    try {
+        const response = await axios.post(route('reasons.store'), {
+            name: newReasonName.value.trim()
+        });
+        
+        // Set the new reason as selected by creating an object with the name
+        transfer_reason.value = { name: response.data };
+        
+        // Close modal and reset form
+        showAddReasonModal.value = false;
+        newReasonName.value = "";
+        
+        toast.success("Reason added successfully");
+    } catch (error) {
+        console.error('Error adding reason:', error);
+        toast.error(error.response?.data || "Failed to add reason");
+    } finally {
+        addingReason.value = false;
+    }
+};
+
+// Function to open add reason modal
+const openAddReasonModal = () => {
+    showAddReasonModal.value = true;
+    newReasonName.value = "";
+};
 </script>
 
 <template>
@@ -197,7 +262,7 @@ const handleSubmit = async () => {
                 <div class="px-8 py-6 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Transfer Expired Item</h1>
+                            <h1 class="text-2xl font-bold text-gray-900">Transfer</h1>
                             <p class="mt-1 text-sm text-gray-600">Transfer ID: {{ props.transferID }}</p>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -210,70 +275,44 @@ const handleSubmit = async () => {
                 </div>
 
                 <form @submit.prevent="handleSubmit" class="px-8 py-6">
-                    <!-- Transfer Information Section -->
+                    <!-- Transfer Information and Destination Section -->
                     <div class="mb-8">
-                        <div class="flex items-center space-x-2 mb-6">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900">Transfer Information</h3>
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Transfer Information Section -->
+                            <div>
+                                <div class="flex items-center space-x-2 mb-6">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Transfer Information</h3>
+                                </div>
 
-                                                    <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-                                <!-- Transfer Date -->
-                                <div>
-                                    <InputLabel for="transfer_date" value="Transfer Date" class="text-sm font-medium text-gray-700" />
-                                    <input
-                                        id="transfer_date"
-                                        type="date"
-                                        v-model="transfer_date"
-                                        class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    />
+                                <div class="grid grid-cols-1 gap-6">
+                                    <!-- Transfer Date -->
+                                    <div>
+                                        <InputLabel for="transfer_date" value="Transfer Date" class="text-sm font-medium text-gray-700" />
+                                        <input
+                                            id="transfer_date"
+                                            type="date"
+                                            v-model="transfer_date"
+                                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                    </div>
 
-                    <!-- Source Information Section -->
-                    <div class="mb-8">
-                        <div class="flex items-center space-x-2 mb-6">
-                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900">Transfer From</h3>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-lg p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Source Type</p>
-                                    <p class="text-sm text-gray-900 font-semibold">Warehouse</p>
+                            <!-- Destination Section -->
+                            <div>
+                                <div class="flex items-center space-x-2 mb-6">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h14m-6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Transfer To</h3>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Source Warehouse</p>
-                                    <p class="text-sm text-gray-900 font-semibold">{{ props.inventory?.warehouse?.name || 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Location</p>
-                                    <p class="text-sm text-gray-900 font-semibold">{{ props.inventory?.location?.location || 'N/A' }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Destination Section -->
-                    <div class="mb-8">
-                        <div class="flex items-center space-x-2 mb-6">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h14m-6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900">Transfer To</h3>
-                        </div>
                         
                         <!-- Destination Type Selection -->
                         <div class="mb-6">
@@ -333,122 +372,132 @@ const handleSubmit = async () => {
                             </Multiselect>
                             <InputError :message="errors.destination_id" class="mt-2" />
                         </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Items Table Section -->
-                    <div class="mb-4 overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr class="bg-gray-50">
-                                    <th class="min-w-[120px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                    <div class="mb-4">
+                        <table class="w-full table-sm">
+                            <thead>
+                                <tr style="background-color: #EFF6FF;">
+                                    <th class="text-xs min-w-[120px] px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tl-lg" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Item Name
                                     </th>
-                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs px-3 py-3 text-left text-xs font-bold uppercase border-b" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Category
                                     </th>
-                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs px-3 py-3 text-left text-xs font-bold uppercase border-b" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         UoM
                                     </th>
-                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs px-3 py-3 text-center text-xs font-bold uppercase border-b" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Total Quantity on Hand Per Unit
                                     </th>
-                                    <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" colspan="4">
+                                    <th class="text-xs px-3 py-3 text-center text-xs font-bold uppercase border-b" colspan="3"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Item details
                                     </th>
-                                    
-                                    <th class="min-w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs min-w-[150px] px-3 py-3 text-left text-xs font-bold uppercase border-b" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Reasons for Transfers
                                     </th>
-                                    <th class="min-w-[110px] px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs min-w-[110px] px-3 py-3 text-left text-xs font-bold uppercase border-b" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Quantity to be transferred
                                     </th>
-                                    <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
+                                    <th class="text-xs px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tr-lg" rowspan="2"
+                                        style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                         Total Quantity to be transferred
                                     </th>
                                 </tr>
-                                <tr class="bg-gray-50">
-                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                <tr style="background-color: #EFF6FF;">
+                                    <th class="text-xs px-3 py-3 text-xs font-bold uppercase border text-center"
+                                        style="color: #979ECD; border: 1px solid #B7C6E6;">
                                         QTY
                                     </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                    <th class="text-xs px-3 py-3 text-xs font-bold uppercase border text-center"
+                                        style="color: #979ECD; border: 1px solid #B7C6E6;">
                                         Batch Number
                                     </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left">
+                                    <th class="px-3 py-3 text-xs font-bold uppercase border text-center "
+                                        style="color: #979ECD; border: 1px solid #B7C6E6;">
                                         Expiry Date
-                                    </th>
-                                    <th class="px-2 py-1 text-xs border border-black text-left">
-                                        Location
                                     </th>
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody class="divide-y divide-gray-200">
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <!-- Item Name -->
-                                    <td class="min-w-[200px] px-3 py-3 text-xs text-gray-900 border border-black align-top">
+                                    <td class="min-w-[200px] px-3 py-3 text-sm font-medium text-gray-900 border-b align-top" style="border-bottom: 1px solid #B7C6E6;">
                                         {{ props.inventory.product.name }}
                                     </td>
 
                                     <!-- Category -->
-                                    <td class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                    <td class="px-3 py-3 text-sm text-gray-700 border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                         {{ props.inventory.product?.category?.name || '' }}
                                     </td>
 
                                     <!-- UoM -->
-                                    <td class="px-3 py-3 text-xs text-gray-900 border border-black text-center">
+                                    <td class="px-3 py-3 text-sm text-gray-700 border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                         {{ props.inventory.uom || '' }}
                                     </td>
 
                                     <!-- Total Quantity on Hand Per Unit -->
-                                    <td class="px-3 py-3 text-xs text-center border border-black">
+                                    <td class="px-3 py-3 text-sm text-center text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                         {{ props.inventory.quantity }}
                                     </td>
 
                                     <!-- Item Details Columns -->
                                     <!-- Quantity -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center">
+                                    <td class="px-3 py-3 text-sm text-center text-gray-700 border" style="border: 1px solid #B7C6E6;">
                                         {{ props.inventory.quantity }}
                                     </td>
 
                                     <!-- Batch Number -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center">
+                                    <td class="px-3 py-3 text-sm text-center text-gray-700 border" style="border: 1px solid #B7C6E6;">
                                         {{ props.inventory.batch_number || '' }}
                                     </td>
 
                                     <!-- Expiry Date -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center" :class="{ 'text-red-600': isExpiringSoon(props.inventory.expiry_date) }">
+                                    <td class="px-3 py-3 text-sm text-center border" style="border: 1px solid #B7C6E6;" :class="{ 'text-red-600': isExpiringSoon(props.inventory.expiry_date) }">
                                         {{ props.inventory.expiry_date ? formatDate(props.inventory.expiry_date) : '' }}
                                     </td>
 
-                                    <!-- Location -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center">
-                                        {{ props.inventory.location?.location || '' }}
-                                    </td>
-
                                     <!-- Reasons for Transfers -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center">
-                                        <select
+                                    <td class="px-3 py-3 max-w-[150px] text-sm border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                        <Multiselect
                                             v-model="transfer_reason"
-                                            class="w-full text-xs border rounded px-2 py-1"
-                                            :class="{ 'border-red-500': errors.transfer_reason }"
+                                            :options="reasonsWithAddOption"
+                                            :searchable="true"
+                                            :close-on-select="true"
+                                            :show-labels="false"
+                                            :placeholder="'Select reason'"
+                                            track-by="name"
+                                            label="name"
+                                            @select="handleReasonSelect"
                                         >
-                                            <option value="">Select reason...</option>
-                                            <option value="Soon to expire">Soon to expire</option>
-                                            <option value="Expired">Expired</option>
-                                            <option value="Replenishment">Replenishment</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                            <template v-slot:option="{ option }">
+                                                <span :class="{ 'text-blue-600 font-semibold': option.isAddOption }">
+                                                    {{ option.name }}
+                                                </span>
+                                            </template>
+                                        </Multiselect>
                                         <InputError :message="errors.transfer_reason" class="mt-1" />
                                     </td>
 
                                     <!-- Quantity to be transferred -->
-                                    <td class="px-2 py-1 text-xs border border-black text-center">
+                                    <td class="px-3 py-3 text-sm border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                         <input
                                             type="number"
                                             v-model="quantityToTransfer"
                                             :max="props.inventory.quantity"
                                             min="0"
-                                            class="w-full text-xs border rounded px-2 py-1 text-center"
+                                            class="w-full text-sm border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                             placeholder="0"
                                             :class="{ 'border-red-500': errors.quantity }"
                                         />
@@ -456,7 +505,7 @@ const handleSubmit = async () => {
                                     </td>
 
                                     <!-- Total Quantity to be transferred -->
-                                    <td class="px-3 py-3 text-xs text-center border border-black">
+                                    <td class="px-3 py-3 text-sm text-center border-b" style="border-bottom: 1px solid #B7C6E6;">
                                         <div class="text-sm font-medium text-blue-600">
                                             {{ quantityToTransfer || 0 }}
                                         </div>
@@ -514,4 +563,67 @@ const handleSubmit = async () => {
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <!-- Add Reason Modal -->
+    <div v-if="showAddReasonModal" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showAddReasonModal = false"></div>
+
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                Add New Transfer Reason
+                            </h3>
+                            <form @submit.prevent="handleAddReason">
+                                <div class="mb-4">
+                                    <InputLabel for="reason_name" value="Reason Name" class="text-sm font-medium text-gray-700" />
+                                    <input
+                                        id="reason_name"
+                                        v-model="newReasonName"
+                                        type="text"
+                                        class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                        placeholder="Enter reason name"
+                                        required
+                                    />
+                                </div>
+                                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                    <button
+                                        type="submit"
+                                        :disabled="addingReason"
+                                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <span v-if="addingReason" class="flex items-center">
+                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Adding...
+                                        </span>
+                                        <span v-else>Add Reason</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="showAddReasonModal = false"
+                                        :disabled="addingReason"
+                                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>

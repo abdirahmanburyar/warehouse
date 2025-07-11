@@ -543,7 +543,7 @@ class TransferController extends Controller
                 'items.*.details' => 'required|array',
                 'items.*.details.*.quantity_to_transfer' => 'required|integer|min:1',
                 'items.*.details.*.id' => 'required|integer',
-                'items.*.details.*.transfer_reason' => 'nullable|string',
+                'items.*.details.*.transfer_reason' => 'required|string',
                 'notes' => 'nullable|string',
                 'transfer_type' => 'nullable|string'
             ]);
@@ -567,18 +567,20 @@ class TransferController extends Controller
             $transfer = Transfer::create($transferData);
     
             foreach ($request->items as $item) {
-                // Calculate total quantity on hand for this product (excluding expired)
-                $warehouseQuantity = InventoryItem::where('product_id', $item['product_id'])
-                    ->where('quantity', '>', 0)
-                    ->where('expiry_date', '>', \Carbon\Carbon::now())
-                    ->sum('quantity');
-
-                $facilityQuantity = FacilityInventoryItem::where('product_id', $item['product_id'])
-                    ->where('quantity', '>', 0)
-                    ->where('expiry_date', '>', \Carbon\Carbon::now())
-                    ->sum('quantity');
-
-                $totalQuantityOnHand = (int) $warehouseQuantity ?? (int) $facilityQuantity;
+                // Calculate total quantity on hand for this product from the source inventory only
+                if ($request->source_type === 'warehouse') {
+                    $totalQuantityOnHand = InventoryItem::where('product_id', $item['product_id'])
+                        ->where('warehouse_id', $request->source_id)
+                        ->where('quantity', '>', 0)
+                        ->where('expiry_date', '>', \Carbon\Carbon::now())
+                        ->sum('quantity');
+                } else {
+                    $totalQuantityOnHand = FacilityInventoryItem::where('product_id', $item['product_id'])
+                        ->where('facility_id', $request->source_id)
+                        ->where('quantity', '>', 0)
+                        ->where('expiry_date', '>', \Carbon\Carbon::now())
+                        ->sum('quantity');
+                }
 
                 // Create transfer item for this product
                 $transferItem = $transfer->items()->create([
@@ -623,7 +625,7 @@ class TransferController extends Controller
                         'allocation_type' => 'transfer',
                         'unit_cost' => $inventoryItem->unit_cost ?? 0,
                         'total_cost' => $quantityToTransfer * ($inventoryItem->unit_cost ?? 0),
-                        'transfer_reason' => $detail['transfer_reason'] ?? null,
+                        'transfer_reason' => $detail['transfer_reason'],
                     ]);
 
                     // Deduct from source inventory

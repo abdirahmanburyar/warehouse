@@ -37,6 +37,7 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use App\Http\Controllers\LogisticCompanyController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\TracertableItemsController;
+use App\Http\Controllers\ReasonController;
 
 // Welcome route - accessible without authentication
 
@@ -665,6 +666,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     });
 
     // Approval Routes
+    // Reason Management Routes
+    Route::controller(ReasonController::class)->prefix('reasons')->group(function () {
+        Route::get('/', 'index')->name('reasons.index');
+        Route::post('/store', 'store')->name('reasons.store');
+        Route::delete('/destroy', 'destroy')->name('reasons.destroy');
+        Route::get('/get-reasons', 'getReasons')->name('reasons.get-reasons');
+    });
         
     });
     

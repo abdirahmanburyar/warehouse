@@ -176,7 +176,18 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end mt-2">
+                <div class="flex justify-between items-center mt-2">
+                    <!-- Icon Legend Button -->
+                    <button
+                        @click="showIconLegend = true"
+                        class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Icon Legend
+                    </button>
+                    
                     <select class="rounded-3xl" name="per_page" id="per_page" @change="props.filters.page = 1"
                         v-model="per_page">
                         <option value="2">2 per page</option>
@@ -202,97 +213,226 @@
             </div>
         </div>
 
+        <!-- Icon Legend Slideover -->
+        <div
+            v-if="showIconLegend"
+            class="fixed inset-0 overflow-hidden z-50"
+            aria-labelledby="slide-over-title"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div class="absolute inset-0 overflow-hidden">
+                <!-- Background overlay -->
+                <div
+                    class="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    @click="showIconLegend = false"
+                ></div>
+
+                <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
+                    <div class="w-screen max-w-md">
+                        <div class="h-full flex flex-col bg-white shadow-xl">
+                            <!-- Header -->
+                            <div class="px-4 py-6 bg-blue-50 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-lg font-medium text-blue-900" id="slide-over-title">
+                                        Transfer Status Icons Legend
+                                    </h2>
+                                    <button
+                                        @click="showIconLegend = false"
+                                        class="rounded-md text-blue-400 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <span class="sr-only">Close panel</span>
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="relative flex-1 px-4 sm:px-6 overflow-y-auto">
+                                <div class="space-y-6 py-6">
+                                    <div class="text-sm text-gray-600 mb-4">
+                                        <p>These icons represent the current status of each transfer in the workflow:</p>
+                                    </div>
+                                    
+                                    <!-- Icon Legend Items -->
+                                    <div class="space-y-4">
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/pending.png" class="w-8 h-8" alt="Pending" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Pending</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been submitted and is awaiting approval</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/approved.png" class="w-8 h-8" alt="Approved" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Approved</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been approved for processing</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/inprocess.png" class="w-8 h-8" alt="In Process" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">In Process</h3>
+                                                <p class="text-sm text-gray-600">Transfer is being prepared and processed</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/dispatch.png" class="w-8 h-8" alt="Dispatched" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Dispatched</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been dispatched for delivery</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/received.png" class="w-8 h-8" alt="Received" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Received</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been received and confirmed by destination</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/rejected.png" class="w-8 h-8" alt="Rejected" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Rejected</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been rejected and will not proceed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Transfer Workflow Information -->
+                                    <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                                        <h3 class="font-medium text-blue-900 mb-2">Transfer Workflow</h3>
+                                        <p class="text-sm text-blue-800">
+                                            Transfers progress through these stages sequentially. Each icon represents a completed stage in the process.
+                                        </p>
+                                    </div>
+
+                                    <!-- Transfer Types Information -->
+                                    <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                                        <h3 class="font-medium text-green-900 mb-2">Transfer Types</h3>
+                                        <div class="text-sm text-green-800 space-y-2">
+                                            <p><strong>Warehouse to Warehouse:</strong> Transfers between different warehouse locations</p>
+                                            <p><strong>Facility to Facility:</strong> Transfers between different healthcare facilities</p>
+                                            <p><strong>Facility to Warehouse:</strong> Returns from facilities to warehouse</p>
+                                            <p><strong>Warehouse to Facility:</strong> Supplies sent from warehouse to facilities</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="grid grid-cols-12 gap-1 mb-[40px]">
             <!-- Table Section (9 cols) -->
-            <div class="md:col-span-9 sm:col-span-12">
-                <div class="max-w-full overflow-auto">
-                    <table class="min-w-full">
-                        <thead>
+            <div class="md:col-span-9 sm:col-span-12 mt-3">
+                <div class="overflow-auto">
+                    <table class="w-full table-sm">
+                        <thead style="background-color: #F4F7FB;">
                             <tr>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b rounded-tl-lg"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     Transfer ID
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     Date
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     From
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     To
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     Transfer Type
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     Items
                                 </th>
-                                <th scope="col"
-                                    class="px-2 py-1 border border-black text-left text-xs font-medium text-[#6C75B8] capitalize tracking-wider">
+                                <th
+                                    class="px-2 py-2 text-left text-xs font-bold uppercase border-b rounded-tr-lg"
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;"
+                                >
                                     Status
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="">
+                        <tbody class="bg-white">
                             <tr v-if="props.transfers.data.length === 0">
-                                <td colspan="7" class="text-center text-black py-4 border border-black">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                                            </path>
-                                        </svg>
-                                        <p class="mt-2 text-xs font-medium">
-                                            No transfer data available
-                                        </p>
-                                        <p class="mt-1 text-xs">
-                                            Create a new transfer or adjust your
-                                            filters to see results
-                                        </p>
-                                    </div>
+                                <td
+                                    colspan="7"
+                                    class="px-2 py-2 text-center text-sm text-gray-600 border-b"
+                                    style="border-bottom: 1px solid #B7C6E6;"
+                                >
+                                    No transfers found
                                 </td>
                             </tr>
-                            <tr v-for="transfer in props.transfers.data" :key="transfer.id"
-                                class="hover:bg-gray-50 border-b border border-black">
-                                <td class="px-2 py-1 whitespace-nowrap text-xs font-medium text-black">
-                                    <Link :href="route('transfers.show', transfer.id)
-                                        " class="hover:underline text-blue-500">
-                                    {{ transfer.transferID }}
-                                    </Link>
+                            <tr
+                                v-for="transfer in props.transfers.data"
+                                :key="transfer.id"
+                                class="border-b"
+                                :class="{
+                                    'hover:bg-gray-50': true,
+                                    'text-red-500':
+                                        transfer.status === 'rejected',
+                                }"
+                                style="border-bottom: 1px solid #B7C6E6;"
+                            >
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    <Link :href="route('transfers.show', transfer.id)">{{ transfer.transferID }}</Link>
                                 </td>
-                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     {{
                                         moment(transfer.transfer_date).format('DD/MM/YYYY')
                                     }}
                                 </td>
-
-                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     {{
                                         transfer.from_warehouse?.name ||
                                         transfer.from_facility?.name
                                     }}
                                 </td>
-                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     {{
                                         transfer.to_warehouse?.name ||
                                         transfer.to_facility?.name
                                     }}
                                 </td>
-                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ transfer.transfer_type }}
                                 </td>
-                                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-600 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ transfer.items_count }}
                                 </td>
-                                <td class="px-2 py-1 text-xs text-black border border-black">
+                                <td class="px-2 py-2 whitespace-nowrap border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     <div class="flex items-center gap-2">
                                         <!-- Status Progress Icons - Only show actions taken -->
                                         <div class="flex items-center gap-2">
@@ -606,6 +746,9 @@ const props = defineProps({
 
 const currentTab = ref("all");
 const currentDirectionTab = ref("other");
+
+// UI states
+const showIconLegend = ref(false);
 
 // Base facility types
 const allFacilityTypes = [

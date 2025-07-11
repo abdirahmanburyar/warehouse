@@ -50,47 +50,120 @@
                     </select>
                 </div>
             </div>
-            <!-- Tabs -->
-            <div class="border-b border-gray-200 mb-6">
-                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" :class="[
-                        activeTab === tab.id
-                            ? 'border-green-500 text-green-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs'
-                    ]">
-                        {{ tab.name }}
-                    </button>
-                </nav>
+            <!-- Header Section with Icon Legend Button -->
+            <div class="flex items-center justify-between mb-6">
+                <!-- Tabs -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" :class="[
+                            activeTab === tab.id
+                                ? 'border-green-500 text-green-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                            'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs'
+                        ]">
+                            {{ tab.name }}
+                        </button>
+                    </nav>
+                </div>
+                
+                <!-- Icon Legend Button -->
+                <button @click="showLegend = true"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Icon Legend
+                </button>
             </div>
 
             <!-- Main Content -->
             <div class="grid grid-cols-12 gap-4">
                 <!-- LEFT COLUMN: Table (8/12) -->
                 <div class="col-span-12 md:col-span-9 overflow-auto">
-                    <table class="min-w-full border border-collapse border-black">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Product</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Quantity</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Batch Number</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Location</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Expiry Date</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Days Until Expiry</th>
-                                <th class="p-2 w-[150px] text-left text-xs font-medium uppercase border border-black">Status</th>
-                                <th class="p-2 text-left text-xs font-medium uppercase border border-black">Action</th>
+                    <table class="w-full rounded-t-3xl overflow-hidden table-sm">
+                        <thead>
+                            <tr style="background-color: #EFF6FF;">
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tl-lg max-w-[150px]"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Item
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Quantity
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Batch Number
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Location
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Expiry Date
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Days Until Expiry
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Status
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tr-lg"
+                                    style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
+                                    Action
+                                </th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr v-for="item in props.inventories.data" :key="item.id">
-                                <td class="p-2 text-xs text-gray-900 border border-black">{{ item.product?.name }}</td>
-                                <td class="p-2 text-xs text-gray-500 border border-black">{{ item.quantity }}</td>
-                                <td class="p-2 text-xs text-gray-500 border border-black">{{ item.batch_number }}</td>
-                                <td class="p-2 text-xs text-gray-500 border border-black">{{ item.location || 'N/A' }}</td>
-                                <td class="p-2 text-xs text-gray-500 border border-black">{{ formatDate(item.expiry_date) }}</td>
-                                <td class="p-2 border border-black">
+                        <tbody class="divide-y divide-gray-200">
+                            <tr v-if="props.inventories.data.length === 0">
+                                <td colspan="8" class="text-center py-8 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                            </path>
+                                        </svg>
+                                        <p class="mt-2 text-sm font-medium text-gray-900">
+                                            No expired items available
+                                        </p>
+                                        <p class="mt-1 text-sm text-gray-500">
+                                            Adjust your filters to see results
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-for="item in props.inventories.data" :key="item.id"
+                                class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ item.product?.name }}
+                                </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ item.quantity }}
+                                </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ item.batch_number }}
+                                </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ item.location || 'N/A' }}
+                                </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ formatDate(item.expiry_date) }}
+                                </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-sm border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     <div :class="{
-                                        'text-xs font-medium': true,
+                                        'text-sm font-medium': true,
                                         'text-gray-600': item.expired,
                                         'text-orange-600': !item.expired && item.days_until_expiry > 180 && item.days_until_expiry <= 365,
                                         'text-pink-600': !item.expired && item.days_until_expiry <= 180 && item.days_until_expiry > 0
@@ -98,7 +171,7 @@
                                         {{ item.days_until_expiry }} days
                                     </div>
                                 </td>
-                                <td class="p-2 border border-black">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     <span v-if="item.expired"
                                         class="p-[5px] rounded-xl inline-flex items-center bg-gray-600 text-xs font-medium text-white">
                                         Expired
@@ -112,17 +185,17 @@
                                         Expiring Soon
                                     </span>
                                 </td>
-                                <td class="p-2 whitespace-nowrap text-xs text-gray-500 border border-black">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm border-b rounded-tr-3xl" style="border-bottom: 1px solid #B7C6E6;">
                                     <template v-if="item.expired">
                                         <button class="text-red-600 hover:text-red-900"
                                             @click="disposeItem(item)">
-                                            <img src="/assets/images/Disposal.png" alt="Dispose" class="w-10">
+                                            <img src="/assets/images/Disposal.png" alt="Dispose" class="w-10" title="Dispose">
                                         </button>
                                     </template>
                                     <template v-else>
                                         <Link class="text-blue-600 hover:text-blue-900"
                                             :href="route('expired.transfer', item.id)">
-                                            <img src="/assets/images/facility.png" alt="Transfer" class="w-10">
+                                            <img src="/assets/images/facility.png" alt="Transfer" class="w-10" title="Transfer">
                                         </Link>
                                     </template>
                                 </td>
@@ -258,6 +331,64 @@
             </div>
         </form>
     </Modal>
+
+    <!-- Slideover for Icon Legend -->
+    <transition name="slide">
+        <div v-if="showLegend" class="fixed inset-0 z-50 flex justify-end">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black bg-opacity-30 transition-opacity" @click="showLegend = false"></div>
+            <!-- Slideover Panel -->
+            <div class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto">
+                <button @click="showLegend = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <h2 class="text-lg font-bold text-blue-700 mb-6 mt-2">Icon Legend</h2>
+                <ul class="space-y-5">
+                    <li class="flex items-center gap-4">
+                        <img src="/assets/images/Disposal.png" class="w-10 h-10" alt="Dispose" />
+                        <div>
+                            <div class="font-semibold text-red-600">Dispose</div>
+                            <div class="text-xs text-gray-500">Dispose of expired items with documentation.</div>
+                        </div>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <img src="/assets/images/facility.png" class="w-10 h-10" alt="Transfer" />
+                        <div>
+                            <div class="font-semibold text-blue-600">Transfer</div>
+                            <div class="text-xs text-gray-500">Transfer items to another facility or warehouse.</div>
+                        </div>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-600 rounded-xl flex items-center justify-center">
+                            <span class="text-xs font-medium text-white">Exp</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-600">Expired</div>
+                            <div class="text-xs text-gray-500">Items that have passed their expiry date.</div>
+                        </div>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center">
+                            <span class="text-xs font-medium text-white">VS</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-pink-600">Expiring Very Soon</div>
+                            <div class="text-xs text-gray-500">Items expiring within 6 months (≤180 days).</div>
+                        </div>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-400 rounded-xl flex items-center justify-center">
+                            <span class="text-xs font-medium text-white">S</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-orange-600">Expiring Soon</div>
+                            <div class="text-xs text-gray-500">Items expiring within 1 year (≤365 days).</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </transition>
 </template>
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
@@ -290,6 +421,9 @@ const props = defineProps({
 })
 
 const activeTab = ref('all')
+
+// Icon Legend state
+const showLegend = ref(false)
 
 const tabs = [
     { id: 'all', name: 'All Items' },

@@ -42,6 +42,7 @@ const isSubmitting = ref(false);
 
 // Modal states
 const showAddModal = ref(false);
+const showLegend = ref(false);
 
 async function loadLocations() {
     if (!warehouse.value) {
@@ -344,7 +345,19 @@ function getResults(page = 1) {
                         class="hidden"
                         @change="handleFileUpload"
                     />
-
+                    <button
+                        @click="showAddModal = true"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                    >
+                        Add Inventory
+                    </button>
+                    <button
+                        @click="showLegend = true"
+                        class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                        Icon Legend
+                    </button>
                     <Link
                         :href="route('inventories.location.index')"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-full font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -395,7 +408,7 @@ function getResults(page = 1) {
             </div>
             <!-- Search and Filters -->
             <div
-                class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"
+                class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
             >
                 <div class="col-span-1 md:col-span-2 min-w-0">
                     <input
@@ -431,34 +444,6 @@ function getResults(page = 1) {
                     >
                     </Multiselect>
                 </div>
-                <div class="col-span-1 min-w-0">
-                    <Multiselect
-                        v-model="warehouse"
-                        :options="props.warehouses"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select a warehouse"
-                        @select="loadLocations"
-                        :allow-empty="true"
-                        class="multiselect--with-icon multiselect--rounded w-full"
-                    >
-                    </Multiselect>
-                </div>
-                <div class="col-span-1 min-w-0">
-                    <Multiselect
-                        v-model="location"
-                        :options="loadedLocation"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select a S. Location"
-                        :allow-empty="true"
-                        :disabled="!warehouse"
-                        class="multiselect--with-icon multiselect--rounded w-full"
-                    >
-                    </Multiselect>
-                </div>
             </div>
             <div class="flex justify-end mt-3">
                 <select
@@ -473,159 +458,48 @@ function getResults(page = 1) {
                 </select>
             </div>
 
-            <!-- Add Button -->
             <div class="lg:grid lg:grid-cols-8 lg:gap-2">
                 <div class="lg:col-span-7 overflow-auto w-full">
                     <!-- Inventory Table -->
-                    <table
-                        class="w-full border border-gray-300 text-sm text-left"
-                    >
-                        <thead class="bg-gray-100">
-                            <tr class="divide-x divide-gray-300">
-                                <th class="px-3 py-2 text-xs" rowspan="2">Item</th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">Category</th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">UoM</th>
-                                <th class="px-3 py-2 text-xs text-center" colspan="5">
-                                    Item Details
-                                </th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">Total Qty on Hand</th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">Reorder Level</th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">Status</th>
-                                <th class="px-3 py-2 text-xs" rowspan="2">Actions</th>
+                    <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                        <thead>
+                            <tr style="background-color: #F4F7FB;">
+                                <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Item</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
+                                <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total Qty on Hand</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status</th>
+                                <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                             </tr>
-                            <tr class="bg-gray-50 divide-x divide-gray-300">
-                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
-                                    QTY
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
-                                    Batch Number
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
-                                    Expiry Date
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-gray-300 text-left w-32">
-                                    Location
-                                </th>
-                                <th class="px-2 py-1 text-xs border border-gray-300 text-left">
-                                    Status
-                                </th>
+                            <tr style="background-color: #F4F7FB;">
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Status</th>
                             </tr>
                         </thead>
-
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
                             <template v-for="inventory in props.inventories.data" :key="inventory.id">
-                                <tr
-                                    v-for="(item, itemIndex) in inventory.items"
-                                    :key="`${inventory.id}-${item.id}`"
-                                    class="divide-x divide-gray-300 hover:bg-gray-50 transition-colors duration-150"
-                                >
-                                    <!-- Show inventory details only on first row for this inventory -->
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs font-medium text-gray-800 align-top"
-                                    >
-                                        {{ inventory.product.name }}
-                                    </td>
-
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs text-gray-700 align-top"
-                                    >
-                                        {{ inventory.product.category.name }}
-                                    </td>
-
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs text-gray-700 align-top"
-                                    >
-                                        {{ inventory.items[0].uom }}
-                                    </td>
-
-                                    <!-- Item Details Columns (like Transfer/Show.vue) -->
-                                    <!-- Quantity -->
-                                    <td
-                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
-                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
-                                    >
-                                        {{ item.quantity }}
-                                    </td>
-
-                                    <!-- Batch Number -->
-                                    <td
-                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
-                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
-                                    >
-                                        {{ item.batch_number }}
-                                    </td>
-
-                                    <!-- Expiry Date -->
-                                    <td
-                                        class="px-2 py-1 text-xs border border-gray-300 text-left"
-                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
-                                    >
-                                        {{ formatDate(item.expiry_date) }}
-                                    </td>
-
-                                    <!-- Location -->
-                                    <td
-                                        class="px-2 py-1 text-xs border border-gray-300 text-left w-32"
-                                        :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'"
-                                    >
-                                        <div class="text-xs flex flex-col space-y-0.5">
-                                            <!-- <span class="text-xs">WH: {{ item.warehouse?.name }}</span> -->
-                                             {{ item.location }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Status Icons -->
-                                    <td class="px-2 py-1 text-xs border border-gray-300 text-left">
-                                        <div class="flex items-center">
+                                <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                        <div class="flex items-center justify-center">
                                             <div v-if="isExpiringSoon(item)" class="mr-1">
-                                                <img
-                                                    src="/assets/images/soon_expire.png"
-                                                    title="Expire soon"
-                                                    class="w-5 h-5"
-                                                    alt="Expire soon"
-                                                />
+                                                <img src="/assets/images/soon_expire.png" title="Expire soon" class="w-5 h-5" alt="Expire soon" />
                                             </div>
-                                            <div v-if="isExpired(item)">
-                                                <img
-                                                    src="/assets/images/expired_stock.png"
-                                                    title="Expired"
-                                                    class="w-5 h-5"
-                                                    alt="Expired"
-                                                />
-                                            </div>
+                                            <div v-if="isExpired(item)"><img src="/assets/images/expired_stock.png" title="Expired" class="w-5 h-5" alt="Expired" /></div>
                                         </div>
                                     </td>
-
-                                    <!-- Total Qty on Hand (only on first row) -->
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs text-gray-800 align-top"
-                                    >
-                                        {{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}
-                                    </td>
-
-                                    <!-- Reorder Level (only on first row) -->
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs text-gray-800 align-top"
-                                    >
-                                        {{ inventory.reorder_level }}
-                                    </td>
-
-                                    <!-- Status (only on first row) -->
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-2 text-xs align-top"
-                                    >
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.reorder_level }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">
                                         <div class="flex items-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
                                                 <img
@@ -657,13 +531,7 @@ function getResults(page = 1) {
                                             </div>
                                         </div>
                                     </td>
-
-                                    <!-- Actions (only on first row) -->
-                                    <td
-                                        v-if="itemIndex === 0"
-                                        :rowspan="inventory.items.length"
-                                        class="px-3 py-4 whitespace-nowrap text-xs font-medium align-top"
-                                    >
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-4 whitespace-nowrap text-xs font-medium align-top">
                                         <div class="flex items-center space-x-3">
                                             <div v-if="isLowStock(inventory)">
                                                 <img
@@ -708,6 +576,8 @@ function getResults(page = 1) {
                         />
                     </div>
                 </div>
+
+                <!-- Sidebar -->
                 <div class="lg:col-span-1">
                     <div class="sticky top-0 z-10 shadow-sm">
                         <div class="space-y-4">
@@ -716,7 +586,7 @@ function getResults(page = 1) {
                             >
                                 <img
                                     src="/assets/images/in_stock.png"
-                                    class="w-[40px] h-[40px]"
+                                    class="w-[56px] h-[56px]"
                                     alt="In Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -734,7 +604,7 @@ function getResults(page = 1) {
                             >
                                 <img
                                     src="/assets/images/low_stock.png"
-                                    class="w-[40px] h-[40px]"
+                                    class="w-[56px] h-[56px]"
                                     alt="Low Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -752,7 +622,7 @@ function getResults(page = 1) {
                             >
                                 <img
                                     src="/assets/images/out_stock.png"
-                                    class="w-[40px] h-[40px]"
+                                    class="w-[56px] h-[56px]"
                                     alt="Out of Stock"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -770,7 +640,7 @@ function getResults(page = 1) {
                             >
                                 <img
                                     src="/assets/images/expired_stock.png"
-                                    class="w-[40px] h-[40px]"
+                                    class="w-[56px] h-[56px]"
                                     alt="Expired"
                                 />
                                 <div class="ml-4 flex flex-col">
@@ -789,81 +659,171 @@ function getResults(page = 1) {
             </div>
         </div>
 
-        <!-- Excel Upload Modal -->
+        <!-- Add Inventory Modal -->
+        <Modal :show="showAddModal" @close="showAddModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Add New Inventory Item</h2>
+                <form @submit.prevent="submitForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                            <Multiselect
+                                v-model="form.product"
+                                :options="props.products"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select a product"
+                                track-by="id"
+                                label="name"
+                                class="multiselect--with-icon w-full"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                            <input
+                                v-model="form.quantity"
+                                type="number"
+                                min="0"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
+                            <input
+                                v-model="form.batch_number"
+                                type="text"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Manufacturing Date</label>
+                            <input
+                                v-model="form.manufacturing_date"
+                                type="date"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                            <input
+                                v-model="form.expiry_date"
+                                type="date"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea
+                                v-model="form.notes"
+                                rows="3"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <SecondaryButton @click="showAddModal = false">Cancel</SecondaryButton>
+                        <button
+                            type="submit"
+                            :disabled="isSubmitting"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {{ isSubmitting ? 'Adding...' : 'Add Item' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Upload Progress Modal -->
         <Modal :show="showUploadModal" @close="showUploadModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">
-                    Excel Import
-                </h2>
-
-                <div v-if="uploadingFile">
-                    <p class="mb-4">
-                        Uploading and processing your Excel file...
-                    </p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Uploading File</h2>
+                <div class="mb-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
                         <div
-                            class="bg-blue-600 h-2.5 rounded-full"
+                            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             :style="{ width: uploadProgress + '%' }"
                         ></div>
                     </div>
-                    <p class="mt-2 text-sm text-gray-600">
-                        {{ uploadProgress }}% Complete
-                    </p>
+                    <p class="text-sm text-gray-600 mt-2">{{ uploadProgress }}% complete</p>
                 </div>
-
-                <div v-else-if="uploadResults">
-                    <div
-                        class="mb-4 p-4 rounded-md"
-                        :class="{
-                            'bg-green-50 border border-green-200':
-                                uploadResults.success,
-                            'bg-red-50 border border-red-200':
-                                !uploadResults.success,
-                        }"
-                    >
-                        <p
-                            class="font-medium"
-                            :class="{
-                                'text-green-800': uploadResults.success,
-                                'text-red-800': !uploadResults.success,
-                            }"
-                        >
-                            {{ uploadResults.message }}
-                        </p>
-                    </div>
-
-                    <div
-                        v-if="
-                            uploadResults.errors &&
-                            uploadResults.errors.length > 0
-                        "
-                        class="mt-4"
-                    >
-                        <h3 class="font-medium text-gray-900 mb-2">Errors:</h3>
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li
-                                v-for="(error, index) in uploadResults.errors"
-                                :key="index"
-                                class="text-sm text-red-600"
-                            >
-                                {{ error }}
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="mt-6 flex justify-end">
-                        <SecondaryButton
-                            @click="
-                                showUploadModal = false;
-                                uploadResults = null;
-                            "
-                        >
-                            Close
-                        </SecondaryButton>
-                    </div>
+                <div v-if="uploadResults" class="bg-green-50 border border-green-200 rounded-md p-4">
+                    <h3 class="text-sm font-medium text-green-800">Upload Results</h3>
+                    <p class="text-sm text-green-700 mt-1">{{ uploadResults.message }}</p>
                 </div>
             </div>
         </Modal>
 
+        <!-- Slideover for Icon Legend -->
+        <transition name="slide">
+          <div v-if="showLegend" class="fixed inset-0 z-50 flex justify-end">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black bg-opacity-30 transition-opacity" @click="showLegend = false"></div>
+            <!-- Slideover Panel -->
+            <div class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto">
+              <button @click="showLegend = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+              <h2 class="text-lg font-bold text-blue-700 mb-6 mt-2">Icon Legend</h2>
+              <ul class="space-y-5">
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/in_stock.png" class="w-10 h-10" alt="In Stock" />
+                  <div>
+                    <div class="font-semibold text-green-700">In Stock</div>
+                    <div class="text-xs text-gray-500">Indicates items that are sufficiently stocked.</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/low_stock.png" class="w-10 h-10" alt="Low Stock" />
+                  <div>
+                    <div class="font-semibold text-orange-600">Low Stock</div>
+                    <div class="text-xs text-gray-500">Indicates items that are below the reorder level.</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/out_stock.png" class="w-10 h-10" alt="Out of Stock" />
+                  <div>
+                    <div class="font-semibold text-red-600">Out of Stock</div>
+                    <div class="text-xs text-gray-500">Indicates items that are completely out of stock.</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/expired_stock.png" class="w-10 h-10" alt="Expired" />
+                  <div>
+                    <div class="font-semibold text-gray-600">Expired</div>
+                    <div class="text-xs text-gray-500">Indicates items that have expired.</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/soon_expire.png" class="w-10 h-10" alt="Expiring Soon" />
+                  <div>
+                    <div class="font-semibold text-yellow-600">Expiring Soon</div>
+                    <div class="text-xs text-gray-500">Indicates items that will expire soon (within 160 days).</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/reorder_status.png" class="w-10 h-10" alt="Reorder Status" />
+                  <div>
+                    <div class="font-semibold text-blue-600">Reorder Status</div>
+                    <div class="text-xs text-gray-500">Indicates that a reorder is recommended for this item.</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </transition>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.slide-enter-active, .slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-enter-from, .slide-leave-to {
+  transform: translateX(100%);
+}
+.slide-enter-to, .slide-leave-from {
+  transform: translateX(0);
+}
+</style>
