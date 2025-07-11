@@ -371,124 +371,156 @@
                 ></textarea>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="bg-white rounded-xl p-6 mb-[80px]">
-                <div class="flex flex-wrap items-center justify-end gap-4">
-                    <!-- Workflow Actions -->
-                    <div class="flex flex-wrap items-center gap-3">
-                        <!-- Review Button -->
-                        <div class="flex flex-col items-start">
-                            <button 
-                                type="button" 
-                                @click="reviewPO"
-                                :class="[
-                                    'inline-flex items-center gap-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-                                    form.reviewed_at
-                                        ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                                        : isProcessing.review
-                                        ? 'bg-yellow-400 text-white cursor-wait'
-                                        : 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2',
-                                ]"
-                                :disabled="
-                                    isProcessing.review ||
-                                    isProcessing.approve ||
-                                    isProcessing.reject ||
-                                    form.reviewed_at ||
-                                    form.approved_at ||
-                                    form.rejected_at
-                                "
-                            >
-                                <img src="/assets/images/review.png" alt="Review" class="h-5 w-5 object-contain" />
-                                {{ form.reviewed_at ? "Reviewed on " + formatDate(form.reviewed_at) : isProcessing.review ? "Processing..." : "Review" }}
-                            </button>
-                            <div v-if="form.reviewed_at" class="mt-2 text-left">
-                                <div class="text-xs font-medium text-start text-gray-700">by {{ form.reviewed_by?.name }}</div>
+            <!-- Purchase Order Status Actions -->
+            <div class="mt-8 mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
+                    Purchase Order Status Actions
+                </h3>
+                <div class="flex justify-start items-center mb-6">
+                    <!-- Status Action Buttons -->
+                    <div class="flex flex-wrap items-center justify-start gap-4">
+                        <!-- Pending status indicator -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button :class="[
+                                    form.reviewed_at || form.approved_at || form.rejected_at
+                                        ? 'bg-green-500'
+                                        : 'bg-green-500 hover:bg-green-600'
+                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]"
+                                    disabled>
+                                    <img src="/assets/images/pending.png" class="w-5 h-5 mr-2" alt="Pending" />
+                                    <span class="text-sm font-bold text-white">Pending since {{
+                                        moment(props.po?.created_at).format('DD/MM/YYYY HH:mm') }}</span>
+                                </button>
                             </div>
+                            <span v-show="props.po?.user" class="text-sm text-gray-600">
+                                By {{ props.po?.user?.name || 'System' }}
+                            </span>
                         </div>
 
-                        <!-- Approve Button -->
-                        <div class="flex flex-col items-start">
-                            <button 
-                                type="button" 
-                                @click="approvePO"
-                                :class="[
-                                    'inline-flex items-center gap-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-                                    form.approved_at
-                                        ? 'bg-green-50 text-green-700 border border-green-200'
-                                        : isProcessing.approve
-                                        ? 'bg-green-400 text-white cursor-wait'
-                                        : !form.reviewed_at
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-                                ]"
-                                :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at"
-                            >
-                                <img src="/assets/images/approved.png" alt="Approve" class="h-5 w-5 object-contain" />
-                                {{ form.approved_at ? 'Approved on ' + formatDate(form.approved_at) : isProcessing.approve ? 'Processing...' : 'Approve' }}
-                            </button>
-                            <div v-if="form.approved_at" class="mt-2 text-left">
-                                <div class="text-xs font-medium text-start text-gray-700">by {{ form.approved_by?.name }}</div>
+                        <!-- Review button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="reviewPO"
+                                    :class="[
+                                        form.reviewed_at
+                                            ? 'bg-green-500'
+                                            : form.approved_at || form.rejected_at
+                                            ? 'bg-gray-300 cursor-not-allowed'
+                                            : 'bg-yellow-500 hover:bg-yellow-600'
+                                    ]"
+                                    :disabled="
+                                        isProcessing.review ||
+                                        isProcessing.approve ||
+                                        isProcessing.reject ||
+                                        form.reviewed_at ||
+                                        form.approved_at ||
+                                        form.rejected_at
+                                    "
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        form.reviewed_at
+                                            ? "Reviewed on " + moment(form.reviewed_at).format('DD/MM/YYYY HH:mm')
+                                            : "Waiting to be Reviewed"
+                                    }}</span>
+                                </button>
+                                <span v-show="form.reviewed_by" class="text-sm text-gray-600">
+                                    By {{ form.reviewed_by?.name }}
+                                </span>
                             </div>
+                            <div v-if="!form.reviewed_at && !form.approved_at && !form.rejected_at"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
-                        <!-- Reject Button -->
-                        <div class="flex flex-col items-center">
-                            <button 
-                                v-if="!form.approved_at" 
-                                type="button" 
-                                @click="rejectPO"
-                                :class="[
-                                    'inline-flex items-center gap-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-                                    form.rejected_at
-                                        ? 'bg-red-50 text-red-700 border border-red-200'
-                                        : !form.reviewed_at
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : isProcessing.reject
-                                        ? 'bg-red-400 text-white cursor-wait'
-                                        : 'bg-red-500 text-white hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2',
-                                ]"
-                                :disabled="
-                                    isProcessing.review ||
-                                    isProcessing.approve ||
-                                    isProcessing.reject ||
-                                    !form.reviewed_at ||
-                                    form.rejected_at ||
-                                    form.approved_at
-                                "
-                            >
-                                <img src="/assets/images/rejected.png" alt="Reject" class="h-5 w-5 object-contain" />
-                                {{ form.rejected_at ? "Rejected on " + formatDate(form.rejected_at) : isProcessing.reject ? "Processing..." : "Reject" }}
-                            </button>
-                            <div v-if="form.rejected_at" class="mt-2 text-center">
-                                <div class="text-xs font-medium text-start text-gray-700">by {{ form.rejected_by?.name }}</div>
+                        <!-- Approve button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="approvePO"
+                                    :class="[
+                                        form.approved_at
+                                            ? 'bg-green-500'
+                                            : !form.reviewed_at || form.rejected_at
+                                            ? 'bg-gray-300 cursor-not-allowed'
+                                            : 'bg-green-500 hover:bg-green-600'
+                                    ]"
+                                    :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at"
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        form.approved_at
+                                            ? "Approved on " + moment(form.approved_at).format('DD/MM/YYYY HH:mm')
+                                            : "Waiting to be Approved"
+                                    }}</span>
+                                </button>
+                                <span v-show="form.approved_by" class="text-sm text-gray-600">
+                                    By {{ form.approved_by?.name }}
+                                </span>
                             </div>
+                            <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                        </div>
+
+                        <!-- Reject button -->
+                        <div class="relative" v-if="!form.approved_at">
+                            <div class="flex flex-col">
+                                <button @click="rejectPO"
+                                    :class="[
+                                        form.rejected_at
+                                            ? 'bg-red-500'
+                                            : !form.reviewed_at
+                                            ? 'bg-gray-300 cursor-not-allowed'
+                                            : 'bg-red-500 hover:bg-red-600'
+                                    ]"
+                                    :disabled="
+                                        isProcessing.review ||
+                                        isProcessing.approve ||
+                                        isProcessing.reject ||
+                                        !form.reviewed_at ||
+                                        form.rejected_at ||
+                                        form.approved_at
+                                    "
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        form.rejected_at
+                                            ? "Rejected on " + moment(form.rejected_at).format('DD/MM/YYYY HH:mm')
+                                            : "Waiting to be Rejected"
+                                    }}</span>
+                                </button>
+                                <span v-show="form.rejected_by" class="text-sm text-gray-600">
+                                    By {{ form.rejected_by?.name }}
+                                </span>
+                            </div>
+                            <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Form Actions -->
-                    <div class="flex items-center gap-3 mb-[80px]">
-                        <button 
-                            type="button" 
-                            @click="router.visit(route('supplies.index'))" 
-                            :disabled="isSubmitting"
-                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-                        >
-                            Exit
-                        </button>
-                        <button 
-                            v-if="!form.approved_at" 
-                            type="button" 
-                            @click="submitForm" 
-                            :disabled="isSubmitting"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-                        >
-                            <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {{ isSubmitting ? "Updating..." : "Update Changes" }}
-                        </button>
-                    </div>
+                <!-- Form Actions -->
+                <div class="flex items-center justify-end gap-3">
+                    <button 
+                        type="button" 
+                        @click="router.visit(route('supplies.index'))" 
+                        :disabled="isSubmitting"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                    >
+                        Exit
+                    </button>
+                    <button 
+                        v-if="!form.approved_at" 
+                        type="button" 
+                        @click="submitForm" 
+                        :disabled="isSubmitting"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                    >
+                        <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ isSubmitting ? "Updating..." : "Update Changes" }}
+                    </button>
                 </div>
             </div>
         </div>

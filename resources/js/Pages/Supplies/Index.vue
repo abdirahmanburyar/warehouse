@@ -280,54 +280,65 @@
                     <div class="grid grid-cols-12 gap-6">
                         <!-- Table Column (10/12) -->
                         <div class="col-span-12 lg:col-span-10">
+                            <!-- Icon Legend Button -->
+                            <div class="flex justify-end mb-4">
+                                <button @click="showIconLegend = true"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Icon Legend
+                                </button>
+                            </div>
+
                             <div class="overflow-x-auto">
-                                <table class="min-w-full border border-gray-300">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-[#EFF6FF]">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300 rounded-tl-3xl">
                                                 SN#
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300">
                                                 PO Number
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300">
                                                 Supplier
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300">
                                                 P.O Date
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300">
                                                 Total Amount
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300">
                                                 Status
                                             </th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                            <th class="px-6 py-4 text-left text-xs font-semibold text-[#979ECD] uppercase tracking-wider border-b border-gray-300 rounded-tr-3xl">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white">
                                         <tr v-for="(po, i) in props.purchaseOrders.data" :key="po.id" class="hover:bg-gray-50 transition-colors duration-150">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-b border-gray-300">
                                                 {{ i + 1 }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-b border-gray-300">
                                                 <Link :href="route('supplies.editPO', po.id)"
                                                     class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                                                     {{ po.po_number }}
                                                 </Link>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-300">
                                                 {{ po.supplier?.name || 'No supplier' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-300">
                                                 {{ moment(po.po_date).format('DD/MM/YYYY') }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-300">
                                                 {{ formatCurrency(po.items_sum_total_cost || 0) }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm border-b border-gray-300">
                                                 <div class="flex items-center space-x-2">
                                                     <!-- Always show Pending Icon (all statuses start as pending) -->
                                                     <img src="/assets/images/pending.png" class="w-6 h-6"
@@ -351,7 +362,7 @@
                                                     </svg>
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-gray-300">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border-b border-gray-300">
                                                 <div class="flex items-center space-x-3">
                                                     <button @click="router.visit(route('supplies.po-show', po.id))"
                                                         class="text-gray-600 hover:text-gray-900 transition-colors duration-200 p-1 rounded-md hover:bg-gray-100"
@@ -384,7 +395,7 @@
                                             </td>
                                         </tr>
                                         <tr v-if="!purchaseOrders?.data?.length">
-                                            <td colspan="7" class="px-6 py-12 text-center border border-gray-300">
+                                            <td colspan="7" class="px-6 py-12 text-center border-b border-gray-300">
                                                 <div class="text-center">
                                                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -519,6 +530,114 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Icon Legend Slideover -->
+                <TransitionRoot as="template" :show="showIconLegend">
+                    <Dialog as="div" class="relative z-50" @close="showIconLegend = false">
+                        <TransitionChild as="template" enter="ease-in-out duration-500" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in-out duration-500" leave-from="opacity-100" leave-to="opacity-0">
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                        </TransitionChild>
+
+                        <div class="fixed inset-0 overflow-hidden">
+                            <div class="absolute inset-0 overflow-hidden">
+                                <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                                    <TransitionChild as="template" enter="transform transition ease-in-out duration-500 sm:duration-700" enter-from="translate-x-full" enter-to="translate-x-0" leave="transform transition ease-in-out duration-500 sm:duration-700" leave-from="translate-x-0" leave-to="translate-x-full">
+                                        <DialogPanel class="pointer-events-auto w-screen max-w-md">
+                                            <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
+                                                <div class="px-4 sm:px-6">
+                                                    <div class="flex items-start justify-between">
+                                                        <DialogTitle class="text-lg font-semibold text-gray-900">Icon Legend</DialogTitle>
+                                                        <div class="ml-3 flex h-7 items-center">
+                                                            <button type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" @click="showIconLegend = false">
+                                                                <span class="sr-only">Close panel</span>
+                                                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="relative mt-6 flex-1 px-4 sm:px-6">
+                                                    <div class="space-y-6">
+                                                        <!-- Status Icons -->
+                                                        <div>
+                                                            <h3 class="text-sm font-medium text-gray-900 mb-4">Purchase Order Status</h3>
+                                                            <div class="space-y-4">
+                                                                <div class="flex items-center space-x-3">
+                                                                    <img src="/assets/images/pending.png" class="w-6 h-6" alt="Pending" />
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Pending</p>
+                                                                        <p class="text-xs text-gray-500">Order is waiting for review</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-3">
+                                                                    <img src="/assets/images/review.png" class="w-8 h-8" alt="Reviewed" />
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Reviewed</p>
+                                                                        <p class="text-xs text-gray-500">Order has been reviewed</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-3">
+                                                                    <img src="/assets/images/approved.png" class="w-6 h-6" alt="Approved" />
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Approved</p>
+                                                                        <p class="text-xs text-gray-500">Order has been approved</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-3">
+                                                                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Rejected</p>
+                                                                        <p class="text-xs text-gray-500">Order has been rejected</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Action Icons -->
+                                                        <div>
+                                                            <h3 class="text-sm font-medium text-gray-900 mb-4">Actions</h3>
+                                                            <div class="space-y-4">
+                                                                <div class="flex items-center space-x-3">
+                                                                    <EyeIcon class="h-4 w-4 text-gray-600" />
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">View</p>
+                                                                        <p class="text-xs text-gray-500">View purchase order details</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-3">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                                                        <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Edit</p>
+                                                                        <p class="text-xs text-gray-500">Edit purchase order</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-3">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900">Delete</p>
+                                                                        <p class="text-xs text-gray-500">Delete purchase order</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </DialogPanel>
+                                    </TransitionChild>
+                                </div>
+                            </div>
+                        </div>
+                    </Dialog>
+                </TransitionRoot>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -547,6 +666,7 @@ const showSupplyDropdown = ref(false);
 const supplyDropdownRef = ref(null);
 const backOrderDropdownRef = ref(null);
 const showBackOrderDropdown = ref(false);
+const showIconLegend = ref(false);
 
 const toggleDropdown = () => {
     showDropdown.value = !showDropdown.value;

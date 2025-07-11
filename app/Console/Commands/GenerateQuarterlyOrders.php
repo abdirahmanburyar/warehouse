@@ -220,7 +220,7 @@ class GenerateQuarterlyOrders extends Command
                 $orderId = DB::table('orders')->insertGetId([
                     'facility_id' => $facility->id,
                     'order_number' => $orderNumber,
-                    'order_type' => 'Quarterly-'.$targetQuarter,
+                    'order_type' => 'Quarterly Q-'.$targetQuarter,
                     'status' => 'pending',
                     'order_date' => Carbon::create($year, ($targetQuarter - 1) * 3 + 1, 1),
                     'expected_date' => Carbon::create($year, ($targetQuarter - 1) * 3 + 1, 1)->addDays(7),

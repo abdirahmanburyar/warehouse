@@ -283,6 +283,7 @@ class LiquidateDisposalController extends Controller
                 $disposal->approved_by = Auth::id();
                 $disposal->save();
             }        
+            logger()->info("Disposal Approved");
             return response()->json("Disposal Approved", 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
