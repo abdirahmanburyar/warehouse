@@ -110,8 +110,8 @@
         </div>
 
         <!-- Packing Lists Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
-            <div class="px-6 py-4 border-b border-gray-200">
+        <div class="mb-[80px]">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-tl-lg rounded-tr-lg">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Packing Lists</h3>
                     <div class="flex items-center space-x-4">
@@ -131,39 +131,39 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="overflow-auto">
+                <table class="w-full table-sm">
+                    <thead style="background-color: #F4F7FB;">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase rounded-tl-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Packing List
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Supplier
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Date
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Items
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Total Cost
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Fulfillment Rate
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Status
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="text-left text-xs font-bold uppercase rounded-tr-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="packingList in props.packingLists.data" :key="packingList.id" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                    <tbody class="bg-white">
+                        <tr v-for="packingList in props.packingLists.data" :key="packingList.id" class="hover:bg-gray-50 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <Link
                                     :href="route('supplies.packing-list.edit', packingList.id)"
                                     class="flex flex-col text-blue-600 hover:text-blue-500"
@@ -173,28 +173,28 @@
                                 
                                 </Link>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div class="text-sm text-gray-900">{{ packingList.purchase_order?.supplier?.name }}</div>
                                 <div class="text-sm text-gray-500">{{ packingList.purchase_order?.supplier?.contact_person }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ formatDate(packingList.pk_date) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ packingList.items?.length || 0 }} items
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 ${{ formatNumber(calculateTotalCost(packingList)) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ packingList.fulfillment_rate }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <span :class="getStatusClasses(packingList.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
                                     {{ packingList.status }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium border border-gray-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-2">
                                     <Link
                                         :href="route('supplies.packing-list.show', packingList.id)"

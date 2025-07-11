@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout
         title="Packing List"
-        img="images/assets/orders.png"
+        img="/assets/images/orders.png"
         description="Manage your packing list"
     >
         <!-- Back Navigation -->
@@ -159,7 +159,7 @@
 
         <!-- Items Section -->
         <div v-if="!isLoading && form" class="mt-4 w-full">
-            <table class="min-w-full divide-y divide-gray-200 table-auto">
+            <table class="w-full table-sm">
                 <colgroup>
                     <col class="w-8" />
                     <col class="w-48" />
@@ -169,69 +169,73 @@
                     <col class="w-32" />
                     <col class="w-28" />
                 </colgroup>
-                <thead class="bg-gray-50 border border-black">
+                <thead style="background-color: #F4F7FB;">
                     <tr>
-                        <th class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10 w-8">#</th>
-                        <th class="text-left text-xs text-black capitalize sticky left-8 bg-gray-50 z-10 w-48">Item</th>
-                        <th class="text-left text-xs text-black capitalize">Qty</th>
-                        <th class="text-left text-xs text-black capitalize">Warehouse</th>
-                        <th class="text-left text-xs text-black capitalize">Locations</th>
-                        <th class="text-left text-xs text-black capitalize">Item Detail</th>
-                        <th class="text-left text-xs text-black capitalize">Cost (Unit/Total)</th>
-                        <th class="text-left text-xs text-black capitalize">Fullfillment</th>
+                        <th class="text-left text-xs font-bold uppercase rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+                            #
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase sticky left-8 z-10 w-48" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Item
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Qty
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Warehouse
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Locations
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Item Detail
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Cost (Unit/Total)
+                        </th>
+                        <th class="text-left text-xs font-bold uppercase rounded-tr-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                            Fullfillment
+                        </th>
                     </tr>
                 </thead>
-                <tbody class="text-xs">
+                <tbody class="bg-white">
                     <tr v-for="(item, index) in form.items" :key="index"
-                        :class="[
-                            'hover:bg-gray-50',
-                            {
-                                'bg-red-50': hasIncompleteBackOrder(item),
-                            },
-                            {
-                                'border-red-500 border-2': item.hasError,
-                            },
-                            { 'bg-red-50/20': item.hasError },
-                        ]"
+                        :class="{
+                            'hover:bg-gray-50': true,
+                            'bg-red-50': hasIncompleteBackOrder(item),
+                            'border-red-500 border-2': item.hasError,
+                            'bg-red-50/20': item.hasError,
+                        }"
+                        style="border: 1px solid #B7C6E6;"
                         :data-row="index + 1"
                     >
-                        <td :class="[
-                            'text-sm text-gray-500 align-middle sticky left-0 z-10 bg-white w-8',
-                            {
-                                'border-green-600 border-2': item.status === 'approved',
-                            },
-                            {
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                            },
-                            {
-                                'border-black border': !item.status || item.status === 'pending',
-                            },
-                        ]">
-                            {{ index + 1 }}
-                        </td>
-                        <td class="sticky left-8 z-10 bg-white whitespace-normal break-words w-48"
+                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-0 z-10 bg-white w-8"
                             :class="{
                                 'border-green-600 border-2': item.status === 'approved',
                                 'border-yellow-500 border-2': item.status === 'reviewed',
                                 'border-black border': !item.status || item.status === 'pending',
-                            }">
+                            }"
+                            style="border: 1px solid #B7C6E6;">
+                            {{ index + 1 }}
+                        </td>
+                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-8 z-10 bg-white w-48"
+                            :class="{
+                                'border-green-600 border-2': item.status === 'approved',
+                                'border-yellow-500 border-2': item.status === 'reviewed',
+                                'border-black border': !item.status || item.status === 'pending',
+                            }"
+                            style="border: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
                                 {{ item.product?.name }}
                                 <span class="font-bold mt-2">UoM: {{ item.uom }}</span>
                             </div>
                         </td>
-                        <td :class="[
-                            {
+                        <td class="whitespace-nowrap text-xs text-gray-900"
+                            :class="{
                                 'border-green-600 border-2': item.status === 'approved',
-                            },
-                            {
                                 'border-yellow-500 border-2': item.status === 'reviewed',
-                            },
-                            {
                                 'border-black border': !item.status || item.status === 'pending',
-                            },
-                            'px-3 py-2',
-                        ]">
+                            }"
+                            style="border: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
                                 <div>
                                     <input type="number" v-model="item.quantity" readonly
@@ -261,34 +265,26 @@
                                 </div>
                             </div>
                         </td>
-                        <td :class="[
-                            {
+                        <td class="whitespace-nowrap text-xs text-gray-900"
+                            :class="{
                                 'border-green-600 border-2': item.status === 'approved',
-                            },
-                            {
                                 'border-yellow-500 border-2': item.status === 'reviewed',
-                            },
-                            {
                                 'border-black border': !item.status || item.status === 'pending',
-                            },
-                        ]">
+                            }"
+                            style="border: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.warehouse" :value="item.warehouse_id" :options="props.warehouses"
                                 :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 placeholder="Select Warehouse" required track-by="id" :disabled="item.status === 'approved'"
                                 :append-to-body="true" label="name" @select="hadleWarehouseSelect(index, $event)">
                             </Multiselect>
                         </td>
-                        <td :class="[
-                            {
+                        <td class="whitespace-nowrap text-xs text-gray-900"
+                            :class="{
                                 'border-green-600 border-2': item.status === 'approved',
-                            },
-                            {
                                 'border-yellow-500 border-2': item.status === 'reviewed',
-                            },
-                            {
                                 'border-black border': !item.status || item.status === 'pending',
-                            },
-                        ]">
+                            }"
+                            style="border: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.location" :value="item.location_id" required
                                 :disabled="item.status === 'approved' || !item.warehouse_id"
                                 :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]" :searchable="true"
@@ -302,11 +298,12 @@
                                 </template>
                             </Multiselect>
                         </td>
-                        <td class="px-1 py-1" :class="{
+                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" :class="{
                             'border-green-600 border-2': item.status === 'approved',
                             'border-yellow-500 border-2': item.status === 'reviewed',
                             'border-black border': !item.status || item.status === 'pending',
-                        }">
+                        }"
+                        style="border-bottom: 1px solid #B7C6E6;">
                             <div class="space-y-1">
                                 <div>
                                     <label class="text-[10px] text-block">Batch</label>
@@ -330,11 +327,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-2 py-2 whitespace-nowrap" :class="{
+                        <td class="whitespace-nowrap text-xs text-gray-900" :class="{
                             'border-green-600 border-2': item.status === 'approved',
                             'border-yellow-500 border-2': item.status === 'reviewed',
-                            'border border-black': !item.status || item.status === 'pending',
-                        }">
+                            'border-black border': !item.status || item.status === 'pending',
+                        }"
+                        style="border: 1px solid #B7C6E6;">
                             <div class="flex flex-col space-y-1">
                                 <div class="text-sm">
                                     <span class="text-gray-500 text-xs">Unit: </span>
@@ -346,18 +344,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td :class="[
-                            {
-                                'border-green-600 border-2': item.status === 'approved',
-                            },
-                            {
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                            },
-                            {
-                                'border-gray-500 border': !item.status || item.status === 'pending',
-                            },
-                            'text-left',
-                        ]">
+                        <td class="whitespace-nowrap text-xs text-gray-900 text-left" :class="{
+                            'border-green-600 border-2': item.status === 'approved',
+                            'border-yellow-500 border-2': item.status === 'reviewed',
+                            'border-gray-500 border': !item.status || item.status === 'pending',
+                        }"
+                        style="border: 1px solid #B7C6E6;">
                             <div class="space-y-2">
                                 <div class="flex items-center flex-col">
                                     <span>{{ calculateFulfillmentRate(item) }}%</span>
