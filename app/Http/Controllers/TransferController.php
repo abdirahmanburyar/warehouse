@@ -726,7 +726,8 @@ class TransferController extends Controller
         return inertia('Transfer/Create', [
             'warehouses' => $warehouses,
             'facilities' => $facilities,
-            'transferID' => $transferID
+            'transferID' => $transferID,
+            'reasons' => Reason::pluck('name')->toArray()
         ]);
     }
     
