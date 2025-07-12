@@ -657,51 +657,61 @@ class TransferController extends Controller
     }
 
     public function show($id){
-       try {
-        $transfer = Transfer::where('id', $id)->with([
-            'items.product.category', 
-            'items.differences', 
-            'fromWarehouse', 
-            'toWarehouse', 
-            'fromFacility', 
-            'toFacility',
-            'dispatchInfo',
-            'items.inventory_allocations.location',
-            'items.inventory_allocations.differences',
-            'dispatchInfo.driver',
-            'dispatchInfo.logistic_company',
-            'reviewedBy', 'approvedBy', 'processedBy','dispatchedBy','deliveredBy','receivedBy','rejectedBy'
-        ])->first();
+        try {
+            DB::beginTransaction();
 
+            $transfer = Transfer::where('id', $id)
+            ->with([
+                'items.product.category',
+                'dispatch',
+                'items.inventory_allocations.location',
+                'items.differences', 
+                'backorders', 
+                'toFacility', 
+                'fromFacility',
+                'toWarehouse',
+                'fromWarehouse',
+                'user',
+                'reviewedBy', 
+                'approvedBy', 
+                'processedBy',
+                'dispatchedBy',
+                'deliveredBy',
+                'receivedBy'
+            ])
+            ->first();
 
-        // Get drivers with their companies
-        $drivers = Driver::with('company')->where('is_active', true)->get();
+            // Get drivers with their companies
+            $drivers = Driver::with('company')->where('is_active', true)->get();
+                
+            // Get all companies for the driver form
+            $companyOptions = LogisticCompany::where('is_active', true)
+                ->get()
+                ->map(function($company) {
+                    return [
+                        'id' => $company->id,
+                        'name' => $company->name,
+                        'isAddNew' => false
+                    ];
+                })
+                ->push([
+                    'id' => 'new',
+                    'name' => 'Add New Company',
+                    'isAddNew' => true
+                ]);
             
-        // Get all companies for the driver form
-        $companyOptions = LogisticCompany::where('is_active', true)
-            ->get()
-            ->map(function($company) {
-                return [
-                    'id' => $company->id,
-                    'name' => $company->name,
-                    'isAddNew' => false
-                ];
-            })
-            ->push([
-                'id' => 'new',
-                'name' => 'Add New Company',
-                'isAddNew' => true
+            DB::commit();
+            return inertia('Transfer/Show', [
+                'transfer' => $transfer,
+                'drivers' => $drivers,
+                'companyOptions' => $companyOptions
             ]);
-
-        return inertia('Transfer/Show', [
-            'transfer' => $transfer,
-            'drivers' => $drivers,
-            'companyOptions' => $companyOptions
-        ]);
-       } catch (\Throwable $th) {
-        logger()->error($th->getMessage());
-        return redirect()->back()->with('error', $th->getMessage());
-       }
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            logger()->error('Transfer show error: ' . $th->getMessage());
+            logger()->error('Stack trace: ' . $th->getTraceAsString());
+            return redirect()->back()->with('error', 'An error occurred while loading the transfer');    
+        }
     }
     
     public function create(Request $request){

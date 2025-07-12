@@ -24,6 +24,7 @@ class Transfer extends Model
         'created_by',  
         'status',
         'expected_date',
+        'notes',
         'dispatched_by',
         'approved_by',
         'approved_at',
@@ -116,8 +117,122 @@ class Transfer extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
-    public function dispatchInfo()
+    public function dispatch()
     {
         return $this->hasMany(DispatchInfo::class);
+    }
+
+    public function backorders()
+    {
+        return $this->hasMany(BackOrder::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    
+    /**
+     * Get the source name (warehouse or facility)
+     */
+    public function getSourceNameAttribute()
+    {
+        if ($this->from_warehouse_id) {
+            return $this->fromWarehouse->name ?? 'Unknown Warehouse';
+        }
+        return $this->fromFacility->name ?? 'Unknown Facility';
+    }
+    
+    /**
+     * Get the destination name (warehouse or facility)
+     */
+    public function getDestinationNameAttribute()
+    {
+        if ($this->to_warehouse_id) {
+            return $this->toWarehouse->name ?? 'Unknown Warehouse';
+        }
+        return $this->toFacility->name ?? 'Unknown Facility';
+    }
+    
+    /**
+     * Check if transfer is in a state that allows editing
+     */
+    public function isEditable()
+    {
+        return in_array($this->status, ['pending']);
+    }
+    
+    /**
+     * Check if transfer is in a state that allows deletion
+     */
+    public function isDeletable()
+    {
+        return in_array($this->status, ['pending']);
+    }
+    
+    /**
+     * Get total quantity of all items in the transfer
+     */
+    public function getTotalQuantityAttribute()
+    {
+        return $this->items->sum('quantity');
+    }
+    
+    /**
+     * Get total received quantity of all items in the transfer
+     */
+    public function getTotalReceivedQuantityAttribute()
+    {
+        return $this->items->sum('received_quantity');
+    }
+    
+    /**
+     * Get completion percentage
+     */
+    public function getCompletionPercentageAttribute()
+    {
+        $totalQuantity = $this->total_quantity;
+        if ($totalQuantity == 0) return 0;
+        
+        return round(($this->total_received_quantity / $totalQuantity) * 100);
+    }
+    
+    /**
+     * Scope to filter transfers by status
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+    
+    /**
+     * Scope to filter transfers by direction (in/out) for current user
+     */
+    public function scopeByDirection($query, $direction)
+    {
+        $user = auth()->user();
+        $userFacilityId = $user->facility_id;
+        $userWarehouseId = $user->warehouse_id;
+        
+        if ($direction === 'in') {
+            return $query->where(function($q) use ($userFacilityId, $userWarehouseId) {
+                $q->where('to_facility_id', $userFacilityId)
+                  ->orWhere('to_warehouse_id', $userWarehouseId);
+            });
+        }
+        
+        if ($direction === 'out') {
+            return $query->where(function($q) use ($userFacilityId, $userWarehouseId) {
+                $q->where('from_facility_id', $userFacilityId)
+                  ->orWhere('from_warehouse_id', $userWarehouseId);
+            });
+        }
+        
+        return $query;
+    }
+
+    public function getTransferIDAttribute($value)
+    {
+        return $value;
     }
 }

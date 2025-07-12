@@ -12,17 +12,17 @@ class InventoryAllocation extends Model
         'product_id',
         'warehouse_id',
         'location',
-        'location_id',
         'batch_number',
         'expiry_date',
         'allocated_quantity',
         'received_quantity',
         'allocation_type',
+        'updated_quantity',
+        'transfer_reason',
         'unit_cost',
         'total_cost',
         'notes',
-        'uom',
-        'transfer_reason'
+        'uom'
     ];
 
     public function product(){
@@ -45,7 +45,11 @@ class InventoryAllocation extends Model
         return $this->belongsTo(OrderItem::class);
     }
 
-    public function back_order(){
-        return $this->hasMany(FacilityBackorder::class, 'inventory_allocation_id');
+    public function differences(){
+        return $this->hasMany(PackingListDifference::class, 'inventory_allocation_id');
+    }
+
+    public function backorders(){
+        return $this->hasManyThrough(BackOrder::class, PackingListDifference::class, 'inventory_allocation_id', 'id', 'id', 'back_order_id');
     }
 }
