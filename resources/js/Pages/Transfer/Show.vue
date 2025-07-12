@@ -2,7 +2,7 @@
     <AuthenticatedLayout title="Transfer Details" description="Transfer Details" img="/assets/images/transfer.png">
         <div class="container mx-auto">
             <!-- Transfer Header -->
-            <div class="mb-6 px-6 py-6 bg-white rounded-lg shadow-sm">
+            <div class="mb-6 bg-white rounded-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-bold text-gray-800">
                         Transfer Details
@@ -225,7 +225,7 @@
 
                 <!-- Status Stage Timeline -->
                 <div v-if="props.transfer.status == 'rejected'">
-                    <div class="flex flex-col items-center">
+                    <div class="flex flex-col items-center mt-3">
                         <div
                             class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10 bg-white border-red-500">
                             <img src="/assets/images/rejected.png" class="w-7 h-7" alt="Rejected" />
@@ -233,7 +233,7 @@
                         <h1 class="mt-3 text-2xl text-red-600 font-bold ">Rejected</h1>
                     </div>
                 </div>
-                <div v-else class="col-span-2 mb-6">
+                <div v-else class="col-span-2 mb-6 mt-3">
                     <div class="relative">
                         <!-- Timeline Track Background -->
                         <div class="absolute top-7 left-0 right-0 h-2 bg-gray-200 z-0"></div>
@@ -420,47 +420,47 @@
                         </div>
                     </div>
 
-                    <div class="bg-white shadow-xl border border-gray-200 overflow-hidden">
+                    <div class="bg-white overflow-hidden">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                            <table class="min-w-full text-sm text-left table-sm">
                                 <thead>
                                     <tr style="background-color: #F4F7FB;">
-                                        <th class="min-w-[300px] px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="min-w-[300px] px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB;" rowspan="2">
                                             Item Name
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             Category
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             UoM
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">
+                                        <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB;" colspan="4">
                                             Item Details
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             Total Quantity on Hand Per Unit
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             Transfer Reason
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             Quantity to Transfer
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB;" rowspan="2">
                                             Received Quantity
                                         </th>
                                     </tr>
                                     <tr style="background-color: #F4F7FB;">
-                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
+                                        <th class="px-2 py-1 text-xs font-bold text-center" style="color: #4F6FCB;">
                                             QTY
                                         </th>
-                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
+                                        <th class="px-2 py-1 text-xs font-bold text-center" style="color: #4F6FCB;">
                                             Batch Number
                                         </th>
-                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
+                                        <th class="px-2 py-1 text-xs font-bold text-center" style="color: #4F6FCB;">
                                             Expiry Date
                                         </th>
-                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
+                                        <th class="px-2 py-1 text-xs font-bold text-center" style="color: #4F6FCB;">
                                             Location
                                         </th>
                                     </tr>
@@ -474,13 +474,13 @@
                                         class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                         <!-- Item Name -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top">
+                                            class="px-3 py-2 text-xs font-medium text-gray-800 align-top items-center">
                                             {{ item.product?.name || "N/A" }}
                                         </td>
 
                                         <!-- Category -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top">
+                                            class="px-3 py-2 text-xs text-gray-700 align-top items-center">
                                             {{
                                                 item.product?.category?.name ||
                                                 "N/A"
@@ -489,12 +489,12 @@
 
                                         <!-- UoM Column -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-left text-black align-top">
+                                            class="px-3 py-2 text-xs text-gray-700 align-top items-center">
                                             {{ item.inventory_allocations?.[0]?.uom || "N/A" }}
                                         </td>
 
                                         <!-- Quantity -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             {{
                                                 allocation.allocated_quantity ||
                                                 0
@@ -502,14 +502,14 @@
                                         </td>
 
                                         <!-- Batch Number -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             {{
                                                 allocation.batch_number || "N/A"
                                             }}
                                         </td>
 
                                         <!-- Expiry Date -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center">
                                             <span :class="{
                                                 'text-red-600':
                                                     isExpiringItem(
@@ -525,23 +525,23 @@
                                         </td>
 
                                         <!-- Location -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             {{ allocation.location || "N/A" }}
                                         </td>
 
                                         <!-- Total Quantity per Unit -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
-                                            class="px-2 py-1 text-xs border border-black text-center text-black align-top">
+                                            class="px-3 py-2 text-xs text-gray-800 align-top items-center">
                                             {{ item.quantity_per_unit || 0 }}
                                         </td>
 
                                         <!-- Transfer Reason - per allocation -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             {{ allocation.transfer_reason || "N/A" }}
                                         </td>
 
                                         <!-- Quantity to Transfer - per allocation -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             <div class="flex flex-col items-center gap-1">
                                                 <span class="font-medium">{{ allocation.allocated_quantity || 0 }}</span>
                                                 <!-- v-if="props.transfer.status === 'pending' && allocation.id" -->
@@ -550,7 +550,7 @@
                                                     type="number" 
                                                     :placeholder="allocation.allocated_quantity || 0"
                                                     min="1"
-                                                    class="w-full text-center border border-black px-1 py-1 text-xs" 
+                                                    class="w-full text-center border border-gray-300 rounded px-1 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
                                                     @input="handleQuantityInput($event, allocation)"
                                                 />
                                                 <span class="text-xs text-gray-500" v-if="isUpdatingQuantity[allocation.id]">
@@ -560,7 +560,7 @@
                                         </td>
 
                                         <!-- Received Quantity - per allocation -->
-                                        <td class="px-2 py-1 text-xs border border-black text-center text-black">
+                                        <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             <input 
                                                 type="number" 
                                                 v-model="allocation.received_quantity" 
@@ -568,11 +568,11 @@
                                                 :max="allocation.allocated_quantity || 0"
                                                 min="0"
                                                 @input="validateAllocationReceivedQuantity(allocation)"
-                                                class="w-20 text-center border border-black px-2 py-1 text-sm" 
+                                                class="w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
                                             />
                                             <button 
                                                 v-if="(allocation.allocated_quantity || 0) > (allocation.received_quantity || 0)"
-                                                @click="showBackOrderModal(item, allocation)"
+                                                @click="openBackOrderModal(item, allocation)"
                                                 class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block">
                                                 Back Order
                                             </button>
@@ -595,7 +595,7 @@
                     </h2>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-lg divide-y divide-gray-200">
+                <div class="bg-white rounded-lg divide-y divide-gray-200">
                     <div v-for="dispatch in props.transfer.dispatchInfo" :key="dispatch.id" class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Driver & Company Info -->
@@ -682,7 +682,7 @@
 
 
             <!-- Dispatch Information -->
-            <div class="p-4 bg-white rounded-lg shadow-xl"
+            <div class="p-4 bg-white rounded-lg"
                 v-if="props.transfer.status === 'dispatched' && props.transfer.dispatch_info?.length > 0">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-800">
@@ -769,7 +769,7 @@
             </div>
 
             <!-- Transfer actions -->
-            <div class="mt-8 mb-[80px] bg-white rounded-lg shadow-sm">
+            <div class="mt-8 mb-[80px] bg-white rounded-lg">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
                     Transfer Status Actions
                 </h3>
@@ -1404,28 +1404,28 @@
 
                         <!-- Table -->
                         <div class="overflow-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                            <table class="min-w-full text-sm text-left table-sm">
+                                <thead>
+                                    <tr style="background-color: #F4F7FB;">
+                                        <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB;">
                                             Quantity
                                         </th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;">
                                             Status
                                         </th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;">
                                             Note
                                         </th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB;">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="(row, index) in backOrderRows" :key="index">
-                                        <td class="px-3 py-2">
+                                <tbody>
+                                    <tr v-for="(row, index) in backOrderRows" :key="index" class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                        <td class="px-3 py-2 items-center">
                                             <input type="number" v-model="row.quantity"
-                                                class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                 min="1" :max="getMissingQuantity(
                                                     selectedBackOrderItem,
                                                     selectedBackOrderAllocation
@@ -1434,9 +1434,9 @@
                                                         validateBackOrderQuantities
                                                     " />
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td class="px-3 py-2 items-center">
                                             <select v-model="row.status"
-                                                class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                                 <option v-for="status in getAvailableStatuses(
                                                     index
                                                 )" :key="status" :value="status">
@@ -1448,12 +1448,12 @@
                                                 </option>
                                             </select>
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td class="px-3 py-2 items-center">
                                             <input type="text" v-model="row.note"
-                                                class="w-full rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                 placeholder="Add note..." />
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td class="px-3 py-2 items-center">
                                             <button @click="
                                                 removeBackOrderRow(index)
                                                 " v-if="backOrderRows.length > 1"

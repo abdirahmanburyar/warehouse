@@ -325,7 +325,7 @@
                         <template v-if="item.inventory_allocations?.length > 0">
                             <tr v-for="(inv, invIndex) in item.inventory_allocations" :key="`${item.id}-${inv.id || invIndex}`"
                                 class="hover:bg-gray-50 transition-colors duration-150 border-b"
-                                :style="'border-bottom: 1px solid #B7C6E6;'">
+                                :style="'border-bottom: 1px solid #F4F7FB;'">
                                 <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
                                     class="px-3 py-3 text-xs text-gray-900 align-top">
                                     {{ item.product?.name }}
@@ -383,22 +383,22 @@
                                     </button>
                                 </td>
                                 <!-- Item Details Columns -->
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
                                     {{ inv.allocated_quantity || '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
                                     {{ inv.batch_number || '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
                                     {{ inv.expiry_date ? moment(inv.expiry_date).format('DD/MM/YYYY') : '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
                                     <div class="flex flex-col text-xs">{{ inv.location }}</div>
                                 </td>
                             </tr>
                         </template>
                         <template v-else>
-                            <tr class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                            <tr class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #F4F7FB;">
                                 <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.product?.name }}</td>
                                 <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.product?.category?.name }}</td>
                                 <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.uom || 'N/A' }}</td>
@@ -435,10 +435,10 @@
                                         Show Back Order
                                     </button>
                                 </td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.allocated_quantity || '' }}</td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.batch_number || '' }}</td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : '' }}</td>
-                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;"><div class="flex flex-col text-xs">{{ item.location }}</div></td>
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.allocated_quantity || '' }}</td>
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.batch_number || '' }}</td>
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : '' }}</td>
+                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center"><div class="flex flex-col text-xs">{{ item.location }}</div></td>
                             </tr>
                         </template>
                     </template>

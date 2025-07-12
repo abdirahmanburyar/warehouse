@@ -250,7 +250,7 @@ const isOutOfStock = (inventory) => {
     return inventory.quantity <= 0;
 };
 
-// Check if product is expiring soon (within 160 days)
+// Check if product is expiring soon (within 30 days)
 const isExpiringSoon = (inventory) => {
     if (!inventory.expiry_date) return false;
     const expiryDate = moment(inventory.expiry_date);
@@ -266,8 +266,6 @@ const isExpired = (inventory) => {
     const today = moment();
     return expiryDate.isBefore(today);
 };
-
-
 
 // Computed properties for inventory status counts
 const inStockCount = computed(() => {
@@ -352,6 +350,13 @@ function getResults(page = 1) {
                         class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
                     >
                         Add Inventory
+                    </button>
+                    <button
+                        @click="showLegend = true"
+                        class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                        Icon Legend
                     </button>
                     <Link
                         :href="route('inventories.location.index')"
@@ -440,7 +445,7 @@ function getResults(page = 1) {
                     </Multiselect>
                 </div>
             </div>
-            <div class="flex justify-end items-center gap-2 mt-3">
+            <div class="flex justify-end mt-3">
                 <select
                     v-model="per_page"
                     class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3"
@@ -451,15 +456,6 @@ function getResults(page = 1) {
                     <option value="100">100 per page</option>
                     <option value="200">200 per page</option>
                 </select>
-                <button
-                    @click="showLegend = true"
-                    class="flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow mb-3"
-                    aria-label="Show Icon Legend"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
             </div>
 
             <div class="lg:grid lg:grid-cols-8 lg:gap-2">
@@ -481,7 +477,7 @@ function getResults(page = 1) {
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -490,10 +486,17 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'" style="border-bottom: 1px solid #B7C6E6;">{{ item.quantity }}</td>
-                                    <td class="px-2 py-1 text-xs border-b text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'" style="border-bottom: 1px solid #B7C6E6;">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border-b text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'" style="border-bottom: 1px solid #B7C6E6;">{{ formatDate(item.expiry_date) }}</td>
-                                    <td class="px-2 py-1 text-xs border-b text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'" style="border-bottom: 1px solid #B7C6E6;">{{ item.location }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                        <div class="flex items-center justify-center">
+                                            <div v-if="isExpiringSoon(item)" class="mr-1">
+                                                <img src="/assets/images/soon_expire.png" title="Expire soon" class="w-5 h-5" alt="Expire soon" />
+                                            </div>
+                                            <div v-if="isExpired(item)"><img src="/assets/images/expired_stock.png" title="Expired" class="w-5 h-5" alt="Expired" /></div>
+                                        </div>
+                                    </td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.reorder_level }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">
@@ -632,7 +635,24 @@ function getResults(page = 1) {
                                     >
                                 </div>
                             </div>
-
+                            <div
+                                class="flex items-center rounded-lg bg-gray-50"
+                            >
+                                <img
+                                    src="/assets/images/expired_stock.png"
+                                    class="w-[56px] h-[56px]"
+                                    alt="Expired"
+                                />
+                                <div class="ml-4 flex flex-col">
+                                    <span
+                                        class="text-xl font-bold text-gray-600"
+                                        >{{ expiredCount }}</span
+                                    >
+                                    <span class="ml-2 text-xs text-gray-600"
+                                        >Expired</span
+                                    >
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -767,28 +787,28 @@ function getResults(page = 1) {
                     <div class="font-semibold text-red-600">Out of Stock</div>
                     <div class="text-xs text-gray-500">Indicates items that are completely out of stock.</div>
                   </div>
-                                  </li>
-                  <li class="flex items-center gap-4">
-                    <img src="/assets/images/expired_stock.png" class="w-10 h-10" alt="Expired" />
-                    <div>
-                      <div class="font-semibold text-gray-600">Expired</div>
-                      <div class="text-xs text-gray-500">Indicates items that have expired.</div>
-                    </div>
-                  </li>
-                  <li class="flex items-center gap-4">
-                    <img src="/assets/images/soon_expire.png" class="w-10 h-10" alt="Expiring Soon" />
-                    <div>
-                      <div class="font-semibold text-yellow-600">Expiring Soon</div>
-                      <div class="text-xs text-gray-500">Indicates items that will expire soon (within 160 days).</div>
-                    </div>
-                  </li>
-                  <li class="flex items-center gap-4">
-                    <img src="/assets/images/reorder_status.png" class="w-10 h-10" alt="Reorder Status" />
-                    <div>
-                      <div class="font-semibold text-blue-600">Reorder Status</div>
-                      <div class="text-xs text-gray-500">Indicates that a reorder is recommended for this item.</div>
-                    </div>
-                  </li>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/expired_stock.png" class="w-10 h-10" alt="Expired" />
+                  <div>
+                    <div class="font-semibold text-gray-600">Expired</div>
+                    <div class="text-xs text-gray-500">Indicates items that have expired.</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/soon_expire.png" class="w-10 h-10" alt="Expiring Soon" />
+                  <div>
+                    <div class="font-semibold text-yellow-600">Expiring Soon</div>
+                    <div class="text-xs text-gray-500">Indicates items that will expire soon (within 160 days).</div>
+                  </div>
+                </li>
+                <li class="flex items-center gap-4">
+                  <img src="/assets/images/reorder_status.png" class="w-10 h-10" alt="Reorder Status" />
+                  <div>
+                    <div class="font-semibold text-blue-600">Reorder Status</div>
+                    <div class="text-xs text-gray-500">Indicates that a reorder is recommended for this item.</div>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
