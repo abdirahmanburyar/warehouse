@@ -53,3 +53,4 @@ class InventoryAllocation extends Model
         return $this->hasManyThrough(BackOrder::class, PackingListDifference::class, 'inventory_allocation_id', 'id', 'id', 'back_order_id');
     }
 }
+
