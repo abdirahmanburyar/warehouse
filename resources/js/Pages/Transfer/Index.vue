@@ -176,18 +176,7 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center mt-2">
-                    <!-- Icon Legend Button -->
-                    <button
-                        @click="showIconLegend = true"
-                        class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Icon Legend
-                    </button>
-                    
+                <div class="flex justify-end items-center gap-2 mt-2">
                     <select class="rounded-3xl" name="per_page" id="per_page" @change="props.filters.page = 1"
                         v-model="per_page">
                         <option value="2">2 per page</option>
@@ -195,6 +184,16 @@
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
                     </select>
+                    <!-- Icon Legend Button -->
+                    <button
+                        @click="showIconLegend = true"
+                        class="flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
+                        aria-label="Show Icon Legend"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
