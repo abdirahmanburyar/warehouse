@@ -296,159 +296,151 @@
 
             <!-- Order Items Table -->
             <h2 class="text-xs text-gray-900 mb-4">Order Items</h2>
-            <table class="min-w-full border border-black border-collapse">
-                <thead class="bg-blue-500">
-                    <tr class="bg-gray-50">
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            Item
-                        </th>
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            Category
-                        </th>
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            UoM
-                        </th>
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            Facility Inventory Data
-                        </th>
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            No. of Days
-                        </th>
-                        <th class="px-2 py-2 text-left text-xs text-black capitalize border border-black" rowspan="2">
-                            Ordered Quantity
-                        </th>
-                        <th class="w-[150px] px-2 py-2 text-left text-xs text-black capitalize border border-black"
-                            rowspan="2">
-                            Quantity to release
-                        </th>
-                        <th class="px-2 py-2 text-center text-xs text-black capitalize border border-black" colspan="4">
-                            Item Detail
-                        </th>
+            <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                <thead>
+                    <tr style="background-color: #F4F7FB;">
+                        <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Item</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Facility Inventory Data</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">No. of Days</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Ordered Quantity</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Quantity to release</th>
+                        <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Detail</th>
                     </tr>
-                    <tr class="bg-gray-50">
-                        <th class="px-2 py-1 text-xs border border-black text-left">
-                            QTY
-                        </th>
-                        <th class="px-2 py-1 text-xs border border-black text-left">
-                            Batch Number
-                        </th>
-                        <th class="px-2 py-1 text-xs border border-black text-left">
-                            Expiry Date
-                        </th>
-                        <th class="px-2 py-1 text-xs border border-black text-left w-32">
-                            Location
-                        </th>
+                    <tr style="background-color: #F4F7FB;">
+                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
+                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
+                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
+                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    <!-- Debug Info -->
                     <tr v-if="form.length === 0">
-                        <td colspan="11" class="px-3 py-3 text-center text-gray-500">
+                        <td colspan="11" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
                             No items found. Form length: {{ form.length }}, Order items: {{ props.order.items?.length || 0 }}
                         </td>
                     </tr>
-                    
                     <template v-for="(item, index) in form" :key="item.id">
-                        <!-- Show allocations if they exist, otherwise show one row with main item data -->
-                        <tr v-for="(inv, invIndex) in (item.inventory_allocations?.length > 0 ? item.inventory_allocations : [{}])"
-                            :key="`${item.id}-${inv.id || invIndex}`"
-                            class="hover:bg-gray-50 transition-colors duration-150">
-                            <!-- Show item details only on first row for this item -->
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.product?.name }}
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.product?.category?.name }}
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.inventory_allocations?.[0]?.uom || item.uom || 'N/A' }}
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                <div class="flex flex-col space-y-1 text-xs">
-                                    <div class="flex">
-                                        <span class="font-medium text-xs w-12">SOH:</span>
-                                        <span>{{ item.soh }}</span>
+                        <template v-if="item.inventory_allocations?.length > 0">
+                            <tr v-for="(inv, invIndex) in item.inventory_allocations" :key="`${item.id}-${inv.id || invIndex}`"
+                                class="hover:bg-gray-50 transition-colors duration-150 border-b"
+                                :style="'border-bottom: 1px solid #B7C6E6;'">
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    {{ item.product?.name }}
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    {{ item.product?.category?.name }}
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    {{ item.inventory_allocations?.[0]?.uom || item.uom || 'N/A' }}
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    <div class="flex flex-col space-y-1 text-xs">
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">SOH:</span>
+                                            <span>{{ item.soh }}</span>
+                                        </div>
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">AMC:</span>
+                                            <span>{{ item.amc || 0 }}</span>
+                                        </div>
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">QOO:</span>
+                                            <span>{{ item.quantity_on_order }}</span>
+                                        </div>
                                     </div>
-                                    <div class="flex">
-                                        <span class="font-medium text-xs w-12">AMC:</span>
-                                        <span>{{ item.amc || 0 }}</span>
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    {{ item.no_of_days }}
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-center text-black align-top">
+                                    {{ item.quantity }}
+                                </td>
+                                <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
+                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
+                                        handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'"
+                                        class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
+                                    <label for="days">No. of Days</label>
+                                    <input type="number" placeholder="0" v-model="item.days"
+                                        @input="handleQuantityInput(item, 'days', index)" :readonly="props.order.status != 'pending'"
+                                        class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
+                                    <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
+                                    <button @click="showBackOrderModal(item)" v-if="
+                                        item.inventory_allocations &&
+                                        item.inventory_allocations.some(
+                                            (a) => a.back_order?.length > 0
+                                        )
+                                    " class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1">
+                                        Show Back Order
+                                    </button>
+                                </td>
+                                <!-- Item Details Columns -->
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ inv.allocated_quantity || '' }}
+                                </td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ inv.batch_number || '' }}
+                                </td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ inv.expiry_date ? moment(inv.expiry_date).format('DD/MM/YYYY') : '' }}
+                                </td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    <div class="flex flex-col text-xs">{{ inv.location }}</div>
+                                </td>
+                            </tr>
+                        </template>
+                        <template v-else>
+                            <tr class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.product?.name }}</td>
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.product?.category?.name }}</td>
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.uom || 'N/A' }}</td>
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    <div class="flex flex-col space-y-1 text-xs">
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">SOH:</span>
+                                            <span>{{ item.soh }}</span>
+                                        </div>
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">AMC:</span>
+                                            <span>{{ item.amc || 0 }}</span>
+                                        </div>
+                                        <div class="flex">
+                                            <span class="font-medium text-xs w-12">QOO:</span>
+                                            <span>{{ item.quantity_on_order }}</span>
+                                        </div>
                                     </div>
-                                    <div class="flex">
-                                        <span class="font-medium text-xs w-12">QOO:</span>
-                                        <span>{{ item.quantity_on_order }}</span>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                {{ item.no_of_days }}
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-center text-black border border-black align-top">
-                                {{ item.quantity }}
-                            </td>
-
-                            <td v-if="invIndex === 0" :rowspan="Math.max(item.inventory_allocations?.length || 1, 1)"
-                                class="px-3 py-3 text-xs text-gray-900 border border-black align-top">
-                                <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
-                                    handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'
-                                        "
-                                    class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
-                                <!-- <label for="received_quantity">Received Quantity</label>
-                            <input
-                                type="number"
-                                placeholder="0"
-                                v-model="item.received_quantity"
-                                readonly
-                                class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1"
-                            /> -->
-                                <label for="days">No. of Days</label>
-                                <input type="number" placeholder="0" v-model="item.days"
-                                    @input="handleQuantityInput(item, 'days', index)" :readonly="props.order.status != 'pending'
-                                        "
-                                    class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
-                                <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
-                                <button @click="showBackOrderModal(item)" v-if="
-                                    item.inventory_allocations &&
-                                    item.inventory_allocations.some(
-                                        (a) => a.back_order?.length > 0
-                                    )
-                                " class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1">
-                                    Show Back Order
-                                </button>
-                            </td>
-
-                            <!-- Item Details Columns (like Transfer/Show.vue and Inventory/Index.vue) -->
-                            <!-- Quantity -->
-                            <td class="px-2 py-1 text-xs border border-black text-left">
-                                {{ inv.allocated_quantity || '' }}
-                            </td>
-
-                            <!-- Batch Number -->
-                            <td class="px-2 py-1 text-xs border border-black text-left">
-                                {{ inv.batch_number || '' }}
-                            </td>
-
-                            <!-- Expiry Date -->
-                            <td class="px-2 py-1 text-xs border border-black text-left">
-                                {{ inv.expiry_date ? moment(inv.expiry_date).format("DD/MM/YYYY") : '' }}
-                            </td>
-
-                            <!-- Location -->
-                            <td class="px-2 py-1 text-xs border border-black text-left w-32">
-                                <div class="flex flex-col text-xs">{{ inv.location }}</div>
-                            </td>
-                        </tr>
+                                </td>
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.no_of_days }}</td>
+                                <td class="px-3 py-3 text-xs text-center text-black align-top">{{ item.quantity }}</td>
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
+                                        handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'"
+                                        class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
+                                    <label for="days">No. of Days</label>
+                                    <input type="number" placeholder="0" v-model="item.days"
+                                        @input="handleQuantityInput(item, 'days', index)" :readonly="props.order.status != 'pending'"
+                                        class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
+                                    <span v-if="isUpading[index]" class="text-green-500 text-md">Updating...</span>
+                                    <button @click="showBackOrderModal(item)" v-if="
+                                        item.back_order && item.back_order.length > 0
+                                    " class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1">
+                                        Show Back Order
+                                    </button>
+                                </td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.allocated_quantity || '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.batch_number || '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;"><div class="flex flex-col text-xs">{{ item.location }}</div></td>
+                            </tr>
+                        </template>
                     </template>
                 </tbody>
             </table>
@@ -923,7 +915,7 @@
                         <div class="overflow-auto">
                             <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
                                 <thead class="bg-gray-50">
-                                    <tr>
+                                    <tr class="border-b border-gray-200">
                                         <th
                                             class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                             Requested Quantity

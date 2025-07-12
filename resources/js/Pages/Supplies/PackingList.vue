@@ -160,21 +160,12 @@
         <!-- Items Section -->
         <div v-if="!isLoading && form" class="mt-4 w-full">
             <table class="w-full table-sm">
-                <colgroup>
-                    <col class="w-8" />
-                    <col class="w-48" />
-                    <col class="w-[120px]" />
-                    <col class="w-[200px]" />
-                    <col class="w-48" />
-                    <col class="w-32" />
-                    <col class="w-28" />
-                </colgroup>
                 <thead style="background-color: #F4F7FB;">
                     <tr>
                         <th class="text-left text-xs font-bold uppercase rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
                             #
                         </th>
-                        <th class="text-left text-xs font-bold uppercase sticky left-8 z-10 w-48" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="text-left text-xs font-bold uppercase sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
                             Item
                         </th>
                         <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
@@ -217,7 +208,7 @@
                             style="border: 1px solid #B7C6E6;">
                             {{ index + 1 }}
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-8 z-10 bg-white w-48"
+                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-8 z-10 bg-white w-[200px]"
                             :class="{
                                 'border-green-600 border-2': item.status === 'approved',
                                 'border-yellow-500 border-2': item.status === 'reviewed',
@@ -225,8 +216,10 @@
                             }"
                             style="border: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
-                                {{ item.product?.name }}
-                                <span class="font-bold mt-2">UoM: {{ item.uom }}</span>
+                                <p class="text-xs text-break">
+                                    {{ item.product?.name }}
+                                </p>
+                                <span class="font-bold mt-2 text-xs text-gray-500">UoM: {{ item.uom }}</span>
                             </div>
                         </td>
                         <td class="whitespace-nowrap text-xs text-gray-900"
