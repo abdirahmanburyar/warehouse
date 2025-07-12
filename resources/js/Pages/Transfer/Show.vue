@@ -587,7 +587,7 @@
             </div>
 
             <!-- dispatch information -->
-            <div v-if="props.transfer.status === 'dispatched' && props.transfer.dispatchInfo?.length > 0"
+            <div v-if="props.transfer.dispatch?.length > 0"
                 class="mt-8 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-800">
