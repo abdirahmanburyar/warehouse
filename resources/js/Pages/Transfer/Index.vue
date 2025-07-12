@@ -603,10 +603,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Pending</span>
-                            </div>
                         </div>
 
                         <!-- Reviewed -->
@@ -630,10 +626,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Reviewed</span>
                             </div>
                         </div>
 
@@ -659,10 +651,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Approved</span>
-                            </div>
                         </div>
 
                         <!-- In Process -->
@@ -686,10 +674,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900" style="font-size: 10px; font-weight: bold">In
-                                    Process</span>
                             </div>
                         </div>
 
@@ -715,10 +699,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Dispatched</span>
-                            </div>
                         </div>
 
                         <!-- Delivered -->
@@ -742,10 +722,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Delivered</span>
                             </div>
                         </div>
 

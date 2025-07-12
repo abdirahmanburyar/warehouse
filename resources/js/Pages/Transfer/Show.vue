@@ -422,57 +422,45 @@
 
                     <div class="bg-white shadow-xl border border-gray-200 overflow-hidden">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full border border-collapse border-black">
+                            <table class="min-w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
                                 <thead>
-                                    <tr class="bg-gray-50">
-                                        <th class="min-w-[300px] px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                    <tr style="background-color: #F4F7FB;">
+                                        <th class="min-w-[300px] px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Item Name
                                         </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Category
                                         </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             UoM
                                         </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-center text-black font-semibold"
-                                            colspan="4">
+                                        <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">
                                             Item Details
                                         </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Total Quantity on Hand Per Unit
                                         </th>
-                                        <th class="px-2 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Transfer Reason
                                         </th>
-                                        <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Quantity to Transfer
                                         </th>
-                                        <th class="px-1 py-1 text-xs border border-black text-left text-black font-semibold"
-                                            rowspan="2">
+                                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                             Received Quantity
                                         </th>
                                     </tr>
-                                    <tr class="bg-gray-50">
-                                        <th
-                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                    <tr style="background-color: #F4F7FB;">
+                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
                                             QTY
                                         </th>
-                                        <th
-                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
                                             Batch Number
                                         </th>
-                                        <th
-                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
                                             Expiry Date
                                         </th>
-                                        <th
-                                            class="px-1 py-1 text-xs border border-black text-center text-black font-semibold">
+                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">
                                             Location
                                         </th>
                                     </tr>
@@ -483,7 +471,7 @@
                         <!-- Show allocations if they exist, otherwise show one row with main item data -->
                         <tr v-for="(allocation, allocIndex) in (item.inventory_allocations?.length > 0 ? item.inventory_allocations : [{}])"
                                         :key="`${item.id}-${allocIndex}`"
-                                        class="hover:bg-gray-50 transition-colors duration-150 border-b border-black">
+                                        class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                         <!-- Item Name -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-2 py-1 text-xs border border-black text-left text-black align-top">
