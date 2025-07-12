@@ -455,6 +455,7 @@ class TransferController extends Controller
         $reviewedCount = $allTransfers->whereIn('status', ['reviewed'])->count();
         $inProcessCount = $allTransfers->whereIn('status', ['in_process'])->count();
         $dispatchedCount = $allTransfers->where('status', 'dispatched')->count();
+        $deliveredCount = $allTransfers->where('status', 'delivered')->count();
         $receivedCount = $allTransfers->where('status', 'received')->count();
         $rejectedCount = $allTransfers->where('status', 'rejected')->count();
         $pendingCount = $allTransfers->where('status', 'pending')->count();
@@ -484,6 +485,11 @@ class TransferController extends Controller
                 'count' => $dispatchedCount,
                 'percentage' => $total > 0 ? round(($dispatchedCount / $total) * 100) : 0,
                 'stages' => ['dispatched']
+            ],
+            'delivered' => [
+                'count' => $deliveredCount,
+                'percentage' => $total > 0 ? round(($deliveredCount / $total) * 100) : 0,
+                'stages' => ['delivered']
             ],
             'received' => [
                 'count' => $receivedCount,

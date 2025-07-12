@@ -246,7 +246,7 @@
                                         </div>
 
                                         <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                                            <img src="/assets/images/delivery.png" class="w-8 h-8" alt="Delivered" />
+                                            <img src="/assets/images/delivered.png" class="w-8 h-8" alt="Delivered" />
                                             <div>
                                                 <h3 class="font-medium text-gray-900">Delivered</h3>
                                                 <p class="text-sm text-gray-600">Order has been delivered to the facility</p>

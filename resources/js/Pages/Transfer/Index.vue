@@ -290,6 +290,14 @@
                                         </div>
 
                                         <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <img src="/assets/images/delivered.png" class="w-8 h-8" alt="Delivered" />
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">Delivered</h3>
+                                                <p class="text-sm text-gray-600">Transfer has been delivered to destination</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                                             <img src="/assets/images/received.png" class="w-8 h-8" alt="Received" />
                                             <div>
                                                 <h3 class="font-medium text-gray-900">Received</h3>
@@ -495,6 +503,22 @@
                                                         alt="Dispatched" title="Dispatched" />
                                                 </div>
                                             </template>
+
+                                            <!-- Show delivered if status is delivered or further -->
+                                            <template v-if="
+                                                [
+                                                    'delivered',
+                                                    'received',
+                                                ].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/delivery.png" class="w-8 h-8"
+                                                        alt="Delivered" title="Delivered" />
+                                                </div>
+                                            </template>
+
                                             <!-- Show received if status is received -->
                                             <template v-if="
                                                 ['received'].includes(
@@ -533,7 +557,7 @@
             <div class="md:col-span-3 sm:col-span-12">
                 <div class="bg-white mb-4">
                     <h3 class="text-xs text-black mb-4">Transfer Statistics</h3>
-                    <div class="flex justify-between gap-1">
+                    <div class="flex justify-between">
                         <!-- Pending -->
                         <div class="flex flex-col items-center">
                             <div class="h-[250px] w-8 bg-amber-50 relative overflow-hidden shadow-md rounded-2xl">
@@ -554,10 +578,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Pending</span>
                             </div>
                         </div>
 
@@ -583,10 +603,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Reviewed</span>
-                            </div>
                         </div>
 
                         <!-- Approved -->
@@ -610,10 +626,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Approved</span>
                             </div>
                         </div>
 
@@ -639,10 +651,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900" style="font-size: 10px; font-weight: bold">In
-                                    Process</span>
-                            </div>
                         </div>
 
                         <!-- Dispatched -->
@@ -667,9 +675,29 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Dispatched</span>
+                        </div>
+
+                        <!-- Delivered -->
+                        <div class="flex flex-col items-center">
+                            <div class="h-[250px] w-8 bg-orange-50 relative overflow-hidden shadow-md rounded-2xl">
+                                <div class="absolute top-0 inset-x-0 flex justify-center pt-2">
+                                    <img src="/assets/images/delivery.png" class="h-8 w-8 object-contain"
+                                        alt="Delivered" />
+                                </div>
+                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-orange-600 to-orange-400 transition-all duration-500"
+                                    :style="{
+                                        height:
+                                            (props.statistics.delivered
+                                                ?.percentage || 0) + '%',
+                                    }">
+                                    <div
+                                        class="absolute bottom-0 left-0 right-0 text-center py-1 text-black font-bold text-xs tracking-wide">
+                                        {{
+                                            props.statistics.delivered
+                                                ?.percentage || 0
+                                        }}%
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -694,10 +722,6 @@
                                         }}%
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <span class="font-medium text-gray-900"
-                                    style="font-size: 10px; font-weight: bold">Received</span>
                             </div>
                         </div>
 
@@ -797,6 +821,7 @@ const statusTabs = [
     { value: "approved", label: "Approved", color: "green" },
     { value: "in_process", label: "In Process", color: "blue" },
     { value: "dispatched", label: "Dispatched", color: "purple" },
+    { value: "delivered", label: "Delivered", color: "orange" },
     { value: "received", label: "Received", color: "gray" },
     { value: "rejected", label: "Rejected", color: "red" },
 ];
