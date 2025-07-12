@@ -6,7 +6,7 @@
         img="/assets/images/orders.png"
     >
         <!-- Filters Section -->
-        <div class="bg-white mb-2 text-xs">
+        <div class="relative bg-white mb-2 text-xs">
             <div
                 class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-5"
             >
@@ -100,18 +100,8 @@
                     />
                 </div>
             </div>
-            <div class="flex justify-between items-center">
-                <!-- Icon Legend Button -->
-                <button
-                    @click="showIconLegend = true"
-                    class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Icon Legend
-                </button>
-                
+            <!-- Move Icon Legend Button to top right and remove text -->
+            <div class="flex justify-end items-center gap-2">
                 <select
                     v-model="per_page"
                     @change="props.filters.page = 1"
@@ -122,6 +112,15 @@
                     <option value="50">50 Per page</option>
                     <option value="100">100 Per page</option>
                 </select>
+                <button
+                    @click="showIconLegend = true"
+                    class="flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
+                    aria-label="Show Icon Legend"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
             </div>
             <!-- Status Tabs -->
             <div class="border-b border-gray-200">
@@ -428,10 +427,7 @@
                                             fill="none"
                                             stroke="#eab308"
                                             stroke-width="4"
-                                            :stroke-dasharray="`${
-                                                (stats.pending / totalOrders) *
-                                                125.6
-                                            } 125.6`"
+                                            :stroke-dasharray="(stats.pending === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.pending / totalOrders) * 175.93} 175.93`"
                                         />
                                     </svg>
                                     <div
@@ -485,10 +481,7 @@
                                         fill="none"
                                         stroke="#22c55e"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.reviewed / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.reviewed === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.reviewed / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -539,10 +532,7 @@
                                         fill="none"
                                         stroke="#22c55e"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.approved / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.approved === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.approved / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -593,10 +583,7 @@
                                         fill="none"
                                         stroke="#ef4444"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.rejected / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.rejected === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.rejected / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -647,10 +634,7 @@
                                         fill="none"
                                         stroke="#3b82f6"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.in_process / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.in_process === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.in_process / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -701,10 +685,7 @@
                                         fill="none"
                                         stroke="#8b5cf6"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.dispatched / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.dispatched === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.dispatched / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -755,10 +736,7 @@
                                         fill="none"
                                         stroke="#6366f1"
                                         stroke-width="4"
-                                        :stroke-dasharray="`${
-                                            (stats.received / totalOrders) *
-                                            125.6
-                                        } 125.6`"
+                                        :stroke-dasharray="(stats.received === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.received / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
