@@ -52,5 +52,9 @@ class InventoryAllocation extends Model
     public function backorders(){
         return $this->hasManyThrough(BackOrder::class, PackingListDifference::class, 'inventory_allocation_id', 'id', 'id', 'back_order_id');
     }
+
+    public function back_order(){
+        return $this->hasOneThrough(BackOrder::class, PackingListDifference::class, 'inventory_allocation_id', 'id', 'id', 'back_order_id');
+    }
 }
 
