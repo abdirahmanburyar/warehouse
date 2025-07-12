@@ -31,6 +31,8 @@ use App\Models\PackingListItem;
 use App\Models\BackOrder;
 use App\Models\ReceivedQuantity;
 use App\Models\Liquidate;
+use App\Models\LiquidateItem;
+use App\Models\DisposalItem;
 use App\Http\Resources\SupplierResource;
 use Inertia\Inertia;
 
@@ -185,234 +187,167 @@ class SupplyController extends Controller
     public function liquidate(Request $request)
     {
         try {
-            // Validate the request
-            $validated = $request->validate([
-                'id' => 'required|exists:packing_list_differences,id',
-                'product_id' => 'required|exists:products,id',
-                'packing_listitem_id' => 'required|exists:packing_list_items,id',
-                'quantity' => 'required|integer|min:1',
-                'original_quantity' => 'required|integer|min:1',
-                'status' => 'required|string',
-                'packing_list_id' => 'required|exists:packing_lists,id',
-                'packing_list_number' => 'nullable|string',
-                'purchase_order_id' => 'nullable',
-                'note' => 'nullable|string|max:255',
-                'type' => 'nullable|string',
-                'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
-                'back_order_id' => 'required|exists:back_orders,id',
-            ]);
-            
-            // Start a database transaction
             DB::beginTransaction();
             
-            // Find the packing list difference record
-            $packingListDiff = PackingListDifference::with('packingListItem')->find($request->id);
+            // Get the back order to determine the source
+            $backOrder = BackOrder::findOrFail($request->back_order_id);
+            
+            // Check if there is already a liquidation for this back order
+            $liquidate = Liquidate::where('back_order_id', $request->back_order_id)->first();
+            
+            if (!$liquidate) {
+                // Create new liquidation record
+                $liquidate = Liquidate::create([
+                    'liquidated_by' => auth()->id(),
+                    'liquidated_at' => now(),
+                    'status' => 'pending',
+                    'source' => $backOrder->source_type, // Get source from BackOrder
+                    'back_order_id' => $request->back_order_id,
+                    'packing_list_id' => $request->packing_list_id,
+                    'order_id' => $request->purchase_order_id, // or $request->order_id if that's the field
+                    'transfer_id' => $request->transfer_id,
+                ]);
+            }
+            
+            // Get packing list item to get unit cost
             $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
+            $totalCost = $unitCost * $request->quantity;
             
-            if (!$packingListDiff) {
-                return response()->json([
-                    'message' => 'Back order item not found'
-                ], 404);
-            }
+            // Get current user's warehouse
+            $user = auth()->user()->load('warehouse');
+            $warehouseName = $user->warehouse ? $user->warehouse->name : null;
             
-            // Calculate the remaining quantity
-            $liquidatedQuantity = $request->quantity;
-            $originalQuantity = $request->original_quantity;
-            $remainingQuantity = $originalQuantity - $liquidatedQuantity;
+            // Create liquidation item
+            $liquidateItem = LiquidateItem::create([
+                'liquidate_id' => $liquidate->id,
+                'product_id' => $request->product_id,
+                'quantity' => $request->quantity,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
+                'barcode' => $packingListItem->barcode ?? null,
+                'expire_date' => $packingListItem->expire_date ?? null,
+                'batch_number' => $packingListItem->batch_number ?? null,
+                'uom' => $packingListItem->uom ?? null,
+                'location' => $packingListItem->location ?? null,
+                'facility' => null, // Facility will be null
+                'warehouse' => $warehouseName,
+                'note' => $request->note,
+                'type' => $request->type,
+            ]);
             
-            // Generate note based on condition and source
-            $note = "PL ({$request->packing_list_number}) - {$request->status}";
-            if ($request->note) {
-                $note .= " - {$request->note}";
-            }
+            // Update the packing list difference to mark as finalized
+            PackingListDifference::where('id', $request->id)->update([
+                'finalized' => 'liquidated'
+            ]);
             
-            // Handle file attachments if any
-            $attachments = [];
+            // Handle attachments if any
             if ($request->hasFile('attachments')) {
-                foreach ($request->file('attachments') as $index => $file) {
-                    $fileName = 'liquidate_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('attachments/liquidations'), $fileName);
+                $attachments = [];
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('attachments/liquidations', 'public');
                     $attachments[] = [
                         'name' => $file->getClientOriginalName(),
-                        'path' => '/attachments/liquidations/' . $fileName,
-                        'type' => $file->getClientMimeType(),
-                        'size' => filesize(public_path('attachments/liquidations/' . $fileName)),
-                        'uploaded_at' => now()->toDateTimeString()
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType()
                     ];
                 }
+                
+                // Store attachments in the liquidation item
+                $liquidateItem->update(['attachments' => $attachments]);
             }
             
-            // Create a record in BackOrderHistory for the liquidated items
-            $backOrderHistory = BackOrderHistory::create([
-                'packing_list_id' => $packingListItem->packing_list_id,
-                'product_id' => $packingListItem->product_id,
-                'quantity' => $liquidatedQuantity,
-                'status' => 'Liquidated',
-                'note' => $request->note ?? 'Liquidated by ' . auth()->user()->name,
-                'performed_by' => auth()->user()->id,
-                'barcode' => $packingListItem->barcode,
-                'batch_number' => $packingListItem->batch_number,
-                'expiry_date' => $packingListItem->expire_date,
-                'back_order_id' => $request->back_order_id,
-                'uom' => $packingListItem->uom,
-                'unit_cost' => $packingListItem->unit_cost,
-                'total_cost' => $packingListItem->unit_cost * $liquidatedQuantity,
-            ]);
-            
-            // Create a new liquidation record
-            $liquidate = Liquidate::create([
-                'product_id' => $request->product_id,
-                'liquidated_by' => auth()->id(),
-                'liquidated_at' => Carbon::now(),
-                'quantity' => $liquidatedQuantity,
-                'status' => 'pending', // Default status is pending
-                'note' => $note,
-                'type' => $request->type,
-                'barcode' => $packingListItem->barcode,
-                'expire_date' => $packingListItem->expire_date,
-                'batch_number' => $packingListItem->batch_number,
-                'uom' => $packingListItem->uom,
-                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
-                'back_order_id' => $request->back_order_id,
-            ]);
-            
-            // Handle the packing list difference record based on remaining quantity
-            if ($remainingQuantity <= 0) {
-                // If nothing remains, delete the record
-                $packingListDiff->delete();
-            } else {
-                // If some items remain, update the quantity
-                $packingListDiff->quantity = $remainingQuantity;
-                $packingListDiff->save();
-            }
-            
-            // Commit the transaction
             DB::commit();
             
-            return response()->json([
-                'message' => "Successfully liquidated {$liquidatedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
-                'liquidated_quantity' => $liquidatedQuantity,
-                'remaining_quantity' => $remainingQuantity,
-                'liquidate' => $liquidate
-            ], 200);
+            return response()->json('Item liquidated successfully', 200);
             
         } catch (\Throwable $th) {
-            // Rollback the transaction in case of error
             DB::rollBack();
-            
-            return response()->json([
-                'message' => $th->getMessage()
-            ], 500);
+            logger()->error('Liquidation error: ' . $th->getMessage());
+            return response()->json('Failed to liquidate item: ' . $th->getMessage(), 500);
         }
     }
     
     public function dispose(Request $request)
     {
         try {
-            // Validate the request
-            $validated = $request->validate([
-                'id' => 'required|exists:packing_list_differences,id',
-                'packing_listitem_id' => 'required|exists:packing_list_items,id',                
-                'note' => 'nullable|string',
-                'type' => 'nullable|string',
-                'quantity' => "required|min:1",
-                'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // Max 10MB per file
-                'back_order_id' => 'nullable|exists:back_orders,id',
-            ]);
-
-            
-            // Start a database transaction
             DB::beginTransaction();
             
-            // Get the packing list to include its number in the note
-            $item = PackingListItem::with('packingList','warehouse:id,name')->find($request->packing_listitem_id);
-            $packingListNumber = $item ? $item->packingList->packing_list_number : 'Unknown';
+            // Get the back order to determine the source
+            $backOrder = BackOrder::findOrFail($request->back_order_id);
             
-            // Generate note based on condition and source
-            $note = "PL ({$packingListNumber}) - {$request->type}";
-            if ($request->note && $request->note !== 'undefined' && trim($request->note) !== '') {
-                $note .= " - {$request->note}";
+            // Check if there is already a disposal for this back order
+            $disposal = Disposal::where('back_order_id', $request->back_order_id)->first();
+            
+            if (!$disposal) {
+                // Create new disposal record
+                $disposal = Disposal::create([
+                    'disposed_by' => auth()->id(),
+                    'disposed_at' => now(),
+                    'status' => 'pending',
+                    'source' => $backOrder->source_type, // Get source from BackOrder
+                    'back_order_id' => $request->back_order_id,
+                ]);
             }
             
-            // Handle file attachments if any
-            $attachments = [];
-            if ($request->hasFile('attachments')) {
-                foreach ($request->file('attachments') as $index => $file) {
-                    $fileName = 'disposal_' . time() . '_' . $index . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('attachments/disposals'), $fileName);
-                    $attachments[] = [
-                        'name' => $file->getClientOriginalName(),
-                        'path' => '/attachments/disposals/' . $fileName,
-                        'type' => $file->getClientMimeType(),
-                        'size' => filesize(public_path('attachments/disposals/' . $fileName)),
-                        'uploaded_at' => now()->toDateTimeString()
-                    ];
-                }
-            }
+            // Get packing list item to get unit cost
+            $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
+            $totalCost = $unitCost * $request->quantity;
             
-            // Create a new disposal record
-            $disposal = Disposal::create([
-                'product_id' => $item->product_id,
-                'disposed_by' => auth()->id(),
-                'disposed_at' => Carbon::now(),
+            // Get current user's warehouse
+            $user = auth()->user()->load('warehouse');
+            $warehouseName = $user->warehouse ? $user->warehouse->name : null;
+            
+            // Create disposal item
+            $disposalItem = DisposalItem::create([
+                'disposal_id' => $disposal->id,
+                'product_id' => $request->product_id,
                 'quantity' => $request->quantity,
-                'status' => 'pending', // Default status is pending
-                'note' => $note,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
+                'barcode' => $packingListItem->barcode ?? null,
+                'expire_date' => $packingListItem->expire_date ?? null,
+                'batch_number' => $packingListItem->batch_number ?? null,
+                'uom' => $packingListItem->uom ?? null,
+                'location' => $packingListItem->location ?? null,
+                'facility' => null, // Facility will be null
+                'warehouse' => $warehouseName,
+                'note' => $request->note,
                 'type' => $request->type,
-                'warehouse' => $item->warehouse->name,
-                'location' => $item->location,
-                'barcode' => $item->barcode,
-                'unit_cost' => $item->unit_cost,
-                'total_cost' => $item->unit_cost * $request->quantity,
-                'expire_date' => $item->expire_date,
-                'batch_number' => $item->batch_number,
-                'uom' => $item->uom,
-                'attachments' => !empty($attachments) ? json_encode($attachments) : null,
-                'back_order_id' => $request->back_order_id,
             ]);
             
-            // Find and update the record from PackingListDifference table
-            $packingListDiff = PackingListDifference::find($request->id);
-            if ($packingListDiff) {
-                // Create a record in BackOrderHistory
-                BackOrderHistory::create([
-                    'packing_list_id' => $item->packing_list_id, // Use packing_list_id from the PackingListItem
-                    'product_id' => $packingListDiff->product_id,
-                    'quantity' => $request->quantity,
-                    'status' => 'Disposed',
-                    'note' => $request->note ?? 'Disposed by ' . auth()->user()->name,
-                    'performed_by' => auth()->id(),
-                    'back_order_id' => $request->back_order_id,
-                    'barcode' => $item->barcode,
-                    'batch_number' => $item->batch_number,
-                    'expiry_date' => $item->expire_date,
-                    'uom' => $item->uom,
-                    'unit_cost' => $item->unit_cost,
-                    'total_cost' => $item->unit_cost * $request->quantity,
-                ]);
+            // Update the packing list difference to mark as finalized
+            PackingListDifference::where('id', $request->id)->update([
+                'finalized' => 'disposed'
+            ]);
+            
+            // Handle attachments if any
+            if ($request->hasFile('attachments')) {
+                $attachments = [];
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('attachments/disposals', 'public');
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType()
+                    ];
+                }
                 
-                // Mark the record as finalized (disposed) - this removes it from the back order list
-                $packingListDiff->update([
-                    'finalized' => 'Disposed'
-                ]);
+                // Store attachments in the disposal item
+                $disposalItem->update(['attachments' => $attachments]);
             }
             
-            // Commit the transaction
             DB::commit();
             
-            return response()->json([
-                'message' => 'Item has been disposed successfully',
-                'disposal' => $disposal
-            ], 200);
+            return response()->json('Item disposed successfully', 200);
             
         } catch (\Throwable $th) {
-            // Rollback the transaction in case of error
             DB::rollBack();
-            return response()->json([
-                'message' => $th->getMessage()
-            ], 500);
+            logger()->error('Disposal error: ' . $th->getMessage());
+            return response()->json('Failed to dispose item: ' . $th->getMessage(), 500);
         }
     }
     

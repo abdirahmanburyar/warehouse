@@ -22,12 +22,6 @@
                             <p class="text-sm font-medium text-gray-500">Back Order Date</p>
                             <p class="text-lg font-semibold text-gray-900">{{ moment(backOrderInfo.back_order_date).format('DD/MM/YYYY') }}</p>
                         </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Status</p>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getBackOrderStatusClass(backOrderInfo.status)">
-                                {{ backOrderInfo.status }}
-                            </span>
-                        </div>
                     </div>
                     <!-- Parent-level Attachments -->
                     <div class="mt-6">
@@ -144,13 +138,13 @@
                                                     <td class="px-6 py-3 text-sm border-r border-black">
                                                         <div class="flex gap-2">
                                                             <button
-                                                                v-if="row.status === 'Missing' || row.status === 'Damaged' || row.status === 'Lost' || row.status === 'Expired' || row.status === 'Low quality'"
+                                                                v-if="row.status === 'Missing' || row.status === 'Damaged' ||  row.status === 'Lost' || row.status === 'Expired' || row.status === 'Low quality'"
                                                                 @click="handleAction('Receive', { ...item, status: row.status, quantity: row.quantity })"
                                                                 class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
                                                                 :disabled="isLoading">
                                                                 Receive
                                                             </button>
-                                                            <button v-if="row.status === 'Missing'"
+                                                            <button v-if="row.status === 'Missing' || row.status === 'Lost'"
                                                                 @click="handleAction('Liquidate', { ...item, status: row.status, quantity: row.quantity })"
                                                                 class="px-3 py-1.5 text-sm font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600"
                                                                 :disabled="isLoading">
@@ -618,7 +612,7 @@ const submitLiquidation = async () => {
             showLiquidateModal.value = false;
             Swal.fire({
                 icon: 'success',
-                title: response.data.message,
+                title: response.data,
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
@@ -707,7 +701,7 @@ const submitDisposal = async () => {
             showDisposeModal.value = false;
             Swal.fire({
                 icon: 'success',
-                title: response.data.message,
+                title: response.data,
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {

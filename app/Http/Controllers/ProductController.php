@@ -27,8 +27,8 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'dosage','eligible'])->latest();
-
+        $query = Product::query();
+        
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -69,6 +69,8 @@ class ProductController extends Controller
                 $q->where('name', $request->dosage);
             });
         }
+
+        $query->with(['category', 'dosage','eligible'])->latest();
 
         // Sorting
         $sortField = $request->input('sort_field', 'created_at');

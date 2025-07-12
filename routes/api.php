@@ -21,13 +21,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Liquidation and Disposal API Routes
 Route::middleware('auth')->group(function () {
-    // Disposal routes
-    Route::post('/disposals/{id}/approve', [LiquidateDisposalController::class, 'approveDisposal']);
-    Route::post('/disposals/{id}/reject', [LiquidateDisposalController::class, 'rejectDisposal']);
-    Route::post('/disposals/{id}/rollback', [LiquidateDisposalController::class, 'rollbackDisposal']);
-    
-    // Liquidation routes
-    Route::post('/liquidates/{id}/approve', [LiquidateDisposalController::class, 'approveLiquidate']);
-    Route::post('/liquidates/{id}/reject', [LiquidateDisposalController::class, 'rejectLiquidate']);
-    Route::post('/liquidates/{id}/rollback', [LiquidateDisposalController::class, 'rollbackLiquidate']);
+    // Removed liquidation and disposal action routes - now using web routes
 });

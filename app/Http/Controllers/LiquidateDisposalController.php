@@ -14,298 +14,386 @@ use App\Http\Resources\LiquidateResource;
 
 class LiquidateDisposalController extends Controller
 {
-    public function disposals(Request $request){
+    /**
+     * Main index method for the tabbed interface
+     */
+    public function index(Request $request)
+    {
+        // Get liquidations
+        $liquidates = $this->getLiquidatesQuery($request);
+        $liquidates = $liquidates->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        // Get disposals
+        $disposals = $this->getDisposalsQuery($request);
+        $disposals = $disposals->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+
+        // Get statistics
+        $stats = [
+            'liquidate' => Liquidate::count(),
+            'disposal' => Disposal::count(),
+            'all' => Liquidate::count() + Disposal::count(),
+            'pending' => Liquidate::where('status', 'pending')->count() + Disposal::where('status', 'pending')->count(),
+            'reviewed' => Liquidate::where('status', 'reviewed')->count() + Disposal::where('status', 'reviewed')->count(),
+            'approved' => Liquidate::where('status', 'approved')->count() + Disposal::where('status', 'approved')->count(),
+            'rejected' => Liquidate::where('status', 'rejected')->count() + Disposal::where('status', 'rejected')->count(),
+        ];
+
+        return inertia('LiquidateDisposal/Index', [
+            'liquidates' => LiquidateResource::collection($liquidates),
+            'disposals' => DisposalResource::collection($disposals),
+            'filters' => $request->only('search', 'per_page', 'page', 'source', 'date_from', 'date_to', 'status'),
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * Get liquidations query with filters
+     */
+    private function getLiquidatesQuery(Request $request)
+    {
+        $liquidates = Liquidate::query()->with([
+            'liquidatedBy:id,name',
+            'approvedBy:id,name',
+            'reviewedBy:id,name',
+            'rejectedBy:id,name',
+            'backOrder'
+        ])->latest('liquidate_id');
+
+        // Search filter
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $liquidates->where(function ($q) use ($search) {
+                $q->where('liquidate_id', 'like', "%{$search}%")
+                  ->orWhere('source', 'like', "%{$search}%");
+            });
+        }
+
+        // Source filter
+        if ($request->has('source') && $request->source) {
+            $liquidates->where('source', $request->source);
+        }
+
+        // Date range filter
+        if ($request->has('date_from') && $request->date_from) {
+            $liquidates->whereDate('liquidated_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to') && $request->date_to) {
+            $liquidates->whereDate('liquidated_at', '<=', $request->date_to);
+        }
+
+        // Status filter
+        if ($request->has('status') && $request->status && $request->status !== 'all') {
+            $liquidates->where('status', $request->status);
+        }
+
+        return $liquidates;
+    }
+
+    /**
+     * Get disposals query with filters
+     */
+    private function getDisposalsQuery(Request $request)
+    {
         $disposals = Disposal::query()->with([
-            'product',
+            'items.product',
             'disposedBy',
             'approvedBy',
             'reviewedBy',
             'rejectedBy',
             'backOrder'
-        ])
-        ->whereIn('status', ['pending', 'reviewed'])
-        ->latest('disposal_id');
+        ])->latest('disposal_id');
 
-        if ($request->has('search')) {
+        // Search filter
+        if ($request->has('search') && $request->search) {
             $search = $request->search;
-             $disposals->where('disposal_id', 'like', "%{$search}%")
-                ->orWhereHas('product', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('barcode', 'like', "%{$search}%")
-                      ->orWhere('batch_number', 'like', "%{$search}%");
-                });
-        }
-
-        // Filter by warehouse (applied to reported_by field)
-        if ($request->has('warehouse_id') && $request->warehouse_id) {
-            $disposals->whereHas('disposedBy.warehouse', function ($q) use ($request) {
-                $q->where('name', $request->warehouse_id);
+            $disposals->where(function ($q) use ($search) {
+                $q->where('disposal_id', 'like', "%{$search}%")
+                  ->orWhere('source', 'like', "%{$search}%");
             });
         }
 
-        // Filter by facility (applied to reported_by field)
-        if ($request->has('facility_id') && $request->facility_id) {
-            $disposals->whereHas('disposedBy.facility', function ($q) use ($request) {
-                $q->where('name', $request->facility_id);
-            });
+        // Source filter
+        if ($request->has('source') && $request->source) {
+            $disposals->where('source', $request->source);
         }
 
-        // Filter by status
-        if ($request->has('status') && $request->status) {
-            if ($request->status === 'pending') {
-                $disposals->whereNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
-            } elseif ($request->status === 'reviewed') {
-                $disposals->whereNotNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
-            } elseif ($request->status === 'approved') {
-                $disposals->whereNotNull('approved_at');
-            } elseif ($request->status === 'rejected') {
-                $disposals->whereNotNull('rejected_at');
-            }
+        // Date range filter
+        if ($request->has('date_from') && $request->date_from) {
+            $disposals->whereDate('disposed_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to') && $request->date_to) {
+            $disposals->whereDate('disposed_at', '<=', $request->date_to);
         }
 
-        $disposals = $disposals->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
-            ->withQueryString();
+        // Status filter
+        if ($request->has('status') && $request->status && $request->status !== 'all') {
+            $disposals->where('status', $request->status);
+        }
 
-        $disposals->setPath(url()->current()); // Force Laravel to use full URLs
-        
-        // Get warehouses and facilities for filters
-        $warehouses = Warehouse::pluck('name')->toArray();
-        $facilities = Facility::pluck('name')->toArray();
-        
-        return inertia('LiquidateDisposal/Disposal', [
-            'disposals' => DisposalResource::collection($disposals),
-            'filters' => $request->only('search', 'per_page', 'page', 'warehouse_id', 'facility_id', 'status'),
-            'warehouses' => $warehouses,
-            'facilities' => $facilities,
-        ]);
+        return $disposals;
     }
 
-    public function liquidates(Request $request){   
-        $liquidates = Liquidate::query()->with([
-            'product',
+    /**
+     * Show individual liquidation details
+     */
+    public function showLiquidate($id)
+    {
+        $liquidate = Liquidate::with([
+            'items.product',
             'liquidatedBy',
             'approvedBy',
             'reviewedBy',
             'rejectedBy',
             'backOrder'
-        ])
-        ->whereIn('status', ['pending', 'reviewed'])
-        ->latest('liquidate_id');
+        ])->findOrFail($id);
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $liquidates->where('liquidate_id', 'like', "%{$search}%")
-                ->orWhereHas('product', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('barcode', 'like', "%{$search}%")
-                      ->orWhere('batch_number', 'like', "%{$search}%");
-                });
-        }
-
-        // Filter by warehouse (applied to reported_by field)
-        if ($request->has('warehouse') && $request->warehouse) {
-            $liquidates->whereHas('liquidatedBy.warehouse', function ($q) use ($request) {
-                $q->where('name', $request->warehouse);
-            });
-        }
-
-        // Filter by facility (applied to reported_by field)
-        if ($request->has('facility') && $request->facility) {
-            $liquidates->whereHas('liquidatedBy.facility', function ($q) use ($request) {
-                $q->where('name', $request->facility);
-            });
-        }
-
-        // Filter by status
-        if ($request->has('status') && $request->status) {
-            if ($request->status === 'pending') {
-                $liquidates->whereNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
-            } elseif ($request->status === 'reviewed') {
-                $liquidates->whereNotNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at');
-            } elseif ($request->status === 'approved') {
-                $liquidates->whereNotNull('approved_at');
-            } elseif ($request->status === 'rejected') {
-                $liquidates->whereNotNull('rejected_at');
-            }
-        }
-
-        $liquidates = $liquidates->paginate($request->input('per_page', 2), ['*'], 'page', $request->input('page', 1))
-            ->withQueryString();
-        $liquidates->setPath(url()->current()); // Force Laravel to use full URLs
-
-        // Get warehouses and facilities for filters
-        $warehouses = Warehouse::pluck('name')->toArray();
-        $facilities = Facility::pluck('name')->toArray();
-        
-        return inertia('LiquidateDisposal/Liquidate', [
-            'liquidates' => LiquidateResource::collection($liquidates),
-            'filters' => $request->only('search', 'per_page', 'page', 'warehouse', 'facility', 'status'),
-            'warehouses' => $warehouses,
-            'facilities' => $facilities,
+        return inertia('LiquidateDisposal/Liquidate/Show', [
+            'liquidate' => $liquidate,
         ]);
     }
-    
-    public function rollbackDisposal(Request $request, $id)
+
+    /**
+     * Show individual disposal details
+     */
+    public function showDisposal($id)
     {
-        $disposal = Disposal::findOrFail($id);
-        
-        // Check if not approved
-        if ($disposal->approved_by === null) {
-            return response()->json([
-                'message' => 'This disposal has not been approved yet.'
-            ], 422);
-        }
-        
-        // Reset the approval information
-        $disposal->approved_by = null;
-        $disposal->approved_at = null;
-        $disposal->status = 'pending';
-        $disposal->save();
-        
-        return response()->json([
-            'message' => 'Disposal rolled back successfully',
-            'disposal' => $disposal
+        $disposal = Disposal::with([
+            'items.product',
+            'disposedBy',
+            'approvedBy',
+            'reviewedBy',
+            'rejectedBy',
+            'backOrder'
+        ])->findOrFail($id);
+
+        return inertia('LiquidateDisposal/Disposal/Show', [
+            'disposal' => $disposal,
         ]);
     }
-    
+
+    /**
+     * Review a liquidation
+     */
+    public function reviewLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            
+            $liquidate->status = 'reviewed';
+            $liquidate->reviewed_at = now();
+            $liquidate->reviewed_by = Auth::id();
+            $liquidate->save();
+
+            return response()->json([
+                'message' => 'Liquidation reviewed successfully',
+                'liquidate' => $liquidate
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'Error reviewing liquidation: ' . $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve a liquidation
+     */
+    public function approveLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            
+            $liquidate->status = 'approved';
+            $liquidate->approved_at = now();
+            $liquidate->approved_by = Auth::id();
+            $liquidate->rejected_at = null;
+            $liquidate->rejection_reason = null;
+            $liquidate->rejected_by = null;
+            $liquidate->save();
+
+            return response()->json([
+                'message' => 'Liquidation approved successfully',
+                'liquidate' => $liquidate
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'Error approving liquidation: ' . $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject a liquidation
+     */
+    public function rejectLiquidate(Request $request, $id)
+    {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            
+            $liquidate->status = 'rejected';
+            $liquidate->rejected_at = now();
+            $liquidate->rejected_by = Auth::id();
+            $liquidate->rejection_reason = $request->reason;
+            $liquidate->save();
+
+            return response()->json([
+                'message' => 'Liquidation rejected successfully',
+                'liquidate' => $liquidate
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'Error rejecting liquidation: ' . $th->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Rollback an approved liquidation to pending status
      */
     public function rollbackLiquidate(Request $request, $id)
     {
-        $liquidate = Liquidate::findOrFail($id);
-        
-        // Check if not approved
-        if ($liquidate->approved_by === null) {
+        try {
+            $liquidate = Liquidate::findOrFail($id);
+            
+            $liquidate->status = 'pending';
+            $liquidate->approved_by = null;
+            $liquidate->approved_at = null;
+            $liquidate->save();
+
             return response()->json([
-                'message' => 'This liquidation has not been approved yet.'
-            ], 422);
-        }
-        
-        // Reset the approval information
-        $liquidate->approved_by = null;
-        $liquidate->approved_at = null;
-        $liquidate->status = 'pending';
-        $liquidate->save();
-        
-        return response()->json([
-            'message' => 'Liquidation rolled back successfully',
-            'liquidate' => $liquidate
-        ]);
-    }
-
-    public function reviewLiquidate(Request $request, $id)
-    {
-        try {
-            $liquidate = Liquidate::findOrFail($id);
-            if(!$liquidate) return response()->json("Liquidate not found", 500);
-            if($liquidate->status == 'pending') {
-                $liquidate->status = 'reviewed';
-                $liquidate->reviewed_at = now();
-                $liquidate->reviewed_by = Auth::id();
-                $liquidate->save();
-            }
-        
-            return response()->json("Liquidate Reviewed", 200);
+                'message' => 'Liquidation rolled back successfully',
+                'liquidate' => $liquidate
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => 'Error rolling back liquidation: ' . $th->getMessage()
+            ], 500);
         }
     }
 
-    public function approveLiquidate(Request $request, $id)
-    {
-        try {
-            $liquidate = Liquidate::findOrFail($id);
-            if(!$liquidate) return response()->json("Liquidate not found", 500);
-            if($liquidate->status == 'reviewed' || $liquidate->status == 'rejected') {
-                $liquidate->status = 'approved';
-                $liquidate->approved_at = now();
-                $liquidate->rejected_at = null;
-                $liquidate->rejection_reason = null;
-                $liquidate->rejected_by = null;
-                $liquidate->approved_by = Auth::id();
-                $liquidate->save();
-            }        
-            return response()->json("Liquidate Approved", 200);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-        }
-    }
-
-    public function rejectLiquidate(Request $request, $id)
-    {
-        try {
-            $liquidate = Liquidate::findOrFail($id);
-            if(!$liquidate) return response()->json("Liquidate not found", 500);
-            if($liquidate->status == 'reviewed') {
-                $liquidate->status = 'rejected';
-                $liquidate->rejected_at = now();
-                $liquidate->rejection_reason = $request->reason;
-                $liquidate->rejected_by = Auth::id();
-                $liquidate->save();
-            }        
-            return response()->json("Liquidate Rejected", 200);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-        }
-    }
-
-    // disposals
+    /**
+     * Review a disposal
+     */
     public function reviewDisposal(Request $request, $id)
     {
         try {
             $disposal = Disposal::findOrFail($id);
-            if(!$disposal) return response()->json("Disposal not found", 500);
-            if($disposal->status == 'pending') {
-                $disposal->status = 'reviewed';
-                $disposal->reviewed_at = now();
-                $disposal->reviewed_by = Auth::id();
-                $disposal->save();
+            
+            if ($disposal->status !== 'pending') {
+                return response()->json([
+                    'message' => 'Only pending disposals can be reviewed'
+                ], 422);
             }
-        
-            return response()->json("Disposal Reviewed", 200);
+
+            $disposal->status = 'reviewed';
+            $disposal->reviewed_at = now();
+            $disposal->reviewed_by = Auth::id();
+            $disposal->save();
+
+            return response()->json([
+                'message' => 'Disposal reviewed successfully',
+                'disposal' => $disposal
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => 'Error reviewing disposal: ' . $th->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * Approve a disposal
+     */
     public function approveDisposal(Request $request, $id)
     {
         try {
             $disposal = Disposal::findOrFail($id);
-            if(!$disposal) return response()->json("Disposal not found", 500);
-            if($disposal->status == 'reviewed' || $disposal->status == 'rejected') {
-                $disposal->status = 'approved';
-                $disposal->approved_at = now();
-                $disposal->rejected_at = null;
-                $disposal->rejection_reason = null;
-                $disposal->rejected_by = null;
-                $disposal->approved_by = Auth::id();
-                $disposal->save();
-            }        
-            logger()->info("Disposal Approved");
-            return response()->json("Disposal Approved", 200);
+            
+            if (!in_array($disposal->status, ['reviewed', 'rejected'])) {
+                return response()->json([
+                    'message' => 'Only reviewed or rejected disposals can be approved'
+                ], 422);
+            }
+
+            $disposal->status = 'approved';
+            $disposal->approved_at = now();
+            $disposal->approved_by = Auth::id();
+            $disposal->rejected_at = null;
+            $disposal->rejection_reason = null;
+            $disposal->rejected_by = null;
+            $disposal->save();
+
+            return response()->json([
+                'message' => 'Disposal approved successfully',
+                'disposal' => $disposal
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => 'Error approving disposal: ' . $th->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * Reject a disposal
+     */
     public function rejectDisposal(Request $request, $id)
     {
         try {
             $disposal = Disposal::findOrFail($id);
-            if(!$disposal) return response()->json("Disposal not found", 500);
-            if($disposal->status == 'reviewed') {
-                $disposal->status = 'rejected';
-                $disposal->rejected_at = now();
-                $disposal->rejection_reason = $request->reason;
-                $disposal->rejected_by = Auth::id();
-                $disposal->save();
-            }        
-            return response()->json("Disposal Rejected", 200);
+            
+            if ($disposal->status !== 'reviewed') {
+                return response()->json([
+                    'message' => 'Only reviewed disposals can be rejected'
+                ], 422);
+            }
+
+            $disposal->status = 'rejected';
+            $disposal->rejected_at = now();
+            $disposal->rejected_by = Auth::id();
+            $disposal->rejection_reason = $request->reason;
+            $disposal->save();
+
+            return response()->json([
+                'message' => 'Disposal rejected successfully',
+                'disposal' => $disposal
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            return response()->json([
+                'message' => 'Error rejecting disposal: ' . $th->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * Rollback an approved disposal to pending status
+     */
+    public function rollbackDisposal(Request $request, $id)
+    {
+        try {
+            $disposal = Disposal::findOrFail($id);
+            
+            if ($disposal->status !== 'approved') {
+                return response()->json([
+                    'message' => 'Only approved disposals can be rolled back'
+                ], 422);
+            }
+
+            $disposal->status = 'pending';
+            $disposal->approved_by = null;
+            $disposal->approved_at = null;
+            $disposal->save();
+
+            return response()->json([
+                'message' => 'Disposal rolled back successfully',
+                'disposal' => $disposal
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'Error rolling back disposal: ' . $th->getMessage()
+            ], 500);
+        }
+    }
 }

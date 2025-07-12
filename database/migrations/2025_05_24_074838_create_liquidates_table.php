@@ -14,22 +14,15 @@ return new class extends Migration
         Schema::create('liquidates', function (Blueprint $table) {
             $table->id();
             $table->string('liquidate_id')->unique();
-            $table->foreignId('product_id')->nullable()->nullOnDelete();
             $table->foreignId('liquidated_by')->nullable()->nullOnDelete();
-            $table->string('barcode')->nullable();
-            $table->date('expire_date')->nullable();
-            $table->string('batch_number')->nullable();
-            $table->string('uom')->nullable();
-            $table->date('liquidated_at');
-            $table->integer('quantity');
-            $table->string('status');
-            $table->string('type');
-            $table->string('location')->nullable();
+            $table->foreignId('transfer_id')->nullable()->nullOnDelete();
+            $table->foreignId('order_id')->nullable()->unique()->nullOnDelete();
+            $table->foreignId('packing_list_id')->nullable()->unique()->nullOnDelete();
             $table->string('facility')->nullable();
             $table->string('warehouse')->nullable();
-            $table->double('unit_cost')->nullable();
-            $table->double('total_cost')->nullable();
-            $table->text('note')->nullable();
+            $table->timestamp('liquidated_at');
+            $table->string('status');
+            $table->string('source')->nullable();
             $table->foreignId('reviewed_by')->nullable()->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->foreignId('approved_by')->nullable()->nullOnDelete();
@@ -37,7 +30,7 @@ return new class extends Migration
             $table->foreignId('rejected_by')->nullable()->nullOnDelete();
             $table->timestamp('rejected_at')->nullable();
             $table->text('rejection_reason')->nullable();
-            $table->json('attachments')->nullable();
+            $table->foreignId('back_order_id')->nullable()->unique()->nullOnDelete();
             $table->timestamps();
         });
     }
@@ -47,6 +40,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('liquidates');
+        Schema::enableForeignKeyConstraints();
     }
 };

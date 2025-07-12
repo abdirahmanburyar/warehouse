@@ -86,7 +86,7 @@ const reloadDisposals = () => {
     if (props.filters.page) {
         query.page = props.filters.page;
     }
-    router.get(route('liquidate-disposal.disposed-items'), query, {
+    router.get(route('liquidate-disposal.index'), query, {
         preserveState: true,
         preserveScroll: true,
         only: ['disposals']
@@ -122,7 +122,7 @@ const reviewDisposal = (id, index) => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             isReviewing.value[index] = true;
-            await axios.get(route('liquidate-disposal.disposals.review', id))
+            await axios.post(route('api.liquidate-disposal.disposals.review', id))
                 .then((response) => {
                     isReviewing.value[index] = false;
                     Swal.fire({
@@ -160,7 +160,7 @@ const approveDisposal = async (id, index) => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             isApproving.value[index] = true;
-            await axios.get(route('liquidate-disposal.disposals.approve', id))
+            await axios.post(route('api.liquidate-disposal.disposals.approve', id))
                 .then((response) => {
                     isApproving.value[index] = false;
                     Swal.fire({
@@ -235,7 +235,7 @@ const rejectDisposal = async (id, index) => {
 
         if (result.isConfirmed && result.value) {
             isRejecting.value[index] = true;
-            await axios.get(route('liquidate-disposal.disposals.reject', id), {
+            await axios.post(route('api.liquidate-disposal.disposals.reject', id), {
                 reason: result.value
             });
 

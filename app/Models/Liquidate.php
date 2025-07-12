@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Liquidate extends Model
 {
@@ -20,39 +21,41 @@ class Liquidate extends Model
 
     protected $fillable = [
         'liquidate_id',
-        'product_id',
         'liquidated_by',
         'liquidated_at',
-        'quantity',
         'status',
-        'type',
-        'barcode',
-        'expire_date',
-        'batch_number',
-        'uom',
-        'location',
-        'facility',
-        'warehouse',
-        'unit_cost',
-        'tota_cost',
-        'note',
+        'source',
         'reviewed_by',
         'reviewed_at',
         'approved_by',
         'approved_at',
         'rejected_by',
         'rejected_at',
+        'facility',
+        'warehouse',
         'rejection_reason',
-        'attachments',
         'back_order_id',
+        'packing_list_id',
+        'order_id',
+        'transfer_id',
     ];
 
     /**
-     * Get the product that owns the liquidate record
+     * The attributes that should be cast.
      */
-    public function product(): BelongsTo
+    protected $casts = [
+        'liquidated_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+    ];
+
+    /**
+     * Get the items for this liquidation
+     */
+    public function items(): HasMany
     {
-        return $this->belongsTo(Product::class);
+        return $this->hasMany(LiquidateItem::class);
     }
 
     /**
@@ -93,5 +96,13 @@ class Liquidate extends Model
     public function backOrder(): BelongsTo
     {
         return $this->belongsTo(BackOrder::class);
+    }
+
+    /**
+     * Get the approvals for this liquidation
+     */
+    public function approvals()
+    {
+        return $this->hasMany(\App\Models\Approval::class, 'model_id')->where('model', 'liquidate');
     }
 }

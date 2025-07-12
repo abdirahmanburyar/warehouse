@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Disposal extends Model
 {
@@ -20,18 +21,10 @@ class Disposal extends Model
 
     protected $fillable = [
         'disposal_id',
-        'product_id',
         'disposed_by',
         'disposed_at',
-        'quantity',
         'status',
-        'barcode',
-        'expire_date',
-        'batch_number',
-        'uom',
-        'attachments',
-        'note',
-        'type',
+        'source',
         'reviewed_by',
         'reviewed_at',
         'approved_by',
@@ -39,20 +32,25 @@ class Disposal extends Model
         'rejected_by',
         'rejected_at',
         'rejection_reason',
-        'location',
-        'facility',
-        'warehouse',
-        'unit_cost',
-        'total_cost',
         'back_order_id',
     ];
 
     /**
-     * Get the product that owns the disposal record
+     * The attributes that should be cast.
      */
-    public function product(): BelongsTo
+    protected $casts = [
+        'disposed_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+    ];
+
+    /**
+     * Get the items for this disposal
+     */
+    public function items(): HasMany
     {
-        return $this->belongsTo(Product::class);
+        return $this->hasMany(DisposalItem::class);
     }
 
     /**
@@ -88,7 +86,7 @@ class Disposal extends Model
     }
 
     /**
-     * Get the back order that owns the disposal record
+     * Get the back order associated with this disposal
      */
     public function backOrder(): BelongsTo
     {

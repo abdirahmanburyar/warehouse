@@ -179,7 +179,7 @@
                 <!-- Liquidate and disposals -->
                 <Link
                     v-if="$page.props.auth.can.liquidate_view"
-                    :href="route('liquidate-disposal.liquidates')"
+                    :href="route('liquidate-disposal.index')"
                     class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }"
                     @click="setCurrentPage('liquidate-disposal')"

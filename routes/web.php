@@ -351,19 +351,26 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
     });
 
+    // Liquidate & Disposal Management Routes
     Route::controller(LiquidateDisposalController::class)
         ->name('liquidate-disposal.')
-        ->prefix('back-order')
+        ->prefix('liquidate-disposal')
         ->group(function(){
-            Route::get('/disposals', 'disposals')->name('disposed-items');
-            Route::get('/liquidates', 'liquidates')->name('liquidates');
-            Route::get('/liquidates/{id}/review', 'reviewLiquidate')->name('liquidates.review');
-            Route::get('/liquidates/{id}/approve', 'approveLiquidate')->name('liquidates.approve');
-            Route::get('/liquidates/{id}/reject', 'rejectLiquidate')->name('liquidates.reject');
-
-            Route::get('/disposals/{id}/review', 'reviewDisposal')->name('disposals.review');
-            Route::get('/disposals/{id}/approve', 'approveDisposal')->name('disposals.approve');
-            Route::get('/disposals/{id}/reject', 'rejectDisposal')->name('disposals.reject');
+            Route::get('/', 'index')->name('index');
+            Route::get('/liquidates/{id}', 'showLiquidate')->name('liquidates.show');
+            Route::get('/disposals/{id}', 'showDisposal')->name('disposals.show');
+            
+            // Liquidation action routes
+            Route::post('/liquidates/{id}/review', 'reviewLiquidate')->name('liquidates.review');
+            Route::post('/liquidates/{id}/approve', 'approveLiquidate')->name('liquidates.approve');
+            Route::post('/liquidates/{id}/reject', 'rejectLiquidate')->name('liquidates.reject');
+            Route::post('/liquidates/{id}/rollback', 'rollbackLiquidate')->name('liquidates.rollback');
+            
+            // Disposal action routes
+            Route::post('/disposals/{id}/review', 'reviewDisposal')->name('disposals.review');
+            Route::post('/disposals/{id}/approve', 'approveDisposal')->name('disposals.approve');
+            Route::post('/disposals/{id}/reject', 'rejectDisposal')->name('disposals.reject');
+            Route::post('/disposals/{id}/rollback', 'rollbackDisposal')->name('disposals.rollback');
         });
 
     // Supplier Management Routes
