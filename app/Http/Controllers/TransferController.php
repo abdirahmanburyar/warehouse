@@ -663,7 +663,8 @@ class TransferController extends Controller
             $transfer = Transfer::where('id', $id)
             ->with([
                 'items.product.category',
-                'dispatch',
+                'dispatch.driver',
+                'dispatch.logistic_company',
                 'items.inventory_allocations.location',
                 'items.differences', 
                 'backorders', 
