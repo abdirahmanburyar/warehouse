@@ -290,7 +290,7 @@
                                         </div>
 
                                         <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                                            <img src="/assets/images/delivered.png" class="w-8 h-8" alt="Delivered" />
+                                            <img src="/assets/images/delivery.png" class="w-8 h-8" alt="Delivered" />
                                             <div>
                                                 <h3 class="font-medium text-gray-900">Delivered</h3>
                                                 <p class="text-sm text-gray-600">Transfer has been delivered to destination</p>
@@ -333,6 +333,10 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Received</span>
                             </div>
                         </div>
                     </div>
@@ -450,6 +454,26 @@
                                                     title="Pending" />
                                             </div>
 
+                                            <!-- Show reviewed if status is reviewed or further -->
+                                            <template v-if="
+                                                [
+                                                    'reviewed',
+                                                    'approved',
+                                                    'in_process',
+                                                    'dispatched',
+                                                    'transferred',
+                                                    'delivered',
+                                                    'received',
+                                                ].includes(
+                                                    transfer.status?.toLowerCase()
+                                                )
+                                            ">
+                                                <div class="flex items-center gap-1">
+                                                    <img src="/assets/images/review.png" class="w-8 h-8"
+                                                        alt="Reviewed" title="Reviewed" />
+                                                </div>
+                                            </template>
+
                                             <!-- Show approved if status is approved or further -->
                                             <template v-if="
                                                 [
@@ -557,7 +581,7 @@
             <div class="md:col-span-3 sm:col-span-12">
                 <div class="bg-white mb-4">
                     <h3 class="text-xs text-black mb-4">Transfer Statistics</h3>
-                    <div class="flex justify-between">
+                    <div class="flex justify-between gap-1">
                         <!-- Pending -->
                         <div class="flex flex-col items-center">
                             <div class="h-[250px] w-8 bg-amber-50 relative overflow-hidden shadow-md rounded-2xl">
@@ -578,6 +602,10 @@
                                         }}%
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Pending</span>
                             </div>
                         </div>
 
@@ -603,6 +631,10 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Reviewed</span>
+                            </div>
                         </div>
 
                         <!-- Approved -->
@@ -626,6 +658,10 @@
                                         }}%
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Approved</span>
                             </div>
                         </div>
 
@@ -651,6 +687,10 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900" style="font-size: 10px; font-weight: bold">In
+                                    Process</span>
+                            </div>
                         </div>
 
                         <!-- Dispatched -->
@@ -675,6 +715,10 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Dispatched</span>
+                            </div>
                         </div>
 
                         <!-- Delivered -->
@@ -698,6 +742,10 @@
                                         }}%
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <span class="font-medium text-gray-900"
+                                    style="font-size: 10px; font-weight: bold">Delivered</span>
                             </div>
                         </div>
 
@@ -767,7 +815,7 @@ const props = defineProps({
     },
 });
 
-const currentTab = ref("all");
+const currentTab = ref(props.filters.tab || "all");
 const currentDirectionTab = ref("other");
 
 // UI states
