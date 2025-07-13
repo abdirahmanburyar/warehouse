@@ -998,7 +998,7 @@ class ReportController extends Controller
             'items.inventory_allocations.product:id,name',
             'items.inventory_allocations.warehouse',
             'items.inventory_allocations.location',
-            'facility',
+            'facility.handledby',
             'user',
             'approvedBy',
             'rejectedBy',
@@ -1031,19 +1031,34 @@ class ReportController extends Controller
             $request->input('page', 1)
         )->withQueryString();
     
-        // Transform orders: extract inventory_allocations, remove items
+        // Transform orders: extract inventory_allocations, remove items, and add tracking_data
         $orders->getCollection()->transform(function ($order) {
             $inventoryAllocations = collect();
+            $totalAllocated = 0;
+            $totalReceived = 0;
     
             foreach ($order->items as $item) {
                 foreach ($item->inventory_allocations as $alloc) {
                     $inventoryAllocations->push($alloc);
                 }
+                // Use OrderItem fields directly
+                $totalAllocated += $item->quantity_to_release ?? 0;
+                $totalReceived += $item->received_quantity ?? 0;
             }
+    
+            // Calculate fulfillment percentage
+            $fulfillmentPercentage = $totalAllocated > 0 ? round(($totalReceived / $totalAllocated) * 100) : 0;
     
             // Remove items relation and add top-level inventory_allocations
             $order->unsetRelation('items');
             $order->inventory_allocations = $inventoryAllocations;
+            
+            // Add tracking_data with fulfillment metrics
+            $order->tracking_data = [
+                'total_allocated' => $totalAllocated,
+                'total_received' => $totalReceived,
+                'fulfillment_percentage' => $fulfillmentPercentage,
+            ];
     
             return $order;
         });
