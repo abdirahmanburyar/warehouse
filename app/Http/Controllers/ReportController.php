@@ -909,6 +909,196 @@ class ReportController extends Controller
         ]);
     }
 
+    public function orderTracking(Request $request)
+    {
+        // Get facilities for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+    
+        $query = Order::query();
+    
+        // Eager load only order-level relationships
+        $query->with([
+            'facility.handledby',
+            'createdBy',
+            'approvedBy',
+            'rejectedBy',
+            'dispatchedBy'
+        ]);
+    
+        // Filters
+        if ($request->filled('facility')) {
+            $query->whereHas('facility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('order_date', $request->date_from);
+        }
+    
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('order_date', [$request->date_from, $request->date_to]);
+        }
+    
+        $orders = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+    
+        // Transform orders with order-level tracking data
+        $orders->getCollection()->transform(function ($order) {
+            // Calculate order-level metrics using raw queries for better performance
+            $orderStats = DB::table('order_items')
+                ->join('inventory_allocations', 'order_items.id', '=', 'inventory_allocations.order_item_id')
+                ->where('order_items.order_id', $order->id)
+                ->selectRaw('
+                    SUM(order_items.quantity) as total_items,
+                    SUM(inventory_allocations.allocated_quantity) as total_allocated,
+                    SUM(inventory_allocations.received_quantity) as total_received
+                ')
+                ->first();
+    
+            $totalItems = $orderStats->total_items ?? 0;
+            $totalAllocated = $orderStats->total_allocated ?? 0;
+            $totalReceived = $orderStats->total_received ?? 0;
+            $progressPercentage = $totalAllocated > 0 ? round(($totalReceived / $totalAllocated) * 100) : 0;
+    
+            $order->tracking_data = [
+                'total_items' => $totalItems,
+                'total_allocated' => $totalAllocated,
+                'total_received' => $totalReceived,
+                'progress_percentage' => $progressPercentage,
+            ];
+    
+            return $order;
+        });
+    
+        // Set full path to keep proper pagination links
+        $orders->setPath(url()->current());
+    
+        return inertia('Report/OrderTracking', [
+            'orders' => $orders,
+            'filters' => $request->only('facility', 'status', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities
+        ]);
+    }
+
+    public function orderFulfillment(Request $request)
+    {
+        // Get facilities for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+    
+        $query = Order::query();
+    
+        // Eager load nested relationships for fulfillment analysis
+        $query->with([
+            'items.inventory_allocations.back_order',
+            'items.inventory_allocations.product:id,name',
+            'items.inventory_allocations.warehouse',
+            'items.inventory_allocations.location',
+            'facility',
+            'user',
+            'approvedBy',
+            'rejectedBy',
+            'dispatchedBy'
+        ]);
+    
+        // Filters
+        if ($request->filled('facility')) {
+            $query->whereHas('facility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('order_date', $request->date_from);
+        }
+    
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('order_date', [$request->date_from, $request->date_to]);
+        }
+    
+        $orders = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+    
+        // Transform orders: extract inventory_allocations, remove items
+        $orders->getCollection()->transform(function ($order) {
+            $inventoryAllocations = collect();
+    
+            foreach ($order->items as $item) {
+                foreach ($item->inventory_allocations as $alloc) {
+                    $inventoryAllocations->push($alloc);
+                }
+            }
+    
+            // Remove items relation and add top-level inventory_allocations
+            $order->unsetRelation('items');
+            $order->inventory_allocations = $inventoryAllocations;
+    
+            return $order;
+        });
+    
+        // Set full path to keep proper pagination links
+        $orders->setPath(url()->current());
+
+        // Calculate fulfillment metrics
+        $fulfillmentMetrics = $this->calculateFulfillmentMetrics($query->get());
+    
+        return inertia('Report/OrderFulfillment', [
+            'orders' => $orders,
+            'filters' => $request->only('facility', 'status', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities,
+            'fulfillmentMetrics' => $fulfillmentMetrics,
+        ]);
+    }
+
+    private function calculateFulfillmentMetrics($orders)
+    {
+        $totalOrders = $orders->count();
+        $totalItems = 0;
+        $totalAllocated = 0;
+        $totalReceived = 0;
+
+        foreach ($orders as $order) {
+            foreach ($order->items as $item) {
+                $totalItems += $item->quantity;
+                
+                foreach ($item->inventory_allocations as $allocation) {
+                    $totalAllocated += $allocation->allocated_inventory ?? 0;
+                    $totalReceived += $allocation->received_quantity ?? 0;
+                }
+            }
+        }
+
+        $allocationRate = $totalItems > 0 ? ($totalAllocated / $totalItems) * 100 : 0;
+        $fulfillmentRate = $totalItems > 0 ? ($totalReceived / $totalItems) * 100 : 0;
+        $efficiencyRate = $totalAllocated > 0 ? ($totalReceived / $totalAllocated) * 100 : 0;
+
+        return [
+            'totalOrders' => $totalOrders,
+            'totalItems' => $totalItems,
+            'totalAllocated' => $totalAllocated,
+            'totalReceived' => $totalReceived,
+            'allocationRate' => round($allocationRate, 2),
+            'fulfillmentRate' => round($fulfillmentRate, 2),
+            'efficiencyRate' => round($efficiencyRate, 2),
+        ];
+    }
+
     public function transfers(Request $request)
     {
         // Get facilities for dropdown

@@ -141,6 +141,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::middleware(PermissionMiddleware::class . ':role.view')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports');
         Route::get('/reports/orders', [ReportController::class, 'orders'])->name('reports.orders');
+        Route::get('/reports/order-tracking', [ReportController::class, 'orderTracking'])->name('reports.order-tracking');
+        Route::get('/reports/order-fulfillment', [ReportController::class, 'orderFulfillment'])->name('reports.order-fulfillment');
         Route::get('/reports/transfers', [ReportController::class, 'transfers'])->name('reports.transfers');
         Route::get('/reports/purchase-orders', [ReportController::class, 'purchaseOrders'])->name('reports.purchase-orders');
         Route::get('/reports/packing-list', [ReportController::class, 'packingList'])->name('reports.packing-list');
