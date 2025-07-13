@@ -1422,20 +1422,56 @@ class ReportController extends Controller
 
         // Filter by facility type
         if ($request->filled('facility_type')) {
-            $query->where('facility_type', $request->facility_type);
+            if (is_array($request->facility_type)) {
+                $facilityTypes = collect($request->facility_type)->pluck('value')->filter();
+                if ($facilityTypes->isNotEmpty()) {
+                    $query->whereIn('facility_type', $facilityTypes);
+                }
+            } else {
+                $query->where('facility_type', $request->facility_type);
+            }
         }
 
         // Filter by product
         if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
+            if (is_array($request->product_id)) {
+                $productIds = collect($request->product_id)->pluck('id')->filter();
+                if ($productIds->isNotEmpty()) {
+                    $query->whereIn('product_id', $productIds);
+                }
+            } else {
+                $query->where('product_id', $request->product_id);
+            }
         }
 
         // Filter by category
         if ($request->filled('category_id')) {
+            if (is_array($request->category_id)) {
+                $categoryIds = collect($request->category_id)->pluck('id')->filter();
+                if ($categoryIds->isNotEmpty()) {
+                    $query->whereHas('product', function($q) use ($categoryIds) {
+                        $q->whereIn('category_id', $categoryIds);
+                    });
+                }
+            } else {
+                $query->whereHas('product', function($q) use ($request) {
+                    $q->where('category_id', $request->category_id);
+                });
+            }
+        }
+
+        // Search by product name or ID
+        if ($request->filled('search')) {
             $query->whereHas('product', function($q) use ($request) {
-                $q->where('category_id', $request->category_id);
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('productID', 'like', '%' . $request->search . '%');
             });
         }
+
+        // Get counts for summary cards (before pagination)
+        $totalCount = (clone $query)->count();
+        $uniqueProductsCount = (clone $query)->distinct('product_id')->count();
+        $facilityTypesCount = (clone $query)->distinct('facility_type')->count();
 
         $eligibleItems = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
@@ -1456,7 +1492,12 @@ class ReportController extends Controller
             'products' => \App\Models\Product::where('is_active', true)->get(),
             'categories' => \App\Models\Category::where('is_active', true)->get(),
             'facilityTypes' => $facilityTypes,
-            'filters' => $request->only(['facility_type', 'product_id', 'category_id', 'per_page'])
+            'filters' => $request->only(['facility_type', 'product_id', 'category_id', 'search', 'per_page']),
+            'summary' => [
+                'total_count' => $totalCount,
+                'unique_products_count' => $uniqueProductsCount,
+                'facility_types_count' => $facilityTypesCount
+            ]
         ]);
     }
 
