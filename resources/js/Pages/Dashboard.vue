@@ -412,8 +412,8 @@ const issuedChartOptions = {
                   { key: 'delivered', img: '/assets/images/delivery.png', label: 'Delivered' },
                   { key: 'received', img: '/assets/images/received.png', label: 'Received' },
                   { key: 'rejected', img: '/assets/images/rejected.png', label: 'Rejected' }
-                ]" :key="status.key" class="flex flex-row items-center space-x-2 min-w-[120px]">
-                  <img :src="status.img" class="w-10 h-10" :alt="status.label" :title="status.label" />
+                ]" :key="status.key" class="flex flex-row items-center space-x-2 min-w-[100px]">
+                  <img :src="status.img" class="w-8 h-8" :alt="status.label" :title="status.label" />
                   <div>
                     <div class="text-xs font-bold text-gray-900">{{ props.orderStats[status.key] }}</div>
                     <div class="text-[10px] text-gray-600">{{ status.label }}</div>
