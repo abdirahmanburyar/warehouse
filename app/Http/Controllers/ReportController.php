@@ -1748,4 +1748,144 @@ class ReportController extends Controller
             return 'safe';
         }
     }
+
+    /**
+     * Liquidation Report
+     */
+    public function liquidationReport(Request $request)
+    {
+        $query = \App\Models\Liquidate::query()
+            ->with(['items.product.category', 'items.product.dosage', 'liquidatedBy', 'approvedBy', 'rejectedBy', 'reviewedBy']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by source
+        if ($request->filled('source')) {
+            $query->where('source', $request->source);
+        }
+
+        // Filter by facility
+        if ($request->filled('facility')) {
+            $query->where('facility', 'like', '%' . $request->facility . '%');
+        }
+
+        // Filter by warehouse
+        if ($request->filled('warehouse')) {
+            $query->where('warehouse', 'like', '%' . $request->warehouse . '%');
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('liquidated_at', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('liquidated_at', [$request->date_from, $request->date_to]);
+        }
+
+        // Search by liquidation ID
+        if ($request->filled('search')) {
+            $query->where('liquidate_id', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalLiquidations = $baseQuery->count();
+        $approvedCount = (clone $baseQuery)->where('status', 'approved')->count();
+        $rejectedCount = (clone $baseQuery)->where('status', 'rejected')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'pending')->count();
+        $totalValue = $baseQuery->join('liquidate_items', 'liquidates.id', '=', 'liquidate_items.liquidate_id')
+            ->sum('liquidate_items.total_cost');
+
+        $liquidations = $query->orderBy('liquidated_at', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $liquidations->setPath(url()->current());
+
+        // Get unique sources for filter
+        $sources = \App\Models\Liquidate::distinct('source')
+            ->whereNotNull('source')
+            ->pluck('source');
+
+        return inertia('Report/LiquidationDisposal/Liquidation', [
+            'liquidations' => $liquidations,
+            'filters' => $request->only(['status', 'source', 'facility', 'warehouse', 'date_from', 'date_to', 'search', 'per_page']),
+            'summary' => [
+                'total_liquidations' => $totalLiquidations,
+                'approved_count' => $approvedCount,
+                'rejected_count' => $rejectedCount,
+                'pending_count' => $pendingCount,
+                'total_value' => $totalValue
+            ],
+            'sources' => $sources
+        ]);
+    }
+
+    /**
+     * Disposal Report
+     */
+    public function disposalReport(Request $request)
+    {
+        $query = \App\Models\Disposal::query()
+            ->with(['items.product.category', 'items.product.dosage', 'disposedBy', 'approvedBy', 'rejectedBy', 'reviewedBy']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by source
+        if ($request->filled('source')) {
+            $query->where('source', $request->source);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('disposed_at', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('disposed_at', [$request->date_from, $request->date_to]);
+        }
+
+        // Search by disposal ID
+        if ($request->filled('search')) {
+            $query->where('disposal_id', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalDisposals = $baseQuery->count();
+        $approvedCount = (clone $baseQuery)->where('status', 'approved')->count();
+        $rejectedCount = (clone $baseQuery)->where('status', 'rejected')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'pending')->count();
+        $totalValue = $baseQuery->join('disposal_items', 'disposals.id', '=', 'disposal_items.disposal_id')
+            ->sum('disposal_items.total_cost');
+
+        $disposals = $query->orderBy('disposed_at', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $disposals->setPath(url()->current());
+
+        // Get unique sources for filter
+        $sources = \App\Models\Disposal::distinct('source')
+            ->whereNotNull('source')
+            ->pluck('source');
+
+        return inertia('Report/LiquidationDisposal/Disposal', [
+            'disposals' => $disposals,
+            'filters' => $request->only(['status', 'source', 'date_from', 'date_to', 'search', 'per_page']),
+            'summary' => [
+                'total_disposals' => $totalDisposals,
+                'approved_count' => $approvedCount,
+                'rejected_count' => $rejectedCount,
+                'pending_count' => $pendingCount,
+                'total_value' => $totalValue
+            ],
+            'sources' => $sources
+        ]);
+    }
 }

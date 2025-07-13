@@ -269,6 +269,46 @@
                         </div>
                     </div>
 
+                    <!-- Liquidation & Disposal Reports Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900">Liquidation & Disposal</h3>
+                                    <p class="text-sm text-gray-600">Item disposal tracking</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-4">
+                                Track product liquidations and item disposals with comprehensive reporting on status, approvals, and financial impact.
+                            </p>
+                            
+                            <div class="space-y-2">
+                                <Link :href="route('reports.liquidation-disposal.liquidation')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <span>Liquidation Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.liquidation-disposal.disposal')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <span>Disposal Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
