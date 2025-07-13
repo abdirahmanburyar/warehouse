@@ -679,6 +679,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/products/eligibility', [ReportController::class, 'productEligibility'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.eligibility');
         Route::get('/products/categories', [ReportController::class, 'productCategories'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.categories');
         Route::get('/products/dosage-forms', [ReportController::class, 'productDosageForms'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.dosage-forms');
+        Route::get('/products/expiry-tracking', [ReportController::class, 'productExpiryTracking'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.expiry-tracking');
     });
 
     // Approval Routes

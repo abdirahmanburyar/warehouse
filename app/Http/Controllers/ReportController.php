@@ -1596,4 +1596,156 @@ class ReportController extends Controller
             'filters' => $request->only(['status', 'search', 'per_page'])
         ]);
     }
+
+    /**
+     * Product Expiry Tracking Report
+     */
+    public function productExpiryTracking(Request $request)
+    {
+        $now = \Carbon\Carbon::now();
+        $sixMonthsFromNow = $now->copy()->addMonths(6);
+        $oneYearFromNow = $now->copy()->addYear();
+
+        // Start with InventoryItem as the base model for expiry tracking
+        $query = \App\Models\InventoryItem::query()
+            ->with(['product.category', 'product.dosage', 'warehouse'])
+            ->where('quantity', '>', 0)
+            ->whereNotNull('expiry_date');
+
+        // Filter by expiry timeframe
+        if ($request->filled('expiry_timeframe')) {
+            $timeframe = $request->expiry_timeframe;
+            
+            switch ($timeframe) {
+                case 'expired':
+                    $query->where('expiry_date', '<', $now);
+                    break;
+                case '6_months':
+                    $query->where('expiry_date', '>=', $now)
+                          ->where('expiry_date', '<=', $sixMonthsFromNow);
+                    break;
+                case '1_year':
+                    $query->where('expiry_date', '>=', $now)
+                          ->where('expiry_date', '<=', $oneYearFromNow);
+                    break;
+                case 'all_expiring':
+                    $query->where('expiry_date', '<=', $oneYearFromNow);
+                    break;
+            }
+        }
+
+        // Filter by product
+        if ($request->filled('product_ids') && is_array($request->product_ids)) {
+            $productIds = collect($request->product_ids)->pluck('id')->filter();
+            if ($productIds->isNotEmpty()) {
+                $query->whereIn('product_id', $productIds);
+            }
+        }
+
+        // Filter by category
+        if ($request->filled('category_ids') && is_array($request->category_ids)) {
+            $categoryIds = collect($request->category_ids)->pluck('id')->filter();
+            if ($categoryIds->isNotEmpty()) {
+                $query->whereHas('product', function($q) use ($categoryIds) {
+                    $q->whereIn('category_id', $categoryIds);
+                });
+            }
+        }
+
+        // Filter by dosage
+        if ($request->filled('dosage_ids') && is_array($request->dosage_ids)) {
+            $dosageIds = collect($request->dosage_ids)->pluck('id')->filter();
+            if ($dosageIds->isNotEmpty()) {
+                $query->whereHas('product', function($q) use ($dosageIds) {
+                    $q->whereIn('dosage_id', $dosageIds);
+                });
+            }
+        }
+
+        // Filter by warehouse
+        if ($request->filled('warehouse_ids') && is_array($request->warehouse_ids)) {
+            $warehouseIds = collect($request->warehouse_ids)->pluck('id')->filter();
+            if ($warehouseIds->isNotEmpty()) {
+                $query->whereIn('warehouse_id', $warehouseIds);
+            }
+        }
+
+        // Search by product name, ID, batch number, or barcode
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('batch_number', 'like', '%' . $search . '%')
+                  ->orWhere('barcode', 'like', '%' . $search . '%')
+                  ->orWhereHas('product', function($prodQ) use ($search) {
+                      $prodQ->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('productID', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalItems = $baseQuery->count();
+        $expiredCount = (clone $baseQuery)->where('expiry_date', '<', $now)->count();
+        $expiring6MonthsCount = (clone $baseQuery)->where('expiry_date', '>=', $now)
+                                                  ->where('expiry_date', '<=', $sixMonthsFromNow)->count();
+        $expiring1YearCount = (clone $baseQuery)->where('expiry_date', '>=', $now)
+                                                ->where('expiry_date', '<=', $oneYearFromNow)->count();
+        $totalQuantity = $baseQuery->sum('quantity');
+        $totalValue = $baseQuery->sum(DB::raw('quantity * unit_cost'));
+
+        $expiryItems = $query->orderBy('expiry_date', 'asc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $expiryItems->setPath(url()->current());
+
+        // Transform the data to add expiry-related calculations
+        $expiryItems->getCollection()->transform(function($item) use ($now) {
+            $item->expiry_date = \Carbon\Carbon::parse($item->expiry_date);
+            $item->is_expired = $item->expiry_date->lt($now);
+            $item->days_until_expiry = $now->diffInDays($item->expiry_date, false);
+            $item->expiry_status = $this->getExpiryStatus($item->expiry_date, $now);
+            $item->total_value = $item->quantity * ($item->unit_cost ?? 0);
+            return $item;
+        });
+
+        return inertia('Report/Products/ExpiryTracking', [
+            'expiryItems' => $expiryItems,
+            'products' => \App\Models\Product::where('is_active', true)->get(),
+            'categories' => \App\Models\Category::where('is_active', true)->get(),
+            'dosages' => \App\Models\Dosage::where('is_active', true)->get(),
+            'warehouses' => \App\Models\Warehouse::all(),
+            'filters' => $request->only(['expiry_timeframe', 'product_ids', 'category_ids', 'dosage_ids', 'warehouse_ids', 'search', 'per_page']),
+            'summary' => [
+                'total_items' => $totalItems,
+                'expired_count' => $expiredCount,
+                'expiring_6_months_count' => $expiring6MonthsCount,
+                'expiring_1_year_count' => $expiring1YearCount,
+                'total_quantity' => $totalQuantity,
+                'total_value' => $totalValue
+            ]
+        ]);
+    }
+
+    /**
+     * Helper method to determine expiry status
+     */
+    private function getExpiryStatus($expiryDate, $now)
+    {
+        if ($expiryDate->lt($now)) {
+            return 'expired';
+        }
+        
+        $daysUntilExpiry = $now->diffInDays($expiryDate, false);
+        
+        if ($daysUntilExpiry <= 30) {
+            return 'critical';
+        } elseif ($daysUntilExpiry <= 90) {
+            return 'warning';
+        } elseif ($daysUntilExpiry <= 180) {
+            return 'notice';
+        } else {
+            return 'safe';
+        }
+    }
 }

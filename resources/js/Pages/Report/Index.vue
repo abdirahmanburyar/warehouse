@@ -236,6 +236,39 @@
                         </div>
                     </div>
 
+                    <!-- Expiry Reports Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900">Expiry Reports</h3>
+                                    <p class="text-sm text-gray-600">Expiration tracking & alerts</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-4">
+                                Monitor product expiration dates with comprehensive tracking for expired, expiring within 6 months, and expiring within 1 year.
+                            </p>
+                            
+                            <div class="space-y-2">
+                                <Link :href="route('reports.products.expiry-tracking')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-red-50 rounded-lg transition-colors">
+                                    <span>Expiry Tracking Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
