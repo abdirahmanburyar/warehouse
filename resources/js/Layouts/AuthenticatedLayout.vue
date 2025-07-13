@@ -486,7 +486,7 @@ const props = defineProps({
     },
     img: {
         type: String,
-        default: "/assets/images/head_web.gif",
+        default: "",
     },
 });
 

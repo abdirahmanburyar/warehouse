@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Tracertable Items Dashboard" description="Track and monitor tracertable items across warehouses and facilities" img="/assets/images/products.png">
+    <AuthenticatedLayout title="Tracertable Items Dashboard" description="Track and monitor tracertable items across warehouses and facilities">
         <!-- Header Section -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
