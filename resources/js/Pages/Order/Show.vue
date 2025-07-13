@@ -383,16 +383,16 @@
                                     </button>
                                 </td>
                                 <!-- Item Details Columns -->
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ inv.allocated_quantity || '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ inv.batch_number || '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ inv.expiry_date ? moment(inv.expiry_date).format('DD/MM/YYYY') : '' }}
                                 </td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
                                     <div class="flex flex-col text-xs">{{ inv.location }}</div>
                                 </td>
                             </tr>
@@ -435,10 +435,10 @@
                                         Show Back Order
                                     </button>
                                 </td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.allocated_quantity || '' }}</td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.batch_number || '' }}</td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : '' }}</td>
-                                <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center"><div class="flex flex-col text-xs">{{ item.location }}</div></td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.allocated_quantity || '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.batch_number || '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : '' }}</td>
+                                <td class="px-2 py-1 text-xs border-b text-center" style="border-bottom: 1px solid #B7C6E6;"><div class="flex flex-col text-xs">{{ item.location }}</div></td>
                             </tr>
                         </template>
                     </template>
