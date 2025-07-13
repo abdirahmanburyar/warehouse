@@ -14,47 +14,48 @@
 
                 <!-- Filters Section -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
-                    <form @submit.prevent="applyFilters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">Results: {{ dosages.total }}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <!-- Status Filter -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Dosage Status</label>
-                            <select v-model="filters.status" class="w-full border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <Multiselect
+                                v-model="status"
+                                :options="statusOptions"
+                                :multiple="true"
+                                :searchable="true"
+                                :create-option="false"
+                                :show-labels="false"
+                                :close-on-select="true"
+                                placeholder="Select status..."
+                                track-by="value"
+                                label="label"
+                                class="w-full"
+                            />
                         </div>
-
                         <!-- Search Filter -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Search Dosage</label>
-                            <input 
-                                v-model="filters.search" 
-                                type="text" 
-                                placeholder="Dosage name..."
-                                class="w-full border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                            >
+                            <div class="relative">
+                                <input 
+                                    v-model="search" 
+                                    type="text" 
+                                    placeholder="Dosage name..."
+                                    class="w-full border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm pl-10"
+                                >
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
-
-                        <!-- Filter Actions -->
-                        <div class="flex gap-3">
-                            <button 
-                                type="submit" 
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                            >
-                                Apply Filters
-                            </button>
-                            <button 
-                                type="button" 
-                                @click="clearFilters"
-                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                            >
-                                Clear Filters
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
 
                 <!-- Summary Cards -->
@@ -125,17 +126,17 @@
                 </div>
 
                 <!-- Dosage Forms Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-[80px]">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">Dosage Forms List</h3>
                             <div class="flex items-center space-x-2">
                                 <label class="text-sm text-gray-600">Show:</label>
-                                <select v-model="filters.per_page" @change="applyFilters" class="border-gray-300 rounded-md text-sm">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
+                                <select v-model="per_page" @change="props.filters.page = 1" class="border-gray-300 rounded-md text-sm">
+                                    <option value="10">10 Per Page</option>
+                                    <option value="25">25 Per Page</option>
+                                    <option value="50">50 Per Page</option>
+                                    <option value="100">100 Per Page</option>
                                 </select>
                             </div>
                         </div>
@@ -185,10 +186,10 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <button 
-                                            @click="toggleDosageDetails(dosage.id)"
+                                            @click="openProductsModal(dosage)"
                                             class="text-indigo-600 hover:text-indigo-900"
                                         >
-                                            {{ expandedDosages.includes(dosage.id) ? 'Hide' : 'View' }} Products
+                                            View Products
                                         </button>
                                     </td>
                                 </tr>
@@ -196,13 +197,19 @@
                         </table>
                     </div>
 
-                    <!-- Expanded Dosage Details -->
-                    <div v-for="dosage in dosages.data" :key="`details-${dosage.id}`" v-show="expandedDosages.includes(dosage.id)" class="border-t border-gray-200 bg-gray-50">
-                        <div class="px-6 py-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">Products with {{ dosage.name }} Dosage Form</h4>
-                            <div class="overflow-x-auto">
+                    <!-- Modal for Products -->
+                    <transition name="fade">
+                    <div v-if="showProductsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" aria-modal="true" role="dialog" tabindex="-1" @keydown.esc="closeProductsModal">
+                        <div class="bg-white w-full h-full flex flex-col shadow-2xl relative overflow-hidden" ref="modalRef">
+                            <!-- Sticky Header -->
+                            <div class="flex items-center justify-between px-8 py-6 border-b border-gray-200 bg-white sticky top-0 z-10">
+                                <h4 class="text-xl font-semibold text-gray-900">Products with {{ selectedDosage?.name }} Dosage Form</h4>
+                                <button @click="closeProductsModal" class="text-gray-400 hover:text-gray-700 text-3xl font-bold focus:outline-none absolute top-4 right-8" aria-label="Close">&times;</button>
+                            </div>
+                            <!-- Scrollable Content -->
+                            <div class="flex-1 overflow-auto px-8 py-4 bg-gray-50">
                                 <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-white">
+                                    <thead class="bg-white sticky top-0 z-5">
                                         <tr>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product ID</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
@@ -211,7 +218,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
-                                        <tr v-for="product in dosage.products" :key="product.id" class="hover:bg-gray-50">
+                                        <tr v-for="product in selectedDosage?.products || []" :key="product.id" class="hover:bg-gray-50">
                                             <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{{ product.productID }}</td>
                                             <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{{ product.name }}</td>
                                             <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-500">{{ product.category?.name || 'N/A' }}</td>
@@ -231,12 +238,21 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <!-- Sticky Footer -->
+                            <div class="flex justify-end px-8 py-6 border-t border-gray-200 bg-white sticky bottom-0 z-10">
+                                <button @click="closeProductsModal" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 focus:outline-none">Close</button>
+                            </div>
                         </div>
                     </div>
+                    </transition>
 
                     <!-- Pagination -->
-                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                        <Pagination :links="dosages.links" />
+                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 flex justify-end mt-3">
+                        <TailwindPagination 
+                            :data="dosages" 
+                            :limit="2"
+                            @pagination-change-page="getResults"
+                        />
                     </div>
                 </div>
 
@@ -247,22 +263,27 @@
 
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import Pagination from '@/Components/Pagination.vue';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
+import { TailwindPagination } from "laravel-vue-pagination";
 
 const props = defineProps({
     dosages: Object,
-    filters: Object
+    filters: Object,
+    summary: Object
 });
 
-const filters = ref({
-    status: props.filters.status || '',
-    search: props.filters.search || '',
-    per_page: props.filters.per_page || 25
-});
+const statusOptions = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' }
+];
 
-const expandedDosages = ref([]);
+const status = ref(props.filters.status || []);
+const search = ref(props.filters.search || '');
+const per_page = ref(props.filters.per_page || 25);
 
 const totalDosages = computed(() => {
     return props.dosages.total;
@@ -281,32 +302,69 @@ const totalProducts = computed(() => {
 });
 
 const applyFilters = () => {
-    router.get(route('reports.products.dosage-forms'), filters.value, {
+    const query = {};
+    if (status.value && status.value.length > 0) query.status = status.value;
+    if (search.value) query.search = search.value;
+    if (per_page.value) query.per_page = per_page.value;
+    if (props.filters.page) query.page = props.filters.page;
+    router.get(route('reports.products.dosage-forms'), query, {
         preserveState: true,
-        preserveScroll: true
+        preserveScroll: true,
+        only: ['dosages']
     });
 };
 
-const clearFilters = () => {
-    filters.value = {
-        status: '',
-        search: '',
-        per_page: 25
-    };
-    applyFilters();
+const getResults = (page = 1) => {
+    props.filters.page = page;
 };
 
-const toggleDosageDetails = (dosageId) => {
-    const index = expandedDosages.value.indexOf(dosageId);
-    if (index > -1) {
-        expandedDosages.value.splice(index, 1);
-    } else {
-        expandedDosages.value.push(dosageId);
+const showProductsModal = ref(false);
+const selectedDosage = ref(null);
+
+// Prevent background scroll when modal is open
+const preventScroll = () => {
+    document.body.style.overflow = showProductsModal.value ? 'hidden' : '';
+};
+watch(showProductsModal, preventScroll);
+onMounted(preventScroll);
+onUnmounted(() => { document.body.style.overflow = ''; });
+
+// Focus trap (basic)
+const modalRef = ref(null);
+watch(showProductsModal, (val) => {
+    if (val && modalRef.value) {
+        modalRef.value.focus();
     }
+});
+
+const openProductsModal = (dosage) => {
+    selectedDosage.value = dosage;
+    showProductsModal.value = true;
+    setTimeout(() => {
+        if (modalRef.value) modalRef.value.focus();
+    }, 50);
 };
 
-// Watch for filter changes and apply them
-watch(filters, () => {
+const closeProductsModal = () => {
+    showProductsModal.value = false;
+    selectedDosage.value = null;
+};
+
+watch([
+    () => status.value,
+    () => search.value,
+    () => per_page.value,
+    () => props.filters.page
+], () => {
     applyFilters();
-}, { deep: true });
-</script> 
+});
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style> 
