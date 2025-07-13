@@ -953,29 +953,25 @@ class ReportController extends Controller
     
         // Transform orders with order-level tracking data
         $orders->getCollection()->transform(function ($order) {
-            // Calculate order-level metrics using raw queries for better performance
+            // Calculate order-level metrics using only OrderItem fields
             $orderStats = DB::table('order_items')
-                ->join('inventory_allocations', 'order_items.id', '=', 'inventory_allocations.order_item_id')
                 ->where('order_items.order_id', $order->id)
                 ->selectRaw('
-                    SUM(order_items.quantity) as total_items,
-                    SUM(inventory_allocations.allocated_quantity) as total_allocated,
-                    SUM(inventory_allocations.received_quantity) as total_received
+                    SUM(order_items.quantity_to_release) as total_allocated,
+                    SUM(order_items.received_quantity) as total_received
                 ')
                 ->first();
-    
-            $totalItems = $orderStats->total_items ?? 0;
+
             $totalAllocated = $orderStats->total_allocated ?? 0;
             $totalReceived = $orderStats->total_received ?? 0;
-            $progressPercentage = $totalAllocated > 0 ? round(($totalReceived / $totalAllocated) * 100) : 0;
-    
+            $fulfillmentPercentage = $totalAllocated > 0 ? round(($totalReceived / $totalAllocated) * 100) : 0;
+
             $order->tracking_data = [
-                'total_items' => $totalItems,
                 'total_allocated' => $totalAllocated,
                 'total_received' => $totalReceived,
-                'progress_percentage' => $progressPercentage,
+                'fulfillment_percentage' => $fulfillmentPercentage,
             ];
-    
+
             return $order;
         });
     
@@ -1328,5 +1324,11 @@ class ReportController extends Controller
             Log::error('Export Error: ' . $th->getMessage());
             return back()->with('error', 'Failed to export report: ' . $th->getMessage());
         }
+    }
+
+    public function exportOrderTrackingExcel(Request $request)
+    {
+        $filters = $request->only(['facility', 'status', 'date_from', 'date_to', 'per_page', 'page']);
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OrderTrackingExport($filters), 'order_tracking_report.xlsx');
     }
 }

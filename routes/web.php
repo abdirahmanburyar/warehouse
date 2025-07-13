@@ -148,6 +148,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/reports/packing-list', [ReportController::class, 'packingList'])->name('reports.packing-list');
         Route::get('/reports/lmis-monthly-report', [ReportController::class, 'lmisMonthlyReport'])->name('reports.lmis-monthly');
         Route::post('/reports/orders/exportToExcel', [ReportController::class, 'exportOrdersToExcel'])->name('reports.orders.exportToExcel');
+        Route::get('/reports/order-tracking/export', [\App\Http\Controllers\ReportController::class, 'exportOrderTrackingExcel'])->name('reports.order-tracking.export');
 
         // monthlyConsumption
         Route::get('/reports/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->name('reports.monthly-consumption');
