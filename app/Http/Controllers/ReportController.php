@@ -1525,6 +1525,12 @@ class ReportController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
+        // Summary counts before pagination
+        $totalCount = (clone $query)->count();
+        $activeCount = (clone $query)->where('is_active', true)->count();
+        $inactiveCount = (clone $query)->where('is_active', false)->count();
+        $totalProducts = (clone $query)->get()->sum('total_products');
+
         $categories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $categories->setPath(url()->current()); // Force Laravel to use full URLs
@@ -1539,7 +1545,13 @@ class ReportController extends Controller
 
         return inertia('Report/Products/Categories', [
             'categories' => $categories,
-            'filters' => $request->only(['status', 'search', 'per_page'])
+            'filters' => $request->only(['status', 'search', 'per_page']),
+            'summary' => [
+                'total_count' => $totalCount,
+                'active_count' => $activeCount,
+                'inactive_count' => $inactiveCount,
+                'total_products' => $totalProducts,
+            ]
         ]);
     }
 
