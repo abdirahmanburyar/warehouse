@@ -716,6 +716,50 @@
                         </div>
                     </div>
 
+                    <!-- Delivered -->
+                    <div class="relative">
+                        <div class="flex items-center mb-2">
+                            <div class="w-16 h-16 relative mr-4">
+                                <svg class="w-16 h-16 transform -rotate-90">
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#e2e8f0"
+                                        stroke-width="4"
+                                    />
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#f59e42"
+                                        stroke-width="4"
+                                        :stroke-dasharray="(stats.delivered === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.delivered / totalOrders) * 175.93} 175.93`"
+                                    />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-base font-bold text-orange-600">
+                                        {{
+                                            totalOrders > 0
+                                                ? Math.round((stats.delivered / totalOrders) * 100)
+                                                : 0
+                                        }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">
+                                    {{ stats.delivered }}
+                                </div>
+                                <div class="text-base text-gray-600">
+                                    Delivered
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Received -->
                     <div class="relative">
                         <div class="flex items-center mb-2">
@@ -846,6 +890,7 @@ const totalOrders = computed(() => {
         props.stats.approved +
         props.stats.in_process +
         props.stats.dispatched +
+        props.stats.delivered +
         props.stats.received +
         props.stats.rejected
     );
@@ -859,6 +904,7 @@ const statusTabs = [
     { value: "approved", label: "Approved", color: "green" },
     { value: "in_process", label: "In Process", color: "blue" },
     { value: "dispatched", label: "Dispatched", color: "purple" },
+    { value: "delivered", label: "Delivered", color: "orange" },
     { value: "received", label: "Received", color: "indigo" },
     { value: "rejected", label: "Rejected", color: "red" },
 ];

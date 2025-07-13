@@ -486,10 +486,10 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
-                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
-                                    <td class="px-2 py-1 text-xs border border-[#B7C6E6] text-center">
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center">
                                         <div class="flex items-center justify-center">
                                             <div v-if="isExpiringSoon(item)" class="mr-1">
                                                 <img src="/assets/images/soon_expire.png" title="Expire soon" class="w-5 h-5" alt="Expire soon" />
