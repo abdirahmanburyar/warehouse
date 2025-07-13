@@ -916,13 +916,19 @@ class ReportController extends Controller
     
         $query = Order::query();
     
-        // Eager load only order-level relationships
+        // Eager load order-level relationships and items with full information
         $query->with([
             'facility.handledby',
             'createdBy',
             'approvedBy',
             'rejectedBy',
-            'dispatchedBy'
+            'dispatchedBy',
+            'items.product:id,name,dosage_id',
+            'items.product.dosage:id,name',
+            'items.warehouse:id,name',
+            'items.inventory_allocations.product:id,name',
+            'items.inventory_allocations.warehouse:id,name',
+            'items.inventory_allocations.location:id,location'
         ]);
     
         // Filters
@@ -958,7 +964,7 @@ class ReportController extends Controller
                 ->where('order_items.order_id', $order->id)
                 ->selectRaw('
                     SUM(order_items.quantity_to_release) as total_allocated,
-                    SUM(order_items.received_quantity) as total_received
+                    SUM(COALESCE(order_items.received_quantity, 0)) as total_received
                 ')
                 ->first();
 
@@ -1345,5 +1351,196 @@ class ReportController extends Controller
     {
         $filters = $request->only(['facility', 'status', 'date_from', 'date_to', 'per_page', 'page']);
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OrderTrackingExport($filters), 'order_tracking_report.xlsx');
+    }
+
+    /**
+     * Active & Inactive Product Report
+     */
+    public function activeInactiveProducts(Request $request)
+    {
+        $query = Product::query()
+            ->with(['category', 'dosage', 'subCategory']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        // Filter by category
+        if ($request->filled('category_ids') && is_array($request->category_ids)) {
+            $categoryIds = collect($request->category_ids)->pluck('id')->filter();
+            if ($categoryIds->isNotEmpty()) {
+                $query->whereIn('category_id', $categoryIds);
+            }
+        }
+
+        // Filter by dosage
+        if ($request->filled('dosage_ids') && is_array($request->dosage_ids)) {
+            $dosageIds = collect($request->dosage_ids)->pluck('id')->filter();
+            if ($dosageIds->isNotEmpty()) {
+                $query->whereIn('dosage_id', $dosageIds);
+            }
+        }
+
+        // Search by product name or ID
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('productID', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Get counts for summary cards (before pagination)
+        $activeCount = (clone $query)->where('is_active', true)->count();
+        $inactiveCount = (clone $query)->where('is_active', false)->count();
+        $totalCount = (clone $query)->count();
+
+        $products = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $products->setPath(url()->current()); // Force Laravel to use full URLs
+
+        return inertia('Report/Products/ActiveInactive', [
+            'products' => $products,
+            'categories' => \App\Models\Category::where('is_active', true)->get(),
+            'dosages' => \App\Models\Dosage::where('is_active', true)->get(),
+            'filters' => $request->only(['status', 'category_ids', 'dosage_ids', 'search', 'per_page']),
+            'summary' => [
+                'active_count' => $activeCount,
+                'inactive_count' => $inactiveCount,
+                'total_count' => $totalCount
+            ]
+        ]);
+    }
+
+    /**
+     * Product Eligibility Report
+     */
+    public function productEligibility(Request $request)
+    {
+        $query = \App\Models\EligibleItem::query()
+            ->with(['product.category', 'product.dosage']);
+
+        // Filter by facility type
+        if ($request->filled('facility_type')) {
+            $query->where('facility_type', $request->facility_type);
+        }
+
+        // Filter by product
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+
+        $eligibleItems = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $eligibleItems->setPath(url()->current()); // Force Laravel to use full URLs
+
+        // Get unique facility types for filter
+        $facilityTypes = \App\Models\EligibleItem::distinct('facility_type')
+            ->pluck('facility_type')
+            ->map(function($type) {
+                return [
+                    'value' => $type,
+                    'label' => ucwords(str_replace('_', ' ', $type))
+                ];
+            });
+
+        return inertia('Report/Products/Eligibility', [
+            'eligibleItems' => $eligibleItems,
+            'products' => \App\Models\Product::where('is_active', true)->get(),
+            'categories' => \App\Models\Category::where('is_active', true)->get(),
+            'facilityTypes' => $facilityTypes,
+            'filters' => $request->only(['facility_type', 'product_id', 'category_id', 'per_page'])
+        ]);
+    }
+
+    /**
+     * Product Category Report
+     */
+    public function productCategories(Request $request)
+    {
+        $query = \App\Models\Category::query()
+            ->withCount(['products as total_products'])
+            ->withCount(['products as active_products' => function($query) {
+                $query->where('is_active', true);
+            }])
+            ->withCount(['products as inactive_products' => function($query) {
+                $query->where('is_active', false);
+            }]);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        // Search by category name
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $categories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $categories->setPath(url()->current()); // Force Laravel to use full URLs
+
+        // Get products for each category
+        $categories->getCollection()->transform(function($category) {
+            $category->products = $category->products()
+                ->with(['dosage', 'subCategory'])
+                ->get();
+            return $category;
+        });
+
+        return inertia('Report/Products/Categories', [
+            'categories' => $categories,
+            'filters' => $request->only(['status', 'search', 'per_page'])
+        ]);
+    }
+
+    /**
+     * Product Dosage Forms Report
+     */
+    public function productDosageForms(Request $request)
+    {
+        $query = \App\Models\Dosage::query()
+            ->withCount(['products as total_products'])
+            ->withCount(['products as active_products' => function($query) {
+                $query->where('is_active', true);
+            }])
+            ->withCount(['products as inactive_products' => function($query) {
+                $query->where('is_active', false);
+            }]);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        // Search by dosage name
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $dosages = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $dosages->setPath(url()->current()); // Force Laravel to use full URLs
+
+        // Get products for each dosage
+        $dosages->getCollection()->transform(function($dosage) {
+            $dosage->products = $dosage->products()
+                ->with(['category', 'subCategory'])
+                ->get();
+            return $dosage;
+        });
+
+        return inertia('Report/Products/DosageForms', [
+            'dosages' => $dosages,
+            'filters' => $request->only(['status', 'search', 'per_page'])
+        ]);
     }
 }

@@ -673,6 +673,12 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::put('/warehouse-monthly/approve', [ReportController::class, 'approveInventoryReport'])->middleware(PermissionMiddleware::class . ':report.approve')->name('reports.warehouseMonthly.approve');
         Route::put('/warehouse-monthly/reject', [ReportController::class, 'rejectInventoryReport'])->middleware(PermissionMiddleware::class . ':report.reject')->name('reports.warehouseMonthly.reject');
         Route::post('/warehouse-monthly/export-to-excel', [ReportController::class, 'exportToExcel'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.warehouseMonthly.exportToExcel');
+
+        // Product Reports Routes
+        Route::get('/products/active-inactive', [ReportController::class, 'activeInactiveProducts'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.active-inactive');
+        Route::get('/products/eligibility', [ReportController::class, 'productEligibility'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.eligibility');
+        Route::get('/products/categories', [ReportController::class, 'productCategories'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.categories');
+        Route::get('/products/dosage-forms', [ReportController::class, 'productDosageForms'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.products.dosage-forms');
     });
 
     // Approval Routes
