@@ -463,7 +463,7 @@
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { defineProps, ref, h, watch } from "vue";
+import { defineProps, ref, h, watch, onMounted } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import { useToast } from "vue-toastification";
@@ -604,6 +604,15 @@ const removeSelectedFile = () => {
     }
 };
 
+const importId = ref(null);
+
+onMounted(() => {
+    Echo.private(`import-progress.${importId}`)
+        .listen('ImportProgressUpdated', (e) => {
+            console.log(e);
+        });
+});
+
 const uploadFile = async () => {
     if (!selectedFile.value) {
         toast.error("Please select a file to upload");
@@ -621,129 +630,21 @@ const uploadFile = async () => {
     const formData = new FormData();
     formData.append("file", selectedFile.value);
 
-    try {
-        console.log('Uploading file:', {
-            name: selectedFile.value.name,
-            size: selectedFile.value.size,
-            type: selectedFile.value.type
-        });
-
-        const response = await axios.post(
-            route("products.import-excel"),
-            formData,
-            {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    console.log('Upload progress:', percentCompleted + '%');
-                }
-            }
-        );
-
+    await axios.post(
+        route("products.import-excel"),
+        formData,
+    )
+    .then(response => {
+        importId.value = response.data.import_id;
         console.log('Upload response:', response.data);
-
-        if (response.data.success) {
-            // Remove loading toast
-            toast.dismiss(loadingToast);
-            
-            if (response.data.data) {
-                const { imported, skipped, total_rows } = response.data.data;
-                toast.success(`Import completed: ${imported} imported, ${skipped} skipped out of ${total_rows} rows`);
-            } else {
-                toast.success("Import completed successfully");
-            }
-
-            // Start polling for status if import_id is provided
-            if (response.data.import_id) {
-                pollImportStatus(response.data.import_id);
-            }
-
-            closeUploadModal();
-        } else {
-            toast.dismiss(loadingToast);
-            toast.error(response.data.message || "Failed to start import");
-        }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Upload error:', error);
+        closeUploadModal();
         toast.dismiss(loadingToast);
-        
-        const errorMessage = error.response?.data?.message 
-            || error.message 
-            || "Failed to start import";
-            
-        toast.error(errorMessage);
-    } finally {
-        isUploading.value = false;
-    }
-};
+        toast.error(response.data.message || "Failed to start import");
+    });
 
-const pollImportStatus = async (importId) => {
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes (with 5-second intervals)
-    
-    const checkStatus = async () => {
-        try {
-            const response = await axios.get(`/products/import-status/${importId}`);
-            
-            if (response.data.success) {
-                const { imported, skipped, errors, completed } = response.data.data;
-                
-                // Show progress
-                if (imported > 0 || skipped > 0) {
-                    toast.info(`Processed: ${imported + skipped} rows (${imported} imported, ${skipped} skipped)`);
-                }
-                
-                // If completed, show final results
-                if (completed) {
-                    // Show detailed results if there are errors
-                    if (errors.length > 0) {
-                        Swal.fire({
-                            title: "Import Completed with Issues",
-                            html: `
-                                <div class="text-left">
-                                    <p class="mb-2">Import completed with the following results:</p>
-                                    <ul class="list-disc list-inside mb-4">
-                                        <li>Successfully imported: ${imported}</li>
-                                        <li>Skipped: ${skipped}</li>
-                                    </ul>
-                                    ${errors.length > 0 ? `
-                                    <div class="mb-2">
-                                        <p><strong>Errors:</strong></p>
-                                        <pre class="text-xs mt-2 bg-gray-100 p-2 rounded overflow-auto max-h-40 border border-gray-200">${errors.join('\n')}</pre>
-                                    </div>` : ''}
-                                </div>
-                            `,
-                            icon: errors.length > 0 ? "warning" : "success",
-                            confirmButtonText: "OK",
-                            width: "600px",
-                        });
-                    } else {
-                        toast.success(`Import completed! ${imported} products imported.`);
-                    }
-                    
-                    // Refresh the products list
-                    updateRoute();
-                    return;
-                }
-                
-                // Continue polling if not completed
-                if (attempts < maxAttempts) {
-                    attempts++;
-                    setTimeout(checkStatus, 5000); // Check every 5 seconds
-                } else {
-                    toast.warning("Import is taking longer than expected. Please check back later.");
-                }
-            }
-        } catch (error) {
-            console.error("Error checking import status:", error);
-            toast.error("Error checking import status");
-        }
-    };
-    
-    // Start checking
-    checkStatus();
 };
 
 const confirmToggleStatus = (product) => {

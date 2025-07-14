@@ -23,8 +23,3 @@ window.Echo = new Echo({
     }
 });
 
-window.Echo.channel(`import-progress.${importId}`)
-    .listen('.ImportProgressUpdated', (e) => {
-        const percentage = Math.round((e.progress / e.total) * 100);
-        console.log(`Progress: ${percentage}%`);
-    });
