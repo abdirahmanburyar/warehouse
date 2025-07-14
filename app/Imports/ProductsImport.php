@@ -60,12 +60,6 @@ class ProductsImport implements
                 return null;
             }
 
-            if (Product::where('name', $itemName)->exists()) {
-                $this->errors[] = "Product '{$itemName}' already exists";
-                $this->skippedCount++;
-                return null;
-            }
-
             // Category
             $categoryId = null;
             if (!empty($row['category'])) {
@@ -109,14 +103,14 @@ class ProductsImport implements
             Cache::increment($this->importId);
             broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
 
-            return Product::updateOrCreate([
-                'name' => $itemName,
-            ], [
-                'name' => $itemName,
-                'category_id' => $categoryId,
-                'dosage_id' => $dosageId,
-                'is_active' => true,
-            ]);
+            return Product::firstOrCreate(
+                ['name' => $itemName],
+                [
+                    'name' => $itemName,
+                    'category_id' => $categoryId,
+                    'dosage_id' => $dosageId,
+                    'is_active' => true,
+                ]);
 
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
