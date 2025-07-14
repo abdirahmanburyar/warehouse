@@ -263,12 +263,24 @@ class ProductController extends Controller
             $request->validate([
                 'file' => 'required|file|mimes:xlsx,xls,csv',
             ]);
-
-            Excel::queueImport(new ProductImport, $request->file('file'))
+    
+            $importId = (string) Str::uuid();
+    
+            // Get total rows (first sheet only)
+            $collection = Excel::toCollection(new ProductImport($importId), $request->file('file'));
+            $totalRows = $collection->first()->count();
+    
+            Cache::put($importId . '_progress', 0);
+            Cache::put($importId . '_total', $totalRows);
+    
+            Excel::queueImport(new ProductImport($importId), $request->file('file'))
                 ->onQueue('imports');
-
-            return response()->json('Products imported successfully.', 200);
-
+    
+            return response()->json([
+                'message' => 'Import started successfully.',
+                'import_id' => $importId
+            ], 200);
+    
         } catch (\Throwable $th) {
             logger()->error('Product import error', ['error' => $th->getMessage()]);
             return response()->json($th->getMessage(), 500);
