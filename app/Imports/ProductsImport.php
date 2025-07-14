@@ -103,27 +103,26 @@ class ProductsImport implements
             Cache::increment($this->importId);
             broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
 
-             // Find the highest productID in the database
-             $maxProductId = Product::max('productID');
+            //  // Find the highest productID in the database
+            //  $maxProductId = Product::max('productID');
             
-             // If there are existing products, increment the highest productID
-             if ($maxProductId) {
-                 $nextId = (int)$maxProductId + 1;
-             } else {
-                 // Start from 1 if no products exist
-                 $nextId = 1;
-             }
+            //  // If there are existing products, increment the highest productID
+            //  if ($maxProductId) {
+            //      $nextId = (int)$maxProductId + 1;
+            //  } else {
+            //      // Start from 1 if no products exist
+            //      $nextId = 1;
+            //  }
              
-             // Format as 6-digit number with leading zeros
-             $productID = str_pad($nextId, 6, '0', STR_PAD_LEFT);
+            //  // Format as 6-digit number with leading zeros
+            //  $productID = str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
-            return new Product([
-                    'productID' => $productID,
-                    'name' => $itemName,
-                    'category_id' => $categoryId,
-                    'dosage_id' => $dosageId,
-                    'is_active' => true,
-                ]);
+            Product::create([
+                'name' => $itemName,
+                'category_id' => $categoryId,
+                'dosage_id' => $dosageId,
+                'is_active' => true,
+            ]);
 
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
