@@ -1,45 +1,38 @@
 <template>
-    <div v-if="links && Object.keys(links).length > 0" class="flex flex-wrap justify-end gap-2">
-        <!-- First Page -->
-        <Link
-            v-if="links.first"
-            :href="links.first"
-            class="px-3 py-2 text-sm border rounded-full transition-all duration-200 ease-in-out text-dark-700 border-dark-200 hover:bg-dark-50 hover:text-indigo-600"
-        >&laquo;</Link>
-
-        <!-- Previous Page -->
-        <Link
-            v-if="links.prev"
-            :href="links.prev"
-            class="px-3 py-2 text-sm border rounded-full transition-all duration-200 ease-in-out text-dark-700 border-dark-200 hover:bg-dark-50 hover:text-indigo-600"
-        >&lsaquo;</Link>
-
-        <!-- Current Page (Disabled) -->
-        <div
-            class="px-3 py-2 text-sm text-white bg-indigo-600 border border-indigo-600 rounded-full"
-        >Current</div>
-
-        <!-- Next Page -->
-        <Link
-            v-if="links.next"
-            :href="links.next"
-            class="px-3 py-2 text-sm border rounded-full transition-all duration-200 ease-in-out text-dark-700 border-dark-200 hover:bg-dark-50 hover:text-indigo-600"
-        >&rsaquo;</Link>
-
-        <!-- Last Page -->
-        <Link
-            v-if="links.last"
-            :href="links.last"
-            class="px-3 py-2 text-sm border rounded-full transition-all duration-200 ease-in-out text-dark-700 border-dark-200 hover:bg-dark-50 hover:text-indigo-600"
-        >&raquo;</Link>
+    <div v-if="links && links.length > 0" class="flex items-center justify-between">
+        <div class="text-sm text-gray-700">
+            Showing {{ meta.from }} to {{ meta.to }} of {{ meta.total }} results
+        </div>
+        <div class="flex space-x-1">
+            <Link 
+                v-for="link in links" 
+                :key="link.label"
+                :href="link.url" 
+                :class="[
+                    'px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    link.active 
+                        ? 'bg-blue-600 text-white' 
+                        : link.url === null
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ]"
+                :disabled="link.url === null"
+                v-html="link.label"
+            />
+        </div>
     </div>
 </template>
 
 <script setup>
-import { router, Link } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     links: {
+        type: Array,
+        required: true,
+        default: () => []
+    },
+    meta: {
         type: Object,
         required: true,
         default: () => ({})

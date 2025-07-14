@@ -372,6 +372,52 @@
 
                 </div>
 
+                <!-- Facilities Reports Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Facilities Card (grouped links) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden col-span-1">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900">Facilities</h3>
+                                    <p class="text-sm text-gray-600">Facilities-related reports</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-4">Access all facilities-related reports including list, monthly consumption, and compliance.</p>
+                            <div class="space-y-2">
+                                <Link :href="route('reports.facilities-list')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-cyan-50 rounded-lg transition-colors">
+                                    <span>Facilities List Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.lmis-monthly-consumption')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-cyan-50 rounded-lg transition-colors">
+                                    <span>LMIS Monthly Consumption Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.facility-compliance')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-cyan-50 rounded-lg transition-colors">
+                                    <span>Facility Compliance Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </AuthenticatedLayout>

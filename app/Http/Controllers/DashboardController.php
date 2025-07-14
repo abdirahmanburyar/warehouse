@@ -112,26 +112,11 @@ class DashboardController extends Controller
         // Calculate overall average fulfillment
         $overallFulfillment = $fulfillmentData->avg('fulfillment_percentage') ?? 0;
 
-        // Debug: Check if we're getting data
-        logger()->info('Dashboard Fulfillment Debug:', [
-            'suppliers_count' => $suppliers->count(),
-            'fulfillment_data_count' => $fulfillmentData->count(),
-            'overall_fulfillment' => $overallFulfillment,
-            'sample_fulfillment_data' => $fulfillmentData->take(3)->toArray()
-        ]);
-
         // Check if we have any data in the related tables
         $packingListItemsCount = DB::table('packing_list_items')->count();
         $purchaseOrderItemsCount = DB::table('purchase_order_items')->count();
         $packingListsCount = DB::table('packing_lists')->count();
         $purchaseOrdersCount = DB::table('purchase_orders')->count();
-        
-        logger()->info('Database Table Counts:', [
-            'packing_list_items' => $packingListItemsCount,
-            'purchase_order_items' => $purchaseOrderItemsCount,
-            'packing_lists' => $packingListsCount,
-            'purchase_orders' => $purchaseOrdersCount
-        ]);
 
         $ordersDelayedCount = \App\Models\Order::whereNotNull('order_date')
             ->whereNotNull('expected_date')

@@ -171,6 +171,11 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
             ->middleware(PermissionMiddleware::class . ':role.delete')
             ->name('roles.destroy');
+
+        // Facilities Reports
+        Route::get('/reports/facilities-list', [ReportController::class, 'facilitiesListReport'])->name('reports.facilities-list');
+        Route::get('/reports/lmis-monthly-consumption', [ReportController::class, 'lmisMonthlyConsumptionReport'])->name('reports.lmis-monthly-consumption');
+        Route::get('/reports/facility-compliance', [ReportController::class, 'facilityComplianceReport'])->name('reports.facility-compliance');
     });
 
     Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])

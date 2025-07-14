@@ -2177,47 +2177,306 @@ class ReportController extends Controller
      */
     public function demandForecastingReport(Request $request)
     {
-        $query = \App\Models\Product::query()
-            ->with(['category', 'dosage', 'supplyItems.supply']);
+        // Date range: last 6 months by default
+        $months = (int)($request->input('months', 6));
+        $end = now()->startOfMonth();
+        $start = (clone $end)->subMonths($months - 1);
 
-        // Filter by category
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+        // Get all products
+        $products = \App\Models\Product::orderBy('name')->get();
+
+        // Aggregate issued quantities by product and month
+        $issued = \App\Models\IssuedQuantity::whereBetween('issued_date', [$start, $end->copy()->endOfMonth()])
+            ->get()
+            ->groupBy('product_id');
+
+        // Get current stock from InventoryReportItem (latest month)
+        $latestInventory = \App\Models\InventoryReport::orderByDesc('month_year')->first();
+        $inventoryItems = $latestInventory
+            ? $latestInventory->items->keyBy('product_id')
+            : collect();
+
+        $forecast = [];
+        foreach ($products as $product) {
+            $productIssued = $issued->get($product->id, collect());
+            // Group by month
+            $monthly = $productIssued->groupBy(function($item) {
+                return \Carbon\Carbon::parse($item->issued_date)->format('Y-m');
+            });
+            $monthlySums = $monthly->map(function($items) {
+                return $items->sum('quantity');
+            });
+            $avgMonthly = $monthlySums->count() ? round($monthlySums->avg(), 2) : 0;
+            $lastMonthKey = $end->copy()->subMonth()->format('Y-m');
+            $lastMonth = $monthlySums->get($lastMonthKey, 0);
+            $currentStock = $inventoryItems[$product->id]->closing_balance ?? 0;
+            $predicted = $avgMonthly;
+            $suggestedReorder = max(0, $predicted - $currentStock);
+            $forecast[] = [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'category' => $product->category->name ?? null,
+                'avg_monthly_demand' => $avgMonthly,
+                'last_month_demand' => $lastMonth,
+                'current_stock' => $currentStock,
+                'predicted_demand' => $predicted,
+                'suggested_reorder' => $suggestedReorder,
+            ];
         }
-
-        // Filter by dosage
-        if ($request->filled('dosage_id')) {
-            $query->where('dosage_id', $request->dosage_id);
-        }
-
-        // Search by product name
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        // Calculate demand forecasting metrics
-        $products = $query->orderBy('name')
-            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
-            ->withQueryString();
-        $products->setPath(url()->current());
-
-        // Calculate summary statistics
-        $baseQuery = clone $query;
-        $totalProducts = $baseQuery->count();
-        $activeProducts = (clone $baseQuery)->where('is_active', true)->count();
-
-        $categories = \App\Models\Category::orderBy('name')->get(['id', 'name']);
-        $dosages = \App\Models\Dosage::orderBy('name')->get(['id', 'name']);
 
         return inertia('Report/Procurement/DemandForecasting', [
-            'products' => $products,
-            'filters' => $request->only(['category_id', 'dosage_id', 'search', 'per_page']),
-            'summary' => [
-                'total_products' => $totalProducts,
-                'active_products' => $activeProducts
-            ],
-            'categories' => $categories,
-            'dosages' => $dosages
+            'forecast' => $forecast,
+            'months' => $months,
+            'filters' => $request->only(['months']),
         ]);
+    }
+
+    /**
+     * Facilities List Report
+     */
+    public function facilitiesListReport(Request $request)
+    {
+        $query = \App\Models\Facility::with(['user', 'handledby']);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('facility_type', 'like', "%{$search}%")
+                  ->orWhere('district', 'like', "%{$search}%")
+                  ->orWhere('region', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('facility_type')) {
+            $facilityTypes = is_array($request->facility_type) ? $request->facility_type : [$request->facility_type];
+            $facilityTypes = array_filter($facilityTypes, function($type) { return $type !== ''; });
+            if (!empty($facilityTypes)) {
+                $query->whereIn('facility_type', $facilityTypes);
+            }
+        }
+
+        if ($request->filled('district')) {
+            $districts = is_array($request->district) ? $request->district : [$request->district];
+            $districts = array_filter($districts, function($dist) { return $dist !== ''; });
+            if (!empty($districts)) {
+                $query->whereIn('district', $districts);
+            }
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'Active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'Inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Get total count before pagination
+        $totalCount = $query->count();
+
+        // Apply default sorting by name
+        $query->orderBy('name', 'asc');
+
+        // Paginate results
+        $perPage = $request->input('per_page', 25);
+        $facilities = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $facilities->setPath(url()->current()); // Force Laravel to use full URLs
+
+        // Transform data
+        $facilities->getCollection()->transform(function($facility) {
+            return [
+                'id' => $facility->id,
+                'name' => $facility->name,
+                'email' => $facility->email ?? '—',
+                'type' => $facility->facility_type ?? '—',
+                'district' => $facility->district ?? '—',
+                'region' => $facility->region ?? '—',
+                'phone' => $facility->phone ?? '—',
+                'address' => $facility->address ?? '—',
+                'status' => $facility->is_active ? 'Active' : 'Inactive',
+                'has_cold_storage' => $facility->has_cold_storage ? 'Yes' : 'No',
+                'user' => $facility->user ? $facility->user->name : '—',
+                'handled_by' => $facility->handledby ? $facility->handledby->name : '—',
+                'created_at' => $facility->created_at?->format('Y-m-d'),
+            ];
+        });
+
+        // Get filter options
+        $facilityTypes = \App\Models\Facility::distinct()->pluck('facility_type')->filter()->sort()->values();
+        $districts = \App\Models\Facility::distinct()->pluck('district')->filter()->sort()->values();
+        $statuses = collect(['Active', 'Inactive']);
+
+        // Calculate summary statistics
+        $summary = [
+            'total_facilities' => $totalCount,
+            'by_type' => \App\Models\Facility::selectRaw('facility_type, COUNT(*) as count')
+                ->groupBy('facility_type')
+                ->pluck('count', 'facility_type')
+                ->toArray(),
+            'by_district' => \App\Models\Facility::selectRaw('district, COUNT(*) as count')
+                ->groupBy('district')
+                ->orderBy('count', 'desc')
+                ->limit(10)
+                ->pluck('count', 'district')
+                ->toArray(),
+            'by_status' => [
+                'Active' => \App\Models\Facility::where('is_active', true)->count(),
+                'Inactive' => \App\Models\Facility::where('is_active', false)->count(),
+            ],
+        ];
+
+        // Handle Excel export
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportFacilitiesToExcel($query, $request);
+        }
+
+        return inertia('Report/Facilities/FacilitiesList', [
+            'facilities' => $facilities,
+            'filters' => $request->only(['search', 'facility_type', 'district', 'status', 'date_from', 'date_to', 'per_page','page']),
+            'filterOptions' => [
+                'facility_types' => $facilityTypes,
+                'districts' => $districts,
+                'statuses' => $statuses,
+            ],
+            'summary' => $summary,
+        ]);
+    }
+
+    /**
+     * LMIS Monthly Consumption Report
+     */
+    public function lmisMonthlyConsumptionReport(Request $request)
+    {
+        $month = $request->input('month');
+        $facilityId = $request->input('facility_id');
+        $query = \App\Models\FacilityMonthlyReport::with(['facility', 'items.product']);
+        if ($month) {
+            $query->where('report_period', $month);
+        }
+        if ($facilityId) {
+            $query->where('facility_id', $facilityId);
+        }
+        $reports = $query->orderByDesc('report_period')->limit(100)->get();
+        $rows = [];
+        foreach ($reports as $report) {
+            foreach ($report->items as $item) {
+                $rows[] = [
+                    'facility' => $report->facility->name ?? '—',
+                    'month' => $report->report_period,
+                    'product' => $item->product->name ?? '—',
+                    'stock_received' => $item->stock_received,
+                    'stock_issued' => $item->stock_issued,
+                    'closing_balance' => $item->closing_balance,
+                    'stockout_days' => $item->stockout_days,
+                ];
+            }
+        }
+        return inertia('Report/Facilities/LmisMonthlyConsumption', [
+            'rows' => $rows,
+            'filters' => $request->only(['month', 'facility_id']),
+        ]);
+    }
+
+    /**
+     * Facility Compliance Report
+     */
+    public function facilityComplianceReport(Request $request)
+    {
+        $month = $request->input('month');
+        $query = \App\Models\FacilityMonthlyReport::with('facility');
+        if ($month) {
+            $query->where('report_period', $month);
+        }
+        $reports = $query->orderByDesc('report_period')->limit(100)->get();
+        $rows = [];
+        foreach ($reports as $report) {
+            $rows[] = [
+                'facility' => $report->facility->name ?? '—',
+                'month' => $report->report_period,
+                'status' => $report->status,
+                'submitted_at' => $report->submitted_at ? $report->submitted_at->format('Y-m-d') : '—',
+                'compliance_rate' => '100%', // Placeholder, can be calculated
+            ];
+        }
+        return inertia('Report/Facilities/FacilityCompliance', [
+            'rows' => $rows,
+            'filters' => $request->only(['month']),
+        ]);
+    }
+
+    /**
+     * Export Facilities to Excel
+     */
+    private function exportFacilitiesToExcel($query, $request)
+    {
+        $facilities = $query->get();
+        
+        $filename = 'facilities_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download(new class($facilities) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping, \Maatwebsite\Excel\Concerns\WithStyles {
+            private $facilities;
+            
+            public function __construct($facilities) {
+                $this->facilities = $facilities;
+            }
+            
+            public function collection() {
+                return $this->facilities;
+            }
+            
+            public function headings(): array {
+                return [
+                    'ID',
+                    'Name',
+                    'Email',
+                    'Type',
+                    'District',
+                    'Region',
+                    'Phone',
+                    'Address',
+                    'Status',
+                    'Cold Storage',
+                    'Handled By',
+                    'Created Date'
+                ];
+            }
+            
+            public function map($facility): array {
+                return [
+                    $facility->id,
+                    $facility->name,
+                    $facility->email ?? '—',
+                    $facility->facility_type ?? '—',
+                    $facility->district ?? '—',
+                    $facility->region ?? '—',
+                    $facility->phone ?? '—',
+                    $facility->address ?? '—',
+                    $facility->is_active ? 'Active' : 'Inactive',
+                    $facility->has_cold_storage ? 'Yes' : 'No',
+                    $facility->handledby ? $facility->handledby->name : '—',
+                    $facility->created_at?->format('Y-m-d'),
+                ];
+            }
+            
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet) {
+                return [
+                    1 => ['font' => ['bold' => true], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E5E7EB']]],
+                ];
+            }
+        }, $filename);
     }
 }
