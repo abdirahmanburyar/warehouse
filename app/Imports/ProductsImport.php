@@ -5,6 +5,10 @@ namespace App\Imports;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -12,7 +16,9 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
-use Maatwebsite\Excel\Validators\Failure;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterImport;
+use App\Events\ImportProgress;
 
 class ProductsImport implements 
     ToModel, 
@@ -20,43 +26,47 @@ class ProductsImport implements
     WithChunkReading, 
     WithBatchInserts, 
     WithValidation, 
-    SkipsEmptyRows
+    SkipsEmptyRows, 
+    WithEvents, 
+    ShouldQueue
 {
+    use Queueable, InteractsWithQueue;
+
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
     protected $categoryCache = [];
     protected $dosageCache = [];
+    protected $importId;
 
-    /**
-     * @param array $row
-     */
+    public function __construct(string $importId)
+    {
+        $this->importId = $importId;
+    }
+
     public function model(array $row)
     {
         try {
-            // Skip if no item description
             if (empty($row['item_description'])) {
                 $this->skippedCount++;
                 return null;
             }
 
             $itemName = trim($row['item_description']);
-            
-            // Validate item name length
+
             if (strlen($itemName) > 255) {
                 $this->errors[] = "Item description too long: " . substr($itemName, 0, 50) . "...";
                 $this->skippedCount++;
                 return null;
             }
 
-            // Check for duplicate product
             if (Product::where('name', $itemName)->exists()) {
                 $this->errors[] = "Product '{$itemName}' already exists";
                 $this->skippedCount++;
                 return null;
             }
 
-            // Handle category
+            // Category
             $categoryId = null;
             if (!empty($row['category'])) {
                 $category = trim($row['category']);
@@ -65,7 +75,7 @@ class ProductsImport implements
                     $this->skippedCount++;
                     return null;
                 }
-                
+
                 if (!isset($this->categoryCache[$category])) {
                     $categoryModel = Category::firstOrCreate(
                         ['name' => $category],
@@ -76,7 +86,7 @@ class ProductsImport implements
                 $categoryId = $this->categoryCache[$category];
             }
 
-            // Handle dosage
+            // Dosage
             $dosageId = null;
             if (!empty($row['dosage_form'])) {
                 $dosageForm = trim($row['dosage_form']);
@@ -85,7 +95,7 @@ class ProductsImport implements
                     $this->skippedCount++;
                     return null;
                 }
-                
+
                 if (!isset($this->dosageCache[$dosageForm])) {
                     $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
                     $this->dosageCache[$dosageForm] = $dosageModel->id;
@@ -94,6 +104,10 @@ class ProductsImport implements
             }
 
             $this->importedCount++;
+
+            // Update progress in cache
+            Cache::increment($this->importId);
+            broadcast(new ImportProgress($this->importId, Cache::get($this->importId)));
 
             return Product::updateOrCreate([
                 'name' => $itemName,
@@ -111,9 +125,6 @@ class ProductsImport implements
         }
     }
 
-    /**
-     * @return array
-     */
     public function rules(): array
     {
         return [
@@ -123,25 +134,27 @@ class ProductsImport implements
         ];
     }
 
-    /**
-     * @return int
-     */
     public function chunkSize(): int
     {
-        return 1000; // Process 1000 rows at a time
+        return 1000;
     }
 
-    /**
-     * @return int
-     */
     public function batchSize(): int
     {
-        return 100; // Insert 100 records at a time
+        return 100;
     }
 
-    /**
-     * Get the results of the import
-     */
+    public function registerEvents(): array
+    {
+        return [
+            AfterImport::class => function (AfterImport $event) {
+                Cache::forget($this->importId);
+                Log::info('Product import completed', ['importId' => $this->importId]);
+                broadcast(new ImportProgress($this->importId, 'completed'));
+            },
+        ];
+    }
+
     public function getResults()
     {
         return [
@@ -150,4 +163,4 @@ class ProductsImport implements
             'errors' => $this->errors,
         ];
     }
-} 
+}

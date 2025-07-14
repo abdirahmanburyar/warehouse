@@ -15,10 +15,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Throwable;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\ProductImport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Imports\ProductsImport;
 
 class ProductController extends Controller
 {
@@ -255,9 +255,7 @@ class ProductController extends Controller
             ->with('success', 'Product deleted successfully.');
     }
 
-    /**
-     * Import products from Excel file.
-     */
+
     public function importExcel(Request $request)
     {
         try {
@@ -267,17 +265,18 @@ class ProductController extends Controller
                     'message' => 'No file was uploaded'
                 ], 422);
             }
-
+    
             $file = $request->file('file');
-            
-            // Validate file
-            if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
+    
+            // Validate file type
+            $extension = $file->getClientOriginalExtension();
+            if (!$file->isValid() || !in_array($extension, ['xlsx', 'xls', 'csv'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
                 ], 422);
             }
-
+    
             // Validate file size (max 50MB)
             if ($file->getSize() > 50 * 1024 * 1024) {
                 return response()->json([
@@ -285,43 +284,35 @@ class ProductController extends Controller
                     'message' => 'File size too large. Maximum allowed size is 50MB'
                 ], 422);
             }
-
-            Log::info('Starting product import with Maatwebsite Excel', [
+    
+            $importId = (string) Str::uuid();
+    
+            Log::info('Queueing product import with Maatwebsite Excel', [
+                'import_id' => $importId,
                 'original_name' => $file->getClientOriginalName(),
                 'file_size' => $file->getSize(),
-                'extension' => $file->getClientOriginalExtension()
+                'extension' => $extension
             ]);
-
-            // Create the import instance
-            $import = new \App\Imports\ProductsImport();
-
-            // Import using Maatwebsite Excel
-            \Maatwebsite\Excel\Facades\Excel::import($import, $file);
-
-            // Get results from the import
-            $results = $import->getResults();
-
-            Log::info('Product import completed successfully', [
-                'results' => $results
-            ]);
-
+    
+            // Initialize cache progress to 0
+            Cache::put($importId, 0);
+    
+            // Queue the import job
+            Excel::queueImport(new ProductsImport($importId), $file)
+                ->onQueue('imports'); // optional: define a specific queue
+    
             return response()->json([
                 'success' => true,
-                'message' => 'Import completed successfully',
-                'data' => [
-                    'imported' => $results['imported'],
-                    'skipped' => $results['skipped'],
-                    'errors' => $results['errors'],
-                    'total_processed' => $results['imported'] + $results['skipped']
-                ]
+                'message' => 'Import has been queued successfully',
+                'import_id' => $importId
             ]);
-
+    
         } catch (\Exception $e) {
-            Log::error('Import failed', [
+            Log::error('Product import failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+    
             return response()->json([
                 'success' => false,
                 'message' => 'Import failed: ' . $e->getMessage()
