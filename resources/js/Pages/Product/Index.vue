@@ -635,10 +635,12 @@ const uploadFile = async () => {
         formData,
     )
     .then(response => {
+        isUploading.value = false;
         importId.value = response.data.import_id;
         console.log('Upload response:', response.data);
     })
     .catch(error => {
+        isUploading.value = false;
         console.error('Upload error:', error);
         closeUploadModal();
         toast.dismiss(loadingToast);
