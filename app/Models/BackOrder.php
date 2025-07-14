@@ -11,6 +11,8 @@ class BackOrder extends Model
     protected $fillable = [
         'back_order_number',
         'packing_list_id',
+        'transfer_id',
+        'order_id',
         'back_order_date',
         'total_items',
         'total_quantity',
@@ -33,6 +35,16 @@ class BackOrder extends Model
     public function packingList(): BelongsTo
     {
         return $this->belongsTo(PackingList::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(Transfer::class);
     }
 
     public function differences(): HasMany

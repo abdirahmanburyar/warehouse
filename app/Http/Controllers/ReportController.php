@@ -2028,13 +2028,18 @@ class ReportController extends Controller
      * Backorder Report
      */
     public function backorderReport(Request $request)
-    {
+    {        
         $query = \App\Models\BackOrder::query()
-            ->with(['packingList.purchaseOrder.supplier', 'differences.product.category', 'differences.product.dosage', 'creator']);
+            ->with(['packingList.purchaseOrder.supplier', 'differences.product.category', 'differences.product.dosage', 'creator', 'order', 'transfer']);
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by source type
+        if ($request->filled('source_type')) {
+            $query->where('source_type', $request->source_type);
         }
 
         // Filter by supplier
@@ -2058,6 +2063,7 @@ class ReportController extends Controller
             $query->where('back_order_number', 'like', '%' . $request->search . '%');
         }
 
+        // Debug: Log the SQL query
         // Calculate summary counts before pagination
         $baseQuery = clone $query;
         $totalBackOrders = $baseQuery->count();
@@ -2071,12 +2077,13 @@ class ReportController extends Controller
             ->withQueryString();
         $backOrders->setPath(url()->current());
 
+        // Debug: Log the results
         // Get suppliers for filter
         $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
 
         return inertia('Report/Procurement/Backorder', [
             'backOrders' => $backOrders,
-            'filters' => $request->only(['status', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
+            'filters' => $request->only(['status', 'source_type', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
             'summary' => [
                 'total_back_orders' => $totalBackOrders,
                 'open_count' => $openCount,
