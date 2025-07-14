@@ -75,11 +75,18 @@ class EligibleItemImport implements ShouldQueue
 
                     // Process row
                     try {
-                        $rowData = array_combine($headers, $values);
-                        $this->processRow($rowData, $rowIndex);
+                        // Handle mismatched column counts safely
+                        $rowData = $this->safeNormalizeRowData($headers, $values, $rowIndex);
+                        if ($rowData !== null) {
+                            $this->processRow($rowData, $rowIndex);
+                        }
                     } catch (\Exception $e) {
                         $this->errors[] = "Row {$rowIndex}: " . $e->getMessage();
                         $this->skippedCount++;
+                        Log::warning("Skipped row {$rowIndex} during import", [
+                            'error' => $e->getMessage(),
+                            'row_data' => $values
+                        ]);
                     }
                 }
             }
@@ -201,5 +208,93 @@ class EligibleItemImport implements ShouldQueue
         ]);
 
         $this->importedCount++;
+    }
+
+    /**
+     * Safely normalize row data to match headers with extensive error checking
+     */
+    protected function safeNormalizeRowData($headers, $values, $rowIndex)
+    {
+        // Validate inputs
+        if (!is_array($headers) || !is_array($values)) {
+            Log::warning("Row {$rowIndex}: Invalid data types", [
+                'headers_type' => gettype($headers),
+                'values_type' => gettype($values)
+            ]);
+            return null;
+        }
+
+        $headerCount = count($headers);
+        $valueCount = count($values);
+
+        // Log the counts for debugging
+        Log::debug("Row {$rowIndex}: Processing", [
+            'header_count' => $headerCount,
+            'value_count' => $valueCount,
+            'headers' => $headers,
+            'values' => $values
+        ]);
+
+        // Filter out empty values and normalize
+        $values = array_map(function($value) {
+            if (is_string($value)) {
+                return trim($value);
+            }
+            return $value;
+        }, $values);
+
+        // If we have more values than headers, truncate the values
+        if ($valueCount > $headerCount) {
+            $values = array_slice($values, 0, $headerCount);
+            Log::warning("Row {$rowIndex}: Truncated excess columns", [
+                'original_count' => $valueCount,
+                'truncated_count' => $headerCount
+            ]);
+        }
+        // If we have fewer values than headers, pad with empty strings
+        elseif ($valueCount < $headerCount) {
+            $values = array_pad($values, $headerCount, '');
+            Log::warning("Row {$rowIndex}: Padded missing columns", [
+                'original_count' => $valueCount,
+                'padded_count' => $headerCount
+            ]);
+        }
+
+        // Validate that we have valid data after normalization
+        if (empty($values) || (count($values) === 1 && empty($values[0]))) {
+            Log::info("Row {$rowIndex}: Skipping empty row after normalization");
+            return null; // Skip completely empty rows
+        }
+
+        // Final validation before array_combine
+        if (count($headers) !== count($values)) {
+            Log::error("Row {$rowIndex}: Critical error - header and value counts still don't match after normalization", [
+                'final_header_count' => count($headers),
+                'final_value_count' => count($values),
+                'headers' => $headers,
+                'values' => $values
+            ]);
+            return null;
+        }
+
+        // Now we can safely combine with extra error checking
+        try {
+            $result = array_combine($headers, $values);
+            if ($result === false) {
+                Log::error("Row {$rowIndex}: array_combine failed", [
+                    'headers' => $headers,
+                    'values' => $values
+                ]);
+                return null;
+            }
+            return $result;
+        } catch (\Exception $e) {
+            Log::error("Row {$rowIndex}: Exception in array_combine", [
+                'error' => $e->getMessage(),
+                'headers' => $headers,
+                'values' => $values
+            ]);
+            return null;
+        }
     }
 } 
