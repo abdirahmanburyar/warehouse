@@ -1965,9 +1965,9 @@ class ReportController extends Controller
         }
 
         // Filter by supplier
-        if ($request->filled('supplier_id')) {
+        if ($request->filled('supplier_ids') && is_array($request->supplier_ids) && count($request->supplier_ids) > 0) {
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
-                $q->where('supplier_id', $request->supplier_id);
+                $q->whereIn('supplier_id', $request->supplier_ids);
             });
         }
 
@@ -1980,9 +1980,17 @@ class ReportController extends Controller
             $query->whereBetween('pk_date', [$request->date_from, $request->date_to]);
         }
 
-        // Search by packing list number
+        // Search by packing list number, ref_no, and PO ref_no
         if ($request->filled('search')) {
-            $query->where('packing_list_number', 'like', '%' . $request->search . '%');
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('packing_list_number', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('ref_no', 'like', '%' . $searchTerm . '%')
+                  ->orWhereHas('purchaseOrder', function($poQuery) use ($searchTerm) {
+                      $poQuery->where('po_number', 'like', '%' . $searchTerm . '%')
+                             ->orWhere('ref_no', 'like', '%' . $searchTerm . '%');
+                  });
+            });
         }
 
         // Calculate summary counts before pagination
@@ -2004,7 +2012,7 @@ class ReportController extends Controller
 
         return inertia('Report/Procurement/PackingList', [
             'packingLists' => $packingLists,
-            'filters' => $request->only(['status', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
+            'filters' => $request->only(['status', 'supplier_ids', 'date_from', 'date_to', 'search', 'per_page']),
             'summary' => [
                 'total_packing_lists' => $totalPackingLists,
                 'confirmed_count' => $confirmedCount,
