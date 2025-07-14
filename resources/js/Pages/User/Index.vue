@@ -354,7 +354,7 @@ const status = ref(props.filters?.status || 'All');
 
 // Watch for filter changes
 watch(
-    () => [role.value, warehouse.value, facility.value, status.value, props.filters.page, per_page.value],
+    () => [role.value, search.value, warehouse.value, facility.value, status.value, props.filters.page, per_page.value],
     () => {
         applyFilters();
     });

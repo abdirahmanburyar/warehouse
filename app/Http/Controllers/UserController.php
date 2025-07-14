@@ -26,7 +26,7 @@ class UserController extends Controller
         
         logger()->info($request->all());
         // Search filter
-        if ($request->has('search') && $request->search) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -35,7 +35,7 @@ class UserController extends Controller
         }
         
         // Role filter
-        if ($request->has('role') && $request->role) {
+        if ($request->filled('role')) {
             $query->whereHas('roles', function ($q) use ($request) {
                 $q->where('roles.name', $request->role);
             });
@@ -47,14 +47,14 @@ class UserController extends Controller
         }
         
         // Warehouse filter
-        if ($request->has('warehouse') && $request->warehouse) {
+        if ($request->filled('warehouse')) {
             $query->whereHas('warehouse', function ($q) use ($request) {
                 $q->where('warehouses.name', $request->warehouse);
             });
         }
         
         // Facility filter
-        if ($request->has('facility') && $request->facility) {
+        if ($request->filled('facility')) {
             $query->whereHas('facility', function ($q) use ($request) {
                 $q->where('facilities.name', $request->facility);
             });
