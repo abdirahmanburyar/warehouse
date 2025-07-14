@@ -18,7 +18,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
-use App\Events\ImportProgressUpdated;
+// use App\Events\ImportProgressUpdated;
 
 class ProductsImport implements 
     ToModel, 
@@ -101,7 +101,7 @@ class ProductsImport implements
 
             // Update progress in cache
             Cache::increment($this->importId);
-            broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
+            // broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
 
             //  // Find the highest productID in the database
             //  $maxProductId = Product::max('productID');
@@ -127,7 +127,7 @@ class ProductsImport implements
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
             $this->skippedCount++;
-            return null;
+            throw $e;
         }
     }
 
