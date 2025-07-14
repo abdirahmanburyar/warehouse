@@ -95,7 +95,9 @@ class ProductsImport implements
 
             $this->importedCount++;
 
-            return Product::create([
+            return Product::updateOrCreate([
+                'name' => $itemName,
+            ], [
                 'name' => $itemName,
                 'category_id' => $categoryId,
                 'dosage_id' => $dosageId,
