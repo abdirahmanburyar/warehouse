@@ -599,6 +599,14 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
             // Asset Document Delete Route
             Route::get('/documents/{document}', 'deleteDocument')->name('assets.document.delete');
+
+            // Asset Approval Routes
+            Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
+            Route::post('/{asset}/submit-approval', 'submitForApproval')->name('assets.submit-approval');
+            Route::post('/{asset}/approve', 'approveAsset')->name('assets.approve');
+            Route::post('/{asset}/approve-transfer', 'approveTransfer')->name('assets.approve-transfer');
+            Route::get('/pending-approvals', 'getPendingApprovals')->name('assets.pending-approvals');
+            Route::get('/{asset}/approval-history', 'getApprovalHistory')->name('assets.approval-history');
         });
 
     // Inventory Management Routes

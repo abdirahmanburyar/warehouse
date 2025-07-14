@@ -29,8 +29,11 @@ return new class extends Migration
             $table->string('sub_location')->nullable();
             $table->date('acquisition_date');
             $table->date('transfer_date')->nullable();
-            $table->enum('status', ['active', 'in_use', 'maintenance', 'retired', 'disposed'])->default('active');
+            $table->enum('status', ['active', 'in_use', 'maintenance', 'retired', 'disposed', 'pending_approval'])->default('active');
             $table->decimal('original_value', 10, 2)->nullable();
+            $table->boolean('submitted_for_approval')->default(false);
+            $table->timestamp('submitted_at')->nullable();
+            $table->foreignId('submitted_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
             $table->softDeletes();
         });

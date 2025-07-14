@@ -1,382 +1,419 @@
 <template>
     <AuthenticatedLayout
-        title="Assets"
-        description="Manage your assets"
+        title="Asset Management"
+        description="Comprehensive asset tracking and approval system"
         img="/assets/images/asset-header.png"
     >
-        <div class="mb-[80px]">
-            <div class="flex justify-between items-center mb-4">
-                <h1 class="text-3xl font-bold text-gray-900 mb-4">Assets</h1>
-                <div class="flex gap-2 items-center">
-                    <!-- Export Button -->
-                    <button
-                        v-if="$page.props.auth.can.asset_export"
-                        @click="exportToExcel"
-                        class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                    >
-                        Export to Excel
-                    </button>
-
-                    <!-- Import Form -->
-                    <button
-                        v-if="$page.props.auth.can.asset_import"
-                        @click="showImportModal = true"
-                        class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                    >
-                        Import Excel
-                    </button>
-
-                    <Link
-                        v-if="$page.props.auth.can.asset_import"
-                        :href="route('assets.create')"
-                        class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                    >
-                        Add Asset
-                    </Link>
-                </div>
-            </div>
-            <!-- Filters Row -->
-            <div class="grid grid-cols-1 sm:grid-cols-5 gap-1">
-                <!-- Search Filter -->
-                <input
-                    type="text"
-                    v-model="search"
-                    placeholder="Search assets by tag, serial number, or description"
-                    class="w-full"
-                />
-                <!-- Region Filter -->
-                <div class="">
-                    <Multiselect
-                        v-model="regionFilter"
-                        :options="regionOptions"
-                        label="name"
-                        track-by="id"
-                        placeholder="Region"
-                        :close-on-select="true"
-                        :clear-on-select="false"
-                        :allow-empty="true"
-                        class=""
-                        @input="onRegionChange"
-                    />
-                </div>
-                <!-- Fund Source Filter -->
-                <div>
-                    <Multiselect
-                        v-model="fundSourceFilter"
-                        :options="props.fundSources"
-                        label="name"
-                        track-by="id"
-                        placeholder="Fund Source"
-                        :close-on-select="true"
-                        :clear-on-select="false"
-                        :allow-empty="true"
-                        class=""
-                    />
-                </div>
-                <!-- Location Filter -->
-                <div class="">
-                    <Multiselect
-                        v-model="locationFilter"
-                        :options="locationOptions"
-                        label="name"
-                        track-by="id"
-                        placeholder="Location"
-                        :close-on-select="true"
-                        :clear-on-select="false"
-                        :allow-empty="true"
-                        class=""
-                        @input="onLocationChange"
-                    />
-                </div>
-                <!-- SubLocation Filter -->
-                <div class="">
-                    <Multiselect
-                        v-model="selectedSubLocations"
-                        :options="filteredSubLocations"
-                        label="name"
-                        track-by="id"
-                        placeholder="Sub Location(s)"
-                        :multiple="true"
-                        :show-labels="false"
-                        :allow-empty="true"
-                        class="text-xs"
-                    />
-                </div>
-            </div>
-            <!-- Create Asset Button -->
-            <!-- Per Page Row -->
-            <div class="flex justify-end mt-2">
-                <div class="flex items-center gap-2">
-                    <select
-                        v-model="per_page"
-                        @change="props.filters.page = 1"
-                        class="border border-gray-300 rounded-lg py-2 pl-3 pr-8 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                        <option value="1">1 per page</option>
-                        <option value="10">10 per page</option>
-                        <option value="25">25 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                    </select>
-                </div>
-            </div>
-            <!-- Main content area -->
-            <div class="flex-grow p-4">
-                <!-- Asset cards will go here -->
-                <!-- Dashboard Summary -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div
-                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
-                    >
-                        <span class="text-3xl font-bold text-indigo-600">{{
-                            props.assets.data.length
-                        }}</span>
-                        <span class="text-xs text-gray-500 mt-1"
-                            >Total Assets</span
-                        >
-                    </div>
-                    <div
-                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
-                    >
-                        <span class="text-3xl font-bold text-green-600">{{
-                            props.assets.data.filter(
-                                (a) => a.status === "in_use"
-                            ).length
-                        }}</span>
-                        <span class="text-xs text-gray-500 mt-1">In Use</span>
-                    </div>
-                    <div
-                        class="bg-gradient-to-r from-green-400 to-orange-300 rounded-xl shadow p-4 flex flex-col items-center"
-                    >
-                        <span class="text-3xl font-bold text-orange-500">{{
-                            props.assets.data.filter(
-                                (a) => a.status === "maintenance"
-                            ).length
-                        }}</span>
-                        <span class="text-xs text-gray-500 mt-1"
-                            >Maintenance</span
-                        >
-                    </div>
-                </div>
-                <!-- Asset Table -->
-                <div class="overflow-auto rounded-xl">
-                    <table class="min-w-full text-left text-black">
-                        <thead
-                            class="p-6 text-black"
-                            style="background-color: rgb(167, 204, 240)"
-                        >
-                            <tr>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Asset Tag
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Category
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Serial Number
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Description
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Assigned To
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Location
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Sub-Location
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Acquisition Date
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Original Value
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Funded Source
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    Attachments
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-xs font-bold"
-                                >
-                                    History
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr
-                                v-for="asset in props.assets.data"
-                                :key="asset.id"
-                                class="hover:bg-gray-50"
+        <div class="space-y-6">
+            <!-- Header Section with Stats -->
+            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 sm:p-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-3 bg-white/20 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-white">
+                                    <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold text-white">Asset Management</h1>
+                                <p class="text-blue-100 text-sm mt-1">
+                                    Track, manage, and approve your organization's assets
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-6 sm:mt-0 flex space-x-3">
+                            <Link
+                                v-if="$page.props.auth.can.asset_import"
+                                :href="route('assets.create')"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors"
                             >
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap font-semibold"
-                                >
-                                    <Link :href="route('assets.show', asset.id)">{{ asset.asset_tag }}</Link>
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap">
-                                    {{ asset.category?.name }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap">
-                                    {{ asset.serial_number }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap max-w-xs truncate"
-                                    :title="asset.item_description"
-                                >
-                                    {{ asset.item_description }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap flex items-center gap-2"
-                                >
-                                    <span>{{ asset.person_assigned }}</span>
-                                    <button
-                                        @click="openTransferModal(asset)"
-                                        class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
-                                    >
-                                        Transfer
-                                    </button>
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap">
-                                    {{ asset.location?.name }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap">
-                                    {{ asset.sub_location?.name }}
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap">
-                                    <span
-                                        :class="{
-                                            'bg-green-100 text-green-700':
-                                                asset.status === 'in_use',
-                                            'bg-orange-100 text-orange-700':
-                                                asset.status === 'maintenance',
-                                            'bg-gray-100':
-                                                asset.status !== 'in_use' &&
-                                                asset.status !== 'maintenance',
-                                        }"
-                                        class="px-2 py-1 rounded-full text-xs font-bold"
-                                    >
-                                        {{
-                                            asset.status
-                                                .replace("_", " ")
-                                                .toUpperCase()
-                                        }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-xs">
-                                    {{ formatDate(asset.acquisition_date) }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-right font-semibold text-indigo-600"
-                                >
-                                    ${{
-                                        parseFloat(
-                                            asset.original_value
-                                        ).toLocaleString()
-                                    }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-right font-semibold text-indigo-600"
-                                >
-                                    {{ asset.fund_source?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-center"
-                                >
-                                    <button
-                                        v-if="
-                                            asset.attachments &&
-                                            asset.attachments.length
-                                        "
-                                        @click="
-                                            openAttachmentsModal(
-                                                asset.attachments
-                                            )
-                                        "
-                                        class="text-green-600 hover:underline text-xs"
-                                    >
-                                        {{ asset.attachments.length }} file(s)
-                                    </button>
-                                    <span v-else class="text-gray-400 text-xs"
-                                        >None</span
-                                    >
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-center"
-                                >
-                                    <button
-                                        v-if="
-                                            asset.history &&
-                                            asset.history.length
-                                        "
-                                        @click="openHistoryModal(asset)"
-                                        class="text-indigo-600 hover:underline text-xs"
-                                    >
-                                        {{ asset.history.length }} entr{{
-                                            asset.history.length === 1
-                                                ? "y"
-                                                : "ies"
-                                        }}
-                                    </button>
-                                    <span v-else class="text-gray-400 text-xs"
-                                        >None</span
-                                    >
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                                Add Asset
+                            </Link>
+                            <Link
+                                :href="route('assets.approvals.index')"
+                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Approvals
+                            </Link>
+                            <button
+                                v-if="$page.props.auth.can.asset_export"
+                                @click="exportToExcel"
+                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                </svg>
+                                Export
+                            </button>
+                            <button
+                                v-if="$page.props.auth.can.asset_import"
+                                @click="showImportModal = true"
+                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                                Import
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="p-6 sm:p-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-blue-600">
+                                        <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-blue-600">Total Assets</p>
+                                    <p class="text-2xl font-bold text-blue-900">{{ props.assetsCount }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-green-600">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-green-600">Active Assets</p>
+                                    <p class="text-2xl font-bold text-green-900">
+                                        {{ props.assets.data.filter(a => a.status === 'active' || a.status === 'in_use').length }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-yellow-600">Pending Approval</p>
+                                    <p class="text-2xl font-bold text-yellow-900">
+                                        {{ props.assets.data.filter(a => a.status === 'pending_approval').length }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-purple-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-purple-600">In Maintenance</p>
+                                    <p class="text-2xl font-bold text-purple-900">
+                                        {{ props.assets.data.filter(a => a.status === 'maintenance').length }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Pagination footer -->
-            <div class="flex justify-end mb-5 mt-3">
-                <TailwindPagination
-                    :data="props.assets"
-                    @pagination-change-page="getResults"
-                    :limit="2"
-                />
+            <!-- Filters Section -->
+            <div class="bg-white shadow-xl rounded-2xl">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Filters & Search</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                        <!-- Search -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Asset tag, serial number, description..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+
+                        <!-- Region Filter -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Region</label>
+                            <Multiselect
+                                v-model="regionFilter"
+                                :options="regionOptions"
+                                label="name"
+                                track-by="id"
+                                placeholder="Select Region"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                                :show-labels="false"
+                                @input="onRegionChange"
+                            />
+                        </div>
+
+                        <!-- Location Filter -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2" :class="regionFilter ? 'text-gray-700' : 'text-gray-400'">Location</label>
+                            <Multiselect
+                                v-model="locationFilter"
+                                :options="locationOptions"
+                                label="name"
+                                track-by="id"
+                                :placeholder="regionFilter ? 'Select Location' : 'Select Region first'"
+                                :show-labels="false"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                                :disabled="!regionFilter"
+                                @input="onLocationChange"
+                            />
+                        </div>
+
+                        <!-- Sub-Location Filter -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2" :class="locationFilter ? 'text-gray-700' : 'text-gray-400'">Sub-Location</label>
+                            <Multiselect
+                                v-model="selectedSubLocations"
+                                :options="filteredSubLocations"
+                                label="name"                                
+                                track-by="id"
+                                :placeholder="locationFilter ? 'Select Sub-Locations' : 'Select Location first'"
+                                :multiple="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                :disabled="!locationFilter"
+                            />
+                        </div>
+
+                        <!-- Fund Source Filter -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fund Source</label>
+                            <Multiselect
+                                v-model="fundSourceFilter"
+                                :options="props.fundSources"
+                                label="name"
+                                track-by="id"
+                                placeholder="Select Fund Source"
+                                :show-labels="false"
+                                :close-on-select="true"
+                                :clear-on-select="false"
+                                :allow-empty="true"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="flex items-center space-x-4">
+                            <button
+                                @click="clearFilters"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                </svg>
+                                Clear Filters
+                            </button>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <select
+                                    v-model="per_page"
+                                    @change="props.filters.page = 1"
+                                    class="w-[200px] border border-gray-300 rounded-md py-1 px-3 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="10">10 Per Page</option>
+                                    <option value="25">25 Per Page</option>
+                                    <option value="50">50 Per Page</option>
+                                    <option value="100">100 Per Page</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assets Table -->
+            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+                <div class="p-6">
+                    <div v-if="loading" class="flex justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    </div>
+
+                    <div v-else-if="props.assets.data.length === 0" class="text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16 text-gray-400 mx-auto mb-4">
+                            <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No assets found</h3>
+                        <p class="text-gray-500">No assets match your current filters.</p>
+                    </div>
+
+                    <div v-else class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Asset Details
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Location
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Value & Source
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-for="asset in props.assets.data" :key="asset.id" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-indigo-600">
+                                                        <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <Link :href="route('assets.show', asset.id)" class="hover:text-indigo-600">
+                                                        {{ asset.asset_tag }}
+                                                    </Link>
+                                                </div>
+                                                <div class="text-sm text-gray-500">{{ asset.serial_number }}</div>
+                                                <div class="text-sm text-gray-500 truncate max-w-xs" :title="asset.item_description">
+                                                    {{ asset.item_description }}
+                                                </div>
+                                                <div class="text-sm text-gray-500">
+                                                    <span class="font-medium">Assigned:</span> {{ asset.person_assigned || 'Unassigned' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ asset.location?.name || 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500">{{ asset.sub_location?.name || 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500">{{ asset.region?.name || 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span
+                                                :class="{
+                                                    'bg-green-100 text-green-800': asset.status === 'active' || asset.status === 'in_use',
+                                                    'bg-yellow-100 text-yellow-800': asset.status === 'pending_approval',
+                                                    'bg-orange-100 text-orange-800': asset.status === 'maintenance',
+                                                    'bg-red-100 text-red-800': asset.status === 'disposed' || asset.status === 'retired',
+                                                    'bg-gray-100 text-gray-800': !['active', 'in_use', 'pending_approval', 'maintenance', 'disposed', 'retired'].includes(asset.status)
+                                                }"
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                            >
+                                                <span v-if="asset.status === 'pending_approval'" class="w-2 h-2 bg-yellow-400 rounded-full mr-1"></span>
+                                                <span v-else-if="asset.status === 'active' || asset.status === 'in_use'" class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                                <span v-else-if="asset.status === 'maintenance'" class="w-2 h-2 bg-orange-400 rounded-full mr-1"></span>
+                                                <span v-else class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                                                {{ formatStatus(asset.status) }}
+                                            </span>
+                                        </div>
+                                        <div v-if="asset.submitted_for_approval" class="text-xs text-yellow-600 mt-1">
+                                            Submitted {{ formatDate(asset.submitted_at) }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            ${{ parseFloat(asset.original_value || 0).toLocaleString() }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ asset.fund_source?.name || 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500">{{ formatDate(asset.acquisition_date) }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <Link
+                                                :href="route('assets.show', asset.id)"
+                                                class="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                                            >
+                                                View
+                                            </Link>
+                                            <Link
+                                                :href="route('assets.edit', asset.id)"
+                                                class="text-gray-600 hover:text-gray-900 text-sm font-medium"
+                                            >
+                                                Edit
+                                            </Link>
+                                            <button
+                                                v-if="asset.status === 'active' || asset.status === 'in_use'"
+                                                @click="openTransferModal(asset)"
+                                                class="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                            >
+                                                Transfer
+                                            </button>
+                                            
+                                            <!-- Approval Actions -->
+                                            <div v-if="asset.status === 'pending_approval' && canApproveAsset(asset)" class="flex items-center space-x-1">
+                                                <button
+                                                    @click="openApprovalModal(asset, 'approve')"
+                                                    class="text-green-600 hover:text-green-900 text-sm font-medium"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    @click="openApprovalModal(asset, 'reject')"
+                                                    class="text-red-600 hover:text-red-900 text-sm font-medium"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                            
+                                            <div v-if="asset.attachments && asset.attachments.length > 0" class="text-sm text-gray-500">
+                                                {{ asset.attachments.length }} file(s)
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 mb-[80px]">
+                    <div class="flex items-center justify-end">
+                        <TailwindPagination
+                            :data="props.assets"
+                            @pagination-change-page="getResults"
+                            :limit="2"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
-        <!-- Attachments Modal -->
-        <TransitionRoot as="template" :show="isAttachmentsModalOpen">
-            <Dialog
-                as="div"
-                class="fixed z-[99] inset-0 overflow-y-auto"
-                @close="closeAttachmentsModal"
-            >
-                <div
-                    class="flex items-center justify-center min-h-screen p-4 text-center"
-                >
+
+        <!-- Import Modal -->
+        <TransitionRoot as="template" :show="showImportModal">
+            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showImportModal = false">
+                <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild
                         as="template"
                         enter="ease-out duration-300"
@@ -386,17 +423,11 @@
                         leave-from="opacity-100"
                         leave-to="opacity-0"
                     >
-                        <div
-                            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            aria-hidden="true"
-                        />
+                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
                     </TransitionChild>
-                    <!-- Modal panel -->
-                    <span
-                        class="hidden sm:inline-block sm:align-middle sm:h-screen"
-                        aria-hidden="true"
-                        >&#8203;</span
-                    >
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
                     <TransitionChild
                         as="template"
                         enter="ease-out duration-300"
@@ -406,74 +437,66 @@
                         leave-from="opacity-100 translate-y-0 sm:scale-100"
                         leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     >
-                        <DialogPanel
-                            class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                        >
-                            <div class="flex justify-between items-center mb-4">
-                                <DialogTitle
-                                    as="h3"
-                                    class="text-lg leading-6 font-medium text-gray-900"
-                                    >Asset Attachments</DialogTitle
-                                >
+                        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-blue-600">
+                                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
+                                            Import Assets
+                                        </DialogTitle>
+                                        <div class="mt-2">
+                                            <p class="text-sm text-gray-500">
+                                                Upload an Excel file to import assets. Make sure your file follows the required format.
+                                            </p>
+                                            <div class="mt-4">
+                                                <input
+                                                    ref="fileInput"
+                                                    type="file"
+                                                    accept=".xlsx,.xls"
+                                                    @change="handleFileSelect"
+                                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                                 <button
-                                    @click="closeAttachmentsModal"
-                                    class="text-gray-400 hover focus:outline-none"
+                                    type="button"
+                                    @click="importAssets"
+                                    :disabled="!selectedFile || importing"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-6 w-6"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
+                                    <svg v-if="importing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
+                                    {{ importing ? 'Importing...' : 'Import' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showImportModal = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                >
+                                    Cancel
                                 </button>
                             </div>
-                            <div v-if="selectedAttachments.length">
-                                <ul class="divide-y divide-gray-200">
-                                    <li
-                                        v-for="file in selectedAttachments"
-                                        :key="file.id"
-                                        class="py-2 flex items-center justify-between"
-                                    >
-                                        <span
-                                            class="truncate max-w-xs"
-                                            :title="file.file"
-                                            >{{
-                                                file.type || "Attachment"
-                                            }}</span
-                                        >
-                                        <a
-                                            :href="'/' + file.file"
-                                            target="_blank"
-                                            class="ml-4 px-3 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold"
-                                            >View</a
-                                        >
-                                    </li>
-                                </ul>
-                            </div>
-                            <div v-else class="text-gray-400 text-sm">
-                                No attachments found.
-                            </div>
-                        </DialogPanel>
+                        </div>
                     </TransitionChild>
                 </div>
             </Dialog>
         </TransitionRoot>
-        <!-- History Modal -->
-        <TransitionRoot as="template" :show="isHistoryModalOpen">
-            <Dialog
-                as="div"
-                class="fixed z-50 inset-0 overflow-y-auto"
-                @close="closeHistoryModal"
-            >
-                <div class="flex items-center justify-center min-h-screen px-0">
+
+        <!-- Transfer Modal -->
+        <TransitionRoot as="template" :show="showTransferModal">
+            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferModal = false">
+                <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild
                         as="template"
                         enter="ease-out duration-300"
@@ -483,174 +506,177 @@
                         leave-from="opacity-100"
                         leave-to="opacity-0"
                     >
-                        <DialogOverlay
-                            class="fixed inset-0 bg-black bg-opacity-40 transition-opacity"
-                        />
+                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
                     </TransitionChild>
 
-                    <span
-                        class="inline-block align-middle h-screen"
-                        aria-hidden="true"
-                        >&#8203;</span
-                    >
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
                     <TransitionChild
                         as="template"
                         enter="ease-out duration-300"
-                        enter-from="opacity-0 scale-95"
-                        enter-to="opacity-100 scale-100"
+                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        enter-to="opacity-100 translate-y-0 sm:scale-100"
                         leave="ease-in duration-200"
-                        leave-from="opacity-100 scale-100"
-                        leave-to="opacity-0 scale-95"
+                        leave-from="opacity-100 translate-y-0 sm:scale-100"
+                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     >
-                        <div
-                            class="fixed inset-0 w-screen h-screen p-0 m-0 bg-white shadow-xl z-50 flex flex-col rounded-none"
-                            style="max-width: 100vw; max-height: 100vh"
-                        >
-                            <div class="flex justify-between items-center mb-4">
-                                <DialogTitle
-                                    as="h3"
-                                    class="text-lg leading-6 font-medium text-gray-900"
-                                    >Asset History</DialogTitle
-                                >
-                                <button
-                                    @click="closeHistoryModal"
-                                    class="text-gray-400 hover focus:outline-none"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-6 w-6"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div v-if="selectedAssetHistory.length">
-                                <div class="overflow-x-auto">
-                                    <table
-                                        class="min-w-full text-left text-xs border border-black"
-                                    >
-                                        <thead>
-                                            <tr>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Date
-                                                </th>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Custodian
-                                                </th>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Status
-                                                </th>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Assigned At
-                                                </th>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Returned At
-                                                </th>
-                                                <th
-                                                    class="px-2 py-1 border border-black font-bold text-left"
-                                                >
-                                                    Status Notes
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr
-                                                v-for="entry in selectedAssetHistory"
-                                                :key="entry.id"
-                                            >
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    {{
-                                                        formatDate(
-                                                            entry.created_at
-                                                        )
-                                                    }}
-                                                </td>
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    {{ entry.custodian }}
-                                                </td>
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    <span
-                                                        :class="{
-                                                            'bg-green-100 text-green-700':
-                                                                entry.status ===
-                                                                'in_use',
-                                                            'bg-orange-100 text-orange-700':
-                                                                entry.status ===
-                                                                'maintenance',
-                                                            'bg-gray-100':
-                                                                entry.status !==
-                                                                    'in_use' &&
-                                                                entry.status !==
-                                                                    'maintenance',
-                                                        }"
-                                                        class="px-2 py-1 rounded-full text-xs font-bold"
-                                                    >
-                                                        {{
-                                                            entry.status
-                                                                .replace(
-                                                                    "_",
-                                                                    " "
-                                                                )
-                                                                .toUpperCase()
-                                                        }}
-                                                    </span>
-                                                </td>
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    {{
-                                                        entry.assigned_at
-                                                            ? moment(
-                                                                  entry.assigned_at
-                                                              ).format(
-                                                                  "DD/MM/YYYY HH:mm"
-                                                              )
-                                                            : "-"
-                                                    }}
-                                                </td>
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    {{
-                                                        entry.returned_at || "-"
-                                                    }}
-                                                </td>
-                                                <td
-                                                    class="px-2 py-1 border border-black text-left"
-                                                >
-                                                    {{ entry.status_notes }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-blue-600">
+                                            <path d="M16 17l-4 4-4-4m4 4V3"/>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
+                                            Transfer Asset
+                                        </DialogTitle>
+                                        <div class="mt-2">
+                                            <p class="text-sm text-gray-500">
+                                                Transfer asset <strong>{{ selectedAsset?.asset_tag }}</strong> to a new custodian.
+                                            </p>
+                                            <div class="mt-4 space-y-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">New Custodian</label>
+                                                    <input
+                                                        v-model="transferData.custodian"
+                                                        type="text"
+                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                        placeholder="Enter custodian name"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Transfer Date</label>
+                                                    <input
+                                                        v-model="transferData.transfer_date"
+                                                        type="date"
+                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
+                                                    <textarea
+                                                        v-model="transferData.assignment_notes"
+                                                        rows="3"
+                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                        placeholder="Add any notes about the transfer"
+                                                    ></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div v-else class="text-gray-400 text-sm">
-                                No history found.
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button
+                                    type="button"
+                                    @click="transferAsset"
+                                    :disabled="!transferData.custodian || !transferData.transfer_date || transferring"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                                >
+                                    <svg v-if="transferring" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {{ transferring ? 'Transferring...' : 'Transfer' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showTransferModal = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </TransitionChild>
+                </div>
+            </Dialog>
+        </TransitionRoot>
+
+        <!-- Approval Modal -->
+        <TransitionRoot as="template" :show="showApprovalModal">
+            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showApprovalModal = false">
+                <div class="flex items-center justify-center min-h-screen p-4 text-center">
+                    <TransitionChild
+                        as="template"
+                        enter="ease-out duration-300"
+                        enter-from="opacity-0"
+                        enter-to="opacity-100"
+                        leave="ease-in duration-200"
+                        leave-from="opacity-100"
+                        leave-to="opacity-0"
+                    >
+                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                    </TransitionChild>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <TransitionChild
+                        as="template"
+                        enter="ease-out duration-300"
+                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        enter-to="opacity-100 translate-y-0 sm:scale-100"
+                        leave="ease-in duration-200"
+                        leave-from="opacity-100 translate-y-0 sm:scale-100"
+                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    >
+                        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
+                                         :class="approvalAction === 'approve' ? 'bg-green-100' : 'bg-red-100'">
+                                        <svg v-if="approvalAction === 'approve'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-green-600">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-600">
+                                            <path d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
+                                            {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }} Asset
+                                        </DialogTitle>
+                                        <div class="mt-2">
+                                            <p class="text-sm text-gray-600 mb-2">
+                                                {{ selectedAsset?.asset_tag }} - {{ selectedAsset?.serial_number }}
+                                            </p>
+                                            <label for="approval-notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Notes (Optional)
+                                            </label>
+                                            <textarea
+                                                id="approval-notes"
+                                                v-model="approvalNotes"
+                                                rows="3"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Add any notes about your decision..."
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button
+                                    type="button"
+                                    @click="processApproval"
+                                    :disabled="processingApproval"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
+                                    :class="approvalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'"
+                                >
+                                    <svg v-if="processingApproval" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {{ processingApproval ? 'Processing...' : (approvalAction === 'approve' ? 'Approve' : 'Reject') }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showApprovalModal = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </div>
                     </TransitionChild>
@@ -658,117 +684,6 @@
             </Dialog>
         </TransitionRoot>
     </AuthenticatedLayout>
-    <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div class="absolute inset-0" @click="showImportModal = false"></div>
-  <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto z-50 p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">Import Assets from Excel</h3>
-      <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-    <form @submit.prevent="uploadExcel">
-      <input
-        type="file"
-        ref="importFile"
-        accept=".xlsx,.xls,.csv"
-        required
-        class="block w-full mb-4"
-      />
-      <div class="flex justify-end gap-2">
-        <button
-          type="button"
-          @click="showImportModal = false"
-          class="px-3 py-1 rounded bg-gray-200"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          :disabled="isUploading"
-          class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {{ isUploading ? "Uploading..." : "Import" }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-    <!-- Transfer Modal -->
-    <TransitionRoot as="template" :show="isTransferModalOpen">
-        <Dialog
-            as="div"
-            class="fixed z-[100] inset-0 overflow-y-auto"
-            @close="closeTransferModal"
-        >
-            <div class="flex items-center justify-center min-h-screen px-4">
-                <DialogOverlay class="fixed inset-0 bg-black opacity-30" />
-                <div
-                    class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto z-50 p-6 relative"
-                >
-                    <DialogTitle class="text-lg font-bold mb-2"
-                        >Transfer Asset</DialogTitle
-                    >
-                    <form @submit.prevent="submitTransfer">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-1"
-                                >New Custodian</label
-                            >
-                            <input
-                                v-model="transferForm.custodian"
-                                type="text"
-                                class="w-full border rounded px-2 py-1"
-                                required
-                            />
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-1"
-                                >Transfer Date</label
-                            >
-                            <input
-                                v-model="transferForm.transfer_date"
-                                type="date"
-                                class="w-full border rounded px-2 py-1"
-                                required
-                            />
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-1"
-                                >Notes</label
-                            >
-                            <textarea
-                                v-model="transferForm.assignment_notes"
-                                class="w-full border rounded px-2 py-1"
-                                rows="2"
-                            ></textarea>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <button
-                                type="button"
-                                @click="closeTransferModal"
-                                class="px-3 py-1 rounded bg-gray-200"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="isTransferring"
-                                class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                                {{
-                                    isTransferring
-                                        ? "Transferring..."
-                                        : "Transfer"
-                                }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </Dialog>
-    </TransitionRoot>
 </template>
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
@@ -795,6 +710,25 @@ import {
 
 const toast = useToast();
 
+// Utility functions
+const formatStatus = (status) => {
+    if (!status) return '-';
+    const statusMap = {
+        'active': 'Active',
+        'in_use': 'In Use',
+        'maintenance': 'Maintenance',
+        'retired': 'Retired',
+        'disposed': 'Disposed',
+        'pending_approval': 'Pending Approval'
+    };
+    return statusMap[status] || status.replace('_', ' ').toUpperCase();
+};
+
+const formatDate = (date) => {
+    if (!date) return '-';
+    return moment(date).format('DD/MM/YYYY');
+};
+
 const props = defineProps({
     locations: {
         type: Array,
@@ -815,14 +749,16 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    assetsCount: {
+        type: Number,
+        required: true,
+    },
 });
 
-const isTransferModalOpen = ref(false);
-const isTransferring = ref(false);
-const selectedAsset = ref(null);
 const showImportModal = ref(false);
-
-const transferForm = reactive({
+const showTransferModal = ref(false);
+const selectedAsset = ref(null);
+const transferData = reactive({
     asset_id: null,
     custodian: "",
     transfer_date: "",
@@ -831,20 +767,18 @@ const transferForm = reactive({
 
 function openTransferModal(asset) {
     selectedAsset.value = asset;
-    transferForm.asset_id = asset.id;
-    transferForm.custodian = asset.person_assigned || "";
-    transferForm.transfer_date = "";
-    transferForm.assignment_notes = "";
-    isTransferModalOpen.value = true;
+    transferData.asset_id = asset.id;
+    transferData.custodian = asset.person_assigned || "";
+    transferData.transfer_date = "";
+    transferData.assignment_notes = "";
+    showTransferModal.value = true;
 }
 
 function closeTransferModal() {
-    isTransferModalOpen.value = false;
+    showTransferModal.value = false;
 }
 
-function formatDate(date) {
-    return moment(date).format("DD/MM/YYYY");
-}
+
 
 const assets = ref([]);
 const loading = ref(false);
@@ -876,8 +810,8 @@ function closeAttachmentsModal() {
     selectedAttachments.value = [];
 }
 
-const search = ref(props.filters.search);
-const per_page = ref(props.filters.per_page);
+const search = ref(props.filters?.search || '');
+const per_page = ref(props.filters.per_page || 25);
 
 // Region, Location, SubLocation filter state
 const regionFilter = ref(null);
@@ -887,21 +821,45 @@ const subLocationOptions = ref([]);
 const fundSourceFilter = ref(null);
 
 const regionOptions = computed(() => props.regions || []);
-const locationOptions = computed(() => props.locations || []);
-// subLocationOptions is now a ref, loaded dynamically
 
+// Filter locations based on selected region (locations that have assets in the selected region)
+const locationOptions = computed(() => {
+    if (!regionFilter.value) return [];
+    
+    // Get unique location IDs that have assets in the selected region
+    const locationIdsInRegion = new Set();
+    props.assets.data.forEach(asset => {
+        if (asset.region_id === regionFilter.value.id && asset.asset_location_id) {
+            locationIdsInRegion.add(asset.asset_location_id);
+        }
+    });
+    
+    // Return only locations that have assets in the selected region
+    return (props.locations || []).filter(location => 
+        locationIdsInRegion.has(location.id)
+    );
+});
+
+// subLocationOptions is now a ref, loaded dynamically
 const filteredSubLocations = computed(() => subLocationOptions.value);
 
 function onRegionChange(selected) {
     locationFilter.value = null;
-    subLocationFilter.value = null;
+    selectedSubLocations.value = [];
     subLocationOptions.value = [];
+    
+    // Clear sub-location options when region changes
+    if (!selected) {
+        subLocationOptions.value = [];
+    }
 }
 
 async function onLocationChange(selected) {
-    subLocationFilter.value = null;
+    selectedSubLocations.value = [];
     subLocationOptions.value = [];
+    
     if (!selected) return;
+    
     const locationId = selected.id || selected;
     try {
         const response = await axios.get(
@@ -914,32 +872,32 @@ async function onLocationChange(selected) {
 }
 
 // Asset transfer
-async function submitTransfer() {
-    if (!transferForm.custodian || !transferForm.transfer_date) {
+async function transferAsset() {
+    if (!transferData.custodian || !transferData.transfer_date) {
         toast.error("Custodian and transfer date are required.");
         return;
     }
-    isTransferring.value = true;
+    loading.value = true;
     try {
         const response = await axios.post(
-            route("assets.transfer", { asset: transferForm.asset_id }),
+            route("assets.transfer", { asset: transferData.asset_id }),
             {
-                asset_id: transferForm.asset_id,
-                custodian: transferForm.custodian,
-                transfer_date: transferForm.transfer_date,
-                assignment_notes: transferForm.assignment_notes,
+                asset_id: transferData.asset_id,
+                custodian: transferData.custodian,
+                transfer_date: transferData.transfer_date,
+                assignment_notes: transferData.assignment_notes,
             }
         );
         if (selectedAsset.value) {
-            selectedAsset.value.person_assigned = transferForm.custodian;
-            selectedAsset.value.transfer_date = transferForm.transfer_date;
+            selectedAsset.value.person_assigned = transferData.custodian;
+            selectedAsset.value.transfer_date = transferData.transfer_date;
         }
         toast.success("Asset transferred successfully!");
         closeTransferModal();
     } catch (error) {
         toast.error(error.response?.data || "Transfer failed.");
     } finally {
-        isTransferring.value = false;
+        loading.value = false;
     }
 }
 
@@ -973,6 +931,9 @@ function getResults(page = 1) {
 watch(
     () => locationFilter.value,
     async (newLocation) => {
+        selectedSubLocations.value = [];
+        subLocationOptions.value = [];
+        
         if (newLocation && newLocation.id) {
             // Fetch sub-locations for the selected location
             try {
@@ -983,18 +944,19 @@ watch(
             } catch (e) {
                 subLocationOptions.value = [];
             }
-        } else {
-            subLocationOptions.value = [];
-            subLocationFilter.value = null;
         }
     },
     { immediate: true }
 );
 
+// Debounced search function
+const debouncedSearch = debounce(() => {
+    reloadAssets();
+}, 300);
+
 watch(
     [
         () => props.filters.page,
-        () => search.value,
         () => per_page.value,
         () => (regionFilter.value ? regionFilter.value.id : null),
         () => (locationFilter.value ? locationFilter.value.id : null),
@@ -1002,6 +964,14 @@ watch(
     ],
     () => {
         reloadAssets();
+    }
+);
+
+// Watch search separately with debouncing
+watch(
+    () => search.value,
+    () => {
+        debouncedSearch();
     }
 );
 
@@ -1120,29 +1090,34 @@ const maintenanceAssets = computed(
 );
 
 
-const importFile = ref(null);
-const isUploading = ref(false);
+const fileInput = ref(null);
+const selectedFile = ref(null);
+const importing = ref(false);
+const transferring = ref(false);
 
-const uploadExcel = async () => {
-    const file = importFile.value?.files[0];
-    if (!file) {
-        toast.error("Please select a file.");
+const handleFileSelect = (event) => {
+    selectedFile.value = event.target.files[0];
+};
+
+const importAssets = async () => {
+    if (!selectedFile.value) {
+        toast.error("Please select a file to import.");
         return;
     }
     const formData = new FormData();
-    formData.append("file", file);
-    isUploading.value = true;
+    formData.append("file", selectedFile.value);
+    importing.value = true;
     try {
         await axios.post(route("assets.import"), formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
         toast.success("Import started. You will be notified when complete.");
-        importFile.value.value = ""; // reset input
+        fileInput.value.value = ""; // reset input
         showImportModal.value = false; // close modal after upload
     } catch (error) {
         toast.error(error.response?.data || "Import failed.");
     } finally {
-        isUploading.value = false;
+        importing.value = false;
     }
 };
 
@@ -1151,17 +1126,18 @@ const exportToExcel = () => {
     // Prepare the data
     const exportData = props.assets.data.map((asset) => ({
         "Asset Tag": asset.asset_tag,
-        Category: asset.category.name,
+        Category: asset.category?.name || '',
         "Serial Number": asset.serial_number,
         Description: asset.item_description,
         "Assigned To": asset.person_assigned,
-        Region: asset.region?.name,
-        Location: asset.location.name,
+        Region: asset.region?.name || '',
+        Location: asset.location?.name || '',
         "Sub Location": asset.sub_location?.name || "",
         "Acquisition Date": formatDate(asset.acquisition_date),
-        Status: asset.status,
+        Status: formatStatus(asset.status),
         "Original Value": asset.original_value,
         "Source Agency": asset.fund_source?.name || "",
+        "Approval Status": asset.submitted_for_approval ? 'Pending Approval' : 'Approved',
     }));
 
     // Create worksheet
@@ -1176,4 +1152,54 @@ const exportToExcel = () => {
     // Save the file
     XLSX.writeFile(workbook, fileName);
 };
+
+// Clear all filters
+const clearFilters = () => {
+    search.value = '';
+    regionFilter.value = null;
+    locationFilter.value = null;
+    selectedSubLocations.value = [];
+    subLocationOptions.value = [];
+    fundSourceFilter.value = null;
+    props.filters.page = 1;
+    reloadAssets();
+};
+
+// Approval system
+const showApprovalModal = ref(false);
+const approvalAction = ref('');
+const approvalNotes = ref('');
+const processingApproval = ref(false);
+
+function canApproveAsset(asset) {
+    // Check if user has approval permissions
+    return $page.props.auth.can.asset_approve || $page.props.auth.can.transfer_approve;
+}
+
+function openApprovalModal(asset, action) {
+    selectedAsset.value = asset;
+    approvalAction.value = action;
+    approvalNotes.value = '';
+    showApprovalModal.value = true;
+}
+
+async function processApproval() {
+    if (!selectedAsset.value) return;
+
+    processingApproval.value = true;
+    try {
+        const response = await axios.post(route('assets.approve', selectedAsset.value.id), {
+            action: approvalAction.value,
+            notes: approvalNotes.value
+        });
+
+        toast.success(response.data.message);
+        showApprovalModal.value = false;
+        router.reload();
+    } catch (error) {
+        toast.error(error.response?.data || 'Failed to process approval');
+    } finally {
+        processingApproval.value = false;
+    }
+}
 </script>

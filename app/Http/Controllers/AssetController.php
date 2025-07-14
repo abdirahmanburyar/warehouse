@@ -10,6 +10,7 @@ use App\Models\AssetCategory;
 use App\Models\CustodyHistory;
 use App\Models\FundSource;
 use App\Models\AssetAttachment;
+use App\Models\AssetApproval;
 use App\Http\Resources\AssetResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,13 @@ class AssetController extends Controller
         $assets = Asset::query();
 
         if($request->filled('search')){
-            $assets->whereLike('asset_tag', '%'.$request->search.'%');
+            $search = $request->search;
+            $assets->where(function($query) use ($search) {
+                $query->whereLike('asset_tag', '%'.$search.'%')
+                      ->orWhereLike('serial_number', '%'.$search.'%')
+                      ->orWhereLike('item_description', '%'.$search.'%')
+                      ->orWhereLike('person_assigned', '%'.$search.'%');
+            });
         }
 
         if($request->filled('region_id')){
@@ -45,7 +52,7 @@ class AssetController extends Controller
             $assets->where('fund_source_id', $request->fund_source_id);
         }
 
-        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource')
+        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'region:id,name', 'history','attachments','fundSource')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -128,7 +135,7 @@ class AssetController extends Controller
 
     public function show(Request $request, $id)
     {
-        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource')
+        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'submittedBy')
             ->findOrFail($id);
 
         return inertia('Assets/Show', [
@@ -331,6 +338,11 @@ class AssetController extends Controller
                 ['id' => $request->id],
                 $assetData
             );
+
+            // If this is a new asset (not an update), create automatic approvals
+            if (!$request->id) {
+                $asset->createAutomaticApprovals();
+            }
             
             // Handle document attachments if has_documents is true
             if ($hasDocuments && !empty($request->documents)) {
@@ -449,46 +461,128 @@ class AssetController extends Controller
         return response()->json($subLocations);
     }
 
-    // transfer submittion
-    
+    // transfer submission with approval
     public function transferAsset(Request $request)
-{
-    try {
-        return DB::transaction(function() use($request) {
+    {
+        try {
+            return DB::transaction(function() use($request) {
+                $validated = $request->validate([
+                    'asset_id' => 'required|exists:assets,id',
+                    'custodian' => 'required|string|max:255',
+                    'transfer_date' => 'required|date',
+                    'assignment_notes' => 'nullable|string',
+                ]);
+
+                $asset = Asset::findOrFail($validated['asset_id']);
+                
+                // Check if asset is approved and in use
+                if ($asset->status !== Asset::STATUS_IN_USE && $asset->status !== Asset::STATUS_ACTIVE) {
+                    return response()->json('Asset must be approved and in use before transfer', 400);
+                }
+
+                // Create transfer approval
+                $transferApproval = $asset->approvals()->create([
+                    'role_id' => 2, // asset_manager role ID - adjust based on your role structure
+                    'action' => 'transfer_approval',
+                    'sequence' => 1,
+                    'status' => 'pending',
+                    'created_by' => auth()->id(),
+                    'notes' => "Transfer request: {$asset->person_assigned} → {$validated['custodian']}"
+                ]);
+
+                // Store transfer data in the approval
+                $transferData = [
+                    'old_custodian' => $asset->person_assigned,
+                    'new_custodian' => $validated['custodian'],
+                    'transfer_date' => $validated['transfer_date'],
+                    'assignment_notes' => $validated['assignment_notes'] ?? null,
+                ];
+                
+                $transferApproval->update([
+                    'transfer_data' => json_encode($transferData)
+                ]);
+
+                return response()->json([
+                    'message' => 'Transfer request submitted for approval',
+                    'transfer_approval' => $transferApproval,
+                    'asset' => $asset->fresh()
+                ], 200);
+            });
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Approve transfer
+     */
+    public function approveTransfer(Request $request, Asset $asset)
+    {
+        try {
             $validated = $request->validate([
-                'asset_id' => 'required|exists:assets,id',
-                'custodian' => 'required|string|max:255',
-                'transfer_date' => 'required|date',
-                'assignment_notes' => 'nullable|string',
+                'approval_id' => 'required|exists:asset_approvals,id',
+                'action' => 'required|in:approve,reject',
+                'notes' => 'nullable|string'
             ]);
 
-            $asset = Asset::findOrFail($validated['asset_id']);
-            $oldCustodian = $asset->person_assigned;
-            $asset->person_assigned = $validated['custodian'];
-            $asset->transfer_date = $validated['transfer_date'];
-        $asset->save();
+            $approval = AssetApproval::findOrFail($validated['approval_id']);
+            
+            if ($approval->action !== 'transfer_approval') {
+                return response()->json('Invalid approval type', 400);
+            }
 
-        $custodyHistory = \App\Models\CustodyHistory::create([
-            'asset_id' => $asset->id,
-            'custodian' => $validated['custodian'],
-            'assigned_by' => auth()->id(),
-            'assigned_at' => now(),
-            'assignment_notes' => $validated['assignment_notes'] ?? null,
-            'status' => 'assigned',
-            'status_notes' => 'Transferred from ' . $oldCustodian . ' to ' . $validated['custodian'],
-        ]);
+            if ($validated['action'] === 'approve') {
+                // Get transfer data
+                $transferData = json_decode($approval->transfer_data, true);
+                
+                // Update asset
+                $asset->update([
+                    'person_assigned' => $transferData['new_custodian'],
+                    'transfer_date' => $transferData['transfer_date']
+                ]);
 
-        return response()->json([
-            'message' => 'Asset transferred successfully',
-            'asset' => $asset,
-            'custody_history' => $custodyHistory,
-        ], 200);
+                // Create custody history
+                $custodyHistory = \App\Models\CustodyHistory::create([
+                    'asset_id' => $asset->id,
+                    'custodian' => $transferData['new_custodian'],
+                    'assigned_by' => auth()->id(),
+                    'assigned_at' => now(),
+                    'assignment_notes' => $transferData['assignment_notes'] ?? null,
+                    'status' => 'assigned',
+                    'status_notes' => 'Transferred from ' . $transferData['old_custodian'] . ' to ' . $transferData['new_custodian'],
+                ]);
 
-        });
-    } catch (\Throwable $th) {
-        return response()->json($th->getMessage(), 500);
+                // Update approval status
+                $approval->update([
+                    'status' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                return response()->json([
+                    'message' => 'Transfer approved successfully',
+                    'asset' => $asset->fresh(),
+                    'custody_history' => $custodyHistory
+                ], 200);
+            } else {
+                // Reject transfer
+                $approval->update([
+                    'status' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                return response()->json([
+                    'message' => 'Transfer rejected',
+                    'asset' => $asset->fresh()
+                ], 200);
+            }
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
     }
-}
     /**
      * Store a new sub-location.
      *
@@ -512,5 +606,227 @@ class AssetController extends Controller
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
+    }
+
+    /**
+     * Submit asset for approval
+     */
+    public function submitForApproval(Request $request, Asset $asset)
+    {
+        try {
+            // Check if asset is already submitted for approval
+            if ($asset->isPendingApproval()) {
+                return response()->json('Asset is already pending approval', 400);
+            }
+
+            // Submit asset for approval
+            $asset->submitForApproval();
+
+            return response()->json([
+                'message' => 'Asset submitted for approval successfully',
+                'asset' => $asset->fresh()
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Approve asset
+     */
+    public function approveAsset(Request $request, Asset $asset)
+    {
+        try {
+            $validated = $request->validate([
+                'notes' => 'nullable|string',
+                'action' => 'required|in:approve,reject,review'
+            ]);
+
+            $action = $validated['action'];
+            $user = auth()->user();
+
+            // Check permissions based on action
+            if ($action === 'approve' && !$user->can('asset_approve')) {
+                return response()->json('You are not authorized to approve assets', 403);
+            }
+
+            if ($action === 'review' && !$user->can('asset_review')) {
+                return response()->json('You are not authorized to review assets', 403);
+            }
+
+            // For reject, no specific permission check needed as mentioned
+            if ($action === 'reject') {
+                // Reject the asset and rollback to active status
+                $asset->update([
+                    'status' => Asset::STATUS_ACTIVE,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Update any pending approvals to rejected
+                $asset->approvals()->where('status', 'pending')->update([
+                    'status' => 'rejected',
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? 'Rejected by ' . $user->name
+                ]);
+
+                return response()->json([
+                    'message' => 'Asset rejected and returned to active status',
+                    'asset' => $asset->fresh()
+                ], 200);
+            }
+
+            if ($action === 'review') {
+                // For review, just add notes without changing status
+                $asset->approvals()->where('status', 'pending')->update([
+                    'notes' => ($asset->approvals()->where('status', 'pending')->first()->notes ?? '') . 
+                               "\n\nReviewed by " . $user->name . " on " . now()->format('Y-m-d H:i:s') . 
+                               ": " . ($validated['notes'] ?? 'No additional notes')
+                ]);
+
+                return response()->json([
+                    'message' => 'Asset reviewed successfully',
+                    'asset' => $asset->fresh()
+                ], 200);
+            }
+
+            if ($action === 'approve') {
+                // Approve the asset
+                $asset->update([
+                    'status' => Asset::STATUS_IN_USE,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Update all pending approvals to approved
+                $asset->approvals()->where('status', 'pending')->update([
+                    'status' => 'approved',
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? 'Approved by ' . $user->name
+                ]);
+
+                return response()->json([
+                    'message' => 'Asset approved and ready for use',
+                    'asset' => $asset->fresh()
+                ], 200);
+            }
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get pending approvals for current user
+     */
+    public function getPendingApprovals(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Get all pending assets that the user can review or approve
+            $pendingAssets = Asset::where('submitted_for_approval', true)
+                ->where('status', Asset::STATUS_PENDING_APPROVAL)
+                ->with(['approvals' => function($query) {
+                    $query->where('status', 'pending');
+                }, 'category', 'location', 'subLocation', 'submittedBy'])
+                ->get();
+
+            return response()->json([
+                'pending_assets' => $pendingAssets
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get approval history for an asset
+     */
+    public function getApprovalHistory(Asset $asset)
+    {
+        try {
+            $approvalHistory = $asset->approvals()
+                ->with(['approver', 'role'])
+                ->orderBy('sequence')
+                ->get();
+
+            return response()->json([
+                'approval_history' => $approvalHistory
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Display the approvals index page
+     */
+    public function approvalsIndex(Request $request)
+    {
+        $query = AssetApproval::with(['approvable', 'role', 'approver', 'creator'])
+            ->where('approvable_type', Asset::class);
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('approvable', function($assetQuery) use ($search) {
+                    $assetQuery->where('asset_tag', 'like', '%' . $search . '%')
+                              ->orWhere('serial_number', 'like', '%' . $search . '%')
+                              ->orWhere('item_description', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('creator', function($creatorQuery) use ($search) {
+                    $creatorQuery->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('email', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('approver', function($approverQuery) use ($search) {
+                    $approverQuery->where('name', 'like', '%' . $search . '%')
+                                 ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            });
+        }
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+
+
+        // Apply action type filter
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        // Apply date range filters
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+
+
+        $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // Get counts
+        $pendingCount = AssetApproval::where('approvable_type', Asset::class)
+            ->where('status', 'pending')->count();
+        $approvedCount = AssetApproval::where('approvable_type', Asset::class)
+            ->where('status', 'approved')->count();
+
+        // Get roles for filter
+        $roles = \App\Models\Role::all();
+
+        return Inertia::render('Assets/Approvals', [
+            'approvals' => $approvals,
+            'roles' => $roles,
+            'filters' => $request->only('search', 'status', 'action', 'date_from', 'date_to'),
+            'pendingCount' => $pendingCount,
+            'approvedCount' => $approvedCount,
+        ]);
     }
 }

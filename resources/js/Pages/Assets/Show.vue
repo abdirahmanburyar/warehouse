@@ -660,6 +660,159 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Approval Section -->
+            <div class="bg-white shadow-xl rounded-2xl overflow-hidden mb-10" v-if="asset.submitted_for_approval || canApprove">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-700 p-6 sm:p-8">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 mr-3">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Approval Status
+                    </h2>
+                </div>
+                <div class="p-6 sm:p-8">
+                    <div v-if="asset.submitted_for_approval" class="space-y-6">
+                        <!-- Approval Status -->
+                        <div class="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-yellow-600 mr-3">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-yellow-800">Pending Approval</h3>
+                                    <p class="text-yellow-600">Submitted on {{ formatDate(asset.submitted_at) }} by {{ asset.submitted_by_user?.name || 'Unknown' }}</p>
+                                </div>
+                            </div>
+                            <div v-if="!canApprove" class="text-sm text-yellow-600">
+                                Waiting for approval...
+                            </div>
+                        </div>
+
+                        <!-- Approval Steps -->
+                        <div v-if="approvalHistory.length > 0" class="space-y-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Approval Steps</h3>
+                            <div class="space-y-3">
+                                <div v-for="(step, index) in approvalHistory" :key="step.id" 
+                                     class="flex items-center p-4 border rounded-lg"
+                                     :class="{
+                                         'bg-green-50 border-green-200': step.status === 'approved',
+                                         'bg-red-50 border-red-200': step.status === 'rejected',
+                                         'bg-gray-50 border-gray-200': step.status === 'pending'
+                                     }">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-4"
+                                         :class="{
+                                             'bg-green-500 text-white': step.status === 'approved',
+                                             'bg-red-500 text-white': step.status === 'rejected',
+                                             'bg-gray-300 text-gray-600': step.status === 'pending'
+                                         }">
+                                        <span class="text-sm font-semibold">{{ index + 1 }}</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="font-medium text-gray-900">{{ step.role?.name || 'Unknown Role' }}</p>
+                                                <p class="text-sm text-gray-500">{{ step.action }}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                      :class="{
+                                                          'bg-green-100 text-green-800': step.status === 'approved',
+                                                          'bg-red-100 text-red-800': step.status === 'rejected',
+                                                          'bg-gray-100 text-gray-800': step.status === 'pending'
+                                                      }">
+                                                    {{ step.status }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div v-if="step.approved_at" class="mt-2 text-sm text-gray-500">
+                                            {{ step.status === 'approved' ? 'Approved' : 'Rejected' }} on {{ formatDate(step.approved_at) }}
+                                            <span v-if="step.approver">by {{ step.approver.name }}</span>
+                                        </div>
+                                        <div v-if="step.notes" class="mt-2 text-sm text-gray-600">
+                                            <strong>Notes:</strong> {{ step.notes }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Approval Actions -->
+                        <div v-if="canApprove" class="border-t pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Take Action</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="approval-notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        id="approval-notes"
+                                        v-model="approvalNotes"
+                                        rows="3"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Add any notes about your decision..."
+                                    ></textarea>
+                                </div>
+                                <div class="flex space-x-4">
+                                    <button
+                                        @click="approveAsset('approve')"
+                                        :disabled="approvalLoading"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                                    >
+                                        <svg v-if="approvalLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Approve
+                                    </button>
+                                    <button
+                                        @click="approveAsset('reject')"
+                                        :disabled="approvalLoading"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                                    >
+                                        <svg v-if="approvalLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                            <path d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit for Approval Button -->
+                    <div v-else-if="!asset.submitted_for_approval && asset.status !== 'pending_approval'" class="text-center py-8">
+                        <div class="max-w-md mx-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16 text-gray-400 mx-auto mb-4">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Ready for Approval</h3>
+                            <p class="text-gray-500 mb-6">Submit this asset for approval to activate it in the system.</p>
+                            <button
+                                @click="submitForApproval"
+                                :disabled="submitLoading"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                <svg v-if="submitLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Submit for Approval
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -683,6 +836,13 @@ const error = ref(null);
 const uploading = ref(false);
 const newDocuments = ref([{ type: "", file: null, asset_id: props.asset.id }]);
 const docErrors = ref([]);
+
+// Approval related reactive variables
+const approvalHistory = ref([]);
+const canApprove = ref(false);
+const approvalNotes = ref('');
+const approvalLoading = ref(false);
+const submitLoading = ref(false);
 
 function addDocumentRow() {
     newDocuments.value.push({ type: "", file: null, asset_id: props.asset.id });
@@ -843,5 +1003,82 @@ function isWarrantyExpiringInOneMonth(end) {
   const dl = daysLeft(end);
   return dl > 7 && dl <= 30;
 }
+
+// Approval methods
+async function loadApprovalHistory() {
+    try {
+        const response = await axios.get(route('assets.approval-history', props.asset.id));
+        approvalHistory.value = response.data.approval_history;
+        
+        // Check if current user can approve
+        const pendingStep = approvalHistory.value.find(step => step.status === 'pending');
+        if (pendingStep) {
+            // This is a simplified check - in a real app you'd check user roles
+            canApprove.value = true;
+        }
+    } catch (error) {
+        console.error('Error loading approval history:', error);
+    }
+}
+
+async function submitForApproval() {
+    submitLoading.value = true;
+    try {
+        const response = await axios.post(route('assets.submit-approval', props.asset.id));
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: response.data.message,
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            router.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data || 'Failed to submit for approval',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    } finally {
+        submitLoading.value = false;
+    }
+}
+
+async function approveAsset(action) {
+    approvalLoading.value = true;
+    try {
+        const response = await axios.post(route('assets.approve', props.asset.id), {
+            action: action,
+            notes: approvalNotes.value
+        });
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: response.data.message,
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            router.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data || 'Failed to process approval',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    } finally {
+        approvalLoading.value = false;
+    }
+}
+
+// Load approval history when component mounts
+loadApprovalHistory();
 
 </script>

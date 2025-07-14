@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Approval;
+use App\Models\AssetApproval;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 trait HasApprovals
@@ -12,7 +12,7 @@ trait HasApprovals
      */
     public function approvals(): MorphMany
     {
-        return $this->morphMany(Approval::class, 'approvable');
+        return $this->morphMany(AssetApproval::class, 'approvable');
     }
 
     /**
@@ -40,7 +40,7 @@ trait HasApprovals
     {
         foreach ($steps as $step) {
             $this->approvals()->create([
-                'role' => $step['role'],
+                'role_id' => $step['role_id'],
                 'action' => $step['action'],
                 'sequence' => $step['sequence'] ?? 1,
                 'status' => 'pending',
@@ -70,6 +70,6 @@ trait HasApprovals
             return false;
         }
 
-        return auth()->user()->hasRole($nextStep->role);
+        return auth()->user()->hasRole($nextStep->role->name);
     }
 }
