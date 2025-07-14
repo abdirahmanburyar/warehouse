@@ -269,6 +269,67 @@
                         </div>
                     </div>
 
+                    <!-- Procurement Reports Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900">Procurement</h3>
+                                    <p class="text-sm text-gray-600">Purchase & supply chain</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-4">
+                                Comprehensive procurement reports including purchase orders, packing lists, backorders, lead time analysis, and demand forecasting.
+                            </p>
+                            
+                            <div class="space-y-2">
+                                <Link :href="route('reports.procurement.purchase-orders')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-teal-50 rounded-lg transition-colors">
+                                    <span>Purchase Orders Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.procurement.packing-list')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-teal-50 rounded-lg transition-colors">
+                                    <span>Packing List Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.procurement.backorder')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-teal-50 rounded-lg transition-colors">
+                                    <span>Backorder Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.procurement.lead-time-analysis')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-teal-50 rounded-lg transition-colors">
+                                    <span>Lead Time Analysis Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.procurement.demand-forecasting')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-teal-50 rounded-lg transition-colors">
+                                    <span>Demand Forecasting Report</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Liquidation & Disposal Reports Card -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
                         <div class="p-6">

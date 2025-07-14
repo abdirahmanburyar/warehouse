@@ -684,6 +684,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // Liquidation & Disposal Reports
         Route::get('/liquidation-disposal/liquidation', [ReportController::class, 'liquidationReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.liquidation-disposal.liquidation');
         Route::get('/liquidation-disposal/disposal', [ReportController::class, 'disposalReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.liquidation-disposal.disposal');
+        
+        // Procurement Reports
+        Route::get('/procurement/purchase-orders', [ReportController::class, 'purchaseOrdersReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.procurement.purchase-orders');
+        Route::get('/procurement/packing-list', [ReportController::class, 'packingListReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.procurement.packing-list');
+        Route::get('/procurement/backorder', [ReportController::class, 'backorderReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.procurement.backorder');
+        Route::get('/procurement/lead-time-analysis', [ReportController::class, 'leadTimeAnalysisReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.procurement.lead-time-analysis');
+        Route::get('/procurement/demand-forecasting', [ReportController::class, 'demandForecastingReport'])->middleware(PermissionMiddleware::class . ':report.view')->name('reports.procurement.demand-forecasting');
     });
 
     // Approval Routes

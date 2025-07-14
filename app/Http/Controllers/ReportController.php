@@ -1888,4 +1888,299 @@ class ReportController extends Controller
             'sources' => $sources
         ]);
     }
+
+    /**
+     * Purchase Orders Report
+     */
+    public function purchaseOrdersReport(Request $request)
+    {
+        $query = \App\Models\PurchaseOrder::query()
+            ->with(['supplier', 'items.product.category', 'items.product.dosage', 'approvedBy', 'rejectedBy', 'reviewedBy', 'creator']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by supplier
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('po_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('po_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Search by PO number
+        if ($request->filled('search')) {
+            $query->where('po_number', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalPOs = $baseQuery->count();
+        $approvedCount = (clone $baseQuery)->where('status', 'approved')->count();
+        $rejectedCount = (clone $baseQuery)->where('status', 'rejected')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'pending')->count();
+        $totalValue = $baseQuery->sum('total_amount');
+
+        $purchaseOrders = $query->orderBy('po_date', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $purchaseOrders->setPath(url()->current());
+
+        // Get suppliers for filter
+        $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
+
+        return inertia('Report/Procurement/PurchaseOrders', [
+            'purchaseOrders' => $purchaseOrders,
+            'filters' => $request->only(['status', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
+            'summary' => [
+                'total_pos' => $totalPOs,
+                'approved_count' => $approvedCount,
+                'rejected_count' => $rejectedCount,
+                'pending_count' => $pendingCount,
+                'total_value' => $totalValue
+            ],
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    /**
+     * Packing List Report
+     */
+    public function packingListReport(Request $request)
+    {
+        $query = \App\Models\PackingList::query()
+            ->with(['purchaseOrder.supplier', 'items.product.category', 'items.product.dosage', 'confirmedBy', 'reviewedBy', 'approvedBy']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by supplier
+        if ($request->filled('supplier_id')) {
+            $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                $q->where('supplier_id', $request->supplier_id);
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('pk_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('pk_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Search by packing list number
+        if ($request->filled('search')) {
+            $query->where('packing_list_number', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalPackingLists = $baseQuery->count();
+        $confirmedCount = (clone $baseQuery)->where('status', 'confirmed')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'pending')->count();
+        $totalItems = $baseQuery->withCount('items')->get()->sum('items_count');
+        $totalValue = $baseQuery->join('packing_list_items', 'packing_lists.id', '=', 'packing_list_items.packing_list_id')
+            ->sum('packing_list_items.total_cost');
+
+        $packingLists = $query->orderBy('pk_date', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $packingLists->setPath(url()->current());
+
+        // Get suppliers for filter
+        $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
+
+        return inertia('Report/Procurement/PackingList', [
+            'packingLists' => $packingLists,
+            'filters' => $request->only(['status', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
+            'summary' => [
+                'total_packing_lists' => $totalPackingLists,
+                'confirmed_count' => $confirmedCount,
+                'pending_count' => $pendingCount,
+                'total_items' => $totalItems,
+                'total_value' => $totalValue
+            ],
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    /**
+     * Backorder Report
+     */
+    public function backorderReport(Request $request)
+    {
+        $query = \App\Models\BackOrder::query()
+            ->with(['packingList.purchaseOrder.supplier', 'differences.product.category', 'differences.product.dosage', 'creator']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by supplier
+        if ($request->filled('supplier_id')) {
+            $query->whereHas('packingList.purchaseOrder', function ($q) use ($request) {
+                $q->where('supplier_id', $request->supplier_id);
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('back_order_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('back_order_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Search by back order number
+        if ($request->filled('search')) {
+            $query->where('back_order_number', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate summary counts before pagination
+        $baseQuery = clone $query;
+        $totalBackOrders = $baseQuery->count();
+        $openCount = (clone $baseQuery)->where('status', 'open')->count();
+        $closedCount = (clone $baseQuery)->where('status', 'closed')->count();
+        $totalItems = $baseQuery->sum('total_items');
+        $totalQuantity = $baseQuery->sum('total_quantity');
+
+        $backOrders = $query->orderBy('back_order_date', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $backOrders->setPath(url()->current());
+
+        // Get suppliers for filter
+        $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
+
+        return inertia('Report/Procurement/Backorder', [
+            'backOrders' => $backOrders,
+            'filters' => $request->only(['status', 'supplier_id', 'date_from', 'date_to', 'search', 'per_page']),
+            'summary' => [
+                'total_back_orders' => $totalBackOrders,
+                'open_count' => $openCount,
+                'closed_count' => $closedCount,
+                'total_items' => $totalItems,
+                'total_quantity' => $totalQuantity
+            ],
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    /**
+     * Lead Time Analysis Report
+     */
+    public function leadTimeAnalysisReport(Request $request)
+    {
+        $query = \App\Models\PurchaseOrder::query()
+            ->with(['supplier', 'packingLists', 'items.product.category']);
+
+        // Filter by supplier
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('po_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('po_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Calculate lead time metrics
+        $purchaseOrders = $query->orderBy('po_date', 'desc')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $purchaseOrders->setPath(url()->current());
+
+        // Calculate summary statistics
+        $baseQuery = clone $query;
+        $totalPOs = $baseQuery->count();
+        $avgLeadTime = $baseQuery->whereNotNull('approved_at')
+            ->get()
+            ->avg(function ($po) {
+                return $po->approved_at ? $po->po_date->diffInDays($po->approved_at) : null;
+            });
+
+        $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
+
+        return inertia('Report/Procurement/LeadTimeAnalysis', [
+            'purchaseOrders' => $purchaseOrders,
+            'filters' => $request->only(['supplier_id', 'date_from', 'date_to', 'status', 'per_page']),
+            'summary' => [
+                'total_pos' => $totalPOs,
+                'avg_lead_time' => round($avgLeadTime ?? 0, 1)
+            ],
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    /**
+     * Demand Forecasting Report
+     */
+    public function demandForecastingReport(Request $request)
+    {
+        $query = \App\Models\Product::query()
+            ->with(['category', 'dosage', 'supplyItems.supply']);
+
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by dosage
+        if ($request->filled('dosage_id')) {
+            $query->where('dosage_id', $request->dosage_id);
+        }
+
+        // Search by product name
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Calculate demand forecasting metrics
+        $products = $query->orderBy('name')
+            ->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
+            ->withQueryString();
+        $products->setPath(url()->current());
+
+        // Calculate summary statistics
+        $baseQuery = clone $query;
+        $totalProducts = $baseQuery->count();
+        $activeProducts = (clone $baseQuery)->where('is_active', true)->count();
+
+        $categories = \App\Models\Category::orderBy('name')->get(['id', 'name']);
+        $dosages = \App\Models\Dosage::orderBy('name')->get(['id', 'name']);
+
+        return inertia('Report/Procurement/DemandForecasting', [
+            'products' => $products,
+            'filters' => $request->only(['category_id', 'dosage_id', 'search', 'per_page']),
+            'summary' => [
+                'total_products' => $totalProducts,
+                'active_products' => $activeProducts
+            ],
+            'categories' => $categories,
+            'dosages' => $dosages
+        ]);
+    }
 }
