@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class ImportProgressUpdated implements ShouldBroadcast
+class UpdateProductUpload implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

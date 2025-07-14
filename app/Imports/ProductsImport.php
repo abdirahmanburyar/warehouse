@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
+use App\Events\UpdateProductUpload;
 
 class ProductsImport implements 
     ToModel, 
@@ -101,21 +102,11 @@ class ProductsImport implements
             // Update progress in cache
             Cache::increment($this->importId);
 
-            //  // Find the highest productID in the database
-            //  $maxProductId = Product::max('productID');
-            
-            //  // If there are existing products, increment the highest productID
-            //  if ($maxProductId) {
-            //      $nextId = (int)$maxProductId + 1;
-            //  } else {
-            //      // Start from 1 if no products exist
-            //      $nextId = 1;
-            //  }
-             
-            //  // Format as 6-digit number with leading zeros
-            //  $productID = str_pad($nextId, 6, '0', STR_PAD_LEFT);
+            event(new UpdateProductUpload($this->importId, Cache::get($this->importId)));
 
-            Product::create([
+            Product::updateOrCreate([
+                'name' => $itemName,
+            ], [
                 'name' => $itemName,
                 'category_id' => $categoryId,
                 'dosage_id' => $dosageId,
@@ -154,7 +145,7 @@ class ProductsImport implements
             AfterImport::class => function (AfterImport $event) {
                 Cache::forget($this->importId);
                 Log::info('Product import completed', ['importId' => $this->importId]);
-                // broadcast(
+                event(new UpdateProductUpload($this->importId, 'completed'));
             },
         ];
     }
