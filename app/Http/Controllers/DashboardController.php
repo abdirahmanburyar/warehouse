@@ -160,6 +160,27 @@ class DashboardController extends Controller
 
         $loadSuppliers = Supplier::pluck('name')->toArray();
 
+        // Inventory statistics
+        $statusCounts = [
+            'in_stock' => 0,
+            'low_stock' => 0,
+            'out_of_stock' => 0,
+        ];
+        $inventories = \App\Models\Inventory::with('items')->get();
+        foreach ($inventories as $inventory) {
+            $reorderLevel = $inventory->reorder_level ?? 0;
+            foreach ($inventory->items ?? [] as $item) {
+                $qty = $item->quantity;
+                if ($qty == 0) {
+                    $statusCounts['out_of_stock']++;
+                } elseif ($qty <= $reorderLevel) {
+                    $statusCounts['low_stock']++;
+                } else {
+                    $statusCounts['in_stock']++;
+                }
+            }
+        }
+
         return Inertia::render('Dashboard', [
             'dashboardData' => [
                 'summary' => $facilityTypes,
@@ -206,6 +227,7 @@ class DashboardController extends Controller
             'warehouseDataType' => $warehouseDataType,
             'warehouseChartData' => $warehouseChartData,
             'issuedData' => $issuedData,
+            'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count])->values(),
         ]);
     }
 

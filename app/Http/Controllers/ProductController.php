@@ -304,9 +304,10 @@ class ProductController extends Controller
             Cache::put("import_{$importId}_imported", 0, now()->addHours(1));
             Cache::put("import_{$importId}_skipped", 0, now()->addHours(1));
             Cache::put("import_{$importId}_errors", [], now()->addHours(1));
+            Cache::put("import_{$importId}_status", 'queued', now()->addHours(1));
 
-            // Dispatch the import job
-            ProcessProductImport::dispatch($filePath, $importId);
+            // Dispatch the import job with proper queue configuration
+            ProcessProductImport::dispatch($filePath, $importId)->onQueue('default');
 
             // Delete the temporary uploaded file
             if ($tempFile && file_exists($tempFile)) {
@@ -358,6 +359,7 @@ class ProductController extends Controller
             $imported = Cache::get("import_{$importId}_imported", 0);
             $skipped = Cache::get("import_{$importId}_skipped", 0);
             $errors = Cache::get("import_{$importId}_errors", []);
+            $status = Cache::get("import_{$importId}_status", 'unknown');
             
             return response()->json([
                 'success' => true,
@@ -365,7 +367,8 @@ class ProductController extends Controller
                     'imported' => $imported,
                     'skipped' => $skipped,
                     'errors' => $errors,
-                    'completed' => $imported > 0 || $skipped > 0 // Simple way to check if processing has started
+                    'status' => $status,
+                    'completed' => in_array($status, ['completed', 'failed']) || $imported > 0 || $skipped > 0
                 ]
             ]);
         } catch (\Exception $e) {

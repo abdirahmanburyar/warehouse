@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 
 class ProductsImport
@@ -33,6 +34,12 @@ class ProductsImport
     public function import()
     {
         try {
+            // Validate file extension
+            $extension = strtolower(pathinfo($this->filePath, PATHINFO_EXTENSION));
+            if (!in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                throw new \Exception("Unsupported file format: {$extension}");
+            }
+
             // Create the reader based on file extension
             $reader = ReaderEntityFactory::createReaderFromFile($this->filePath);
             $reader->open($this->filePath);
@@ -52,7 +59,7 @@ class ProductsImport
                     if ($isFirstRow) {
                         $headers = array_map('strtolower', $values);
                         if (!in_array('item description', $headers)) {
-                            throw new \Exception("Required column 'item description' not found");
+                            throw new \Exception("Required column 'item description' not found in headers: " . implode(', ', $headers));
                         }
                         $isFirstRow = false;
                         continue;
@@ -71,6 +78,10 @@ class ProductsImport
                     } catch (\Exception $e) {
                         $this->errors[] = "Row {$rowIndex}: " . $e->getMessage();
                         $this->skippedCount++;
+                        Log::warning("Skipped row {$rowIndex} during import", [
+                            'error' => $e->getMessage(),
+                            'row_data' => $values
+                        ]);
                     }
                 }
             }
@@ -87,7 +98,8 @@ class ProductsImport
         } catch (\Exception $e) {
             Log::error('Import error', [
                 'error' => $e->getMessage(),
-                'file' => $this->filePath
+                'file' => $this->filePath,
+                'trace' => $e->getTraceAsString()
             ]);
             throw $e;
         }
@@ -103,6 +115,12 @@ class ProductsImport
         }
 
         $itemName = trim($row['item description']);
+        
+        // Validate item name
+        if (strlen($itemName) > 255) {
+            throw new \Exception("Item description too long (max 255 characters)");
+        }
+
         $category = !empty($row['category']) ? trim($row['category']) : null;
         $dosageForm = !empty($row['dosage form']) ? trim($row['dosage form']) : null;
 

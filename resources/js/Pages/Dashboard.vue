@@ -86,7 +86,12 @@ const props = defineProps({
         type: Array,
         required: true,
         default: () => []
-    }
+    },
+    inventoryStatusCounts: {
+        type: Array,
+        required: false,
+        default: () => []
+    },
 });
 
 function getCount(abbr) {
@@ -273,6 +278,10 @@ const issuedChartOptions = {
         y: { beginAtZero: true }
     }
 };
+
+const inStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'in_stock')?.count || 0);
+const lowStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'low_stock')?.count || 0);
+const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'out_of_stock')?.count || 0);
 </script>
 
 <template>
@@ -340,6 +349,49 @@ const issuedChartOptions = {
         </div>
 
         <div class="flex flex-row gap-3 mb-6">
+            <!-- Inventory Statistics Cards -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">In Stock</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">{{ inStockCount }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Low Stock</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-orange-600">{{ lowStockCount }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Out of Stock</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600">{{ outOfStockCount }}</div>
+                    </div>
+                </div>
+            </div>
             <!-- Product Category Card -->
             <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
