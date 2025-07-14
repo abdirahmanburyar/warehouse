@@ -261,30 +261,71 @@ class ProductController extends Controller
     public function importExcel(Request $request)
     {
         try {
-            $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls,csv',
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file was uploaded'
+                ], 422);
+            }
+
+            $file = $request->file('file');
+            
+            // Validate file
+            if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
+                ], 422);
+            }
+
+            // Validate file size (max 50MB)
+            if ($file->getSize() > 50 * 1024 * 1024) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File size too large. Maximum allowed size is 50MB'
+                ], 422);
+            }
+
+            Log::info('Starting product import with Maatwebsite Excel', [
+                'original_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'extension' => $file->getClientOriginalExtension()
             ]);
-    
-            $importId = (string) Str::uuid();
-    
-            // Get total rows (first sheet only)
-            $collection = Excel::toCollection(new ProductImport($importId), $request->file('file'));
-            $totalRows = $collection->first()->count();
-    
-            Cache::put($importId . '_progress', 0);
-            Cache::put($importId . '_total', $totalRows);
-    
-            Excel::queueImport(new ProductImport($importId), $request->file('file'))
-                ->onQueue('imports');
-    
+
+            // Create the import instance
+            $import = new \App\Imports\ProductsImport();
+
+            // Import using Maatwebsite Excel
+            \Maatwebsite\Excel\Facades\Excel::import($import, $file);
+
+            // Get results from the import
+            $results = $import->getResults();
+
+            Log::info('Product import completed successfully', [
+                'results' => $results
+            ]);
+
             return response()->json([
-                'message' => 'Import started successfully.',
-                'import_id' => $importId
-            ], 200);
-    
-        } catch (\Throwable $th) {
-            logger()->error('Product import error', ['error' => $th->getMessage()]);
-            return response()->json($th->getMessage(), 500);
+                'success' => true,
+                'message' => 'Import completed successfully',
+                'data' => [
+                    'imported' => $results['imported'],
+                    'skipped' => $results['skipped'],
+                    'errors' => $results['errors'],
+                    'total_processed' => $results['imported'] + $results['skipped']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -342,54 +383,5 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Check the status of a queued import
-     */
-    public function checkImportStatus($importId)
-    {
-        try {
-            $imported = Cache::get("import_{$importId}_imported", 0);
-            $skipped = Cache::get("import_{$importId}_skipped", 0);
-            $errors = Cache::get("import_{$importId}_errors", []);
-            $status = Cache::get("import_{$importId}_status", 'unknown');
-            $startedAt = Cache::get("import_{$importId}_started_at");
-            
-            // Calculate processing time if started
-            $processingTime = null;
-            if ($startedAt) {
-                $processingTime = now()->diffInSeconds($startedAt);
-            }
 
-            // Determine if processing is complete
-            $isCompleted = in_array($status, ['completed', 'failed']);
-            $hasStarted = $imported > 0 || $skipped > 0 || $status !== 'queued';
-            
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'import_id' => $importId,
-                    'imported' => $imported,
-                    'skipped' => $skipped,
-                    'errors' => $errors,
-                    'status' => $status,
-                    'started_at' => $startedAt,
-                    'processing_time_seconds' => $processingTime,
-                    'has_started' => $hasStarted,
-                    'completed' => $isCompleted,
-                    'total_processed' => $imported + $skipped,
-                    'error_count' => count($errors)
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error checking import status', [
-                'import_id' => $importId,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error checking import status: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }
