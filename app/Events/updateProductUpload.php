@@ -20,6 +20,7 @@ class UpdateProductUpload implements ShouldBroadcast
     {
         $this->importId = $importId;
         $this->progress = $progress;
+        logger()->info('UpdateProductUpload event triggered', ['importId' => $this->importId, 'progress' => $this->progress]);
     }
 
     public function broadcastOn()
