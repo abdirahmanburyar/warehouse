@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProductImport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
