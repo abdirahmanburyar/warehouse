@@ -11,7 +11,6 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Validators\Failure;
 
@@ -21,7 +20,6 @@ class ProductsImport implements
     WithChunkReading, 
     WithBatchInserts, 
     WithValidation, 
-    SkipsOnError, 
     SkipsEmptyRows
 {
     protected $importedCount = 0;
@@ -121,17 +119,6 @@ class ProductsImport implements
             'category' => 'nullable|string|max:255',
             'dosage_form' => 'nullable|string|max:255',
         ];
-    }
-
-    /**
-     * @param Failure[] $failures
-     */
-    public function onFailure(Failure ...$failures)
-    {
-        foreach ($failures as $failure) {
-            $this->errors[] = "Row {$failure->row()}: {$failure->errors()[0]}";
-            $this->skippedCount++;
-        }
     }
 
     /**
