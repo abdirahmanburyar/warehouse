@@ -642,7 +642,7 @@ const uploadFile = async () => {
         console.error('Upload error:', error);
         closeUploadModal();
         toast.dismiss(loadingToast);
-        toast.error(response.data.message || "Failed to start import");
+        toast.error(error.response.data.message || "Failed to start import");
     });
 
 };
