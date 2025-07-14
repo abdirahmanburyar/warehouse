@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessProductImport implements ShouldQueue
 {
@@ -27,7 +28,7 @@ class ProcessProductImport implements ShouldQueue
     /**
      * The number of seconds the job can run before timing out.
      */
-    public $timeout = 300;
+    public $timeout = 600; // 10 minutes for large files
 
     /**
      * Create a new job instance.
@@ -49,21 +50,28 @@ class ProcessProductImport implements ShouldQueue
                 throw new \Exception("Import file not found: {$this->filePath}");
             }
 
-            // Ensure ProductsImport class is available
-            if (!class_exists(ProductsImport::class)) {
-                throw new \Exception("ProductsImport class not found. Please check autoloading.");
-            }
-
             // Initialize cache with processing status
             Cache::put("import_{$this->importId}_status", 'processing', now()->addHours(1));
 
-            $import = new ProductsImport($this->filePath);
-            $result = $import->import();
+            Log::info('Starting product import with Maatwebsite Excel', [
+                'import_id' => $this->importId,
+                'file_path' => $this->filePath,
+                'file_size' => filesize($this->filePath)
+            ]);
+
+            // Create the import instance
+            $import = new ProductsImport($this->importId);
+
+            // Import using Maatwebsite Excel with queue support
+            Excel::import($import, $this->filePath);
+
+            // Get results from the import
+            $results = $import->getResults();
 
             // Store results in cache
-            Cache::put("import_{$this->importId}_imported", $result['imported'], now()->addHours(1));
-            Cache::put("import_{$this->importId}_skipped", $result['skipped'], now()->addHours(1));
-            Cache::put("import_{$this->importId}_errors", $result['errors'], now()->addHours(1));
+            Cache::put("import_{$this->importId}_imported", $results['imported'], now()->addHours(1));
+            Cache::put("import_{$this->importId}_skipped", $results['skipped'], now()->addHours(1));
+            Cache::put("import_{$this->importId}_errors", $results['errors'], now()->addHours(1));
             Cache::put("import_{$this->importId}_status", 'completed', now()->addHours(1));
 
             // Clean up the file
@@ -73,7 +81,7 @@ class ProcessProductImport implements ShouldQueue
 
             Log::info('Product import completed successfully', [
                 'import_id' => $this->importId,
-                'results' => $result
+                'results' => $results
             ]);
 
         } catch (\Exception $e) {
