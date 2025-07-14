@@ -15,10 +15,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Throwable;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\ProductsImport;
+use App\Imports\ProductImport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use App\Jobs\ProcessProductImport;
 
 class ProductController extends Controller
 {
@@ -260,82 +259,62 @@ class ProductController extends Controller
      */
     public function importExcel(Request $request)
     {
-        $tempFile = null;
         try {
-            if (!$request->hasFile('file')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No file was uploaded'
-                ], 422);
-            }
-
-            $file = $request->file('file');
-            $tempFile = $file->getPathname(); // Get temporary file path
-            
-            // Validate file
-            if (!$file->isValid() || !in_array($file->getClientOriginalExtension(), ['xlsx', 'xls', 'csv'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
-                ], 422);
-            }
-
-            // Create directory if it doesn't exist
-            $uploadPath = public_path('excel-imports');
-            if (!file_exists($uploadPath)) {
-                mkdir($uploadPath, 0755, true);
-            }
-
-            // Generate unique filename and import ID
-            $importId = uniqid();
-            $filename = $importId . '.' . $file->getClientOriginalExtension();
-            
-            // Move file to public directory
-            $file->move($uploadPath, $filename);
-            $filePath = $uploadPath . '/' . $filename;
-
-            Log::info('File uploaded successfully', [
-                'original_name' => $file->getClientOriginalName(),
-                'stored_name' => $filename,
-                'path' => $filePath
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls,csv',
             ]);
 
-            // Initialize cache values
-            Cache::put("import_{$importId}_imported", 0, now()->addHours(1));
-            Cache::put("import_{$importId}_skipped", 0, now()->addHours(1));
-            Cache::put("import_{$importId}_errors", [], now()->addHours(1));
-            Cache::put("import_{$importId}_status", 'queued', now()->addHours(1));
+            Excel::queueImport(new ProductImport, $request->file('file'))
+                ->onQueue('imports');
 
-            // Dispatch the import job with proper queue configuration
-            ProcessProductImport::dispatch($filePath, $importId)->onQueue('default');
+            return response()->json('Products imported successfully.', 200);
 
-            // Delete the temporary uploaded file
-            if ($tempFile && file_exists($tempFile)) {
-                @unlink($tempFile);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Import started successfully',
-                'import_id' => $importId
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Import failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Clean up temporary file in case of error
-            if ($tempFile && file_exists($tempFile)) {
-                @unlink($tempFile);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $th) {
+            logger()->error('Product import error', ['error' => $th->getMessage()]);
+            return response()->json($th->getMessage(), 500);
         }
+    }
+
+    /**
+     * Get sample Excel format and validation rules
+     */
+    public function getImportFormat()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'format' => [
+                    'headers' => [
+                        'item_description' => 'Required - Product name/description (max 255 characters)',
+                        'category' => 'Optional - Product category (max 255 characters)',
+                        'dosage_form' => 'Optional - Dosage form (max 255 characters)'
+                    ],
+                    'sample_data' => [
+                        [
+                            'item_description' => 'Paracetamol 500mg',
+                            'category' => 'Pain Relief',
+                            'dosage_form' => 'Tablet'
+                        ],
+                        [
+                            'item_description' => 'Amoxicillin 250mg',
+                            'category' => 'Antibiotics',
+                            'dosage_form' => 'Capsule'
+                        ]
+                    ],
+                    'file_requirements' => [
+                        'supported_formats' => ['xlsx', 'xls', 'csv'],
+                        'max_file_size' => '50MB',
+                        'first_row' => 'Must contain headers',
+                        'encoding' => 'UTF-8 recommended'
+                    ],
+                    'validation_rules' => [
+                        'item_description' => 'Required, max 255 characters, must be unique',
+                        'category' => 'Optional, max 255 characters, will be created if not exists',
+                        'dosage_form' => 'Optional, max 255 characters, will be created if not exists'
+                    ]
+                ]
+            ]
+        ]);
     }
 
     public function toggleStatus(Product $product)
@@ -360,18 +339,40 @@ class ProductController extends Controller
             $skipped = Cache::get("import_{$importId}_skipped", 0);
             $errors = Cache::get("import_{$importId}_errors", []);
             $status = Cache::get("import_{$importId}_status", 'unknown');
+            $startedAt = Cache::get("import_{$importId}_started_at");
+            
+            // Calculate processing time if started
+            $processingTime = null;
+            if ($startedAt) {
+                $processingTime = now()->diffInSeconds($startedAt);
+            }
+
+            // Determine if processing is complete
+            $isCompleted = in_array($status, ['completed', 'failed']);
+            $hasStarted = $imported > 0 || $skipped > 0 || $status !== 'queued';
             
             return response()->json([
                 'success' => true,
                 'data' => [
+                    'import_id' => $importId,
                     'imported' => $imported,
                     'skipped' => $skipped,
                     'errors' => $errors,
                     'status' => $status,
-                    'completed' => in_array($status, ['completed', 'failed']) || $imported > 0 || $skipped > 0
+                    'started_at' => $startedAt,
+                    'processing_time_seconds' => $processingTime,
+                    'has_started' => $hasStarted,
+                    'completed' => $isCompleted,
+                    'total_processed' => $imported + $skipped,
+                    'error_count' => count($errors)
                 ]
             ]);
         } catch (\Exception $e) {
+            Log::error('Error checking import status', [
+                'import_id' => $importId,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error checking import status: ' . $e->getMessage()
