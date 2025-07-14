@@ -107,7 +107,7 @@ class ProductsImport implements
 
             // Update progress in cache
             Cache::increment($this->importId);
-            broadcast(new ImportProgress($this->importId, Cache::get($this->importId)));
+            broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
 
             return Product::updateOrCreate([
                 'name' => $itemName,
