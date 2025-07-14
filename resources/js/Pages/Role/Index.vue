@@ -1,620 +1,382 @@
 <template>
-  <UserAuthTab>
-    <div>
-      <Head title="Role Management" />
+    <UserAuthTab>
+        <Head title="Role Management" />
 
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-semibold text-gray-900">Role Management</h2>
-        <button
-          @click="openCreateModal"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center transition"
-        >
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Role
-        </button>
-      </div>
-
-      <!-- Search and Filters -->
-      <div class="mb-6">
-        <div class="flex items-center space-x-4">
-          <div class="flex-grow">
-            <TextInput
-              v-model="search"
-              type="text"
-              placeholder="Search roles..."
-              class="w-full text-sm text-black"
-              @input="performSearch"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Roles Table -->
-      <div class="bg-white shadow-sm overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200 border border-black">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider border-r border-black">Permissions</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-if="roles.length === 0" class="text-center">
-              <td colspan="3" class="px-6 py-4 text-sm text-gray-500">No roles found</td>
-            </tr>
-            <tr v-for="role in filteredRoles" :key="role.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 text-sm text-black border-r border-black">{{ role.name }}</td>
-              <td class="px-6 py-4 text-sm text-black border-r border-black">
-                <div class="flex flex-wrap gap-1">
-                  <span 
-                    v-for="(permission, index) in getDisplayPermissions(role)" 
-                    :key="index"
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {{ permission }}
-                  </span>
-                  <span v-if="role.permissions && role.permissions.length > 5" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                    +{{ role.permissions.length - 5 }} more
-                  </span>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm text-black whitespace-nowrap">
-                <div class="flex items-center space-x-3">
-                  <button 
-                    @click="openEditModal(role)"
-                    class="text-blue-600 hover:text-blue-900"
-                    title="Edit Role"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button 
-                    @click="confirmDelete(role)"
-                    class="text-red-600 hover:text-red-900"
-                    title="Delete Role"
-                    :disabled="role.name === 'admin'"
-                    :class="{'opacity-50 cursor-not-allowed': role.name === 'admin'}"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Create/Edit Role Modal -->
-      <Modal :show="showModal" @close="closeModal">
-        <div class="p-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">
-            {{ isEditing ? 'Edit Role' : 'Create New Role' }}
-          </h3>
-          <form @submit.prevent="submitForm">
-            <div class="mb-4">
-              <InputLabel for="name" value="Role Name" />
-              <TextInput
-                id="name"
-                type="text"
-                v-model="form.name"
-                class="mt-1 block w-full"
-                required
-                :disabled="isEditing && form.original_name === 'admin'"
-              />
-              <InputError :message="form.errors.name" class="mt-2" />
-            </div>
-            
-            <!-- Permissions Selection -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-2">
-                <InputLabel value="Permissions" />
-                <div class="flex items-center space-x-2">
-                  <button 
-                    type="button" 
-                    @click="selectAllPermissions"
-                    class="text-sm text-blue-600 hover:text-blue-800"
-                    :disabled="processing || (isEditing && form.original_name === 'admin')"
-                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
-                  >
-                    Select All
-                  </button>
-                  <span class="text-gray-500">|</span>
-                  <button 
-                    type="button" 
-                    @click="deselectAllPermissions"
-                    class="text-sm text-blue-600 hover:text-blue-800"
-                    :disabled="processing || (isEditing && form.original_name === 'admin')"
-                    :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
-                  >
-                    Deselect All
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Permission Groups -->
-              <div class="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div v-for="(permissions, module) in groupedPermissions" :key="module" class="mb-4">
-                  <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-medium text-gray-700 capitalize">{{ formatModuleName(module) }}</h4>
-                    <div class="flex items-center space-x-2">
-                      <button 
-                        type="button" 
-                        @click="selectModulePermissions(module)"
-                        class="text-xs text-blue-600 hover:text-blue-800"
-                        :disabled="processing || (isEditing && form.original_name === 'admin')"
-                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
-                      >
-                        Select All
-                      </button>
-                      <span class="text-gray-500">|</span>
-                      <button 
-                        type="button" 
-                        @click="deselectModulePermissions(module)"
-                        class="text-xs text-blue-600 hover:text-blue-800"
-                        :disabled="processing || (isEditing && form.original_name === 'admin')"
-                        :class="{'opacity-50 cursor-not-allowed': processing || (isEditing && form.original_name === 'admin')}"
-                      >
-                        Deselect All
-                      </button>
+        <!-- Header Section -->
+        <div class="bg-white shadow-xl rounded-2xl mb-6">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-700 p-6 sm:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="p-3 bg-white/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-white">
+                                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-white">Role Management</h1>
+                            <p class="text-purple-100 text-sm mt-1">
+                                Manage system roles and permissions
+                            </p>
+                        </div>
                     </div>
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    <div v-for="permission in permissions" :key="permission.id" class="flex items-start">
-                      <div class="flex items-center h-5">
-                        <input
-                          :id="`permission-${permission.id}`"
-                          type="checkbox"
-                          :value="permission.id"
-                          v-model="form.permissions"
-                          class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          :disabled="isEditing && form.original_name === 'admin'"
+                    <div class="mt-6 sm:mt-0">
+                        <Link
+                            :href="route('settings.roles.create')"
+                            class="inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add New Role
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Roles</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ roles.total || roles.data?.length || 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Permissions</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ permissions.length || 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Users</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ roles.data?.reduce((total, role) => total + (role.users_count || 0), 0) || 0 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white shadow-xl rounded-2xl mb-6">
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Search -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Roles</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search by role name..."
+                                class="pl-10 pr-4 py-3 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            />
+                        </div>
+                    </div>
+                    
+                    <!-- Permission Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Permission</label>
+                        <Multiselect
+                            v-model="permission"
+                            :options="permissionOptions"
+                            :searchable="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            :multiple="false"
+                            placeholder="All Permissions"
+                            label="name"
+                            track-by="id"
+                            class="text-sm"
                         />
-                      </div>
-                      <div class="ml-3 text-sm">
-                        <label :for="`permission-${permission.id}`" class="font-medium text-gray-700">
-                          {{ formatPermissionName(permission.name) }}
-                        </label>
-                      </div>
                     </div>
-                  </div>
                 </div>
-              </div>
+                
+                <div class="w-full flex justify-end">
+                    <select 
+                        v-model="per_page" 
+                        @change="props.filters.page = 1"
+                        class="w-[200px] mt-4 flex justify-end px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                    >
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
+                </div>
             </div>
-            
-            <div class="flex justify-end mt-6 gap-4">
-              <SecondaryButton 
-                type="button" 
-                @click="closeModal" 
-                :disabled="processing"
-              >
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton :disabled="processing || (isEditing && form.original_name === 'admin')">
-                {{ processing ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
-              </PrimaryButton>
-            </div>
-          </form>
         </div>
-      </Modal>
-    </div>
-  </UserAuthTab>
+
+        <!-- Roles Table -->
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Role
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Permissions
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Users
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="role in roles.data" :key="role.id" class="hover:bg-gray-50 transition-colors">
+                            <!-- Role Info -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-white">{{ role.name.charAt(0).toUpperCase() }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-semibold text-gray-900">{{ role.name }}</div>
+                                        <div class="text-sm text-gray-500">{{ role.permissions?.length || 0 }} permissions</div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Permissions -->
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1">
+                                    <span 
+                                        v-for="(permission, index) in getDisplayPermissions(role)" 
+                                        :key="index"
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                                    >
+                                        {{ formatPermissionName(permission) }}
+                                    </span>
+                                    <span v-if="role.permissions && role.permissions.length > 5" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        +{{ role.permissions.length - 5 }} more
+                                    </span>
+                                    <span v-if="!role.permissions || role.permissions.length === 0" class="text-sm text-gray-500 italic">
+                                        No permissions
+                                    </span>
+                                </div>
+                            </td>
+                            
+                            <!-- Users Count -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ role.users_count || 0 }} users</div>
+                                <div class="text-sm text-gray-500">assigned</div>
+                            </td>
+                            
+                            <!-- Actions -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <Link 
+                                        :href="route('settings.roles.edit', role.id)"
+                                        class="inline-flex items-center p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit Role"
+                                    >
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </Link>
+                                    
+                                    <button 
+                                        @click="confirmDelete(role)"
+                                        class="inline-flex items-center p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete Role"
+                                        :disabled="role.name === 'admin'"
+                                        :class="{'opacity-50 cursor-not-allowed': role.name === 'admin'}"
+                                    >
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="!roles.data || roles.data.length === 0" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No roles found</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating a new role.</p>
+                <div class="mt-6">
+                    <Link
+                        :href="route('settings.roles.create')"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                    >
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Role
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="roles.data && roles.data.length > 0" class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                <div class="flex items-center justify-end">
+                    <TailwindPagination 
+                        :data="roles" 
+                        @pagination-change-page="getRoles"
+                        :limit="2"
+                    />
+                </div>
+            </div>
+        </div>
+    </UserAuthTab>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import InputError from '@/Components/InputError.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import Modal from '@/Components/Modal.vue';
-import SelectInput from '@/Components/SelectInput.vue';
-import Swal from 'sweetalert2';
-import debounce from 'lodash/debounce';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
+import Swal from 'sweetalert2';
 import UserAuthTab from '@/Layouts/UserAuthTab.vue';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+import '@/Components/multiselect.css';
+import { TailwindPagination } from 'laravel-vue-pagination';
 
 const props = defineProps({
-  roles: Array,
-  permissions: Array,
-  filters: Object
+    roles: Object,
+    permissions: Array,
+    filters: Object
 });
 
-// Initialize toast
 const toast = useToast();
-
-// UI state
 const search = ref(props.filters?.search || '');
-const showModal = ref(false);
-const isEditing = ref(false);
-const processing = ref(false);
+const per_page = ref(props.filters?.per_page || '10');
+const permission = ref(props.filters?.permission || null);
 
-// Form state
-const form = useForm({
-  id: null,
-  name: '',
-  original_name: '',
-  permissions: [],
+// Format permission options for multiselect
+const permissionOptions = computed(() => {
+    return props.permissions.map(permission => ({
+        id: permission.id,
+        name: formatPermissionName(permission.name)
+    }));
 });
 
-// Filter roles based on search
-const filteredRoles = computed(() => {
-  if (!search.value) return props.roles;
-  
-  return props.roles.filter(role => 
-    role.name.toLowerCase().includes(search.value.toLowerCase())
-  );
-});
+// Watch for filter changes
+watch(
+    () => [permission.value, search.value, props.filters.page, per_page.value],
+    () => {
+        applyFilters();
+    });
 
-// Group permissions by module
-const groupedPermissions = computed(() => {
-  const groups = {};
-  
-  props.permissions.forEach(permission => {
-    const parts = permission.name.split('.');
-    const module = parts[0];
+// Apply filters
+const applyFilters = () => {
+    const params = {};
     
-    if (!groups[module]) {
-      groups[module] = [];
+    // Only add search if it has a value
+    if (search.value) {
+        params.search = search.value;
     }
     
-    groups[module].push(permission);
-  });
-  
-  // Sort modules alphabetically
-  return Object.keys(groups).sort().reduce((sorted, key) => {
-    sorted[key] = groups[key];
-    return sorted;
-  }, {});
-});
+    // Only add permission if it has a value
+    if (permission.value) {
+        params.permission = permission.value.id || permission.value;
+    }
 
-// Format module name for display
-function formatModuleName(module) {
-  return module.replace(/-/g, ' ');
+    if (per_page.value) {
+        params.per_page = per_page.value;
+    }
+
+    if (props.filters.page) {
+        params.page = props.filters.page;
+    }
+
+    router.get(route('settings.roles.index'), params, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['roles', 'permissions'],
+    });
+};
+
+// Get roles for pagination
+const getRoles = (page) => {
+    props.filters.page = page;
+};
+
+// Get display permissions (limited to 5 for UI)
+function getDisplayPermissions(role) {
+    if (!role.permissions || role.permissions.length === 0) return [];
+    
+    return role.permissions.slice(0, 5).map(permission => {
+        const parts = permission.name.split('.');
+        return parts.length > 1 ? `${parts[0]}.${parts[1]}` : permission.name;
+    });
 }
 
 // Format permission name for display
 function formatPermissionName(name) {
-  const parts = name.split('.');
-  if (parts.length > 1) {
-    return parts[1].replace(/-/g, ' ');
-  }
-  return name;
-}
-
-// Get display permissions (limited to 5 for UI)
-function getDisplayPermissions(role) {
-  if (!role.permissions || role.permissions.length === 0) return [];
-  
-  return role.permissions.slice(0, 5).map(permission => {
-    const parts = permission.name.split('.');
-    return parts.length > 1 ? `${parts[0]}.${parts[1]}` : permission.name;
-  });
-}
-
-// Open create modal
-function openCreateModal() {
-  isEditing.value = false;
-  form.reset();
-  form.clearErrors();
-  showModal.value = true;
-}
-
-// Open edit modal
-function openEditModal(role) {
-  isEditing.value = true;
-  form.id = role.id;
-  form.name = role.name;
-  form.original_name = role.name;
-  form.permissions = role.permissions.map(permission => permission.id);
-  form.clearErrors();
-  showModal.value = true;
-}
-
-// Close modal
-function closeModal() {
-  showModal.value = false;
-}
-
-// Submit form
-function submitForm() {
-  processing.value = true;
-  
-  // Use the same route for both create and edit, just pass the ID for editing
-  const url = route('roles.store');
-  const successMessage = isEditing.value ? 'Role updated successfully' : 'Role created successfully';
-  const errorMessage = isEditing.value ? 'Failed to update role' : 'Failed to create role';
-  
-  form.post(url, {
-    onSuccess: () => {
-      toast.success(successMessage);
-      closeModal();
-      processing.value = false;
-    },
-    onError: () => {
-      toast.error(errorMessage);
-      processing.value = false;
+    const parts = name.split('.');
+    if (parts.length > 1) {
+        return parts[1].replace(/-/g, ' ');
     }
-  });
+    return name;
 }
 
 // Confirm delete
 function confirmDelete(role) {
-  if (role.name === 'admin') {
-    toast.error('Cannot delete the admin role');
-    return;
-  }
-  
-  Swal.fire({
-    title: 'Are you sure?',
-    text: `Delete role "${role.name}"? This may affect users assigned to this role.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#EF4444',
-    confirmButtonText: 'Yes, delete it',
-    cancelButtonText: 'Cancel'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      router.delete(route('roles.destroy', role.id), {
-        onSuccess: () => {
-          toast.success('Role deleted successfully');
-        },
-        onError: () => {
-          toast.error('Failed to delete role');
+    if (role.name === 'admin') {
+        toast.error('Cannot delete the admin role');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Delete role "${role.name}"? This may affect users assigned to this role.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('settings.roles.destroy', role.id), {
+                onSuccess: () => {
+                    toast.success('Role deleted successfully');
+                },
+                onError: () => {
+                    toast.error('Failed to delete role');
+                }
+            });
         }
-      });
-    }
-  });
-}
-
-// Select all permissions
-function selectAllPermissions() {
-  form.permissions = props.permissions.map(permission => permission.id);
-}
-
-// Deselect all permissions
-function deselectAllPermissions() {
-  form.permissions = [];
-}
-
-// Select all permissions for a module
-function selectModulePermissions(module) {
-  const modulePermissions = groupedPermissions.value[module].map(permission => permission.id);
-  form.permissions = [...new Set([...form.permissions, ...modulePermissions])];
-}
-
-// Deselect all permissions for a module
-function deselectModulePermissions(module) {
-  const modulePermissionIds = groupedPermissions.value[module].map(permission => permission.id);
-  form.permissions = form.permissions.filter(id => !modulePermissionIds.includes(id));
-}
-
-// Perform search with debouncing
-const performSearch = debounce(() => {
-  router.get(route('settings.roles.index'), { search: search.value }, {
-    preserveState: true,
-    preserveScroll: true,
-    replace: true,
-  });
-}, 300);
-
-// Initialize filters with values from props
-const sort_field = ref(props.filters?.sort_field || 'name');
-const sort_direction = ref(props.filters?.sort_direction || 'asc');
-
-// Watch search field and call debounced search
-watch(search, debounce(() => {
-  debouncedSearch();
-}, 300));
-
-// This section has been removed to avoid duplicate declarations
-// The form is already declared above
-
-const editingRole = ref(false);
-const currentRole = ref(null);
-const isSubmitted = ref(false);
-
-// When a form is submitted successfully
-const handleFormSuccess = (message) => {
-  toast.success(message);
-
-  // Determine current page context
-  const isInSettingsPage = window.location.href.includes('settings');
-
-  // Refresh data based on context
-  if (isInSettingsPage) {
-    // When on settings page, refresh the roles list
-    const params = {};
-    if (search.value) params.search = search.value;
-    if (sort_field.value) params.sort_field = sort_field.value;
-    if (sort_direction.value) params.sort_direction = sort_direction.value;
-
-    router.visit(route('settings.index', { tab: 'roles', ...params }), {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-      only: ['roles', 'filters']
     });
-  } else {
-    // When on roles page, refresh data
-    const params = {};
-    if (search.value) params.search = search.value;
-    if (sort_field.value) params.sort_field = sort_field.value;
-    if (sort_direction.value) params.sort_direction = sort_direction.value;
-
-    router.visit(route('settings.roles.index', params), {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-      only: ['roles', 'filters']
-    });
-  }
-
-  // Reset processing and isSubmitted flags
-  isSubmitted.value = false;
-}
-
-// Create a new role
-const createRole = () => {
-  isSubmitted.value = true;
-
-  // Determine if we're in settings page
-  const isInSettingsPage = window.location.href.includes('settings');
-
-  if (isInSettingsPage) {
-    form.transform(data => ({
-      ...data,
-      _headers: { 'X-From-Settings': 'true' }
-    }));
-  }
-
-  form.post(route('roles.store'), {
-    preserveScroll: true,
-    onSuccess: () => {
-      form.reset();
-      handleFormSuccess('Role created successfully');
-    },
-    onError: () => {
-      isSubmitted.value = false;
-    }
-  });
-};
-
-// Open the edit modal for a role
-const editRole = (role) => {
-  currentRole.value = role;
-  editForm.id = role.id;
-  editForm.name = role.name;
-  editForm.permissions = role.permissions.map(p => p.id);
-  editingRole.value = true;
-};
-
-// Close the edit modal
-const closeEditModal = () => {
-  editingRole.value = false;
-  editForm.reset();
-  currentRole.value = null;
-};
-
-// Update a role
-const updateRole = () => {
-  isSubmitted.value = true;
-
-  // Determine if we're in settings page
-  const isInSettingsPage = window.location.href.includes('settings');
-
-  if (isInSettingsPage) {
-    editForm.transform(data => ({
-      ...data,
-      _headers: { 'X-From-Settings': 'true' }
-    }));
-  }
-
-  editForm.put(route('roles.update', editForm.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      closeEditModal();
-      handleFormSuccess('Role updated successfully');
-    },
-    onError: () => {
-      isSubmitted.value = false;
-    }
-  });
-};
-
-// Confirm deletion of a role
-const confirmDeleteRole = (role) => {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: `You are about to delete the role "${role.name}". This action cannot be undone.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, delete it!'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      deleteRole();
-    }
-  });
-};
-
-// Delete a role
-const deleteRole = () => {
-  if (!currentRole.value) return;
-
-  isSubmitted.value = true;
-
-  // Determine if we're in settings page
-  const isInSettingsPage = window.location.href.includes('settings');
-
-  const deleteForm = useForm({
-    _method: 'DELETE',
-    _headers: isInSettingsPage ? { 'X-From-Settings': 'true' } : {}
-  });
-
-  deleteForm.post(route('roles.destroy', currentRole.value.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      handleFormSuccess('Role deleted successfully');
-    },
-    onError: (error) => {
-      isSubmitted.value = false;
-      Swal.fire({
-        title: 'Error',
-        text: error.message || 'Failed to delete role',
-        icon: 'error'
-      });
-    }
-  });
-};
-
-
-// Sort function
-function sort(field) {
-  sort_field.value = field;
-  sort_direction.value = sort_direction.value === 'asc' ? 'desc' : 'asc';
-
-  const currentUrl = window.location.pathname;
-  const params = {};
-
-  // Only include non-empty values
-  if (search.value) params.search = search.value;
-  if (sort_field.value) params.sort_field = sort_field.value;
-  if (sort_direction.value) params.sort_direction = sort_direction.value;
-
-  if (currentUrl.includes('settings')) {
-    router.visit(route('settings.index', { tab: 'roles', ...params }), {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-      only: ['roles', 'filters']
-    });
-  } else {
-    router.visit(route('settings.roles.index', params), {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-      only: ['roles', 'filters']
-    });
-  }
-}
-
-// Format date
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
 }
 </script>
