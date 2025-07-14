@@ -154,7 +154,7 @@ class ProductsImport implements
             AfterImport::class => function (AfterImport $event) {
                 Cache::forget($this->importId);
                 Log::info('Product import completed', ['importId' => $this->importId]);
-                broadcast(new ImportProgress($this->importId, 'completed'));
+                // broadcast(
             },
         ];
     }
