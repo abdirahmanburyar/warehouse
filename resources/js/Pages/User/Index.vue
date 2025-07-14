@@ -389,6 +389,14 @@ const applyFilters = () => {
         params.status = status.value;
     }
 
+    if (per_page.value) {
+        params.per_page = per_page.value;
+    }
+
+    if (props.filters.page) {
+        params.page = props.filters.page;
+    }
+
     router.get(route('settings.users.index'), params, {
         preserveState: true,
         preserveScroll: true,
