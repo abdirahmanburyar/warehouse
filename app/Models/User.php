@@ -25,6 +25,7 @@ class User extends Authenticatable
         'warehouse_id',
         'facility_id',
         'password',
+        'title',
     ];
 
     /**

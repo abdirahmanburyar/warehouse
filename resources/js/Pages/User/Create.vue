@@ -41,6 +41,18 @@
                         </div>
                     </div>
 
+                    <!-- Title -->
+                    <div>
+                        <InputLabel for="title" value="Title" />
+                        <TextInput
+                            id="title"
+                            type="text"
+                            v-model="form.title"
+                            class="mt-1 block w-full"
+                            placeholder="e.g., Manager, Supervisor, etc."
+                        />
+                    </div>
+
                     <!-- Email -->
                     <div>
                         <InputLabel for="email" value="Email" />
@@ -221,6 +233,7 @@ const props = defineProps({
 // Initialize form data
 const form = ref({
     name: '',
+    title: '',
     username: '',
     email: '',
     password: '',
@@ -351,6 +364,7 @@ const submit = async () => {
     // Prepare form data for submission
     const formData = {
         name: form.value.name,
+        title: form.value.title,
         username: form.value.username,
         email: form.value.email,
         password: form.value.password,

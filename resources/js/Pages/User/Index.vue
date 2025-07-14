@@ -2,190 +2,318 @@
     <UserAuthTab>
         <Head title="User Management" />
 
-        <!-- Header with create button -->
-        <div class="mb-4 flex justify-end">
-            <Link
-                :href="route('settings.users.create')"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add User
-            </Link>
-        </div>
-            
-        <!-- Filters row -->
-        <div class="mb-6 grid grid-cols-6 gap-3">
-            <!-- Search -->
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                    </svg>
+        <!-- Header Section -->
+        <div class="bg-white shadow-xl rounded-2xl mb-6">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 sm:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="p-3 bg-white/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-white">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-white">User Management</h1>
+                            <p class="text-blue-100 text-sm mt-1">
+                                Manage system users, roles, and permissions
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-6 sm:mt-0">
+                        <Link
+                            :href="route('settings.users.create')"
+                            class="inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add New User
+                        </Link>
+                    </div>
                 </div>
-                <input
-                    v-model="search"
-                    type="text"
-                    placeholder="Search users..."
-                    class="pl-10 pr-4 py-2 w-full text-sm text-black border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
             </div>
-            
-            <!-- Role Filter -->
-            <div>
-                <Multiselect
-                    v-model="filters.role_id"
-                    :options="roleOptions"
-                    :searchable="true"
-                    :allow-empty="true"
-                    :multiple="false"
-                    placeholder="Filter by Role"
-                    label="label"
-                    track-by="value"
-                    class="text-sm text-black"
-                />
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Users</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ users.total || 0 }}</p>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Warehouse Filter -->
-            <div>
-                <Multiselect
-                    v-model="filters.warehouse_id"
-                    :options="warehouseOptions"
-                    :searchable="true"
-                    :allow-empty="true"
-                    :multiple="false"
-                    placeholder="Filter by Warehouse"
-                    label="label"
-                    track-by="value"
-                    class="text-sm text-black"
-                />
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Users</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ users.data?.filter(u => u.is_active).length || 0 }}</p>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Facility Filter -->
-            <div>
-                <Multiselect
-                    v-model="filters.facility_id"
-                    :options="facilityOptions"
-                    :searchable="true"
-                    :allow-empty="true"
-                    :multiple="false"
-                    placeholder="Filter by Facility"
-                    label="label"
-                    track-by="value"
-                    class="text-sm text-black"
-                />
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Inactive Users</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ users.data?.filter(u => !u.is_active).length || 0 }}</p>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Per Page Filter -->
-            <div class="flex items-center">
-                <select 
-                    v-model="perPage" 
-                    @change="changePerPage"
-                    class="w-full text-sm text-black border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Roles</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ roles.length || 0 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white shadow-xl rounded-2xl mb-6">
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search by name, email, username..."
+                                class="pl-10 pr-4 py-3 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            />
+                        </div>
+                    </div>
+                    
+                    <!-- Role Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <Multiselect
+                            v-model="role"
+                            :options="props.roles"
+                            :searchable="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            :multiple="false"
+                            placeholder="All Roles"
+                            class="text-sm"
+                        />
+                    </div>
+                    
+                    <!-- Warehouse Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Warehouse</label>
+                        <Multiselect
+                            v-model="warehouse"
+                            :options="props.warehouses"
+                            :searchable="true"
+                            :allow-empty="true"
+                            :show-labels="false"
+                            :multiple="false"
+                            placeholder="All Warehouses"
+                            class="text-sm"
+                        />
+                    </div>
+                    
+                    <!-- Facility Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Facility</label>
+                        <Multiselect
+                            v-model="facility"
+                            :options="props.facilities"
+                            :searchable="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            :multiple="false"
+                            placeholder="All Facilities"
+                            class="text-sm"
+                        />
+                    </div>
+                </div>
+                
+                <div class="w-full flex justify-end">
+                    <select 
+                    v-model="per_page" 
+                    @change="props.filters.page = 1"
+                    class="w-[200px] mt-4 flex justify-end px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                     <option value="10">10 per page</option>
                     <option value="25">25 per page</option>
                     <option value="50">50 per page</option>
                     <option value="100">100 per page</option>
                 </select>
-            </div>
-            
-            <!-- Clear Filters -->
-            <div class="flex items-center">
-                <button 
-                    @click="clearFilters" 
-                    class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-black rounded-lg transition"
-                >
-                    Clear Filters
-                </button>
+                </div>
             </div>
         </div>
-
-        <!-- No bulk actions needed -->
 
         <!-- Users Table -->
-        <div class="overflow-auto">
-            <table class="min-w-full">
-                <thead>
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Name
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Username
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Email
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Role
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Warehouse
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Facility
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider border border-black text-black">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="user in users.data" :key="user.id">
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm font-medium text-black">{{ user.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm text-black">{{ user.username }}</div>
-                        </td>
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm text-black">{{ user.email }}</div>
-                        </td>
-                        <td class="px-6 py-4 border border-black">
-                            <span v-for="role in user.roles" :key="role.id"
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-black"
-                            >
-                                {{ role.name }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm text-black">{{ user.warehouse?.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 border border-black">
-                            <div class="text-sm text-black">{{ user.facility?.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 flex gap-2 border border-black">
-                            <Link 
-                                :href="route('settings.users.edit', user.id)"
-                                class="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                                title="Edit User"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </Link>
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                User
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Contact
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Roles
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Location
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="user in users.data" :key="user.id" class="hover:bg-gray-50 transition-colors">
+                            <!-- User Info -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-white">{{ user.name.charAt(0).toUpperCase() }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-semibold text-gray-900">{{ user.name }}</div>
+                                        <div class="text-sm text-gray-500">{{ user.title || 'No title' }}</div>
+                                    </div>
+                                </div>
+                            </td>
                             
-                            <button @click="confirmToggleStatus(user)" class="relative inline-flex items-center cursor-pointer" :title="user.is_active ? 'Deactivate User' : 'Activate User'">
-                                <div class="w-10 h-5 rounded-full after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all" 
-                                    :class="{ 
-                                        'bg-green-500 after:translate-x-full after:border-white': user.is_active, 
-                                        'bg-red-500': !user.is_active 
-                                    }"></div>
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <!-- Pagination -->
-        <div class="mt-4 flex justify-end">
-            <TailwindPagination 
-                :data="users" 
-                @pagination-change-page="getUsers"
-                class="mt-4"
-            />
+                            <!-- Contact Info -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ user.username }}</div>
+                                <div class="text-sm text-gray-500">{{ user.email }}</div>
+                            </td>
+                            
+                            <!-- Roles -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex flex-wrap gap-1">
+                                    <span v-for="role in user.roles" :key="role.id"
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                    >
+                                        {{ role.name }}
+                                    </span>
+                                    <span v-if="!user.roles || user.roles.length === 0" class="text-sm text-gray-500 italic">
+                                        No roles
+                                    </span>
+                                </div>
+                            </td>
+                            
+                            <!-- Location -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ user.warehouse?.name || '-' }}</div>
+                                <div class="text-sm text-gray-500">{{ user.facility?.name || '-' }}</div>
+                            </td>
+                            
+                            <!-- Status -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                    :class="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                >
+                                    <span class="w-2 h-2 rounded-full mr-1.5"
+                                        :class="user.is_active ? 'bg-green-400' : 'bg-red-400'"
+                                    ></span>
+                                    {{ user.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            
+                            <!-- Actions -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <Link 
+                                        :href="route('settings.users.edit', user.id)"
+                                        class="inline-flex items-center p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit User"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </Link>
+                                    
+                                    <button @click="confirmToggleStatus(user)" class="relative inline-flex items-center cursor-pointer" :title="user.is_active ? 'Deactivate User' : 'Activate User'">
+                                        <div class="w-10 h-5 rounded-full after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all" 
+                                            :class="{ 
+                                                'bg-green-500 after:translate-x-full after:border-white': user.is_active, 
+                                                'bg-red-500': !user.is_active 
+                                            }"></div>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="!users.data || users.data.length === 0" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
+                <div class="mt-6">
+                    <Link
+                        :href="route('settings.users.create')"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add User
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="users.data && users.data.length > 0" class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                <div class="flex items-center justify-end">
+                    <TailwindPagination 
+                        :data="users" 
+                        @pagination-change-page="getUsers"
+                        :limit="2"
+                    />
+                </div>
+            </div>
         </div>
     </UserAuthTab>
 </template>
@@ -214,86 +342,27 @@ const props = defineProps({
 });
 
 const toast = useToast();
+
 const search = ref(props.filters?.search || '');
 const processing = ref(false);
-const perPage = ref(props.filters?.per_page || '10');
+const per_page = ref(props.filters?.per_page || '10');
+const warehouse = ref(props.filters?.warehouse || null);
+const facility = ref(props.filters?.facility || null);
+const role = ref(props.filters?.role || null);
+const status = ref(props.filters?.status || 'All');
 
-// Filter states
-const filters = ref({
-    role_id: null,
-    warehouse_id: null,
-    facility_id: null,
-});
 
-// Initialize filters from props
-const initializeFilters = () => {
-    if (props.filters?.role_id) {
-        const roleOption = roleOptions.value.find(option => option.value == props.filters.role_id);
-        if (roleOption) filters.value.role_id = roleOption;
-    }
-    
-    if (props.filters?.warehouse_id) {
-        const warehouseOption = warehouseOptions.value.find(option => option.value == props.filters.warehouse_id);
-        if (warehouseOption) filters.value.warehouse_id = warehouseOption;
-    }
-    
-    if (props.filters?.facility_id) {
-        const facilityOption = facilityOptions.value.find(option => option.value == props.filters.facility_id);
-        if (facilityOption) filters.value.facility_id = facilityOption;
-    }
-};
-
-// Format options for multiselect
-const roleOptions = computed(() => {
-    const options = props.roles.map(role => ({
-        value: role.id,
-        label: role.name
-    }));
-    return [{ value: null, label: 'All Roles' }, ...options];
-});
-
-const warehouseOptions = computed(() => {
-    const options = props.warehouses.map(warehouse => ({
-        value: warehouse.id,
-        label: warehouse.name
-    }));
-    return [{ value: null, label: 'All Warehouses' }, ...options];
-});
-
-const facilityOptions = computed(() => {
-    const options = props.facilities.map(facility => ({
-        value: facility.id,
-        label: facility.name
-    }));
-    return [{ value: null, label: 'All Facilities' }, ...options];
-});
-
-// Initialize filters after computed properties are defined
-onMounted(() => {
-    initializeFilters();
-});
-
-// Clear all filters
-const clearFilters = () => {
-    // Reset all filter values
-    filters.value.role_id = roleOptions.value[0]; // Select 'All Roles' option
-    filters.value.warehouse_id = warehouseOptions.value[0]; // Select 'All Warehouses' option
-    filters.value.facility_id = facilityOptions.value[0]; // Select 'All Facilities' option
-    search.value = '';
-    perPage.value = '10';
-    
-    // Use router.visit to completely reset URL parameters
-    router.visit(route('settings.users.index'), {
-        preserveState: false
+// Watch for filter changes
+watch(
+    () => [role.value, warehouse.value, facility.value, status.value, props.filters.page, per_page.value],
+    () => {
+        applyFilters();
     });
-};
 
-// Helper function to get filter values for API calls
-const getFilterParams = () => {
-    // Start with base parameters
-    const params = {
-        per_page: perPage.value
-    };
+// Apply filters
+const applyFilters = () => {
+     // Start with base parameters
+     const params = {};
     
     // Only add search if it has a value
     if (search.value) {
@@ -301,83 +370,36 @@ const getFilterParams = () => {
     }
     
     // Only add role_id if it has a value and is not the 'All' option
-    if (filters.value.role_id && filters.value.role_id.value !== null) {
-        params.role_id = filters.value.role_id.value;
+    if (role.value) {
+        params.role = role.value;
     }
     
     // Only add warehouse_id if it has a value and is not the 'All' option
-    if (filters.value.warehouse_id && filters.value.warehouse_id.value !== null) {
-        params.warehouse_id = filters.value.warehouse_id.value;
+    if (warehouse.value) {
+        params.warehouse = warehouse.value;
     }
     
     // Only add facility_id if it has a value and is not the 'All' option
-    if (filters.value.facility_id && filters.value.facility_id.value !== null) {
-        params.facility_id = filters.value.facility_id.value;
+    if (facility.value) {
+        params.facility = facility.value;
     }
-    
-    return params;
-};
 
-// Watch for filter changes
-watch(
-    () => [filters.value.role_id, filters.value.warehouse_id, filters.value.facility_id],
-    () => {
-        console.log('Filter changed:', filters.value);
-        applyFilters();
-    },
-    { deep: true }
-);
+    // Only add status if it has a value and is not the 'All' option
+    if (status.value) {
+        params.status = status.value;
+    }
 
-// Debounced search
-let searchTimeout;
-watch(search, (value) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        router.get(route('settings.users.index'), {
-            ...getFilterParams(),
-            search: value
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    }, 300);
-});
-
-// Apply filters
-const applyFilters = () => {
-    console.log('Applying filters:', filters.value);
-    router.get(route('settings.users.index'), getFilterParams(), {
+    router.get(route('settings.users.index'), params, {
         preserveState: true,
         preserveScroll: true,
-        replace: true,
-    });
-};
-
-// Change per page
-const changePerPage = () => {
-    router.get(route('settings.users.index'), {
-        ...getFilterParams(),
-        page: 1 // Always reset to page 1 when changing per_page
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
+        only: ['users', 'roles', 'warehouses', 'facilities'],
     });
 };
 
 // Get users for pagination
 const getUsers = (page) => {
-    router.get(route('settings.users.index'), {
-        ...getFilterParams(),
-        page: page
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-    });
+    props.filters.page = page;
 };
-
-// No bulk toggle functionality needed
 
 // Confirm toggle user status with SweetAlert
 const confirmToggleStatus = (user) => {

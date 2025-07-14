@@ -16,30 +16,42 @@
         <div class="bg-white rounded-lg shadow-sm">
             <form @submit.prevent="submit" class="p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Name -->
+                    <!-- Name and Username -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Name -->
+                        <!-- Name -->
+                        <div>
+                            <InputLabel for="name" value="Name" />
+                            <TextInput
+                                id="name"
+                                type="text"
+                                v-model="form.name"
+                                class="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <InputLabel for="username" value="Username" />
+                            <TextInput
+                                id="username"
+                                type="text"
+                                v-model="form.username"
+                                class="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Title -->
                     <div>
-                        <InputLabel for="name" value="Name" />
+                        <InputLabel for="title" value="Title" />
                         <TextInput
-                            id="name"
+                            id="title"
                             type="text"
-                            v-model="form.name"
+                            v-model="form.title"
                             class="mt-1 block w-full"
-                            required
+                            placeholder="e.g., Manager, Supervisor, etc."
                         />
                     </div>
-                    <div>
-                        <InputLabel for="username" value="Username" />
-                        <TextInput
-                            id="username"
-                            type="text"
-                            v-model="form.username"
-                            class="mt-1 block w-full"
-                            required
-                        />
-                    </div>
-                </div>
 
 
                     <!-- Email -->
@@ -231,6 +243,7 @@ const props = defineProps({
 const form = ref({
     id: props.user?.id || null,
     name: props.user?.name || '',
+    title: props.user?.title || '',
     email: props.user?.email || '',
     username: props.user?.username || '',
     password: '',
@@ -362,6 +375,7 @@ const submit = async () => {
     const formData = {
         id: form.value.id,
         name: form.value.name,
+        title: form.value.title,
         username: form.value.username,
         email: form.value.email,
         password: form.value.password,

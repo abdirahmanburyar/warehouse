@@ -385,9 +385,9 @@
                                     <span>A</span>
                                 </div>
                                 <div class="user-details">
-                                    <span class="user-role"
-                                        >Pharmaceutical Manager</span
-                                    >
+                                    <span class="user-role">{{
+                                        $page.props.auth.user?.title
+                                    }} </span>
                                     <span class="user-name">{{
                                         $page.props.auth.user?.name
                                     }}</span>

@@ -34,41 +34,49 @@ class UserController extends Controller
         }
         
         // Role filter
-        if ($request->has('role_id') && $request->role_id) {
+        if ($request->has('role') && $request->role) {
             $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('roles.id', $request->role_id);
+                $q->where('roles.name', $request->role);
             });
+        }
+
+        // is active
+        if ($request->has('status') && $request->status) {
+            $query->where('is_active', $request->status);
         }
         
         // Warehouse filter
-        if ($request->has('warehouse_id') && $request->warehouse_id) {
-            $query->where('warehouse_id', $request->warehouse_id);
+        if ($request->has('warehouse') && $request->warehouse) {
+            $query->whereHas('warehouse', function ($q) use ($request) {
+                $q->where('warehouses.name', $request->warehouse);
+            });
         }
         
         // Facility filter
-        if ($request->has('facility_id') && $request->facility_id) {
-            $query->where('facility_id', $request->facility_id);
+        if ($request->has('facility') && $request->facility) {
+            $query->whereHas('facility', function ($q) use ($request) {
+                $q->where('facilities.name', $request->facility);
+            });
         }
-
-        // Get per_page parameter or default to 10
-        $perPage = $request->input('per_page', 10);
         
-        $users = $query->paginate($perPage)->withQueryString();
+        $users = $query->paginate($request->per_page, ['*'], 'page', $request->page)->withQueryString();
+
+        $users->setPath(url()->current());
         
         // Get all roles for filtering and the roles modal
-        $roles = \Spatie\Permission\Models\Role::all();
+        $roles = \Spatie\Permission\Models\Role::pluck('name')->toArray();
         
         // Get all warehouses for filtering and selection
-        $warehouses = Warehouse::get();
+        $warehouses = Warehouse::pluck('name')->toArray();
 
         // Get all facilities for filtering and selection
-        $facilities = Facility::get();
+        $facilities = Facility::pluck('name')->toArray();
         
         return Inertia::render('User/Index', [
             'users' => UserResource::collection($users),
             'roles' => $roles,
             'warehouses' => $warehouses,
-            'filters' => $request->only(['search', 'role_id', 'warehouse_id', 'facility_id', 'per_page']),
+            'filters' => $request->only(['search', 'role', 'status', 'warehouse', 'facility', 'per_page']),
             'facilities' => $facilities
         ]);
     }
@@ -97,11 +105,13 @@ class UserController extends Controller
                 'role_ids.*' => 'exists:roles,id',
                 'direct_permissions' => 'nullable|array',
                 'direct_permissions.*' => 'exists:permissions,id',
+                'title' => 'required|string|max:255',
             ]);
 
             $userData = [
                 'name' => $request->name,
                 'username' => $request->username,
+                'title' => $request->title,
                 'email' => $request->email,
                 'warehouse_id' => $request->warehouse_id,
                 'facility_id' => $request->facility_id,
