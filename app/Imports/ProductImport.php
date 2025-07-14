@@ -43,6 +43,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithChunkReading, S
             }
         } catch (\Throwable $th) {
             logger()->error($th);
+            throw $th;
         }
     }
 
