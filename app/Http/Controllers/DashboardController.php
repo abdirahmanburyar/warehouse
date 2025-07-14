@@ -158,6 +158,8 @@ class DashboardController extends Controller
             }
         }
 
+        $loadSuppliers = Supplier::pluck('name')->toArray();
+
         return Inertia::render('Dashboard', [
             'dashboardData' => [
                 'summary' => $facilityTypes,
@@ -166,6 +168,7 @@ class DashboardController extends Controller
                 'recommended_actions' => [],
                 'product_status' => []
             ],
+            'loadSuppliers' => $loadSuppliers,
             'orderCard' => [
                 'filter' => $filter,
                 'counts' => $orderCounts,

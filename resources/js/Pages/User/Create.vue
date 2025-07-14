@@ -16,8 +16,8 @@
         <div class="bg-white rounded-lg shadow-sm">
             <form @submit.prevent="submit" class="p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Name and Username -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name, Title and Username -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Name -->
                         <div>
                             <InputLabel for="name" value="Name" />
@@ -27,6 +27,17 @@
                                 v-model="form.name"
                                 class="mt-1 block w-full"
                                 required
+                            />
+                        </div>
+                        <!-- Title -->
+                        <div>
+                            <InputLabel for="title" value="Title" />
+                            <TextInput
+                                id="title"
+                                type="text"
+                                v-model="form.title"
+                                class="mt-1 block w-full"
+                                placeholder="e.g., Manager, Supervisor, etc."
                             />
                         </div>
                         <div>
@@ -39,18 +50,6 @@
                                 required
                             />
                         </div>
-                    </div>
-
-                    <!-- Title -->
-                    <div>
-                        <InputLabel for="title" value="Title" />
-                        <TextInput
-                            id="title"
-                            type="text"
-                            v-model="form.title"
-                            class="mt-1 block w-full"
-                            placeholder="e.g., Manager, Supervisor, etc."
-                        />
                     </div>
 
                     <!-- Email -->

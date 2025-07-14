@@ -25,13 +25,7 @@ class AssetController extends Controller
         $assets = Asset::query();
 
         if($request->filled('search')){
-            $search = $request->search;
-            $assets->where(function($query) use ($search) {
-                $query->whereLike('asset_tag', '%'.$search.'%')
-                      ->orWhereLike('serial_number', '%'.$search.'%')
-                      ->orWhereLike('item_description', '%'.$search.'%')
-                      ->orWhereLike('person_assigned', '%'.$search.'%');
-            });
+            $assets->whereLike('asset_tag', '%'.$request->search.'%');
         }
 
         if($request->filled('region_id')){
@@ -52,7 +46,7 @@ class AssetController extends Controller
             $assets->where('fund_source_id', $request->fund_source_id);
         }
 
-        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'region:id,name', 'history','attachments','fundSource')
+        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -637,80 +631,66 @@ class AssetController extends Controller
     public function approveAsset(Request $request, Asset $asset)
     {
         try {
+            // Check if current user can approve this asset
+            if (!$asset->canBeApprovedByCurrentUser()) {
+                return response()->json('You are not authorized to approve this asset', 403);
+            }
+
             $validated = $request->validate([
                 'notes' => 'nullable|string',
-                'action' => 'required|in:approve,reject,review'
+                'action' => 'required|in:approve,reject'
             ]);
 
-            $action = $validated['action'];
-            $user = auth()->user();
-
-            // Check permissions based on action
-            if ($action === 'approve' && !$user->can('asset_approve')) {
-                return response()->json('You are not authorized to approve assets', 403);
+            $nextStep = $asset->getNextApprovalStep();
+            if (!$nextStep) {
+                return response()->json('No pending approval step found', 400);
             }
 
-            if ($action === 'review' && !$user->can('asset_review')) {
-                return response()->json('You are not authorized to review assets', 403);
-            }
+            if ($validated['action'] === 'approve') {
+                // Approve the current step
+                $nextStep->update([
+                    'status' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
 
-            // For reject, no specific permission check needed as mentioned
-            if ($action === 'reject') {
-                // Reject the asset and rollback to active status
+                // Check if all approvals are complete
+                if ($asset->isFullyApproved()) {
+                    $asset->update([
+                        'status' => Asset::STATUS_IN_USE,
+                        'submitted_for_approval' => false
+                    ]);
+                    
+                    return response()->json([
+                        'message' => 'Asset fully approved and ready for use',
+                        'asset' => $asset->fresh()
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'message' => 'Asset step approved, waiting for next approval',
+                        'asset' => $asset->fresh()
+                    ], 200);
+                }
+            } else {
+                // Reject the asset
+                $nextStep->update([
+                    'status' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
                 $asset->update([
                     'status' => Asset::STATUS_ACTIVE,
                     'submitted_for_approval' => false
                 ]);
 
-                // Update any pending approvals to rejected
-                $asset->approvals()->where('status', 'pending')->update([
-                    'status' => 'rejected',
-                    'approved_by' => $user->id,
-                    'approved_at' => now(),
-                    'notes' => $validated['notes'] ?? 'Rejected by ' . $user->name
-                ]);
-
                 return response()->json([
-                    'message' => 'Asset rejected and returned to active status',
+                    'message' => 'Asset rejected',
                     'asset' => $asset->fresh()
                 ], 200);
             }
-
-            if ($action === 'review') {
-                // For review, just add notes without changing status
-                $asset->approvals()->where('status', 'pending')->update([
-                    'notes' => ($asset->approvals()->where('status', 'pending')->first()->notes ?? '') . 
-                               "\n\nReviewed by " . $user->name . " on " . now()->format('Y-m-d H:i:s') . 
-                               ": " . ($validated['notes'] ?? 'No additional notes')
-                ]);
-
-                return response()->json([
-                    'message' => 'Asset reviewed successfully',
-                    'asset' => $asset->fresh()
-                ], 200);
-            }
-
-            if ($action === 'approve') {
-                // Approve the asset
-                $asset->update([
-                    'status' => Asset::STATUS_IN_USE,
-                    'submitted_for_approval' => false
-                ]);
-
-                // Update all pending approvals to approved
-                $asset->approvals()->where('status', 'pending')->update([
-                    'status' => 'approved',
-                    'approved_by' => $user->id,
-                    'approved_at' => now(),
-                    'notes' => $validated['notes'] ?? 'Approved by ' . $user->name
-                ]);
-
-                return response()->json([
-                    'message' => 'Asset approved and ready for use',
-                    'asset' => $asset->fresh()
-                ], 200);
-            }
-
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -723,14 +703,18 @@ class AssetController extends Controller
     {
         try {
             $user = auth()->user();
-            
-            // Get all pending assets that the user can review or approve
-            $pendingAssets = Asset::where('submitted_for_approval', true)
-                ->where('status', Asset::STATUS_PENDING_APPROVAL)
-                ->with(['approvals' => function($query) {
-                    $query->where('status', 'pending');
-                }, 'category', 'location', 'subLocation', 'submittedBy'])
-                ->get();
+            $pendingAssets = Asset::whereHas('approvals', function($query) use ($user) {
+                $query->where('status', 'pending')
+                      ->whereHas('role', function($roleQuery) use ($user) {
+                          $roleQuery->whereIn('name', $user->roles->pluck('name'));
+                      });
+            })->with(['approvals' => function($query) use ($user) {
+                $query->where('status', 'pending')
+                      ->whereHas('role', function($roleQuery) use ($user) {
+                          $roleQuery->whereIn('name', $user->roles->pluck('name'));
+                      });
+            }, 'category', 'location', 'subLocation', 'submittedBy'])
+            ->get();
 
             return response()->json([
                 'pending_assets' => $pendingAssets
@@ -767,48 +751,22 @@ class AssetController extends Controller
         $query = AssetApproval::with(['approvable', 'role', 'approver', 'creator'])
             ->where('approvable_type', Asset::class);
 
-        // Apply search filter
+        // Apply filters
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('approvable', function($assetQuery) use ($search) {
-                    $assetQuery->where('asset_tag', 'like', '%' . $search . '%')
-                              ->orWhere('serial_number', 'like', '%' . $search . '%')
-                              ->orWhere('item_description', 'like', '%' . $search . '%');
-                })
-                ->orWhereHas('creator', function($creatorQuery) use ($search) {
-                    $creatorQuery->where('name', 'like', '%' . $search . '%')
-                                ->orWhere('email', 'like', '%' . $search . '%');
-                })
-                ->orWhereHas('approver', function($approverQuery) use ($search) {
-                    $approverQuery->where('name', 'like', '%' . $search . '%')
-                                 ->orWhere('email', 'like', '%' . $search . '%');
-                });
+            $query->whereHas('approvable', function($q) use ($request) {
+                $q->where('asset_tag', 'like', '%' . $request->search . '%')
+                  ->orWhere('serial_number', 'like', '%' . $request->search . '%')
+                  ->orWhere('item_description', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Apply status filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-
-
-        // Apply action type filter
-        if ($request->filled('action')) {
-            $query->where('action', $request->action);
+        if ($request->filled('role')) {
+            $query->where('role_id', $request->role);
         }
-
-        // Apply date range filters
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-
 
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
@@ -824,7 +782,7 @@ class AssetController extends Controller
         return Inertia::render('Assets/Approvals', [
             'approvals' => $approvals,
             'roles' => $roles,
-            'filters' => $request->only('search', 'status', 'action', 'date_from', 'date_to'),
+            'filters' => $request->only('search', 'status', 'role'),
             'pendingCount' => $pendingCount,
             'approvedCount' => $approvedCount,
         ]);

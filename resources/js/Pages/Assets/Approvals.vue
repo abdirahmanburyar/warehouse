@@ -41,13 +41,13 @@
             <!-- Filters Section -->
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                             <input
                                 v-model="filters.search"
                                 type="text"
-                                placeholder="Asset tag, serial number, description, creator..."
+                                placeholder="Search by asset tag, serial number..."
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -63,46 +63,17 @@
                                 <option value="rejected">Rejected</option>
                             </select>
                         </div>
-
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
                             <select
-                                v-model="filters.action"
+                                v-model="filters.role"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             >
-                                <option value="">All Actions</option>
-                                <option value="create">Asset Creation</option>
-                                <option value="transfer">Asset Transfer</option>
-                                <option value="update">Asset Update</option>
+                                <option value="">All Roles</option>
+                                <option v-for="role in roles" :key="role.id" :value="role.id">
+                                    {{ role.name }}
+                                </option>
                             </select>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                            <input
-                                v-model="filters.date_from"
-                                type="date"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                            <input
-                                v-model="filters.date_to"
-                                type="date"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                        </div>
-
-                        <div class="flex items-end">
-                            <button
-                                @click="clearFilters"
-                                class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
-                            >
-                                Clear Filters
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -156,7 +127,11 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <dt class="text-sm font-medium text-gray-500">Role</dt>
+                                            <dd class="text-sm text-gray-900">{{ approval.role?.name || 'N/A' }}</dd>
+                                        </div>
                                         <div>
                                             <dt class="text-sm font-medium text-gray-500">Action</dt>
                                             <dd class="text-sm text-gray-900">{{ approval.action }}</dd>
@@ -184,23 +159,8 @@
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div v-if="approval.status === 'pending'" class="ml-6 flex flex-col space-y-2">
-                                    <!-- Review Button (if user has review permission) -->
+                                <div v-if="approval.status === 'pending' && canApprove(approval)" class="ml-6 flex flex-col space-y-2">
                                     <button
-                                        v-if="$page.props.auth.asset_review"
-                                        @click="showApprovalModal(approval, 'review')"
-                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
-                                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                        </svg>
-                                        Review
-                                    </button>
-                                    
-                                    <!-- Approve Button (if user has approve permission) -->
-                                    <button
-                                        v-if="$page.props.auth.asset_approve"
                                         @click="showApprovalModal(approval, 'approve')"
                                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                                     >
@@ -209,8 +169,6 @@
                                         </svg>
                                         Approve
                                     </button>
-                                    
-                                    <!-- Reject Button (available to all users) -->
                                     <button
                                         @click="showApprovalModal(approval, 'reject')"
                                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -244,7 +202,7 @@
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        {{ modalAction === 'approve' ? 'Approve' : modalAction === 'reject' ? 'Reject' : 'Review' }} Asset
+                        {{ modalAction === 'approve' ? 'Approve' : 'Reject' }} Asset
                     </h3>
                     <div class="mb-4">
                         <p class="text-sm text-gray-600 mb-2">
@@ -272,17 +230,13 @@
                             @click="processApproval"
                             :disabled="processing"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                            :class="{
-                                'bg-green-600 hover:bg-green-700 focus:ring-green-500': modalAction === 'approve',
-                                'bg-red-600 hover:bg-red-700 focus:ring-red-500': modalAction === 'reject',
-                                'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': modalAction === 'review'
-                            }"
+                            :class="modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'"
                         >
                             <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            {{ modalAction === 'approve' ? 'Approve' : modalAction === 'reject' ? 'Reject' : 'Review' }}
+                            {{ modalAction === 'approve' ? 'Approve' : 'Reject' }}
                         </button>
                     </div>
                 </div>
@@ -318,9 +272,7 @@ const processing = ref(false);
 const filters = ref({
     search: props.filters?.search || '',
     status: props.filters?.status || '',
-    action: props.filters?.action || '',
-    date_from: props.filters?.date_from || '',
-    date_to: props.filters?.date_to || '',
+    role: props.filters?.role || '',
 });
 
 // Watch for filter changes and reload data
@@ -343,7 +295,10 @@ async function loadApprovals() {
     }
 }
 
-
+function canApprove(approval) {
+    // This is a simplified check - in a real app you'd check user roles
+    return true;
+}
 
 function showApprovalModal(approval, action) {
     selectedApproval.value = approval;
@@ -405,16 +360,6 @@ function getResults(page) {
         preserveState: true,
         preserveScroll: true,
     });
-}
-
-function clearFilters() {
-    filters.value = {
-        search: '',
-        status: '',
-        action: '',
-        date_from: '',
-        date_to: '',
-    };
 }
 
 onMounted(() => {

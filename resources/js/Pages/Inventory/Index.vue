@@ -69,7 +69,6 @@ const form = ref({
     warehouse: "",
     quantity: 0,
     manufacturing_date: "",
-    expiry_date: "",
     batch_number: "",
     location: "",
     notes: "",
@@ -250,23 +249,6 @@ const isOutOfStock = (inventory) => {
     return inventory.quantity <= 0;
 };
 
-// Check if product is expiring soon (within 30 days)
-const isExpiringSoon = (inventory) => {
-    if (!inventory.expiry_date) return false;
-    const expiryDate = moment(inventory.expiry_date);
-    const today = moment();
-    const diffDays = expiryDate.diff(today, "days");
-    return diffDays <= 160 && diffDays > 0;
-};
-
-// Check if product is expired
-const isExpired = (inventory) => {
-    if (!inventory.expiry_date) return false;
-    const expiryDate = moment(inventory.expiry_date);
-    const today = moment();
-    return expiryDate.isBefore(today);
-};
-
 // Computed properties for inventory status counts
 const inStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
@@ -289,13 +271,6 @@ const outOfStockCount = computed(() => {
     return stat.count;
 });
 
-const expiredCount = computed(() => {
-    const stat = Object.values(props.inventoryStatusCounts).find(
-        (s) => s.status === "expired"
-    );
-    return stat.count;
-});
-
 function getResults(page = 1) {
     props.filters.page = page;
 }
@@ -310,154 +285,55 @@ function getResults(page = 1) {
         description="Keeping Essentials Ready, Every Time"
     >
         <div class="mb-[100px]">
-            <!-- Navigation Buttons and Heading -->
-            <div class="flex justify-between items-center mb-6">
-                <!-- Page Heading -->
-                <h1 class="text-sm font-bold text-gray-800">
-                    Warehouse Inventory
-                </h1>
-                <div class="flex space-x-4">
-                    <!-- Excel Upload Button -->
+            <!-- Header & Actions -->
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Warehouse Inventory</h1>
+                <div class="flex flex-wrap gap-2 md:gap-4 items-center">
                     <label
                         for="excelUpload"
-                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-full font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-500 active:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition ease-in-out duration-150 cursor-pointer"
+                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-500 active:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition ease-in-out duration-150 cursor-pointer shadow-sm"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5 mr-2"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                         Upload Excel
                     </label>
-                    <input
-                        id="excelUpload"
-                        type="file"
-                        accept=".xlsx,.xls,.csv"
-                        class="hidden"
-                        @change="handleFileUpload"
-                    />
-                    <button
-                        @click="showAddModal = true"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-                    >
-                        Add Inventory
-                    </button>
-                    <button
-                        @click="showLegend = true"
-                        class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
-                        Icon Legend
-                    </button>
-                    <Link
-                        :href="route('inventories.location.index')"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-full font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5 mr-2"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                        </svg>
+                    <input id="excelUpload" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileUpload" />
+                    <button @click="showAddModal = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm">Add Inventory</button>
+                    <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         Locations List
                     </Link>
-                    <Link
-                        :href="route('inventories.warehouses.index')"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-full font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5 mr-2"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                            />
-                        </svg>
+                    <Link :href="route('inventories.warehouses.index')" class="inline-flex items-center px-4 py-2 bg-blue-100 border border-blue-200 rounded-lg font-semibold text-xs text-blue-700 uppercase tracking-widest hover:bg-blue-200 focus:bg-blue-200 active:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                         Warehouses List
                     </Link>
                 </div>
             </div>
-            <!-- Search and Filters -->
-            <div
-                class="mb-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
-            >
-                <div class="col-span-1 md:col-span-2 min-w-0">
-                    <input
-                        v-model="search"
-                        type="text"
-                        class="w-full"
-                        placeholder="Search by item name, barcode, batch number, uom"
-                    />
+            <!-- Filters Card -->
+            <div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                    <div class="col-span-1 md:col-span-2 min-w-0">
+                        <input v-model="search" type="text" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" placeholder="Search by item name, barcode, batch number, uom" />
+                    </div>
+                    <div class="col-span-1 min-w-0">
+                        <Multiselect v-model="category" :options="props.category" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a category" :allow-empty="true" class="multiselect--with-icon w-full" />
+                    </div>
+                    <div class="col-span-1 min-w-0">
+                        <Multiselect v-model="dosage" :options="props.dosage" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a dosage form" :allow-empty="true" class="multiselect--with-icon w-full" />
+                    </div>
                 </div>
-                <div class="col-span-1 min-w-0">
-                    <Multiselect
-                        v-model="category"
-                        :options="props.category"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select a category"
-                        :allow-empty="true"
-                        class="multiselect--with-icon w-full"
-                    >
-                    </Multiselect>
-                </div>
-                <div class="col-span-1 min-w-0">
-                    <Multiselect
-                        v-model="dosage"
-                        :options="props.dosage"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        placeholder="Select a dosage form"
-                        :allow-empty="true"
-                        class="multiselect--with-icon w-full"
-                    >
-                    </Multiselect>
+                <div class="flex justify-end items-center gap-4 mt-3">
+                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="props.filters.page = 1">
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                        <option value="200">200 per page</option>
+                    </select>
+                    <button @click="showLegend = true" class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200 mb-3" title="Icon Legend">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                    </button>
                 </div>
             </div>
-            <div class="flex justify-end mt-3">
-                <select
-                    v-model="per_page"
-                    class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3"
-                    @change="props.filters.page = 1"
-                >
-                    <option value="25">25 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                    <option value="200">200 per page</option>
-                </select>
-            </div>
-
+            <!-- Table and Sidebar (do not change table markup) -->
             <div class="lg:grid lg:grid-cols-8 lg:gap-2">
                 <div class="lg:col-span-7 overflow-auto w-full">
                     <!-- Inventory Table -->
@@ -476,25 +352,34 @@ function getResults(page = 1) {
                             <tr style="background-color: #F4F7FB;">
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Manufacturing Date</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <template v-for="inventory in props.inventories.data" :key="inventory.id">
+                            <template v-if="props.inventories.data.length === 0">
+                                <tr>
+                                    <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
+                                            <span>No inventory data found.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
                                 <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isExpired(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.manufacturing_date) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center">
                                         <div class="flex items-center justify-center">
-                                            <div v-if="isExpiringSoon(item)" class="mr-1">
-                                                <img src="/assets/images/soon_expire.png" title="Expire soon" class="w-5 h-5" alt="Expire soon" />
+                                            <div v-if="isOutOfStock(item)" class="mr-1">
+                                                <img src="/assets/images/out_stock.png" title="Out of Stock" class="w-5 h-5" alt="Out of Stock" />
                                             </div>
-                                            <div v-if="isExpired(item)"><img src="/assets/images/expired_stock.png" title="Expired" class="w-5 h-5" alt="Expired" /></div>
                                         </div>
                                     </td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}</td>
@@ -581,76 +466,25 @@ function getResults(page = 1) {
                 <div class="lg:col-span-1">
                     <div class="sticky top-0 z-10 shadow-sm">
                         <div class="space-y-4">
-                            <div
-                                class="flex items-center rounded-lg bg-green-50"
-                            >
-                                <img
-                                    src="/assets/images/in_stock.png"
-                                    class="w-[56px] h-[56px]"
-                                    alt="In Stock"
-                                />
+                            <div class="flex items-center rounded-xl bg-green-50 p-1 shadow">
+                                <img src="/assets/images/in_stock.png" class="w-[40px] h-[40px]" alt="In Stock" />
                                 <div class="ml-4 flex flex-col">
-                                    <span
-                                        class="text-xl font-bold text-green-600"
-                                        >{{ inStockCount }}</span
-                                    >
-                                    <span class="ml-2 text-xs text-green-600"
-                                        >In Stock</span
-                                    >
+                                    <span class="text-sm font-bold text-green-600">{{ inStockCount }}</span>
+                                    <span class="ml-2 text-xs text-green-600">In Stock</span>
                                 </div>
                             </div>
-                            <div
-                                class="flex items-center rounded-lg bg-orange-50"
-                            >
-                                <img
-                                    src="/assets/images/low_stock.png"
-                                    class="w-[56px] h-[56px]"
-                                    alt="Low Stock"
-                                />
+                            <div class="flex items-center rounded-xl bg-orange-50 p-1 shadow">
+                                <img src="/assets/images/low_stock.png" class="w-[40px] h-[40px]" alt="Low Stock" />
                                 <div class="ml-4 flex flex-col">
-                                    <span
-                                        class="text-xl font-bold text-orange-600"
-                                        >{{ lowStockCount }}</span
-                                    >
-                                    <span class="ml-2 text-xs text-orange-600"
-                                        >Low Stock</span
-                                    >
+                                    <span class="text-sm font-bold text-orange-600">{{ lowStockCount }}</span>
+                                    <span class="ml-2 text-xs text-orange-600">Low Stock</span>
                                 </div>
                             </div>
-                            <div
-                                class="flex items-center rounded-lg bg-red-50"
-                            >
-                                <img
-                                    src="/assets/images/out_stock.png"
-                                    class="w-[56px] h-[56px]"
-                                    alt="Out of Stock"
-                                />
+                            <div class="flex items-center rounded-xl bg-red-50 p-1 shadow">
+                                <img src="/assets/images/out_stock.png" class="w-[40px] h-[40px]" alt="Out of Stock" />
                                 <div class="ml-4 flex flex-col">
-                                    <span
-                                        class="text-xl font-bold text-red-600"
-                                        >{{ outOfStockCount }}</span
-                                    >
-                                    <span class="ml-2 text-xs text-red-600"
-                                        >Out of Stock</span
-                                    >
-                                </div>
-                            </div>
-                            <div
-                                class="flex items-center rounded-lg bg-gray-50"
-                            >
-                                <img
-                                    src="/assets/images/expired_stock.png"
-                                    class="w-[56px] h-[56px]"
-                                    alt="Expired"
-                                />
-                                <div class="ml-4 flex flex-col">
-                                    <span
-                                        class="text-xl font-bold text-gray-600"
-                                        >{{ expiredCount }}</span
-                                    >
-                                    <span class="ml-2 text-xs text-gray-600"
-                                        >Expired</span
-                                    >
+                                    <span class="text-sm font-bold text-red-600">{{ outOfStockCount }}</span>
+                                    <span class="ml-2 text-xs text-red-600">Out of Stock</span>
                                 </div>
                             </div>
                         </div>
@@ -659,92 +493,48 @@ function getResults(page = 1) {
             </div>
         </div>
 
+        <!-- Modals: Add Inventory, Upload Progress, Icon Legend -->
         <!-- Add Inventory Modal -->
         <Modal :show="showAddModal" @close="showAddModal = false">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Add New Inventory Item</h2>
+            <div class="p-8 rounded-xl shadow-xl bg-white">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Add New Inventory Item</h2>
                 <form @submit.prevent="submitForm">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                            <Multiselect
-                                v-model="form.product"
-                                :options="props.products"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                placeholder="Select a product"
-                                track-by="id"
-                                label="name"
-                                class="multiselect--with-icon w-full"
-                            />
+                            <Multiselect v-model="form.product" :options="props.products" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a product" track-by="id" label="name" class="multiselect--with-icon w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                            <input
-                                v-model="form.quantity"
-                                type="number"
-                                min="0"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+                            <input v-model="form.quantity" type="number" min="0" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
-                            <input
-                                v-model="form.batch_number"
-                                type="text"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+                            <input v-model="form.batch_number" type="text" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Manufacturing Date</label>
-                            <input
-                                v-model="form.manufacturing_date"
-                                type="date"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                            <input
-                                v-model="form.expiry_date"
-                                type="date"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+                            <input v-model="form.manufacturing_date" type="date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                            <textarea
-                                v-model="form.notes"
-                                rows="3"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            ></textarea>
+                            <textarea v-model="form.notes" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                         </div>
                     </div>
                     <div class="flex justify-end space-x-3 mt-6">
                         <SecondaryButton @click="showAddModal = false">Cancel</SecondaryButton>
-                        <button
-                            type="submit"
-                            :disabled="isSubmitting"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {{ isSubmitting ? 'Adding...' : 'Add Item' }}
-                        </button>
+                        <button type="submit" :disabled="isSubmitting" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">{{ isSubmitting ? 'Adding...' : 'Add Item' }}</button>
                     </div>
                 </form>
             </div>
         </Modal>
-
         <!-- Upload Progress Modal -->
         <Modal :show="showUploadModal" @close="showUploadModal = false">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Uploading File</h2>
+            <div class="p-8 rounded-xl shadow-xl bg-white">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Uploading File</h2>
                 <div class="mb-4">
                     <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            :style="{ width: uploadProgress + '%' }"
-                        ></div>
+                        <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
                     </div>
                     <p class="text-sm text-gray-600 mt-2">{{ uploadProgress }}% complete</p>
                 </div>
@@ -754,14 +544,11 @@ function getResults(page = 1) {
                 </div>
             </div>
         </Modal>
-
         <!-- Slideover for Icon Legend -->
         <transition name="slide">
           <div v-if="showLegend" class="fixed inset-0 z-50 flex justify-end">
-            <!-- Overlay -->
             <div class="fixed inset-0 bg-black bg-opacity-30 transition-opacity" @click="showLegend = false"></div>
-            <!-- Slideover Panel -->
-            <div class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto">
+            <div class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto rounded-l-xl">
               <button @click="showLegend = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -786,20 +573,6 @@ function getResults(page = 1) {
                   <div>
                     <div class="font-semibold text-red-600">Out of Stock</div>
                     <div class="text-xs text-gray-500">Indicates items that are completely out of stock.</div>
-                  </div>
-                </li>
-                <li class="flex items-center gap-4">
-                  <img src="/assets/images/expired_stock.png" class="w-10 h-10" alt="Expired" />
-                  <div>
-                    <div class="font-semibold text-gray-600">Expired</div>
-                    <div class="text-xs text-gray-500">Indicates items that have expired.</div>
-                  </div>
-                </li>
-                <li class="flex items-center gap-4">
-                  <img src="/assets/images/soon_expire.png" class="w-10 h-10" alt="Expiring Soon" />
-                  <div>
-                    <div class="font-semibold text-yellow-600">Expiring Soon</div>
-                    <div class="text-xs text-gray-500">Indicates items that will expire soon (within 160 days).</div>
                   </div>
                 </li>
                 <li class="flex items-center gap-4">

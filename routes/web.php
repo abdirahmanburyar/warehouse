@@ -159,18 +159,18 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             ->name('settings.roles.create');
         Route::post('/roles', [RoleController::class, 'store'])
             ->middleware(PermissionMiddleware::class . ':role.create')
-            ->name('settings.roles.store');
+            ->name('roles.store');
             
 
         Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])
             ->middleware(PermissionMiddleware::class . ':role.edit')
-            ->name('settings.roles.edit');
+            ->name('roles.edit');
         Route::put('/roles/{role}', [RoleController::class, 'update'])
             ->middleware(PermissionMiddleware::class . ':role.edit')
-            ->name('settings.roles.update');
+            ->name('roles.update');
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
             ->middleware(PermissionMiddleware::class . ':role.delete')
-            ->name('settings.roles.destroy');
+            ->name('roles.destroy');
 
         // Facilities Reports
         Route::get('/reports/facilities-list', [ReportController::class, 'facilitiesListReport'])->name('reports.facilities-list');

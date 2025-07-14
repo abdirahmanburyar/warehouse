@@ -14,60 +14,13 @@ class RoleController extends Controller
     /**
      * Display a listing of the roles.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Role::with(['permissions', 'users'])
-            ->withCount('users');
-
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        // Permission filter
-        if ($request->filled('permission')) {
-            $permissionId = $request->permission;
-            $query->whereHas('permissions', function ($q) use ($permissionId) {
-                $q->where('permissions.id', $permissionId);
-            });
-        }
-
-        // Pagination
-        $perPage = $request->get('per_page', 10);
-        $roles = $query->paginate($perPage);
-
+        $roles = Role::with('permissions')->get();
         $permissions = Permission::all();
         
         return Inertia::render('Role/Index', [
             'roles' => $roles,
-            'permissions' => $permissions,
-            'filters' => $request->only(['search', 'permission', 'per_page', 'page'])
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new role.
-     */
-    public function create()
-    {
-        $permissions = Permission::all();
-        
-        return Inertia::render('Role/Create', [
-            'permissions' => $permissions
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified role.
-     */
-    public function edit(Role $role)
-    {
-        $role->load('permissions');
-        $permissions = Permission::all();
-        
-        return Inertia::render('Role/Edit', [
-            'role' => $role,
             'permissions' => $permissions
         ]);
     }
@@ -87,29 +40,67 @@ class RoleController extends Controller
     }
 
     /**
-     * Store a newly created role.
+     * Store a newly created role or update an existing one.
      */
     public function store(Request $request)
     {
+        // Check if this is an update operation (id is provided)
+        $isUpdate = $request->has('id') && $request->id;
+        $roleId = $isUpdate ? $request->id : null;
+        
+        // Validate the request with conditional unique rule
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
+            'name' => 'required|string|max:255|unique:roles,name' . ($isUpdate ? ',' . $roleId : ''),
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
         ]);
 
-        $role = Role::create(['name' => $request->name]);
+        // Create or update the role
+        if ($isUpdate) {
+            $role = Role::findOrFail($roleId);
+            
+            // Don't allow editing the admin role name
+            if ($role->name === 'admin' && $request->name !== 'admin') {
+                if ($request->expectsJson()) {
+                    return response()->json('Cannot modify the admin role name', 500);
+                }
+                return redirect()->back()->with('error', 'Cannot modify the admin role name');
+            }
+            
+            $role->update(['name' => $request->name]);
+            $successMessage = 'Role updated successfully';
+        } else {
+            $role = Role::create(['name' => $request->name]);
+            $successMessage = 'Role created successfully';
+        }
         
         // Sync permissions
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
         }
 
+        // Return JSON response if requested
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage,
+                'role' => $role->load('permissions')
+            ]);
+        }
+
+        // Check if request from settings page
+        $isFromSettings = $request->header('X-From-Settings') || 
+                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', $successMessage);
+        }
         // Send a broadcast to every user who has this role
         User::role($role->name)->get()->each(function ($user) use ($role) {
             event(new GlobalPermissionChanged($user));
         });
 
-        return redirect()->route('settings.roles.index')->with('success', 'Role created successfully');
+        return redirect()->route('settings.roles.index')->with('success', $successMessage);
     }
 
     /**
@@ -123,21 +114,27 @@ class RoleController extends Controller
             'permissions.*' => 'exists:permissions,id',
         ]);
 
-        // Don't allow editing the admin role name
-        if ($role->name === 'admin' && $request->name !== 'admin') {
-            return redirect()->back()->withErrors(['name' => 'Cannot modify the admin role name']);
-        }
-
         $role->update(['name' => $request->name]);
         
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
         }
 
-        // Send a broadcast to every user who has this role
-        User::role($role->name)->get()->each(function ($user) use ($role) {
-            event(new GlobalPermissionChanged($user));
-        });
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Role updated successfully',
+                'role' => $role->load('permissions')
+            ]);
+        }
+
+        // Check if request from settings page
+        $isFromSettings = $request->header('X-From-Settings') || 
+                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role updated successfully');
+        }
 
         return redirect()->route('settings.roles.index')->with('success', 'Role updated successfully');
     }
@@ -148,10 +145,37 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         if ($role->name === 'admin') {
-            return redirect()->back()->with('error', 'Cannot delete the admin role');
+            // Check if request from settings page
+            $isFromSettings = request()->header('X-From-Settings') || 
+                             (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+            
+            if (request()->expectsJson()) {
+                return response()->json('Cannot delete the admin role', 500);
+            }
+            
+            if ($isFromSettings) {
+                return redirect()->route('settings.index', ['tab' => 'roles'])->with('error', 'Cannot delete the admin role');
+            }
+            
+            return redirect()->route('settings.roles.index')->with('error', 'Cannot delete the admin role');
         }
         
         $role->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Role deleted successfully'
+            ]);
+        }
+
+        // Check if request from settings page
+        $isFromSettings = request()->header('X-From-Settings') || 
+                         (request()->has('_headers') && request()->_headers && isset(request()->_headers['X-From-Settings']));
+        
+        if ($isFromSettings) {
+            return redirect()->route('settings.index', ['tab' => 'roles'])->with('success', 'Role deleted successfully');
+        }
 
         return redirect()->route('settings.roles.index')->with('success', 'Role deleted successfully');
     }
@@ -176,6 +200,6 @@ class RoleController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Roles assigned successfully');
+        return back()->with('success', 'Roles assigned successfully');
     }
 }

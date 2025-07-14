@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
@@ -13,6 +13,9 @@ const props = defineProps({
         type: Object,
         required: true,
         default: () => ({ summary: [] })
+    },
+    loadSuppliers: {
+        type: Array
     },
     orderCard: {
         type: Object,
@@ -91,13 +94,33 @@ function getCount(abbr) {
     return found ? found.value : 0;
 }
 
-const selectedOrderType = ref(props.orderCard.filter);
+// Date filters
+const dateFrom = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
+const dateTo = ref(dayjs().endOf('month').format('YYYY-MM-DD'));
+
+// Order type filter - convert to object format for Multiselect
+const orderTypeOptions = [
+    { value: 'PO', label: 'Purchase Order (Approved)' },
+    { value: 'PKL', label: 'Packing List' },
+    { value: 'BO', label: 'Back Order' }
+];
+
+const selectedOrderType = ref(orderTypeOptions.find(opt => opt.value === props.orderCard.filter) || orderTypeOptions[0]);
+
 const orderCounts = computed(() => props.orderCard.counts);
 const orderLabels = {
     PO: 'Purchase Order (Approved)',
     PKL: 'Packing List',
     BO: 'Back Order'
 };
+
+// Get selected order type value
+const selectedOrderTypeValue = computed(() => {
+    if (typeof selectedOrderType.value === 'object' && selectedOrderType.value !== null) {
+        return selectedOrderType.value.value;
+    }
+    return selectedOrderType.value;
+});
 
 const totalOrders = computed(() =>
     props.orderStats.pending +
@@ -113,37 +136,95 @@ const totalOrders = computed(() =>
 // Tab functionality
 const activeTab = ref('warehouse');
 
-// Fulfillment filter
-const selectedSupplier = ref('all');
-const supplierOptions = computed(() => {
-    const options = [
-        { value: 'all', label: 'Suppliers' }
-    ];
-    props.fulfillmentData.forEach(item => {
-        options.push({
-            value: item.supplier_name,
-            label: item.supplier_name
-        });
-    });
-    return options;
-});
+const supplierOptions = computed(() => [
+  { label: 'All Suppliers', value: '' },
+  ...(props.loadSuppliers || []).map(s => ({ label: s, value: s }))
+]);
+const selectedSupplier = ref(supplierOptions.value[0]);
 
 const filteredFulfillment = computed(() => {
-    const selectedValue = selectedSupplier.value?.value || selectedSupplier.value;
+    let selectedValue;
     
-    if (selectedValue === 'all') {
+    // Handle both object and string values from Multiselect
+    if (typeof selectedSupplier.value === 'object' && selectedSupplier.value !== null) {
+        selectedValue = selectedSupplier.value.value;
+    } else {
+        selectedValue = selectedSupplier.value;
+    }
+    
+    if (selectedValue === '' || !selectedValue) { // Changed from 'all' to ''
         return props.overallFulfillment || 0;
     }
+    
     const supplierData = props.fulfillmentData.find(item => item.supplier_name === selectedValue);
     return supplierData ? supplierData.fulfillment_percentage : 0;
 });
 
 const selectedSupplierLabel = computed(() => {
-    if (selectedSupplier.value === 'all') {
-        return 'Suppliers';
+    let selectedValue;
+    
+    // Handle both object and string values from Multiselect
+    if (typeof selectedSupplier.value === 'object' && selectedSupplier.value !== null) {
+        selectedValue = selectedSupplier.value.value;
+    } else {
+        selectedValue = selectedSupplier.value;
     }
-    return selectedSupplier.value;
+    
+    if (selectedValue === '' || !selectedValue) { // Changed from 'all' to ''
+        return 'All Suppliers';
+    }
+    return selectedValue;
 });
+
+// Filtered total cost based on date range
+const filteredTotalCost = computed(() => {
+    // This is a placeholder - you'll need to implement the actual filtering logic
+    // based on your backend data structure
+    // For now, we'll return the original value
+    return props.totalApprovedPOCost || 0;
+});
+
+// Watch for date changes and emit events to parent component
+watch([dateFrom, dateTo], ([newDateFrom, newDateTo]) => {
+    // You can emit events here to notify the parent component about date changes
+    // This will allow the backend to recalculate the total cost based on the date range
+    console.log('Date range changed:', { from: newDateFrom, to: newDateTo });
+    
+    // Example: You might want to emit an event to the parent component
+    // emit('dateRangeChanged', { from: newDateFrom, to: newDateTo });
+}, { deep: true });
+
+// Watch for order type changes
+watch(selectedOrderType, (newValue) => {
+    console.log('Order type changed:', newValue);
+    // You can emit events here to notify the parent component about order type changes
+}, { deep: true });
+
+// Watch for supplier changes
+watch(selectedSupplier, (newValue) => {
+    console.log('Supplier changed:', newValue);
+    // You can emit events here to notify the parent component about supplier changes
+}, { deep: true });
+
+// Method to handle filter changes and update data
+const handleFilterChange = () => {
+    const filters = {
+        dateFrom: dateFrom.value,
+        dateTo: dateTo.value,
+        orderType: selectedOrderTypeValue.value,
+        supplier: selectedSupplier.value?.value || '' // Changed from 'all' to ''
+    };
+    
+    console.log('Filters changed:', filters);
+    
+    // Here you can make an API call to update the dashboard data based on filters
+    // Example:
+    // router.get('/dashboard', { 
+    //     data: filters,
+    //     preserveState: true,
+    //     preserveScroll: true
+    // });
+};
 
 const warehouseDataTypeOptions = [
   { value: 'beginning_balance', label: 'Beginning Balance (This Month)' },
@@ -197,89 +278,188 @@ const issuedChartOptions = {
 <template>
     <Head title="Dashboard" />
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
-        <div class="flex flex-row justify-end gap-1">
-            <!-- Product Category Card -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl border border-pink-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-3 uppercase">
-                    List
+        <!-- Filters Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div class="flex flex-row items-center gap-x-4 flex-nowrap">
+                <!-- Date From Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-medium text-gray-600">Date From:</label>
+                    <input
+                        type="date"
+                        v-model="dateFrom"
+                        class="px-3 py-2 border border-gray-300 rounded-md text-sm min-w-[150px]"
+                    />
                 </div>
-                <div class="flex w-full justify-between mb-1 text-[10px]">
-                    <div class="flex-1 text-center font-medium text-gray-600">Drugs</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">Consumable</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">Lab</div>
+                <!-- Date To Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-medium text-gray-600">Date To:</label>
+                    <input
+                        type="date"
+                        v-model="dateTo"
+                        class="px-3 py-2 border border-gray-300 rounded-md text-sm min-w-[150px]"
+                    />
                 </div>
-                <div class="flex w-full justify-between text-[10px]">
-                    <div class="flex-1 text-center font-bold text-pink-600 text-base">{{ productCategoryCard.Drugs || 0 }}</div>
-                    <div class="flex-1 text-center font-bold text-pink-600 text-base">{{ productCategoryCard.Consumable || 0 }}</div>
-                    <div class="flex-1 text-center font-bold text-pink-600 text-base">{{ productCategoryCard.Lab || 0 }}</div>
+                <!-- Order Type Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-medium text-gray-600">Order Type:</label>
+                    <Multiselect
+                        v-model="selectedOrderType"
+                        :options="orderTypeOptions"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        placeholder="All Order Types"
+                        class="min-w-[200px]"
+                    />
                 </div>
-            </div>
-            <!-- Facilities Card -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-3 uppercase">
-                    Facilities
+                <!-- Supplier Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-medium text-gray-600">Supplier:</label>
+                    <Multiselect
+                        v-model="selectedSupplier"
+                        :options="props.loadSuppliers"
+                        :searchable="true"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        label="label"
+                        track-by="value"
+                        placeholder="All Suppliers"
+                        class="min-w-[200px]"
+                    />
                 </div>
-                <div class="flex w-full justify-between mb-1 text-[10px]">
-                    <div class="flex-1 text-center font-medium text-gray-600">HC</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">PHU</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">RH</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">DH</div>
-                    <div class="flex-1 text-center font-medium text-gray-600">MT</div>
-                </div>
-                <div class="flex w-full justify-between text-[10px]">
-                    <div class="flex-1 text-center font-bold text-blue-700 text-base">{{ getCount('HC') }}</div>
-                    <div class="flex-1 text-center font-bold text-blue-700 text-base">{{ getCount('PHU') }}</div>
-                    <div class="flex-1 text-center font-bold text-blue-700 text-base">{{ getCount('RH') }}</div>
-                    <div class="flex-1 text-center font-bold text-blue-700 text-base">{{ getCount('DH') }}</div>
-                    <div class="flex-1 text-center font-bold text-blue-700 text-base">5</div>
-                </div>
-            </div>
-            <!-- Order Card with Filter -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="mb-1 w-full">
-                    <select v-model="selectedOrderType" class="w-full border-none rounded px-2 py-1 text-[10px]">
-                        <option value="PO">Purchase Order</option>
-                        <option value="PKL">Packing List</option>
-                        <option value="BO">Back Order</option>
-                    </select>
-                </div>
-                <div class="text-[10px] font-semibold text-center text-gray-500 tracking-widest mb-1 uppercase">
-                    {{ orderLabels[selectedOrderType] }}
-                </div>
-                <div class="text-base font-bold text-green-700">
-                    {{ orderCounts[selectedOrderType] || 0 }}
-                </div>
-            </div>
-            <!-- Transfers Received Card -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl border border-yellow-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-1 uppercase">
-                    Transfers Received
-                </div>
-                <div class="text-base font-bold text-yellow-700">
-                    {{ transferReceivedCard || 0 }}
-                </div>
-            </div>
-            <!-- Users Card -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-1 uppercase">
-                    Users
-                </div>
-                <div class="text-base font-bold text-purple-700">
-                    {{ userCountCard || 0 }}
-                </div>
-            </div>
-            <!-- Warehouses Card -->
-            <div class="w-full max-w-sm min-h-[120px] bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl border border-indigo-100 px-5 py-2 flex flex-col items-center mb-8">
-                <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-1 uppercase">
-                    Warehouses
-                </div>
-                <div class="text-base font-bold text-indigo-700">
-                    {{ warehouseCountCard || 0 }}
+                <!-- Apply Filters Button -->
+                <div>
+                    <button
+                        @click="handleFilterChange"
+                        class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                    >
+                        Apply Filters
+                    </button>
                 </div>
             </div>
         </div>
+
+        <div class="flex flex-row gap-3 mb-6">
+            <!-- Product Category Card -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">List of Categories</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1">
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">Drugs</div>
+                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Drugs || 0 }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">Consumable</div>
+                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Consumable || 0 }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">Lab</div>
+                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Lab || 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warehouse/Facilities Card -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Warehouse/Facilities</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1">
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">WH</div>
+                            <div class="text-sm font-bold text-emerald-600">{{ warehouseCountCard || 0 }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">HC</div>
+                            <div class="text-sm font-bold text-emerald-600">{{ getCount('HC') }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">PHU</div>
+                            <div class="text-sm font-bold text-emerald-600">{{ getCount('PHU') }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">RH</div>
+                            <div class="text-sm font-bold text-emerald-600">{{ getCount('RH') }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">DH</div>
+                            <div class="text-sm font-bold text-emerald-600">{{ getCount('DH') }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600">MT</div>
+                            <div class="text-sm font-bold text-emerald-600">5</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Card -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-amber-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Orders</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs font-medium text-gray-600">{{ orderLabels[selectedOrderTypeValue] }}</div>
+                        <div class="text-sm font-bold text-amber-600">{{ orderCounts[selectedOrderTypeValue] || 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfers Received Card -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-teal-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-teal-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Transfers</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs font-medium text-gray-600">Received</div>
+                        <div class="text-sm font-bold text-teal-600">{{ transferReceivedCard || 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Card -->
+            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-indigo-600/5"></div>
+                <div class="relative p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                            <h3 class="text-sm font-semibold text-gray-900">Users</h3>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-bold text-indigo-600">{{ userCountCard || 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
         <!-- Tabs, Total Cost, and Order Statistics Row -->
-        <div class="flex justify-between items-start -mt-4">
+        <div class="flex justify-between items-start">
             <!-- Tabs Section -->
             <div class="flex-1 mr-8">
                 <!-- Tab Navigation -->
@@ -320,14 +500,14 @@ const issuedChartOptions = {
                                         <input type="month" v-model="issuedMonth" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1">Month</label>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1">Filters</label>
                                         <Multiselect
-                                            v-model="requestData"
-                                            :options="['QTY Issued', 'QTY Received', 'Beggining Balance', 'Closing Balance']"
+                                            v-model="warehouseDataType"
+                                            :options="warehouseDataTypeOptions"
                                             :searchable="true"
                                             :close-on-select="true"
                                             :show-labels="false"
-                                            placeholder="Select Month"
+                                            placeholder="Select Data Type"
                                             class="w-full"
                                         />
                                     </div>
@@ -352,50 +532,55 @@ const issuedChartOptions = {
             </div>
 
             <!-- Total Cost and Fulfillment Cards -->
-            <div class="flex flex-col space-y-4 mx-4">
+            <div class="flex flex-col space-y-3 mx-4">
                 <!-- Total Cost Card -->
-                <div class="w-48 min-h-[80px] bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl border border-emerald-100 px-5 py-2 flex flex-col items-center">
-                    <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-1 uppercase">
-                        Total Cost
-                    </div>
-                    <div class="text-[10px] font-semibold text-center text-gray-500 tracking-widest mb-1 uppercase">
-                        Approved PO
-                    </div>
-                    <div class="text-base font-bold text-emerald-700">
-                        ${{ (totalApprovedPOCost || 0).toLocaleString() }}
+                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+                    <div class="relative p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <h3 class="text-sm font-semibold text-gray-900">Total Cost</h3>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600 mb-1">Approved PO</div>
+                            <div class="text-base font-bold text-green-600">${{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Fulfillment Percentage Card -->
-                <div class="w-48 min-h-[80px] bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-100 px-5 py-2 flex flex-col items-center">
-                    <div class="mb-1 w-full">
-                        <Multiselect
-                            v-model="selectedSupplier"
-                            :options="supplierOptions"
-                            :searchable="true"
-                            :close-on-select="true"
-                            :show-labels="false"
-                            placeholder="Suppliers"
-                            track-by="value"
-                            label="label"
-                            class="text-xs"
-                        />
-                    </div>
-                    <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-1 uppercase">
-                        Fulfillment Rate
-                    </div>
-                    <div class="text-base font-bold text-orange-700">
-                        {{ (filteredFulfillment || 0).toFixed(1) }}%
+                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5"></div>
+                    <div class="relative p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                                <h3 class="text-sm font-semibold text-gray-900">Fulfillment</h3>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600 mb-1">Rate</div>
+                            <div class="text-base font-bold text-cyan-600">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Orders Delayed Card -->
-                <div class="w-48 min-h-[80px] bg-gradient-to-br from-red-50 to-red-100 rounded-2xl border border-red-100 px-5 py-2 flex flex-col items-center">
-                    <div class="text-[10px] font-semibold text-gray-500 tracking-widest mb-3 uppercase">
-                        Orders Delayed
-                    </div>
-                    <div class="text-base font-bold text-red-700">
-                        {{ ordersDelayedCount }}
+                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-rose-600/5"></div>
+                    <div class="relative p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-rose-500 rounded-full"></div>
+                                <h3 class="text-sm font-semibold text-gray-900">Delayed</h3>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-medium text-gray-600 mb-1">Orders</div>
+                            <div class="text-base font-bold text-rose-600">{{ ordersDelayedCount }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -423,3 +608,4 @@ const issuedChartOptions = {
         </div>
     </AuthenticatedLayout>
 </template>
+
