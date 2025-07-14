@@ -22,8 +22,8 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with(['roles', 'warehouse', 'facility'])->latest();
-
+        $query = User::query();
+        
         // Search filter
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -58,6 +58,9 @@ class UserController extends Controller
                 $q->where('facilities.name', $request->facility);
             });
         }
+
+        $query->with(['roles', 'warehouse', 'facility'])->latest();
+
         
         $users = $query->paginate($request->per_page, ['*'], 'page', $request->page)->withQueryString();
 
