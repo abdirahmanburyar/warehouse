@@ -608,7 +608,7 @@ const importId = ref(null);
 
 onMounted(() => {
     Echo.private(`import-progress.${importId}`)
-        .listen('ImportProgressUpdated', (e) => {
+        .listen('.ImportProgressUpdated', (e) => {
             console.log(e);
         });
 });
