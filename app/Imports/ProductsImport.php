@@ -103,9 +103,7 @@ class ProductsImport implements
             Cache::increment($this->importId);
             broadcast(new ImportProgressUpdated($this->importId, Cache::get($this->importId)));
 
-            return Product::firstOrCreate(
-                ['name' => $itemName],
-                [
+            return Product::create([
                     'name' => $itemName,
                     'category_id' => $categoryId,
                     'dosage_id' => $dosageId,
