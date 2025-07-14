@@ -1969,6 +1969,8 @@ class ReportController extends Controller
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
                 $q->whereIn('supplier_id', $request->supplier_ids);
             });
+        } else if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
         }
 
         // Filter by date range
@@ -2104,7 +2106,9 @@ class ReportController extends Controller
             ->with(['supplier', 'packingLists', 'items.product.category']);
 
         // Filter by supplier
-        if ($request->filled('supplier_id')) {
+        if ($request->filled('supplier_ids') && is_array($request->supplier_ids) && count($request->supplier_ids) > 0) {
+            $query->whereIn('supplier_id', $request->supplier_ids);
+        } else if ($request->filled('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);
         }
 
@@ -2128,20 +2132,38 @@ class ReportController extends Controller
             ->withQueryString();
         $purchaseOrders->setPath(url()->current());
 
+
+
         // Calculate summary statistics
         $baseQuery = clone $query;
         $totalPOs = $baseQuery->count();
-        $avgLeadTime = $baseQuery->whereNotNull('approved_at')
+        $avgLeadTime = $baseQuery->whereHas('packingLists')
             ->get()
             ->avg(function ($po) {
-                return $po->approved_at ? $po->po_date->diffInDays($po->approved_at) : null;
+                if (!$po->po_date || !$po->packingLists || $po->packingLists->isEmpty()) {
+                    return null;
+                }
+                
+                // Get the earliest packing list date for this PO
+                $earliestPkDate = $po->packingLists->min('pk_date');
+                if (!$earliestPkDate) {
+                    return null;
+                }
+                
+                // Ensure both dates are Carbon instances
+                $poDate = $po->po_date instanceof \Carbon\Carbon ? $po->po_date : \Carbon\Carbon::parse($po->po_date);
+                $pkDate = $earliestPkDate instanceof \Carbon\Carbon ? $earliestPkDate : \Carbon\Carbon::parse($earliestPkDate);
+                
+                return $poDate->diffInDays($pkDate);
             });
 
         $suppliers = \App\Models\Supplier::orderBy('name')->get(['id', 'name']);
 
+
+
         return inertia('Report/Procurement/LeadTimeAnalysis', [
             'purchaseOrders' => $purchaseOrders,
-            'filters' => $request->only(['supplier_id', 'date_from', 'date_to', 'status', 'per_page']),
+            'filters' => $request->only(['supplier_ids', 'supplier_id', 'date_from', 'date_to', 'status', 'per_page']),
             'summary' => [
                 'total_pos' => $totalPOs,
                 'avg_lead_time' => round($avgLeadTime ?? 0, 1)

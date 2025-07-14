@@ -30,6 +30,13 @@ class PurchaseOrder extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'po_date' => 'date',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+    ];
+
     public function approvedBy(){
         return $this->belongsTo(User::class, 'approved_by');
     }

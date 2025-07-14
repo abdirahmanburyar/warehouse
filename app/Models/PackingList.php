@@ -24,6 +24,13 @@ class PackingList extends Model
         'approved_by',
     ];
 
+    protected $casts = [
+        'pk_date' => 'datetime',
+        'confirmed_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
+    ];
+
     public function items(){
         return $this->hasMany(PackingListItem::class, 'packing_list_id');
     }
