@@ -24,6 +24,7 @@ class UserController extends Controller
     {
         $query = User::query();
         
+        logger()->info($request->all());
         // Search filter
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -41,7 +42,7 @@ class UserController extends Controller
         }
 
         // is active
-        if ($request->has('status') && $request->status) {
+        if ($request->has('status') && $request->status != 'All') {
             $query->where('is_active', $request->status);
         }
         
