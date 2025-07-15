@@ -32,11 +32,6 @@ const props = defineProps({
         required: true,
         default: 0
     },
-    userCountCard: {
-        type: Number,
-        required: true,
-        default: 0
-    },
     warehouseCountCard: {
         type: Number,
         required: true,
@@ -491,23 +486,6 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                     </div>
                 </div>
             </div>
-
-            <!-- Users Card -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-indigo-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Users</h3>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-sm font-bold text-indigo-600">{{ userCountCard || 0 }}</div>
-                    </div>
-                </div>
-            </div>
-
 
         </div>
         <!-- Tabs, Total Cost, and Order Statistics Row -->

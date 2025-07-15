@@ -72,6 +72,24 @@ class ExpiredController extends Controller
         if ($request->filled('location')) {
             $query->where('location', 'like', "%{$request->location}%");
         }
+
+        // Tab filtering
+        if ($request->filled('tab')) {
+            $tab = $request->tab;
+            if ($tab === 'expired') {
+                // Show only expired items
+                $query->where('expiry_date', '<', $now);
+            } elseif ($tab === 'six_months') {
+                // Show items expiring within 6 months (180 days)
+                $query->where('expiry_date', '>', $now)
+                      ->where('expiry_date', '<=', $sixMonthsFromNow);
+            } elseif ($tab === 'year') {
+                // Show items expiring within 1 year (365 days)
+                $query->where('expiry_date', '>', $now)
+                      ->where('expiry_date', '<=', $oneYearFromNow);
+            }
+            // 'all' tab shows everything (no additional filtering)
+        }
     
         // Paginate while still a query builder
         $paginatedInventories = $query->paginate(
@@ -105,19 +123,114 @@ class ExpiredController extends Controller
         $category = Category::pluck('name')->toArray();
         $dosage = Dosage::pluck('name')->toArray();
     
+        // Calculate summary based on current tab filter
+        $summary = [];
+        if ($request->filled('tab')) {
+            $tab = $request->tab;
+            if ($tab === 'expired') {
+                $summary = [
+                    'total' => $paginatedInventories->total(),
+                    'expiring_within_6_months' => 0,
+                    'expiring_within_1_year' => 0,
+                    'expired' => $paginatedInventories->total(),
+                    'disposed' => 0,
+                ];
+            } elseif ($tab === 'six_months') {
+                $summary = [
+                    'total' => $paginatedInventories->total(),
+                    'expiring_within_6_months' => $paginatedInventories->total(),
+                    'expiring_within_1_year' => 0,
+                    'expired' => 0,
+                    'disposed' => 0,
+                ];
+            } elseif ($tab === 'year') {
+                $summary = [
+                    'total' => $paginatedInventories->total(),
+                    'expiring_within_6_months' => 0,
+                    'expiring_within_1_year' => $paginatedInventories->total(),
+                    'expired' => 0,
+                    'disposed' => 0,
+                ];
+            }
+        } else {
+            // For 'all' tab or no tab specified, we need to get the full dataset for accurate summary
+            // Create a separate query for summary calculation without pagination
+            $summaryQuery = InventoryItem::query();
+            $summaryQuery->with(['product.dosage:id,name', 'product.category:id,name', 'warehouse']);
+            $summaryQuery->where('quantity', '>', 0)
+                  ->where(function($q) use ($now, $oneYearFromNow) {
+                      $q->where('expiry_date', '<=', $oneYearFromNow)
+                        ->orWhere('expiry_date', '<', $now);
+                  });
+
+            // Apply the same filters as the main query (except pagination)
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $summaryQuery->where(function ($q) use ($search) {
+                    $q->where('barcode', 'like', "%{$search}%")
+                      ->orWhere('batch_number', 'like', "%{$search}%")
+                      ->orWhereHas('product', function ($prodQ) use ($search) {
+                          $prodQ->where('name', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            if ($request->filled('product_id')) {
+                $summaryQuery->where('product_id', $request->product_id);
+            }
+
+            if ($request->filled('category')) {
+                $summaryQuery->whereHas('product.category', function ($q) use ($request) {
+                    $q->where('name', $request->category);
+                });
+            }
+
+            if ($request->filled('dosage')) {
+                $summaryQuery->whereHas('product.dosage', function ($q) use ($request) {
+                    $q->where('name', $request->dosage);
+                });
+            }
+
+            if ($request->filled('warehouse')) {
+                $summaryQuery->whereHas('warehouse', function($q) use($request){
+                    $q->where('name', 'like', "%{$request->warehouse}%");
+                });
+            }
+
+            if ($request->filled('location')) {
+                $summaryQuery->where('location', 'like', "%{$request->location}%");
+            }
+
+            // Get all records for summary calculation
+            $allInventories = $summaryQuery->get();
+            
+            // Transform the data for summary calculation
+            $allInventories->transform(function($inventory) {
+                $inventory->expiry_date = Carbon::parse($inventory->expiry_date);
+                $now = Carbon::now();
+                $inventory->expired = $inventory->expiry_date->lt($now);
+                $inventory->days_until_expiry = intval($now->diffInDays($inventory->expiry_date, false));
+                $inventory->expiring_soon = !$inventory->expired && $inventory->days_until_expiry <= 180;
+                return $inventory;
+            });
+
+            $summary = [
+                'total' => $allInventories->count(),
+                'expiring_within_6_months' => $allInventories->where('expiring_soon', true)->count(),
+                'expiring_within_1_year' => $allInventories->where('expired', false)->where('days_until_expiry', '<=', 365)->count(),
+                'expired' => $allInventories->where('expired', true)->count(),
+                'disposed' => 0, // Disposed items are not in the inventory anymore
+            ];
+        }
+
         return inertia('Expired/Index', [
             'inventories' => ExpiredResource::collection($paginatedInventories),
-            'summary' => [
-                'total' => $paginatedInventories->total(),
-                'expiring_within_6_months' => $paginatedInventories->getCollection()->where('expiring_soon', true)->count(),
-                'expiring_within_1_year' => $paginatedInventories->getCollection()->where('expired', false)->where('days_until_expiry', '<=', 365)->count(),
-                'expired' => $paginatedInventories->getCollection()->where('expired', true)->count(),
-            ],
+            'summary' => $summary,
             'products' => $products,
             'warehouses' => $warehouses,
             'categories' => $category,
             'dosage' => $dosage,
-            'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page'),
+            'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page', 'tab'),
         ]);
     }
 

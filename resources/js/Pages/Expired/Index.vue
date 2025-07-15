@@ -420,7 +420,7 @@ const props = defineProps({
     summary: Object,
 })
 
-const activeTab = ref('all')
+const activeTab = ref(props.filters.tab || 'all')
 
 // Icon Legend state
 const showLegend = ref(false)
@@ -487,8 +487,15 @@ const applyFilters = () => {
     if (dosage.value) query.dosage = dosage.value;
     if (category.value) query.category = category.value;
 
+    // Add active tab to query
+    if (activeTab.value && activeTab.value !== 'all') {
+        query.tab = activeTab.value;
+    }
+
     // Always include per_page in query if it exists
     if (per_page.value) query.per_page = per_page.value;
+    
+    // Always include page in query
     if (props.filters.page) query.page = props.filters.page;
 
     router.get(route("expired.index"), query, {
@@ -507,7 +514,7 @@ const applyFilters = () => {
     });
 };
 
-// Watch for changes in search input
+// Watch for changes in search input and other filters
 watch(
     [
         () => search.value,
@@ -519,6 +526,16 @@ watch(
         () => props.filters.page,
     ],
     () => {
+        applyFilters();
+    }
+);
+
+// Watch for tab changes separately to reset page
+watch(
+    () => activeTab.value,
+    () => {
+        // Reset page to 1 when tab changes
+        props.filters.page = 1;
         applyFilters();
     }
 );
@@ -588,29 +605,26 @@ const submitDisposal = async () => {
 };
 
 const filteredStats = computed(() => {
-    const yearItems = props.summary.expiring_within_1_year
-    const sixMonthItems = props.summary.expiring_within_6_months
-    const expiredItems = props.summary.expired
-    const disposedItems = props.summary.disposed
-
+    // When a specific tab is selected, the backend will filter the data
+    // So we show the appropriate stats based on the current tab
     if (activeTab.value === 'all') {
         return {
-            year: yearItems,
-            six_months: sixMonthItems,
-            expired: expiredItems,
-            disposed: disposedItems
+            year: props.summary.expiring_within_1_year || 0,
+            six_months: props.summary.expiring_within_6_months || 0,
+            expired: props.summary.expired || 0,
+            disposed: props.summary.disposed || 0
         }
     } else if (activeTab.value === 'year') {
         return {
-            year: yearItems,
-            six_months: sixMonthItems,
+            year: props.summary.expiring_within_1_year || 0,
+            six_months: 0,
             expired: 0,
             disposed: 0
         }
     } else if (activeTab.value === 'six_months') {
         return {
             year: 0,
-            six_months: sixMonthItems,
+            six_months: props.summary.expiring_within_6_months || 0,
             expired: 0,
             disposed: 0
         }
@@ -618,8 +632,8 @@ const filteredStats = computed(() => {
         return {
             year: 0,
             six_months: 0,
-            expired: expiredItems,
-            disposed: disposedItems
+            expired: props.summary.expired || 0,
+            disposed: 0
         }
     }
     return { year: 0, six_months: 0, expired: 0, disposed: 0 }
