@@ -398,10 +398,13 @@ async function checkImportProgress(importId) {
             setTimeout(() => checkImportProgress(importId), 2000); // Check every 2 seconds
         } else {
             uploadStatus.value = 'Import completed successfully!';
-            // Optionally refresh the page or reload items
+            
+            // Redirect to the EditPo page
             setTimeout(() => {
-                uploadStatus.value = '';
-            }, 3000);
+                if (form.value.id) {
+                    router.visit(route('supplies.editPO', form.value.id));
+                }
+            }, 1500); // Wait 1.5 seconds to show success message
         }
     } catch (error) {
         console.error('Error checking import progress:', error);

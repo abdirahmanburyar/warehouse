@@ -133,6 +133,38 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function show(PurchaseOrder $purchaseOrder)
+    {
+        try {
+            $purchaseOrder->load(['items.product', 'supplier']);
+            
+            return inertia('PurchaseOrder/Show', [
+                'purchase_order' => [
+                    'id' => $purchaseOrder->id,
+                    'po_number' => $purchaseOrder->po_number,
+                    'po_date' => $purchaseOrder->po_date,
+                    'status' => $purchaseOrder->status,
+                    'total_amount' => $purchaseOrder->total_amount,
+                    'notes' => $purchaseOrder->notes,
+                    'supplier' => $purchaseOrder->supplier,
+                    'items' => $purchaseOrder->items->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'product' => $item->product,
+                            'quantity' => $item->quantity,
+                            'uom' => $item->uom,
+                            'unit_cost' => $item->unit_cost,
+                            'total_cost' => $item->total_cost
+                        ];
+                    })
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function packingList($id)
     {
         $purchaseOrder = PurchaseOrder::with([

@@ -516,6 +516,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/', [PurchaseOrderController::class, 'index'])->middleware(PermissionMiddleware::class . ':purchase-order.view')->name('purchase-orders.index');
         Route::get('/create', [PurchaseOrderController::class, 'create'])->middleware(PermissionMiddleware::class . ':purchase-order.create')->name('purchase-orders.create');
         Route::post('/', [PurchaseOrderController::class, 'store'])->middleware(PermissionMiddleware::class . ':purchase-order.create')->name('purchase-orders.store');
+        Route::get('/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->middleware(PermissionMiddleware::class . ':purchase-order.view')->name('purchase-orders.show');
         Route::get('/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->middleware(PermissionMiddleware::class . ':purchase-order.edit')->name('purchase-orders.edit');
         Route::put('/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->middleware(PermissionMiddleware::class . ':purchase-order.edit')->name('purchase-orders.update');
         Route::delete('/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':purchase-order.delete')->name('purchase-orders.destroy');
