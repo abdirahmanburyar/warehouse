@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Imports\ProductsImport;
+use App\Events\UpdateProductUpload;
 
 class ProductController extends Controller
 {
@@ -300,6 +301,10 @@ class ProductController extends Controller
             // Queue the import job
             Excel::queueImport(new ProductsImport($importId), $file)
                 ->onQueue('imports'); // optional: define a specific queue
+
+
+            // broadcast(new UpdateProductUpload($importId, 0));
+
     
             return response()->json([
                 'success' => true,

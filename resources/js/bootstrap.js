@@ -24,6 +24,8 @@ window.Echo = new Echo({
 });
 
 console.log(window.Echo);
+console.log(window.location.hostname);
+
 
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
