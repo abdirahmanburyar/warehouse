@@ -5,13 +5,9 @@ namespace App\Imports;
 use App\Models\Product;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
-use App\Models\Category;
-use App\Models\Dosage;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -20,7 +16,6 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
 use Carbon\Carbon;
-// use App\Events\UpdateProductUpload;
 
 class UploadInventory implements 
     ToModel, 
@@ -28,94 +23,57 @@ class UploadInventory implements
     WithChunkReading, 
     WithBatchInserts, 
     SkipsEmptyRows, 
-    WithEvents, 
-    ShouldQueue
+    WithEvents
 {
-    use Queueable, InteractsWithQueue;
-
     public $importId;
-    public $importedCount = 0;
-    public $skippedCount = 0;
-    public $errors = [];
+    protected $productCache = [];
+    protected $inventoryCache = [];
 
     public function __construct(string $importId)
     {
         $this->importId = $importId;
-        $this->importedCount = 0;
-        $this->skippedCount = 0;
-        $this->errors = [];
     }
 
     public function model(array $row)
     {
         try {
-            logger()->info('Processing inventory row', $row);
-
             // Validate required fields
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-                $this->errors[] = "Row skipped: Missing required fields (item, quantity, or batch_no)";
-                $this->skippedCount++;
+                Log::warning('Row skipped: Missing required fields', $row);
                 return null;
             }
 
-            // Check if product exists
-            $product = Product::where('name', $row['item'])->first();
-            
+            // Check if product exists (with caching)
+            $product = $this->getProduct($row['item']);
             if (!$product) {
-                $this->errors[] = "Row skipped: Product '{$row['item']}' not found";
-                $this->skippedCount++;
+                Log::warning("Row skipped: Product '{$row['item']}' not found", $row);
                 return null;
             }
 
-            logger()->info('Product found', [
-                'productId' => $product->id,
-                'productName' => $product->name
+            Log::info('Processing row', [
+                'item' => $row['item'],
+                'product_id' => $product->id,
+                'quantity' => $row['quantity'],
+                'batch_no' => $row['batch_no']
             ]);
 
-            // Check if Inventory exists for this product
-            $inventory = Inventory::where('product_id', $product->id)->first();
-            
+            // Check if Inventory exists for this product (with caching)
+            $inventory = $this->getInventory($product->id);
             if (!$inventory) {
                 // Create new Inventory record
                 $inventory = Inventory::create([
                     'product_id' => $product->id,
-                    'quantity' => 0, // Will be updated by InventoryItems
+                    'quantity' => 0,
                 ]);
-                
-                logger()->info('New Inventory created', [
-                    'inventoryId' => $inventory->id,
-                    'productId' => $product->id
-                ]);
-            } else {
-                logger()->info('Existing Inventory found', [
-                    'inventoryId' => $inventory->id,
-                    'productId' => $product->id
-                ]);
+                $this->inventoryCache[$product->id] = $inventory;
+                Log::info('New Inventory created', ['inventory_id' => $inventory->id]);
             }
 
-            // Parse expiry date from "Feb-25" format to "01-02-2025"
-            $expiryDate = null;
-            if (!empty($row['expiry_date'])) {
-                try {
-                    // Convert "Feb-25" to "01-02-2025" format
-                    $expiryDate = Carbon::createFromFormat('M-y', $row['expiry_date'])->startOfMonth();
-                    logger()->info('Expiry date parsed', [
-                        'original' => $row['expiry_date'],
-                        'parsed' => $expiryDate->format('Y-m-d')
-                    ]);
-                } catch (\Exception $e) {
-                    logger()->error('Failed to parse expiry date', [
-                        'original' => $row['expiry_date'],
-                        'error' => $e->getMessage()
-                    ]);
-                    $this->errors[] = "Invalid expiry date format: {$row['expiry_date']}";
-                    $this->skippedCount++;
-                    return null;
-                }
-            }
+            // Parse expiry date - handle Excel serial numbers
+            $expiryDate = $this->parseExpiryDate($row['expiry_date']);
 
-            // Create InventoryItem
-            $inventoryItem = InventoryItem::create([
+            // Prepare InventoryItem data
+            $inventoryItemData = [
                 'inventory_id' => $inventory->id,
                 'product_id' => $product->id,
                 'warehouse_id' => 1, // Using warehouse_id = 1 as specified
@@ -124,27 +82,30 @@ class UploadInventory implements
                 'expiry_date' => $expiryDate,
                 'location' => $row['location'] ?? null,
                 'uom' => $row['uom'] ?? null,
-                'is_active' => true,
-            ]);
+                'unit_cost' => 0.00, // Default value since it's required
+                'total_cost' => 0.00, // Default value since it's required
+            ];
 
-            logger()->info('InventoryItem created', [
-                'inventoryItemId' => $inventoryItem->id,
-                'batchNumber' => $inventoryItem->batch_number,
-                'quantity' => $inventoryItem->quantity,
-                'expiryDate' => $inventoryItem->expiry_date
-            ]);
+            Log::info('Attempting to create InventoryItem', $inventoryItemData);
 
-            $this->importedCount++;
+            // Create InventoryItem
+            $inventoryItem = InventoryItem::create($inventoryItemData);
+
+            Log::info('InventoryItem created successfully', [
+                'inventory_item_id' => $inventoryItem->id,
+                'inventory_id' => $inventory->id,
+                'batch_number' => $inventoryItem->batch_number,
+                'quantity' => $inventoryItem->quantity
+            ]);
 
             // Update progress
-            Cache::put($this->importId, $this->importedCount, 3600);
+            $currentProgress = Cache::get($this->importId, 0);
+            Cache::put($this->importId, $currentProgress + 1, 3600);
 
-            return null; // We're not using ToModel for actual model creation, just processing
+            return null;
 
         } catch (\Throwable $e) {
-            $this->errors[] = "Error processing row: " . $e->getMessage();
-            $this->skippedCount++;
-            logger()->error('UploadInventory error', [
+            Log::error('UploadInventory error', [
                 'row' => $row,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -153,46 +114,81 @@ class UploadInventory implements
         }
     }
 
+    protected function getProduct($itemName)
+    {
+        if (isset($this->productCache[$itemName])) {
+            return $this->productCache[$itemName];
+        }
+
+        $product = Product::where('name', $itemName)->first();
+        if ($product) {
+            $this->productCache[$itemName] = $product;
+        }
+
+        return $product;
+    }
+
+    protected function getInventory($productId)
+    {
+        if (isset($this->inventoryCache[$productId])) {
+            return $this->inventoryCache[$productId];
+        }
+
+        $inventory = Inventory::where('product_id', $productId)->first();
+        if ($inventory) {
+            $this->inventoryCache[$productId] = $inventory;
+        }
+
+        return $inventory;
+    }
+
+    protected function parseExpiryDate($expiryDateValue)
+    {
+        if (empty($expiryDateValue)) {
+            return null;
+        }
+
+        try {
+            // Check if it's an Excel serial number (numeric)
+            if (is_numeric($expiryDateValue)) {
+                // Convert Excel serial number to date
+                // Excel dates are days since 1900-01-01
+                $excelDate = (int) $expiryDateValue;
+                $unixTimestamp = ($excelDate - 25569) * 86400; // Convert to Unix timestamp
+                return Carbon::createFromTimestamp($unixTimestamp);
+            } else {
+                // Try to parse as "M-y" format (Feb-25)
+                return Carbon::createFromFormat('M-y', $expiryDateValue)->startOfMonth();
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to parse expiry date', [
+                'original' => $expiryDateValue,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
     public function chunkSize(): int
     {
-        return 50;
+        return 100; // Increased chunk size for better performance
     }
 
     public function batchSize(): int
     {
-        return 100;
+        return 50; // Reduced batch size to avoid memory issues
     }
 
     public function registerEvents(): array
     {
         return [
             AfterImport::class => function (AfterImport $event) {
-                logger()->info('UploadInventory: AfterImport event triggered', [
-                    'importId' => $this->importId,
-                    'imported' => $this->importedCount,
-                    'skipped' => $this->skippedCount,
-                    'errors' => count($this->errors),
-                    'errorDetails' => $this->errors
+                Log::info('Inventory import completed', [
+                    'importId' => $this->importId
                 ]);
                 
                 Cache::forget($this->importId);
-                Log::info('Inventory import completed', [
-                    'importId' => $this->importId,
-                    'imported' => $this->importedCount,
-                    'skipped' => $this->skippedCount,
-                    'errors' => count($this->errors)
-                ]);
-                // event(new UpdateProductUpload($this->importId, 'completed'));
             },
-        ];
-    }
-
-    public function getResults()
-    {
-        return [
-            'imported' => $this->importedCount,
-            'skipped' => $this->skippedCount,
-            'errors' => $this->errors,
         ];
     }
 }
