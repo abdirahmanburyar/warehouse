@@ -49,164 +49,9 @@ class InventoryImport implements
     public function model(array $row)
     {
         try {
-            logger()->info('InventoryImport: Processing row', ['row' => $row]);
-            
-            // Skip if required fields are empty
-            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-                logger()->warning('InventoryImport: Skipping row - missing required fields', [
-                    'item' => $row['item'] ?? 'empty',
-                    'quantity' => $row['quantity'] ?? 'empty',
-                    'batch_no' => $row['batch_no'] ?? 'empty'
-                ]);
-                $this->skippedCount++;
-                return null;
-            }
+           logger()->info($row);
 
-            $itemName = trim($row['item']);
-            $quantity = (float) $row['quantity'];
-            $batchNo = trim($row['batch_no']);
-
-            logger()->info('InventoryImport: Parsed values', [
-                'itemName' => $itemName,
-                'quantity' => $quantity,
-                'batchNo' => $batchNo
-            ]);
-
-            // Validate quantity
-            if ($quantity <= 0) {
-                logger()->warning('InventoryImport: Invalid quantity', [
-                    'itemName' => $itemName,
-                    'quantity' => $quantity
-                ]);
-                $this->errors[] = "Invalid quantity for item: {$itemName}";
-                $this->skippedCount++;
-                return null;
-            }
-
-            // Find or create product
-            logger()->info('InventoryImport: Getting/creating product', ['itemName' => $itemName]);
-            $product = $this->getOrCreateProduct($itemName, $row['category'] ?? null);
-            if (!$product) {
-                logger()->error('InventoryImport: Failed to get/create product', ['itemName' => $itemName]);
-                $this->errors[] = "Could not create/find product: {$itemName}";
-                $this->skippedCount++;
-                return null;
-            }
-            logger()->info('InventoryImport: Product found/created', ['productId' => $product->id, 'productName' => $product->name]);
-
-            // Use default warehouse_id = 1 and location
-            $warehouseId = 1; // Default warehouse
-            $locationName = $row['location'] ?? 'Default Location';
-            
-            logger()->info('InventoryImport: Warehouse and location set', [
-                'warehouseId' => $warehouseId,
-                'locationName' => $locationName
-            ]);
-
-            // Parse expiry date
-            $expiryDate = null;
-            if (!empty($row['expiry_date'])) {
-                try {
-                    $expiryDate = \Carbon\Carbon::parse($row['expiry_date'])->format('Y-m-d');
-                    logger()->info('InventoryImport: Expiry date parsed', ['expiryDate' => $expiryDate]);
-                } catch (\Exception $e) {
-                    logger()->error('InventoryImport: Invalid expiry date format', [
-                        'itemName' => $itemName,
-                        'expiryDate' => $row['expiry_date'],
-                        'error' => $e->getMessage()
-                    ]);
-                    $this->errors[] = "Invalid expiry date format for item: {$itemName}";
-                    $this->skippedCount++;
-                    return null;
-                }
-            }
-
-            // First, ensure we have a unique Inventory record for this product
-            logger()->info('InventoryImport: Getting/creating inventory record', [
-                'productId' => $product->id
-            ]);
-            
-            $inventory = Inventory::firstOrCreate(
-                ['product_id' => $product->id],
-                [
-                    'product_id' => $product->id,
-                    'quantity' => 0, // Will be calculated from items
-                ]
-            );
-            
-            logger()->info('InventoryImport: Inventory record processed', [
-                'inventoryId' => $inventory->id,
-                'productId' => $inventory->product_id,
-                'wasCreated' => $inventory->wasRecentlyCreated
-            ]);
-
-            // Check if inventory item already exists with same batch number and product
-            logger()->info('InventoryImport: Checking for existing item', [
-                'productId' => $product->id,
-                'batchNo' => $batchNo,
-                'warehouseId' => $warehouseId
-            ]);
-            
-            $existingItem = InventoryItem::where('product_id', $product->id)
-                ->where('batch_number', $batchNo)
-                ->where('warehouse_id', $warehouseId)
-                ->first();
-
-            if ($existingItem) {
-                logger()->info('InventoryImport: Updating existing item', [
-                    'existingItemId' => $existingItem->id,
-                    'oldQuantity' => $existingItem->quantity,
-                    'newQuantity' => $existingItem->quantity + $quantity
-                ]);
-                
-                // Update existing item quantity
-                $existingItem->update([
-                    'quantity' => $existingItem->quantity + $quantity,
-                ]);
-                
-                $this->importedCount++;
-                Cache::increment($this->importId);
-                // event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
-                return null; // Return null since we're updating, not creating new model
-            }
-
-            // Create new inventory item
-            logger()->info('InventoryImport: Creating new inventory item', [
-                'productId' => $product->id,
-                'inventoryId' => $inventory->id,
-                'warehouseId' => $warehouseId,
-                'quantity' => $quantity,
-                'batchNumber' => $batchNo,
-                'expiryDate' => $expiryDate,
-                'location' => $locationName,
-                'uom' => $row['uom'] ?? 'PCS'
-            ]);
-            
-            $inventoryItem = new InventoryItem([
-                'inventory_id' => $inventory->id,
-                'product_id' => $product->id,
-                'warehouse_id' => $warehouseId,
-                'quantity' => $quantity,
-                'batch_number' => $batchNo,
-                'expiry_date' => $expiryDate,
-                'location' => $locationName,
-                'uom' => $row['uom'] ?? 'PCS',
-                'notes' => null,
-            ]);
-
-            logger()->info('InventoryImport: Inventory item created', [
-                'inventoryItemId' => $inventoryItem->id ?? 'not saved yet',
-                'inventoryId' => $inventoryItem->inventory_id,
-                'data' => $inventoryItem->toArray()
-            ]);
-
-            $this->importedCount++;
-            Cache::increment($this->importId);
-            // event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
-
-            return $inventoryItem;
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
             $this->skippedCount++;
             logger()->error('InventoryImport error', [
@@ -214,7 +59,7 @@ class InventoryImport implements
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return null;
+            throw $e;
         }
     }
 

@@ -24,6 +24,7 @@ use App\Imports\InventoryImport;
 use App\Services\InventoryAnalyticsService;
 use App\Models\InventoryItem;
 use App\Models\Warehouse;
+use Illuminate\Support\Str;
 
 class InventoryController extends Controller
 {
@@ -218,65 +219,66 @@ class InventoryController extends Controller
     public function import(Request $request)
     {
         try {
-            logger()->info('Inventory import started', [
-                'hasFile' => $request->hasFile('file'),
-                'fileSize' => $request->file('file') ? $request->file('file')->getSize() : 'no file',
-                'maxFileSize' => ini_get('upload_max_filesize'),
-                'postMaxSize' => ini_get('post_max_size'),
-                'memoryLimit' => ini_get('memory_limit')
-            ]);
-
-            $request->validate([
-                'file' => 'required|file|mimes:xlsx|max:51200', // 50MB max file size
-            ]);
-
-            // Generate unique import ID
-            $importId = 'inventory_' . time() . '_' . uniqid();
-            
-            // Initialize progress tracking
-            Cache::put($importId, 0, 3600); // 1 hour expiry
-            
-            // Process the import with progress tracking
-            $import = new InventoryImport($importId);
-            
-            // Queue the import job
-            Excel::queueImport($import, $request->file('file'))->onQueue('imports');
-            
-            logger()->info('Inventory import queued successfully', [
-                'importId' => $importId,
-                'fileName' => $request->file('file')->getClientOriginalName()
-            ]);
-            
-            return response()->json([
-                'message' => 'Inventory import started successfully',
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file was uploaded'
+                ], 422);
+            }
+    
+            $file = $request->file('file');
+    
+            // Validate file type
+            $extension = $file->getClientOriginalExtension();
+            if (!$file->isValid() || !in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
+                ], 422);
+            }
+    
+            // Validate file size (max 50MB)
+            if ($file->getSize() > 50 * 1024 * 1024) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File size too large. Maximum allowed size is 50MB'
+                ], 422);
+            }
+    
+            $importId = (string) Str::uuid();
+    
+            Log::info('Queueing product import with Maatwebsite Excel', [
                 'import_id' => $importId,
-                'status' => 'processing'
-            ], 200);
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            logger()->error('Inventory import validation error', [
-                'errors' => $e->errors(),
-                'file' => $request->file('file') ? [
-                    'name' => $request->file('file')->getClientOriginalName(),
-                    'size' => $request->file('file')->getSize(),
-                    'mime' => $request->file('file')->getMimeType()
-                ] : 'no file'
+                'original_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'extension' => $extension
             ]);
+    
+            // Initialize cache progress to 0
+            Cache::put($importId, 0);
+    
+            // Queue the import job
+            Excel::queueImport(new InventoryImport($importId), $file)
+                ->onQueue('imports'); // optional: define a specific queue
+
+            // broadcast(new UpdateProductUpload($importId, 0));
+
+    
             return response()->json([
-                'message' => 'Validation failed: ' . implode(', ', array_flatten($e->errors()))
-            ], 422);
-        } catch (\Throwable $th) {
-            logger()->error('Inventory import error', [
-                'message' => $th->getMessage(),
-                'file' => $request->file('file') ? [
-                    'name' => $request->file('file')->getClientOriginalName(),
-                    'size' => $request->file('file')->getSize(),
-                    'mime' => $request->file('file')->getMimeType()
-                ] : 'no file',
-                'trace' => $th->getTraceAsString()
+                'success' => true,
+                'message' => 'Import has been queued successfully',
+                'import_id' => $importId
             ]);
+    
+        } catch (\Exception $e) {
+            Log::error('Product import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+    
             return response()->json([
-                'message' => 'Failed to start inventory import: ' . $th->getMessage()
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -302,7 +302,6 @@ class ProductController extends Controller
             Excel::queueImport(new ProductsImport($importId), $file)
                 ->onQueue('imports'); // optional: define a specific queue
 
-
             // broadcast(new UpdateProductUpload($importId, 0));
 
     
