@@ -218,8 +218,16 @@ class InventoryController extends Controller
     public function import(Request $request)
     {
         try {
+            logger()->info('Inventory import started', [
+                'hasFile' => $request->hasFile('file'),
+                'fileSize' => $request->file('file') ? $request->file('file')->getSize() : 'no file',
+                'maxFileSize' => ini_get('upload_max_filesize'),
+                'postMaxSize' => ini_get('post_max_size'),
+                'memoryLimit' => ini_get('memory_limit')
+            ]);
+
             $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls,csv|max:5120', // 5MB max file size
+                'file' => 'required|file|mimes:xlsx|max:51200', // 50MB max file size
             ]);
 
             // Generate unique import ID
@@ -234,15 +242,42 @@ class InventoryController extends Controller
             // Queue the import job
             Excel::queueImport($import, $request->file('file'))->onQueue('imports');
             
+            logger()->info('Inventory import queued successfully', [
+                'importId' => $importId,
+                'fileName' => $request->file('file')->getClientOriginalName()
+            ]);
+            
             return response()->json([
                 'message' => 'Inventory import started successfully',
                 'import_id' => $importId,
                 'status' => 'processing'
             ], 200);
             
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            logger()->error('Inventory import validation error', [
+                'errors' => $e->errors(),
+                'file' => $request->file('file') ? [
+                    'name' => $request->file('file')->getClientOriginalName(),
+                    'size' => $request->file('file')->getSize(),
+                    'mime' => $request->file('file')->getMimeType()
+                ] : 'no file'
+            ]);
+            return response()->json([
+                'message' => 'Validation failed: ' . implode(', ', array_flatten($e->errors()))
+            ], 422);
         } catch (\Throwable $th) {
-            Log::error('Inventory import error: ' . $th->getMessage());
-            return response()->json( 'Failed to start inventory import: ' . $th->getMessage(), 500);
+            logger()->error('Inventory import error', [
+                'message' => $th->getMessage(),
+                'file' => $request->file('file') ? [
+                    'name' => $request->file('file')->getClientOriginalName(),
+                    'size' => $request->file('file')->getSize(),
+                    'mime' => $request->file('file')->getMimeType()
+                ] : 'no file',
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Failed to start inventory import: ' . $th->getMessage()
+            ], 500);
         }
     }
 
