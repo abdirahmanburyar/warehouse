@@ -33,14 +33,17 @@ class UploadInventory implements
 {
     use Queueable, InteractsWithQueue;
 
-    protected $importId;
-    protected $importedCount = 0;
-    protected $skippedCount = 0;
-    protected $errors = [];
+    public $importId;
+    public $importedCount = 0;
+    public $skippedCount = 0;
+    public $errors = [];
 
     public function __construct(string $importId)
     {
         $this->importId = $importId;
+        $this->importedCount = 0;
+        $this->skippedCount = 0;
+        $this->errors = [];
     }
 
     public function model(array $row)
