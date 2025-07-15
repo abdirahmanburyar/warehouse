@@ -8,6 +8,9 @@ use App\Models\InventoryItem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -23,8 +26,11 @@ class UploadInventory implements
     WithChunkReading, 
     WithBatchInserts, 
     SkipsEmptyRows, 
-    WithEvents
+    WithEvents,
+    ShouldQueue
 {
+    use Queueable, InteractsWithQueue;
+
     public $importId;
     protected $productCache = [];
     protected $inventoryCache = [];
@@ -72,6 +78,16 @@ class UploadInventory implements
             // Parse expiry date - handle Excel serial numbers
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
 
+            // Validate that we have all required data
+            if (!$inventory || !$product) {
+                Log::error('Missing required data for InventoryItem creation', [
+                    'inventory_id' => $inventory ? $inventory->id : 'null',
+                    'product_id' => $product ? $product->id : 'null',
+                    'expiry_date' => $expiryDate ? $expiryDate : 'null'
+                ]);
+                return null;
+            }
+
             // Prepare InventoryItem data
             $inventoryItemData = [
                 'inventory_id' => $inventory->id,
@@ -88,15 +104,24 @@ class UploadInventory implements
 
             Log::info('Attempting to create InventoryItem', $inventoryItemData);
 
-            // Create InventoryItem
-            $inventoryItem = InventoryItem::create($inventoryItemData);
+            try {
+                // Create InventoryItem
+                $inventoryItem = InventoryItem::create($inventoryItemData);
 
-            Log::info('InventoryItem created successfully', [
-                'inventory_item_id' => $inventoryItem->id,
-                'inventory_id' => $inventory->id,
-                'batch_number' => $inventoryItem->batch_number,
-                'quantity' => $inventoryItem->quantity
-            ]);
+                Log::info('InventoryItem created successfully', [
+                    'inventory_item_id' => $inventoryItem->id,
+                    'inventory_id' => $inventory->id,
+                    'batch_number' => $inventoryItem->batch_number,
+                    'quantity' => $inventoryItem->quantity
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to create InventoryItem', [
+                    'data' => $inventoryItemData,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e; // Re-throw to be caught by the outer try-catch
+            }
 
             // Update progress
             $currentProgress = Cache::get($this->importId, 0);
@@ -145,7 +170,7 @@ class UploadInventory implements
     protected function parseExpiryDate($expiryDateValue)
     {
         if (empty($expiryDateValue)) {
-            return null;
+            return null; // Return null since the field is nullable
         }
 
         try {
@@ -155,17 +180,21 @@ class UploadInventory implements
                 // Excel dates are days since 1900-01-01
                 $excelDate = (int) $expiryDateValue;
                 $unixTimestamp = ($excelDate - 25569) * 86400; // Convert to Unix timestamp
-                return Carbon::createFromTimestamp($unixTimestamp);
+                $date = Carbon::createFromTimestamp($unixTimestamp);
+                // Set to first day of the month
+                return $date->startOfMonth()->format('Y-m-d');
             } else {
-                // Try to parse as "M-y" format (Feb-25)
-                return Carbon::createFromFormat('M-y', $expiryDateValue)->startOfMonth();
+                // Try to parse as "M-y" format (Feb-25, Jun-27)
+                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
+                // Set to first day of the month
+                return $date->startOfMonth()->format('Y-m-d');
             }
         } catch (\Exception $e) {
             Log::error('Failed to parse expiry date', [
                 'original' => $expiryDateValue,
                 'error' => $e->getMessage()
             ]);
-            return null;
+            return null; // Return null since the field is nullable
         }
     }
 

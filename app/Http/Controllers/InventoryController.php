@@ -218,9 +218,6 @@ class InventoryController extends Controller
      */
     public function import(Request $request)
     {
-        // Increase execution time limit for large imports
-        set_time_limit(300); // 5 minutes
-        
         try {
             if (!$request->hasFile('file')) {
                 return response()->json([
@@ -260,8 +257,8 @@ class InventoryController extends Controller
             // Initialize cache progress to 0
             Cache::put($importId, 0);
     
-            // Process the import directly (no queue for now to avoid serialization issues)
-            Excel::import(new UploadInventory($importId), $file);
+            // Queue the import job
+            Excel::queueImport(new UploadInventory($importId), $file)->onQueue('imports');
 
             // broadcast(new UpdateProductUpload($importId, 0));
 

@@ -470,7 +470,7 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.manufacturing_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center">
                                         <div class="flex items-center justify-center">
                                             <div v-if="isOutOfStock(item)" class="mr-1">
