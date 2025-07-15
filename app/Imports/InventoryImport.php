@@ -3,249 +3,231 @@
 namespace App\Imports;
 
 use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Models\Product;
-use App\Models\Warehouse;
-use App\Models\Location;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
+use App\Models\Category;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterImport;
+use App\Events\InventoryUpdated;
 
-class InventoryImport implements ToCollection
+class InventoryImport implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithChunkReading, 
+    WithBatchInserts, 
+    WithValidation, 
+    SkipsEmptyRows, 
+    WithEvents, 
+    ShouldQueue
 {
+    use Queueable, InteractsWithQueue;
+
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
-    protected $batchSize = 100;
+    protected $productCache = [];
+    protected $categoryCache = [];
+    protected $importId;
 
-    /**
-     * Process the collection of rows from the Excel file
-     */
-    public function collection(Collection $rows)
+    public function __construct(string $importId)
     {
-        // Get headers to identify columns
-        $headers = $rows->first();
-        if (!$headers) return;
-        
-        // Initialize column indexes
-        $itemDescIndex = null;
-        $uomIndex = null;
-        $quantityIndex = null;
-        $batchNumberIndex = null;
-        $barcodeIndex = null;
-        $expiryDateIndex = null;
-        $warehouseIndex = null;
-        $locationIndex = null;
-        
-        foreach ($headers as $key => $header) {
-            if (is_string($header)) {
-                $header = trim(strtolower($header));
-                if ($header === 'item description') {
-                    $itemDescIndex = $key;
-                } else if ($header === 'uom') {
-                    $uomIndex = $key;
-                } else if ($header === 'quantity') {
-                    $quantityIndex = $key;
-                } else if ($header === 'batch number') {
-                    $batchNumberIndex = $key;
-                } else if ($header === 'barcode') {
-                    $barcodeIndex = $key;
-                } else if ($header === 'expiry date') {
-                    $expiryDateIndex = $key;
-                } else if ($header === 'warehouse') {
-                    $warehouseIndex = $key;
-                } else if ($header === 'location') {
-                    $locationIndex = $key;
-                }
-            }
-        }
-        
-        // Validate that we found the required columns
-        if ($itemDescIndex === null) {
-            $this->errors[] = "Item Description column not found in Excel file";
-            return;
-        }
-        
-        if ($quantityIndex === null) {
-            $this->errors[] = "Quantity column not found in Excel file";
-            return;
-        }
-        
-        if ($warehouseIndex === null) {
-            $this->errors[] = "Warehouse column not found in Excel file";
-            return;
-        }
-        
-        // Increase PHP execution time limit for large imports
-        set_time_limit(300); // 5 minutes
-        
-        DB::beginTransaction();
+        $this->importId = $importId;
+    }
+
+    public function model(array $row)
+    {
         try {
-            // Cache for warehouses and locations to reduce database queries
-            $warehouseCache = [];
-            $locationCache = [];
-            $productCache = [];
-            
-            // Process data rows
-            foreach ($rows->skip(1) as $rowIndex => $row) {
-                // Skip empty rows
-                if (empty($row[$itemDescIndex]) || empty($row[$warehouseIndex])) {
-                    $this->errors[] = "Row " . ($rowIndex + 2) . " skipped: Missing required data";
-                    $this->skippedCount++;
-                    continue;
-                }
-                
-                // Trim whitespace from values
-                $itemName = trim($row[$itemDescIndex]);
-                $uom = ($uomIndex !== null && !empty($row[$uomIndex])) ? trim($row[$uomIndex]) : null;
-                $quantity = ($quantityIndex !== null && !empty($row[$quantityIndex])) ? (float)$row[$quantityIndex] : 0;
-                $batchNumber = ($batchNumberIndex !== null && !empty($row[$batchNumberIndex])) ? trim($row[$batchNumberIndex]) : null;
-                $barcode = ($barcodeIndex !== null && !empty($row[$barcodeIndex])) ? trim($row[$barcodeIndex]) : null;
-                $expiryDate = ($expiryDateIndex !== null && !empty($row[$expiryDateIndex])) ? $row[$expiryDateIndex] : null;
-                $warehouseName = trim($row[$warehouseIndex]);
-                $locationName = ($locationIndex !== null && !empty($row[$locationIndex])) ? trim($row[$locationIndex]) : null;
+            // Skip if required fields are empty
+            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
+                $this->skippedCount++;
+                return null;
+            }
 
-                // Convert Excel date if needed
-                if ($expiryDate && is_numeric($expiryDate)) {
-                    $expiryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($expiryDate)->format('Y-m-d');
-                }
-                
-                // Find product by name or create new one
-                if (!isset($productCache[$itemName])) {
-                    $product = Product::where('name', $itemName)->first();
-                    if (!$product) {
-                        // Get first available category and dosage
-                        $defaultCategory = \App\Models\Category::first();
-                        $defaultDosage = \App\Models\Dosage::first();
-                        
-                        if (!$defaultCategory || !$defaultDosage) {
-                            $this->errors[] = "Row " . ($rowIndex + 2) . " skipped: No categories or dosages exist in the system. Please create them first.";
-                            $this->skippedCount++;
-                            continue;
-                        }
-                        
-                        // Create new product if it doesn't exist
-                        $product = Product::create([
-                            'name' => $itemName,
-                            'category_id' => $defaultCategory->id,
-                            'dosage_id' => $defaultDosage->id,
-                            'is_active' => true,
-                        ]);
-                        
-                        // Log that we created a new product
-                        Log::info("Created new product during import: {$itemName} with ID {$product->id}");
-                    }
-                    $productCache[$itemName] = $product->id;
-                }
-                $productId = $productCache[$itemName];
-                
-                // Find or create warehouse
-                if (!isset($warehouseCache[$warehouseName])) {
-                    $warehouse = Warehouse::firstOrCreate(
-                        ['name' => $warehouseName],
-                        [
-                            'code' => strtoupper(substr(str_replace(' ', '', $warehouseName), 0, 5)),
-                            'status' => 'active',
-                            'user_id' => auth()->id() // Add authenticated user ID
-                        ]
-                    );
-                    $warehouseCache[$warehouseName] = $warehouse->id;
-                }
-                $warehouseId = $warehouseCache[$warehouseName];
-                
-                // Find or create location if provided
-                $locationId = null;
-                if ($locationName) {
-                    $cacheKey = $warehouseId . '-' . $locationName;
-                    if (!isset($locationCache[$cacheKey])) {
-                        $location = Location::firstOrCreate(
-                            [
-                                'location' => $locationName,
-                                'warehouse_id' => $warehouseId
-                            ]
-                        );
-                        $locationCache[$cacheKey] = $location->id;
-                    }
-                    $locationId = $locationCache[$cacheKey];
-                }
-                
-                // Check if inventory already exists with the same product, warehouse, and batch number
-                $existingInventory = Inventory::where('product_id', $productId)
-                    ->where('warehouse_id', $warehouseId)
-                    ->where('batch_number', $batchNumber)
-                    ->first();
-                
+            $itemName = trim($row['item']);
+            $quantity = (float) $row['quantity'];
+            $batchNo = trim($row['batch_no']);
+
+            // Validate quantity
+            if ($quantity <= 0) {
+                $this->errors[] = "Invalid quantity for item: {$itemName}";
+                $this->skippedCount++;
+                return null;
+            }
+
+            // Find or create product
+            $product = $this->getOrCreateProduct($itemName, $row['category'] ?? null);
+            if (!$product) {
+                $this->errors[] = "Could not create/find product: {$itemName}";
+                $this->skippedCount++;
+                return null;
+            }
+
+            // Use default warehouse_id = 1 and location
+            $warehouseId = 1; // Default warehouse
+            $locationName = $row['location'] ?? 'Default Location';
+
+            // Parse expiry date
+            $expiryDate = null;
+            if (!empty($row['expiry_date'])) {
                 try {
-                    if ($existingInventory) {
-                        // Update existing inventory
-                        $existingInventory->quantity += $quantity;
-                        if ($locationId) {
-                            $existingInventory->location_id = $locationId;
-                        }
-                        if ($expiryDate) {
-                            $existingInventory->expiry_date = $expiryDate;
-                        }
-                        if ($uom) {
-                            $existingInventory->uom = $uom;
-                        }
-                        if ($barcode) {
-                            $existingInventory->barcode = $barcode;
-                        }
-                        $existingInventory->save();
-                    } else {
-                        // Create new inventory record
-                        Inventory::create([
-                            'product_id' => $productId,
-                            'warehouse_id' => $warehouseId,
-                            'location_id' => $locationId,
-                            'quantity' => $quantity,
-                            'batch_number' => $batchNumber,
-                            'barcode' => $barcode,
-                            'expiry_date' => $expiryDate,
-                            'uom' => $uom,
-                            'is_active' => true,
-                        ]);
-                    }
-                    
-                    // Increment imported count
-                    $this->importedCount++;
+                    $expiryDate = \Carbon\Carbon::parse($row['expiry_date'])->format('Y-m-d');
                 } catch (\Exception $e) {
-                    $this->errors[] = "Failed to import inventory for '{$itemName}': {$e->getMessage()}";
+                    $this->errors[] = "Invalid expiry date format for item: {$itemName}";
                     $this->skippedCount++;
-                    continue;
-                }
-
-                // Log progress for large imports
-                if ($this->importedCount % 500 === 0) {
-                    Log::info("Processed {$this->importedCount} inventory items so far");
+                    return null;
                 }
             }
-            
-            // Log final processing count
-            Log::info("Processed final batch, total: {$this->importedCount} inventory items");
-            
-            DB::commit();
+
+            // Check if inventory item already exists with same batch number and product
+            $existingItem = InventoryItem::where('product_id', $product->id)
+                ->where('batch_number', $batchNo)
+                ->where('warehouse_id', $warehouseId)
+                ->first();
+
+            if ($existingItem) {
+                // Update existing item quantity
+                $existingItem->update([
+                    'quantity' => $existingItem->quantity + $quantity,
+                ]);
+                
+                $this->importedCount++;
+                Cache::increment($this->importId);
+                event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
+                return null; // Return null since we're updating, not creating new model
+            }
+
+            // Create new inventory item
+            $inventoryItem = new InventoryItem([
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouseId,
+                'quantity' => $quantity,
+                'batch_number' => $batchNo,
+                'expiry_date' => $expiryDate,
+                'location' => $locationName,
+                'uom' => $row['uom'] ?? 'PCS',
+                'notes' => null,
+            ]);
+
+            $this->importedCount++;
+            Cache::increment($this->importId);
+            event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
+
+            return $inventoryItem;
+
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Inventory import error: ' . $e->getMessage());
-            $this->errors[] = "Import failed: " . $e->getMessage();
+            $this->errors[] = "Error processing row: " . $e->getMessage();
+            $this->skippedCount++;
+            Log::error('InventoryImport error', [
+                'row' => $row,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
         }
     }
 
-    public function getImportedCount()
+    protected function getOrCreateProduct($itemName, $categoryName = null)
     {
-        return $this->importedCount;
+        // Check cache first
+        if (isset($this->productCache[$itemName])) {
+            return $this->productCache[$itemName];
+        }
+
+        // Try to find existing product
+        $product = Product::where('name', $itemName)->first();
+        
+        if (!$product) {
+            // Create new product if it doesn't exist
+            $categoryId = null;
+            if ($categoryName) {
+                $categoryId = $this->getOrCreateCategory($categoryName);
+            }
+
+            $product = Product::create([
+                'name' => $itemName,
+                'category_id' => $categoryId,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->productCache[$itemName] = $product;
+        return $product;
     }
 
-    public function getSkippedCount()
+    protected function getOrCreateCategory($categoryName)
     {
-        return $this->skippedCount;
+        if (isset($this->categoryCache[$categoryName])) {
+            return $this->categoryCache[$categoryName];
+        }
+
+        $category = Category::firstOrCreate(
+            ['name' => $categoryName],
+            ['is_active' => true]
+        );
+
+        $this->categoryCache[$categoryName] = $category->id;
+        return $category->id;
     }
 
-    public function getErrors()
+
+
+    public function rules(): array
     {
-        return $this->errors;
+        return [
+            'item' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'uom' => 'nullable|string|max:50',
+            'quantity' => 'required|numeric|min:0',
+            'batch_no' => 'required|string|max:255',
+            'expiry_date' => 'nullable|date',
+            'location' => 'nullable|string|max:255',
+        ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 1000;
+    }
+
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterImport::class => function (AfterImport $event) {
+                Cache::forget($this->importId);
+                Log::info('Inventory import completed', [
+                    'importId' => $this->importId,
+                    'imported' => $this->importedCount,
+                    'skipped' => $this->skippedCount,
+                    'errors' => count($this->errors)
+                ]);
+                event(new InventoryUpdated($this->importId, 'completed'));
+            },
+        ];
+    }
+
+    public function getResults()
+    {
+        return [
+            'imported' => $this->importedCount,
+            'skipped' => $this->skippedCount,
+            'errors' => $this->errors,
+        ];
     }
 }

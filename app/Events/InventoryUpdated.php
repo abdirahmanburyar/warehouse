@@ -15,15 +15,49 @@ class InventoryUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $importId;
+    public $progress;
+
+    public function __construct($importId, $progress)
+    {
+        $this->importId = $importId;
+        $this->progress = $progress;
+    }
+
     public function broadcastOn(): array
     {
+        if ($this->progress === 'completed') {
+            return [
+                new Channel('inventory'),
+            ];
+        }
+        
         return [
-            new Channel('inventory'),
+            new PrivateChannel('import-progress.' . $this->importId),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'refresh';
+        if ($this->progress === 'completed') {
+            return 'refresh';
+        }
+        
+        return 'ImportProgressUpdated';
+    }
+
+    public function broadcastWith()
+    {
+        if ($this->progress === 'completed') {
+            return [
+                'message' => 'Inventory import completed',
+                'completed' => true,
+            ];
+        }
+        
+        return [
+            'progress' => $this->progress,
+            'importId' => $this->importId,
+        ];
     }
 } 

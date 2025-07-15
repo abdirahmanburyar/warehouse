@@ -18,6 +18,7 @@ use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\InventoryImport;
 use App\Services\InventoryAnalyticsService;
@@ -218,41 +219,34 @@ class InventoryController extends Controller
     {
         try {
             $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max file size
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:5120', // 5MB max file size
             ]);
+
+            // Generate unique import ID
+            $importId = 'inventory_' . time() . '_' . uniqid();
             
-            // Process the import
-            $import = new InventoryImport();
-            Excel::import($import, $request->file('file'));
+            // Initialize progress tracking
+            Cache::put($importId, 0, 3600); // 1 hour expiry
             
-            // Get import statistics
-            $importedCount = $import->getImportedCount();
-            $skippedCount = $import->getSkippedCount();
-            $errors = $import->getErrors();
+            // Process the import with progress tracking
+            $import = new InventoryImport($importId);
             
-            // Dispatch event to notify other users of the update
-            // Pass a dummy inventory object with import summary data
-            $dummyInventory = [
-                'product_id' => 0,
-                'quantity' => $importedCount,
-                'type' => 'bulk_import',
-                'message' => "Bulk import: {$importedCount} items imported"
-            ];
-            event(new InventoryUpdated($dummyInventory));
+            // Queue the import job
+            Excel::queueImport($import, $request->file('file'))
+                ->onQueue('imports');
             
             return response()->json([
-                'success' => true,
-                'message' => "Import completed: {$importedCount} items imported, {$skippedCount} items skipped",
-                'imported' => $importedCount,
-                'skipped' => $skippedCount,
-                'errors' => $errors
-            ]);
+                'message' => 'Inventory import started successfully',
+                'import_id' => $importId,
+                'status' => 'processing'
+            ], 200);
+            
         } catch (\Throwable $th) {
             Log::error('Inventory import error: ' . $th->getMessage());
             return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $th->getMessage()
+                'message' => 'Failed to start inventory import: ' . $th->getMessage()
             ], 500);
         }
     }
+
 }
