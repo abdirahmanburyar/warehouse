@@ -84,7 +84,7 @@
                         <thead>
                             <tr style="background-color: #EFF6FF;">
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tl-lg max-w-[150px]"
+                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tl-lg w-[300px]"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Item
                                 </th>
@@ -146,7 +146,7 @@
                             </tr>
                             <tr v-for="item in props.inventories.data" :key="item.id"
                                 class="hover:bg-gray-50 transition-colors duration-150">
-                                <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                <td class="px-3 py-3 text-sm font-medium text-gray-900 border-b break-words" style="border-bottom: 1px solid #B7C6E6;">
                                     {{ item.product?.name }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
