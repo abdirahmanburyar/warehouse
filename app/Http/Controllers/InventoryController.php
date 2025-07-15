@@ -20,7 +20,7 @@ use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\InventoryImport;
+use App\Imports\UploadInventory;
 use App\Services\InventoryAnalyticsService;
 use App\Models\InventoryItem;
 use App\Models\Warehouse;
@@ -258,7 +258,7 @@ class InventoryController extends Controller
             Cache::put($importId, 0);
     
             // Queue the import job
-            Excel::queueImport(new InventoryImport($importId), $file)
+            Excel::queueImport(new UploadInventory($importId), $file)
                 ->onQueue('imports'); // optional: define a specific queue
 
             // broadcast(new UpdateProductUpload($importId, 0));
