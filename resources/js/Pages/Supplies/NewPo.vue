@@ -356,36 +356,57 @@ async function handleFileUpload(event) {
         }
     })
     .then((response) => {
-        // Update items with imported data
-        form.value.items = response.data.map(item => ({
-            id: item.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.total_cost,
-            uom: item.uom,
-            product: item.product,
-        }));
-        // Show success message
-        toast.success('Items imported successfully');
+        // Handle queue-based import response
+        if (response.data.import_id) {
+            // Import is queued, show progress message
+            toast.success('Import started successfully. Processing in background...');
+            uploadStatus.value = "Import queued successfully. Processing...";
+            
+            // Start progress tracking
+            checkImportProgress(response.data.import_id);
+        } else {
+            // Fallback for direct import response (if any)
+            toast.success('Items imported successfully');
+            uploadStatus.value = "";
+        }
 
         // Clear file input
         event.target.value = '';
-
-        // // Display the imported items
-        // items.value = response.data.items;
-        // totalAmount.value = response.data.total_amount;
-        toast.success('Items imported successfully');
-        uploadStatus.value = "";
     })
     .catch((error) => {
         console.error('Upload failed:', error);
-        uploadStatus.value = 'Upload failed: ' + (error.response.data);
+        uploadStatus.value = 'Upload failed: ' + (error.response?.data?.message || error.message);
     });
 
     // Clear the file input
     event.target.value = '';
+}
+
+// Function to check import progress
+async function checkImportProgress(importId) {
+    try {
+        const response = await axios.get(route('purchase-orders.import.progress'), {
+            params: { import_id: importId }
+        });
+        
+        if (response.data.progress > 0) {
+            uploadStatus.value = `Import progress: ${response.data.progress} items processed`;
+        }
+        
+        // Continue checking if still processing
+        if (response.data.status === 'processing') {
+            setTimeout(() => checkImportProgress(importId), 2000); // Check every 2 seconds
+        } else {
+            uploadStatus.value = 'Import completed successfully!';
+            // Optionally refresh the page or reload items
+            setTimeout(() => {
+                uploadStatus.value = '';
+            }, 3000);
+        }
+    } catch (error) {
+        console.error('Error checking import progress:', error);
+        uploadStatus.value = 'Error checking import progress';
+    }
 }
 
 function hadleProductSelect(index, selected){

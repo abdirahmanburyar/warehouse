@@ -519,6 +519,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->middleware(PermissionMiddleware::class . ':purchase-order.edit')->name('purchase-orders.edit');
         Route::put('/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->middleware(PermissionMiddleware::class . ':purchase-order.edit')->name('purchase-orders.update');
         Route::delete('/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':purchase-order.delete')->name('purchase-orders.destroy');
+        
+        // Import routes
+        Route::post('/import', [PurchaseOrderController::class, 'importItems'])->middleware(PermissionMiddleware::class . ':purchase-order.create')->name('purchase-orders.import');
+        Route::get('/import/progress', [PurchaseOrderController::class, 'getImportProgress'])->name('purchase-orders.import.progress');
     });
 
     // Dispatch Management Routes

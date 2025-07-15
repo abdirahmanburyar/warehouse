@@ -9,124 +9,187 @@ use App\Models\Dosage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Concerns\ToCollection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterImport;
 use Illuminate\Validation\Rule;
 
-class PurchaseOrderItemsImport implements ToCollection, WithHeadingRow, WithValidation
+class PurchaseOrderItemsImport implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithChunkReading, 
+    WithBatchInserts, 
+    SkipsEmptyRows, 
+    WithEvents,
+    ShouldQueue
 {
-    use Importable;
+    use Queueable, InteractsWithQueue;
 
-    protected $purchaseOrderId;
+    public $purchaseOrderId;
+    public $importId;
+    protected $productCache = [];
+    protected $categoryCache = [];
+    protected $dosageCache = [];
 
-    public function __construct($purchaseOrderId)
+    public function __construct($purchaseOrderId, string $importId = null)
     {
         $this->purchaseOrderId = $purchaseOrderId;
+        $this->importId = $importId ?? 'po_items_' . time() . '_' . uniqid();
     }
 
-    public function rules(): array
+    public function model(array $row)
     {
-        return [
-            'item_description' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'numeric', 'min:0'],
-            'unit_cost' => ['required', 'numeric', 'min:0'],
-            'total_cost' => ['required', 'numeric', 'min:0'],
-            'uom' => ['required', 'string', 'max:50'],
-            '*.item_description' => ['required', 'string', 'max:255'],
-            '*.quantity' => ['required', 'numeric', 'min:0'],
-            '*.unit_cost' => ['required', 'numeric', 'min:0'],
-            '*.total_cost' => ['required', 'numeric', 'min:0'],
-            '*.uom' => ['required', 'string', 'max:50'],
-        ];
-    }
-
-    public function customValidationMessages()
-    {
-        return [
-            'item_description.required' => 'The item description is required',
-            'quantity.required' => 'The quantity is required',
-            'unit_cost.required' => 'The unit cost is required',
-            'total_cost.required' => 'The total cost is required',
-            'uom.required' => 'The unit of measure (UOM) is required',
-            'quantity.numeric' => 'The quantity must be a number',
-            'unit_cost.numeric' => 'The unit cost must be a number',
-            'total_cost.numeric' => 'The total cost must be a number',
-        ];
-    }
-
-    public function collection(Collection $rows)
-    {
-        if ($rows->isEmpty()) {
-            throw new \Exception('The Excel file is empty');
-        }
-
-        // Validate required columns
-        $requiredColumns = ['item_description', 'quantity', 'unit_cost', 'total_cost', 'uom'];
-        $missingColumns = array_diff($requiredColumns, array_keys($rows->first()->toArray()));
-        if (!empty($missingColumns)) {
-            throw new \Exception('Missing required columns: ' . implode(', ', $missingColumns));
-        }
-
-        DB::beginTransaction();
         try {
-            foreach ($rows as $row) {
-                if (empty($row['item_description'])) {
-                    continue;
-                }
-
-                $item_description = trim($row['item_description']);
-                $uom = trim($row['uom']);
-                $quantity = floatval($row['quantity']);
-                $unit_cost = floatval($row['unit_cost']);
-                
-                // Calculate total cost instead of using Excel value
-                $total_cost = $quantity * $unit_cost;
-
-                // Extract category from the row
-                $category = Category::firstOrCreate(
-                    ['name' => $row['category'] ?? 'Drug'],
-                    ['status' => 'active']
-                );
-
-                // Extract dosage form and create if not exists
-                $dosageForm = Dosage::firstOrCreate(
-                    ['name' => $row['dosage_form'] ?? 'Tablet'],
-                    ['status' => 'active']
-                );
-
-                // Find or create product by name with category and dosage
-                $product = Product::firstOrCreate(
-                    ['name' => $item_description],
-                    [
-                        'status' => 'active',
-                        'category_id' => $category->id,
-                        'dosage_id' => $dosageForm->id
-                    ]
-                );
-
-                // Create new item for each row
-                $poi = PurchaseOrderItem::create([
-                    'purchase_order_id' => $this->purchaseOrderId,
-                    'product_id' => $product->id,
-                    'quantity' => $quantity,
-                    'unit_cost' => $unit_cost,
-                    'total_cost' => $total_cost,
-                    'uom' => $uom
-                ]);
-                logger()->info($poi);
+            // Validate required fields
+            if (empty($row['item_description']) || empty($row['quantity']) || empty($row['unit_cost']) || empty($row['uom'])) {
+                Log::warning('Row skipped: Missing required fields', $row);
+                return null;
             }
 
-            DB::commit();
-            return true;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error importing items:', [
+            $item_description = trim($row['item_description']);
+            $uom = trim($row['uom']);
+            $quantity = floatval($row['quantity']);
+            $unit_cost = floatval($row['unit_cost']);
+            
+            // Calculate total cost
+            $total_cost = $quantity * $unit_cost;
+
+            // Get or create category
+            $category = $this->getOrCreateCategory($row['category'] ?? 'Drug');
+
+            // Get or create dosage form
+            $dosageForm = $this->getOrCreateDosage($row['dosage_form'] ?? 'Tablet');
+
+            // Get or create product
+            $product = $this->getOrCreateProduct($item_description, $category->id, $dosageForm->id);
+
+            // Create PurchaseOrderItem
+            $poi = PurchaseOrderItem::create([
+                'purchase_order_id' => $this->purchaseOrderId,
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'unit_cost' => $unit_cost,
+                'total_cost' => $total_cost,
+                'uom' => $uom
+            ]);
+
+            Log::info('PurchaseOrderItem created', [
+                'po_item_id' => $poi->id,
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'total_cost' => $total_cost
+            ]);
+
+            // Update progress
+            $currentProgress = Cache::get($this->importId, 0);
+            Cache::put($this->importId, $currentProgress + 1, 3600);
+
+            return $poi; // Return the created model instead of null
+
+        } catch (\Throwable $e) {
+            Log::error('PurchaseOrderItemsImport error', [
+                'row' => $row,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+            return null;
         }
+    }
+
+    protected function getOrCreateCategory($categoryName)
+    {
+        if (isset($this->categoryCache[$categoryName])) {
+            return $this->categoryCache[$categoryName];
+        }
+
+        $category = Category::firstOrCreate(
+            ['name' => $categoryName],
+            ['status' => 'active']
+        );
+
+        $this->categoryCache[$categoryName] = $category;
+        return $category;
+    }
+
+    protected function getOrCreateDosage($dosageName)
+    {
+        if (isset($this->dosageCache[$dosageName])) {
+            return $this->dosageCache[$dosageName];
+        }
+
+        $dosage = Dosage::firstOrCreate(
+            ['name' => $dosageName],
+            ['status' => 'active']
+        );
+
+        $this->dosageCache[$dosageName] = $dosage;
+        return $dosage;
+    }
+
+    protected function getOrCreateProduct($itemName, $categoryId, $dosageId)
+    {
+        if (isset($this->productCache[$itemName])) {
+            return $this->productCache[$itemName];
+        }
+
+        $product = Product::firstOrCreate(
+            ['name' => $itemName],
+            [
+                'status' => 'active',
+                'category_id' => $categoryId,
+                'dosage_id' => $dosageId
+            ]
+        );
+
+        $this->productCache[$itemName] = $product;
+        return $product;
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
+    }
+
+    public function batchSize(): int
+    {
+        return 50;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterImport::class => function (AfterImport $event) {
+                try {
+                    // Update purchase order total amount
+                    $totalAmount = PurchaseOrderItem::where('purchase_order_id', $this->purchaseOrderId)
+                        ->sum('total_cost');
+                    
+                    DB::table('purchase_orders')
+                        ->where('id', $this->purchaseOrderId)
+                        ->update(['total_amount' => $totalAmount]);
+
+                    Log::info('PurchaseOrderItems import completed', [
+                        'importId' => $this->importId,
+                        'purchaseOrderId' => $this->purchaseOrderId,
+                        'totalAmount' => $totalAmount
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to update purchase order total amount', [
+                        'error' => $e->getMessage(),
+                        'purchaseOrderId' => $this->purchaseOrderId
+                    ]);
+                }
+                
+                Cache::forget($this->importId);
+            },
+        ];
     }
 }

@@ -21,6 +21,8 @@ use App\Http\Resources\PurchaseOrderResource;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseOrderController extends Controller
 {
@@ -368,36 +370,57 @@ class PurchaseOrderController extends Controller
                 'file.mimes' => 'The file must be an Excel file (xlsx or xls)',
             ]);
 
-            DB::beginTransaction();
-            $import = new PurchaseOrderItemsImport($request->purchase_order_id);
-            Excel::import($import, $request->file('file'));
-
-            // Get the imported items
-            $items = PurchaseOrderItem::where('purchase_order_id', $request->purchase_order_id)
-                ->with('product')
-                ->get()
-                ->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'unit_cost' => $item->unit_cost,
-                        'total_cost' => $item->total_cost,
-                        'uom' => $item->uom,
-                        'product' => $item->product
-                    ];
-                });
+            // Generate unique import ID
+            $importId = 'po_items_' . time() . '_' . uniqid();
             
-            // Update purchase order total amount
-            $totalAmount = $items->sum('total_cost');
-            PurchaseOrder::where('id', $request->purchase_order_id)
-                ->update(['total_amount' => $totalAmount]);
+            // Initialize progress tracking
+            Cache::put($importId, 0, 3600); // 1 hour expiry
+            
+            Log::info('Queueing purchase order items import', [
+                'import_id' => $importId,
+                'purchase_order_id' => $request->purchase_order_id,
+                'original_name' => $request->file('file')->getClientOriginalName(),
+                'file_size' => $request->file('file')->getSize()
+            ]);
 
-            DB::commit();
-            return response()->json($items, 200);
+            // Queue the import job
+            Excel::queueImport(new PurchaseOrderItemsImport($request->purchase_order_id, $importId), $request->file('file'))
+                ->onQueue('imports');
+
+            return response()->json([
+                'message' => 'Purchase order items import started successfully',
+                'import_id' => $importId,
+                'status' => 'processing'
+            ], 200);
+
         } catch (\Throwable $th) {
-            DB::rollBack();
+            Log::error('Purchase order items import error', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString()
+            ]);
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    public function getImportProgress(Request $request)
+    {
+        try {
+            $importId = $request->input('import_id');
+            
+            if (!$importId) {
+                return response()->json(['error' => 'Import ID is required'], 400);
+            }
+
+            $progress = Cache::get($importId, 0);
+            
+            return response()->json([
+                'import_id' => $importId,
+                'progress' => $progress,
+                'status' => $progress > 0 ? 'processing' : 'pending'
+            ]);
+
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 
