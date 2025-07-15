@@ -232,8 +232,7 @@ class InventoryController extends Controller
             $import = new InventoryImport($importId);
             
             // Queue the import job
-            Excel::queueImport($import, $request->file('file'))
-                ->onQueue('imports');
+            Excel::queueImport($import, $request->file('file'))->onQueue('imports');
             
             return response()->json([
                 'message' => 'Inventory import started successfully',

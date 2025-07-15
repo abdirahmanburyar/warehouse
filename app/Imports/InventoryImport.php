@@ -20,7 +20,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
-use App\Events\InventoryUpdated;
+// use App\Events\InventoryUpdated;
 
 class InventoryImport implements 
     ToModel, 
@@ -121,6 +121,25 @@ class InventoryImport implements
                 }
             }
 
+            // First, ensure we have a unique Inventory record for this product
+            logger()->info('InventoryImport: Getting/creating inventory record', [
+                'productId' => $product->id
+            ]);
+            
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->id],
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 0, // Will be calculated from items
+                ]
+            );
+            
+            logger()->info('InventoryImport: Inventory record processed', [
+                'inventoryId' => $inventory->id,
+                'productId' => $inventory->product_id,
+                'wasCreated' => $inventory->wasRecentlyCreated
+            ]);
+
             // Check if inventory item already exists with same batch number and product
             logger()->info('InventoryImport: Checking for existing item', [
                 'productId' => $product->id,
@@ -154,6 +173,7 @@ class InventoryImport implements
             // Create new inventory item
             logger()->info('InventoryImport: Creating new inventory item', [
                 'productId' => $product->id,
+                'inventoryId' => $inventory->id,
                 'warehouseId' => $warehouseId,
                 'quantity' => $quantity,
                 'batchNumber' => $batchNo,
@@ -163,6 +183,7 @@ class InventoryImport implements
             ]);
             
             $inventoryItem = new InventoryItem([
+                'inventory_id' => $inventory->id,
                 'product_id' => $product->id,
                 'warehouse_id' => $warehouseId,
                 'quantity' => $quantity,
@@ -175,12 +196,13 @@ class InventoryImport implements
 
             logger()->info('InventoryImport: Inventory item created', [
                 'inventoryItemId' => $inventoryItem->id ?? 'not saved yet',
+                'inventoryId' => $inventoryItem->inventory_id,
                 'data' => $inventoryItem->toArray()
             ]);
 
             $this->importedCount++;
             Cache::increment($this->importId);
-            event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
+            // event(new InventoryUpdated($this->importId, Cache::get($this->importId)));
 
             return $inventoryItem;
 
@@ -310,7 +332,7 @@ class InventoryImport implements
                     'skipped' => $this->skippedCount,
                     'errors' => count($this->errors)
                 ]);
-                event(new InventoryUpdated($this->importId, 'completed'));
+                // event(new InventoryUpdated($this->importId, 'completed'));
             },
         ];
     }
