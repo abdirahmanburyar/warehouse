@@ -243,9 +243,7 @@ class InventoryController extends Controller
             
         } catch (\Throwable $th) {
             Log::error('Inventory import error: ' . $th->getMessage());
-            return response()->json([
-                'message' => 'Failed to start inventory import: ' . $th->getMessage()
-            ], 500);
+            return response()->json( 'Failed to start inventory import: ' . $th->getMessage(), 500);
         }
     }
 
