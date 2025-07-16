@@ -23,8 +23,8 @@ return new class extends Migration
             $table->foreignId('sub_location_id');
             $table->boolean('has_warranty')->default(false);
             $table->boolean('has_documents')->default(false);
-            $table->date('asset_warranty_start');
-            $table->date('asset_warranty_end');
+            $table->date('asset_warranty_start')->nullable();
+            $table->date('asset_warranty_end')->nullable();
             $table->foreignId('region_id');
             $table->string('sub_location')->nullable();
             $table->date('acquisition_date');
@@ -44,6 +44,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('assets');
+        Schema::enableForeignKeyConstraints();
     }
 };

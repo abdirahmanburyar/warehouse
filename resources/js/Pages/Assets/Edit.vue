@@ -316,17 +316,7 @@ const submit = async () => {
 
     processing.value = true;
 
-    // Prepare form data with proper null handling for foreign keys
-    const formData = {
-        ...form.value,
-        asset_category_id: form.value.category?.id || null,
-        asset_location_id: form.value.location?.id || null,
-        sub_location_id: form.value.sub_location?.id || null,
-        fund_source_id: form.value.fund_source?.id || null,
-        region_id: form.value.region?.id || null
-    };
-
-    await axios.put(route('assets.update', props.asset.id), formData)
+    await axios.put(route('assets.update', props.asset.id), form.value)
         .then((response) => {
             processing.value = false;
             Swal.fire({
