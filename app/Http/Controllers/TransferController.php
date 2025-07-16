@@ -1739,6 +1739,20 @@ class TransferController extends Controller
                                     ->first();
                                 if($inventoryItem){
                                     $inventoryItem->increment('quantity', $finalQuantity);
+                                    ReceivedQuantity::create([
+                                        'product_id' => $allocation->product_id,
+                                        'quantity' => $finalQuantity,
+                                        'received_by' => auth()->id(),
+                                        'received_at' => now(),
+                                        'warehouse_id' => $transfer->to_warehouse_id,
+                                        'transfer_id' => $transfer->id,
+                                        'expiry_date' => $allocation->expiry_date,
+                                        'uom' => $allocation->uom,
+                                        'barcode' => $allocation->barcode,
+                                        'batch_number' => $allocation->batch_number,
+                                        'unit_cost' => $allocation->unit_cost,
+                                        'total_cost' => $allocation->unit_cost * $finalQuantity,
+                                    ]);
                                 }else{
                                     $inventory->items()->create([
                                         'product_id' => $allocation->product_id,
