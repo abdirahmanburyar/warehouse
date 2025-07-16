@@ -390,7 +390,6 @@ class DashboardController extends Controller
 
             $charts[] = [
                 'id' => $chunkIndex + 1,
-                'title' => 'Chart ' . ($chunkIndex + 1),
                 'labels' => $labels,
                 'data' => $data,
                 'backgroundColors' => $backgroundColors,
@@ -438,7 +437,6 @@ class DashboardController extends Controller
     {
         return [
             'id' => 1,
-            'title' => 'Chart 1',
             'labels' => ['No Data Available'],
             'data' => [0],
             'backgroundColors' => ['rgba(156, 163, 175, 0.8)'],

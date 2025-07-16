@@ -242,11 +242,11 @@ const warehouseDataType = ref('beginning_balance');
 const warehouseChartData = ref([]);
 const chartCount = ref(0);
 
-// Computed property to group charts into rows of 2
+// Computed property to group charts into rows of 3
 const chartRows = computed(() => {
     const rows = [];
-    for (let i = 0; i < warehouseChartData.value.length; i += 2) {
-        rows.push(warehouseChartData.value.slice(i, i + 2));
+    for (let i = 0; i < warehouseChartData.value.length; i += 3) {
+        rows.push(warehouseChartData.value.slice(i, i + 3));
     }
     return rows;
 });
@@ -300,7 +300,6 @@ async function handleTracertItems() {
             const charts = response.data.chartData.charts;
             warehouseChartData.value = charts.map(chart => ({
                 id: chart.id,
-                title: chart.title,
                 labels: chart.labels || ['No Data'],
                 datasets: [{
                     label: getTypeLabel(warehouseDataType.value),
@@ -317,7 +316,6 @@ async function handleTracertItems() {
             chartError.value = response.data.message || 'No data available for the selected period';
             warehouseChartData.value = [{
                 id: 1,
-                title: 'Chart 1',
                 labels: ['No Data'],
                 datasets: [{
                     label: 'Quantity',
@@ -335,7 +333,6 @@ async function handleTracertItems() {
         // Set empty chart data on error
         warehouseChartData.value = [{
             id: 1,
-            title: 'Chart 1',
             labels: ['Error'],
             datasets: [{
                 label: 'Quantity',
@@ -839,11 +836,10 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                                         <Bar :data="warehouseChartData[0]" :options="issuedChartOptions" />
                                     </div>
                                     
-                                    <!-- Multiple Charts Grid - 2 charts per row -->
+                                    <!-- Multiple Charts Grid - 3 charts per row -->
                                     <div v-else class="space-y-6">
-                                        <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-                                                <h4 class="text-sm font-medium text-gray-700 mb-3 text-center border-b border-gray-100 pb-2">{{ chart.title }}</h4>
+                                        <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
                                                 <div class="h-64">
                                                     <Bar :data="chart" :options="issuedChartOptions" />
                                                 </div>
