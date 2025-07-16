@@ -989,19 +989,6 @@ const locationOptions = computed(() => {
     );
 });
 
-// subLocationOptions is now a ref, loaded dynamically
-const filteredSubLocations = computed(() => subLocationOptions.value);
-
-function onRegionChange(selected) {
-    locationFilter.value = null;
-    selectedSubLocations.value = [];
-    subLocationOptions.value = [];
-
-    // Clear sub-location options when region changes
-    if (!selected) {
-        subLocationOptions.value = [];
-    }
-}
 
 async function onLocationChange(selected) {
     selectedSubLocations.value = [];
@@ -1049,28 +1036,6 @@ async function transferAsset() {
         loading.value = false;
     }
 }
-
-// Computed property for filtered assets
-const filteredAssets = computed(() => {
-    return assets.value.filter((asset) => {
-        const regionMatch =
-            !regionFilter.value || asset.region_id === regionFilter.value.id;
-        const locationMatch =
-            !locationFilter.value ||
-            asset.asset_location_id === locationFilter.value.id;
-        const subLocationMatch =
-            !subLocationFilter.value ||
-            asset.sub_location_id === subLocationFilter.value.id;
-        const searchMatch =
-            !search.value ||
-            [asset.asset_tag, asset.serial_number, asset.item_description].some(
-                (field) =>
-                    field &&
-                    field.toLowerCase().includes(search.value.toLowerCase())
-            );
-        return regionMatch && locationMatch && subLocationMatch && searchMatch;
-    });
-});
 
 function getResults(page = 1) {
     props.filters.page = page;
