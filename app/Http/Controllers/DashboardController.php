@@ -308,18 +308,16 @@ class DashboardController extends Controller
     }
 
     /**
-     * Process data for chart visualization
+     * Process data for chart visualization - returns multiple charts with 4 items each
      */
     private function processChartData($items, $type)
     {
         if ($items->isEmpty()) {
-            return $this->getEmptyChartData();
+            return [
+                'charts' => [$this->getEmptyChartData()],
+                'totalCharts' => 1
+            ];
         }
-
-        $labels = [];
-        $data = [];
-        $backgroundColors = [];
-        $borderColors = [];
 
         // Color palette for charts
         $colors = [
@@ -335,27 +333,46 @@ class DashboardController extends Controller
             ['bg' => 'rgba(251, 191, 36, 0.8)', 'border' => 'rgb(251, 191, 36)'] // Amber
         ];
 
-        foreach ($items as $index => $item) {
-            // Truncate long product names for better chart display
-            $productName = strlen($item->product->name) > 20 
-                ? substr($item->product->name, 0, 20) . '...'
-                : $item->product->name;
+        // Split items into chunks of 4
+        $itemChunks = $items->chunk(4);
+        $charts = [];
+        
+        foreach ($itemChunks as $chunkIndex => $chunk) {
+            $labels = [];
+            $data = [];
+            $backgroundColors = [];
+            $borderColors = [];
+
+            foreach ($chunk as $index => $item) {
+                // Truncate long product names for better chart display
+                $productName = strlen($item->product->name) > 20 
+                    ? substr($item->product->name, 0, 20) . '...'
+                    : $item->product->name;
+                    
+                $labels[] = $productName;
+                $data[] = (float) $item->{$type};
                 
-            $labels[] = $productName;
-            $data[] = (float) $item->{$type};
-            
-            $colorIndex = $index % count($colors);
-            $backgroundColors[] = $colors[$colorIndex]['bg'];
-            $borderColors[] = $colors[$colorIndex]['border'];
+                $colorIndex = $index % count($colors);
+                $backgroundColors[] = $colors[$colorIndex]['bg'];
+                $borderColors[] = $colors[$colorIndex]['border'];
+            }
+
+            $charts[] = [
+                'id' => $chunkIndex + 1,
+                'title' => 'Chart ' . ($chunkIndex + 1),
+                'labels' => $labels,
+                'data' => $data,
+                'backgroundColors' => $backgroundColors,
+                'borderColors' => $borderColors,
+                'total' => array_sum($data),
+                'count' => count($data)
+            ];
         }
 
         return [
-            'labels' => $labels,
-            'data' => $data,
-            'backgroundColors' => $backgroundColors,
-            'borderColors' => $borderColors,
-            'total' => array_sum($data),
-            'count' => count($data)
+            'charts' => $charts,
+            'totalCharts' => count($charts),
+            'totalItems' => $items->count()
         ];
     }
 
@@ -389,6 +406,8 @@ class DashboardController extends Controller
     private function getEmptyChartData()
     {
         return [
+            'id' => 1,
+            'title' => 'Chart 1',
             'labels' => ['No Data Available'],
             'data' => [0],
             'backgroundColors' => ['rgba(156, 163, 175, 0.8)'],

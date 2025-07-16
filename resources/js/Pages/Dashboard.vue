@@ -239,16 +239,8 @@ const warehouseDataType = ref('beginning_balance');
 // Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
 
 // Chart data state
-const warehouseChartData = ref({
-    labels: [],
-    datasets: [{
-        label: 'Quantity',
-        data: [],
-        backgroundColor: [],
-        borderColor: [],
-        borderWidth: 2
-    }]
-});
+const warehouseChartData = ref([]);
+const chartCount = ref(0);
 
 const isLoadingChart = ref(false);
 const chartError = ref(null);
@@ -294,24 +286,29 @@ async function handleTracertItems() {
         const response = await axios.post(route('dashboard.warehouse.tracert-items'), query);
         console.log('API Response:', response.data);
         
-        if (response.data.success && response.data.chartData) {
-            // Handle successful response
-            const chartData = response.data.chartData;
-            warehouseChartData.value = {
-                labels: chartData.labels || ['No Data'],
+        if (response.data.success && response.data.chartData && response.data.chartData.charts) {
+            // Handle successful response with multiple charts
+            const charts = response.data.chartData.charts;
+            warehouseChartData.value = charts.map(chart => ({
+                id: chart.id,
+                title: chart.title,
+                labels: chart.labels || ['No Data'],
                 datasets: [{
                     label: getTypeLabel(warehouseDataType.value),
-                    data: chartData.data || [0],
-                    backgroundColor: chartData.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
-                    borderColor: chartData.borderColors || ['rgba(156, 163, 175, 1)'],
+                    data: chart.data || [0],
+                    backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
+                    borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
                     borderWidth: 2
                 }]
-            };
+            }));
+            chartCount.value = response.data.chartData.totalCharts;
             chartError.value = null;
         } else {
             // Handle API success but no data
             chartError.value = response.data.message || 'No data available for the selected period';
-            warehouseChartData.value = {
+            warehouseChartData.value = [{
+                id: 1,
+                title: 'Chart 1',
                 labels: ['No Data'],
                 datasets: [{
                     label: 'Quantity',
@@ -320,13 +317,16 @@ async function handleTracertItems() {
                     borderColor: ['rgba(156, 163, 175, 1)'],
                     borderWidth: 2
                 }]
-            };
+            }];
+            chartCount.value = 1;
         }
     } catch (error) {
         console.error('Error fetching tracert items:', error);
         chartError.value = error.response?.data?.message || 'Network error occurred while loading data';
         // Set empty chart data on error
-        warehouseChartData.value = {
+        warehouseChartData.value = [{
+            id: 1,
+            title: 'Chart 1',
             labels: ['Error'],
             datasets: [{
                 label: 'Quantity',
@@ -335,7 +335,8 @@ async function handleTracertItems() {
                 borderColor: ['rgba(239, 68, 68, 1)'],
                 borderWidth: 2
             }]
-        };
+        }];
+        chartCount.value = 1;
     } finally {
         isLoadingChart.value = false;
     }
@@ -803,7 +804,7 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                             </div>
                             
                             <!-- Chart Container -->
-                            <div class="h-80 relative">
+                            <div class="relative" :class="chartCount > 1 ? 'min-h-96' : 'h-80'">
                                 <!-- Loading State -->
                                 <div v-if="isLoadingChart" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
                                     <div class="flex items-center space-x-2">
@@ -822,9 +823,28 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                                     </div>
                                 </div>
                                 
-                                <!-- Chart -->
+                                <!-- Charts Grid -->
                                 <div v-else class="h-full">
-                                    <Bar :data="warehouseChartData" :options="issuedChartOptions" />
+                                    <div v-if="chartCount > 1" class="mb-4 text-sm text-gray-600 text-center">
+                                        Showing {{ chartCount }} charts with up to 4 items each
+                                    </div>
+                                    
+                                    <!-- Single Chart -->
+                                    <div v-if="chartCount === 1" class="h-full">
+                                        <Bar :data="warehouseChartData[0]" :options="issuedChartOptions" />
+                                    </div>
+                                    
+                                    <!-- Multiple Charts Grid -->
+                                    <div v-else class="space-y-4">
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            <div v-for="chart in warehouseChartData" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                                                <h4 class="text-sm font-medium text-gray-700 mb-3 text-center border-b border-gray-100 pb-2">{{ chart.title }}</h4>
+                                                <div class="h-64">
+                                                    <Bar :data="chart" :options="issuedChartOptions" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
