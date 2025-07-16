@@ -43,6 +43,29 @@ const toast = useToast();
 // Helper function to find item by id in array
 const findById = (array, id) => (Array.isArray(array) ? array.find(item => item.id === id) : '');
 
+// Helper function to format date for HTML5 date input (YYYY-MM-DD)
+const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    // Extract just the date part (YYYY-MM-DD) from datetime string
+    return dateString.split(' ')[0];
+};
+
+// Warranty date validation function
+const validateWarrantyDates = () => {
+    warrantyDateError.value = "";
+    
+    if (form.value.asset_warranty_start && form.value.asset_warranty_end) {
+        const startDate = new Date(form.value.asset_warranty_start);
+        const endDate = new Date(form.value.asset_warranty_end);
+        
+        if (endDate <= startDate) {
+            warrantyDateError.value = "End date must be after start date";
+            return false;
+        }
+    }
+    return true;
+};
+
 function handleFundSourceSelect(selected) {
     if (!selected) {
         form.value.fund_source_id = '';
@@ -65,7 +88,13 @@ function handleRegionSelect(selected) {
 
 const warrantyDateError = ref("");
 
-const form = ref({...props.asset} || {});
+// Initialize form with properly formatted dates
+const form = ref({
+    ...props.asset,
+    acquisition_date: formatDateForInput(props.asset?.acquisition_date),
+    asset_warranty_start: formatDateForInput(props.asset?.asset_warranty_start),
+    asset_warranty_end: formatDateForInput(props.asset?.asset_warranty_end)
+} || {});
 
 const subLocations = ref([]);
 const locationOptions = ref([]);
@@ -280,6 +309,11 @@ const createCategory = async () => {
 };
 
 const submit = async () => {
+    // Validate warranty dates if warranty is enabled
+    if (form.value.has_warranty && !validateWarrantyDates()) {
+        return;
+    }
+
     processing.value = true;
 
     await axios.put(route('assets.update', props.asset.id), form.value)
@@ -287,7 +321,7 @@ const submit = async () => {
             processing.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: 'Asset created successfully',
+                text: 'Asset updated successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {
@@ -298,7 +332,7 @@ const submit = async () => {
         .catch((error) => {
             processing.value = false;
             console.log(error.response.data);
-            toast.error(error.response?.data || 'Error creating asset');
+            toast.error(error.response?.data || 'Error updating asset');
         })
 };
 </script>
@@ -326,8 +360,8 @@ const submit = async () => {
                         <div>
                             <InputLabel for="asset_category" value="Asset Category" />
                             <div class="w-full">
-                                <Multiselect v-model="form.category" :value="props.categories"
-                                    :options="props.categories" :searchable="true" :close-on-select="true"
+                                <Multiselect v-model="form.category"
+                                    :options="categoryOptions" :searchable="true" :close-on-select="true"
                                     :show-labels="false" :allow-empty="true" placeholder="Select Category" track-by="id"
                                     label="name" @select="handleCategorySelect">
                                     <template v-slot:option="{ option }">
@@ -357,7 +391,7 @@ const submit = async () => {
 
                         <div>
                             <InputLabel for="acquisition_date" value="Acquisition Date" />
-                            <TextInput id="acquisition_date" type="date" class="mt-1 block w-full"
+                            <input id="acquisition_date" type="date" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 v-model="form.acquisition_date" required />
                         </div>
                     </div>
@@ -462,12 +496,14 @@ const submit = async () => {
                             <div>
                                 <InputLabel for="asset_warranty_start" value="Start Date" />
                                 <input type="date" v-model="form.asset_warranty_start" id="asset_warranty_start"
-                                    class="mt-1 w-full" @change="validateWarrantyDates && validateWarrantyDates()" />
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" 
+                                    @change="validateWarrantyDates" />
                             </div>
                             <div>
                                 <InputLabel for="asset_warranty_end" value="End Date" />
                                 <input type="date" v-model="form.asset_warranty_end" id="asset_warranty_end"
-                                    class="mt-1 w-full" @change="validateWarrantyDates && validateWarrantyDates()" />
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" 
+                                    @change="validateWarrantyDates" />
                                 <div v-if="warrantyDateError" class="text-red-500 text-sm mt-1">
                                     {{ warrantyDateError }}
                                 </div>

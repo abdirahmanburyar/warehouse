@@ -35,13 +35,7 @@ class Asset extends Model
         'submitted_by'
     ];
 
-    protected $casts = [
-        'submitted_for_approval' => 'boolean',
-        'submitted_at' => 'datetime',
-        'acquisition_date' => 'date',
-        'asset_warranty_start' => 'date',
-        'asset_warranty_end' => 'date',
-    ];
+
 
     public function region(){
         return $this->belongsTo(Region::class);
