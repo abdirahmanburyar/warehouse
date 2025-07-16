@@ -3,7 +3,7 @@
         img="/assets/images/asset-header.png">
         <div class="space-y-6">
             <!-- Header Section with Stats -->
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="bg-white shadow-xl rounded-2xl">
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 sm:p-8">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center space-x-4">
@@ -139,8 +139,8 @@
             </div>
 
             <!-- Filter and Search Section -->
-            <div class="bg-white shadow-lg rounded-xl overflow-hidden">
-                <div class="p-6">
+            <div class="bg-white rounded-xl">
+                <div class="p-3">
                     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -180,7 +180,7 @@
                             </button>
                         </div>
 
-                        <div class="flex items-center space-x-4">
+                        <div class="flex justify-emd">
                             <div class="flex items-center space-x-2">
                                 <select v-model="per_page" @change="props.filters.page = 1"
                                     class="w-[200px] border border-gray-300 rounded-md py-1 px-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -196,7 +196,7 @@
             </div>
 
             <!-- Assets Table -->
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="bg-white rounded-2xl">
                 <div v-if="loading" class="flex justify-center items-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
@@ -563,7 +563,7 @@
                         leave-from="opacity-100 translate-y-0 sm:scale-100"
                         leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                         <div
-                            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="sm:flex sm:items-start">
                                     <div
@@ -634,7 +634,7 @@
                         leave-from="opacity-100 translate-y-0 sm:scale-100"
                         leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                         <div
-                            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="sm:flex sm:items-start">
                                     <div
@@ -722,7 +722,7 @@
                         leave-from="opacity-100 translate-y-0 sm:scale-100"
                         leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                         <div
-                            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="sm:flex sm:items-start">
                                     <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
