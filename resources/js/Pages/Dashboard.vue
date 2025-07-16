@@ -242,6 +242,15 @@ const warehouseDataType = ref('beginning_balance');
 const warehouseChartData = ref([]);
 const chartCount = ref(0);
 
+// Computed property to group charts into rows of 2
+const chartRows = computed(() => {
+    const rows = [];
+    for (let i = 0; i < warehouseChartData.value.length; i += 2) {
+        rows.push(warehouseChartData.value.slice(i, i + 2));
+    }
+    return rows;
+});
+
 const isLoadingChart = ref(false);
 const chartError = ref(null);
 
@@ -825,19 +834,15 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                                 
                                 <!-- Charts Grid -->
                                 <div v-else class="h-full">
-                                    <div v-if="chartCount > 1" class="mb-4 text-sm text-gray-600 text-center">
-                                        Showing {{ chartCount }} charts with up to 4 items each
-                                    </div>
-                                    
                                     <!-- Single Chart -->
                                     <div v-if="chartCount === 1" class="h-full">
                                         <Bar :data="warehouseChartData[0]" :options="issuedChartOptions" />
                                     </div>
                                     
-                                    <!-- Multiple Charts Grid -->
-                                    <div v-else class="space-y-4">
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div v-for="chart in warehouseChartData" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                                    <!-- Multiple Charts Grid - 2 charts per row -->
+                                    <div v-else class="space-y-6">
+                                        <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                                                 <h4 class="text-sm font-medium text-gray-700 mb-3 text-center border-b border-gray-100 pb-2">{{ chart.title }}</h4>
                                                 <div class="h-64">
                                                     <Bar :data="chart" :options="issuedChartOptions" />

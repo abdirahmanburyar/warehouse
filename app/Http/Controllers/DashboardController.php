@@ -245,32 +245,63 @@ class DashboardController extends Controller
             }
             
             // Get the inventory report for the specified month
-            $inventoryReport = InventoryReport::where('month_year', $month)
-                ->with(['items' => function($query) use ($type) {
-                    $query->with('product:id,name,productID,tracert_type')
-                        ->whereHas('product', function($q) {
-                            // Since tracert_type is JSON, we need to use JSON_CONTAINS or check if it contains 'Warehouse'
-                            $q->whereRaw('JSON_CONTAINS(tracert_type, ?)', ['"Warehouse"'])
-                              ->orWhere('tracert_type', 'like', '%Warehouse%');
-                        })
-                        ->where($type, '>', 0) // Only include items with values > 0 for the selected type
-                        ->orderBy($type, 'desc')
-                        ->limit(10); // Top 10 items for better chart readability
-                }])
-                ->first();
+            $inventoryReport = InventoryReport::where('month_year', $month)->first();
+            
+            // Get all warehouse products
+            $warehouseProducts = Product::whereRaw('JSON_CONTAINS(tracert_type, ?)', ['"Warehouse"'])
+                ->orWhere('tracert_type', 'like', '%Warehouse%')
+                ->select('id', 'name', 'productID', 'tracert_type')
+                ->get();
 
-            if (!$inventoryReport) {
+            if ($warehouseProducts->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => "No inventory report found for {$month}",
+                    'message' => "No warehouse products found",
+                    'chartData' => $this->getEmptyChartData(),
+                    'summary' => $this->getEmptySummary()
+                ], 404);
+            }
+
+            // Create a collection to hold the items with their inventory data
+            $items = collect();
+            
+            foreach ($warehouseProducts as $product) {
+                // Find the inventory report item for this product
+                $inventoryItem = null;
+                if ($inventoryReport) {
+                    $inventoryItem = $inventoryReport->items()
+                        ->where('product_id', $product->id)
+                        ->first();
+                }
+                
+                // Create a mock item with the product data and inventory values (or zeros if no data)
+                $mockItem = (object) [
+                    'id' => $inventoryItem ? $inventoryItem->id : 'mock_' . $product->id,
+                    'product' => $product,
+                    'beginning_balance' => $inventoryItem ? $inventoryItem->beginning_balance : 0,
+                    'received_quantity' => $inventoryItem ? $inventoryItem->received_quantity : 0,
+                    'issued_quantity' => $inventoryItem ? $inventoryItem->issued_quantity : 0,
+                    'closing_balance' => $inventoryItem ? $inventoryItem->closing_balance : 0,
+                ];
+                
+                $items->push($mockItem);
+            }
+            
+            // Sort by the selected type in descending order
+            $items = $items->sortByDesc($type);
+
+            if ($items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No warehouse products found",
                     'chartData' => $this->getEmptyChartData(),
                     'summary' => $this->getEmptySummary()
                 ], 404);
             }
 
             // Process data for charts
-            $chartData = $this->processChartData($inventoryReport->items, $type);
-            $summary = $this->processSummaryData($inventoryReport->items, $type);
+            $chartData = $this->processChartData($items, $type);
+            $summary = $this->processSummaryData($items, $type);
 
             return response()->json([
                 'success' => true,
@@ -278,7 +309,7 @@ class DashboardController extends Controller
                 'type' => $type,
                 'chartData' => $chartData,
                 'summary' => $summary,
-                'items' => $inventoryReport->items->map(function ($item) use ($type) {
+                'items' => $items->map(function ($item) use ($type) {
                     return [
                         'id' => $item->id,
                         'product_name' => $item->product->name,
