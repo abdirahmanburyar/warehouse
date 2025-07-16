@@ -82,7 +82,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // pending -> rejected (branch) (SENDER ACTION)
@@ -94,7 +94,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // reviewed -> approved (SENDER ACTION)
@@ -106,7 +106,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // reviewed -> rejected (branch) (SENDER ACTION)
@@ -118,7 +118,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // approved -> in_process (SENDER ACTION)
@@ -130,7 +130,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
 
             // in_process -> dispatched (SENDER ACTION)
@@ -142,7 +142,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // dispatched -> delivered (RECEIVER ACTION)
@@ -154,7 +154,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // delivered -> received (RECEIVER ACTION)
@@ -166,7 +166,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             DB::commit();
@@ -1064,7 +1064,7 @@ class TransferController extends Controller
                 $transferItem->quantity_to_release = $newQuantityToRelease;
                 $transferItem->save();
 
-                event(new InventoryUpdated());
+               // event(new InventoryUpdated());
 
                 DB::commit();
                 return response()->json('Quantity to release updated successfully', 200);
@@ -1144,7 +1144,7 @@ class TransferController extends Controller
                 'total_quantity' => $totalQuantity,
             ]);
 
-            // event(new \App\Events\InventoryUpdated($transfer->from_facility_id));
+            //// event(new \App\Events\InventoryUpdated($transfer->from_facility_id));
 
             DB::commit();
             return response()->json('Back orders saved successfully', 200);
@@ -1314,7 +1314,7 @@ class TransferController extends Controller
                 $transferItem->save();
 
                 // Dispatch inventory updated event
-                event(new InventoryUpdated($sourceId));
+               // event(new InventoryUpdated($sourceId));
 
                 DB::commit();
                 return response()->json('Allocation quantity decreased successfully', 200);
@@ -1379,7 +1379,7 @@ class TransferController extends Controller
                 $transferItem->save();
 
                 // Dispatch inventory updated event
-                event(new InventoryUpdated($sourceId));
+               // event(new InventoryUpdated($sourceId));
 
                 DB::commit();
                 return response()->json('Allocation quantity increased successfully', 200);
@@ -1469,7 +1469,7 @@ class TransferController extends Controller
             $transferItem->save();
 
             // Dispatch inventory updated event
-            event(new InventoryUpdated($transfer->from_warehouse_id ?? $transfer->from_facility_id));
+           // event(new InventoryUpdated($transfer->from_warehouse_id ?? $transfer->from_facility_id));
 
             return response()->json('Allocation received quantity updated successfully', 200);
         } catch (\Throwable $th) {
@@ -1840,7 +1840,7 @@ class TransferController extends Controller
             $transfer->save();
 
             // Dispatch event for real-time updates
-            // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, $user->id));
+            //// event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, $user->id));
 
             DB::commit();
             return response()->json('Transfer status updated successfully', 200);
@@ -1971,7 +1971,7 @@ class TransferController extends Controller
                 'action' => 'received',
                 'source' => 'backorder'
             ];
-            event(new \App\Events\InventoryUpdated($inventoryData));
+           // event(new \App\Events\InventoryUpdated($inventoryData));
             return response()->json([
                 'message' => 'Backorder received successfully'
             ], 200);
