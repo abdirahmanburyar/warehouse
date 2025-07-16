@@ -21,7 +21,7 @@ class GenerateInventoryReport extends Command
      *
      * @var string
      */
-    protected $signature = 'inventory:generate-report {month? : The month to generate report for (YYYY-MM format)}';
+    protected $signature = 'inventory:generate-report {month? : The month to generate report for (YYYY-MM format)} {--force : Force regeneration of existing reports}';
 
     /**
      * The console command description.
@@ -45,11 +45,21 @@ class GenerateInventoryReport extends Command
                 : now()->startOfMonth();
 
             $monthYear = $targetMonth->format('Y-m');
+            $force = $this->option('force');
 
             // Check if report already exists
-            if (InventoryReport::where('month_year', $monthYear)->exists()) {
-                $this->error("Report for {$monthYear} already exists!");
+            $existingReport = InventoryReport::where('month_year', $monthYear)->first();
+            
+            if ($existingReport && !$force) {
+                $this->error("Report for {$monthYear} already exists! Use --force to regenerate.");
                 return 1;
+            }
+
+            // Delete existing report if force is used
+            if ($existingReport && $force) {
+                $this->info("Force mode: Deleting existing report for {$monthYear}");
+                $existingReport->items()->delete();
+                $existingReport->delete();
             }
 
             // Create the report
@@ -165,12 +175,22 @@ class GenerateInventoryReport extends Command
 
         $issuedQuantity = $issuedItem ? $issuedItem->quantity : 0;
 
-        // Debug information
+        // Enhanced debug information
         $this->info("\nDEBUG - Issued Quantity Calculation:");
         $this->info("Target Month: {$monthYear}");
         $this->info("Product ID: {$product->id}");
+        $this->info("Product Name: {$product->name}");
         $this->info("Issue Report ID: {$issueReport->id}");
+        $this->info("Issue Report Month: {$issueReport->month_year}");
+        $this->info("Issued Item Found: " . ($issuedItem ? 'YES' : 'NO'));
         $this->info("Issued Quantity: {$issuedQuantity}");
+        
+        // Additional debugging - check all items in the report
+        $allItems = IssueQuantityItem::where('parent_id', $issueReport->id)->get();
+        $this->info("Total items in report: {$allItems->count()}");
+        foreach ($allItems as $item) {
+            $this->info("  - Product ID: {$item->product_id}, Quantity: {$item->quantity}");
+        }
 
         return $issuedQuantity;
     }
@@ -261,7 +281,6 @@ class GenerateInventoryReport extends Command
         $data = [
             'inventory_report_id' => $report->id,
             'product_id' => $product->id,
-            'uom' => 'N/A', // Default UOM since we're not using inventory records
             'beginning_balance' => $beginningBalance,
             'received_quantity' => $receivedQuantity,
             'issued_quantity' => $issuedQuantity,
@@ -275,10 +294,21 @@ class GenerateInventoryReport extends Command
             'quantity_in_pipeline' => 0 // TODO: Implement pipeline calculation
         ];
 
-        // Save the record and show summary
-        $reportItem = InventoryReportItem::create($data);
+        // Debug the data being saved
+        $this->info("\nDEBUG - Data being saved:");
+        $this->info("Product: {$product->name} (ID: {$product->id})");
+        $this->info("Data: " . json_encode($data));
         
-        $this->info("\nSaved: {$product->name} - Closing Balance: {$closingBalance}");
+        try {
+            // Save the record and show summary
+            $reportItem = InventoryReportItem::create($data);
+            $this->info("✅ Successfully saved with ID: {$reportItem->id}");
+        } catch (\Exception $e) {
+            $this->error("❌ Failed to save: " . $e->getMessage());
+            $this->error("Data: " . json_encode($data));
+        }
+        
+        $this->info("Saved: {$product->name} - Closing Balance: {$closingBalance}");
         $bar->advance();
     }
 

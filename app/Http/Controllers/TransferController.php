@@ -82,7 +82,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // pending -> rejected (branch) (SENDER ACTION)
@@ -94,7 +94,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // reviewed -> approved (SENDER ACTION)
@@ -106,7 +106,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // reviewed -> rejected (branch) (SENDER ACTION)
@@ -118,7 +118,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // approved -> in_process (SENDER ACTION)
@@ -130,7 +130,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
 
             // in_process -> dispatched (SENDER ACTION)
@@ -142,7 +142,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // dispatched -> delivered (RECEIVER ACTION)
@@ -154,7 +154,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             // delivered -> received (RECEIVER ACTION)
@@ -166,7 +166,7 @@ class TransferController extends Controller
                 ]);
                 
                 // Dispatch event for status change
-                event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
+                // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, auth()->id()));
             }
             
             DB::commit();
@@ -1752,6 +1752,20 @@ class TransferController extends Controller
                                         'unit_cost' => $allocation->unit_cost,
                                         'total_cost' => $allocation->unit_cost * $finalQuantity
                                     ]);
+                                    ReceivedQuantity::create([
+                                        'product_id' => $allocation->product_id,
+                                        'quantity' => $finalQuantity,
+                                        'received_by' => auth()->id(),
+                                        'received_at' => now(),
+                                        'warehouse_id' => $transfer->to_warehouse_id,
+                                        'transfer_id' => $transfer->id,
+                                        'expiry_date' => $allocation->expiry_date,
+                                        'uom' => $allocation->uom,
+                                        'barcode' => $allocation->barcode,
+                                        'batch_number' => $allocation->batch_number,
+                                        'unit_cost' => $allocation->unit_cost,
+                                        'total_cost' => $allocation->unit_cost * $finalQuantity,
+                                    ]);
                                 }
                                 
                             }else{
@@ -1769,6 +1783,20 @@ class TransferController extends Controller
                                     'uom' => $allocation->uom,
                                     'unit_cost' => $allocation->unit_cost,
                                     'total_cost' => $allocation->unit_cost * $finalQuantity
+                                ]);
+                                ReceivedQuantity::create([
+                                    'product_id' => $allocation->product_id,
+                                    'quantity' => $finalQuantity,
+                                    'received_by' => auth()->id(),
+                                    'received_at' => now(),
+                                    'warehouse_id' => $transfer->to_warehouse_id,
+                                    'transfer_id' => $transfer->id,
+                                    'expiry_date' => $allocation->expiry_date,
+                                    'uom' => $allocation->uom,
+                                    'barcode' => $allocation->barcode,
+                                    'batch_number' => $allocation->batch_number,
+                                    'unit_cost' => $allocation->unit_cost,
+                                    'total_cost' => $allocation->unit_cost * $finalQuantity,
                                 ]);
                             }
                         }
@@ -1798,7 +1826,7 @@ class TransferController extends Controller
             $transfer->save();
 
             // Dispatch event for real-time updates
-            event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, $user->id));
+            // event(new TransferStatusChanged($transfer, $oldStatus, $newStatus, $user->id));
 
             DB::commit();
             return response()->json('Transfer status updated successfully', 200);
