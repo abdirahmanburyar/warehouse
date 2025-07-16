@@ -6,6 +6,10 @@ use App\Models\InventoryReport;
 use App\Models\InventoryReportItem;
 use App\Models\Product;
 use App\Models\Inventory;
+use App\Models\IssueQuantityReport;
+use App\Models\IssueQuantityItem;
+use App\Models\MonthlyQuantityReceived;
+use App\Models\ReceivedQuantityItem;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -62,64 +66,15 @@ class GenerateInventoryReport extends Command
             $bar->start();
 
             foreach ($products as $product) {
-                // Get batch number from inventory
-                // Get the first inventory record for this product
-                $inventory = $product->inventories()->first();
-                $batchNumber = $inventory->batch_number ?? null;
-
-                // Calculate quantities for the month
-                $beginningBalance = $this->calculateBeginningBalance($product, $targetMonth, $batchNumber);
-                $receivedQuantity = $this->calculateReceivedQuantity($product, $targetMonth, $batchNumber);
-                $issuedQuantity = $this->calculateIssuedQuantity($product, $targetMonth, $batchNumber);
-                $otherQuantityOut = $this->calculateOtherQuantityOut($product, $targetMonth, $batchNumber);
-                $adjustments = $this->calculateAdjustments($product, $targetMonth, $batchNumber);
-                
-                // Calculate closing balance
-                $closingBalance = $beginningBalance 
-                    + $receivedQuantity 
-                    - $issuedQuantity 
-                    - $otherQuantityOut 
-                    + $adjustments['positive'] 
-                    - $adjustments['negative'];
-
-                // Calculate average monthly consumption (last 3 months)
-                $avgConsumption = $this->calculateAverageMonthlyConsumption($product, $targetMonth);
-                
-                // Calculate months of stock
-                $monthsOfStock = $avgConsumption > 0 ? $closingBalance / $avgConsumption : 0;
-
-                // Create report item
-                // InventoryReportItem::create([
-                $data = [
-                    'inventory_report_id' => $report->id,
-                    'product_id' => $product->id,
-                    'uom' => $inventory->uom ?? 'N/A',
-                    'batch_number' => $inventory->batch_number ?? null,
-                    'expiry_date' => $inventory->expiry_date ?? null,
-                    'beginning_balance' => $beginningBalance,
-                    'received_quantity' => $receivedQuantity,
-                    'issued_quantity' => $issuedQuantity,
-                    'other_quantity_out' => $otherQuantityOut,
-                    'positive_adjustment' => $adjustments['positive'],
-                    'negative_adjustment' => $adjustments['negative'],
-                    'closing_balance' => $closingBalance,
-                    'total_closing_balance' => $closingBalance * ($inventory->unit_cost ?? 0),
-                    'average_monthly_consumption' => $avgConsumption,
-                    'months_of_stock' => $monthsOfStock,
-                    'quantity_in_pipeline' => 0, // TODO: Implement pipeline calculation
-                    'unit_cost' => $inventory->unit_cost ?? 0,
-                    'total_cost' => $closingBalance * ($inventory->unit_cost ?? 0)
-                ];
-
-                // Save the record and show summary
-                $reportItem = InventoryReportItem::create($data);
-                
-                $this->info("\nSaved: {$product->name} (Batch: {$data['batch_number']}) - Closing Balance: {$data['closing_balance']}");
-                $bar->advance();
+                // Process each product at product_id level (no batches)
+                $this->processProductInventory($product, $targetMonth, $report, $bar);
             }
 
             $bar->finish();
             $this->newLine();
+
+            // Show summary of all quantities for each product
+            $this->showQuantitySummary($report->id, $monthYear);
 
             DB::commit();
             $this->info("\nInventory report for {$monthYear} generated successfully!");
@@ -132,7 +87,7 @@ class GenerateInventoryReport extends Command
         }
     }
 
-    private function calculateBeginningBalance($product, $targetMonth, $batchNumber = null)
+    private function calculateBeginningBalance($product, $targetMonth)
     {
         // Get the previous month's report
         $previousMonth = (clone $targetMonth)->subMonth();
@@ -149,7 +104,6 @@ class GenerateInventoryReport extends Command
         if ($previousReport) {
             $previousBalance = InventoryReportItem::where('inventory_report_id', $previousReport->id)
                 ->where('product_id', $product->id)
-                ->where('batch_number', $batchNumber)
                 ->value('closing_balance');
 
             if ($previousBalance !== null) {
@@ -163,49 +117,71 @@ class GenerateInventoryReport extends Command
         return 0;
     }
 
-    private function calculateReceivedQuantity($product, $targetMonth, $batchNumber = null)
+    private function calculateReceivedQuantity($product, $targetMonth)
     {
-        // TODO: Implement received quantity calculation
-        // Sum all received quantities for the month from purchase orders or transfers
-        return 0;
+        // Get the monthly quantity received report for the target month
+        $monthYear = $targetMonth->format('Y-m');
+        $receivedReport = MonthlyQuantityReceived::where('month_year', $monthYear)->first();
+
+        if (!$receivedReport) {
+            $this->info("\nDEBUG - Received Quantity Calculation:");
+            $this->info("No monthly quantity received report found for month: {$monthYear}");
+            return 0;
+        }
+
+        // Get the received quantity for this product from the report
+        $receivedItem = ReceivedQuantityItem::where('parent_id', $receivedReport->id)
+            ->where('product_id', $product->id)
+            ->first();
+
+        $receivedQuantity = $receivedItem ? $receivedItem->quantity : 0;
+
+        // Debug information
+        $this->info("\nDEBUG - Received Quantity Calculation:");
+        $this->info("Target Month: {$monthYear}");
+        $this->info("Product ID: {$product->id}");
+        $this->info("Received Report ID: {$receivedReport->id}");
+        $this->info("Received Quantity: {$receivedQuantity}");
+
+        return $receivedQuantity;
     }
 
-    private function calculateIssuedQuantity($product, $targetMonth, $batchNumber = null)
+    private function calculateIssuedQuantity($product, $targetMonth)
     {
-        // Sum all issued quantities for the target month from issue_quantity_items table
-        $query = DB::table('issue_quantity_items')
+        // Get the issue quantity report for the target month
+        $monthYear = $targetMonth->format('Y-m');
+        $issueReport = IssueQuantityReport::where('month_year', $monthYear)->first();
+
+        if (!$issueReport) {
+            $this->info("\nDEBUG - Issued Quantity Calculation:");
+            $this->info("No issue quantity report found for month: {$monthYear}");
+            return 0;
+        }
+
+        // Get the issued quantity for this product from the report
+        $issuedItem = IssueQuantityItem::where('parent_id', $issueReport->id)
             ->where('product_id', $product->id)
-            ->when($batchNumber, function($query) use ($batchNumber) {
-                return $query->where('batch_number', $batchNumber);
-            })
-            ->whereYear('issued_date', $targetMonth->year)
-            ->whereMonth('issued_date', $targetMonth->month);
+            ->first();
+
+        $issuedQuantity = $issuedItem ? $issuedItem->quantity : 0;
 
         // Debug information
         $this->info("\nDEBUG - Issued Quantity Calculation:");
-        $this->info("Target Month: {$targetMonth->format('Y-m')}");
+        $this->info("Target Month: {$monthYear}");
         $this->info("Product ID: {$product->id}");
-        $this->info("Batch Number: {$batchNumber}");
-        $this->info("SQL: " . $query->toSql());
-        $this->info("Bindings: " . json_encode($query->getBindings()));
+        $this->info("Issue Report ID: {$issueReport->id}");
+        $this->info("Issued Quantity: {$issuedQuantity}");
 
-        // Get matching records for detailed review
-        $records = $query->get();
-        $this->info("Matching Records: " . $records->count());
-        foreach ($records as $record) {
-            $this->info("  - Date: {$record->issued_date}, Quantity: {$record->quantity}");
-        }
-
-        return $query->sum('quantity');
+        return $issuedQuantity;
     }
-    private function calculateOtherQuantityOut($product, $targetMonth, $batchNumber = null)
+    private function calculateOtherQuantityOut($product, $targetMonth)
     {
         // TODO: Implement other quantity out calculation
         // Sum all other quantity outs (disposals, etc) for the month
         return 0;
     }
 
-    private function calculateAdjustments($product, $targetMonth, $batchNumber = null)
+    private function calculateAdjustments($product, $targetMonth)
     {
         // TODO: Implement adjustments calculation
         // Calculate both positive and negative adjustments for the month
@@ -221,4 +197,90 @@ class GenerateInventoryReport extends Command
         // Calculate average consumption over last 3 months
         return 0;
     }
+
+    /**
+     * Show summary of all quantities for each product
+     */
+    private function showQuantitySummary($reportId, $monthYear)
+    {
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("QUANTITY SUMMARY FOR {$monthYear}");
+        $this->info(str_repeat("=", 80));
+
+        $reportItems = InventoryReportItem::where('inventory_report_id', $reportId)
+            ->with('product')
+            ->orderBy('product_id')
+            ->get();
+
+        foreach ($reportItems as $item) {
+            $this->info("\nProduct: {$item->product->name} (ID: {$item->product_id})");
+            $this->info("  Beginning Balance: {$item->beginning_balance}");
+            $this->info("  Received Quantity: {$item->received_quantity}");
+            $this->info("  Issued Quantity: {$item->issued_quantity}");
+            $this->info("  Other Quantity Out: {$item->other_quantity_out}");
+            $this->info("  Positive Adjustment: {$item->positive_adjustment}");
+            $this->info("  Negative Adjustment: {$item->negative_adjustment}");
+            $this->info("  Closing Balance: {$item->closing_balance}");
+            $this->info("  Average Monthly Consumption: {$item->average_monthly_consumption}");
+            $this->info("  Months of Stock: {$item->months_of_stock}");
+        }
+
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("Total Products Processed: {$reportItems->count()}");
+        $this->info("Total Closing Balance: " . $reportItems->sum('closing_balance'));
+        $this->info(str_repeat("=", 80));
+    }
+
+    /**
+     * Process individual product inventory at product_id level
+     */
+    private function processProductInventory($product, $targetMonth, $report, $bar)
+    {
+        // Calculate quantities for the month (no batch number)
+        $beginningBalance = $this->calculateBeginningBalance($product, $targetMonth);
+        $receivedQuantity = $this->calculateReceivedQuantity($product, $targetMonth);
+        $issuedQuantity = $this->calculateIssuedQuantity($product, $targetMonth);
+        $otherQuantityOut = $this->calculateOtherQuantityOut($product, $targetMonth);
+        $adjustments = $this->calculateAdjustments($product, $targetMonth);
+        
+        // Calculate closing balance
+        $closingBalance = $beginningBalance 
+            + $receivedQuantity 
+            - $issuedQuantity 
+            - $otherQuantityOut 
+            + $adjustments['positive'] 
+            - $adjustments['negative'];
+
+        // Calculate average monthly consumption (last 3 months)
+        $avgConsumption = $this->calculateAverageMonthlyConsumption($product, $targetMonth);
+        
+        // Calculate months of stock
+        $monthsOfStock = $avgConsumption > 0 ? $closingBalance / $avgConsumption : 0;
+
+        // Create report item
+        $data = [
+            'inventory_report_id' => $report->id,
+            'product_id' => $product->id,
+            'uom' => 'N/A', // Default UOM since we're not using inventory records
+            'beginning_balance' => $beginningBalance,
+            'received_quantity' => $receivedQuantity,
+            'issued_quantity' => $issuedQuantity,
+            'other_quantity_out' => $otherQuantityOut,
+            'positive_adjustment' => $adjustments['positive'],
+            'negative_adjustment' => $adjustments['negative'],
+            'closing_balance' => $closingBalance,
+            'total_closing_balance' => $closingBalance, // Same as closing balance since no cost
+            'average_monthly_consumption' => $avgConsumption,
+            'months_of_stock' => $monthsOfStock,
+            'quantity_in_pipeline' => 0 // TODO: Implement pipeline calculation
+        ];
+
+        // Save the record and show summary
+        $reportItem = InventoryReportItem::create($data);
+        
+        $this->info("\nSaved: {$product->name} - Closing Balance: {$closingBalance}");
+        $bar->advance();
+    }
+
+
 }

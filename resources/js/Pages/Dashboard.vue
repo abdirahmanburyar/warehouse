@@ -7,6 +7,7 @@ import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import { Bar } from 'vue-chartjs';
 import dayjs from 'dayjs';
+import axios from 'axios';
 
 const props = defineProps({
     dashboardData: {
@@ -72,11 +73,6 @@ const props = defineProps({
     issuedMonths: Array,
     selectedIssuedMonth: String,
     issuedData: Array,
-    warehouseDataType: {
-        type: String,
-        required: true,
-        default: 'qty_issued'
-    },
     warehouseChartData: {
         type: Array,
         required: true,
@@ -238,42 +234,40 @@ const handleFilterChange = () => {
     });
 };
 
-const warehouseDataTypeOptions = [
-  { value: 'beginning_balance', label: 'Beginning Balance (This Month)' },
-  { value: 'qty_received', label: 'QTY Received (This Month)' },
-  { value: 'qty_issued', label: 'QTY Issued (This Month)' },
-  { value: 'closing_balance', label: 'Closing Balance (This Month)' },
-];
-const warehouseDataType = ref('qty_issued');
+const warehouseDataType = ref('beggining_balance');
+    // 'beggining_balance','received_quantity','issued_quantity','closing_balance','total_closing_balance','average_monthly_consumption','months_of_stock','quantity_in_pipeline','unit_cost','total_cost'
+
 const months = Array.from({ length: 12 }, (_, i) =>
   dayjs().subtract(i, 'month').format('YYYY-MM')
 );
 const issuedMonth = ref(months[0]);
 
-// Example: Replace this with real data from props or API
-const allWarehouseData = {
-  qty_issued: {
-    [months[0]]: props.warehouseChartData,
-    // Add more months as needed
-  },
-  // Add other types as you implement them
-};
-
-const warehouseChartData = computed(() => {
-  const type = warehouseDataType.value;
-  const month = issuedMonth.value;
-  const data = allWarehouseData[type]?.[month] || [];
-  return {
-    labels: data.map(d => d.product),
-    datasets: [
-      {
-        label: warehouseDataTypeOptions.find(opt => opt.value === type)?.label,
-        backgroundColor: '#6366f1',
-        data: data.map(d => d.quantity),
-      },
-    ],
-  };
+watch([
+    () => warehouseDataType.value,
+    () => issuedMonth.value
+], () => {
+    handleTracertItems();
 });
+
+async function handleTracertItems() {
+    const query = {};
+    if (warehouseDataType.value){
+        query.type = warehouseDataType.value;
+    }else{
+        query.type = 'beginning_balance';
+    }
+    if (issuedMonth.value){
+        query.month = issuedMonth.value;
+    }
+    console.log('Tracert Items', query);
+    await axios.post(route('dashboard.warehouse.tracert-items'), query)
+        .then(response => {
+        console.log('Tracert Items', response.data);
+        }).catch(error => {
+            console.error('Error fetching tracert items:', error);
+        });
+}
+
 
 const issuedChartOptions = {
     responsive: true,
@@ -621,17 +615,15 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                 <!-- Tab Content -->
                 <div class="min-h-[400px]">
                     <!-- Warehouse Tab -->
-                    <div v-if="activeTab === 'warehouse'" class="space-y-6">
-                        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                    <div v-if="activeTab === 'warehouse'" class="">
+                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                                 <div class="flex gap-4">
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1">Months</label>
                                         <input type="month" v-model="issuedMonth" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1">Filters</label>
-                                        <Multiselect
+                                        <!-- <Multiselect
                                             v-model="warehouseDataType"
                                             :options="warehouseDataTypeOptions"
                                             :searchable="true"
@@ -639,12 +631,20 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                                             :show-labels="false"
                                             placeholder="Select Data Type"
                                             class="w-full"
-                                        />
+                                        /> -->
+                                        <select v-model="warehouseDataType" class="w-full">
+                                            <option value="beggining_balance">Beggining Balance</option>
+                                            <option value="received_quantity">QTY Received</option>
+                                            <option value="issued_quantity">QTY Issued</option>
+                                            <option value="closing_balance">Closed Balance</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                             <div class="h-80">
-                                <Bar :data="warehouseChartData" :options="issuedChartOptions" />
+                                <!-- <Bar :data="warehouseChartData" :options="issuedChartOptions" /> -->
+
+                                <!-- Warehoust - Tracert Items -->
                             </div>
                         </div>
                     </div>

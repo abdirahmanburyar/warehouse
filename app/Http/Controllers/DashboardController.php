@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Order;
 use App\Models\Supplier;
+use App\Models\InventoryReport;
 use Carbon\Carbon;
 use App\Models\IssueQuantityReport;
 
@@ -229,6 +230,24 @@ class DashboardController extends Controller
             'issuedData' => $issuedData,
             'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count])->values(),
         ]);
+    }
+
+    public function warehouseTracertItems(Request $request)
+    {
+        try {
+            logger()->info('Tracert items fetched successfully', $request->all());
+            $type = $request->type;
+            $month = $request->month;
+            $tracertItems = InventoryReport::where('month_year', $month)
+                ->whereHas('items.product', function($query) use ($type) {
+                    $query->whereIn('tracert_type', ['Warehouse']);
+                })
+                ->with(['items.product'])
+                ->first();
+            return response()->json($tracertItems, 200);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }        
     }
 
     private function getFacilityTypeColor($facilityType)

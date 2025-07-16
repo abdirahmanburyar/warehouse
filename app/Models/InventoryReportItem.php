@@ -10,9 +10,6 @@ class InventoryReportItem extends Model
     protected $fillable = [
         'inventory_report_id',
         'product_id',
-        'uom',
-        'batch_number',
-        'expiry_date',
         'beginning_balance',
         'received_quantity',
         'issued_quantity',
@@ -27,6 +24,8 @@ class InventoryReportItem extends Model
         'unit_cost',
         'total_cost'
     ];
+
+    // 'beggining_balance','received_quantity','issued_quantity','closing_balance','total_closing_balance','average_monthly_consumption','months_of_stock','quantity_in_pipeline','unit_cost','total_cost'
 
     protected $casts = [
         'expiry_date' => 'date',

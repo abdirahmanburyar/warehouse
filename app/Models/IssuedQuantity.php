@@ -8,6 +8,8 @@ class IssuedQuantity extends Model
 {
     protected $fillable = [
         'product_id',
+        'order_id',
+        'transfer_id',
         'warehouse_id',
         'quantity',
         'unit_cost',
@@ -32,4 +34,16 @@ class IssuedQuantity extends Model
     {
         return $this->belongsTo(User::class, 'issued_by');
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function transfer()
+    {
+        return $this->belongsTo(Transfer::class);
+    }
+
+    
 }

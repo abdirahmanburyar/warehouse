@@ -703,6 +703,7 @@ class OrderController extends Controller
                    foreach($order->items as $item){
                         foreach($item['inventory_allocations'] as $allocation){
                             IssuedQuantity::create([
+                                'order_id' => $order->id,
                                 'product_id' => $allocation['product_id'],
                                 'warehouse_id' => $allocation['warehouse_id'],
                                 'quantity' => $allocation['allocated_quantity'],

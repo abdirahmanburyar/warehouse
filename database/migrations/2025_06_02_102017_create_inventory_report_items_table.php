@@ -15,9 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('inventory_report_id')->constrained('inventory_reports')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products');
-            $table->string('uom')->nullable();
-            $table->string('batch_number')->nullable();
-            $table->date('expiry_date')->nullable();
             $table->integer('beginning_balance')->default(0);
             $table->integer('received_quantity')->default(0);
             $table->integer('issued_quantity')->default(0);
@@ -29,8 +26,6 @@ return new class extends Migration
             $table->integer('average_monthly_consumption')->default(0);
             $table->string('months_of_stock')->nullable();
             $table->integer('quantity_in_pipeline')->default(0);
-            $table->double('unit_cost')->default(0);
-            $table->double('total_cost')->default(0);
             $table->timestamps();
         });
     }

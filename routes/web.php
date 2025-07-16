@@ -67,6 +67,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::controller(DashboardController::class)
         ->group(function () {
             Route::get('/dashboard', 'index')->name('dashboard');
+            Route::post('/warehouse/tracert-items', 'warehouseTracertItems')->name('dashboard.warehouse.tracert-items');
         });
     // Unauthorized access page
     Route::get('/unauthorized', function () {
