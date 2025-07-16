@@ -38,11 +38,11 @@ class GenerateInventoryReport extends Command
         try {
             DB::beginTransaction();
 
-            // Get target month from argument or use current month
+            // Get target month from argument or use previous month (more logical for monthly reports)
             $monthInput = $this->argument('month');
             $targetMonth = $monthInput 
                 ? Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth()
-                : now()->startOfMonth();
+                : now()->subMonth()->startOfMonth();
 
             $monthYear = $targetMonth->format('Y-m');
             $force = $this->option('force');
@@ -102,10 +102,6 @@ class GenerateInventoryReport extends Command
         // Get the previous month's report
         $previousMonth = (clone $targetMonth)->subMonth();
         $previousMonthYear = $previousMonth->format('Y-m');
-
-        // Debug info
-        $this->info("\nDEBUG - Beginning Balance Calculation:");
-        $this->info("Looking for previous month report: {$previousMonthYear}");
         
         // Find the previous month's report and get the closing balance
         $previousReport = InventoryReport::where('month_year', $previousMonthYear)
@@ -117,13 +113,11 @@ class GenerateInventoryReport extends Command
                 ->value('closing_balance');
 
             if ($previousBalance !== null) {
-                $this->info("Found previous month closing balance: {$previousBalance}");
                 return $previousBalance;
             }
         }
 
         // If no previous report found, return 0
-        $this->info("No previous report found, using 0 as beginning balance");
         return 0;
     }
 
@@ -134,8 +128,6 @@ class GenerateInventoryReport extends Command
         $receivedReport = MonthlyQuantityReceived::where('month_year', $monthYear)->first();
 
         if (!$receivedReport) {
-            $this->info("\nDEBUG - Received Quantity Calculation:");
-            $this->info("No monthly quantity received report found for month: {$monthYear}");
             return 0;
         }
 
@@ -144,16 +136,7 @@ class GenerateInventoryReport extends Command
             ->where('product_id', $product->id)
             ->first();
 
-        $receivedQuantity = $receivedItem ? $receivedItem->quantity : 0;
-
-        // Debug information
-        $this->info("\nDEBUG - Received Quantity Calculation:");
-        $this->info("Target Month: {$monthYear}");
-        $this->info("Product ID: {$product->id}");
-        $this->info("Received Report ID: {$receivedReport->id}");
-        $this->info("Received Quantity: {$receivedQuantity}");
-
-        return $receivedQuantity;
+        return $receivedItem ? $receivedItem->quantity : 0;
     }
 
     private function calculateIssuedQuantity($product, $targetMonth)
@@ -163,8 +146,6 @@ class GenerateInventoryReport extends Command
         $issueReport = IssueQuantityReport::where('month_year', $monthYear)->first();
 
         if (!$issueReport) {
-            $this->info("\nDEBUG - Issued Quantity Calculation:");
-            $this->info("No issue quantity report found for month: {$monthYear}");
             return 0;
         }
 
@@ -173,27 +154,9 @@ class GenerateInventoryReport extends Command
             ->where('product_id', $product->id)
             ->first();
 
-        $issuedQuantity = $issuedItem ? $issuedItem->quantity : 0;
-
-        // Enhanced debug information
-        $this->info("\nDEBUG - Issued Quantity Calculation:");
-        $this->info("Target Month: {$monthYear}");
-        $this->info("Product ID: {$product->id}");
-        $this->info("Product Name: {$product->name}");
-        $this->info("Issue Report ID: {$issueReport->id}");
-        $this->info("Issue Report Month: {$issueReport->month_year}");
-        $this->info("Issued Item Found: " . ($issuedItem ? 'YES' : 'NO'));
-        $this->info("Issued Quantity: {$issuedQuantity}");
-        
-        // Additional debugging - check all items in the report
-        $allItems = IssueQuantityItem::where('parent_id', $issueReport->id)->get();
-        $this->info("Total items in report: {$allItems->count()}");
-        foreach ($allItems as $item) {
-            $this->info("  - Product ID: {$item->product_id}, Quantity: {$item->quantity}");
-        }
-
-        return $issuedQuantity;
+        return $issuedItem ? $issuedItem->quantity : 0;
     }
+
     private function calculateOtherQuantityOut($product, $targetMonth)
     {
         // TODO: Implement other quantity out calculation
@@ -294,23 +257,13 @@ class GenerateInventoryReport extends Command
             'quantity_in_pipeline' => 0 // TODO: Implement pipeline calculation
         ];
 
-        // Debug the data being saved
-        $this->info("\nDEBUG - Data being saved:");
-        $this->info("Product: {$product->name} (ID: {$product->id})");
-        $this->info("Data: " . json_encode($data));
-        
         try {
-            // Save the record and show summary
-            $reportItem = InventoryReportItem::create($data);
-            $this->info("✅ Successfully saved with ID: {$reportItem->id}");
+            // Save the record
+            InventoryReportItem::create($data);
         } catch (\Exception $e) {
-            $this->error("❌ Failed to save: " . $e->getMessage());
-            $this->error("Data: " . json_encode($data));
+            $this->error("Failed to save product {$product->name}: " . $e->getMessage());
         }
         
-        $this->info("Saved: {$product->name} - Closing Balance: {$closingBalance}");
         $bar->advance();
     }
-
-
 }

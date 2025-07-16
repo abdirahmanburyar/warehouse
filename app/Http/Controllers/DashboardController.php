@@ -235,19 +235,197 @@ class DashboardController extends Controller
     public function warehouseTracertItems(Request $request)
     {
         try {
-            logger()->info('Tracert items fetched successfully', $request->all());
-            $type = $request->type;
-            $month = $request->month;
-            $tracertItems = InventoryReport::where('month_year', $month)
-                ->whereHas('items.product', function($query) use ($type) {
-                    $query->whereIn('tracert_type', ['Warehouse']);
-                })
-                ->with(['items.product'])
+            $type = $request->type ?? 'beginning_balance';
+            $month = $request->month ?? now()->subMonth()->format('Y-m');
+            
+            // Validate the type is one of the allowed columns
+            $allowedTypes = ['beginning_balance', 'received_quantity', 'issued_quantity', 'closing_balance'];
+            if (!in_array($type, $allowedTypes)) {
+                $type = 'beginning_balance';
+            }
+            
+            // Get the inventory report for the specified month
+            $inventoryReport = InventoryReport::where('month_year', $month)
+                ->with(['items' => function($query) use ($type) {
+                    $query->with('product:id,name,productID,tracert_type')
+                        ->whereHas('product', function($q) {
+                            // Since tracert_type is JSON, we need to use JSON_CONTAINS or check if it contains 'Warehouse'
+                            $q->whereRaw('JSON_CONTAINS(tracert_type, ?)', ['"Warehouse"'])
+                              ->orWhere('tracert_type', 'like', '%Warehouse%');
+                        })
+                        ->where($type, '>', 0) // Only include items with values > 0 for the selected type
+                        ->orderBy($type, 'desc')
+                        ->limit(10); // Top 10 items for better chart readability
+                }])
                 ->first();
-            return response()->json($tracertItems, 200);
+
+            if (!$inventoryReport) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No inventory report found for {$month}",
+                    'chartData' => $this->getEmptyChartData(),
+                    'summary' => $this->getEmptySummary()
+                ], 404);
+            }
+
+            // Process data for charts
+            $chartData = $this->processChartData($inventoryReport->items, $type);
+            $summary = $this->processSummaryData($inventoryReport->items, $type);
+
+            return response()->json([
+                'success' => true,
+                'month' => $month,
+                'type' => $type,
+                'chartData' => $chartData,
+                'summary' => $summary,
+                'items' => $inventoryReport->items->map(function ($item) use ($type) {
+                    return [
+                        'id' => $item->id,
+                        'product_name' => $item->product->name,
+                        'product_id' => $item->product->productID,
+                        'value' => $item->{$type},
+                        'beginning_balance' => $item->beginning_balance,
+                        'received_quantity' => $item->received_quantity,
+                        'issued_quantity' => $item->issued_quantity,
+                        'closing_balance' => $item->closing_balance,
+                    ];
+                })
+            ], 200);
+
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            logger()->error('Error fetching warehouse tracert items', [
+                'error' => $th->getMessage(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch warehouse data: ' . $th->getMessage(),
+                'chartData' => $this->getEmptyChartData(),
+                'summary' => $this->getEmptySummary()
+            ], 500);
         }        
+    }
+
+    /**
+     * Process data for chart visualization
+     */
+    private function processChartData($items, $type)
+    {
+        if ($items->isEmpty()) {
+            return $this->getEmptyChartData();
+        }
+
+        $labels = [];
+        $data = [];
+        $backgroundColors = [];
+        $borderColors = [];
+
+        // Color palette for charts
+        $colors = [
+            ['bg' => 'rgba(59, 130, 246, 0.8)', 'border' => 'rgb(59, 130, 246)'], // Blue
+            ['bg' => 'rgba(16, 185, 129, 0.8)', 'border' => 'rgb(16, 185, 129)'], // Green
+            ['bg' => 'rgba(245, 158, 11, 0.8)', 'border' => 'rgb(245, 158, 11)'], // Yellow
+            ['bg' => 'rgba(239, 68, 68, 0.8)', 'border' => 'rgb(239, 68, 68)'], // Red
+            ['bg' => 'rgba(147, 51, 234, 0.8)', 'border' => 'rgb(147, 51, 234)'], // Purple
+            ['bg' => 'rgba(236, 72, 153, 0.8)', 'border' => 'rgb(236, 72, 153)'], // Pink
+            ['bg' => 'rgba(14, 165, 233, 0.8)', 'border' => 'rgb(14, 165, 233)'], // Sky
+            ['bg' => 'rgba(34, 197, 94, 0.8)', 'border' => 'rgb(34, 197, 94)'], // Emerald
+            ['bg' => 'rgba(168, 85, 247, 0.8)', 'border' => 'rgb(168, 85, 247)'], // Violet
+            ['bg' => 'rgba(251, 191, 36, 0.8)', 'border' => 'rgb(251, 191, 36)'] // Amber
+        ];
+
+        foreach ($items as $index => $item) {
+            // Truncate long product names for better chart display
+            $productName = strlen($item->product->name) > 20 
+                ? substr($item->product->name, 0, 20) . '...'
+                : $item->product->name;
+                
+            $labels[] = $productName;
+            $data[] = (float) $item->{$type};
+            
+            $colorIndex = $index % count($colors);
+            $backgroundColors[] = $colors[$colorIndex]['bg'];
+            $borderColors[] = $colors[$colorIndex]['border'];
+        }
+
+        return [
+            'labels' => $labels,
+            'data' => $data,
+            'backgroundColors' => $backgroundColors,
+            'borderColors' => $borderColors,
+            'total' => array_sum($data),
+            'count' => count($data)
+        ];
+    }
+
+    /**
+     * Process summary data
+     */
+    private function processSummaryData($items, $type)
+    {
+        if ($items->isEmpty()) {
+            return $this->getEmptySummary();
+        }
+
+        $total = $items->sum($type);
+        $average = $items->avg($type);
+        $max = $items->max($type);
+        $min = $items->where($type, '>', 0)->min($type);
+
+        return [
+            'total' => number_format($total),
+            'average' => number_format($average, 2),
+            'max' => number_format($max),
+            'min' => number_format($min ?? 0),
+            'count' => $items->count(),
+            'type_label' => $this->getTypeLabel($type)
+        ];
+    }
+
+    /**
+     * Get empty chart data
+     */
+    private function getEmptyChartData()
+    {
+        return [
+            'labels' => ['No Data Available'],
+            'data' => [0],
+            'backgroundColors' => ['rgba(156, 163, 175, 0.8)'],
+            'borderColors' => ['rgba(156, 163, 175, 1)'],
+            'total' => 0,
+            'count' => 0
+        ];
+    }
+
+    /**
+     * Get empty summary
+     */
+    private function getEmptySummary()
+    {
+        return [
+            'total' => '0',
+            'average' => '0',
+            'max' => '0',
+            'min' => '0',
+            'count' => 0,
+            'type_label' => 'No Data'
+        ];
+    }
+
+    /**
+     * Get human-readable type label
+     */
+    private function getTypeLabel($type)
+    {
+        $labels = [
+            'beginning_balance' => 'Beginning Balance',
+            'received_quantity' => 'Quantity Received',
+            'issued_quantity' => 'Quantity Issued',
+            'closing_balance' => 'Closing Balance'
+        ];
+
+        return $labels[$type] ?? 'Unknown';
     }
 
     private function getFacilityTypeColor($facilityType)

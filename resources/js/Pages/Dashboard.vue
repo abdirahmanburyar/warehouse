@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
@@ -234,8 +234,23 @@ const handleFilterChange = () => {
     });
 };
 
-const warehouseDataType = ref('beggining_balance');
-    // 'beggining_balance','received_quantity','issued_quantity','closing_balance','total_closing_balance','average_monthly_consumption','months_of_stock','quantity_in_pipeline','unit_cost','total_cost'
+const warehouseDataType = ref('beginning_balance');
+// Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
+
+// Chart data state
+const warehouseChartData = ref({
+    labels: [],
+    datasets: [{
+        label: 'Quantity',
+        data: [],
+        backgroundColor: [],
+        borderColor: [],
+        borderWidth: 2
+    }]
+});
+
+const isLoadingChart = ref(false);
+const chartError = ref(null);
 
 const months = Array.from({ length: 12 }, (_, i) =>
   dayjs().subtract(i, 'month').format('YYYY-MM')
@@ -250,35 +265,157 @@ watch([
 });
 
 async function handleTracertItems() {
+    isLoadingChart.value = true;
+    chartError.value = null;
+    
     const query = {};
     if (warehouseDataType.value){
         query.type = warehouseDataType.value;
-    }else{
+    } else {
         query.type = 'beginning_balance';
     }
     if (issuedMonth.value){
         query.month = issuedMonth.value;
     }
-    console.log('Tracert Items', query);
-    await axios.post(route('dashboard.warehouse.tracert-items'), query)
-        .then(response => {
-        console.log('Tracert Items', response.data);
-        }).catch(error => {
-            console.error('Error fetching tracert items:', error);
+
+       await axios.post(route('dashboard.warehouse.tracert-items'), query)
+            .then(response => {
+                console.log(response.data);
+                chartError.value = response.data.message || 'Failed to load chart data';
+                // Set empty chart data
+                warehouseChartData.value = {
+                    labels: ['No Data'],
+                    datasets: [{
+                        label: 'Quantity',
+                        data: [0],
+                        backgroundColor: ['rgba(156, 163, 175, 0.8)'],
+                        borderColor: ['rgba(156, 163, 175, 1)'],
+                        borderWidth: 2
+                    }]
+                };
+            })
+            .catch(error => {
+                console.error('Error fetching tracert items:', error);
+                chartError.value = 'Network error occurred while loading data';
+                // Set empty chart data on error
+                warehouseChartData.value = {
+                    labels: ['Error'],
+                    datasets: [{
+                        label: 'Quantity',
+                        data: [0],
+                        backgroundColor: ['rgba(239, 68, 68, 0.8)'],
+                        borderColor: ['rgba(239, 68, 68, 1)'],
+                        borderWidth: 2
+                    }]
+                };
         });
+}
+
+// Update chart data based on API response
+function updateChartData(chartData) {
+    if (!chartData || !chartData.labels || !chartData.data) {
+        warehouseChartData.value = {
+            labels: ['No Data'],
+            datasets: [{
+                label: 'Quantity',
+                data: [0],
+                backgroundColor: ['rgba(156, 163, 175, 0.8)'],
+                borderColor: ['rgba(156, 163, 175, 1)'],
+                borderWidth: 2
+            }]
+        };
+        return;
+    }
+
+    warehouseChartData.value = {
+        labels: chartData.labels,
+        datasets: [{
+            label: getDataTypeLabel(warehouseDataType.value),
+            data: chartData.data,
+            backgroundColor: chartData.backgroundColors || generateColors(chartData.data.length, true),
+            borderColor: chartData.borderColors || generateColors(chartData.data.length, false),
+            borderWidth: 2
+        }]
+    };
+}
+
+// Get human-readable label for data type
+function getDataTypeLabel(type) {
+    const labels = {
+        'beginning_balance': 'Beginning Balance',
+        'received_quantity': 'Quantity Received',
+        'issued_quantity': 'Quantity Issued',
+        'closing_balance': 'Closing Balance'
+    };
+    return labels[type] || 'Quantity';
+}
+
+// Generate colors for chart
+function generateColors(count, isBackground = true) {
+    const baseColors = [
+        'rgba(59, 130, 246, ' + (isBackground ? '0.8)' : '1)'), // Blue
+        'rgba(16, 185, 129, ' + (isBackground ? '0.8)' : '1)'), // Green
+        'rgba(245, 158, 11, ' + (isBackground ? '0.8)' : '1)'), // Yellow
+        'rgba(239, 68, 68, ' + (isBackground ? '0.8)' : '1)'),   // Red
+        'rgba(147, 51, 234, ' + (isBackground ? '0.8)' : '1)'), // Purple
+        'rgba(236, 72, 153, ' + (isBackground ? '0.8)' : '1)'), // Pink
+        'rgba(14, 165, 233, ' + (isBackground ? '0.8)' : '1)'), // Sky
+        'rgba(34, 197, 94, ' + (isBackground ? '0.8)' : '1)'),  // Emerald
+        'rgba(168, 85, 247, ' + (isBackground ? '0.8)' : '1)'), // Violet
+        'rgba(251, 191, 36, ' + (isBackground ? '0.8)' : '1)')  // Amber
+    ];
+    
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(baseColors[i % baseColors.length]);
+    }
+    return colors;
 }
 
 
 const issuedChartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true },
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            callbacks: {
+                label: function(context) {
+                    return context.parsed.y.toLocaleString();
+                }
+            }
+        }
     },
     scales: {
-        y: { beginAtZero: true }
+        y: { 
+            beginAtZero: true,
+            ticks: {
+                callback: function(value) {
+                    return value.toLocaleString();
+                }
+            }
+        },
+        x: {
+            ticks: {
+                maxRotation: 45,
+                minRotation: 0
+            }
+        }
     }
 };
+
+// Load initial data on component mount
+onMounted(() => {
+    handleTracertItems();
+});
 
 // Helper function to get selected supplier value
 const getSelectedSupplierValue = () => {
@@ -620,31 +757,45 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                                 <div class="flex gap-4">
                                     <div>
-                                        <input type="month" v-model="issuedMonth" />
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                                        <input type="month" v-model="issuedMonth" class="border border-gray-300 rounded-md px-3 py-2" />
                                     </div>
                                     <div>
-                                        <!-- <Multiselect
-                                            v-model="warehouseDataType"
-                                            :options="warehouseDataTypeOptions"
-                                            :searchable="true"
-                                            :close-on-select="true"
-                                            :show-labels="false"
-                                            placeholder="Select Data Type"
-                                            class="w-full"
-                                        /> -->
-                                        <select v-model="warehouseDataType" class="w-full">
-                                            <option value="beggining_balance">Beggining Balance</option>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
+                                        <select v-model="warehouseDataType" class="border border-gray-300 rounded-md px-3 py-2 min-w-[180px]">
+                                            <option value="beginning_balance">Beginning Balance</option>
                                             <option value="received_quantity">QTY Received</option>
                                             <option value="issued_quantity">QTY Issued</option>
-                                            <option value="closing_balance">Closed Balance</option>
+                                            <option value="closing_balance">Closing Balance</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                            <div class="h-80">
-                                <!-- <Bar :data="warehouseChartData" :options="issuedChartOptions" /> -->
-
-                                <!-- Warehoust - Tracert Items -->
+                            
+                            <!-- Chart Container -->
+                            <div class="h-80 relative">
+                                <!-- Loading State -->
+                                <div v-if="isLoadingChart" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                        <span class="text-gray-600">Loading chart data...</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Error State -->
+                                <div v-else-if="chartError" class="absolute inset-0 flex items-center justify-center bg-red-50 rounded-lg">
+                                    <div class="text-center">
+                                        <div class="text-red-600 font-medium">{{ chartError }}</div>
+                                        <button @click="handleTracertItems" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                            Retry
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart -->
+                                <div v-else class="h-full">
+                                    <Bar :data="warehouseChartData" :options="issuedChartOptions" />
+                                </div>
                             </div>
                         </div>
                     </div>
