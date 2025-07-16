@@ -36,7 +36,6 @@ use App\Http\Controllers\DashboardController;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use App\Http\Controllers\LogisticCompanyController;
 use App\Http\Controllers\DriverController;
-use App\Http\Controllers\TracertableItemsController;
 use App\Http\Controllers\ReasonController;
 
 // Welcome route - accessible without authentication
@@ -252,12 +251,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->middleware(PermissionMiddleware::class . ':product.edit')->name('products.toggle-status');
         Route::get('/import-status/{importId}', [ProductController::class, 'checkImportStatus'])
             ->name('products.import-status');
-    });
-
-    // Tracertable Items Dashboard Routes
-    Route::prefix('tracertable-items')->group(function () {
-        Route::get('/dashboard', [TracertableItemsController::class, 'dashboard'])->name('tracertable-items.dashboard');
-        Route::get('/facility-data', [TracertableItemsController::class, 'getFacilityData'])->name('tracertable-items.facility-data');
     });
 
     // Eligible Items Management Routes
