@@ -22,7 +22,7 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0 flex space-x-3">
-                            <Link v-if="$page.props.auth.can.asset_import" :href="route('assets.create')"
+                            <Link v-if="page.props.auth.can.asset_import" :href="route('assets.create')"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                 class="w-4 h-4 mr-2">
@@ -38,7 +38,7 @@
                             </svg>
                             Approvals
                             </Link>
-                            <button v-if="$page.props.auth.can.asset_export" @click="exportToExcel"
+                            <button v-if="page.props.auth.can.asset_export" @click="exportToExcel"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -47,7 +47,7 @@
                                 </svg>
                                 Export
                             </button>
-                            <button v-if="$page.props.auth.can.asset_import" @click="showImportModal = true"
+                            <button v-if="page.props.auth.can.asset_import" @click="showImportModal = true"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -476,8 +476,8 @@
 
                                     <!-- Actions Dropdown Column -->
                                     <td class="px-6 py-5 relative">
-                                        <div class="relative">
-                                            <button @click="toggleDropdown(asset.id)" 
+                                        <div class="relative dropdown-container">
+                                            <button @click.stop="toggleDropdown(asset.id)" 
                                                 class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-700 hover:text-gray-900 text-xs font-medium rounded-md border border-gray-200 transition-all duration-200 group-hover:shadow-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                                     <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
@@ -787,8 +787,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { TailwindPagination } from "laravel-vue-pagination";
-import { Link, router } from "@inertiajs/vue3";
-import { ref, computed, watch, onMounted } from "vue";
+import { Link, router, usePage } from "@inertiajs/vue3";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { debounce } from "lodash";
 import axios from "axios";
 import * as XLSX from "xlsx";
@@ -807,6 +807,7 @@ import {
 } from "@headlessui/vue";
 
 const toast = useToast();
+const page = usePage();
 
 // Utility functions
 const formatStatus = (status) => {
@@ -936,7 +937,12 @@ const fundSourceFilter = ref(null);
 const activeDropdown = ref(null);
 
 function toggleDropdown(assetId) {
-    activeDropdown.value = activeDropdown.value === assetId ? null : assetId;
+    try {
+        console.log('Toggling dropdown for asset:', assetId);
+        activeDropdown.value = activeDropdown.value === assetId ? null : assetId;
+    } catch (error) {
+        console.error('Error in toggleDropdown:', error);
+    }
 }
 
 function closeDropdown() {
@@ -945,10 +951,18 @@ function closeDropdown() {
 
 // Close dropdown when clicking outside
 onMounted(() => {
-    document.addEventListener('click', (event) => {
-        if (!event.target.closest('.relative')) {
+    const handleClickOutside = (event) => {
+        // Check if click is outside dropdown
+        if (!event.target.closest('.dropdown-container')) {
             activeDropdown.value = null;
         }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    // Cleanup on unmount
+    onUnmounted(() => {
+        document.removeEventListener('click', handleClickOutside);
     });
 });
 
@@ -1316,7 +1330,7 @@ const processingApproval = ref(false);
 
 function canApproveAsset(asset) {
     // Check if user has approval permissions
-    return $page.props.auth.can.asset_approve || $page.props.auth.can.transfer_approve;
+    return page.props.auth.can.asset_approve || page.props.auth.can.transfer_approve;
 }
 
 function openApprovalModal(asset, action) {
