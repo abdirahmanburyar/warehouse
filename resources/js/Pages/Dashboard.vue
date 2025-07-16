@@ -5,6 +5,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
+import Chart from 'chart.js/auto';
 import { Bar } from 'vue-chartjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -255,7 +256,7 @@ const chartError = ref(null);
 const months = Array.from({ length: 12 }, (_, i) =>
   dayjs().subtract(i, 'month').format('YYYY-MM')
 );
-const issuedMonth = ref(months[0]);
+const issuedMonth = ref(months[1]); // Use previous month as default to match backend
 
 watch([
     () => warehouseDataType.value,
@@ -263,6 +264,17 @@ watch([
 ], () => {
     handleTracertItems();
 });
+
+// Get human-readable label for data type
+function getTypeLabel(type) {
+    const labels = {
+        'beginning_balance': 'Beginning Balance',
+        'received_quantity': 'Quantity Received',
+        'issued_quantity': 'Quantity Issued', 
+        'closing_balance': 'Closing Balance'
+    };
+    return labels[type] || 'Quantity';
+}
 
 async function handleTracertItems() {
     isLoadingChart.value = true;
@@ -278,37 +290,55 @@ async function handleTracertItems() {
         query.month = issuedMonth.value;
     }
 
-       await axios.post(route('dashboard.warehouse.tracert-items'), query)
-            .then(response => {
-                console.log(response.data);
-                chartError.value = response.data.message || 'Failed to load chart data';
-                // Set empty chart data
-                warehouseChartData.value = {
-                    labels: ['No Data'],
-                    datasets: [{
-                        label: 'Quantity',
-                        data: [0],
-                        backgroundColor: ['rgba(156, 163, 175, 0.8)'],
-                        borderColor: ['rgba(156, 163, 175, 1)'],
-                        borderWidth: 2
-                    }]
-                };
-            })
-            .catch(error => {
-                console.error('Error fetching tracert items:', error);
-                chartError.value = 'Network error occurred while loading data';
-                // Set empty chart data on error
-                warehouseChartData.value = {
-                    labels: ['Error'],
-                    datasets: [{
-                        label: 'Quantity',
-                        data: [0],
-                        backgroundColor: ['rgba(239, 68, 68, 0.8)'],
-                        borderColor: ['rgba(239, 68, 68, 1)'],
-                        borderWidth: 2
-                    }]
-                };
-        });
+    try {
+        const response = await axios.post(route('dashboard.warehouse.tracert-items'), query);
+        console.log('API Response:', response.data);
+        
+        if (response.data.success && response.data.chartData) {
+            // Handle successful response
+            const chartData = response.data.chartData;
+            warehouseChartData.value = {
+                labels: chartData.labels || ['No Data'],
+                datasets: [{
+                    label: getTypeLabel(warehouseDataType.value),
+                    data: chartData.data || [0],
+                    backgroundColor: chartData.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
+                    borderColor: chartData.borderColors || ['rgba(156, 163, 175, 1)'],
+                    borderWidth: 2
+                }]
+            };
+            chartError.value = null;
+        } else {
+            // Handle API success but no data
+            chartError.value = response.data.message || 'No data available for the selected period';
+            warehouseChartData.value = {
+                labels: ['No Data'],
+                datasets: [{
+                    label: 'Quantity',
+                    data: [0],
+                    backgroundColor: ['rgba(156, 163, 175, 0.8)'],
+                    borderColor: ['rgba(156, 163, 175, 1)'],
+                    borderWidth: 2
+                }]
+            };
+        }
+    } catch (error) {
+        console.error('Error fetching tracert items:', error);
+        chartError.value = error.response?.data?.message || 'Network error occurred while loading data';
+        // Set empty chart data on error
+        warehouseChartData.value = {
+            labels: ['Error'],
+            datasets: [{
+                label: 'Quantity',
+                data: [0],
+                backgroundColor: ['rgba(239, 68, 68, 0.8)'],
+                borderColor: ['rgba(239, 68, 68, 1)'],
+                borderWidth: 2
+            }]
+        };
+    } finally {
+        isLoadingChart.value = false;
+    }
 }
 
 // Update chart data based on API response

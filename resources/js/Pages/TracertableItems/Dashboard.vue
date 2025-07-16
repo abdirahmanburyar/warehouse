@@ -253,7 +253,7 @@ const warehouseDataType = ref('beginning_balance');
 const months = Array.from({ length: 12 }, (_, i) =>
   dayjs().subtract(i, 'month').format('YYYY-MM')
 );
-const selectedMonth = ref(months[0]);
+const selectedMonth = ref(months[1]); // Use previous month as default to match backend
 
 // Chart data state for inventory reports
 const inventoryChartData = ref({
