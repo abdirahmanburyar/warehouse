@@ -283,11 +283,11 @@ class AssetController extends Controller
                 // Validate the request
                 $validated = $request->validate([
                     'asset_tag' => 'required|string|max:255',
-                    'asset_category_id' => 'required',
-                'region_id' => 'required',
-                'fund_source_id' => 'required',
-                'asset_location_id' => 'required',
-                'sub_location_id' => 'required',
+                    'asset_category_id' => 'nullable|integer',
+                'region_id' => 'nullable|integer',
+                'fund_source_id' => 'nullable|integer',
+                'asset_location_id' => 'nullable|integer',
+                'sub_location_id' => 'nullable|integer',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $request->id,
                 'item_description' => 'required|string',
                 'person_assigned' => 'required',
@@ -307,17 +307,22 @@ class AssetController extends Controller
             $hasWarranty = filter_var($request->has_warranty, FILTER_VALIDATE_BOOLEAN);
             $hasDocuments = filter_var($request->has_documents, FILTER_VALIDATE_BOOLEAN);
             
+            // Helper function to convert empty strings to null for foreign keys
+            $convertToNullIfEmpty = function($value) {
+                return ($value === '' || $value === 'null' || $value === null) ? null : (int)$value;
+            };
+
             // Create asset data array with the correct IDs
             $assetData = [
                 'asset_tag' => $request->asset_tag,
-                'asset_category_id' => $request->asset_category_id,
+                'asset_category_id' => $convertToNullIfEmpty($request->asset_category_id),
                 'serial_number' => $request->serial_number,
                 'item_description' => $request->item_description,
                 'person_assigned' => $request->person_assigned,
-                'asset_location_id' => $request->asset_location_id,
-                'sub_location_id' => $request->sub_location_id,
-                'fund_source_id' => $request->fund_source_id,
-                'region_id' => $request->region_id,
+                'asset_location_id' => $convertToNullIfEmpty($request->asset_location_id),
+                'sub_location_id' => $convertToNullIfEmpty($request->sub_location_id),
+                'fund_source_id' => $convertToNullIfEmpty($request->fund_source_id),
+                'region_id' => $convertToNullIfEmpty($request->region_id),
                 'acquisition_date' => $request->acquisition_date,
                 'status' => $request->status,
                 'original_value' => $request->original_value,
@@ -398,20 +403,33 @@ class AssetController extends Controller
         try {
             $validated = $request->validate([
                 'asset_tag' => 'required|string|max:255',
-                'asset_category_id' => 'required|exists:asset_categories,id',
+                'asset_category_id' => 'nullable|integer',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $asset->id,
                 'item_description' => 'required|string',
                 'person_assigned' => 'required',
-                'asset_location_id' => 'required',
-                'sub_location_id' => 'required',
-                'region_id' => 'required',
-                'fund_source_id' => 'required',
+                'asset_location_id' => 'nullable|integer',
+                'sub_location_id' => 'nullable|integer',
+                'region_id' => 'nullable|integer',
+                'fund_source_id' => 'nullable|integer',
                 'acquisition_date' => 'required|date',
                 'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
                 'original_value' => 'required|numeric|min:0'
             ]);
+
+            // Helper function to convert empty strings to null for foreign keys
+            $convertToNullIfEmpty = function($value) {
+                return ($value === '' || $value === 'null' || $value === null) ? null : (int)$value;
+            };
+
+            // Process the validated data to handle null foreign keys
+            $updateData = $validated;
+            $updateData['asset_category_id'] = $convertToNullIfEmpty($validated['asset_category_id']);
+            $updateData['asset_location_id'] = $convertToNullIfEmpty($validated['asset_location_id']);
+            $updateData['sub_location_id'] = $convertToNullIfEmpty($validated['sub_location_id']);
+            $updateData['region_id'] = $convertToNullIfEmpty($validated['region_id']);
+            $updateData['fund_source_id'] = $convertToNullIfEmpty($validated['fund_source_id']);
     
-            $asset->update($validated);
+            $asset->update($updateData);
     
             return response()->json('Updated', 200);
         } catch (\Throwable $th) {

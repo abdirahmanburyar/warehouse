@@ -803,7 +803,6 @@ import {
     DialogOverlay,
     DialogTitle,
     TransitionRoot,
-    DialogPanel,
     TransitionChild,
 } from "@headlessui/vue";
 

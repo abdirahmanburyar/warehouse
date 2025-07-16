@@ -565,22 +565,33 @@ const submit = async () => {
     }
 
     formData.append("asset_tag", form.value.asset_tag);
-    formData.append("asset_category_id", form.value.asset_category_id);
+    
+    // Handle foreign key IDs properly - send empty string for null values to let backend handle them
+    const categoryId = form.value.asset_category_id || 
+        (form.value.asset_category ? form.value.asset_category.id : "") || "";
+    formData.append("asset_category_id", categoryId);
+    
     formData.append("serial_number", form.value.serial_number);
     formData.append("item_description", form.value.item_description);
-    formData.append("region_id", form.value.region_id);
-    formData.append("fund_source_id", form.value.fund_source_id);
+    
+    const regionId = form.value.region_id || 
+        (form.value.region ? form.value.region.id : "") || "";
+    formData.append("region_id", regionId);
+    
+    const fundSourceId = form.value.fund_source_id || 
+        (form.value.fund_source ? form.value.fund_source.id : "") || "";
+    formData.append("fund_source_id", fundSourceId);
 
     // Ensure location ID is properly set (use the ID from the object if available)
     const locationId =
         form.value.asset_location_id ||
-        (form.value.asset_location ? form.value.asset_location.id : "");
+        (form.value.asset_location ? form.value.asset_location.id : "") || "";
     formData.append("asset_location_id", locationId);
 
     // Ensure sub-location ID is properly set
     const subLocationId =
         form.value.sub_location_id ||
-        (form.value.sub_location ? form.value.sub_location.id : "");
+        (form.value.sub_location ? form.value.sub_location.id : "") || "";
     formData.append("sub_location_id", subLocationId);
     formData.append("person_assigned", form.value.person_assigned);
     formData.append("acquisition_date", form.value.acquisition_date);
