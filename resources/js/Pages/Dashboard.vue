@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
@@ -176,11 +176,24 @@ const selectedSupplierLabel = computed(() => {
     return selectedValue;
 });
 
-// Filtered total cost based on date range
+// Filtered total cost based on supplier selection
 const filteredTotalCost = computed(() => {
-    // This is a placeholder - you'll need to implement the actual filtering logic
-    // based on your backend data structure
+    let selectedValue;
+    
+    // Handle both object and string values from Multiselect
+    if (typeof selectedSupplier.value === 'object' && selectedSupplier.value !== null) {
+        selectedValue = selectedSupplier.value.value;
+    } else {
+        selectedValue = selectedSupplier.value;
+    }
+    
+    if (selectedValue === '' || !selectedValue) {
+        return props.totalApprovedPOCost || 0;
+    }
+    
+    // This would need to be implemented based on your backend data structure
     // For now, we'll return the original value
+    // You should filter the total cost based on the selected supplier
     return props.totalApprovedPOCost || 0;
 });
 
@@ -212,18 +225,17 @@ const handleFilterChange = () => {
         dateFrom: dateFrom.value,
         dateTo: dateTo.value,
         orderType: selectedOrderTypeValue.value,
-        supplier: selectedSupplier.value?.value || '' // Changed from 'all' to ''
+        supplier: getSelectedSupplierValue()
     };
     
     console.log('Filters changed:', filters);
     
-    // Here you can make an API call to update the dashboard data based on filters
-    // Example:
-    // router.get('/dashboard', { 
-    //     data: filters,
-    //     preserveState: true,
-    //     preserveScroll: true
-    // });
+    // Make an API call to update the dashboard data based on filters
+    router.get('/dashboard', { 
+        data: filters,
+        preserveState: true,
+        preserveScroll: true
+    });
 };
 
 const warehouseDataTypeOptions = [
@@ -274,6 +286,65 @@ const issuedChartOptions = {
     }
 };
 
+// Helper function to get selected supplier value
+const getSelectedSupplierValue = () => {
+    if (typeof selectedSupplier.value === 'object' && selectedSupplier.value !== null) {
+        return selectedSupplier.value.value;
+    }
+    return selectedSupplier.value;
+};
+
+// Filtered computed properties based on supplier selection
+const filteredProductCategoryCard = computed(() => {
+    const selectedValue = getSelectedSupplierValue();
+    if (selectedValue === '' || !selectedValue) {
+        return props.productCategoryCard;
+    }
+    // This would need to be implemented based on your backend data structure
+    // For now, return the original value
+    return props.productCategoryCard;
+});
+
+const filteredWarehouseCountCard = computed(() => {
+    const selectedValue = getSelectedSupplierValue();
+    if (selectedValue === '' || !selectedValue) {
+        return props.warehouseCountCard;
+    }
+    // This would need to be implemented based on your backend data structure
+    // For now, return the original value
+    return props.warehouseCountCard;
+});
+
+const filteredOrderCounts = computed(() => {
+    const selectedValue = getSelectedSupplierValue();
+    if (selectedValue === '' || !selectedValue) {
+        return props.orderCard.counts;
+    }
+    // This would need to be implemented based on your backend data structure
+    // For now, return the original value
+    return props.orderCard.counts;
+});
+
+const filteredTransferReceivedCard = computed(() => {
+    const selectedValue = getSelectedSupplierValue();
+    if (selectedValue === '' || !selectedValue) {
+        return props.transferReceivedCard;
+    }
+    // This would need to be implemented based on your backend data structure
+    // For now, return the original value
+    return props.transferReceivedCard;
+});
+
+const filteredOrdersDelayedCount = computed(() => {
+    const selectedValue = getSelectedSupplierValue();
+    if (selectedValue === '' || !selectedValue) {
+        return props.ordersDelayedCount;
+    }
+    // This would need to be implemented based on your backend data structure
+    // For now, return the original value
+    return props.ordersDelayedCount;
+});
+
 const inStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'in_stock')?.count || 0);
 const lowStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'low_stock')?.count || 0);
 const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'out_of_stock')?.count || 0);
@@ -283,215 +354,244 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
     <Head title="Dashboard" />
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
         <!-- Filters Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-            <div class="flex flex-row items-center gap-x-4 flex-nowrap">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-x-4">
                 <!-- Date From Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-medium text-gray-600">Date From:</label>
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label class="text-xs font-medium text-gray-600 mb-1">Date From:</label>
                     <input
                         type="date"
                         v-model="dateFrom"
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm min-w-[150px]"
+                        class="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
                     />
                 </div>
                 <!-- Date To Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-medium text-gray-600">Date To:</label>
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label class="text-xs font-medium text-gray-600 mb-1">Date To:</label>
                     <input
                         type="date"
                         v-model="dateTo"
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm min-w-[150px]"
+                        class="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
                     />
                 </div>
                 <!-- Order Type Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-medium text-gray-600">Order Type:</label>
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label class="text-xs font-medium text-gray-600 mb-1">Order Type:</label>
                     <Multiselect
                         v-model="selectedOrderType"
                         :options="orderTypeOptions"
                         :searchable="true"
                         :close-on-select="true"
                         :show-labels="false"
+                        label="label"
+                        track-by="value"
                         placeholder="All Order Types"
-                        class="min-w-[200px]"
+                        class="w-full sm:w-auto"
                     />
                 </div>
                 <!-- Supplier Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-medium text-gray-600">Supplier:</label>
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label class="text-xs font-medium text-gray-600 mb-1">Supplier:</label>
                     <Multiselect
                         v-model="selectedSupplier"
-                        :options="props.loadSuppliers"
+                        :options="supplierOptions"
                         :searchable="true"
                         :close-on-select="true"
                         :show-labels="false"
                         label="label"
                         track-by="value"
                         placeholder="All Suppliers"
-                        class="min-w-[200px]"
+                        class="w-full sm:w-auto"
                     />
-                </div>
-                <!-- Apply Filters Button -->
-                <div>
-                    <button
-                        @click="handleFilterChange"
-                        class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
-                    >
-                        Apply Filters
-                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="flex flex-row gap-3 mb-6">
-            <!-- Inventory Statistics Cards -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">In Stock</h3>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">{{ inStockCount }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Low Stock</h3>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-orange-600">{{ lowStockCount }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Out of Stock</h3>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-red-600">{{ outOfStockCount }}</div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
             <!-- Product Category Card -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
+            <div class="w-full sm:w-64 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-400"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">List of Categories</h3>
+                            <h3 class="text-2xs font-semibold text-white">Categories</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-1">
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">Drugs</div>
-                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Drugs || 0 }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">Drugs</div>
+                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Drugs || 0 }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">Consumable</div>
-                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Consumable || 0 }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">Cons</div>
+                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Consumable || 0 }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">Lab</div>
-                            <div class="text-sm font-bold text-blue-600">{{ productCategoryCard.Lab || 0 }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">Lab</div>
+                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Lab || 0 }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Warehouse/Facilities Card -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
+            <div class="w-full sm:w-64 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-300"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Warehouse/Facilities</h3>
+                            <h3 class="text-2xs font-semibold text-white">WH/FC</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
                         </div>
                     </div>
-                    <div class="grid grid-cols-6 gap-1">
+                    <div class="grid grid-cols-3 gap-2">
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">WH</div>
-                            <div class="text-sm font-bold text-emerald-600">{{ warehouseCountCard || 0 }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">WH</div>
+                            <div class="text-2xs font-bold text-white">{{ filteredWarehouseCountCard || 0 }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">HC</div>
-                            <div class="text-sm font-bold text-emerald-600">{{ getCount('HC') }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">HC</div>
+                            <div class="text-2xs font-bold text-white">{{ getCount('HC') }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">PHU</div>
-                            <div class="text-sm font-bold text-emerald-600">{{ getCount('PHU') }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">PHU</div>
+                            <div class="text-2xs font-bold text-white">{{ getCount('PHU') }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">RH</div>
-                            <div class="text-sm font-bold text-emerald-600">{{ getCount('RH') }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">RH</div>
+                            <div class="text-2xs font-bold text-white">{{ getCount('RH') }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">DH</div>
-                            <div class="text-sm font-bold text-emerald-600">{{ getCount('DH') }}</div>
+                            <div class="text-2xs font-medium text-white opacity-90">DH</div>
+                            <div class="text-2xs font-bold text-white">{{ getCount('DH') }}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600">MT</div>
-                            <div class="text-sm font-bold text-emerald-600">5</div>
+                            <div class="text-2xs font-medium text-white opacity-90">MT</div>
+                            <div class="text-2xs font-bold text-white">5</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Order Card -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-amber-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
+            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-400"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Orders</h3>
+                            <h3 class="text-2xs font-semibold text-white">Orders</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
                         </div>
                     </div>
                     <div class="text-center">
-                        <div class="text-xs font-medium text-gray-600">{{ orderLabels[selectedOrderTypeValue] }}</div>
-                        <div class="text-sm font-bold text-amber-600">{{ orderCounts[selectedOrderTypeValue] || 0 }}</div>
+                        <div class="text-2xs font-medium text-white opacity-90">{{ orderLabels[selectedOrderTypeValue] }}</div>
+                        <div class="text-2xs font-bold text-white">{{ filteredOrderCounts[selectedOrderTypeValue] || 0 }}</div>
                     </div>
                 </div>
             </div>
 
             <!-- Transfers Received Card -->
-            <div class="flex-1 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-teal-600/5"></div>
-                <div class="relative p-3">
-                    <div class="flex items-center justify-between mb-1">
+            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-teal-500 rounded-full"></div>
-                            <h3 class="text-sm font-semibold text-gray-900">Transfers</h3>
+                            <h3 class="text-2xs font-semibold text-white">Transfers</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
                         </div>
                     </div>
                     <div class="text-center">
-                        <div class="text-xs font-medium text-gray-600">Received</div>
-                        <div class="text-sm font-bold text-teal-600">{{ transferReceivedCard || 0 }}</div>
+                        <div class="text-2xs font-medium text-white opacity-90">Received</div>
+                        <div class="text-2xs font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Cost Card -->
+            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-300"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-2xs font-semibold text-white">Total Cost</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Approved PO</div>
+                        <div class="text-2xs font-bold text-white">${{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fulfillment Percentage Card -->
+            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-400"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-2xs font-semibold text-white">Fulfillment</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Rate</div>
+                        <div class="text-2xs font-bold text-white">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Delayed Card -->
+            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
+                <div class="relative p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-2xs font-semibold text-white">Delayed</h3>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Orders</div>
+                        <div class="text-2xs font-bold text-white">{{ filteredOrdersDelayedCount }}</div>
                     </div>
                 </div>
             </div>
 
         </div>
         <!-- Tabs, Total Cost, and Order Statistics Row -->
-        <div class="flex justify-between items-start">
+        <div class="flex flex-col lg:flex-row justify-between items-start gap-6">
             <!-- Tabs Section -->
-            <div class="flex-1 mr-8">
+            <div class="flex-1 lg:mr-8 w-full">
                 <!-- Tab Navigation -->
                 <div class="flex border-b border-gray-200 mb-6">
                     <button
@@ -561,78 +661,227 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
                 </div>
             </div>
 
-            <!-- Total Cost and Fulfillment Cards -->
-            <div class="flex flex-col space-y-3 mx-4">
-                <!-- Total Cost Card -->
-                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
-                    <div class="relative p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <h3 class="text-sm font-semibold text-gray-900">Total Cost</h3>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600 mb-1">Approved PO</div>
-                            <div class="text-base font-bold text-green-600">${{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                        </div>
+
+
+            <!-- Order Statistics and Stock Status Section -->
+            <div class="flex flex-col sm:flex-row items-stretch space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
+                <!-- Order Statistics -->
+                <div class="flex flex-col items-end">
+                    <div class="text-xs font-bold text-gray-700 mb-1 text-end">Order Status</div>
+                    <div v-for="status in [
+                      { key: 'pending', img: '/assets/images/pending.png', label: 'Pending' },
+                      { key: 'reviewed', img: '/assets/images/review.png', label: 'Reviewed' },
+                      { key: 'approved', img: '/assets/images/approved.png', label: 'Approved' },
+                      { key: 'in_process', img: '/assets/images/inprocess.png', label: 'In Process' },
+                      { key: 'dispatched', img: '/assets/images/dispatch.png', label: 'Dispatched' },
+                      { key: 'delivered', img: '/assets/images/delivery.png', label: 'Delivered' },
+                      { key: 'received', img: '/assets/images/received.png', label: 'Received' },
+                      { key: 'rejected', img: '/assets/images/rejected.png', label: 'Rejected' }
+                    ]" :key="status.key" class="flex flex-row items-center space-x-2 min-w-[100px]">
+                      <img :src="status.img" class="w-8 h-8" :alt="status.label" :title="status.label" />
+                      <div>
+                        <div class="text-xs font-bold text-gray-900">{{ props.orderStats[status.key] }}</div>
+                        <div class="text-[10px] text-gray-600">{{ status.label }}</div>
+                      </div>
                     </div>
                 </div>
 
-                <!-- Fulfillment Percentage Card -->
-                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5"></div>
-                    <div class="relative p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                                <h3 class="text-sm font-semibold text-gray-900">Fulfillment</h3>
+                <!-- Stock Status Cards (Inventory/Index.vue style) -->
+                <div class="flex flex-col items-end justify-start h-full">
+                    <div class="text-xs font-bold text-gray-700 mb-1 text-end">Stock Status</div>
+                    <div class="space-y-2 flex-1 flex flex-col justify-start">
+                        <div class="flex items-center rounded-xl bg-green-50 p-1 shadow">
+                            <img src="/assets/images/in_stock.png" class="w-[40px] h-[40px]" alt="In Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-sm font-bold text-green-600">{{ inStockCount }}</span>
+                                <span class="ml-2 text-xs text-green-600">In Stock</span>
                             </div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600 mb-1">Rate</div>
-                            <div class="text-base font-bold text-cyan-600">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Orders Delayed Card -->
-                <div class="w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-rose-600/5"></div>
-                    <div class="relative p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-rose-500 rounded-full"></div>
-                                <h3 class="text-sm font-semibold text-gray-900">Delayed</h3>
+                        <div class="flex items-center rounded-xl bg-orange-50 p-1 shadow">
+                            <img src="/assets/images/low_stock.png" class="w-[40px] h-[40px]" alt="Low Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-sm font-bold text-orange-600">{{ lowStockCount }}</span>
+                                <span class="ml-2 text-xs text-orange-600">Low Stock</span>
                             </div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-xs font-medium text-gray-600 mb-1">Orders</div>
-                            <div class="text-base font-bold text-rose-600">{{ ordersDelayedCount }}</div>
+                        <div class="flex items-center rounded-xl bg-red-50 p-1 shadow">
+                            <img src="/assets/images/out_stock.png" class="w-[40px] h-[40px]" alt="Out of Stock" />
+                            <div class="ml-4 flex flex-col">
+                                <span class="text-sm font-bold text-red-600">{{ outOfStockCount }}</span>
+                                <span class="ml-2 text-xs text-red-600">Out of Stock</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Order Statistics Section -->
-            <div class="flex flex-col items-end">
-                <div class="text-xs font-bold text-gray-700 mb-1 text-end">Order Status</div>
-                <div v-for="status in [
-                  { key: 'pending', img: '/assets/images/pending.png', label: 'Pending' },
-                  { key: 'reviewed', img: '/assets/images/review.png', label: 'Reviewed' },
-                  { key: 'approved', img: '/assets/images/approved.png', label: 'Approved' },
-                  { key: 'in_process', img: '/assets/images/inprocess.png', label: 'In Process' },
-                  { key: 'dispatched', img: '/assets/images/dispatch.png', label: 'Dispatched' },
-                  { key: 'delivered', img: '/assets/images/delivery.png', label: 'Delivered' },
-                  { key: 'received', img: '/assets/images/received.png', label: 'Received' },
-                  { key: 'rejected', img: '/assets/images/rejected.png', label: 'Rejected' }
-                ]" :key="status.key" class="flex flex-row items-center space-x-2 min-w-[100px]">
-                  <img :src="status.img" class="w-8 h-8" :alt="status.label" :title="status.label" />
-                  <div>
-                    <div class="text-xs font-bold text-gray-900">{{ props.orderStats[status.key] }}</div>
-                    <div class="text-[10px] text-gray-600">{{ status.label }}</div>
-                  </div>
+        <!-- Asset Information Section -->
+        <div class="mt-6">
+            <div class="text-xs font-bold text-gray-700 mb-3">Asset Information</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+                <!-- Asset Types -->
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Furniture</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">24</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">IT Equipment</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">18</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-green-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Medical Equipment</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">32</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Vehicles</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">12</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Others</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">8</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Status -->
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">In Use</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">156</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Needs Maintenance</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">23</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-2xs font-semibold text-white">Disposed</h3>
+                            </div>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
+                            <div class="text-2xs font-bold text-white">7</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

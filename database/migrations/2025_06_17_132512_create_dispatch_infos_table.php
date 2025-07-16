@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('received_cartoons')->nullable();
             $table->string('driver_number');
             $table->string('plate_number');
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }
