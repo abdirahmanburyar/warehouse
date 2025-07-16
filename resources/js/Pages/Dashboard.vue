@@ -6,9 +6,13 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar } from 'vue-chartjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
+
+// Register the datalabels plugin
+Chart.register(ChartDataLabels);
 
 const props = defineProps({
     dashboardData: {
@@ -428,6 +432,19 @@ const issuedChartOptions = {
                 label: function(context) {
                     return context.parsed.y.toLocaleString();
                 }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'top',
+            color: '#374151',
+            font: {
+                weight: 'bold',
+                size: 11
+            },
+            formatter: function(value, context) {
+                return value > 0 ? value.toLocaleString() : '';
             }
         }
     },

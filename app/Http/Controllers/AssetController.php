@@ -46,7 +46,7 @@ class AssetController extends Controller
             $assets->where('fund_source_id', $request->fund_source_id);
         }
 
-        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource')
+        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource','region:id,name')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
