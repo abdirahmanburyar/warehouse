@@ -10,6 +10,8 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar, Doughnut, Line, Pie } from 'vue-chartjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import Datepicker from 'vue-datepicker-next';
+import 'vue-datepicker-next/index.css';
 
 // Register the datalabels plugin
 Chart.register(ChartDataLabels);
@@ -96,8 +98,22 @@ function getCount(abbr) {
 }
 
 // Date filters
-const dateFrom = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
-const dateTo = ref(dayjs().endOf('month').format('YYYY-MM-DD'));
+const dateRange = ref([
+    dayjs().startOf('month').toDate(),
+    dayjs().endOf('month').toDate()
+]);
+
+// Date presets for the datepicker
+const datePresets = [
+    { label: 'Today', value: [new Date(), new Date()] },
+    { label: 'Yesterday', value: [dayjs().subtract(1, 'day').toDate(), dayjs().subtract(1, 'day').toDate()] },
+    { label: 'Last 7 days', value: [dayjs().subtract(7, 'day').toDate(), new Date()] },
+    { label: 'Last 30 days', value: [dayjs().subtract(30, 'day').toDate(), new Date()] },
+    { label: 'This month', value: [dayjs().startOf('month').toDate(), dayjs().endOf('month').toDate()] },
+    { label: 'Last month', value: [dayjs().subtract(1, 'month').startOf('month').toDate(), dayjs().subtract(1, 'month').endOf('month').toDate()] },
+    { label: 'This quarter', value: [dayjs().startOf('quarter').toDate(), dayjs().endOf('quarter').toDate()] },
+    { label: 'This year', value: [dayjs().startOf('year').toDate(), dayjs().endOf('year').toDate()] }
+];
 
 // Order type filter - convert to object format for Multiselect
 const orderTypeOptions = [
@@ -211,14 +227,14 @@ const filteredTotalCost = computed(() => {
     return props.totalApprovedPOCost || 0;
 });
 
-// Watch for date changes and emit events to parent component
-watch([dateFrom, dateTo], ([newDateFrom, newDateTo]) => {
-    // You can emit events here to notify the parent component about date changes
-    // This will allow the backend to recalculate the total cost based on the date range
-    console.log('Date range changed:', { from: newDateFrom, to: newDateTo });
-    
-    // Example: You might want to emit an event to the parent component
-    // emit('dateRangeChanged', { from: newDateFrom, to: newDateTo });
+// Watch for date range changes
+watch(dateRange, (newDateRange) => {
+    if (newDateRange && newDateRange.length === 2) {
+        console.log('Date range changed:', { 
+            from: dayjs(newDateRange[0]).format('YYYY-MM-DD'), 
+            to: dayjs(newDateRange[1]).format('YYYY-MM-DD') 
+        });
+    }
 }, { deep: true });
 
 // Watch for order type changes
@@ -243,11 +259,23 @@ const clearAllStatuses = () => {
     selectedOrderStatus.value = [];
 };
 
+// Helper function to get date range values
+const getDateRangeValues = () => {
+    if (dateRange.value && dateRange.value.length === 2) {
+        return {
+            from: dayjs(dateRange.value[0]).format('YYYY-MM-DD'),
+            to: dayjs(dateRange.value[1]).format('YYYY-MM-DD')
+        };
+    }
+    return { from: '', to: '' };
+};
+
 // Method to handle filter changes and update data
 const handleFilterChange = () => {
+    const dateValues = getDateRangeValues();
     const filters = {
-        dateFrom: dateFrom.value,
-        dateTo: dateTo.value,
+        dateFrom: dateValues.from,
+        dateTo: dateValues.to,
         orderType: selectedOrderTypeValue.value,
         supplier: getSelectedSupplierValue()
     };
@@ -1469,35 +1497,65 @@ const orderStatusChartData = computed(() => {
 <template>
     <Head title="Dashboard" />
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
-        <!-- Filters Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-2">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-x-4">
-                <!-- Date From Filter -->
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label class="text-xs font-medium text-gray-600 mb-1">Date From:</label>
-                    <input
-                        type="date"
-                        v-model="dateFrom"
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-                    />
-                </div>
-                <!-- Date To Filter -->
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label class="text-xs font-medium text-gray-600 mb-1">Date To:</label>
-                    <input
-                        type="date"
-                        v-model="dateTo"
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-                    />
-                </div>
-            </div>
-        </div>
-
         <!-- Quick Stats Cards Row -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <!-- Total PO Cost Card -->
+            <Link :href="route('purchase-orders.index')" class="block">
+                <div class="relative overflow-hidden rounded-none border-l-4 border-l-green-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-green-500 to-green-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Total PO Cost</h3>
+                            <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+
+            <!-- Transfers Card -->
+            <Link :href="route('transfers.index')" class="block">
+                <div class="relative overflow-hidden rounded-none border-l-4 border-l-pink-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
+                            <div class="text-2xl font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+
+            <!-- Delayed Orders Card -->
+            <Link :href="route('orders.index')" class="block">
+                <div class="relative overflow-hidden rounded-none border-l-4 border-l-orange-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
+                            <div class="text-2xl font-bold text-white">{{ filteredOrdersDelayedCount || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+
             <!-- Low Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-none border-l-4 border-l-orange-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
@@ -1515,8 +1573,8 @@ const orderStatusChartData = computed(() => {
 
             <!-- Out of Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-400"></div>
+                <div class="relative overflow-hidden rounded-none border-l-4 border-l-red-600 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-600 to-red-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Out of Stock</h3>
@@ -1530,60 +1588,33 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
             </Link>
+        </div>
 
-            <!-- Transfers Card -->
-            <Link :href="route('transfers.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
-                    <div class="relative p-6 flex items-center justify-between">
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
-                            <div class="text-2xl font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                            </svg>
-                        </div>
-                    </div>
+        <!-- Date Range Filter -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-700">Select Date Range</span>
                 </div>
-            </Link>
-
-            <!-- Total Cost Card -->
-            <Link :href="route('purchase-orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-400"></div>
-                    <div class="relative p-6 flex items-center justify-between">
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Total PO Cost</h3>
-                            <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </Link>
-
-            <!-- Delayed Orders Card -->
-            <Link :href="route('orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-teal-500 to-green-400"></div>
-                    <div class="relative p-6 flex items-center justify-between">
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
-                            <div class="text-2xl font-bold text-white">{{ filteredOrdersDelayedCount || 0 }}</div>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </Link>
+                
+                <Datepicker
+                    v-model="dateRange"
+                    range
+                    :enable-time-picker="false"
+                    :format="{ year: 'numeric', month: 'short', day: 'numeric' }"
+                    :placeholder="'Select date range'"
+                    :preview-format="'MMM DD, YYYY'"
+                    :teleport="true"
+                    :auto-apply="true"
+                    :min-date="new Date('2020-01-01')"
+                    :max-date="new Date('2030-12-31')"
+                    :presets="datePresets"
+                    class="w-full max-w-md"
+                />
+            </div>
         </div>
 
         <!-- Charts Row -->
@@ -1622,7 +1653,7 @@ const orderStatusChartData = computed(() => {
         <!-- Fulfillment Chart Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Fulfillment Chart - Takes 8 columns -->
-            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <div class="lg:col-span-8 bg-white rounded-none shadow-lg border border-gray-200 p-6">
                 <div class="mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Top 10 Suppliers - Fulfillment Rate</h3>
                     <p class="text-sm text-gray-600 mt-1">Supplier performance based on fulfillment percentage</p>
@@ -1635,7 +1666,7 @@ const orderStatusChartData = computed(() => {
             <!-- Summary Stats - Takes 4 columns -->
             <div class="lg:col-span-4 space-y-4">
                 <!-- Lowest Performer Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-semibold text-gray-900">Lowest Performer</h3>
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1646,7 +1677,7 @@ const orderStatusChartData = computed(() => {
                     <div class="text-2xl font-bold text-red-600">{{ lowestPerformerRate }}%</div>
                 </div>
                 <!-- Top Performer Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-semibold text-gray-900">Top Performer</h3>
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1658,7 +1689,7 @@ const orderStatusChartData = computed(() => {
                 </div>
                 
                 <!-- Total Suppliers Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-semibold text-gray-900">Total Suppliers</h3>
                         <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1767,7 +1798,7 @@ const orderStatusChartData = computed(() => {
 
                     <!-- Facilities Tab -->
                     <div v-if="activeTab === 'facilities'" class="space-y-6">
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="bg-white rounded-none shadow-sm border border-gray-200 p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Facilities Data</h3>
                             <div class="text-gray-600 text-sm">
                                 Facilities information will be displayed here.
@@ -1826,7 +1857,7 @@ const orderStatusChartData = computed(() => {
             <div class="text-xs font-bold text-gray-700 mb-3">Asset Information</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
                 <!-- Asset Types -->
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1847,7 +1878,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1867,7 +1898,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-green-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1887,7 +1918,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1907,7 +1938,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1928,7 +1959,7 @@ const orderStatusChartData = computed(() => {
                 </div>
 
                 <!-- Asset Status -->
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1948,7 +1979,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1969,7 +2000,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
