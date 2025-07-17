@@ -19,6 +19,7 @@ use App\Models\Supplier;
 use App\Models\InventoryReport;
 use Carbon\Carbon;
 use App\Models\IssueQuantityReport;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -182,7 +183,32 @@ class DashboardController extends Controller
             }
         }
 
-        return Inertia::render('Dashboard', [
+        // Expired statistics
+        $now = Carbon::now();
+        $sixMonthsFromNow = $now->copy()->addMonths(6);
+        $oneYearFromNow = $now->copy()->addYear();
+
+        $expiredCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+            ->where('expiry_date', '<', $now)
+            ->count();
+        $expiring6MonthsCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+            ->where('expiry_date', '>=', $now)
+            ->where('expiry_date', '<=', $sixMonthsFromNow)
+            ->count();
+        $expiring1YearCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+            ->where('expiry_date', '>=', $now)
+            ->where('expiry_date', '<=', $oneYearFromNow)
+            ->count();
+
+        $expiredStats = [
+            'expired' => $expiredCount,
+            'expiring_within_6_months' => $expiring6MonthsCount,
+            'expiring_within_1_year' => $expiring1YearCount,
+        ];
+
+
+
+        $responseData = [
             'dashboardData' => [
                 'summary' => $facilityTypes,
                 'order_stats' => [],
@@ -229,7 +255,12 @@ class DashboardController extends Controller
             'warehouseChartData' => $warehouseChartData,
             'issuedData' => $issuedData,
             'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count])->values(),
-        ]);
+            'expiredStats' => $expiredStats,
+        ];
+
+
+
+        return Inertia::render('Dashboard', $responseData);
     }
 
     public function warehouseTracertItems(Request $request)

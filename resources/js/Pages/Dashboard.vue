@@ -90,7 +90,18 @@ const props = defineProps({
         required: false,
         default: () => []
     },
+    expiredStats: {
+        type: Object,
+        required: false,
+        default: () => ({
+            expired: 0,
+            expiring_within_6_months: 0,
+            expiring_within_1_year: 0
+        })
+    },
 });
+
+
 
 function getCount(abbr) {
     const found = props.dashboardData.summary.find(item => item.label === abbr);
@@ -556,6 +567,14 @@ const doughnutChartOptions = {
         animateScale: true,
         duration: 1200,
         easing: 'easeOutCubic'
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -636,6 +655,14 @@ const barChartOptions = {
     animation: {
         duration: 1000,
         easing: 'easeOutQuart'
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -738,6 +765,14 @@ const horizontalBarChartOptions = {
     animation: {
         duration: 1200,
         easing: 'easeOutCubic'
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -836,6 +871,14 @@ const orderChartOptions = {
     animation: {
         duration: 1200,
         easing: 'easeOutCubic'
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -940,6 +983,14 @@ const issuedChartOptions = {
                 minRotation: 0
             }
         }
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -1031,6 +1082,14 @@ const orderStatusChartOptions = {
     animation: {
         duration: 1200,
         easing: 'easeOutCubic'
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -1086,7 +1145,7 @@ const fulfillmentBarChartOptions = {
     scales: {
         y: { 
             beginAtZero: true,
-            max: 100,
+            max: 110,
             grid: {
                 color: 'rgba(0, 0, 0, 0.08)',
                 drawBorder: false,
@@ -1123,6 +1182,14 @@ const fulfillmentBarChartOptions = {
     animation: {
         duration: 1200,
         easing: 'easeOutCubic'
+    },
+    layout: {
+        padding: {
+            top: 40,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
     }
 };
 
@@ -1492,6 +1559,44 @@ const orderStatusChartData = computed(() => {
         }]
     };
 });
+
+// Expired statistics chart data
+const expiredChartData = computed(() => {
+    const data = {
+        labels: ['Expired', 'Expiring in 6 Months', 'Expiring in 1 Year'],
+        datasets: [{
+            data: [
+                props.expiredStats?.expired || 0,
+                props.expiredStats?.expiring_within_6_months || 0,
+                props.expiredStats?.expiring_within_1_year || 0
+            ],
+            backgroundColor: [
+                'rgba(75, 85, 99, 0.85)',    // Gray-600 for expired (from Expired/Index.vue)
+                'rgba(236, 72, 153, 0.85)',  // Pink-500 for 6 months (from Expired/Index.vue)
+                'rgba(251, 146, 60, 0.85)'   // Orange-400 for 1 year (from Expired/Index.vue)
+            ],
+            borderColor: [
+                'rgba(75, 85, 99, 1)',       // Gray-600 for expired
+                'rgba(236, 72, 153, 1)',     // Pink-500 for 6 months
+                'rgba(251, 146, 60, 1)'      // Orange-400 for 1 year
+            ],
+            borderWidth: 2,
+            hoverBackgroundColor: [
+                'rgba(75, 85, 99, 1)',
+                'rgba(236, 72, 153, 1)',
+                'rgba(251, 146, 60, 1)'
+            ],
+            hoverBorderColor: [
+                'rgba(75, 85, 99, 1)',
+                'rgba(236, 72, 153, 1)',
+                'rgba(251, 146, 60, 1)'
+            ],
+            hoverBorderWidth: 3
+        }]
+    };
+    
+    return data;
+});
 </script>
 
 <template>
@@ -1501,25 +1606,25 @@ const orderStatusChartData = computed(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <!-- Total PO Cost Card -->
             <Link :href="route('purchase-orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-none border-l-4 border-l-green-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-br from-green-500 to-green-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Total PO Cost</h3>
                             <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                        </div>
+                </div>
                         <div class="flex-shrink-0">
                             <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
-                        </div>
-                    </div>
+                </div>
+                </div>
                 </div>
             </Link>
 
             <!-- Transfers Card -->
             <Link :href="route('transfers.index')" class="block">
-                <div class="relative overflow-hidden rounded-none border-l-4 border-l-pink-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
@@ -1532,12 +1637,12 @@ const orderStatusChartData = computed(() => {
                             </svg>
                         </div>
                     </div>
-                </div>
+                        </div>
             </Link>
 
             <!-- Delayed Orders Card -->
             <Link :href="route('orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-none border-l-4 border-l-orange-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
@@ -1555,7 +1660,7 @@ const orderStatusChartData = computed(() => {
 
             <!-- Low Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-none border-l-4 border-l-orange-500 transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
@@ -1568,13 +1673,13 @@ const orderStatusChartData = computed(() => {
                             </svg>
                         </div>
                     </div>
-                </div>
+                        </div>
             </Link>
 
             <!-- Out of Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-none border-l-4 border-l-red-600 transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-600 to-red-400"></div>
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Out of Stock</h3>
@@ -1585,124 +1690,13 @@ const orderStatusChartData = computed(() => {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                             </svg>
                         </div>
-                    </div>
-                </div>
+                        </div>
+                        </div>
             </Link>
-        </div>
-
-        <!-- Date Range Filter -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <span class="text-sm font-medium text-gray-700">Select Date Range</span>
-                </div>
-                
-                <Datepicker
-                    v-model="dateRange"
-                    range
-                    :enable-time-picker="false"
-                    :format="{ year: 'numeric', month: 'short', day: 'numeric' }"
-                    :placeholder="'Select date range'"
-                    :preview-format="'MMM DD, YYYY'"
-                    :teleport="true"
-                    :auto-apply="true"
-                    :min-date="new Date('2020-01-01')"
-                    :max-date="new Date('2030-12-31')"
-                    :presets="datePresets"
-                    class="w-full max-w-md"
-                />
-            </div>
-        </div>
-
-        <!-- Charts Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Product Categories Chart -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold text-gray-900">Product Categories</h3>
-                </div>
-                <div class="h-64">
-                    <Doughnut :data="productCategoryChartData" :options="doughnutChartOptions" />
-                </div>
             </div>
 
-            <!-- Warehouse/Facilities Chart -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold text-gray-900">Warehouse & Facilities</h3>
-                </div>
-                <div class="h-64">
-                    <Bar :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
-                </div>
-            </div>
-
-            <!-- Orders Chart -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold text-gray-900">Supplies</h3>
-                </div>
-                <div class="h-64">
-                    <Bar :data="orderChartData" :options="orderChartOptions" />
-                </div>
-            </div>
-        </div>
-
-        <!-- Fulfillment Chart Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-            <!-- Fulfillment Chart - Takes 8 columns -->
-            <div class="lg:col-span-8 bg-white rounded-none shadow-lg border border-gray-200 p-6">
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold text-gray-900">Top 10 Suppliers - Fulfillment Rate</h3>
-                    <p class="text-sm text-gray-600 mt-1">Supplier performance based on fulfillment percentage</p>
-                </div>
-                <div class="h-80">
-                    <Bar :data="fulfillmentChartData" :options="fulfillmentBarChartOptions" />
-                </div>
-            </div>
-            
-            <!-- Summary Stats - Takes 4 columns -->
-            <div class="lg:col-span-4 space-y-4">
-                <!-- Lowest Performer Card -->
-                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-gray-900">Lowest Performer</h3>
-                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-lg font-semibold text-gray-900">{{ lowestPerformerName }}</div>
-                    <div class="text-2xl font-bold text-red-600">{{ lowestPerformerRate }}%</div>
-                </div>
-                <!-- Top Performer Card -->
-                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-gray-900">Top Performer</h3>
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-lg font-semibold text-gray-900">{{ topPerformerName }}</div>
-                    <div class="text-2xl font-bold text-green-600">{{ topPerformerRate }}%</div>
-                </div>
-                
-                <!-- Total Suppliers Card -->
-                <div class="bg-white rounded-none shadow-sm border border-gray-200 p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-gray-900">Total Suppliers</h3>
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-3xl font-bold text-purple-600">{{ totalSuppliers }}</div>
-                    <div class="text-sm text-gray-600 mt-1">Active suppliers</div>
-                </div>
-            </div>
-        </div>
         <!-- Tabs, Total Cost, and Order Statistics Row -->
-        <div class="flex flex-col lg:flex-row justify-between items-start gap-6">
+        <div class="flex flex-col lg:flex-row justify-between items-start gap-6 mb-6">
             <!-- Tabs Section -->
             <div class="flex-1 lg:mr-8 w-full">
                 <!-- Tab Navigation -->
@@ -1753,7 +1747,6 @@ const orderStatusChartData = computed(() => {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- Chart Container -->
                             <div class="relative" :class="chartCount > 1 ? 'min-h-96' : 'h-80'">
                                 <!-- Loading State -->
@@ -1763,7 +1756,6 @@ const orderStatusChartData = computed(() => {
                                         <span class="text-gray-600">Loading chart data...</span>
                                     </div>
                                 </div>
-                                
                                 <!-- Error State -->
                                 <div v-else-if="chartError" class="absolute inset-0 flex items-center justify-center bg-red-50 rounded-lg">
                                     <div class="text-center">
@@ -1773,14 +1765,12 @@ const orderStatusChartData = computed(() => {
                                         </button>
                                     </div>
                                 </div>
-                                
                                 <!-- Charts Grid -->
                                 <div v-else class="h-full">
                                     <!-- Single Chart -->
                                     <div v-if="chartCount === 1" class="h-full">
                                         <Bar :data="localWarehouseChartData[0]" :options="issuedChartOptions" />
                                     </div>
-                                    
                                     <!-- Multiple Charts Grid - 3 charts per row -->
                                     <div v-else class="space-y-6">
                                         <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1795,10 +1785,9 @@ const orderStatusChartData = computed(() => {
                             </div>
                         </div>
                     </div>
-
                     <!-- Facilities Tab -->
                     <div v-if="activeTab === 'facilities'" class="space-y-6">
-                        <div class="bg-white rounded-none shadow-sm border border-gray-200 p-6">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Facilities Data</h3>
                             <div class="text-gray-600 text-sm">
                                 Facilities information will be displayed here.
@@ -1807,10 +1796,171 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Date Range Filter -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-gray-700">Select Date Range</span>
+                </div>
+                <Datepicker
+                    v-model="dateRange"
+                    range
+                    :enable-time-picker="false"
+                    :format="{ year: 'numeric', month: 'short', day: 'numeric' }"
+                    :placeholder="'Select date range'"
+                    :preview-format="'MMM DD, YYYY'"
+                    :teleport="true"
+                    :auto-apply="true"
+                    :min-date="new Date('2020-01-01')"
+                    :max-date="new Date('2030-12-31')"
+                    :presets="datePresets"
+                    class="w-full max-w-md"
+                />
+            </div>
+        </div>
 
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Product Categories Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Product Categories</h3>
+                        </div>
+                <div class="h-64">
+                    <Doughnut :data="productCategoryChartData" :options="doughnutChartOptions" />
+                        </div>
+                    </div>
 
+            <!-- Warehouse/Facilities Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Warehouse & Facilities</h3>
+                    </div>
+                <div class="h-64">
+                    <Bar :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
+                </div>
+            </div>
 
+            <!-- Orders Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Supplies</h3>
+                        </div>
+                <div class="h-64">
+                    <Bar :data="orderChartData" :options="orderChartOptions" />
+                        </div>
+                    </div>
+                    </div>
+
+        <!-- Fulfillment Chart Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <!-- Fulfillment Chart - Takes 8 columns -->
+            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-3">
+                <div class="mb-2">
+                    <h3 class="text-xl font-bold text-gray-900">Top 10 Suppliers - Fulfillment Rate</h3>
+                    <p class="text-sm text-gray-600 mt-1">Supplier performance based on fulfillment percentage</p>
+                </div>
+                <div class="h-64">
+                    <Bar :data="fulfillmentChartData" :options="fulfillmentBarChartOptions" />
+                </div>
+            </div>
+            
+            <!-- Summary Stats - Takes 4 columns -->
+            <div class="lg:col-span-4 space-y-3">
+                <!-- Lowest Performer Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-gray-900">Lowest Performer</h3>
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-lg font-semibold text-gray-900">{{ lowestPerformerName }}</div>
+                    <div class="text-xl font-bold text-red-600">{{ lowestPerformerRate }}%</div>
+                </div>
+                
+                <!-- Top Performer Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-gray-900">Top Performer</h3>
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-lg font-semibold text-gray-900">{{ topPerformerName }}</div>
+                    <div class="text-xl font-bold text-green-600">{{ topPerformerRate }}%</div>
+                </div>
+
+                <!-- Total Suppliers Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-gray-900">Total Suppliers</h3>
+                        <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-purple-600">{{ totalSuppliers }}</div>
+                    <div class="text-xs text-gray-600 mt-1">Active suppliers</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expired Statistics Chart Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <!-- Expired Chart - Takes 8 columns -->
+            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-3">
+                <div class="mb-2">
+                    <h3 class="text-xl font-bold text-gray-900">Expiry Status Overview</h3>
+                    <p class="text-sm text-gray-600 mt-1">Items by expiry status and timeline</p>
+                </div>
+                <div class="h-64">
+                    <Doughnut :data="expiredChartData" :options="doughnutChartOptions" />
+                </div>
+            </div>
+            
+            <!-- Summary Stats - Takes 4 columns -->
+            <div class="lg:col-span-4 space-y-3">
+                <!-- Expired Items Card -->
+                <div class="bg-gray-600 rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-white">Expired Items</h3>
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-xl font-bold text-white">{{ props.expiredStats?.expired || 0 }}</div>
+                    <div class="text-xs text-white mt-1">Items past expiry date</div>
+                </div>
+                
+                <!-- Expiring in 6 Months Card -->
+                <div class="bg-pink-500 rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-white">Expiring in 6 Months</h3>
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_6_months || 0 }}</div>
+                    <div class="text-xs text-white mt-1">Items expiring soon</div>
+                </div>
+                
+                <!-- Expiring in 1 Year Card -->
+                <div class="bg-orange-400 rounded-xl shadow-sm border border-gray-200 p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-white">Expiring in 1 Year</h3>
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_1_year || 0 }}</div>
+                    <div class="text-xs text-white mt-1">Items to monitor</div>
+                </div>
+            </div>
         </div>
 
         <!-- Order Status Chart Section -->
@@ -1819,7 +1969,7 @@ const orderStatusChartData = computed(() => {
                 <div>
                     <h3 class="text-xl font-bold text-gray-900">Order Status Overview</h3>
                     <p class="text-sm text-gray-600 mt-1">Track orders across different statuses</p>
-                </div>
+                            </div>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <!-- Status Filter -->
                     <div class="flex flex-col">
@@ -1844,9 +1994,9 @@ const orderStatusChartData = computed(() => {
                                 Clear
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
+                            </div>
+                        </div>
+                            </div>
             <div class="h-80">
                 <Bar :data="orderStatusChartData" :options="orderStatusChartOptions" />
             </div>
@@ -1857,7 +2007,7 @@ const orderStatusChartData = computed(() => {
             <div class="text-xs font-bold text-gray-700 mb-3">Asset Information</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
                 <!-- Asset Types -->
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1878,7 +2028,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1898,7 +2048,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-green-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1918,7 +2068,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1938,7 +2088,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1959,7 +2109,7 @@ const orderStatusChartData = computed(() => {
                 </div>
 
                 <!-- Asset Status -->
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -1979,7 +2129,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">
@@ -2000,7 +2150,7 @@ const orderStatusChartData = computed(() => {
                     </div>
                 </div>
 
-                <div class="w-full group relative bg-white rounded-none shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"></div>
                     <div class="relative p-4">
                         <div class="flex items-center justify-between mb-2">

@@ -49,6 +49,34 @@ Route::get('/', function () {
     ->name('welcome')
     ->middleware('guest');
 
+// Test route for expired stats (no auth required)
+Route::get('/test-expired-stats', function() {
+    $now = \Carbon\Carbon::now();
+    $sixMonthsFromNow = $now->copy()->addMonths(6);
+    $oneYearFromNow = $now->copy()->addYear();
+
+    $expiredCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+        ->where('expiry_date', '<', $now)
+        ->count();
+    $expiring6MonthsCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+        ->where('expiry_date', '>=', $now)
+        ->where('expiry_date', '<=', $sixMonthsFromNow)
+        ->count();
+    $expiring1YearCount = \App\Models\InventoryItem::where('quantity', '>', 0)
+        ->where('expiry_date', '>=', $now)
+        ->where('expiry_date', '<=', $oneYearFromNow)
+        ->count();
+
+    return response()->json([
+        'expired' => $expiredCount,
+        'expiring_within_6_months' => $expiring6MonthsCount,
+        'expiring_within_1_year' => $expiring1YearCount,
+        'now' => $now->toDateString(),
+        'six_months_from_now' => $sixMonthsFromNow->toDateString(),
+        'one_year_from_now' => $oneYearFromNow->toDateString(),
+    ]);
+});
+
 // Broadcast routes
 Broadcast::routes(['middleware' => ['web', 'auth']]);
 
@@ -64,10 +92,12 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     
     // Default route - redirect to login or dashboard
     Route::controller(DashboardController::class)
-        ->group(function () {
-            Route::get('/dashboard', 'index')->name('dashboard');
-            Route::post('/warehouse/tracert-items', 'warehouseTracertItems')->name('dashboard.warehouse.tracert-items');
-        });
+    ->group(function () {
+        Route::get('/dashboard', 'index')->name('dashboard');
+        Route::post('/warehouse/tracert-items', 'warehouseTracertItems')->name('dashboard.warehouse.tracert-items');
+    });
+
+
     // Unauthorized access page
     Route::get('/unauthorized', function () {
         return Inertia::render('Unauthorized');

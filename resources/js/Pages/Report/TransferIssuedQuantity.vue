@@ -130,9 +130,14 @@
                         v-model="filters.per_page"
                         class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:bg-white transition-colors duration-200 text-sm"
                     >
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
+                        <option value="75">75</option>
                         <option value="100">100</option>
+                        <option value="150">150</option>
                         <option value="200">200</option>
                         <option value="500">500</option>
                     </select>
@@ -172,7 +177,7 @@
                     <thead class="bg-gradient-to-r from-red-50 to-orange-50 border-b border-gray-200">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Reference ID
+                                Transfer ID
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 Product
@@ -187,22 +192,10 @@
                                 Quantity
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Batch Number
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Expiry Date
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 Issued Date
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 Issued By
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Unit Cost
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Total Cost
                             </th>
                         </tr>
                     </thead>
@@ -221,46 +214,37 @@
                                             </svg>
                                         </div>
                                     </div>
-                                                                                <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">#{{ issuedQuantity.transfer?.id || issuedQuantity.id || 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">{{ issuedQuantity.transfer?.transferID || 'Issued' }}</div>
-                                            </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">#{{ issuedQuantity.transfer?.id || 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500">{{ issuedQuantity.transfer?.transferID || 'N/A' }}</div>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ issuedQuantity.product?.name || 'N/A' }}</div>
                                 <div class="text-sm text-gray-500">{{ issuedQuantity.product?.category?.name || 'N/A' }}</div>
                             </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
-                                            {{ issuedQuantity.transfer?.from_facility?.name || issuedQuantity.transfer?.from_warehouse?.name || issuedQuantity.warehouse?.name || 'N/A' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ issuedQuantity.transfer?.from_facility_id ? 'Facility' : issuedQuantity.transfer?.from_warehouse_id ? 'Warehouse' : issuedQuantity.warehouse_id ? 'Warehouse' : '' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
-                                            {{ issuedQuantity.transfer?.to_facility?.name || issuedQuantity.transfer?.to_warehouse?.name || issuedQuantity.warehouse?.name || 'N/A' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ issuedQuantity.transfer?.to_facility_id ? 'Facility' : issuedQuantity.transfer?.to_warehouse_id ? 'Warehouse' : issuedQuantity.warehouse_id ? 'Warehouse' : 'N/A' }}
-                                        </div>
-                                    </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    {{ issuedQuantity.transfer?.from_facility?.name || issuedQuantity.transfer?.from_warehouse?.name || 'N/A' }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ issuedQuantity.transfer?.from_facility_id ? 'Facility' : issuedQuantity.transfer?.from_warehouse_id ? 'Warehouse' : '' }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    {{ issuedQuantity.transfer?.to_facility?.name || issuedQuantity.transfer?.to_warehouse?.name || 'N/A' }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ issuedQuantity.transfer?.to_facility_id ? 'Facility' : issuedQuantity.transfer?.to_warehouse_id ? 'Warehouse' : '' }}
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-lg font-bold text-gray-900">
                                     {{ issuedQuantity.quantity.toLocaleString() }}
                                 </div>
                                 <div class="text-sm text-gray-500">{{ issuedQuantity.uom || 'units' }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ issuedQuantity.batch_number || 'N/A' }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ issuedQuantity.expiry_date ? moment(issuedQuantity.expiry_date).format('DD/MM/YYYY') : 'N/A' }}</div>
-                                <div v-if="issuedQuantity.expiry_date" class="text-xs text-gray-500">
-                                    {{ getExpiryStatus(issuedQuantity.expiry_date) }}
-                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ formatDate(issuedQuantity.issued_date) }}</div>
@@ -269,16 +253,6 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ issuedQuantity.issuer?.name || 'N/A' }}</div>
                                 <div class="text-sm text-gray-500">Issued</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ issuedQuantity.unit_cost ? `$${parseFloat(issuedQuantity.unit_cost).toFixed(2)}` : 'N/A' }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ issuedQuantity.total_cost ? `$${parseFloat(issuedQuantity.total_cost).toFixed(2)}` : 'N/A' }}
-                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -348,16 +322,8 @@ const debouncedFetchData = () => {
 const fetchData = () => {
     loading.value = true;
 
-    // Only include non-empty filters in the request
-    const cleanFilters = {};
-    Object.keys(filters.value).forEach(key => {
-        if (filters.value[key] && filters.value[key] !== '') {
-            cleanFilters[key] = filters.value[key];
-        }
-    });
-
     router.visit(route("reports.transfer-issued-quantity"), {
-        data: cleanFilters,
+        data: filters.value,
         preserveState: true,
         onSuccess: () => {
             loading.value = false;
@@ -370,15 +336,7 @@ const fetchData = () => {
 
 // Get results for pagination
 const getResult = (page = 1) => {
-    // Only include non-empty filters in the request
-    const cleanFilters = {};
-    Object.keys(filters.value).forEach(key => {
-        if (filters.value[key] && filters.value[key] !== '') {
-            cleanFilters[key] = filters.value[key];
-        }
-    });
-    
-    const params = { ...cleanFilters, page };
+    const params = { ...filters.value, page };
     
     router.visit(route("reports.transfer-issued-quantity"), {
         data: params,
@@ -413,23 +371,6 @@ const formatTime = (dateString) => {
     return moment(dateString).format("HH:mm");
 };
 
-const getExpiryStatus = (expiryDate) => {
-    if (!expiryDate) return "N/A";
-    const today = moment();
-    const expiry = moment(expiryDate);
-    const daysUntilExpiry = expiry.diff(today, 'days');
-    
-    if (daysUntilExpiry < 0) {
-        return 'Expired';
-    } else if (daysUntilExpiry <= 30) {
-        return 'Expiring Soon';
-    } else if (daysUntilExpiry <= 90) {
-        return 'Expiring in 3 months';
-    } else {
-        return 'Valid';
-    }
-};
-
 // Export to Excel
 const exportToExcel = () => {
     loading.value = true;
@@ -441,17 +382,12 @@ const exportToExcel = () => {
         "Reference No": issuedQuantity.transfer?.transferID || "N/A",
         "Product": issuedQuantity.product?.name || "N/A",
         "Category": issuedQuantity.product?.category?.name || "N/A",
-        "From": issuedQuantity.transfer?.from_facility?.name || issuedQuantity.transfer?.from_warehouse?.name || issuedQuantity.warehouse?.name || "N/A",
-        "To": issuedQuantity.transfer?.to_facility?.name || issuedQuantity.transfer?.to_warehouse?.name || issuedQuantity.warehouse?.name || "N/A",
+        "From": issuedQuantity.transfer?.from_facility?.name || issuedQuantity.transfer?.from_warehouse?.name || "N/A",
+        "To": issuedQuantity.transfer?.to_facility?.name || issuedQuantity.transfer?.to_warehouse?.name || "N/A",
         "Quantity": issuedQuantity.quantity,
         "UOM": issuedQuantity.uom || "units",
-        "Batch Number": issuedQuantity.batch_number || "N/A",
-        "Expiry Date": issuedQuantity.expiry_date ? moment(issuedQuantity.expiry_date).format('DD/MM/YYYY') : "N/A",
-        "Expiry Status": getExpiryStatus(issuedQuantity.expiry_date),
         "Issued Date": formatDate(issuedQuantity.issued_date),
         "Issued By": issuedQuantity.issuer?.name || "N/A",
-        "Unit Cost": issuedQuantity.unit_cost ? parseFloat(issuedQuantity.unit_cost).toFixed(2) : "N/A",
-        "Total Cost": issuedQuantity.total_cost ? parseFloat(issuedQuantity.total_cost).toFixed(2) : "N/A",
     }));
 
     // Create summary data
@@ -476,13 +412,8 @@ const exportToExcel = () => {
         "To",
         "Quantity",
         "UOM",
-        "Batch Number",
-        "Expiry Date",
-        "Expiry Status",
         "Issued Date",
-        "Issued By",
-        "Unit Cost",
-        "Total Cost"
+        "Issued By"
     ];
     summaryData.push(headers);
 
