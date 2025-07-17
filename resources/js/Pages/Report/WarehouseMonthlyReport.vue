@@ -680,40 +680,71 @@ const rejectReport = async () => {
     }
 };
 
-// Export to Excel
+// Export to Excel using frontend xlsx library
 const exportToExcel = async () => {
     try {
-        // Create a form to submit the POST request
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = route('reports.warehouseMonthly.exportToExcel');
+        // Import xlsx dynamically
+        const XLSX = await import('xlsx');
         
-        // Add CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
+        // Prepare the data for export
+        const exportData = props.reportData.map((item, index) => {
+            // Calculate closing balance using the same formula as the table
+            const currentAdj = currentAdjustments.value[index];
+            const positiveAdj = currentAdj ? (parseFloat(currentAdj.positive_adjustment) || 0) : item.positive_adjustment;
+            const negativeAdj = currentAdj ? (parseFloat(currentAdj.negative_adjustment) || 0) : item.negative_adjustment;
+            const closingBalance = item.beginning_balance + item.received_quantity - item.issued_quantity - negativeAdj + positiveAdj;
+            
+            return {
+                'Product': item.product.name || 'N/A',
+                'Beginning Balance': item.beginning_balance || 0,
+                'Stock Received': item.received_quantity || 0,
+                'Stock Issued': item.issued_quantity || 0,
+                'Negative Adjustment': negativeAdj,
+                'Positive Adjustment': positiveAdj,
+                'Closing Balance': closingBalance
+            };
+        });
         
-        // Add month_year parameter
-        const monthInput = document.createElement('input');
-        monthInput.type = 'hidden';
-        monthInput.name = 'month_year';
-        monthInput.value = month_year.value;
-        form.appendChild(monthInput);
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
         
-        // Submit the form
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+        // Set column widths
+        const columnWidths = [
+            { wch: 30 }, // Product
+            { wch: 15 }, // Beginning Balance
+            { wch: 15 }, // Stock Received
+            { wch: 15 }, // Stock Issued
+            { wch: 18 }, // Negative Adjustment
+            { wch: 18 }, // Positive Adjustment
+            { wch: 15 }  // Closing Balance
+        ];
+        worksheet['!cols'] = columnWidths;
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse Monthly Report');
+        
+        // Generate filename
+        const filename = `warehouse_monthly_report_${month_year.value}.xlsx`;
+        
+        // Download the file
+        XLSX.writeFile(workbook, filename);
+        
+        // Show success message
+        Swal.fire({
+            icon: 'success',
+            title: 'Export Successful',
+            text: `Report exported as ${filename}`,
+            timer: 2000,
+            showConfirmButton: false
+        });
         
     } catch (error) {
         console.error('Error exporting to Excel:', error);
         Swal.fire({
             icon: 'error',
             title: 'Export Error',
-            text: 'Failed to export report to Excel'
+            text: 'Failed to export report to Excel. Please try again.'
         });
     }
 };
