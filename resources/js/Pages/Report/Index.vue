@@ -89,18 +89,71 @@
                                 </div>
                                 <div class="ml-4 flex-1">
                                     <h3 class="text-lg font-semibold text-gray-900">Transfer Reports</h3>
-                                    <p class="text-sm text-gray-600">Stock movement tracking</p>
+                                    <p class="text-sm text-gray-600">Stock movement tracking & analytics</p>
                                 </div>
                             </div>
                             
                             <p class="text-gray-600 text-sm mb-4">
-                                Monitor stock transfers between warehouses and facilities with detailed status tracking and history.
+                                Comprehensive transfer reports including tracking, issued/received quantities, transfer types, and reasons analysis.
                             </p>
                             
                             <div class="space-y-2">
                                 <Link :href="route('reports.transfers')"
                                     class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors">
-                                    <span>Transfer Report</span>
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                        </svg>
+                                        <span>Transfer Tracking Report</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.transfer-issued-quantity')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span>Transfer Issued Quantity Report</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.transfer-received-quantity')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                                        </svg>
+                                        <span>Transfer Received Quantity Report</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.transfer-type')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                        </svg>
+                                        <span>Transfer Type Report</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </Link>
+                                <Link :href="route('reports.transfer-reasons')"
+                                    class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span>Transfer Reasons Report</span>
+                                    </div>
                                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                     </svg>

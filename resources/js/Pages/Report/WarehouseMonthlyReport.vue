@@ -182,7 +182,7 @@
                                     ]"
                                 />
                                 <span v-else class="text-gray-900">
-                                    {{ formatNumber(item.positive_adjustment) }}
+                                {{ formatNumber(item.positive_adjustment) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, index)">

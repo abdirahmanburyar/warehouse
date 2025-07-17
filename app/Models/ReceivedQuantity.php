@@ -60,4 +60,12 @@ class ReceivedQuantity extends Model
     {
         return $this->belongsTo(PackingList::class);
     }
+
+    /**
+     * Get the warehouse associated with the received quantity.
+     */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 }

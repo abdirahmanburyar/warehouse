@@ -33,7 +33,10 @@ use App\Models\Transfer;
 use App\Http\Resources\DisposalResource;
 use App\Models\IssueQuantityItem;
 use App\Models\ReceivedQuantityItem;
+use App\Models\IssuedQuantity;
+use App\Models\ReceivedQuantity;
 use App\Models\District;
+use App\Models\Reason;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1161,6 +1164,308 @@ class ReportController extends Controller
             'filters' => $request->only('facility','warehouse', 'status', 'per_page', 'page', 'date_from', 'date_to'),
             'facilities' => $facilities,
             'warehouses' => $warehouses
+        ]);
+    }
+
+    /**
+     * Transfer Issued Quantity Report
+     */
+    public function transferIssuedQuantity(Request $request)
+    {
+        // Get facilities and warehouses for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+        $warehouses = Warehouse::get()->pluck('name')->toArray();
+
+        $query = IssuedQuantity::query()
+            ->with([
+                'product.category',
+                'product.dosage',
+                'transfer.toFacility',
+                'transfer.fromFacility',
+                'transfer.toWarehouse',
+                'transfer.fromWarehouse',
+                'transfer.user',
+                'issuer',
+                'warehouse'
+            ]);
+
+        // Apply filters
+        if ($request->filled('facility')) {
+            $query->whereHas('transfer.fromFacility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+
+        if ($request->filled('warehouse')) {
+            $query->whereHas('transfer.fromWarehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse);
+            });
+        }
+
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('issued_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('issued_date', [$request->date_from, $request->date_to]);
+        }
+
+        $issuedQuantities = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+
+        $issuedQuantities->setPath(url()->current());
+
+        return inertia('Report/TransferIssuedQuantity', [
+            'issuedQuantities' => $issuedQuantities,
+            'filters' => $request->only('facility', 'warehouse', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities,
+            'warehouses' => $warehouses
+        ]);
+    }
+
+    /**
+     * Transfer Received Quantity Report
+     */
+    public function transferReceivedQuantity(Request $request)
+    {
+        // Get facilities and warehouses for dropdown
+        $facilities = Facility::get()->pluck('name')->toArray();
+        $warehouses = Warehouse::get()->pluck('name')->toArray();
+
+        $query = ReceivedQuantity::query()
+            ->with([
+                'product.category',
+                'product.dosage',
+                'transfer.toFacility',
+                'transfer.fromFacility',
+                'transfer.toWarehouse',
+                'transfer.fromWarehouse',
+                'transfer.user',
+                'receiver',
+                'warehouse'
+            ]);
+
+        // Apply filters
+        if ($request->filled('facility')) {
+            $query->whereHas('transfer.toFacility', function ($q) use ($request) {
+                $q->where('name', $request->facility);
+            });
+        }
+
+        if ($request->filled('warehouse')) {
+            $query->whereHas('warehouse', function ($q) use ($request) {
+                $q->where('name', $request->warehouse);
+            });
+        }
+
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('received_at', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('received_at', [$request->date_from, $request->date_to]);
+        }
+
+        $receivedQuantities = $query->paginate(
+            $request->input('per_page', 25),
+            ['*'],
+            'page',
+            $request->input('page', 1)
+        )->withQueryString();
+
+        $receivedQuantities->setPath(url()->current());
+
+        return inertia('Report/TransferReceivedQuantity', [
+            'receivedQuantities' => $receivedQuantities,
+            'filters' => $request->only('facility', 'warehouse', 'per_page', 'page', 'date_from', 'date_to'),
+            'facilities' => $facilities,
+            'warehouses' => $warehouses
+        ]);
+    }
+
+    /**
+     * Transfer Type Report
+     */
+    public function transferType(Request $request)
+    {
+        $query = Transfer::query()
+            ->with([
+                'items.product.category',
+                'toFacility',
+                'fromFacility',
+                'toWarehouse',
+                'fromWarehouse'
+            ])
+            ->where('status', '!=', 'draft');
+
+        // Apply date filters
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('transfer_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Apply transfer type filter
+        if ($request->filled('transfer_type')) {
+            $query->where(function ($q) use ($request) {
+                switch ($request->transfer_type) {
+                    case 'Facility to Facility':
+                        $q->whereNotNull('from_facility_id')->whereNotNull('to_facility_id');
+                        break;
+                    case 'Warehouse to Warehouse':
+                        $q->whereNotNull('from_warehouse_id')->whereNotNull('to_warehouse_id');
+                        break;
+                    case 'Warehouse to Facility':
+                        $q->whereNotNull('from_warehouse_id')->whereNotNull('to_facility_id');
+                        break;
+                    case 'Facility to Warehouse':
+                        $q->whereNotNull('from_facility_id')->whereNotNull('to_warehouse_id');
+                        break;
+                    case 'Other':
+                        $q->where(function ($subQ) {
+                            $subQ->whereNull('from_facility_id')->whereNull('to_facility_id')
+                                 ->whereNull('from_warehouse_id')->whereNull('to_warehouse_id');
+                        });
+                        break;
+                }
+            });
+        }
+
+        // Group by transfer type and get statistics
+        $transferTypes = $query->get()->groupBy(function ($transfer) {
+            if ($transfer->fromWarehouse && $transfer->toWarehouse) {
+                return 'Warehouse to Warehouse';
+            } elseif ($transfer->fromFacility && $transfer->toFacility) {
+                return 'Facility to Facility';
+            } elseif ($transfer->fromWarehouse && $transfer->toFacility) {
+                return 'Warehouse to Facility';
+            } elseif ($transfer->fromFacility && $transfer->toWarehouse) {
+                return 'Facility to Warehouse';
+            } else {
+                return 'Other';
+            }
+        })->map(function ($transfers, $type) {
+            return [
+                'type' => $type,
+                'count' => $transfers->count(),
+                'total_quantity' => $transfers->sum(function ($transfer) {
+                    return $transfer->items->sum('quantity');
+                }),
+                'total_value' => $transfers->sum(function ($transfer) {
+                    return $transfer->items->sum(function ($item) {
+                        return $item->quantity * ($item->product->unit_price ?? 0);
+                    });
+                })
+            ];
+        });
+
+        return inertia('Report/TransferType', [
+            'transferTypes' => $transferTypes,
+            'transferReasons' => [], // Empty for type report
+            'reasons' => Reason::orderBy('name')->get(),
+            'filters' => $request->only('date_from', 'date_to', 'transfer_type', 'reason')
+        ]);
+    }
+
+    /**
+     * Transfer Reasons Report
+     */
+    public function transferReasons(Request $request)
+    {
+        $query = Transfer::query()
+            ->with([
+                'items.product.category',
+                'items.inventory_allocations',
+                'toFacility',
+                'fromFacility',
+                'toWarehouse',
+                'fromWarehouse'
+            ])
+            ->where('status', '!=', 'draft');
+
+        // Apply date filters
+        if ($request->filled('date_from') && !$request->filled('date_to')) {
+            $query->whereDate('transfer_date', $request->date_from);
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('transfer_date', [$request->date_from, $request->date_to]);
+        }
+
+        // Apply transfer type filter
+        if ($request->filled('transfer_type')) {
+            $query->where(function ($q) use ($request) {
+                switch ($request->transfer_type) {
+                    case 'Facility to Facility':
+                        $q->whereNotNull('from_facility_id')->whereNotNull('to_facility_id');
+                        break;
+                    case 'Warehouse to Warehouse':
+                        $q->whereNotNull('from_warehouse_id')->whereNotNull('to_warehouse_id');
+                        break;
+                    case 'Warehouse to Facility':
+                        $q->whereNotNull('from_warehouse_id')->whereNotNull('to_facility_id');
+                        break;
+                    case 'Facility to Warehouse':
+                        $q->whereNotNull('from_facility_id')->whereNotNull('to_warehouse_id');
+                        break;
+                    case 'Other':
+                        $q->where(function ($subQ) {
+                            $subQ->whereNull('from_facility_id')->whereNull('to_facility_id')
+                                 ->whereNull('from_warehouse_id')->whereNull('to_warehouse_id');
+                        });
+                        break;
+                }
+            });
+        }
+
+        // Apply reason filter
+        if ($request->filled('reason')) {
+            $query->whereHas('items.inventory_allocations', function ($q) use ($request) {
+                $q->where('transfer_reason', $request->reason);
+            });
+        }
+
+        // Get transfers and group by reason from inventory allocations
+        $transfers = $query->get();
+        
+        // Group by reason from inventory allocations
+        $transferReasons = collect();
+        
+        foreach ($transfers as $transfer) {
+            foreach ($transfer->items as $item) {
+                foreach ($item->inventory_allocations as $allocation) {
+                    $reason = $allocation->transfer_reason ?: 'No Reason Specified';
+                    
+                    if (!$transferReasons->has($reason)) {
+                        $transferReasons->put($reason, [
+                            'reason' => $reason,
+                            'count' => 0,
+                            'total_quantity' => 0,
+                            'total_value' => 0
+                        ]);
+                    }
+                    
+                    $transferReasons->get($reason)['count']++;
+                    $transferReasons->get($reason)['total_quantity'] += $allocation->allocated_quantity ?? 0;
+                    $transferReasons->get($reason)['total_value'] += ($allocation->allocated_quantity ?? 0) * ($allocation->unit_cost ?? 0);
+                }
+            }
+        }
+
+        // Sort by count descending
+        $transferReasons = $transferReasons->sortByDesc('count')->values();
+
+        return inertia('Report/TransferType', [
+            'transferTypes' => [], // Empty for reasons report
+            'transferReasons' => $transferReasons,
+            'reasons' => Reason::orderBy('name')->get(),
+            'filters' => $request->only('date_from', 'date_to', 'transfer_type', 'reason')
         ]);
     }
 

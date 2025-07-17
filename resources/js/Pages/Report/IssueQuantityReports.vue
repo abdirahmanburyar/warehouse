@@ -371,6 +371,18 @@
                                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                             Quantity
                                         </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Batch Number
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Expiry Date
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Unit Cost
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Total Cost
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
@@ -413,6 +425,25 @@
                                             <div class="flex items-center">
                                                 <span class="text-lg font-bold text-gray-900">{{ item.quantity.toLocaleString() }}</span>
                                                 <span class="ml-2 text-sm text-gray-500">units</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ item.batch_number || 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : 'N/A' }}</div>
+                                            <div v-if="item.expiry_date" class="text-xs text-gray-500">
+                                                {{ getExpiryStatus(item.expiry_date) }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ item.unit_cost ? `$${parseFloat(item.unit_cost).toFixed(2)}` : 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ item.total_cost ? `$${parseFloat(item.total_cost).toFixed(2)}` : 'N/A' }}
                                             </div>
                                         </td>
                                     </tr>
@@ -648,6 +679,23 @@ function formatMonth(monthYear) {
     return moment(monthYear).format('MMMM YYYY');
 }
 
+function getExpiryStatus(expiryDate) {
+    if (!expiryDate) return "N/A";
+    const today = moment();
+    const expiry = moment(expiryDate);
+    const daysUntilExpiry = expiry.diff(today, 'days');
+    
+    if (daysUntilExpiry < 0) {
+        return 'Expired';
+    } else if (daysUntilExpiry <= 30) {
+        return 'Expiring Soon';
+    } else if (daysUntilExpiry <= 90) {
+        return 'Expiring in 3 months';
+    } else {
+        return 'Valid';
+    }
+}
+
 function formatMonthShort(monthYear) {
     if (!monthYear) return 'N/A';
     return moment(monthYear).format('MMM-YY');
@@ -771,6 +819,11 @@ function exportReportItems(reportId) {
             'Category', 
             'Dosage Form', 
             'Quantity', 
+            'Batch Number',
+            'Expiry Date',
+            'Expiry Status',
+            'Unit Cost',
+            'Total Cost'
         ]);
         
         // Add data rows - match the table data structure
@@ -781,7 +834,12 @@ function exportReportItems(reportId) {
                     item.product?.name || 'N/A',
                     item.product?.category?.name || 'N/A',
                     item.product?.dosage?.name || 'N/A',
-                    item.quantity
+                    item.quantity,
+                    item.batch_number || 'N/A',
+                    item.expiry_date ? moment(item.expiry_date).format('DD/MM/YYYY') : 'N/A',
+                    getExpiryStatus(item.expiry_date),
+                    item.unit_cost ? parseFloat(item.unit_cost).toFixed(2) : 'N/A',
+                    item.total_cost ? parseFloat(item.total_cost).toFixed(2) : 'N/A'
                 ]);
             });
         }
@@ -796,6 +854,11 @@ function exportReportItems(reportId) {
             { wch: 20 }, // Category
             { wch: 20 }, // Dosage Form
             { wch: 10 }, // Quantity
+            { wch: 15 }, // Batch Number
+            { wch: 15 }, // Expiry Date
+            { wch: 15 }, // Expiry Status
+            { wch: 12 }, // Unit Cost
+            { wch: 12 }  // Total Cost
         ];
         
         // Style the header row

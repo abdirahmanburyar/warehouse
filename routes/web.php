@@ -144,6 +144,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/reports/order-tracking', [ReportController::class, 'orderTracking'])->name('reports.order-tracking');
         Route::get('/reports/order-fulfillment', [ReportController::class, 'orderFulfillment'])->name('reports.order-fulfillment');
         Route::get('/reports/transfers', [ReportController::class, 'transfers'])->name('reports.transfers');
+        Route::get('/reports/transfer-issued-quantity', [ReportController::class, 'transferIssuedQuantity'])->name('reports.transfer-issued-quantity');
+        Route::get('/reports/transfer-received-quantity', [ReportController::class, 'transferReceivedQuantity'])->name('reports.transfer-received-quantity');
+        Route::get('/reports/transfer-type', [ReportController::class, 'transferType'])->name('reports.transfer-type');
+        Route::get('/reports/transfer-reasons', [ReportController::class, 'transferReasons'])->name('reports.transfer-reasons');
         Route::get('/reports/purchase-orders', [ReportController::class, 'purchaseOrders'])->name('reports.purchase-orders');
         Route::get('/reports/packing-list', [ReportController::class, 'packingList'])->name('reports.packing-list');
         Route::get('/reports/lmis-monthly-report', [ReportController::class, 'lmisMonthlyReport'])->name('reports.lmis-monthly');
