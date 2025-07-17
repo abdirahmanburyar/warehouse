@@ -238,11 +238,7 @@ watch(selectedOrderStatus, (newValue) => {
     console.log('Order status changed:', newValue);
 }, { deep: true });
 
-// Functions for status filter buttons
-const selectAllStatuses = () => {
-    selectedOrderStatus.value = [...orderStatusOptions];
-};
-
+// Function for status filter button
 const clearAllStatuses = () => {
     selectedOrderStatus.value = [];
 };
@@ -1010,6 +1006,98 @@ const orderStatusChartOptions = {
     }
 };
 
+const fulfillmentBarChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#333333',
+            bodyColor: '#333333',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: true,
+            titleFont: {
+                size: 13,
+                weight: '600'
+            },
+            bodyFont: {
+                size: 12
+            },
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    return `${context.parsed.y.toFixed(1)}% fulfillment rate`;
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'top',
+            color: '#374151',
+            font: {
+                weight: 'bold',
+                size: 12,
+                family: 'Segoe UI, Arial, sans-serif'
+            },
+            formatter: function(value, context) {
+                return value > 0 ? `${value.toFixed(1)}%` : '';
+            },
+            padding: 6
+        }
+    },
+    scales: {
+        y: { 
+            beginAtZero: true,
+            max: 100,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.08)',
+                drawBorder: false,
+                lineWidth: 1
+            },
+            ticks: {
+                callback: function(value) {
+                    return `${value}%`;
+                },
+                font: {
+                    size: 11,
+                    weight: '500',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                font: {
+                    size: 11,
+                    weight: '600',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6,
+                maxRotation: 45,
+                minRotation: 0
+            }
+        }
+    },
+    animation: {
+        duration: 1200,
+        easing: 'easeOutCubic'
+    }
+};
+
 // Utility function to format large numbers
 function formatLargeNumber(value) {
     if (value === null || value === undefined) return '0';
@@ -1233,16 +1321,88 @@ const costChartData = computed(() => ({
     }]
 }));
 
-const fulfillmentChartData = computed(() => ({
-    labels: ['Fulfillment Rate'],
-    datasets: [{
-        label: 'Percentage',
-        data: [filteredFulfillment.value || 0],
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-        borderColor: 'rgba(239, 68, 68, 1)',
-        borderWidth: 2
-    }]
-}));
+const fulfillmentChartData = computed(() => {
+    // Get top 10 suppliers with their fulfillment rates
+    const topSuppliers = (props.fulfillmentData || [])
+        .sort((a, b) => b.fulfillment_percentage - a.fulfillment_percentage)
+        .slice(0, 10);
+    
+    return {
+        labels: topSuppliers.map(supplier => supplier.supplier_name || 'Unknown'),
+        datasets: [{
+            label: 'Fulfillment Rate (%)',
+            data: topSuppliers.map(supplier => supplier.fulfillment_percentage || 0),
+            backgroundColor: [
+                'rgba(68, 114, 196, 0.85)',  // Excel Blue
+                'rgba(237, 125, 49, 0.85)',  // Excel Orange
+                'rgba(165, 165, 165, 0.85)', // Excel Gray
+                'rgba(255, 192, 0, 0.85)',   // Excel Yellow
+                'rgba(112, 173, 71, 0.85)',  // Excel Green
+                'rgba(91, 155, 213, 0.85)',  // Light Blue
+                'rgba(255, 102, 0, 0.85)',   // Orange
+                'rgba(128, 128, 128, 0.85)', // Gray
+                'rgba(0, 176, 80, 0.85)',    // Green
+                'rgba(0, 112, 192, 0.85)'    // Blue
+            ],
+            borderColor: [
+                'rgba(68, 114, 196, 1)',
+                'rgba(237, 125, 49, 1)',
+                'rgba(165, 165, 165, 1)',
+                'rgba(255, 192, 0, 1)',
+                'rgba(112, 173, 71, 1)',
+                'rgba(91, 155, 213, 1)',
+                'rgba(255, 102, 0, 1)',
+                'rgba(128, 128, 128, 1)',
+                'rgba(0, 176, 80, 1)',
+                'rgba(0, 112, 192, 1)'
+            ],
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: [
+                'rgba(68, 114, 196, 1)',
+                'rgba(237, 125, 49, 1)',
+                'rgba(165, 165, 165, 1)',
+                'rgba(255, 192, 0, 1)',
+                'rgba(112, 173, 71, 1)',
+                'rgba(91, 155, 213, 1)',
+                'rgba(255, 102, 0, 1)',
+                'rgba(128, 128, 128, 1)',
+                'rgba(0, 176, 80, 1)',
+                'rgba(0, 112, 192, 1)'
+            ],
+            hoverBorderColor: [
+                'rgba(68, 114, 196, 1)',
+                'rgba(237, 125, 49, 1)',
+                'rgba(165, 165, 165, 1)',
+                'rgba(255, 192, 0, 1)',
+                'rgba(112, 173, 71, 1)',
+                'rgba(91, 155, 213, 1)',
+                'rgba(255, 102, 0, 1)',
+                'rgba(128, 128, 128, 1)',
+                'rgba(0, 176, 80, 1)',
+                'rgba(0, 112, 192, 1)'
+            ],
+            hoverBorderWidth: 3
+        }]
+    };
+});
+
+// Computed properties for fulfillment summary stats
+const topPerformerName = computed(() => {
+    const topSupplier = (props.fulfillmentData || [])
+        .sort((a, b) => b.fulfillment_percentage - a.fulfillment_percentage)[0];
+    return topSupplier?.supplier_name || 'N/A';
+});
+
+const topPerformerRate = computed(() => {
+    const topSupplier = (props.fulfillmentData || [])
+        .sort((a, b) => b.fulfillment_percentage - a.fulfillment_percentage)[0];
+    return topSupplier ? topSupplier.fulfillment_percentage.toFixed(1) : '0.0';
+});
+
+const totalSuppliers = computed(() => {
+    return (props.fulfillmentData || []).length;
+});
 
 const delayedChartData = computed(() => ({
     labels: ['Delayed Orders'],
@@ -1446,17 +1606,54 @@ const orderStatusChartData = computed(() => {
         </div>
 
         <!-- Fulfillment Chart Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-            <!-- Fulfillment Chart -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-gray-900">Fulfillment</h3>
-                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <!-- Fulfillment Chart - Takes 8 columns -->
+            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Top 10 Suppliers - Fulfillment Rate</h3>
+                    <p class="text-sm text-gray-600 mt-1">Supplier performance based on fulfillment percentage</p>
                 </div>
-                <div class="h-32">
-                    <Bar :data="fulfillmentChartData" :options="barChartOptions" />
+                <div class="h-80">
+                    <Bar :data="fulfillmentChartData" :options="fulfillmentBarChartOptions" />
+                </div>
+            </div>
+            
+            <!-- Summary Stats - Takes 4 columns -->
+            <div class="lg:col-span-4 space-y-4">
+                <!-- Overall Fulfillment Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-900">Overall Fulfillment</h3>
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-3xl font-bold text-blue-600">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
+                    <div class="text-sm text-gray-600 mt-1">Average fulfillment rate</div>
+                </div>
+                
+                <!-- Top Performer Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-900">Top Performer</h3>
+                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-lg font-semibold text-gray-900">{{ topPerformerName }}</div>
+                    <div class="text-2xl font-bold text-green-600">{{ topPerformerRate }}%</div>
+                </div>
+                
+                <!-- Total Suppliers Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-900">Total Suppliers</h3>
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-3xl font-bold text-purple-600">{{ totalSuppliers }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Active suppliers</div>
                 </div>
             </div>
         </div>
@@ -1596,12 +1793,6 @@ const orderStatusChartData = computed(() => {
                                 placeholder="Select statuses..."
                                 class="w-full sm:w-48"
                             />
-                            <button
-                                @click="selectAllStatuses"
-                                class="px-3 py-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mt-2"
-                            >
-                                All
-                            </button>
                             <button
                                 @click="clearAllStatuses"
                                 class="px-3 py-2 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors mt-2"
