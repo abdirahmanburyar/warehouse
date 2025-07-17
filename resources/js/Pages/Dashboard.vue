@@ -1404,6 +1404,20 @@ const totalSuppliers = computed(() => {
     return (props.fulfillmentData || []).length;
 });
 
+const lowestPerformerName = computed(() => {
+    const sorted = (props.fulfillmentData || [])
+        .filter(s => typeof s.fulfillment_percentage === 'number')
+        .sort((a, b) => a.fulfillment_percentage - b.fulfillment_percentage);
+    return sorted.length > 0 ? sorted[0].supplier_name : 'N/A';
+});
+
+const lowestPerformerRate = computed(() => {
+    const sorted = (props.fulfillmentData || [])
+        .filter(s => typeof s.fulfillment_percentage === 'number')
+        .sort((a, b) => a.fulfillment_percentage - b.fulfillment_percentage);
+    return sorted.length > 0 ? sorted[0].fulfillment_percentage.toFixed(1) : '0.0';
+});
+
 const delayedChartData = computed(() => ({
     labels: ['Delayed Orders'],
     datasets: [{
@@ -1620,18 +1634,17 @@ const orderStatusChartData = computed(() => {
             
             <!-- Summary Stats - Takes 4 columns -->
             <div class="lg:col-span-4 space-y-4">
-                <!-- Overall Fulfillment Card -->
+                <!-- Lowest Performer Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-gray-900">Overall Fulfillment</h3>
-                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <h3 class="text-sm font-semibold text-gray-900">Lowest Performer</h3>
+                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                         </svg>
                     </div>
-                    <div class="text-3xl font-bold text-blue-600">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
-                    <div class="text-sm text-gray-600 mt-1">Average fulfillment rate</div>
+                    <div class="text-lg font-semibold text-gray-900">{{ lowestPerformerName }}</div>
+                    <div class="text-2xl font-bold text-red-600">{{ lowestPerformerRate }}%</div>
                 </div>
-                
                 <!-- Top Performer Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                     <div class="flex items-center justify-between mb-3">
