@@ -571,7 +571,7 @@ const submitReport = async () => {
 
     processing.value = true;
     try {
-        await axios.post(route('reports.warehouseMonthly.submit'), {
+        await axios.put(route('reports.warehouseMonthly.submit'), {
             month_year: month_year.value
         });
         
@@ -599,7 +599,7 @@ const submitReport = async () => {
 const reviewReport = async () => {
     processing.value = true;
     try {
-        await axios.post(route('reports.warehouseMonthly.review'), {
+        await axios.put(route('reports.warehouseMonthly.review'), {
             month_year: month_year.value
         });
         
@@ -627,7 +627,7 @@ const reviewReport = async () => {
 const approveReport = async () => {
     processing.value = true;
     try {
-        await axios.post(route('reports.warehouseMonthly.approve'), {
+        await axios.put(route('reports.warehouseMonthly.approve'), {
             month_year: month_year.value
         });
         
@@ -655,7 +655,7 @@ const approveReport = async () => {
 const rejectReport = async () => {
     processing.value = true;
     try {
-        await axios.post(route('reports.warehouseMonthly.reject'), {
+        await axios.put(route('reports.warehouseMonthly.reject'), {
             month_year: month_year.value
         });
         
