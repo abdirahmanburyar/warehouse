@@ -28,46 +28,29 @@ class WarehouseMonthlyReportExport implements FromCollection, WithHeadings, With
     public function headings(): array
     {
         return [
-            'Product Name',
-            'UoM',
-            'Batch Number',
-            'Expiry Date',
+            'Product',
             'Beginning Balance',
-            'Received Quantity',
-            'Issued Quantity',
-            'Other Quantity Out',
-            'Positive Adjustment',
+            'Stock Received',
+            'Stock Issued',
             'Negative Adjustment',
+            'Positive Adjustment',
             'Closing Balance',
-            'Total Closing Balance',
-            'Average Monthly Consumption',
-            'Months of Stock',
-            'Quantity in Pipeline',
-            'Unit Cost',
-            'Total Cost',
         ];
     }
 
     public function map($item): array
     {
+        // Calculate closing balance using the same formula as the frontend
+        $closingBalance = $item->beginning_balance + $item->received_quantity - $item->issued_quantity - $item->negative_adjustment + $item->positive_adjustment;
+        
         return [
             $item->product->name ?? 'N/A',
-            $item->uom ?? 'unit',
-            $item->batch_number ?? 'N/A',
-            $item->expiry_date ? $item->expiry_date->format('Y-m-d') : 'N/A',
             $item->beginning_balance ?? 0,
             $item->received_quantity ?? 0,
             $item->issued_quantity ?? 0,
-            $item->other_quantity_out ?? 0,
-            $item->positive_adjustment ?? 0,
             $item->negative_adjustment ?? 0,
-            $item->closing_balance ?? 0,
-            $item->total_closing_balance ?? 0,
-            round($item->average_monthly_consumption ?? 0, 2),
-            $item->months_of_stock ?? 0,
-            $item->quantity_in_pipeline ?? 0,
-            round($item->unit_cost ?? 0, 2),
-            round($item->total_cost ?? 0, 2),
+            $item->positive_adjustment ?? 0,
+            $closingBalance,
         ];
     }
 
@@ -78,7 +61,7 @@ class WarehouseMonthlyReportExport implements FromCollection, WithHeadings, With
             1 => ['font' => ['bold' => true]],
             
             // Set auto width for all columns
-            'A:M' => ['alignment' => ['horizontal' => 'center']],
+            'A:G' => ['alignment' => ['horizontal' => 'center']],
         ];
     }
 

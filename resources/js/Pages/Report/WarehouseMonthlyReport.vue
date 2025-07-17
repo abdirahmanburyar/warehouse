@@ -681,8 +681,41 @@ const rejectReport = async () => {
 };
 
 // Export to Excel
-const exportToExcel = () => {
-    window.location.href = route('reports.warehouseMonthly.exportToExcel', { monthYear: month_year.value });
+const exportToExcel = async () => {
+    try {
+        // Create a form to submit the POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = route('reports.warehouseMonthly.exportToExcel');
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add month_year parameter
+        const monthInput = document.createElement('input');
+        monthInput.type = 'hidden';
+        monthInput.name = 'month_year';
+        monthInput.value = month_year.value;
+        form.appendChild(monthInput);
+        
+        // Submit the form
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+    } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Export Error',
+            text: 'Failed to export report to Excel'
+        });
+    }
 };
 
 // Calculate closing balance using the specification formula

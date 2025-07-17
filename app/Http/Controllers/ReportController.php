@@ -1309,9 +1309,15 @@ class ReportController extends Controller
     /**
      * Export warehouse monthly report to Excel
      */
-    public function exportToExcel($monthYear, Request $request)
+    public function exportToExcel(Request $request)
     {
         try {
+            $monthYear = $request->input('month_year');
+            
+            if (!$monthYear) {
+                return back()->with('error', 'Month/Year is required for export');
+            }
+            
             $reportData = $this->getInventoryReportData($request, $monthYear);
             
             $filename = "warehouse_monthly_report_{$monthYear}.xlsx";
