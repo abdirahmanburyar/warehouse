@@ -556,7 +556,7 @@ class DashboardController extends Controller
         // Initialize status counts
         $statusCounts = [
             'In Use' => 0,
-            'Needs Maintenance' => 0,
+            'Maintenance' => 0,
             'Disposed' => 0
         ];
         
@@ -585,7 +585,7 @@ class DashboardController extends Controller
                     $statusCounts['In Use']++;
                     break;
                 case 'maintenance':
-                    $statusCounts['Needs Maintenance']++;
+                    $statusCounts['Maintenance']++;
                     break;
                 case 'disposed':
                     $statusCounts['Disposed']++;

@@ -115,7 +115,10 @@ const props = defineProps({
         required: false,
         default: () => ({
             'In Use': 0,
+            'Active': 0,
             'Needs Maintenance': 0,
+            'Pending Approval': 0,
+            'Retired': 0,
             'Disposed': 0
         })
     },
@@ -1619,40 +1622,36 @@ const expiredChartData = computed(() => {
 });
 
 // Asset Status Chart Data
-const assetStatusChartData = computed(() => ({
-    labels: ['In Use', 'Needs Maintenance', 'Disposed'],
-    datasets: [{
-        label: 'Asset Status',
-        data: [
-            props.assetStatusStats?.['In Use'] || 0,
-            props.assetStatusStats?.['Needs Maintenance'] || 0,
-            props.assetStatusStats?.['Disposed'] || 0
-        ],
-        backgroundColor: [
-            'rgba(68, 114, 196, 0.85)',  // Excel Blue for In Use
-            'rgba(237, 125, 49, 0.85)',  // Excel Orange for Needs Maintenance
-            'rgba(165, 165, 165, 0.85)'  // Excel Gray for Disposed
-        ],
-        borderColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        borderWidth: 2,
-        borderRadius: 6,
-        hoverBackgroundColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        hoverBorderColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        hoverBorderWidth: 3
-    }]
-}));
+const assetStatusChartData = computed(() => {
+    const statusData = [
+        { key: 'In Use', color: 'rgba(68, 114, 196, 0.85)' },      // Excel Blue
+        { key: 'Active', color: 'rgba(112, 173, 71, 0.85)' },      // Excel Green
+        { key: 'Needs Maintenance', color: 'rgba(237, 125, 49, 0.85)' }, // Excel Orange
+        { key: 'Pending Approval', color: 'rgba(255, 192, 0, 0.85)' },   // Excel Yellow
+        { key: 'Retired', color: 'rgba(128, 128, 128, 0.85)' },    // Gray
+        { key: 'Disposed', color: 'rgba(165, 165, 165, 0.85)' }    // Excel Gray
+    ];
+
+    // Filter out statuses with zero count
+    const filteredData = statusData.filter(status => 
+        (props.assetStatusStats?.[status.key] || 0) > 0
+    );
+
+    return {
+        labels: filteredData.map(status => status.key),
+        datasets: [{
+            label: 'Asset Status',
+            data: filteredData.map(status => props.assetStatusStats?.[status.key] || 0),
+            backgroundColor: filteredData.map(status => status.color),
+            borderColor: filteredData.map(status => status.color.replace('0.85', '1')),
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: filteredData.map(status => status.color.replace('0.85', '1')),
+            hoverBorderColor: filteredData.map(status => status.color.replace('0.85', '1')),
+            hoverBorderWidth: 3
+        }]
+    };
+});
 
 // Asset Status Chart Options
 const assetStatusChartOptions = {
