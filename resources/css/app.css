@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 html, body {
-    background-color: white !important;
+    background-color: rgb(245, 245, 245) !important;
     margin: 0;
     padding: 0;
     box-sizing: border-box;

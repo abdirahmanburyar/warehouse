@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted } from 'vue';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
@@ -137,6 +137,19 @@ const totalOrders = computed(() =>
 // Tab functionality
 const activeTab = ref('warehouse');
 
+// Order Status Chart Filter
+const selectedOrderStatus = ref([]);
+const orderStatusOptions = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'reviewed', label: 'Reviewed' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'in_process', label: 'In Process' },
+    { value: 'dispatched', label: 'Dispatched' },
+    { value: 'delivered', label: 'Delivered' },
+    { value: 'received', label: 'Received' },
+    { value: 'rejected', label: 'Rejected' }
+];
+
 const supplierOptions = computed(() => [
   { label: 'All Suppliers', value: '' },
   ...(props.loadSuppliers || []).map(s => ({ label: s, value: s }))
@@ -220,6 +233,20 @@ watch(selectedSupplier, (newValue) => {
     // You can emit events here to notify the parent component about supplier changes
 }, { deep: true });
 
+// Watch for order status changes
+watch(selectedOrderStatus, (newValue) => {
+    console.log('Order status changed:', newValue);
+}, { deep: true });
+
+// Functions for status filter buttons
+const selectAllStatuses = () => {
+    selectedOrderStatus.value = [...orderStatusOptions];
+};
+
+const clearAllStatuses = () => {
+    selectedOrderStatus.value = [];
+};
+
 // Method to handle filter changes and update data
 const handleFilterChange = () => {
     const filters = {
@@ -243,14 +270,14 @@ const warehouseDataType = ref('beginning_balance');
 // Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
 
 // Chart data state
-const warehouseChartData = ref([]);
+const localWarehouseChartData = ref([]);
 const chartCount = ref(0);
 
 // Computed property to group charts into rows of 3
 const chartRows = computed(() => {
     const rows = [];
-    for (let i = 0; i < warehouseChartData.value.length; i += 3) {
-        rows.push(warehouseChartData.value.slice(i, i + 3));
+    for (let i = 0; i < localWarehouseChartData.value.length; i += 3) {
+        rows.push(localWarehouseChartData.value.slice(i, i + 3));
     }
     return rows;
 });
@@ -302,7 +329,7 @@ async function handleTracertItems() {
         if (response.data.success && response.data.chartData && response.data.chartData.charts) {
             // Handle successful response with multiple charts
             const charts = response.data.chartData.charts;
-            warehouseChartData.value = charts.map(chart => ({
+            localWarehouseChartData.value = charts.map(chart => ({
                 id: chart.id,
                 labels: chart.labels || ['No Data'],
                 datasets: [{
@@ -318,7 +345,7 @@ async function handleTracertItems() {
         } else {
             // Handle API success but no data
             chartError.value = response.data.message || 'No data available for the selected period';
-            warehouseChartData.value = [{
+            localWarehouseChartData.value = [{
                 id: 1,
                 labels: ['No Data'],
                 datasets: [{
@@ -335,7 +362,7 @@ async function handleTracertItems() {
         console.error('Error fetching tracert items:', error);
         chartError.value = error.response?.data?.message || 'Network error occurred while loading data';
         // Set empty chart data on error
-        warehouseChartData.value = [{
+        localWarehouseChartData.value = [{
             id: 1,
             labels: ['Error'],
             datasets: [{
@@ -355,7 +382,7 @@ async function handleTracertItems() {
 // Update chart data based on API response
 function updateChartData(chartData) {
     if (!chartData || !chartData.labels || !chartData.data) {
-        warehouseChartData.value = {
+        localWarehouseChartData.value = {
             labels: ['No Data'],
             datasets: [{
                 label: 'Quantity',
@@ -368,7 +395,7 @@ function updateChartData(chartData) {
         return;
     }
 
-    warehouseChartData.value = {
+    localWarehouseChartData.value = {
         labels: chartData.labels,
         datasets: [{
             label: getDataTypeLabel(warehouseDataType.value),
@@ -892,6 +919,97 @@ const issuedChartOptions = {
     }
 };
 
+const orderStatusChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#333333',
+            bodyColor: '#333333',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: true,
+            titleFont: {
+                size: 13,
+                weight: '600'
+            },
+            bodyFont: {
+                size: 12
+            },
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    return `${formatLargeNumberForTooltip(context.parsed.y)} orders`;
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
+            font: {
+                weight: 'bold',
+                size: 14,
+                family: 'Segoe UI, Arial, sans-serif'
+            },
+            formatter: function(value, context) {
+                return value > 0 ? formatLargeNumber(value) : '';
+            },
+            padding: 0
+        }
+    },
+    scales: {
+        y: { 
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.08)',
+                drawBorder: false,
+                lineWidth: 1
+            },
+            ticks: {
+                callback: function(value) {
+                    return formatLargeNumber(value);
+                },
+                font: {
+                    size: 11,
+                    weight: '500',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                font: {
+                    size: 11,
+                    weight: '600',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6,
+                maxRotation: 45,
+                minRotation: 0
+            }
+        }
+    },
+    animation: {
+        duration: 1200,
+        easing: 'easeOutCubic'
+    }
+};
+
 // Utility function to format large numbers
 function formatLargeNumber(value) {
     if (value === null || value === undefined) return '0';
@@ -929,6 +1047,14 @@ const getSelectedSupplierValue = () => {
         return selectedSupplier.value.value;
     }
     return selectedSupplier.value;
+};
+
+// Helper function to get selected order status values
+const getSelectedOrderStatusValues = () => {
+    if (Array.isArray(selectedOrderStatus.value)) {
+        return selectedOrderStatus.value.map(item => item.value);
+    }
+    return [];
 };
 
 // Filtered computed properties based on supplier selection
@@ -1128,6 +1254,42 @@ const delayedChartData = computed(() => ({
         borderWidth: 2
     }]
 }));
+
+// Order Status Chart Data
+const orderStatusChartData = computed(() => {
+    const statusData = [
+        { key: 'pending', label: 'Pending', color: 'rgba(245, 158, 11, 0.85)' },
+        { key: 'reviewed', label: 'Reviewed', color: 'rgba(59, 130, 246, 0.85)' },
+        { key: 'approved', label: 'Approved', color: 'rgba(16, 185, 129, 0.85)' },
+        { key: 'in_process', label: 'In Process', color: 'rgba(168, 85, 247, 0.85)' },
+        { key: 'dispatched', label: 'Dispatched', color: 'rgba(236, 72, 153, 0.85)' },
+        { key: 'delivered', label: 'Delivered', color: 'rgba(34, 197, 94, 0.85)' },
+        { key: 'received', label: 'Received', color: 'rgba(6, 182, 212, 0.85)' },
+        { key: 'rejected', label: 'Rejected', color: 'rgba(239, 68, 68, 0.85)' }
+    ];
+
+    // Filter data based on selected statuses
+    let filteredData = statusData;
+    const selectedValues = getSelectedOrderStatusValues();
+    if (selectedValues.length > 0) {
+        filteredData = statusData.filter(item => selectedValues.includes(item.key));
+    }
+
+    return {
+        labels: filteredData.map(item => item.label),
+        datasets: [{
+            label: 'Order Count',
+            data: filteredData.map(item => props.orderStats[item.key] || 0),
+            backgroundColor: filteredData.map(item => item.color),
+            borderColor: filteredData.map(item => item.color.replace('0.85', '1')),
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: filteredData.map(item => item.color.replace('0.85', '1')),
+            hoverBorderColor: filteredData.map(item => item.color.replace('0.85', '1')),
+            hoverBorderWidth: 3
+        }]
+    };
+});
 </script>
 
 <template>
@@ -1154,91 +1316,100 @@ const delayedChartData = computed(() => ({
                         class="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
                     />
                 </div>
-                <!-- Order Type Filter -->
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label class="text-xs font-medium text-gray-600 mb-1">Order Type:</label>
-                    <Multiselect
-                        v-model="selectedOrderType"
-                        :options="orderTypeOptions"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        label="label"
-                        track-by="value"
-                        placeholder="All Order Types"
-                        class="w-full sm:w-auto"
-                    />
-                </div>
-                <!-- Supplier Filter -->
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label class="text-xs font-medium text-gray-600 mb-1">Supplier:</label>
-                    <Multiselect
-                        v-model="selectedSupplier"
-                        :options="supplierOptions"
-                        :searchable="true"
-                        :close-on-select="true"
-                        :show-labels="false"
-                        label="label"
-                        track-by="value"
-                        placeholder="All Suppliers"
-                        class="w-full sm:w-auto"
-                    />
-                </div>
             </div>
         </div>
 
         <!-- Quick Stats Cards Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Transfers Card -->
-            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
-                <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
-                <div class="relative p-6 flex items-center justify-between">
-                    <div class="flex flex-col">
-                        <h3 class="text-sm font-medium text-white mb-1">Total Transfers</h3>
-                        <div class="text-2xl font-bold text-white mb-1">{{ filteredTransferReceivedCard || 0 }}</div>
-                        <div class="text-xs text-white opacity-90">01/11/2024</div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                        </svg>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <!-- Low Stock Card -->
+            <Link :href="route('inventories.index')" class="block">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Low Stock</h3>
+                            <div class="text-2xl font-bold text-white">{{ lowStockCount || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Link>
+
+            <!-- Out of Stock Card -->
+            <Link :href="route('inventories.index')" class="block">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Out of Stock</h3>
+                            <div class="text-2xl font-bold text-white">{{ outOfStockCount || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+
+            <!-- Transfers Card -->
+            <Link :href="route('transfers.index')" class="block">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
+                            <div class="text-2xl font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </Link>
 
             <!-- Total Cost Card -->
-            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-400"></div>
-                <div class="relative p-6 flex items-center justify-between">
-                    <div class="flex flex-col">
-                        <h3 class="text-sm font-medium text-white mb-1">Total Value</h3>
-                        <div class="text-2xl font-bold text-white mb-1">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                        <div class="text-xs text-white opacity-90">01/11/2024</div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                        </svg>
+            <Link :href="route('purchase-orders.index')" class="block">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Total PO Cost</h3>
+                            <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Link>
 
             <!-- Delayed Orders Card -->
-            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
-                <div class="absolute inset-0 bg-gradient-to-br from-teal-500 to-green-400"></div>
-                <div class="relative p-6 flex items-center justify-between">
-                    <div class="flex flex-col">
-                        <h3 class="text-sm font-medium text-white mb-1">Pending Orders</h3>
-                        <div class="text-2xl font-bold text-white mb-1">{{ filteredOrdersDelayedCount || 0 }}</div>
-                        <div class="text-xs text-white opacity-90">01/11/2024</div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+            <Link :href="route('orders.index')" class="block">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-br from-teal-500 to-green-400"></div>
+                    <div class="relative p-6 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
+                            <div class="text-2xl font-bold text-white">{{ filteredOrdersDelayedCount || 0 }}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Link>
         </div>
 
         <!-- Charts Row -->
@@ -1366,7 +1537,7 @@ const delayedChartData = computed(() => ({
                                 <div v-else class="h-full">
                                     <!-- Single Chart -->
                                     <div v-if="chartCount === 1" class="h-full">
-                                        <Bar :data="warehouseChartData[0]" :options="issuedChartOptions" />
+                                        <Bar :data="localWarehouseChartData[0]" :options="issuedChartOptions" />
                                     </div>
                                     
                                     <!-- Multiple Charts Grid - 3 charts per row -->
@@ -1398,56 +1569,51 @@ const delayedChartData = computed(() => ({
 
 
 
-            <!-- Order Statistics and Stock Status Section -->
-            <div class="flex flex-col sm:flex-row items-stretch space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
-                <!-- Order Statistics -->
-                <div class="flex flex-col items-end">
-                    <div class="text-xs font-bold text-gray-700 mb-1 text-end">Order Status</div>
-                    <div v-for="status in [
-                      { key: 'pending', img: '/assets/images/pending.png', label: 'Pending' },
-                      { key: 'reviewed', img: '/assets/images/review.png', label: 'Reviewed' },
-                      { key: 'approved', img: '/assets/images/approved.png', label: 'Approved' },
-                      { key: 'in_process', img: '/assets/images/inprocess.png', label: 'In Process' },
-                      { key: 'dispatched', img: '/assets/images/dispatch.png', label: 'Dispatched' },
-                      { key: 'delivered', img: '/assets/images/delivery.png', label: 'Delivered' },
-                      { key: 'received', img: '/assets/images/received.png', label: 'Received' },
-                      { key: 'rejected', img: '/assets/images/rejected.png', label: 'Rejected' }
-                    ]" :key="status.key" class="flex flex-row items-center space-x-2 min-w-[100px]">
-                      <img :src="status.img" class="w-8 h-8" :alt="status.label" :title="status.label" />
-                      <div>
-                        <div class="text-xs font-bold text-gray-900">{{ props.orderStats[status.key] }}</div>
-                        <div class="text-[10px] text-gray-600">{{ status.label }}</div>
-                      </div>
-                    </div>
-                </div>
 
-                <!-- Stock Status Cards (Inventory/Index.vue style) -->
-                <div class="flex flex-col items-end justify-start h-full">
-                    <div class="text-xs font-bold text-gray-700 mb-1 text-end">Stock Status</div>
-                    <div class="space-y-2 flex-1 flex flex-col justify-start">
-                        <div class="flex items-center rounded-xl bg-green-50 p-1 shadow">
-                            <img src="/assets/images/in_stock.png" class="w-[40px] h-[40px]" alt="In Stock" />
-                            <div class="ml-4 flex flex-col">
-                                <span class="text-sm font-bold text-green-600">{{ inStockCount }}</span>
-                                <span class="ml-2 text-xs text-green-600">In Stock</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center rounded-xl bg-orange-50 p-1 shadow">
-                            <img src="/assets/images/low_stock.png" class="w-[40px] h-[40px]" alt="Low Stock" />
-                            <div class="ml-4 flex flex-col">
-                                <span class="text-sm font-bold text-orange-600">{{ lowStockCount }}</span>
-                                <span class="ml-2 text-xs text-orange-600">Low Stock</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center rounded-xl bg-red-50 p-1 shadow">
-                            <img src="/assets/images/out_stock.png" class="w-[40px] h-[40px]" alt="Out of Stock" />
-                            <div class="ml-4 flex flex-col">
-                                <span class="text-sm font-bold text-red-600">{{ outOfStockCount }}</span>
-                                <span class="ml-2 text-xs text-red-600">Out of Stock</span>
-                            </div>
+        </div>
+
+        <!-- Order Status Chart Section -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Order Status Overview</h3>
+                    <p class="text-sm text-gray-600 mt-1">Track orders across different statuses</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Status Filter -->
+                    <div class="flex flex-col">
+                        <label class="text-xs font-medium text-gray-600 mb-1">Filter by Status:</label>
+                        <div class="flex gap-2">
+                            <Multiselect
+                                v-model="selectedOrderStatus"
+                                :options="orderStatusOptions"
+                                :searchable="true"
+                                :close-on-select="false"
+                                :multiple="true"
+                                :show-labels="false"
+                                label="label"
+                                track-by="value"
+                                placeholder="Select statuses..."
+                                class="w-full sm:w-48"
+                            />
+                            <button
+                                @click="selectAllStatuses"
+                                class="px-3 py-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mt-2"
+                            >
+                                All
+                            </button>
+                            <button
+                                @click="clearAllStatuses"
+                                class="px-3 py-2 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors mt-2"
+                            >
+                                Clear
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="h-80">
+                <Bar :data="orderStatusChartData" :options="orderStatusChartOptions" />
             </div>
         </div>
 
