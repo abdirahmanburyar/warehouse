@@ -5,262 +5,245 @@
         description="Track all received inventory"
         img="/assets/images/report.png"
     >
-        <!-- <div class="mb-[100px]"> -->
-            <h2 class="text-xl font-semibold mb-4">
-                Monthly Received Quantities Report
-            </h2>
+        <h2 class="text-xl font-semibold mb-4">
+            Monthly Received Quantities Report
+        </h2>
 
-            <!-- Main Content with adjusted split -->
-            <div class="flex">
-                <!-- Filter Section -->
-                <div class="flex-[0.1] pr-4">
-                    <div class="bg-gray-50 p-4 rounded-md shadow-sm">
-                        <h3 class="text-lg font-medium mb-3">Filters</h3>
+        <!-- Main Content with adjusted split -->
+        <div class="flex">
+            <!-- Filter Section -->
+            <div class="flex-[0.1] pr-4">
+                <div class="bg-gray-50 p-4 rounded-md shadow-sm">
+                    <h3 class="text-lg font-medium mb-3">Filters</h3>
 
-                        <!-- Years with nested months -->
-                        <div class="mb-4">
-                            <label
-                                class="block text-sm font-medium text-gray-700 mb-1"
-                                >Filter by Year & Month</label
-                            >
+                    <!-- Years with nested months -->
+                    <div class="mb-4">
+                        <label
+                            class="block text-sm font-medium text-gray-700 mb-1"
+                            >Filter by Year & Month</label
+                        >
+                        <div
+                            class="max-h-80 overflow-y-auto border border-gray-300 rounded-md p-2"
+                        >
                             <div
-                                class="max-h-80 overflow-y-auto border border-gray-300 rounded-md p-2"
+                                v-for="year in availableYears"
+                                :key="year"
+                                class="mb-3"
                             >
-                                <div
-                                    v-for="year in availableYears"
-                                    :key="year"
-                                    class="mb-3"
-                                >
-                                    <div class="flex items-center mb-1">
-                                        <input
-                                            type="checkbox"
-                                            :id="`year-${year}`"
-                                            :value="year"
-                                            v-model="selectedYears"
-                                            @change="
-                                                toggleYearMonths(year, $event)
-                                            "
-                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        />
-                                        <label
-                                            :for="`year-${year}`"
-                                            class="ml-2 block text-sm font-medium text-gray-900"
-                                            >{{ year }}</label
-                                        >
-                                    </div>
-
-                                    <!-- Months for this year -->
-                                    <div
-                                        v-if="selectedYears.includes(year)"
-                                        class="ml-6 mt-1 border-l-2 border-gray-200 pl-2"
+                                <div class="flex items-center mb-1">
+                                    <input
+                                        type="checkbox"
+                                        :id="`year-${year}`"
+                                        :value="year"
+                                        v-model="selectedYears"
+                                        @change="
+                                            toggleYearMonths(year, $event)
+                                        "
+                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                    />
+                                    <label
+                                        :for="`year-${year}`"
+                                        class="ml-2 block text-sm font-medium text-gray-900"
+                                        >{{ year }}</label
                                     >
-                                        <div class="mb-1 flex justify-end">
-                                            <button
-                                                type="button"
-                                                @click="
-                                                    selectAllMonthsForYear(year)
+                                </div>
+
+                                <!-- Months for this year -->
+                                <div
+                                    v-if="selectedYears.includes(year)"
+                                    class="ml-6 mt-1 border-l-2 border-gray-200 pl-2"
+                                >
+                                    <div class="mb-1 flex justify-end">
+                                        <button
+                                            type="button"
+                                            @click="
+                                                selectAllMonthsForYear(year)
+                                            "
+                                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                                        >
+                                            Select All
+                                        </button>
+                                        <span class="mx-1">|</span>
+                                        <button
+                                            type="button"
+                                            @click="
+                                                deselectAllMonthsForYear(
+                                                    year
+                                                )
+                                            "
+                                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <div class="flex flex-col gap-y-1">
+                                        <div
+                                            v-for="(month, index) in months"
+                                            :key="`${year}-${index}`"
+                                            class="flex items-center"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                :id="`year-${year}-month-${index}`"
+                                                :value="{
+                                                    year: year,
+                                                    month: index + 1,
+                                                }"
+                                                v-model="
+                                                    yearMonthSelections
                                                 "
-                                                class="text-xs text-indigo-600 hover:text-indigo-800"
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                            />
+                                            <label
+                                                :for="`year-${year}-month-${index}`"
+                                                class="ml-2 block text-sm text-gray-900 truncate"
+                                                >{{ month }}</label
                                             >
-                                                Select All
-                                            </button>
-                                            <span class="mx-1">|</span>
-                                            <button
-                                                type="button"
-                                                @click="
-                                                    deselectAllMonthsForYear(
-                                                        year
-                                                    )
-                                                "
-                                                class="text-xs text-indigo-600 hover:text-indigo-800"
-                                            >
-                                                Clear
-                                            </button>
-                                        </div>
-                                        <div class="flex flex-col gap-y-1">
-                                            <div
-                                                v-for="(month, index) in months"
-                                                :key="`${year}-${index}`"
-                                                class="flex items-center"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    :id="`year-${year}-month-${index}`"
-                                                    :value="{
-                                                        year: year,
-                                                        month: index + 1,
-                                                    }"
-                                                    v-model="
-                                                        yearMonthSelections
-                                                    "
-                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                                />
-                                                <label
-                                                    :for="`year-${year}-month-${index}`"
-                                                    class="ml-2 block text-sm text-gray-900 truncate"
-                                                    >{{ month }}</label
-                                                >
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Filter Button -->
-                    <button
-                        type="button"
-                        @click="fetchData"
-                        class="w-full inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                        :disabled="loading"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4 mr-2"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                            />
-                        </svg>
-                        Apply Filter
-                    </button>
-
-                    <!-- Export Button (Only visible with export permission) -->
-                    <button
-                        type="button"
-                        @click="exportToExcel"
-                        class="w-full mt-3 inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                        :disabled="loading || !receivedQuantities.data.length"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4 mr-2"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
-                        {{ exportButtonText }}
-                    </button>
                 </div>
-                
-                <!-- Content Section -->
-                <div class="flex-[0.8]">
-                    <!-- Monthly Reports Table - Column-Based Design -->
-                    <div class="overflow-auto bg-white p-4 rounded-md shadow-sm">
+
+                <!-- Reset Filters Button -->
+                <button
+                    type="button"
+                    @click="resetFilters"
+                    class="w-full mt-3 inline-flex justify-center items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-600 focus:bg-gray-600 active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                >
+                    Reset Filters
+                </button>
+
+                <!-- Export Button (Only visible with export permission) -->
+                <button
+                    type="button"
+                    @click="exportToExcel"
+                    class="w-full mt-3 inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                    :disabled="loading || !receivedQuantities.data.length"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 mr-2"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    {{ exportButtonText }}
+                </button>
+            </div>
+            
+            <!-- Content Section -->
+            <div class="flex-[0.8]">
+                <!-- Monthly Reports Table - Column-Based Design -->
+                <div class="overflow-auto bg-white rounded-lg shadow-sm border border-gray-200">
                     <div
                         v-if="loading"
-                        class="flex justify-center items-center p-8"
+                        class="flex justify-center items-center p-12"
                     >
-                        <div
-                            class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"
-                        ></div>
+                        <div class="flex flex-col items-center space-y-3">
+                            <div class="animate-spin rounded-full h-10 w-10 border-3 border-indigo-500 border-t-transparent"></div>
+                            <p class="text-sm text-gray-500">Loading reports...</p>
+                        </div>
                     </div>
 
                     <div
                         v-else-if="!dataFetched"
-                        class="text-center p-8 text-gray-500"
+                        class="text-center p-12"
                     >
-                        Please select filters and click Apply to view data
+                        <div class="flex flex-col items-center space-y-3">
+                            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-gray-500 font-medium">Please select filters to view data</p>
+                        </div>
                     </div>
 
-                    <table
-                        v-else
-                        class="min-w-full border-collapse border border-gray-300"
+                    <div
+                        v-else-if="receivedQuantities.data.length === 0"
+                        class="text-center p-12"
                     >
-                        <thead>
-                            <tr>
-                                <template
-                                    v-if="receivedQuantities.data.length === 0"
-                                >
-                                    <th
-                                        class="border border-gray-300 p-2 text-center font-medium"
-                                    >
-                                        No Data Available
-                                    </th>
-                                </template>
-                                <template v-else>
+                        <div class="flex flex-col items-center space-y-3">
+                            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                            <p class="text-gray-500 font-medium">No monthly reports found matching the criteria.</p>
+                        </div>
+                    </div>
+
+                    <div v-else class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-200">
+                                <tr>
                                     <th
                                         v-for="report in receivedQuantities.data"
                                         :key="`header-${report.id}`"
-                                        class="border border-gray-300 p-2 text-center font-medium"
+                                        class="px-6 py-4 text-center font-semibold text-gray-700 uppercase tracking-wider text-sm"
                                     >
-                                        {{
-                                            formatMonthShort(report.month_year)
-                                        }}
+                                        <div class="flex flex-col items-center space-y-1">
+                                            <span class="font-bold text-indigo-600">{{ formatMonthShort(report.month_year) }}</span>
+                                            <span class="text-xs text-gray-500 font-normal">{{ formatMonthYear(report.month_year) }}</span>
+                                        </div>
                                     </th>
-                                </template>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="receivedQuantities.data.length === 0">
-                                <td
-                                    class="border border-gray-300 p-4 text-center text-gray-500"
-                                >
-                                    No monthly reports found matching the
-                                    criteria.
-                                </td>
-                            </tr>
-                            <template v-else>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
                                 <!-- Quantities Row -->
-                                <tr>
+                                <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <td
                                         v-for="report in receivedQuantities.data"
                                         :key="`qty-${report.id}`"
-                                        class="border border-gray-300 p-2 text-center"
+                                        class="px-6 py-6 text-center"
                                     >
-                                        {{
-                                            report.total_quantity.toLocaleString()
-                                        }}
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <span class="text-2xl font-bold text-gray-900">{{ report.total_quantity.toLocaleString() }}</span>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide">Items Received</span>
+                                        </div>
                                     </td>
                                 </tr>
                                 <!-- Actions Row -->
-                                <tr>
+                                <tr class="bg-gray-25">
                                     <td
                                         v-for="report in receivedQuantities.data"
                                         :key="`action-${report.id}`"
-                                        class="border border-gray-300 p-2 text-center"
+                                        class="px-6 py-4 text-center"
                                     >
-                                        <button
-                                            v-if="
-                                                $page.props.auth.can.report_view
-                                            "
-                                            @click="viewReportItems(report)"
-                                            class="text-blue-600 hover:text-blue-800 font-medium"
-                                        >
-                                            view
-                                        </button>
-                                        <template
-                                            v-if="
-                                                $page.props.auth.can.report_view
-                                            "
-                                            >/</template
-                                        >
-                                        <button
-                                            @click="downloadReportItems(report)"
-                                            class="text-green-600 hover:text-green-800 font-medium"
-                                        >
-                                            download
-                                        </button>
+                                        <div class="flex items-center justify-center space-x-3">
+                                            <button
+                                                v-if="$page.props.auth.can.report_view"
+                                                @click="viewReportItems(report)"
+                                                class="inline-flex items-center px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-md text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors duration-150"
+                                            >
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                                View
+                                            </button>
+                                            <button
+                                                @click="downloadReportItems(report)"
+                                                class="inline-flex items-center px-3 py-1.5 bg-green-50 border border-green-200 rounded-md text-sm font-medium text-green-700 hover:bg-green-100 hover:border-green-300 transition-colors duration-150"
+                                            >
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                Download
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
-                            </template>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        </div>
 
         <!-- Pagination -->
         <div class="mt-4 flex items-center justify-end">
@@ -273,21 +256,31 @@
         <!-- Modal for viewing report items -->
         <div
             v-if="showModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         >
             <div
-                class="bg-white rounded-lg shadow-lg w-full h-full max-h-screen overflow-hidden flex flex-col"
+                class="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[90vh] overflow-hidden flex flex-col"
             >
+                <!-- Modal Header -->
                 <div
-                    class="px-6 py-4 border-b border-gray-200 flex justify-between items-center"
+                    class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-200 flex justify-between items-center"
                 >
-                    <h3 class="text-lg font-medium text-gray-900">
-                        Received Items for
-                        {{ formatMonthYear(selectedReport?.month_year) }}
-                    </h3>
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-indigo-100 rounded-lg">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">
+                                Received Items for {{ formatMonthYear(selectedReport?.month_year) }}
+                            </h3>
+                            <p class="text-sm text-gray-500">Detailed breakdown of received quantities</p>
+                        </div>
+                    </div>
                     <button
                         @click="showModal = false"
-                        class="text-gray-400 hover:text-gray-500"
+                        class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-150"
                     >
                         <svg
                             class="h-6 w-6"
@@ -304,96 +297,140 @@
                         </svg>
                     </button>
                 </div>
+
+                <!-- Modal Content -->
                 <div class="px-6 py-4 overflow-auto flex-grow">
-                    <div class="flex justify-between mb-4">
-                        <div>
-                            <span class="font-semibold">Total Items:</span>
-                            {{ selectedReport?.items?.length || 0 }}
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-blue-100 rounded-lg">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-blue-600">Total Items</p>
+                                    <p class="text-2xl font-bold text-blue-900">{{ selectedReport?.items?.length || 0 }}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <span class="font-semibold">Total Quantity:</span>
-                            {{
-                                selectedReport?.total_quantity?.toLocaleString() ||
-                                0
-                            }}
+                        
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-green-100 rounded-lg">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-green-600">Total Quantity</p>
+                                    <p class="text-2xl font-bold text-green-900">{{ selectedReport?.total_quantity?.toLocaleString() || 0 }}</p>
+                                </div>
+                            </div>
                         </div>
-                        <button
-                            @click="downloadReportItems(selectedReport)"
-                            class="inline-flex items-center px-3 py-1 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                        >
-                            Download Excel
-                        </button>
+                        
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-purple-100 rounded-lg">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-purple-600">Actions</p>
+                                    <button
+                                        @click="downloadReportItems(selectedReport)"
+                                        class="text-sm font-medium text-purple-700 hover:text-purple-800 underline"
+                                    >
+                                        Download Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50 border-b border-black">
-                            <tr>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    #
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Item
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Category
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Dosage
-                                </th>
-                                <th
-                                    class="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider border border-black"
-                                >
-                                    Quantity
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="(item, i) in selectedReport?.items"
-                                :key="item.id"
-                                class="hover:bg-gray-50 border border-black"
-                            >
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ i + 1 }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.product?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.product?.category?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.product?.dosage?.name || "N/A" }}
-                                </td>
-                                <td
-                                    class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border border-black"
-                                >
-                                    {{ item.quantity.toLocaleString() }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                    <!-- Table -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            #
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Item Name
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Category
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Dosage Form
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Quantity
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <tr
+                                        v-for="(item, i) in selectedReport?.items"
+                                        :key="item.id"
+                                        class="hover:bg-gray-50 transition-colors duration-150"
+                                    >
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-800 text-sm font-semibold rounded-full">
+                                                {{ i + 1 }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">{{ item.product?.name || "N/A" }}</div>
+                                                    <div class="text-sm text-gray-500">Product ID: {{ item.product?.id || "N/A" }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                {{ item.product?.category?.name || "N/A" }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                {{ item.product?.dosage?.name || "N/A" }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <span class="text-lg font-bold text-gray-900">{{ item.quantity.toLocaleString() }}</span>
+                                                <span class="ml-2 text-sm text-gray-500">units</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="px-6 py-4 border-t border-gray-200 text-right">
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
                     <button
                         @click="showModal = false"
-                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
                     >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                         Close
                     </button>
                 </div>
@@ -501,11 +538,30 @@ const months = [
 
 // Reset filters to default values
 const resetFilters = () => {
+    // Reset year and month selections to current year and month
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    selectedYears.value = [currentYear];
+    yearMonthSelections.value = [{ year: currentYear, month: currentMonth }];
+    
+    // Reset other filters
     filters.value = {
-        year: new Date().getFullYear(),
-        month: "",
         per_page: "10",
     };
+};
+
+// Debounced fetch function to prevent too many requests
+let fetchTimeout = null;
+
+const debouncedFetchData = () => {
+    if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+    }
+    
+    fetchTimeout = setTimeout(() => {
+        fetchData();
+    }, 300); // 300ms delay
 };
 
 // Fetch data based on filters
@@ -972,6 +1028,33 @@ const totalQuantity = computed(() => {
         .toLocaleString();
 });
 
+// Computed properties for new stats
+const totalReceived = computed(() => totalQuantity.value);
+const uniqueProducts = computed(() => {
+    const productNames = new Set();
+    props.receivedQuantities.data.forEach(item => {
+        if (item.product) {
+            productNames.add(item.product.name);
+        }
+    });
+    return productNames.size;
+});
+
+// Watchers for automatic filtering
+watch([selectedYears, yearMonthSelections], () => {
+    // Only fetch if we have selections
+    if (selectedYears.value.length > 0 || yearMonthSelections.value.length > 0) {
+        debouncedFetchData();
+    }
+}, { deep: true });
+
+// Watch for filter changes
+watch(filters, () => {
+    if (dataFetched.value) {
+        debouncedFetchData();
+    }
+}, { deep: true });
+
 // Lifecycle hooks
 onMounted(() => {
     // Initialize with dataFetched as false - user must apply filter first
@@ -984,5 +1067,8 @@ onMounted(() => {
     // Set current month as default selected month for current year
     const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
     yearMonthSelections.value = [{ year: currentYear, month: currentMonth }];
+    
+    // Auto-fetch data on mount since we have default selections
+    fetchData();
 });
 </script>
