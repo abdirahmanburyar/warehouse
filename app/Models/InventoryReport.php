@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryReport extends Model
 {
-    const STATUS_DRAFT = 'generated';
+    const STATUS_DRAFT = 'pending';
     const STATUS_SUBMITTED = 'submitted';
     const STATUS_UNDER_REVIEW = 'under_review';
     const STATUS_APPROVED = 'approved';
@@ -65,7 +65,7 @@ class InventoryReport extends Model
     public static function getStatusOptions()
     {
         return [
-            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_DRAFT => 'Pending',
             self::STATUS_SUBMITTED => 'Submitted',
             self::STATUS_UNDER_REVIEW => 'Under Review',
             self::STATUS_APPROVED => 'Approved',

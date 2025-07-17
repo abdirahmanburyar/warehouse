@@ -552,7 +552,7 @@ class ReportController extends Controller
         $inventoryReport = InventoryReport::firstOrCreate(
             ['month_year' => $monthYear],
             [
-                'status' => 'generated',
+                'status' => 'pending',
                 'generated_by' => auth()->id(),
                 'generated_at' => now(),
             ]
@@ -578,9 +578,9 @@ class ReportController extends Controller
                 ->firstOrCreate(
                     ['month_year' => $monthYear],
                     [
-                        'status' => 'generated',
-                        'generated_by' => auth()->id(),
-                        'generated_at' => now(),
+                                        'status' => 'pending',
+                'generated_by' => auth()->id(),
+                'generated_at' => now(),
                     ]
                 );
                 
@@ -659,22 +659,7 @@ class ReportController extends Controller
                             'negative_adjustment' => $adjustment['negative_adjustment'],
                             // Update closing balance
                             'closing_balance' => $closingBalance,
-                            // Update total cost based on new closing balance and unit cost
-                            'total_cost' => $totalCost,
                         ];
-                        
-                        // Debug: Log current and new months_of_stock values
-                        $oldMonthsOfStock = $reportItem->months_of_stock;
-                        $newMonthsOfStock = $adjustment['months_of_stock'] ?? null;
-                        
-                        Log::debug('Updating months_of_stock', [
-                            'product_id' => $reportItem->product_id,
-                            'old_value' => $oldMonthsOfStock,
-                            'new_value' => $newMonthsOfStock,
-                            'type_old' => gettype($oldMonthsOfStock),
-                            'type_new' => gettype($newMonthsOfStock),
-                            'full_request' => $adjustment
-                        ]);
                         
                         // Only update months_of_stock if it's provided in the request
                         if (isset($adjustment['months_of_stock'])) {
@@ -682,14 +667,6 @@ class ReportController extends Controller
                         }
                         
                         $reportItem->update($updateData);
-                        
-                        // Log after update to verify
-                        $updatedItem = $reportItem->fresh();
-                        Log::debug('After update months_of_stock', [
-                            'product_id' => $reportItem->product_id,
-                            'saved_value' => $updatedItem->months_of_stock,
-                            'type_saved' => gettype($updatedItem->months_of_stock)
-                        ]);
                     }
                 }
 
@@ -714,8 +691,8 @@ class ReportController extends Controller
 
             $inventoryReport = InventoryReport::where('month_year', $request->month_year)->firstOrFail();
 
-            if ($inventoryReport->status !== 'generated') {
-                return response()->json(['message' => 'Only generated reports can be submitted.'], 403);
+            if ($inventoryReport->status !== 'pending') {
+                return response()->json(['message' => 'Only pending reports can be submitted.'], 403);
             }
 
             $inventoryReport->update([

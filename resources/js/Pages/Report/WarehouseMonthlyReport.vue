@@ -21,6 +21,12 @@
                     <span :class="getStatusBadgeClass(props.inventoryReport?.status)" class="px-3 py-1 rounded-full text-sm font-medium">
                         {{ props.inventoryReport?.status?.toUpperCase() ?? 'N/A' }}
                     </span>
+                    <span v-if="canEdit" class="text-green-600 text-sm font-medium">
+                        ✏️ Editable
+                    </span>
+                    <span v-else class="text-gray-500 text-sm">
+                        🔒 Read-only (Status: {{ props.inventoryReport?.status || 'unknown' }})
+                    </span>
                 </div>
 
                 <!-- Action Buttons -->
@@ -90,80 +96,109 @@
                 <div class="text-sm text-gray-500 mt-2">This may take a few moments for large datasets</div>
             </div>
             <div v-else-if="props.reportData && props.reportData.length > 0" class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UoM</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Beginning Balance</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Received Quantity</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Issued Quantity</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Other Quantity Out</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Positive Adjustment</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Negative Adjustment</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Closing Balance</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Closing Balance</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Average Monthly Consumption</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Months of Stock</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity in Pipeline</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Product</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Beginning Balance</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Stock Received</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Stock Issued</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider bg-blue-50 border border-gray-300">
+                                Negative Adjustment
+                                <span v-if="canEdit" class="ml-1 text-blue-600" title="Editable">✏️</span>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider bg-blue-50 border border-gray-300">
+                                Positive Adjustment
+                                <span v-if="canEdit" class="ml-1 text-blue-600" title="Editable">✏️</span>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Closing Balance</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="item in props.reportData" :key="item.product.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <tr v-for="(item, index) in props.reportData" :key="item.product.id" :class="getRowClass(index)">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300 relative">
                                 {{ item.product.name }}
+                                <span v-if="rowError[index]" class="absolute top-2 right-2 text-red-500 animate-bounce">
+                                    ❌
+                                </span>
+                                <span v-else-if="rowSaving[index]" class="absolute top-2 right-2 text-yellow-500">
+                                    <svg class="animate-pulse h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                                    </svg>
+                                </span>
+                                <span v-else-if="rowUpdating[index]" class="absolute top-2 right-2 text-blue-500">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </span>
+                                <span v-else-if="rowChanged[index]" class="absolute top-2 right-2 text-green-500">
+                                    ✓
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ item.uom || 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ item.batch_number || 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ item.expiry_date ? formatDate(item.expiry_date) : 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right" :class="getBalanceColor(item.beginning_balance)">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300" :class="getBalanceColor(item.beginning_balance)">
                                 {{ formatNumber(item.beginning_balance) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
                                 {{ formatNumber(item.received_quantity) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
                                 {{ formatNumber(item.issued_quantity) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.other_quantity_out) }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
+                                <input 
+                                    v-if="canEdit"
+                                    v-model.number="currentAdjustments[index].negative_adjustment"
+                                    @input="updateCalculatedBalance(item, index)"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    :class="[
+                                        'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
+                                        rowError[index] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
+                                        rowSaving[index] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
+                                        rowUpdating[index] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
+                                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                    ]"
+                                />
+                                <span v-else class="text-gray-900">
+                                    {{ formatNumber(item.negative_adjustment) }}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.positive_adjustment) }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
+                                <input 
+                                    v-if="canEdit"
+                                    v-model.number="currentAdjustments[index].positive_adjustment"
+                                    @input="updateCalculatedBalance(item, index)"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    :class="[
+                                        'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
+                                        rowError[index] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
+                                        rowSaving[index] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
+                                        rowUpdating[index] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
+                                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                    ]"
+                                />
+                                <span v-else class="text-gray-900">
+                                    {{ formatNumber(item.positive_adjustment) }}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.negative_adjustment) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right" :class="getBalanceColor(item.closing_balance)">
-                                {{ formatNumber(item.closing_balance) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right" :class="getBalanceColor(item.total_closing_balance)">
-                                {{ formatNumber(item.total_closing_balance) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.average_monthly_consumption) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.months_of_stock) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatNumber(item.quantity_in_pipeline) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatCurrency(item.unit_cost) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ formatCurrency(item.total_cost) }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, index)">
+                                {{ formatNumber(calculateClosingBalance(item, index)) }}
+                                <span v-if="rowError[index]" class="ml-2 text-red-500 animate-bounce">
+                                    ❌
+                                </span>
+                                <span v-else-if="rowSaving[index]" class="ml-2 text-yellow-500">
+                                    💾
+                                </span>
+                                <span v-else-if="rowUpdating[index]" class="ml-2 text-blue-500">
+                                    ⟳
+                                </span>
+                                <span v-else-if="rowChanged[index]" class="ml-2 text-green-500">
+                                    ✓
+                                </span>
                             </td>
                         </tr>
                     </tbody>
@@ -202,7 +237,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import moment from 'moment';
@@ -237,19 +272,64 @@ const cellLoading = ref({});
 const processing = ref(false);
 const saving = ref(false);
 const dataLoading = ref(false);
+const rowUpdating = ref({});
+const rowChanged = ref({});
+const rowSaving = ref({});
+const rowError = ref({});
+const saveTimeouts = ref({});
+
+// Initialize adjustments tracking
+const initializeAdjustments = () => {
+    if (props.reportData && Array.isArray(props.reportData)) {
+        const newOriginal = {};
+        const newCurrent = {};
+        
+        props.reportData.forEach((item, index) => {
+            // Initialize only the required editable fields
+            newOriginal[index] = {
+                positive_adjustment: item.positive_adjustment ?? 0,
+                negative_adjustment: item.negative_adjustment ?? 0
+            };
+            
+            newCurrent[index] = {
+                positive_adjustment: item.positive_adjustment ?? 0,
+                negative_adjustment: item.negative_adjustment ?? 0
+            };
+            
+            // Initialize row states
+            rowUpdating.value[index] = false;
+            rowChanged.value[index] = false;
+            rowSaving.value[index] = false;
+            rowError.value[index] = false;
+        });
+        
+        originalAdjustments.value = newOriginal;
+        currentAdjustments.value = newCurrent;
+    }
+};
 
 // Initialize cell loading states
 onMounted(() => {
     if (props.reportData && props.reportData.length > 0) {
-        props.reportData.forEach(item => {
-            cellLoading.value[item.product.id] = {
+        props.reportData.forEach((item, index) => {
+            cellLoading.value[index] = {
                 positive_adjustment: false,
-                negative_adjustment: false,
-                months_of_stock: false
+                negative_adjustment: false
             };
+            rowUpdating.value[index] = false;
+            rowChanged.value[index] = false;
+            rowSaving.value[index] = false;
+            rowError.value[index] = false;
         });
         initializeAdjustments();
     }
+});
+
+// Cleanup timeouts on unmount
+onUnmounted(() => {
+    Object.values(saveTimeouts.value).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+    });
 });
 
 watch([
@@ -258,10 +338,16 @@ watch([
     reloadData();
 });
 
-function reloadData(){
+watch(() => props.reportData, (newData) => {
+    if (newData && newData.length > 0) {
+        initializeAdjustments();
+    }
+}, { immediate: true });
+
+function reloadData() {
     dataLoading.value = true;
-    const query = {}
-    if(month_year.value) query.month_year = month_year.value
+    const query = {};
+    if (month_year.value) query.month_year = month_year.value;
     router.get(route('reports.warehouseMonthly'), query, {
         preserveState: true,
         preserveScroll: true,
@@ -273,46 +359,50 @@ function reloadData(){
         ],
         onFinish: () => {
             dataLoading.value = false;
+            // Re-initialize adjustments with new data
+            setTimeout(() => {
+                if (props.reportData && props.reportData.length > 0) {
+                    initializeAdjustments();
+                }
+            }, 100);
         }
-    })
+    });
 }
 
-// Initialize adjustments tracking
-const initializeAdjustments = () => {
-    if (props.reportData && Array.isArray(props.reportData)) {
-        const newOriginal = {};
-        const newCurrent = {};
-        
-        props.reportData.forEach(item => {
-            if (!item.product?.id) return; // Skip if no product id
-            
-            // Initialize with default values if any field is undefined
-            newOriginal[item.product.id] = {
-                positive_adjustment: item.positive_adjustment ?? 0,
-                negative_adjustment: item.negative_adjustment ?? 0,
-                months_of_stock: item.months_of_stock?.toString() ?? '0'  // Convert to string
-            };
-            
-            newCurrent[item.product.id] = {
-                positive_adjustment: item.positive_adjustment ?? 0,
-                negative_adjustment: item.negative_adjustment ?? 0,
-                months_of_stock: item.months_of_stock?.toString() ?? '0'  // Convert to string
-            };
-        });
-        
-        originalAdjustments.value = newOriginal;
-        currentAdjustments.value = newCurrent;
+// Row state helpers
+const getRowClass = (index) => {
+    const classes = ['transition-all', 'duration-300', 'ease-in-out'];
+    
+    if (rowError.value[index]) {
+        classes.push('bg-red-50', 'border-red-200', 'shadow-md');
+    } else if (rowSaving.value[index]) {
+        classes.push('bg-yellow-50', 'border-yellow-200', 'shadow-md');
+    } else if (rowUpdating.value[index]) {
+        classes.push('bg-blue-50', 'shadow-md', 'transform', 'scale-[1.02]');
+    } else if (rowChanged.value[index]) {
+        classes.push('bg-green-50', 'border-green-200');
     }
+    
+    return classes.join(' ');
 };
 
-// format dates
-const formatDate = (date) => {
-    return moment(date).format('DD/MM/YYYY');
+const getClosingBalanceClass = (item, index) => {
+    const baseClasses = ['transition-all', 'duration-500', 'ease-in-out'];
+    const balanceColor = getBalanceColor(calculateClosingBalance(item, index));
+    
+    if (rowUpdating.value[index]) {
+        baseClasses.push('font-bold', 'text-lg', 'animate-pulse');
+    } else if (rowChanged.value[index]) {
+        baseClasses.push('font-semibold');
+    }
+    
+    baseClasses.push(balanceColor);
+    return baseClasses.join(' ');
 };
 
 // Computed properties
 const canEdit = computed(() => {
-    return props.inventoryReport?.status === 'generated' || props.inventoryReport?.status === 'rejected';
+    return props.inventoryReport?.status === 'pending' || props.inventoryReport?.status === 'rejected';
 });
 
 const submittedBy = computed(() => {
@@ -332,7 +422,7 @@ const rejectedBy = computed(() => {
 });
 
 const canSubmit = computed(() => {
-    return props.inventoryReport?.status === 'generated' || props.inventoryReport?.status === 'rejected';
+    return props.inventoryReport?.status === 'pending' || props.inventoryReport?.status === 'rejected';
 });
 
 const canReview = computed(() => {
@@ -352,9 +442,9 @@ const hasUnsavedChanges = computed(() => {
         return false;
     }
 
-    return Object.keys(currentAdjustments.value).some(id => {
-        const current = currentAdjustments.value[id];
-        const original = originalAdjustments.value[id];
+    return Object.keys(currentAdjustments.value).some(index => {
+        const current = currentAdjustments.value[index];
+        const original = originalAdjustments.value[index];
         
         // Return false if either current or original is undefined
         if (!current || !original) {
@@ -362,8 +452,7 @@ const hasUnsavedChanges = computed(() => {
         }
 
         return current.positive_adjustment !== original.positive_adjustment ||
-               current.negative_adjustment !== original.negative_adjustment ||
-               current.months_of_stock !== original.months_of_stock;
+               current.negative_adjustment !== original.negative_adjustment;
     });
 });
 
@@ -395,7 +484,7 @@ const getBalanceColor = (balance) => {
 // Get status badge class
 const getStatusBadgeClass = (status) => {
     switch (status) {
-        case 'generated':
+        case 'pending':
             return 'bg-yellow-100 text-yellow-800';
         case 'submitted':
             return 'bg-blue-100 text-blue-800';
@@ -417,29 +506,36 @@ const saveAdjustments = async () => {
     saving.value = true;
     try {
         const adjustments = [];
-        Object.keys(currentAdjustments.value).forEach(productId => {
-            const current = currentAdjustments.value[productId];
-            const original = originalAdjustments.value[productId];
+        Object.keys(currentAdjustments.value).forEach(index => {
+            const current = currentAdjustments.value[index];
+            const original = originalAdjustments.value[index];
+            const item = props.reportData[parseInt(index)];
             
             if (current.positive_adjustment !== original.positive_adjustment ||
-                current.negative_adjustment !== original.negative_adjustment ||
-                current.months_of_stock !== original.months_of_stock) {
+                current.negative_adjustment !== original.negative_adjustment) {
                 adjustments.push({
-                    product_id: parseInt(productId),
+                    product_id: item.product.id,
                     positive_adjustment: parseFloat(current.positive_adjustment) || 0,
-                    negative_adjustment: parseFloat(current.negative_adjustment) || 0,
-                    months_of_stock: current.months_of_stock
+                    negative_adjustment: parseFloat(current.negative_adjustment) || 0
                 });
             }
         });
 
-        await axios.post(route('reports.warehouseMonthly.updateInventoryReportAdjustments'), {
+        await axios.put(route('reports.warehouseMonthly.updateInventoryReportAdjustments'), {
             month_year: month_year.value,
             adjustments
         });
 
         // Update original adjustments to match current
         originalAdjustments.value = JSON.parse(JSON.stringify(currentAdjustments.value));
+        
+        // Clear all row states
+        Object.keys(rowChanged.value).forEach(index => {
+            rowChanged.value[index] = false;
+            rowUpdating.value[index] = false;
+            rowSaving.value[index] = false;
+            rowError.value[index] = false;
+        });
         
         // Reload data to get updated calculations
         reloadData();
@@ -588,4 +684,118 @@ const rejectReport = async () => {
 const exportToExcel = () => {
     window.location.href = route('reports.warehouseMonthly.exportToExcel', { monthYear: month_year.value });
 };
+
+// Calculate closing balance using the specification formula
+const calculateClosingBalance = (item, index) => {
+    const currentAdj = currentAdjustments.value[index];
+    
+    // Use current form values if editing, otherwise use original values
+    const positiveAdj = currentAdj ? (parseFloat(currentAdj.positive_adjustment) || 0) : item.positive_adjustment;
+    const negativeAdj = currentAdj ? (parseFloat(currentAdj.negative_adjustment) || 0) : item.negative_adjustment;
+    
+    // Formula: Beginning balance + stock received - stock issued - negative adjustment + positive adjustment
+    return item.beginning_balance + item.received_quantity - item.issued_quantity - negativeAdj + positiveAdj;
+};
+
+const updateCalculatedBalance = (item, index) => {
+    if (currentAdjustments.value[index]) {
+        // Clear any previous error state
+        rowError.value[index] = false;
+        
+        // Mark row as updating
+        rowUpdating.value[index] = true;
+        
+        currentAdjustments.value[index].positive_adjustment = parseFloat(currentAdjustments.value[index].positive_adjustment) || 0;
+        currentAdjustments.value[index].negative_adjustment = parseFloat(currentAdjustments.value[index].negative_adjustment) || 0;
+        
+        // Clear previous timeout if exists
+        if (saveTimeouts.value[index]) {
+            clearTimeout(saveTimeouts.value[index]);
+        }
+        
+        // Debounce auto-save with 1 second delay
+        saveTimeouts.value[index] = setTimeout(async () => {
+            // Mark as saving
+            rowSaving.value[index] = true;
+            
+            // Auto-save to backend
+            try {
+                await saveRowToBackend(item, index);
+                
+                // Success state
+                rowChanged.value[index] = true;
+                rowSaving.value[index] = false;
+                
+                // Clear updating state after animation
+                setTimeout(() => {
+                    rowUpdating.value[index] = false;
+                }, 300);
+                
+                // Clear success state after delay
+                setTimeout(() => {
+                    rowChanged.value[index] = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error auto-saving row:', error);
+                
+                // Error state
+                rowError.value[index] = true;
+                rowSaving.value[index] = false;
+                rowUpdating.value[index] = false;
+                
+                // Show error message
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Auto-save Failed',
+                    text: error.response?.data?.message || 'Failed to save changes automatically',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+                
+                // Clear error state after delay
+                setTimeout(() => {
+                    rowError.value[index] = false;
+                }, 5000);
+            }
+        }, 1000); // 1 second debounce
+    }
+};
+
+// Auto-save individual row to backend
+const saveRowToBackend = async (item, index) => {
+    const current = currentAdjustments.value[index];
+    const original = originalAdjustments.value[index];
+    
+    // Check if there are actual changes
+    if (current.positive_adjustment === original.positive_adjustment &&
+        current.negative_adjustment === original.negative_adjustment) {
+        return; // No changes to save
+    }
+    
+    try {
+        await axios.put(route('reports.warehouseMonthly.updateInventoryReportAdjustments'), {
+            month_year: month_year.value,
+            adjustments: [{
+                product_id: item.product.id,
+                positive_adjustment: parseFloat(current.positive_adjustment) || 0,
+                negative_adjustment: parseFloat(current.negative_adjustment) || 0
+            }]
+        });
+        
+        // Update original values to match current (mark as saved)
+        originalAdjustments.value[index] = {
+            positive_adjustment: current.positive_adjustment,
+            negative_adjustment: current.negative_adjustment
+        };
+        
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+
 </script>
