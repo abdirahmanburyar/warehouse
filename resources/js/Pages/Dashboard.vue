@@ -99,6 +99,26 @@ const props = defineProps({
             expiring_within_1_year: 0
         })
     },
+    assetStats: {
+        type: Object,
+        required: false,
+        default: () => ({
+            Furniture: 0,
+            IT: 0,
+            'Medical equipment': 0,
+            Vehicles: 0,
+            Others: 0
+        })
+    },
+    assetStatusStats: {
+        type: Object,
+        required: false,
+        default: () => ({
+            'In Use': 0,
+            'Needs Maintenance': 0,
+            'Disposed': 0
+        })
+    },
 });
 
 
@@ -1597,6 +1617,137 @@ const expiredChartData = computed(() => {
     
     return data;
 });
+
+// Asset Status Chart Data
+const assetStatusChartData = computed(() => ({
+    labels: ['In Use', 'Needs Maintenance', 'Disposed'],
+    datasets: [{
+        label: 'Asset Status',
+        data: [
+            props.assetStatusStats?.['In Use'] || 0,
+            props.assetStatusStats?.['Needs Maintenance'] || 0,
+            props.assetStatusStats?.['Disposed'] || 0
+        ],
+        backgroundColor: [
+            'rgba(68, 114, 196, 0.85)',  // Excel Blue for In Use
+            'rgba(237, 125, 49, 0.85)',  // Excel Orange for Needs Maintenance
+            'rgba(165, 165, 165, 0.85)'  // Excel Gray for Disposed
+        ],
+        borderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderWidth: 3
+    }]
+}));
+
+// Asset Status Chart Options
+const assetStatusChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: false
+        },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+                label: function(context) {
+                    return `${context.label}: ${context.parsed.y} assets`;
+                }
+            }
+        }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)',
+                drawBorder: false
+            },
+            ticks: {
+                color: '#6b7280',
+                font: {
+                    size: 12
+                }
+            },
+            max: function(context) {
+                const max = Math.max(...context.chart.data.datasets[0].data);
+                return max > 0 ? max * 1.2 : 10;
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                color: '#6b7280',
+                font: {
+                    size: 12
+                }
+            }
+        }
+    },
+    layout: {
+        padding: {
+            top: 20,
+            bottom: 20
+        }
+    }
+};
+
+// Asset Statistics Cards Row
+const assetStatsCards = computed(() => [
+    {
+        title: 'Furniture',
+        value: props.assetStats?.Furniture || 0,
+        icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z',
+        gradient: 'linear-gradient(135deg, #60a5fa 0%, #a7f3d0 100%)'
+    },
+    {
+        title: 'IT Equipment',
+        value: props.assetStats?.IT || 0,
+        icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+        gradient: 'linear-gradient(135deg, #a78bfa 0%, #f0abfc 100%)'
+    },
+    {
+        title: 'Medical Equipment',
+        value: props.assetStats?.['Medical equipment'] || 0,
+        icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+        gradient: 'linear-gradient(135deg, #6ee7b7 0%, #fef08a 100%)'
+    },
+    {
+        title: 'Vehicles',
+        value: props.assetStats?.Vehicles || 0,
+        icon: 'M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4',
+        gradient: 'linear-gradient(135deg, #fdba74 0%, #fca5a5 100%)'
+    },
+    {
+        title: 'Others',
+        value: props.assetStats?.Others || 0,
+        icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+        gradient: 'linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)'
+    }
+]);
 </script>
 
 <template>
@@ -2002,170 +2153,135 @@ const expiredChartData = computed(() => {
             </div>
         </div>
 
-        <!-- Asset Information Section -->
-        <div class="mt-6">
-            <div class="text-xs font-bold text-gray-700 mb-3">Asset Information</div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
-                <!-- Asset Types -->
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Furniture</h3>
+        <!-- Asset Statistics Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <!-- Asset Status Chart - Takes 5 columns -->
+            <div class="lg:col-span-5 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Asset Status Overview</h3>
+                    <p class="text-sm text-gray-600 mt-1">Assets by current status</p>
+                </div>
+                <div class="h-64">
+                    <Bar :data="assetStatusChartData" :options="assetStatusChartOptions" />
+                </div>
+            </div>
+            
+            <!-- Asset Category Cards - Takes 7 columns -->
+            <div class="lg:col-span-7">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Row 1: Furniture and IT -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
+                        <div class="p-6 flex flex-col items-center justify-center h-32 relative">
+                            <!-- Background Pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-60"></div>
+                            <!-- Icon -->
+                            <div class="relative z-10 mb-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
+                                    </svg>
+                                </div>
                             </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
-                                </svg>
+                            <!-- Content -->
+                            <div class="relative z-10 text-center">
+                                <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Furniture || 0 }}</div>
+                                <div class="text-sm font-medium text-gray-600">Furniture</div>
                             </div>
+                            <!-- Hover Effect -->
+                            <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">24</div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
+                        <div class="p-6 flex flex-col items-center justify-center h-32 relative">
+                            <!-- Background Pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-60"></div>
+                            <!-- Icon -->
+                            <div class="relative z-10 mb-3">
+                                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Content -->
+                            <div class="relative z-10 text-center">
+                                <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.IT || 0 }}</div>
+                                <div class="text-sm font-medium text-gray-600">IT Equipment</div>
+                            </div>
+                            <!-- Hover Effect -->
+                            <div class="absolute inset-0 bg-purple-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Medical Equipment and Vehicles -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
+                        <div class="p-6 flex flex-col items-center justify-center h-32 relative">
+                            <!-- Background Pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-60"></div>
+                            <!-- Icon -->
+                            <div class="relative z-10 mb-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Content -->
+                            <div class="relative z-10 text-center">
+                                <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.['Medical equipment'] || 0 }}</div>
+                                <div class="text-sm font-medium text-gray-600">Medical Equipment</div>
+                            </div>
+                            <!-- Hover Effect -->
+                            <div class="absolute inset-0 bg-green-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
+                        <div class="p-6 flex flex-col items-center justify-center h-32 relative">
+                            <!-- Background Pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-orange-50 to-red-50 opacity-60"></div>
+                            <!-- Icon -->
+                            <div class="relative z-10 mb-3">
+                                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Content -->
+                            <div class="relative z-10 text-center">
+                                <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Vehicles || 0 }}</div>
+                                <div class="text-sm font-medium text-gray-600">Vehicles</div>
+                            </div>
+                            <!-- Hover Effect -->
+                            <div class="absolute inset-0 bg-orange-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                         </div>
                     </div>
                 </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">IT Equipment</h3>
+                
+                <!-- Row 3: Others Card - Takes full width (2 columns) -->
+                <div class="mt-4">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
+                        <div class="p-6 flex flex-col items-center justify-center h-32 relative">
+                            <!-- Background Pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-gray-50 to-slate-50 opacity-60"></div>
+                            <!-- Icon -->
+                            <div class="relative z-10 mb-3">
+                                <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                </div>
                             </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
+                            <!-- Content -->
+                            <div class="relative z-10 text-center">
+                                <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Others || 0 }}</div>
+                                <div class="text-sm font-medium text-gray-600">Others</div>
                             </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">18</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-green-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Medical Equipment</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">32</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Vehicles</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">12</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Others</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">8</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Asset Status -->
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">In Use</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">156</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Needs Maintenance</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">23</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"></div>
-                    <div class="relative p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <h3 class="text-2xs font-semibold text-white">Disposed</h3>
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90 mb-1">Assets</div>
-                            <div class="text-2xs font-bold text-white">7</div>
+                            <!-- Hover Effect -->
+                            <div class="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                         </div>
                     </div>
                 </div>

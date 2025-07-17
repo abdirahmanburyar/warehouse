@@ -206,6 +206,9 @@ class DashboardController extends Controller
             'expiring_within_1_year' => $expiring1YearCount,
         ];
 
+        // Asset statistics by category
+        $assetStats = $this->getAssetStatistics();
+
 
 
         $responseData = [
@@ -256,6 +259,8 @@ class DashboardController extends Controller
             'issuedData' => $issuedData,
             'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count])->values(),
             'expiredStats' => $expiredStats,
+            'assetStats' => $assetStats['categories'],
+            'assetStatusStats' => $assetStats['statuses'],
         ];
 
 
@@ -529,5 +534,68 @@ class DashboardController extends Controller
         ];
 
         return $abbreviations[$facilityType] ?? $facilityType;
+    }
+
+    private function getAssetStatistics()
+    {
+        // Define the main categories we want to track
+        $mainCategories = ['Furniture', 'IT', 'Medical equipment', 'Vehicles'];
+        
+        // Get all assets with their categories
+        $assets = \App\Models\Asset::with('category')->get();
+        
+        // Initialize counts
+        $categoryCounts = [
+            'Furniture' => 0,
+            'IT' => 0,
+            'Medical equipment' => 0,
+            'Vehicles' => 0,
+            'Others' => 0
+        ];
+        
+        // Initialize status counts
+        $statusCounts = [
+            'In Use' => 0,
+            'Needs Maintenance' => 0,
+            'Disposed' => 0
+        ];
+        
+        // Count assets by category and status
+        foreach ($assets as $asset) {
+            $categoryName = $asset->category ? $asset->category->name : 'Unknown';
+            
+            // Check if it matches any of our main categories (case-insensitive)
+            $matched = false;
+            foreach ($mainCategories as $mainCategory) {
+                if (stripos($categoryName, $mainCategory) !== false) {
+                    $categoryCounts[$mainCategory]++;
+                    $matched = true;
+                    break;
+                }
+            }
+            
+            // If no match found, count as "Others"
+            if (!$matched) {
+                $categoryCounts['Others']++;
+            }
+            
+            // Count by status
+            switch ($asset->status) {
+                case 'in_use':
+                    $statusCounts['In Use']++;
+                    break;
+                case 'maintenance':
+                    $statusCounts['Needs Maintenance']++;
+                    break;
+                case 'disposed':
+                    $statusCounts['Disposed']++;
+                    break;
+            }
+        }
+        
+        return [
+            'categories' => $categoryCounts,
+            'statuses' => $statusCounts
+        ];
     }
 }
