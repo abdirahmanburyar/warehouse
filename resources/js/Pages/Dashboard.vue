@@ -7,7 +7,7 @@ import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Bar } from 'vue-chartjs';
+import { Bar, Doughnut, Line, Pie } from 'vue-chartjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
 
@@ -413,6 +413,432 @@ function generateColors(count, isBackground = true) {
     return colors;
 }
 
+// Chart options for different chart types
+const doughnutChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+        legend: { 
+            display: true,
+            position: 'bottom',
+            labels: {
+                padding: 20,
+                usePointStyle: true,
+                font: {
+                    size: 12,
+                    weight: '600',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                generateLabels: function(chart) {
+                    const data = chart.data;
+                    if (data.labels.length && data.datasets.length) {
+                        return data.labels.map((label, i) => {
+                            const dataset = data.datasets[0];
+                            const value = dataset.data[i];
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            
+                            return {
+                                text: `${label}: ${value.toLocaleString()} (${percentage}%)`,
+                                fillStyle: dataset.backgroundColor[i],
+                                strokeStyle: dataset.borderColor[i],
+                                lineWidth: 2,
+                                pointStyle: 'circle',
+                                hidden: false,
+                                index: i
+                            };
+                        });
+                    }
+                    return [];
+                }
+            }
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#333333',
+            bodyColor: '#333333',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: true,
+            titleFont: {
+                size: 13,
+                weight: '600'
+            },
+            bodyFont: {
+                size: 12
+            },
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    const value = context.parsed;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${value.toLocaleString()} items (${percentage}%)`;
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            color: '#ffffff',
+            font: {
+                weight: 'bold',
+                size: 14,
+                family: 'Segoe UI, Arial, sans-serif'
+            },
+            formatter: function(value, context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return value > 0 ? `${percentage}%` : '';
+            },
+            textAlign: 'center',
+            textBaseline: 'middle'
+        }
+    },
+    animation: {
+        animateRotate: true,
+        animateScale: true,
+        duration: 1200,
+        easing: 'easeOutCubic'
+    }
+};
+
+const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 12,
+            displayColors: true,
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    return formatLargeNumberForTooltip(context.parsed.y);
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'top',
+            color: '#374151',
+            font: {
+                weight: 'bold',
+                size: 14
+            },
+            formatter: function(value, context) {
+                return value > 0 ? formatLargeNumber(value) : '';
+            },
+            padding: 6
+        }
+    },
+    scales: {
+        y: { 
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.1)',
+                drawBorder: false
+            },
+            ticks: {
+                callback: function(value) {
+                    return formatLargeNumber(value);
+                },
+                font: {
+                    size: 12,
+                    weight: '500'
+                },
+                padding: 8
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                maxRotation: 45,
+                minRotation: 0,
+                font: {
+                    size: 12,
+                    weight: '500'
+                },
+                padding: 8
+            }
+        }
+    },
+    animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
+    }
+};
+
+const horizontalBarChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y', // This makes it horizontal
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#333333',
+            bodyColor: '#333333',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: true,
+            titleFont: {
+                size: 13,
+                weight: '600'
+            },
+            bodyFont: {
+                size: 12
+            },
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    return formatLargeNumberForTooltip(context.parsed.x);
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
+            font: {
+                weight: 'bold',
+                size: 12,
+                family: 'Segoe UI, Arial, sans-serif'
+            },
+            formatter: function(value, context) {
+                return value > 0 ? formatLargeNumber(value) : '';
+            },
+            padding: 0
+        }
+    },
+    scales: {
+        x: { 
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.08)',
+                drawBorder: false,
+                lineWidth: 1
+            },
+            ticks: {
+                callback: function(value) {
+                    return formatLargeNumber(value);
+                },
+                font: {
+                    size: 11,
+                    weight: '500',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6
+            }
+        },
+        y: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                font: {
+                    size: 11,
+                    weight: '600',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6,
+                callback: function(value, index, values) {
+                    // Add custom labels for each facility type (sorted order)
+                    const labels = [
+                        'Warehouses',
+                        'Health Centers', 
+                        'Primary Health Units',
+                        'Regional Hospitals',
+                        'District Hospitals',
+                        'Medical Teams'
+                    ];
+                    return labels[index] || value;
+                }
+            }
+        }
+    },
+    animation: {
+        duration: 1200,
+        easing: 'easeOutCubic'
+    }
+};
+
+const orderChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#333333',
+            bodyColor: '#333333',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: true,
+            titleFont: {
+                size: 13,
+                weight: '600'
+            },
+            bodyFont: {
+                size: 12
+            },
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                },
+                label: function(context) {
+                    return `${formatLargeNumberForTooltip(context.parsed.y)} orders`;
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
+            font: {
+                weight: 'bold',
+                size: 14,
+                family: 'Segoe UI, Arial, sans-serif'
+            },
+            formatter: function(value, context) {
+                return value > 0 ? formatLargeNumber(value) : '';
+            },
+            padding: 0
+        }
+    },
+    scales: {
+        y: { 
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0, 0, 0, 0.08)',
+                drawBorder: false,
+                lineWidth: 1
+            },
+            ticks: {
+                callback: function(value) {
+                    return formatLargeNumber(value);
+                },
+                font: {
+                    size: 11,
+                    weight: '500',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            },
+            ticks: {
+                font: {
+                    size: 11,
+                    weight: '600',
+                    family: 'Segoe UI, Arial, sans-serif'
+                },
+                padding: 6,
+                callback: function(value, index, values) {
+                    // Add custom labels for each order type
+                    const labels = [
+                        'Purchase Orders',
+                        'Packing Lists',
+                        'Back Orders'
+                    ];
+                    return labels[index] || value;
+                }
+            }
+        }
+    },
+    animation: {
+        duration: 1200,
+        easing: 'easeOutCubic'
+    }
+};
+
+const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { 
+            display: false 
+        },
+        tooltip: { 
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            callbacks: {
+                label: function(context) {
+                    return formatLargeNumberForTooltip(context.parsed.y);
+                }
+            }
+        },
+        datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'top',
+            color: '#374151',
+            font: {
+                weight: 'bold',
+                size: 11
+            },
+            formatter: function(value, context) {
+                return value > 0 ? formatLargeNumber(value) : '';
+            }
+        }
+    },
+    scales: {
+        y: { 
+            beginAtZero: true,
+            ticks: {
+                callback: function(value) {
+                    return formatLargeNumber(value);
+                }
+            }
+        },
+        x: {
+            ticks: {
+                maxRotation: 45,
+                minRotation: 0
+            }
+        }
+    }
+};
 
 const issuedChartOptions = {
     responsive: true,
@@ -430,7 +856,7 @@ const issuedChartOptions = {
             borderWidth: 1,
             callbacks: {
                 label: function(context) {
-                    return context.parsed.y.toLocaleString();
+                    return formatLargeNumberForTooltip(context.parsed.y);
                 }
             }
         },
@@ -444,7 +870,7 @@ const issuedChartOptions = {
                 size: 11
             },
             formatter: function(value, context) {
-                return value > 0 ? value.toLocaleString() : '';
+                return value > 0 ? formatLargeNumber(value) : '';
             }
         }
     },
@@ -453,7 +879,7 @@ const issuedChartOptions = {
             beginAtZero: true,
             ticks: {
                 callback: function(value) {
-                    return value.toLocaleString();
+                    return formatLargeNumber(value);
                 }
             }
         },
@@ -465,6 +891,32 @@ const issuedChartOptions = {
         }
     }
 };
+
+// Utility function to format large numbers
+function formatLargeNumber(value) {
+    if (value === null || value === undefined) return '0';
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return '0';
+    
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    } else {
+        return num.toLocaleString();
+    }
+}
+
+// Utility function to format large numbers for tooltips (showing full value)
+function formatLargeNumberForTooltip(value) {
+    if (value === null || value === undefined) return '0';
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return '0';
+    
+    return num.toLocaleString();
+}
 
 // Load initial data on component mount
 onMounted(() => {
@@ -533,6 +985,149 @@ const filteredOrdersDelayedCount = computed(() => {
 const inStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'in_stock')?.count || 0);
 const lowStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'low_stock')?.count || 0);
 const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'out_of_stock')?.count || 0);
+
+// Chart data for top cards
+const productCategoryChartData = computed(() => ({
+    labels: ['Drugs', 'Consumable', 'Lab'],
+    datasets: [{
+        data: [
+            filteredProductCategoryCard.value.Drugs || 0,
+            filteredProductCategoryCard.value.Consumable || 0,
+            filteredProductCategoryCard.value.Lab || 0
+        ],
+        backgroundColor: [
+            'rgba(68, 114, 196, 0.85)',  // Excel Blue
+            'rgba(237, 125, 49, 0.85)',  // Excel Orange
+            'rgba(165, 165, 165, 0.85)'  // Excel Gray
+        ],
+        borderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        borderWidth: 2,
+        hoverBackgroundColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderWidth: 3
+    }]
+}));
+
+const warehouseFacilitiesChartData = computed(() => {
+    // Create facility data array with distinct colors
+    const facilityData = [
+        { label: 'Warehouses', count: filteredWarehouseCountCard.value || 0, color: 'rgba(68, 114, 196, 0.85)' }, // Blue
+        { label: 'Health Centers', count: getCount('HC'), color: 'rgba(237, 125, 49, 0.85)' }, // Orange
+        { label: 'Primary Health Units', count: getCount('PHU'), color: 'rgba(165, 165, 165, 0.85)' }, // Gray
+        { label: 'Regional Hospitals', count: getCount('RH'), color: 'rgba(255, 192, 0, 0.85)' }, // Yellow
+        { label: 'District Hospitals', count: getCount('DH'), color: 'rgba(112, 173, 71, 0.85)' }, // Green
+        { label: 'Medical Teams', count: 5, color: 'rgba(91, 155, 213, 0.85)' } // Light Blue
+    ];
+
+    // Sort by count in descending order (highest to lowest)
+    const sortedData = [...facilityData].sort((a, b) => b.count - a.count);
+
+    return {
+        labels: sortedData.map(item => item.label),
+        datasets: [{
+            label: 'Facility Count',
+            data: sortedData.map(item => item.count),
+            backgroundColor: sortedData.map(item => item.color),
+            borderColor: sortedData.map(item => item.color.replace('0.85', '1')),
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: sortedData.map(item => item.color.replace('0.85', '1')),
+            hoverBorderColor: sortedData.map(item => item.color.replace('0.85', '1')),
+            hoverBorderWidth: 3
+        }]
+    };
+});
+
+const orderChartData = computed(() => ({
+    labels: ['PO', 'PKL', 'BO'],
+    datasets: [{
+        label: 'Orders',
+        data: [
+            filteredOrderCounts.value.PO || 0,
+            filteredOrderCounts.value.PKL || 0,
+            filteredOrderCounts.value.BO || 0
+        ],
+        backgroundColor: [
+            'rgba(68, 114, 196, 0.85)',  // Excel Blue for Purchase Orders
+            'rgba(237, 125, 49, 0.85)',  // Excel Orange for Packing Lists
+            'rgba(165, 165, 165, 0.85)'  // Excel Gray for Back Orders
+        ],
+        borderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderColor: [
+            'rgba(68, 114, 196, 1)',
+            'rgba(237, 125, 49, 1)',
+            'rgba(165, 165, 165, 1)'
+        ],
+        hoverBorderWidth: 3
+    }]
+}));
+
+const transferChartData = computed(() => ({
+    labels: ['Received'],
+    datasets: [{
+        label: 'Transfers',
+        data: [filteredTransferReceivedCard.value || 0],
+        backgroundColor: 'rgba(20, 184, 166, 0.8)',
+        borderColor: 'rgba(20, 184, 166, 1)',
+        borderWidth: 2
+    }]
+}));
+
+const costChartData = computed(() => ({
+    labels: ['Total Cost'],
+    datasets: [{
+        label: 'Cost',
+        data: [filteredTotalCost.value || 0],
+        backgroundColor: 'rgba(75, 85, 99, 0.8)',
+        borderColor: 'rgba(75, 85, 99, 1)',
+        borderWidth: 2
+    }]
+}));
+
+const fulfillmentChartData = computed(() => ({
+    labels: ['Fulfillment Rate'],
+    datasets: [{
+        label: 'Percentage',
+        data: [filteredFulfillment.value || 0],
+        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 2
+    }]
+}));
+
+const delayedChartData = computed(() => ({
+    labels: ['Delayed Orders'],
+    datasets: [{
+        label: 'Count',
+        data: [filteredOrdersDelayedCount.value || 0],
+        backgroundColor: 'rgba(20, 184, 166, 0.8)',
+        borderColor: 'rgba(20, 184, 166, 1)',
+        borderWidth: 2
+    }]
+}));
 </script>
 
 <template>
@@ -592,186 +1187,107 @@ const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.s
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 mb-6">
-            <!-- Product Category Card -->
-            <div class="w-full sm:w-64 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-400"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Categories</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                        </div>
+        <!-- Quick Stats Cards Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Transfers Card -->
+            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
+                <div class="relative p-6 flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <h3 class="text-sm font-medium text-white mb-1">Total Transfers</h3>
+                        <div class="text-2xl font-bold text-white mb-1">{{ filteredTransferReceivedCard || 0 }}</div>
+                        <div class="text-xs text-white opacity-90">01/11/2024</div>
                     </div>
-                    <div class="grid grid-cols-3 gap-1">
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">Drugs</div>
-                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Drugs || 0 }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">Cons</div>
-                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Consumable || 0 }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">Lab</div>
-                            <div class="text-2xs font-bold text-white">{{ filteredProductCategoryCard.Lab || 0 }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Warehouse/Facilities Card -->
-            <div class="w-full sm:w-64 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-300"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">WH/FC</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">WH</div>
-                            <div class="text-2xs font-bold text-white">{{ filteredWarehouseCountCard || 0 }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">HC</div>
-                            <div class="text-2xs font-bold text-white">{{ getCount('HC') }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">PHU</div>
-                            <div class="text-2xs font-bold text-white">{{ getCount('PHU') }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">RH</div>
-                            <div class="text-2xs font-bold text-white">{{ getCount('RH') }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">DH</div>
-                            <div class="text-2xs font-bold text-white">{{ getCount('DH') }}</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xs font-medium text-white opacity-90">MT</div>
-                            <div class="text-2xs font-bold text-white">5</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Order Card -->
-            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-400"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Orders</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xs font-medium text-white opacity-90">{{ orderLabels[selectedOrderTypeValue] }}</div>
-                        <div class="text-2xs font-bold text-white">{{ filteredOrderCounts[selectedOrderTypeValue] || 0 }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transfers Received Card -->
-            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Transfers</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xs font-medium text-white opacity-90">Received</div>
-                        <div class="text-2xs font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
             <!-- Total Cost Card -->
-            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-300"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Total Cost</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
+            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-400"></div>
+                <div class="relative p-6 flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <h3 class="text-sm font-medium text-white mb-1">Total Value</h3>
+                        <div class="text-2xl font-bold text-white mb-1">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                        <div class="text-xs text-white opacity-90">01/11/2024</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Approved PO</div>
-                        <div class="text-2xs font-bold text-white">${{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
-            <!-- Fulfillment Percentage Card -->
-            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-400"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Fulfillment</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
+            <!-- Delayed Orders Card -->
+            <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                <div class="absolute inset-0 bg-gradient-to-br from-teal-500 to-green-400"></div>
+                <div class="relative p-6 flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <h3 class="text-sm font-medium text-white mb-1">Pending Orders</h3>
+                        <div class="text-2xl font-bold text-white mb-1">{{ filteredOrdersDelayedCount || 0 }}</div>
+                        <div class="text-xs text-white opacity-90">01/11/2024</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Rate</div>
-                        <div class="text-2xs font-bold text-white">{{ (filteredFulfillment || 0).toFixed(1) }}%</div>
+                    <div class="flex-shrink-0">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Orders Delayed Card -->
-            <div class="w-full sm:w-48 group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400"></div>
-                <div class="relative p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="text-2xs font-semibold text-white">Delayed</h3>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xs font-medium text-white opacity-90 mb-1">Orders</div>
-                        <div class="text-2xs font-bold text-white">{{ filteredOrdersDelayedCount }}</div>
-                    </div>
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Product Categories Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Product Categories</h3>
+                </div>
+                <div class="h-64">
+                    <Doughnut :data="productCategoryChartData" :options="doughnutChartOptions" />
                 </div>
             </div>
 
+            <!-- Warehouse/Facilities Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Warehouse & Facilities</h3>
+                </div>
+                <div class="h-64">
+                    <Bar :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
+                </div>
+            </div>
+
+            <!-- Orders Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Supplies</h3>
+                </div>
+                <div class="h-64">
+                    <Bar :data="orderChartData" :options="orderChartOptions" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Fulfillment Chart Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+            <!-- Fulfillment Chart -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-900">Fulfillment</h3>
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div class="h-32">
+                    <Bar :data="fulfillmentChartData" :options="barChartOptions" />
+                </div>
+            </div>
         </div>
         <!-- Tabs, Total Cost, and Order Statistics Row -->
         <div class="flex flex-col lg:flex-row justify-between items-start gap-6">

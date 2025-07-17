@@ -429,7 +429,7 @@ const getPercentage = (count) => {
 
 // Export to Excel
 const exportToExcel = () => {
-    exporting.value = true;
+    loading.value = true;
 
     // Prepare the data for export
     const exportData = currentData.value.map((item, index) => ({
@@ -496,7 +496,7 @@ const exportToExcel = () => {
 
     // Save the file
     XLSX.writeFile(workbook, fileName);
-    exporting.value = false;
+    loading.value = false;
 };
 
 const formatDateTime = (dateTimeString) => {
@@ -506,7 +506,7 @@ const formatDateTime = (dateTimeString) => {
 
 // Computed property for export button text
 const exportButtonText = computed(() => {
-    return exporting.value ? "Exporting..." : "Export";
+    return exporting.value ? "Exporting..." : "Export to Excel";
 });
 
 // Watchers for automatic filtering

@@ -49,8 +49,8 @@ class DashboardController extends Controller
 
         // Product category counts
         $productCategoryCounts = [
-            'Drugs' => Product::whereHas('category', function($q) { $q->where('name', 'Drug'); })->count(),
-            'Consumable' => Product::whereHas('category', function($q) { $q->where('name', 'Consumable'); })->count(),
+            'Drugs' => Product::whereHas('category', function($q) { $q->where('name', 'Durgs'); })->count(),
+            'Consumable' => Product::whereHas('category', function($q) { $q->where('name', 'Consumables'); })->count(),
             'Lab' => Product::whereHas('category', function($q) { $q->where('name', 'Lab'); })->count(),
         ];
 
