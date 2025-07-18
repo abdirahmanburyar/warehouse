@@ -447,9 +447,6 @@ class ReportController extends Controller
                     
                     if ($difference > 0) {
                         // Positive difference - create ReceivedBackorder
-                        // Add microsecond delay to ensure unique timestamps for ID generation
-                        usleep(1000); // 1 millisecond delay
-                        
                         $receivedBackorder = ReceivedBackorder::create([
                             'received_by' => Auth::id(),
                             'received_at' => now(),
@@ -476,9 +473,6 @@ class ReportController extends Controller
                         
                     } elseif ($difference < 0) {
                         // Negative difference - create Liquidate
-                        // Add microsecond delay to ensure unique timestamps for ID generation
-                        usleep(1000); // 1 millisecond delay
-                        
                         $liquidate = Liquidate::create([
                             'liquidated_by' => Auth::id(),
                             'liquidated_at' => now(),

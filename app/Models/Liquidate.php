@@ -13,9 +13,20 @@ class Liquidate extends Model
         parent::boot();
 
         static::creating(function ($liquidate) {
-            $latestLiquidate = static::latest()->first();
-            $nextId = $latestLiquidate ? intval(substr($latestLiquidate->liquidate_id, -7)) + 1 : 1;
-            $liquidate->liquidate_id = str_pad($nextId, 7, '0', STR_PAD_LEFT);
+            // Use a more robust approach to handle concurrent creation
+            do {
+                $latestLiquidate = static::latest()->first();
+                $nextId = $latestLiquidate ? intval(substr($latestLiquidate->liquidate_id, -7)) + 1 : 1;
+                $liquidate->liquidate_id = str_pad($nextId, 7, '0', STR_PAD_LEFT);
+                
+                // Check if this ID already exists (in case of race condition)
+                $exists = static::where('liquidate_id', $liquidate->liquidate_id)->exists();
+                if ($exists) {
+                    // If ID exists, increment and try again
+                    $nextId++;
+                    $liquidate->liquidate_id = str_pad($nextId, 7, '0', STR_PAD_LEFT);
+                }
+            } while ($exists);
         });
     }
 
