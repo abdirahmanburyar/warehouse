@@ -232,6 +232,7 @@ watch([
     () => search.value,
     () => per_page.value,
     () => page.value,
+    () => props.filters.page,
 ], () => {
     reloadReorderLevels();
 });
