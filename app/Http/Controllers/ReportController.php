@@ -441,14 +441,8 @@ class ReportController extends Controller
                 return response()->json("Physical count status must be reviewed before approval", 500);
             }
             
-            // Update status to processing to prevent duplicate processing
-            $adjustment->update([
-                'status' => 'processing',
-                'approved_by' => Auth::id(),
-                'approved_at' => now()
-            ]);
-            
             // Dispatch the job to process in background
+            // Don't change status here - let the job handle it
             ProcessPhysicalCountApprovalJob::dispatch($adjustment->id, Auth::id());
             
             return response()->json([
