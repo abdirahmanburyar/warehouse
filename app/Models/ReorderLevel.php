@@ -10,9 +10,6 @@ class ReorderLevel extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',
-        'description',
-        'img',
         'product_id',
         'amc',
         'lead_time',

@@ -18,60 +18,6 @@
 
                         <!-- Form -->
                         <form @submit.prevent="submit" class="space-y-6">
-                            <!-- Title Field -->
-                            <div>
-                                <label for="title" class="block text-sm font-medium text-gray-700">
-                                    Title
-                                </label>
-                                <input
-                                    id="title"
-                                    v-model="form.title"
-                                    type="text"
-                                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    :class="{ 'border-red-500': errors.title }"
-                                    placeholder="Enter title"
-                                />
-                                <p v-if="errors.title" class="mt-1 text-sm text-red-600">
-                                    {{ errors.title[0] }}
-                                </p>
-                            </div>
-
-                            <!-- Description Field -->
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    id="description"
-                                    v-model="form.description"
-                                    rows="3"
-                                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    :class="{ 'border-red-500': errors.description }"
-                                    placeholder="Enter description"
-                                ></textarea>
-                                <p v-if="errors.description" class="mt-1 text-sm text-red-600">
-                                    {{ errors.description[0] }}
-                                </p>
-                            </div>
-
-                            <!-- Image Field -->
-                            <div>
-                                <label for="img" class="block text-sm font-medium text-gray-700">
-                                    Image URL
-                                </label>
-                                <input
-                                    id="img"
-                                    v-model="form.img"
-                                    type="text"
-                                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    :class="{ 'border-red-500': errors.img }"
-                                    placeholder="Enter image URL"
-                                />
-                                <p v-if="errors.img" class="mt-1 text-sm text-red-600">
-                                    {{ errors.img[0] }}
-                                </p>
-                            </div>
-
                             <!-- Product Selection -->
                             <div>
                                 <label for="product_id" class="block text-sm font-medium text-gray-700">
@@ -96,7 +42,7 @@
                             <!-- AMC Field -->
                             <div>
                                 <label for="amc" class="block text-sm font-medium text-gray-700">
-                                    Annual Monthly Consumption (AMC) *
+                                    Average Monthly Consumption (AMC) *
                                 </label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
                                     <input
@@ -221,9 +167,6 @@ const props = defineProps({
 });
 
 const form = ref({
-    title: props.reorderLevel.title || '',
-    description: props.reorderLevel.description || '',
-    img: props.reorderLevel.img || '',
     product_id: props.reorderLevel.product_id,
     amc: props.reorderLevel.amc,
     lead_time: props.reorderLevel.lead_time

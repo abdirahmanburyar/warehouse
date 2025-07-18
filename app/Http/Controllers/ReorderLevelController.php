@@ -60,18 +60,12 @@ class ReorderLevelController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'img' => 'nullable|string|max:500',
             'product_id' => 'required|exists:products,id',
             'amc' => 'required|numeric|min:0',
             'lead_time' => 'required|integer|min:1'
         ]);
 
         $reorderLevel = ReorderLevel::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'img' => $request->img,
             'product_id' => $request->product_id,
             'amc' => $request->amc,
             'lead_time' => $request->lead_time
@@ -104,18 +98,12 @@ class ReorderLevelController extends Controller
     public function update(Request $request, ReorderLevel $reorderLevel)
     {
         $request->validate([
-            'title' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'img' => 'nullable|string|max:500',
             'product_id' => 'required|exists:products,id',
             'amc' => 'required|numeric|min:0',
             'lead_time' => 'required|integer|min:1'
         ]);
 
         $reorderLevel->update([
-            'title' => $request->title,
-            'description' => $request->description,
-            'img' => $request->img,
             'product_id' => $request->product_id,
             'amc' => $request->amc,
             'lead_time' => $request->lead_time
