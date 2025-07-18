@@ -18,6 +18,7 @@ use App\Models\Order;
 use Illuminate\Support\Collection;
 use App\Models\Facility;
 use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Models\InventoryReport;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
@@ -356,31 +357,31 @@ class ReportController extends Controller
             DB::beginTransaction();
             
             // Create parent adjustment record
-            $adjustment = new InventoryAdjustment();
-            $adjustment->month_year = date('Y-m');
-            $adjustment->adjustment_date = Carbon::now();
-            $adjustment->status = 'pending';
-            $adjustment->save();
+            $adjustment = InventoryAdjustment::create([
+                'month_year' => date('Y-m'),
+                'adjustment_date' => Carbon::now(),
+                'status' => 'pending',
+            ]);
             
-            // Get all inventories with active products
-            $inventories = Inventory::whereHas('product', function($query) {
+            // Get all inventory items with active products
+            $inventoryItems = InventoryItem::whereHas('product', function($query) {
                 $query->where('is_active', true);
-            })->get();
+            })->with(['product', 'warehouse'])->get();
             
             // Create adjustment items for each inventory item
-            foreach ($inventories as $inventory) {
+            foreach ($inventoryItems as $inventoryItem) {
                 InventoryAdjustmentItem::create([
                     'parent_id' => $adjustment->id,
                     'user_id' => auth()->id(),
-                    'product_id' => $inventory->product_id,
-                    'location_id' => $inventory->location_id,
-                    'warehouse_id' => $inventory->warehouse_id,
-                    'quantity' => $inventory->quantity,
+                    'product_id' => $inventoryItem->product_id,
+                    'location_id' => null, // location is stored as string in inventory_items, not as foreign key
+                    'warehouse_id' => $inventoryItem->warehouse_id,
+                    'quantity' => $inventoryItem->quantity,
                     'physical_count' => 0, // Default to 0, will be updated during physical count
-                    'batch_number' => $inventory->batch_number,
-                    'barcode' => $inventory->barcode,
-                    'expiry_date' => $inventory->expiry_date,
-                    'uom' => $inventory->uom,
+                    'batch_number' => $inventoryItem->batch_number ?? 'N/A',
+                    'barcode' => $inventoryItem->barcode,
+                    'expiry_date' => $inventoryItem->expiry_date,
+                    'uom' => $inventoryItem->uom,
                 ]);
             }
             
@@ -391,12 +392,14 @@ class ReportController extends Controller
                 'message' => 'Physical count adjustment has been successfully generated.'
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Throwable $th) {
             DB::rollBack();
+
+            logger()->error('Physical count adjustment generation error: ' . $th->getMessage());
             
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while generating the physical count adjustment: ' . $e->getMessage()
+                'message' => 'An error occurred while generating the physical count adjustment: ' . $th->getMessage()
             ], 500);
         }
     }
@@ -432,17 +435,28 @@ class ReportController extends Controller
                 if($adjustment->status !== 'reviewed') {
                     return response()->json("Physical count status must be reviewed before approval", 500);
                 }
-                // update inventory
-                $inventoryItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->get();
-                foreach ($inventoryItems as $item) {
-                    $inventory = Inventory::where('product_id', $item->product_id)
-                        ->where('batch_number', $item->batch_number)
-                        ->where('expiry_date', $item->expiry_date)
+                // update inventory items
+                $adjustmentItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->get();
+                foreach ($adjustmentItems as $adjustmentItem) {
+                    $batchNumber = $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number;
+                    $inventoryItem = InventoryItem::where('product_id', $adjustmentItem->product_id)
+                        ->where('batch_number', $batchNumber)
+                        ->where('expiry_date', $adjustmentItem->expiry_date)
+                        ->where('warehouse_id', $adjustmentItem->warehouse_id)
                         ->first();
-                    if ($inventory) {
-                        $inventory->update([
-                            'quantity' => $item->physical_count
+                    if ($inventoryItem) {
+                        $inventoryItem->update([
+                            'quantity' => $adjustmentItem->physical_count
                         ]);
+                        
+                        // Update the parent inventory quantity
+                        $inventory = Inventory::where('product_id', $adjustmentItem->product_id)->first();
+                        if ($inventory) {
+                            // Recalculate total quantity from all inventory items for this product
+                            $totalQuantity = InventoryItem::where('product_id', $adjustmentItem->product_id)
+                                ->sum('quantity');
+                            $inventory->update(['quantity' => $totalQuantity]);
+                        }
                     }
                 }
                 $adjustment->update([
@@ -584,9 +598,9 @@ class ReportController extends Controller
                 ->firstOrCreate(
                     ['month_year' => $monthYear],
                     [
-                                        'status' => 'pending',
-                'generated_by' => auth()->id(),
-                'generated_at' => now(),
+                        'status' => 'pending',
+                        'generated_by' => auth()->id(),
+                        'generated_at' => now(),
                     ]
                 );
                 
