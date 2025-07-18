@@ -22,6 +22,10 @@ use App\Models\InventoryItem;
 use App\Models\InventoryReport;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
+use App\Models\ReceivedBackorder;
+use App\Models\ReceivedBackorderItem;
+use App\Models\Liquidate;
+use App\Models\LiquidateItem;
 use App\Models\IssueQuantityReport;
 use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Resources\PhysicalCountReportResource;
@@ -435,28 +439,62 @@ class ReportController extends Controller
                 if($adjustment->status !== 'reviewed') {
                     return response()->json("Physical count status must be reviewed before approval", 500);
                 }
-                // update inventory items
+                // Process adjustment items based on difference
                 $adjustmentItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->get();
+                
                 foreach ($adjustmentItems as $adjustmentItem) {
-                    $batchNumber = $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number;
-                    $inventoryItem = InventoryItem::where('product_id', $adjustmentItem->product_id)
-                        ->where('batch_number', $batchNumber)
-                        ->where('expiry_date', $adjustmentItem->expiry_date)
-                        ->where('warehouse_id', $adjustmentItem->warehouse_id)
-                        ->first();
-                    if ($inventoryItem) {
-                        $inventoryItem->update([
-                            'quantity' => $adjustmentItem->physical_count
+                    $difference = $adjustmentItem->difference;
+                    
+                    if ($difference > 0) {
+                        // Positive difference - create ReceivedBackorder
+                        $receivedBackorder = ReceivedBackorder::create([
+                            'received_by' => Auth::id(),
+                            'received_at' => now(),
+                            'status' => 'pending',
+                            'type' => 'physical_count_adjustment',
+                            'warehouse_id' => $adjustmentItem->warehouse_id,
+                            'warehouse' => $adjustmentItem->warehouse->name ?? 'Unknown',
+                            'inventory_adjustment_id' => $adjustment->id,
+                            'note' => 'Physical count adjustment - positive difference'
                         ]);
                         
-                        // Update the parent inventory quantity
-                        $inventory = Inventory::where('product_id', $adjustmentItem->product_id)->first();
-                        if ($inventory) {
-                            // Recalculate total quantity from all inventory items for this product
-                            $totalQuantity = InventoryItem::where('product_id', $adjustmentItem->product_id)
-                                ->sum('quantity');
-                            $inventory->update(['quantity' => $totalQuantity]);
-                        }
+                        // Create ReceivedBackorderItem
+                        ReceivedBackorderItem::create([
+                            'received_backorder_id' => $receivedBackorder->id,
+                            'product_id' => $adjustmentItem->product_id,
+                            'quantity' => $difference,
+                            'barcode' => $adjustmentItem->barcode,
+                            'expire_date' => $adjustmentItem->expiry_date,
+                            'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
+                            'uom' => $adjustmentItem->uom,
+                            'location' => null, // location_id is not available in adjustment item
+                            'note' => $adjustmentItem->remarks
+                        ]);
+                        
+                    } elseif ($difference < 0) {
+                        // Negative difference - create Liquidate
+                        $liquidate = Liquidate::create([
+                            'liquidated_by' => Auth::id(),
+                            'liquidated_at' => now(),
+                            'status' => 'pending',
+                            'source' => 'physical_count_adjustment',
+                            'warehouse' => $adjustmentItem->warehouse->name ?? 'Unknown',
+                            'inventory_adjustment_id' => $adjustment->id
+                        ]);
+                        
+                        // Create LiquidateItem
+                        LiquidateItem::create([
+                            'liquidate_id' => $liquidate->id,
+                            'product_id' => $adjustmentItem->product_id,
+                            'quantity' => abs($difference), // Use absolute value
+                            'barcode' => $adjustmentItem->barcode,
+                            'expire_date' => $adjustmentItem->expiry_date,
+                            'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
+                            'uom' => $adjustmentItem->uom,
+                            'location' => null, // location_id is not available in adjustment item
+                            'note' => $adjustmentItem->remarks,
+                            'type' => 'physical_count_adjustment'
+                        ]);
                     }
                 }
                 $adjustment->update([

@@ -150,14 +150,51 @@ const rejectReceivedBackorder = async (id, index) => {
     }
 };
 
+const parseAttachments = (attachments) => {
+    console.log('parseAttachments called with:', attachments);
+    if (!attachments) {
+        console.log('No attachments, returning empty array');
+        return [];
+    }
+    const files = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+    console.log('Parsed files:', files);
+    const result = files.map(file => ({
+        name: file.name || file.path.split('/').pop(),
+        url: `${file.path}`
+    }));
+    console.log('Final result:', result);
+    return result;
+};
+
+const activeDropdown = ref(null);
+
+const toggleDropdown = (id) => {
+    console.log('Toggle dropdown clicked for ID:', id);
+    console.log('Current activeDropdown:', activeDropdown.value);
+    activeDropdown.value = activeDropdown.value === id ? null : id;
+    console.log('New activeDropdown:', activeDropdown.value);
+};
+
+const handleClickOutside = (event) => {
+    const dropdowns = document.querySelectorAll('.attachments-dropdown');
+    let clickedInside = false;
+
+    dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+            clickedInside = true;
+        }
+    });
+
+    if (!clickedInside) {
+        activeDropdown.value = null;
+    }
+};
+
 const search = ref(props.filters?.search || "");
 const per_page = ref(props.filters?.per_page || 25);
-const status = ref(props.filters?.status || "");
-const type = ref(props.filters?.type || "");
-const date_from = ref(props.filters?.date_from || "");
-const date_to = ref(props.filters?.date_to || "");
 const warehouse = ref(props.filters?.warehouse || "");
 const facility = ref(props.filters?.facility || "");
+const status = ref(props.filters?.status || "");
 
 const facilityOptions = computed(() => {
     const options = props.facilities?.map(name => ({
@@ -165,14 +202,6 @@ const facilityOptions = computed(() => {
         label: name
     })) || [];
     return [{ value: "", label: 'All Facilities' }, ...options];
-});
-
-const warehouseOptions = computed(() => {
-    const options = props.warehouses?.map(name => ({
-        value: name,
-        label: name
-    })) || [];
-    return [{ value: "", label: 'All Warehouses' }, ...options];
 });
 
 const statusOptions = computed(() => [
@@ -183,45 +212,26 @@ const statusOptions = computed(() => [
     { value: "rejected", label: 'Rejected' }
 ]);
 
-const typeOptions = computed(() => [
-    { value: "", label: 'All Types' },
-    { value: "missing", label: 'Missing' },
-    { value: "damaged", label: 'Damaged' },
-    { value: "expired", label: 'Expired' },
-    { value: "low quality", label: 'Low Quality' }
-]);
-
 watch([
     () => search.value,
     () => per_page.value,
-    () => status.value,
-    () => type.value,
-    () => date_from.value,
-    () => date_to.value,
     () => warehouse.value,
     () => facility.value,
+    () => status.value,
     () => props.filters.page
 ], () => {
     reloadPage();
 });
 
-// Watch date_from to reset date_to
-watch(() => date_from.value, (newDateFrom) => {
-    if (newDateFrom) {
-        date_to.value = '';
-    }
-});
-
 function reloadPage() {
     const query = {};
     if (search.value) query.search = search.value;
-    if (per_page.value) query.per_page = per_page.value;
-    if (status.value) query.status = status.value;
-    if (type.value) query.type = type.value;
-    if (date_from.value) query.date_from = date_from.value;
-    if (date_to.value) query.date_to = date_to.value;
+    if (per_page.value) {
+        query.per_page = per_page.value;
+    }
     if (warehouse.value) query.warehouse = warehouse.value;
     if (facility.value) query.facility = facility.value;
+    if (status.value) query.status = status.value;
     if (props.filters.page) query.page = props.filters.page;
     
     router.get(route('supplies.received-backorder.index'), query, {
@@ -294,29 +304,19 @@ const toggleGroup = (groupKey) => {
     }
 };
 
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount || 0);
-};
-
-const formatDate = (date) => {
-    return moment(date).format('DD/MM/YYYY');
-};
-
 // Combined onMounted hook
 onMounted(() => {
+    // Add click outside listener for dropdowns
+    document.addEventListener('click', handleClickOutside);
+    
     // Expand all groups by default
     Object.keys(groupedReceivedBackorders.value).forEach(key => {
         expandedGroups.value.add(key);
     });
-    
-    // Debug: Check if warehouses and facilities are being passed
-    console.log('Warehouses:', props.warehouses);
-    console.log('Facilities:', props.facilities);
-    console.log('Warehouse Options:', warehouseOptions.value);
-    console.log('Facility Options:', facilityOptions.value);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
 });
 
 </script>
@@ -325,7 +325,6 @@ onMounted(() => {
     <Head title="Received Back Orders" />
     <AuthenticatedLayout title="Received Back Orders"
         description="Manage and track received back orders" img="/assets/images/supplies.png">
-        
         <!-- Header Section -->
         <div class="">
             <div class="flex items-center justify-between mb-4">
@@ -344,15 +343,15 @@ onMounted(() => {
                 <div class="flex items-center space-x-4">
                     <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-3 py-1.5 rounded-lg shadow-sm">
                         <div class="text-xs font-medium">Total Records</div>
-                        <div class="text-lg font-bold">{{ props.stats.total || 0 }}</div>
+                        <div class="text-lg font-bold">{{ props.receivedBackorders.total || 0 }}</div>
                     </div>
                 </div>
             </div>
 
             <!-- Search and Filter Section -->
             <div class="bg-white p-4 mb-4">
-                <!-- First Row: Search, Warehouse, Facility (3 columns) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <!-- First Row: Search, Warehouse, Facility, Status -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <!-- Search -->
                     <div class="lg:col-span-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Search Records</label>
@@ -376,15 +375,12 @@ onMounted(() => {
                         <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
                         <Multiselect
                             v-model="warehouse"
-                            :options="warehouseOptions"
+                            :options="props.warehouses"
                             :searchable="true"
                             :allow-empty="true"
                             :multiple="false"
-                            :show-labels="false"
                             placeholder="Filter by Warehouse"
-                            label="label"
-                            track-by="value"
-                            @select="() => {}"
+                            :show-labels="false"
                             class="text-sm text-black"
                         />
                     </div>
@@ -402,14 +398,10 @@ onMounted(() => {
                             placeholder="Filter by Facility"
                             label="label"
                             track-by="value"
-                            @select="() => {}"
                             class="text-sm text-black"
                         />
                     </div>
-                </div>
-                
-                <!-- Second Row: Status, Type, Date From, Date To (4 columns) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    
                     <!-- Status Filter -->
                     <div class="lg:col-span-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -426,47 +418,9 @@ onMounted(() => {
                             class="text-sm text-black"
                         />
                     </div>
-                    
-                    <!-- Type Filter -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <Multiselect
-                            v-model="type"
-                            :options="typeOptions"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :multiple="false"
-                            :show-labels="false"
-                            placeholder="Filter by Type"
-                            label="label"
-                            track-by="value"
-                            class="text-sm text-black"
-                        />
-                    </div>
-                    
-                    <!-- Date From -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                        <input 
-                            type="date" 
-                            v-model="date_from"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-                    
-                    <!-- Date To -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                        <input 
-                            type="date" 
-                            v-model="date_to"
-                            :min="date_from"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
                 </div>
                 
-                <!-- Third Row: Per Page Filter (Right Aligned) -->
+                <!-- Second Row: Per Page Filter (Right Aligned) -->
                 <div class="flex justify-end">
                     <div class="w-48">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
@@ -481,65 +435,6 @@ onMounted(() => {
                             <option value="50">50 per page</option>
                             <option value="100">100 per page</option>
                         </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Status Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Total Received</p>
-                        <p class="text-lg font-bold text-gray-800">{{ stats.total }}</p>
-                    </div>
-                    <div class="p-2 bg-blue-50 rounded-lg">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Pending</p>
-                        <p class="text-lg font-bold text-gray-800">{{ stats.pending }}</p>
-                    </div>
-                    <div class="p-2 bg-yellow-50 rounded-lg">
-                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Total Quantity</p>
-                        <p class="text-lg font-bold text-gray-800">{{ stats.total_quantity }}</p>
-                    </div>
-                    <div class="p-2 bg-green-50 rounded-lg">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-medium text-gray-600 uppercase tracking-wider mb-1">Total Cost</p>
-                        <p class="text-lg font-bold text-gray-800">{{ formatCurrency(stats.total_cost) }}</p>
-                    </div>
-                    <div class="p-2 bg-purple-50 rounded-lg">
-                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
                     </div>
                 </div>
             </div>
@@ -565,8 +460,6 @@ onMounted(() => {
                         <col class="w-24">
                         <col class="w-28">
                         <col class="w-28">
-                        <col class="w-28">
-                        <col class="w-24">
                         <col class="w-24">
                         <col class="w-24">
                         <col class="w-32">
@@ -589,16 +482,10 @@ onMounted(() => {
                                 Expiry Date
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Received Date
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
                                 Status
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Type
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Total Cost
+                                Attachments
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider">
                                 Actions
@@ -609,7 +496,7 @@ onMounted(() => {
                         <template v-for="(group, groupKey) in groupedReceivedBackorders" :key="groupKey">
                             <!-- Group Header Row -->
                             <tr class="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
-                                <td colspan="10" class="px-4 py-3">
+                                <td colspan="8" class="px-4 py-3">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <button 
@@ -682,6 +569,9 @@ onMounted(() => {
                                                 <div><span class="font-medium">Barcode:</span> {{ receivedBackorder.barcode || 'N/A' }}</div>
                                                 <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse }}</div>
                                                 <div v-if="receivedBackorder.location"><span class="font-medium">Location:</span> {{ receivedBackorder.location }}</div>
+                                                <div class="text-gray-500">
+                                                    {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -708,13 +598,6 @@ onMounted(() => {
                                         </div>
                                     </td>
 
-                                    <!-- Received Date -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
-                                        </div>
-                                    </td>
-
                                     <!-- Status Column -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
                                         <span :class="getStatusBadge(receivedBackorder).class" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border">
@@ -729,18 +612,85 @@ onMounted(() => {
                                         </span>
                                     </td>
 
-                                    <!-- Type Column -->
+                                    <!-- Attachments Column -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <span :class="getTypeBadge(receivedBackorder.type).class" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border">
-                                            <span class="mr-1">{{ getTypeBadge(receivedBackorder.type).icon }}</span>
-                                            {{ receivedBackorder.type || 'N/A' }}
-                                        </span>
-                                    </td>
-
-                                    <!-- Total Cost -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ formatCurrency(receivedBackorder.total_cost) }}
+                                        <div class="relative" v-if="parseAttachments(receivedBackorder.attachments).length > 0">
+                                            <button 
+                                                @click.stop="toggleDropdown(receivedBackorder.id)"
+                                                class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
+                                            >
+                                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                </svg>
+                                                {{ parseAttachments(receivedBackorder.attachments).length }} file{{ parseAttachments(receivedBackorder.attachments).length > 1 ? 's' : '' }}
+                                                <svg class="w-4 h-4 ml-1 text-gray-500 transition-transform duration-150" :class="{ 'rotate-180': activeDropdown === receivedBackorder.id }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+                                            
+                                            <!-- Dropdown Menu -->
+                                            <div 
+                                                v-if="activeDropdown === receivedBackorder.id"
+                                                class="attachments-dropdown absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                                            >
+                                                <div class="p-3 border-b border-gray-200">
+                                                    <h3 class="text-sm font-semibold text-gray-900">Attachments</h3>
+                                                    <p class="text-xs text-gray-500 mt-1">Click to view or download files</p>
+                                                </div>
+                                                <div class="max-h-60">
+                                                    <div 
+                                                        v-for="(attachment, index) in parseAttachments(receivedBackorder.attachments)" 
+                                                        :key="index"
+                                                        class="p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-150"
+                                                    >
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                                                <!-- File Icon -->
+                                                                <div class="flex-shrink-0">
+                                                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                
+                                                                <!-- File Info -->
+                                                                <div class="flex-1 min-w-0">
+                                                                    <p class="text-sm font-medium text-gray-900 truncate" :title="attachment.name">
+                                                                        {{ attachment.name }}
+                                                                    </p>
+                                                                    <p class="text-xs text-gray-500">
+                                                                        {{ attachment.url.split('/').pop() }}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Action Button -->
+                                                            <div class="flex items-center flex-shrink-0">
+                                                                <a 
+                                                                    :href="attachment.url" 
+                                                                    target="_blank"
+                                                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors duration-150"
+                                                                    title="Open file"
+                                                                >
+                                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                                    </svg>
+                                                                    Open
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- No attachments -->
+                                        <div v-else class="text-center">
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded-md">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                No files
+                                            </span>
                                         </div>
                                     </td>
 
@@ -757,7 +707,7 @@ onMounted(() => {
 
                                         <div v-else class="flex flex-col space-y-2">
                                             <button 
-                                                v-if="!receivedBackorder.reviewed_at" 
+                                                v-if="!receivedBackorder.reviewed_at && $page.props.auth.can.received_backorder_review" 
                                                 @click="reviewReceivedBackorder(receivedBackorder.id, index)"
                                                 :disabled="isReviewing[index]"
                                                 class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
@@ -775,6 +725,7 @@ onMounted(() => {
                                                     <button 
                                                         @click="approveReceivedBackorder(receivedBackorder.id, index)" 
                                                         :disabled="isApproving[index]"
+                                                        v-if="$page.props.auth.can.received_backorder_approve"
                                                         class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150"
                                                     >
                                                         <svg v-if="isApproving[index]" class="animate-spin -ml-1 mr-2 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
@@ -784,7 +735,7 @@ onMounted(() => {
                                                         {{ isApproving[index] ? 'Approving...' : (receivedBackorder.rejected_at ? 'Re-approve' : 'Approve') }}
                                                     </button>
                                                     <button 
-                                                        v-if="!receivedBackorder.rejected_at" 
+                                                        v-if="!receivedBackorder.rejected_at && $page.props.auth.can.received_backorder_approve" 
                                                         @click="rejectReceivedBackorder(receivedBackorder.id, index)"
                                                         :disabled="isRejecting[index]"
                                                         class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"

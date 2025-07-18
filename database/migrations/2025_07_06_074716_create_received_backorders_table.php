@@ -48,6 +48,7 @@ return new class extends Migration
             $table->string('purchase_order_number')->nullable();
             $table->string('supplier_id')->nullable();
             $table->string('supplier_name')->nullable();
+            $table->foreignId('inventory_adjustment_id')->nullable()->constrained('inventory_adjustments')->onDelete('set null');
             
             $table->timestamps();
         });

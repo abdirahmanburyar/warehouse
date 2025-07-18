@@ -38,6 +38,7 @@ class Liquidate extends Model
         'packing_list_id',
         'order_id',
         'transfer_id',
+        'inventory_adjustment_id',
     ];
 
     /**
@@ -104,5 +105,13 @@ class Liquidate extends Model
     public function approvals()
     {
         return $this->hasMany(\App\Models\Approval::class, 'model_id')->where('model', 'liquidate');
+    }
+
+    /**
+     * Get the inventory adjustment associated with this liquidation
+     */
+    public function inventoryAdjustment(): BelongsTo
+    {
+        return $this->belongsTo(InventoryAdjustment::class);
     }
 }

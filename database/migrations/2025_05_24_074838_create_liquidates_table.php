@@ -31,6 +31,7 @@ return new class extends Migration
             $table->timestamp('rejected_at')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->foreignId('back_order_id')->nullable()->unique()->nullOnDelete();
+            $table->foreignId('inventory_adjustment_id')->nullable()->constrained('inventory_adjustments')->onDelete('set null');
             $table->timestamps();
         });
     }
