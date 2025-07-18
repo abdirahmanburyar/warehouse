@@ -328,6 +328,7 @@ const deleteReorderLevel = async (id, itemName) => {
                 'The reorder level has been deleted successfully.',
                 'success'
             );
+            reloadReorderLevels();
         } catch (error) {
             // Show error message
             Swal.fire(

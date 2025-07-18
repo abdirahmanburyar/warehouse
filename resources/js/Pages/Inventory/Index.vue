@@ -509,17 +509,9 @@ function getResults(page = 1) {
                                     </td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-4 whitespace-nowrap text-xs font-medium align-top">
                                         <div class="flex items-center space-x-3">
-                                            <div v-if="isLowStock(inventory)">
-                                                <img
-                                                    src="/assets/images/reorder_status.png"
-                                                    alt="Reorder Status"
-                                                    class="w-6 h-6"
-                                                    title="Reorder Status"
-                                                />
-                                            </div>
                                             <Link
                                                 :href="route('supplies.purchase_order')"
-                                                v-if="inventory.items && inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) > inventory.reorder_level"
+                                                v-if="isLowStock(inventory)"
                                                 class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
                                             >
                                                 <svg
