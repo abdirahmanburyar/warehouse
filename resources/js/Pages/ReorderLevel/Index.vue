@@ -114,13 +114,13 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ reorderLevel.amc }}
+                                    {{ formatNumber(reorderLevel.amc) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ reorderLevel.lead_time }} days
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ reorderLevel.reorder_level }}
+                                    {{ formatNumber(reorderLevel.reorder_level) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ formatDate(reorderLevel.created_at) }}
@@ -296,6 +296,14 @@ const fileInput = ref(null);
 
 const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
+};
+
+const formatNumber = (value) => {
+    if (value === null || value === undefined) return '0';
+    return parseFloat(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 };
 
 const deleteReorderLevel = async (id, itemName) => {
