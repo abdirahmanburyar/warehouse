@@ -202,12 +202,28 @@ class ReorderLevelController extends Controller
             Cache::put($importId, 0);
     
             // Import synchronously to avoid serialization issues
-            Excel::import(new ReorderLevelImport($importId), $file);
+            $import = new ReorderLevelImport($importId);
+            Excel::import($import, $file);
+            
+            // Get import results
+            $results = $import->getResults();
+            
+            $message = "Import completed successfully. ";
+            if ($results['imported'] > 0) {
+                $message .= "Created: {$results['imported']} new reorder levels. ";
+            }
+            if ($results['updated'] > 0) {
+                $message .= "Updated: {$results['updated']} existing reorder levels. ";
+            }
+            if ($results['skipped'] > 0) {
+                $message .= "Skipped: {$results['skipped']} rows. ";
+            }
     
             return response()->json([
                 'success' => true,
-                'message' => 'Import completed successfully',
-                'import_id' => $importId
+                'message' => trim($message),
+                'import_id' => $importId,
+                'results' => $results
             ]);
     
         } catch (\Throwable $e) {

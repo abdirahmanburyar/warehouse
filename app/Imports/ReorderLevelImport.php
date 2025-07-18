@@ -29,6 +29,7 @@ class ReorderLevelImport implements
 {
 
     protected $importedCount = 0;
+    protected $updatedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
     protected $productCache = [];
@@ -76,23 +77,45 @@ class ReorderLevelImport implements
                 return null;
             }
 
-            $this->importedCount++;
-
             // Update progress in cache
             Cache::increment($this->importId);
 
             // Calculate reorder level: AMC * Lead Time
             $reorderLevel = $amc * $leadTime;
 
-            // Update or create reorder level using the found product ID
-            ReorderLevel::updateOrCreate([
-                'product_id' => $product->id,
-            ], [
-                'product_id' => $product->id,
-                'amc' => $amc,
-                'lead_time' => $leadTime,
-                'reorder_level' => $reorderLevel,
-            ]);
+            // Check if reorder level already exists for this product
+            $existingReorderLevel = ReorderLevel::where('product_id', $product->id)->first();
+
+            if ($existingReorderLevel) {
+                // Update existing reorder level
+                $existingReorderLevel->update([
+                    'amc' => $amc,
+                    'lead_time' => $leadTime,
+                    'reorder_level' => $reorderLevel,
+                ]);
+                $this->updatedCount++;
+                Log::info("Updated reorder level for product: {$itemDescription}", [
+                    'product_id' => $product->id,
+                    'old_amc' => $existingReorderLevel->amc,
+                    'new_amc' => $amc,
+                    'old_lead_time' => $existingReorderLevel->lead_time,
+                    'new_lead_time' => $leadTime
+                ]);
+            } else {
+                // Create new reorder level
+                ReorderLevel::create([
+                    'product_id' => $product->id,
+                    'amc' => $amc,
+                    'lead_time' => $leadTime,
+                    'reorder_level' => $reorderLevel,
+                ]);
+                $this->importedCount++;
+                Log::info("Created new reorder level for product: {$itemDescription}", [
+                    'product_id' => $product->id,
+                    'amc' => $amc,
+                    'lead_time' => $leadTime
+                ]);
+            }
 
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
@@ -134,6 +157,7 @@ class ReorderLevelImport implements
     {
         return [
             'imported' => $this->importedCount,
+            'updated' => $this->updatedCount,
             'skipped' => $this->skippedCount,
             'errors' => $this->errors,
         ];
