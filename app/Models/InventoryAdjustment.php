@@ -24,7 +24,7 @@ class InventoryAdjustment extends Model
 
     public function items()
     {
-        return $this->hasMany(InventoryAdjustmentItem::class, 'id', 'parent_id');
+        return $this->hasMany(InventoryAdjustmentItem::class, 'parent_id', 'id');
     }
     
     public function reviewer()
