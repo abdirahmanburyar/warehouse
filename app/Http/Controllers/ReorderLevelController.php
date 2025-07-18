@@ -87,7 +87,7 @@ class ReorderLevelController extends Controller
                 ? 'Reorder level created successfully.' 
                 : "{$createdCount} reorder levels created successfully.";
 
-            return redirect()->route('reorder-levels.index')
+            return redirect()->route('settings.reorder-levels.index')
                 ->with('success', $message);
         }
 
@@ -104,7 +104,7 @@ class ReorderLevelController extends Controller
             'lead_time' => $request->lead_time
         ]);
 
-        return redirect()->route('reorder-levels.index')
+        return redirect()->route('settings.reorder-levels.index')
             ->with('success', 'Reorder level created successfully.');
     }
 
@@ -142,7 +142,7 @@ class ReorderLevelController extends Controller
             'lead_time' => $request->lead_time
         ]);
 
-        return redirect()->route('reorder-levels.index')
+        return redirect()->route('settings.reorder-levels.index')
             ->with('success', 'Reorder level updated successfully.');
     }
 
@@ -153,7 +153,7 @@ class ReorderLevelController extends Controller
     {
         $reorderLevel->delete();
 
-        return redirect()->route('reorder-levels.index')
+        return redirect()->route('settings.reorder-levels.index')
             ->with('success', 'Reorder level deleted successfully.');
     }
 
