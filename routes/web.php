@@ -37,6 +37,7 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use App\Http\Controllers\LogisticCompanyController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ReasonController;
+use App\Http\Controllers\ReorderLevelController;
 
 // Welcome route - accessible without authentication
 
@@ -440,6 +441,16 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{settings}/edit', [SettingsController::class, 'edit'])->middleware(PermissionMiddleware::class . ':settings.edit')->name('settings.edit');
         Route::put('/{settings}', [SettingsController::class, 'update'])->middleware(PermissionMiddleware::class . ':settings.edit')->name('settings.update');
         Route::delete('/{settings}', [SettingsController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':settings.delete')->name('settings.destroy');
+    });
+
+    // Reorder Level Management Routes
+    Route::prefix('reorder-levels')->group(function () {
+        Route::get('/', [ReorderLevelController::class, 'index'])->name('reorder-levels.index');
+        Route::get('/create', [ReorderLevelController::class, 'create'])->name('reorder-levels.create');
+        Route::post('/', [ReorderLevelController::class, 'store'])->name('reorder-levels.store');
+        Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])->name('reorder-levels.edit');
+        Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])->name('reorder-levels.update');
+        Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('reorder-levels.destroy');
     });
 
     // Order Management Routes

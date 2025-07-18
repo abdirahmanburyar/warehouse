@@ -1767,9 +1767,9 @@ const assetStatsCards = computed(() => [
                             <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
-                </div>
-                </div>
-                </div>
+                        </div>
+                    </div>
+                        </div>
             </Link>
 
             <!-- Transfers Card -->
@@ -1787,7 +1787,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                        </div>
+                    </div>
             </Link>
 
             <!-- Delayed Orders Card -->
@@ -1805,7 +1805,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                    </div>
             </Link>
 
             <!-- Low Stock Card -->
@@ -1823,7 +1823,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                        </div>
+                    </div>
             </Link>
 
             <!-- Out of Stock Card -->
@@ -1840,8 +1840,8 @@ const assetStatsCards = computed(() => [
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                             </svg>
                         </div>
-                        </div>
-                        </div>
+                    </div>
+                    </div>
             </Link>
             </div>
 
@@ -1942,11 +1942,11 @@ const assetStatsCards = computed(() => [
                             <div class="text-gray-600 text-sm">
                                 Facilities information will be displayed here.
                             </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Date Range Filter -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -1980,21 +1980,21 @@ const assetStatsCards = computed(() => [
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <div class="mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Product Categories</h3>
-                        </div>
+                      </div>
                 <div class="h-64">
                     <Doughnut :data="productCategoryChartData" :options="doughnutChartOptions" />
-                        </div>
                     </div>
+                </div>
 
             <!-- Warehouse/Facilities Chart -->
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <div class="mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Warehouse & Facilities</h3>
-                    </div>
+                            </div>
                 <div class="h-64">
                     <Bar :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
-                </div>
-            </div>
+                        </div>
+                            </div>
 
             <!-- Orders Chart -->
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
@@ -2003,8 +2003,8 @@ const assetStatsCards = computed(() => [
                         </div>
                 <div class="h-64">
                     <Bar :data="orderChartData" :options="orderChartOptions" />
+                            </div>
                         </div>
-                    </div>
                     </div>
 
         <!-- Fulfillment Chart Row -->
@@ -2017,22 +2017,22 @@ const assetStatsCards = computed(() => [
                 </div>
                 <div class="h-64">
                     <Bar :data="fulfillmentChartData" :options="fulfillmentBarChartOptions" />
-                </div>
             </div>
-            
+        </div>
+
             <!-- Summary Stats - Takes 4 columns -->
             <div class="lg:col-span-4 space-y-3">
                 <!-- Lowest Performer Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
-                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center justify-between mb-2">
                         <h3 class="text-sm font-semibold text-gray-900">Lowest Performer</h3>
                         <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                        </svg>
-                    </div>
+                                </svg>
+                            </div>
                     <div class="text-lg font-semibold text-gray-900">{{ lowestPerformerName }}</div>
                     <div class="text-xl font-bold text-red-600">{{ lowestPerformerRate }}%</div>
-                </div>
+                        </div>
                 
                 <!-- Top Performer Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
@@ -2041,23 +2041,23 @@ const assetStatsCards = computed(() => [
                         <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                         </svg>
-                    </div>
+                        </div>
                     <div class="text-lg font-semibold text-gray-900">{{ topPerformerName }}</div>
                     <div class="text-xl font-bold text-green-600">{{ topPerformerRate }}%</div>
                 </div>
 
                 <!-- Total Suppliers Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
-                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center justify-between mb-2">
                         <h3 class="text-sm font-semibold text-gray-900">Total Suppliers</h3>
                         <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
+                                </svg>
+                            </div>
                     <div class="text-2xl font-bold text-purple-600">{{ totalSuppliers }}</div>
                     <div class="text-xs text-gray-600 mt-1">Active suppliers</div>
-                </div>
-            </div>
+                        </div>
+                        </div>
         </div>
 
         <!-- Expired Statistics Chart Row -->
@@ -2070,19 +2070,19 @@ const assetStatsCards = computed(() => [
                 </div>
                 <div class="h-64">
                     <Doughnut :data="expiredChartData" :options="doughnutChartOptions" />
+                    </div>
                 </div>
-            </div>
-            
+
             <!-- Summary Stats - Takes 4 columns -->
             <div class="lg:col-span-4 space-y-3">
                 <!-- Expired Items Card -->
                 <div class="bg-gray-600 rounded-xl shadow-sm border border-gray-200 p-3">
-                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center justify-between mb-2">
                         <h3 class="text-sm font-semibold text-white">Expired Items</h3>
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                    </div>
+                            </div>
                     <div class="text-xl font-bold text-white">{{ props.expiredStats?.expired || 0 }}</div>
                     <div class="text-xs text-white mt-1">Items past expiry date</div>
                 </div>
@@ -2093,11 +2093,11 @@ const assetStatsCards = computed(() => [
                         <h3 class="text-sm font-semibold text-white">Expiring in 6 Months</h3>
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                        </svg>
-                    </div>
+                                </svg>
+                            </div>
                     <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_6_months || 0 }}</div>
                     <div class="text-xs text-white mt-1">Items expiring soon</div>
-                </div>
+                        </div>
                 
                 <!-- Expiring in 1 Year Card -->
                 <div class="bg-orange-400 rounded-xl shadow-sm border border-gray-200 p-3">
@@ -2109,9 +2109,9 @@ const assetStatsCards = computed(() => [
                     </div>
                     <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_1_year || 0 }}</div>
                     <div class="text-xs text-white mt-1">Items to monitor</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
         <!-- Order Status Chart Section -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -2143,14 +2143,14 @@ const assetStatsCards = computed(() => [
                             >
                                 Clear
                             </button>
-                        </div>
                             </div>
+                        </div>
                         </div>
                             </div>
             <div class="h-80">
                 <Bar :data="orderStatusChartData" :options="orderStatusChartOptions" />
-            </div>
-        </div>
+                    </div>
+                </div>
 
         <!-- Asset Statistics Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
@@ -2159,7 +2159,7 @@ const assetStatsCards = computed(() => [
                 <div class="mb-4">
                     <h3 class="text-xl font-bold text-gray-900">Asset Status Overview</h3>
                     <p class="text-sm text-gray-600 mt-1">Assets by current status</p>
-                </div>
+                            </div>
                 <div class="h-64">
                     <Bar :data="assetStatusChartData" :options="assetStatusChartOptions" />
                 </div>
@@ -2179,18 +2179,18 @@ const assetStatsCards = computed(() => [
                                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
-                                    </svg>
-                                </div>
+                                </svg>
                             </div>
+                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Furniture || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">Furniture</div>
-                            </div>
+                        </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                        </div>
                     </div>
+                </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
                         <div class="p-6 flex flex-col items-center justify-center h-32 relative">
@@ -2201,19 +2201,19 @@ const assetStatsCards = computed(() => [
                                 <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
+                                </svg>
                             </div>
+                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.IT || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">IT Equipment</div>
-                            </div>
+                        </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-purple-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                        </div>
                     </div>
-                    
+                </div>
+
                     <!-- Row 2: Medical Equipment and Vehicles -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
                         <div class="p-6 flex flex-col items-center justify-center h-32 relative">
@@ -2224,18 +2224,18 @@ const assetStatsCards = computed(() => [
                                 <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                    </svg>
-                                </div>
+                                </svg>
                             </div>
+                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.['Medical equipment'] || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">Medical Equipment</div>
-                            </div>
+                        </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-green-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                        </div>
                     </div>
+                </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
                         <div class="p-6 flex flex-col items-center justify-center h-32 relative">
@@ -2247,7 +2247,7 @@ const assetStatsCards = computed(() => [
                                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4"></path>
                                     </svg>
-                                </div>
+                            </div>
                             </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
@@ -2271,9 +2271,9 @@ const assetStatsCards = computed(() => [
                                 <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                    </svg>
-                                </div>
+                                </svg>
                             </div>
+                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Others || 0 }}</div>

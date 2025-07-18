@@ -19,6 +19,13 @@
                                 <!-- <li><a href="#" class="text-gray-600 hover:text-indigo-600">Audit Trials</a></li> -->
                             </ul>
                         </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">Inventory Management</h3>
+                            <ul class="space-y-2">
+                                <li><Link :href="route('reorder-levels.index')" class="text-gray-600 hover:text-indigo-600">Reorder Levels</Link></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
