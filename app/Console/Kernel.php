@@ -48,6 +48,14 @@ class Kernel extends ConsoleKernel
         $schedule->command('report:generate-inventory')
             ->monthlyOn(28, '23:55')
             ->appendOutputTo(storage_path('logs/monthly-inventory-report.log'));
+            
+        // Clean up empty inventory items and inventories weekly on Sunday at 2:00 AM
+        $schedule->command('inventory:cleanup-empty')
+            ->weekly()
+            ->sundays()
+            ->at('02:00')
+            ->appendOutputTo(storage_path('logs/inventory-cleanup.log'))
+            ->emailOutputOnFailure(config('mail.admin_address'));
     }
 
     /**
