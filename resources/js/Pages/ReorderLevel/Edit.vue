@@ -169,10 +169,9 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { computed, ref } from 'vue';
-import axios from 'axios';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
@@ -198,30 +197,25 @@ const calculatedReorderLevel = computed(() => {
     return (amc * leadTime).toFixed(2);
 });
 
-const submit = async () => {
+const submit = () => {
     processing.value = true;
     errors.value = {};
     
-    try {
-        // Prepare data for submission - extract product ID
-        const submitData = {
-            product_id: form.value.product_id ? form.value.product_id.id : null,
-            amc: form.value.amc,
-            lead_time: form.value.lead_time
-        };
-        
-        const response = await axios.put(route('reorder-levels.update', props.reorderLevel), submitData);
-        
-        // Redirect to index page with success message
-        window.location.href = route('reorder-levels.index') + '?success=Reorder level updated successfully.';
-    } catch (error) {
-        if (error.response && error.response.data.errors) {
-            errors.value = error.response.data.errors;
-        } else {
-            console.error('Error updating reorder level:', error);
+    // Prepare data for submission - extract product ID
+    const submitData = {
+        product_id: form.value.product_id ? form.value.product_id.id : null,
+        amc: form.value.amc,
+        lead_time: form.value.lead_time
+    };
+    
+    router.put(route('reorder-levels.update', props.reorderLevel.id), submitData, {
+        onSuccess: () => {
+            processing.value = false;
+        },
+        onError: (errors) => {
+            errors.value = errors;
+            processing.value = false;
         }
-    } finally {
-        processing.value = false;
-    }
+    });
 };
 </script> 
