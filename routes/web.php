@@ -444,17 +444,31 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     });
 
     // Reorder Level Management Routes
-    Route::prefix('reorder-levels')->group(function () {
-        Route::get('/', [ReorderLevelController::class, 'index'])->name('reorder-levels.index');
-        Route::get('/create', [ReorderLevelController::class, 'create'])->name('reorder-levels.create');
-        Route::post('/', [ReorderLevelController::class, 'store'])->name('reorder-levels.store');
-        Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])->name('reorder-levels.edit');
-        Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])->name('reorder-levels.update');
-        Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('reorder-levels.destroy');
+    Route::middleware(PermissionMiddleware::class . ':reorder-level.view')->group(function () {
+        Route::get('/reorder-levels', [ReorderLevelController::class, 'index'])->name('settings.reorder-levels.index');
+        Route::get('/reorder-levels/create', [ReorderLevelController::class, 'create'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.create')
+            ->name('settings.reorder-levels.create');
+        Route::post('/reorder-levels', [ReorderLevelController::class, 'store'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.create')
+            ->name('settings.reorder-levels.store');
+        Route::get('/reorder-levels/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.edit')
+            ->name('settings.reorder-levels.edit');
+        Route::put('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'update'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.edit')
+            ->name('settings.reorder-levels.update');
+        Route::delete('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'destroy'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.delete')
+            ->name('settings.reorder-levels.destroy');
         
         // Import routes
-        Route::post('/import', [ReorderLevelController::class, 'importExcel'])->name('reorder-levels.import');
-        Route::get('/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('reorder-levels.import.format');
+        Route::post('/reorder-levels/import', [ReorderLevelController::class, 'importExcel'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.create')
+            ->name('settings.reorder-levels.import');
+        Route::get('/reorder-levels/import/format', [ReorderLevelController::class, 'getImportFormat'])
+            ->middleware(PermissionMiddleware::class . ':reorder-level.view')
+            ->name('settings.reorder-levels.import.format');
     });
 
     // Order Management Routes

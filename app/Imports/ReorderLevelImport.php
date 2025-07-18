@@ -94,13 +94,6 @@ class ReorderLevelImport implements
                     'reorder_level' => $reorderLevel,
                 ]);
                 $this->updatedCount++;
-                Log::info("Updated reorder level for product: {$itemDescription}", [
-                    'product_id' => $product->id,
-                    'old_amc' => $existingReorderLevel->amc,
-                    'new_amc' => $amc,
-                    'old_lead_time' => $existingReorderLevel->lead_time,
-                    'new_lead_time' => $leadTime
-                ]);
             } else {
                 // Create new reorder level
                 ReorderLevel::create([
@@ -110,11 +103,6 @@ class ReorderLevelImport implements
                     'reorder_level' => $reorderLevel,
                 ]);
                 $this->importedCount++;
-                Log::info("Created new reorder level for product: {$itemDescription}", [
-                    'product_id' => $product->id,
-                    'amc' => $amc,
-                    'lead_time' => $leadTime
-                ]);
             }
 
         } catch (\Exception $e) {
@@ -148,7 +136,6 @@ class ReorderLevelImport implements
         return [
             AfterImport::class => function (AfterImport $event) {
                 Cache::forget($this->importId);
-                Log::info('Reorder Level import completed', ['importId' => $this->importId]);
             },
         ];
     }

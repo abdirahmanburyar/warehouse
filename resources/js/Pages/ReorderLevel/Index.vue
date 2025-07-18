@@ -26,8 +26,8 @@
                             </svg>
                             Import Excel
                         </button>
-                        <Link :href="route('reorder-levels.create')"
-                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                            <Link :href="route('settings.reorder-levels.create')"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
@@ -127,7 +127,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
-                                        <Link :href="route('reorder-levels.edit', reorderLevel.id)"
+                                        <Link :href="route('settings.reorder-levels.edit', reorderLevel.id)"
                                             class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors duration-200"
                                             title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">No reorder levels</h3>
                     <p class="mt-1 text-sm text-gray-500">Get started by creating a new reorder level.</p>
                     <div class="mt-6">
-                        <Link :href="route('reorder-levels.create')"
+                        <Link :href="route('settings.reorder-levels.create')"
                             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
@@ -321,7 +321,7 @@ const deleteReorderLevel = async (id, itemName) => {
 
     if (result.isConfirmed) {
         try {
-            await router.delete(route('reorder-levels.destroy', id));
+            await router.delete(route('settings.reorder-levels.destroy', id));
 
             // Show success message
             Swal.fire(
@@ -356,7 +356,7 @@ const reloadReorderLevels = () => {
     if (per_page.value) query.per_page = per_page.value;
     if (page.value) query.page = page.value;
 
-    router.get(route("reorder-levels.index"), query, {
+    router.get(route("settings.reorder-levels.index"), query, {
         preserveState: true,
         preserveScroll: true,
         only: ["reorderLevels", "filters"],
@@ -401,7 +401,7 @@ const uploadFile = async () => {
     formData.append('file', selectedFile.value);
 
     try {
-        const response = await axios.post(route('reorder-levels.import'), formData, {
+        const response = await axios.post(route('settings.reorder-levels.import'), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -432,7 +432,7 @@ const uploadFile = async () => {
 
 const downloadSample = async () => {
     try {
-        const response = await axios.get(route('reorder-levels.import.format'));
+        const response = await axios.get(route('settings.reorder-levels.import.format'));
         if (response.data.success) {
             const format = response.data.data.format;
             
