@@ -440,7 +440,10 @@ class ReportController extends Controller
                     return response()->json("Physical count status must be reviewed before approval", 500);
                 }
                 // Process adjustment items based on difference
-                $adjustmentItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->get();
+                // Load warehouse data to avoid N+1 queries
+                $adjustmentItems = InventoryAdjustmentItem::where('parent_id', $adjustment->id)
+                    ->with('warehouse')
+                    ->get();
                 
                 foreach ($adjustmentItems as $adjustmentItem) {
                     $difference = $adjustmentItem->difference;
@@ -453,7 +456,6 @@ class ReportController extends Controller
                             'status' => 'pending',
                             'type' => 'physical_count_adjustment',
                             'warehouse_id' => $adjustmentItem->warehouse_id,
-                            'warehouse' => $adjustmentItem->warehouse->name ?? 'Unknown',
                             'inventory_adjustment_id' => $adjustment->id,
                             'note' => 'Physical count adjustment - positive difference'
                         ]);
