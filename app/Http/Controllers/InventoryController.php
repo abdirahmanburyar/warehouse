@@ -16,6 +16,7 @@ use App\Events\InventoryEvent;
 use Illuminate\Support\Facades\Event;
 use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
+use App\Models\ReorderLevel;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
@@ -30,18 +31,6 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $lastThreeMonths = IssueQuantityReport::select('month_year')
-            ->distinct()
-            ->orderByDesc('month_year')
-            ->limit(3)
-            ->pluck('month_year')
-            ->toArray();        
-
-        $amcSubquery = IssueQuantityItem::join('issue_quantity_reports', 'issue_quantity_items.parent_id', '=', 'issue_quantity_reports.id')
-            ->whereIn('issue_quantity_reports.month_year', $lastThreeMonths)
-            ->select('issue_quantity_items.product_id', DB::raw('COALESCE(SUM(issue_quantity_items.quantity) / 3, 0) as amc'))
-            ->groupBy('issue_quantity_items.product_id');
-
         $query = Inventory::query()
             ->with([
                 'items.warehouse:id,name',
@@ -49,12 +38,10 @@ class InventoryController extends Controller
                 'product.category:id,name',
                 'product.dosage:id,name'
             ])
-            ->leftJoinSub($amcSubquery, 'amc_data', function ($join) {
-                $join->on('inventories.product_id', '=', 'amc_data.product_id');
-            })
+            ->leftJoin('reorder_levels', 'inventories.product_id', '=', 'reorder_levels.product_id')
             ->addSelect('inventories.*')
-            ->addSelect(DB::raw('COALESCE(amc_data.amc, 0) as amc'))
-            ->addSelect(DB::raw('ROUND(COALESCE(amc_data.amc, 0) * 6) as reorder_level'));
+            ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
+            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, 0) as reorder_level'));
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -94,7 +81,7 @@ class InventoryController extends Controller
         $now = now();
         foreach ($inventories as $inventory) {
             $amc = $inventory->amc ?: 0;
-            $reorderLevel = $inventory->reorder_level ?: ($amc * 6);
+            $reorderLevel = $inventory->reorder_level ?: 0; // Use the calculated reorder level from the model
 
             foreach ($inventory->items ?? [] as $item) {
                 $qty = $item->quantity;

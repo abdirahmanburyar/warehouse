@@ -327,16 +327,24 @@ const formatDate = (date) => {
     return moment(date).format("DD/MM/YYYY");
 };
 
-// Check if inventory is low
+// Check if inventory is low stock (total quantities < reorder_level)
 const isLowStock = (inventory) => {
+    if (!inventory.items || !Array.isArray(inventory.items)) {
+        return false; // If no items, it's not low stock (it's out of stock)
+    }
+    const totalQuantity = inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
     return (
-        inventory.quantity > 0 && inventory.quantity <= inventory.reorder_level
+        totalQuantity > 0 && totalQuantity <= inventory.reorder_level
     );
 };
 
-// Check if inventory is out of stock
+// Check if inventory is out of stock (total quantities <= 0)
 const isOutOfStock = (inventory) => {
-    return inventory.quantity <= 0;
+    if (!inventory.items || !Array.isArray(inventory.items)) {
+        return true; // If no items, consider it out of stock
+    }
+    const totalQuantity = inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    return totalQuantity <= 0;
 };
 
 // Computed properties for inventory status counts
@@ -478,7 +486,7 @@ function getResults(page = 1) {
                                             </div>
                                         </div>
                                     </td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items.reduce((sum, item) => sum + item.quantity, 0) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0 }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.reorder_level }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">
                                         <div class="flex items-center space-x-2">
@@ -524,7 +532,7 @@ function getResults(page = 1) {
                                             </div>
                                             <Link
                                                 :href="route('supplies.purchase_order')"
-                                                v-if="inventory.quantity > inventory.reorder_level"
+                                                v-if="inventory.items && inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) > inventory.reorder_level"
                                                 class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
                                             >
                                                 <svg
