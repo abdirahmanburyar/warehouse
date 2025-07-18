@@ -191,7 +191,7 @@ class ReorderLevelController extends Controller
     
             $importId = (string) Str::uuid();
     
-            Log::info('Queueing reorder level import with Maatwebsite Excel', [
+            Log::info('Starting reorder level import with Maatwebsite Excel', [
                 'import_id' => $importId,
                 'original_name' => $file->getClientOriginalName(),
                 'file_size' => $file->getSize(),
@@ -201,17 +201,16 @@ class ReorderLevelController extends Controller
             // Initialize cache progress to 0
             Cache::put($importId, 0);
     
-            // Queue the import job
-            Excel::queueImport(new ReorderLevelImport($importId), $file)
-                ->onQueue('imports'); // optional: define a specific queue
+            // Import synchronously to avoid serialization issues
+            Excel::import(new ReorderLevelImport($importId), $file);
     
             return response()->json([
                 'success' => true,
-                'message' => 'Import has been queued successfully',
+                'message' => 'Import completed successfully',
                 'import_id' => $importId
             ]);
     
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Reorder level import failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()

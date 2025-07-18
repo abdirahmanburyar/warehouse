@@ -25,10 +25,8 @@ class ReorderLevelImport implements
     WithBatchInserts, 
     WithValidation, 
     SkipsEmptyRows, 
-    WithEvents, 
-    ShouldQueue
+    WithEvents
 {
-    use Queueable, InteractsWithQueue;
 
     protected $importedCount = 0;
     protected $skippedCount = 0;

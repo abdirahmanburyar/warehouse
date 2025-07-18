@@ -403,10 +403,8 @@ const uploadFile = async () => {
             importSuccess.value = response.data.message;
             importProgress.value = 100;
             
-            // Reload the page after successful import
-            setTimeout(() => {
-                router.reload();
-            }, 2000);
+            // Reload the page immediately after successful import
+            router.reload();
         } else {
             importError.value = response.data.message;
         }
