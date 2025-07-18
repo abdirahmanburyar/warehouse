@@ -46,9 +46,9 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
             
             $adjustment = InventoryAdjustment::findOrFail($this->adjustmentId);
             
-            // Check if adjustment is still in reviewed status
-            if ($adjustment->status !== 'reviewed') {
-                Log::warning("Adjustment {$this->adjustmentId} is not in reviewed status. Current status: {$adjustment->status}");
+            // Check if adjustment is in processing status (set by controller before dispatching job)
+            if ($adjustment->status !== 'processing') {
+                Log::warning("Adjustment {$this->adjustmentId} is not in processing status. Current status: {$adjustment->status}");
                 return;
             }
 
