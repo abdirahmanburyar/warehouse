@@ -23,17 +23,31 @@
                                 <label for="product_id" class="block text-sm font-medium text-gray-700">
                                     Product *
                                 </label>
-                                <select
+                                <Multiselect
                                     id="product_id"
                                     v-model="form.product_id"
-                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                    :options="products"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    track-by="id"
+                                    label="name"
+                                    placeholder="Select a product"
                                     :class="{ 'border-red-500': errors.product_id }"
                                 >
-                                    <option value="">Select a product</option>
-                                    <option v-for="product in products" :key="product.id" :value="product.id">
-                                        {{ product.name }} ({{ product.productID }})
-                                    </option>
-                                </select>
+                                    <template slot="option" slot-scope="props">
+                                        <div class="option__desc">
+                                            <span class="option__title">{{ props.option.name }}</span>
+                                            <span class="option__small">ID: {{ props.option.productID }}</span>
+                                        </div>
+                                    </template>
+                                    <template slot="singleLabel" slot-scope="props">
+                                        <div class="option__desc">
+                                            <span class="option__title">{{ props.option.name }}</span>
+                                            <span class="option__small">ID: {{ props.option.productID }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
                                 <p v-if="errors.product_id" class="mt-1 text-sm text-red-600">
                                     {{ errors.product_id[0] }}
                                 </p>
@@ -159,6 +173,9 @@ import { Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { computed, ref } from 'vue';
 import axios from 'axios';
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const props = defineProps({
     reorderLevel: Object,

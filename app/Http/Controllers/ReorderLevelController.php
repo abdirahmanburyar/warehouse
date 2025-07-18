@@ -59,6 +59,34 @@ class ReorderLevelController extends Controller
      */
     public function store(Request $request)
     {
+        // Handle multiple items
+        if ($request->has('items') && is_array($request->items)) {
+            $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.amc' => 'required|numeric|min:0',
+                'items.*.lead_time' => 'required|integer|min:1'
+            ]);
+
+            $createdCount = 0;
+            foreach ($request->items as $item) {
+                ReorderLevel::create([
+                    'product_id' => $item['product_id'],
+                    'amc' => $item['amc'],
+                    'lead_time' => $item['lead_time']
+                ]);
+                $createdCount++;
+            }
+
+            $message = $createdCount === 1 
+                ? 'Reorder level created successfully.' 
+                : "{$createdCount} reorder levels created successfully.";
+
+            return redirect()->route('reorder-levels.index')
+                ->with('success', $message);
+        }
+
+        // Handle single item (backward compatibility)
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'amc' => 'required|numeric|min:0',
