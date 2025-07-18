@@ -36,6 +36,24 @@
 
                                 <!-- Items Container -->
                                 <div class="space-y-4">
+                                    <!-- Duplicate Products Error -->
+                                    <div v-if="errors.duplicate_products" class="bg-red-50 border border-red-200 rounded-md p-4">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                                </svg>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h3 class="text-sm font-medium text-red-800">
+                                                    Duplicate Products Detected
+                                                </h3>
+                                                <div class="mt-2 text-sm text-red-700">
+                                                    <p>{{ errors.duplicate_products[0] }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div
                                         v-for="(item, index) in form.items"
                                         :key="index"
@@ -65,7 +83,7 @@
                                                 <Multiselect
                                                     :id="'product_id_' + index"
                                                     v-model="item.product_id"
-                                                    :options="products"
+                                                    :options="getAvailableProducts(index)"
                                                     :searchable="true"
                                                     :close-on-select="true"
                                                     :show-labels="false"
@@ -217,6 +235,14 @@ const calculateReorderLevel = (item) => {
     return (amc * leadTime).toFixed(2);
 };
 
+const getAvailableProducts = (currentIndex) => {
+    const selectedProductIds = form.value.items
+        .map((item, index) => index !== currentIndex && item.product_id ? item.product_id.id : null)
+        .filter(id => id !== null);
+    
+    return props.products.filter(product => !selectedProductIds.includes(product.id));
+};
+
 const addItem = () => {
     form.value.items.push({
         product_id: null,
@@ -234,6 +260,21 @@ const removeItem = (index) => {
 const submit = async () => {
     processing.value = true;
     errors.value = {};
+    
+    // Validate unique product IDs
+    const productIds = form.value.items
+        .map(item => item.product_id ? item.product_id.id : null)
+        .filter(id => id !== null);
+    
+    const uniqueProductIds = [...new Set(productIds)];
+    
+    if (productIds.length !== uniqueProductIds.length) {
+        errors.value = {
+            'duplicate_products': ['Each product can only be selected once. Please remove duplicate selections.']
+        };
+        processing.value = false;
+        return;
+    }
     
     try {
         // Prepare data for submission - extract product IDs

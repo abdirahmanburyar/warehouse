@@ -184,7 +184,7 @@ const props = defineProps({
 });
 
 const form = ref({
-    product_id: props.reorderLevel.product_id,
+    product_id: props.products.find(p => p.id === props.reorderLevel.product_id) || null,
     amc: props.reorderLevel.amc,
     lead_time: props.reorderLevel.lead_time
 });
@@ -203,7 +203,14 @@ const submit = async () => {
     errors.value = {};
     
     try {
-        const response = await axios.put(route('reorder-levels.update', props.reorderLevel.id), form.value);
+        // Prepare data for submission - extract product ID
+        const submitData = {
+            product_id: form.value.product_id ? form.value.product_id.id : null,
+            amc: form.value.amc,
+            lead_time: form.value.lead_time
+        };
+        
+        const response = await axios.put(route('reorder-levels.update', props.reorderLevel), submitData);
         
         // Redirect to index page with success message
         window.location.href = route('reorder-levels.index') + '?success=Reorder level updated successfully.';
