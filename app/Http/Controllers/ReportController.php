@@ -49,6 +49,7 @@ use App\Imports\IssueQuantitiyImport;
 use App\Models\FacilityMonthlyReport;
 use App\Jobs\ProcessIssueQuantityImport;
 use App\Exports\WarehouseMonthlyReportExport;
+use App\Models\PhysicalCountReport;
 
 class ReportController extends Controller
 {
