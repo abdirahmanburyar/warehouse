@@ -283,7 +283,6 @@ const props = defineProps({
 
 const search = ref(props.filters.search || '');
 const per_page = ref(props.filters.per_page || 25);
-const page = ref(props.filters.page || 1);
 
 // Import modal state
 const showImportModal = ref(false);
@@ -354,7 +353,7 @@ const reloadReorderLevels = () => {
     const query = {};
     if (search.value) query.search = search.value;
     if (per_page.value) query.per_page = per_page.value;
-    if (page.value) query.page = page.value;
+    if (props.filters.page) query.page = props.filters.page;
 
     router.get(route("settings.reorder-levels.index"), query, {
         preserveState: true,
