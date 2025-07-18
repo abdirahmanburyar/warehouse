@@ -164,7 +164,7 @@
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="props.reorderLevels.data.length > 0" class="mt-6">
+                <div v-if="props.reorderLevels.data.length > 0" class="mt-6 flex justify-end mb-[80px]">
                     <TailwindPagination :data="props.reorderLevels" :limit="2"
                         @pagination-change-page="handlePageChange" class="flex justify-center" />
                 </div>
