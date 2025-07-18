@@ -369,19 +369,19 @@ class ReportController extends Controller
             
             // Create adjustment items for each inventory item
             foreach ($inventories as $inventory) {
-                $item = new InventoryAdjustmentItem();
-                $item->parent_id = $adjustment->id;
-                $item->user_id = auth()->id();
-                $item->product_id = $inventory->product_id;
-                $item->location_id = $inventory->location_id;
-                $item->warehouse_id = $inventory->warehouse_id;
-                $item->quantity = $inventory->quantity;
-                $item->physical_count = 0; // Default to 0, will be updated during physical count
-                $item->batch_number = $inventory->batch_number;
-                $item->barcode = $inventory->barcode;
-                $item->expiry_date = $inventory->expiry_date;
-                $item->uom = $inventory->uom;
-                $item->save();
+                InventoryAdjustmentItem::create([
+                    'parent_id' => $adjustment->id,
+                    'user_id' => auth()->id(),
+                    'product_id' => $inventory->product_id,
+                    'location_id' => $inventory->location_id,
+                    'warehouse_id' => $inventory->warehouse_id,
+                    'quantity' => $inventory->quantity,
+                    'physical_count' => 0, // Default to 0, will be updated during physical count
+                    'batch_number' => $inventory->batch_number,
+                    'barcode' => $inventory->barcode,
+                    'expiry_date' => $inventory->expiry_date,
+                    'uom' => $inventory->uom,
+                ]);
             }
             
             DB::commit();
