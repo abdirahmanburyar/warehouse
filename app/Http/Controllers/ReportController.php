@@ -361,8 +361,10 @@ class ReportController extends Controller
             $adjustment->status = 'pending';
             $adjustment->save();
             
-            // Get all active inventory items
-            $inventories = Inventory::where('is_active', true)->get();
+            // Get all inventories with active products
+            $inventories = Inventory::whereHas('product', function($query) {
+                $query->where('is_active', true);
+            })->get();
             
             // Create adjustment items for each inventory item
             foreach ($inventories as $inventory) {
