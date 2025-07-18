@@ -11,19 +11,29 @@
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
-                <!-- Header with Create Button -->
+                <!-- Header with Create and Import Buttons -->
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">Reorder Level Management</h3>
                         <p class="text-sm text-gray-600 mt-1">Manage reorder levels for inventory items</p>
                     </div>
-                    <Link :href="route('reorder-levels.create')"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Reorder Level
-                    </Link>
+                    <div class="flex space-x-3">
+                        <button
+                            @click="showImportModal = true"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            Import Excel
+                        </button>
+                        <Link :href="route('reorder-levels.create')"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Reorder Level
+                        </Link>
+                    </div>
                 </div>
 
                 <!-- Success Message -->
@@ -170,6 +180,91 @@
                 </div>
             </div>
         </div>
+
+        <!-- Import Modal -->
+        <div v-if="showImportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Import Reorder Levels</h3>
+                        <button @click="closeImportModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Import Instructions -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-md">
+                        <h4 class="text-sm font-medium text-blue-900 mb-2">Import Format Requirements:</h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li><strong>item_description:</strong> Required - Product name (must exist in products table)</li>
+                            <li><strong>amc:</strong> Optional - Average Monthly Consumption (numeric, min 0, default 0)</li>
+                            <li><strong>lead_time:</strong> Optional - Lead Time in days (integer, min 1, default 5)</li>
+                        </ul>
+                        <p class="text-sm text-blue-800 mt-2"><strong>Formula:</strong> Reorder Level = AMC × Lead Time</p>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Excel File</label>
+                        <input
+                            type="file"
+                            ref="fileInput"
+                            @change="handleFileSelect"
+                            accept=".xlsx"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        <p class="mt-1 text-sm text-gray-500">Supported format: .xlsx only (max 50MB)</p>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div v-if="importing" class="mb-4">
+                        <div class="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Importing...</span>
+                            <span>{{ importProgress }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: importProgress + '%' }"></div>
+                        </div>
+                    </div>
+
+                    <!-- Error Messages -->
+                    <div v-if="importError" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                        {{ importError }}
+                    </div>
+
+                    <!-- Success Message -->
+                    <div v-if="importSuccess" class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                        {{ importSuccess }}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end space-x-3">
+                        <button
+                            @click="closeImportModal"
+                            :disabled="importing"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            @click="downloadSample"
+                            class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        >
+                            Download Sample
+                        </button>
+                        <button
+                            @click="uploadFile"
+                            :disabled="!selectedFile || importing"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                        >
+                            {{ importing ? 'Importing...' : 'Upload' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -179,6 +274,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import { ref, watch } from 'vue';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 
 const props = defineProps({
     reorderLevels: Object,
@@ -188,6 +284,15 @@ const props = defineProps({
 const search = ref(props.filters.search || '');
 const per_page = ref(props.filters.per_page || 25);
 const page = ref(props.filters.page || 1);
+
+// Import modal state
+const showImportModal = ref(false);
+const selectedFile = ref(null);
+const importing = ref(false);
+const importProgress = ref(0);
+const importError = ref('');
+const importSuccess = ref('');
+const fileInput = ref(null);
 
 const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
@@ -252,5 +357,100 @@ const reloadReorderLevels = () => {
 
 const handlePageChange = (pageNumber) => {
     props.filters.page = pageNumber;
+};
+
+// Import functions
+const closeImportModal = () => {
+    showImportModal.value = false;
+    selectedFile.value = null;
+    importing.value = false;
+    importProgress.value = 0;
+    importError.value = '';
+    importSuccess.value = '';
+    if (fileInput.value) {
+        fileInput.value.value = '';
+    }
+};
+
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile.value = file;
+        importError.value = '';
+        importSuccess.value = '';
+    }
+};
+
+const uploadFile = async () => {
+    if (!selectedFile.value) return;
+
+    importing.value = true;
+    importProgress.value = 0;
+    importError.value = '';
+    importSuccess.value = '';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile.value);
+
+    try {
+        const response = await axios.post(route('reorder-levels.import'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        if (response.data.success) {
+            importSuccess.value = response.data.message;
+            importProgress.value = 100;
+            
+            // Reload the page after successful import
+            setTimeout(() => {
+                router.reload();
+            }, 2000);
+        } else {
+            importError.value = response.data.message;
+        }
+    } catch (error) {
+        if (error.response && error.response.data.message) {
+            importError.value = error.response.data.message;
+        } else {
+            importError.value = 'An error occurred during import.';
+        }
+    } finally {
+        importing.value = false;
+    }
+};
+
+const downloadSample = async () => {
+    try {
+        const response = await axios.get(route('reorder-levels.import.format'));
+        if (response.data.success) {
+            const format = response.data.data.format;
+            
+            // Create sample data for download
+            const sampleData = [
+                ['item_description', 'amc', 'lead_time'],
+                ['Paracetamol 500mg', 100.5, 5],
+                ['Amoxicillin 250mg', 75.0, 7],
+                ['Ibuprofen 400mg', 50.0, ''],
+            ];
+
+            // Convert to CSV format (will be saved as .xlsx by user)
+            const csvContent = sampleData.map(row => row.join(',')).join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reorder_levels_sample.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    } catch (error) {
+        console.error('Error downloading sample:', error);
+    }
 };
 </script>

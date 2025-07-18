@@ -451,6 +451,10 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])->name('reorder-levels.edit');
         Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])->name('reorder-levels.update');
         Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('reorder-levels.destroy');
+        
+        // Import routes
+        Route::post('/import', [ReorderLevelController::class, 'importExcel'])->name('reorder-levels.import');
+        Route::get('/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('reorder-levels.import.format');
     });
 
     // Order Management Routes
