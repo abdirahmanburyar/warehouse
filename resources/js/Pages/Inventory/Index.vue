@@ -53,24 +53,6 @@ const uploadProgress = ref(0);
 const uploadResults = ref(null);
 const importId = ref(null);
 
-async function loadLocations() {
-    if (!warehouse.value) {
-        loadedLocation.value = [];
-        location.value = '';
-        return;
-    };
-    await axios
-        .post(route("invetnories.getLocations"), {
-            warehouse: warehouse.value,
-        })
-        .then((response) => {
-            loadedLocation.value = response.data;
-        })
-        .catch((error) => {
-            toast.error(error.response.data);
-        });
-}
-
 // Form states
 const form = ref({
     product_id: null,
@@ -338,13 +320,18 @@ const isLowStock = (inventory) => {
     );
 };
 
-// Check if inventory is out of stock (total quantities <= 0)
+// Check if individual inventory item is out of stock
+const isItemOutOfStock = (item) => {
+    return (item.quantity || 0) === 0;
+};
+
+// Check if inventory is out of stock (sum of items.quantity is 0)
 const isOutOfStock = (inventory) => {
     if (!inventory.items || !Array.isArray(inventory.items)) {
         return true; // If no items, consider it out of stock
     }
     const totalQuantity = inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    return totalQuantity <= 0;
+    return totalQuantity === 0;
 };
 
 // Computed properties for inventory status counts
@@ -476,12 +463,12 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center">
                                         <div class="flex items-center justify-center">
-                                            <div v-if="isOutOfStock(item)" class="mr-1">
+                                            <div v-if="isItemOutOfStock(item)" class="mr-1">
                                                 <img src="/assets/images/out_stock.png" title="Out of Stock" class="w-5 h-5" alt="Out of Stock" />
                                             </div>
                                         </div>
