@@ -976,18 +976,11 @@ class ReceivedBackorderController extends Controller
             'total_cost' => ($receivedBackorder->unit_cost ?? 0) * $receivedBackorder->quantity
         ];
 
-        // Ensure no null values for required fields, but preserve null for foreign keys
-        $receivedQuantityData = array_map(function($value, $key) {
-            // Don't convert foreign key fields to 'N/A'
-            if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
-                return $value;
-            }
-            // Don't convert numeric fields to 'N/A'
-            if (in_array($key, ['quantity', 'unit_cost', 'total_cost'])) {
-                return $value === null ? 0 : $value;
-            }
-            return $value === null ? 'N/A' : $value;
-        }, $receivedQuantityData, array_keys($receivedQuantityData));
+        // Log the data for debugging
+        logger()->info('ReceivedQuantity data (single)', [
+            'received_backorder_id' => $receivedBackorder->id,
+            'data' => $receivedQuantityData
+        ]);
 
         $receivedQuantity = ReceivedQuantity::create($receivedQuantityData);
     }
@@ -1015,28 +1008,22 @@ class ReceivedBackorderController extends Controller
             'order_id' => $receivedBackorder->order_id,
             'product_id' => $item->product_id,
             'packing_list_id' => $receivedBackorder->packing_list_id,
-            'uom' => $item->uom ?? 'N/A',
-            'barcode' => $item->barcode ?? 'N/A',
-            'batch_number' => $item->batch_number ?? 'N/A',
+            'uom' => $item->uom ?? $receivedBackorder->uom ?? 'N/A',
+            'barcode' => $item->barcode ?? $receivedBackorder->barcode ?? 'N/A',
+            'batch_number' => $item->batch_number ?? $receivedBackorder->batch_number ?? 'N/A',
             'warehouse_id' => $receivedBackorder->warehouse_id,
             'facility_id' => $receivedBackorder->facility_id,
-            'expiry_date' => $item->expire_date ?? now()->addYears(1)->toDateString(),
-            'unit_cost' => $item->unit_cost ?? 0,
-            'total_cost' => ($item->unit_cost ?? 0) * $item->quantity
+            'expiry_date' => $item->expire_date ?? $receivedBackorder->expire_date ?? now()->addYears(1)->toDateString(),
+            'unit_cost' => $item->unit_cost ?? $receivedBackorder->unit_cost ?? 0,
+            'total_cost' => ($item->unit_cost ?? $receivedBackorder->unit_cost ?? 0) * $item->quantity
         ];
 
-        // Ensure no null values for required fields, but preserve null for foreign keys
-        $receivedQuantityData = array_map(function($value, $key) {
-            // Don't convert foreign key fields to 'N/A'
-            if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
-                return $value;
-            }
-            // Don't convert numeric fields to 'N/A'
-            if (in_array($key, ['quantity', 'unit_cost', 'total_cost'])) {
-                return $value === null ? 0 : $value;
-            }
-            return $value === null ? 'N/A' : $value;
-        }, $receivedQuantityData, array_keys($receivedQuantityData));
+        // Log the data for debugging
+        logger()->info('ReceivedQuantity data', [
+            'received_backorder_id' => $receivedBackorder->id,
+            'item_id' => $item->id ?? 'N/A',
+            'data' => $receivedQuantityData
+        ]);
 
         $receivedQuantity = ReceivedQuantity::create($receivedQuantityData);
     }
