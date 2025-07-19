@@ -285,6 +285,11 @@ class ReceivedBackorderController extends Controller
 
             // Handle physical count adjustment type specifically
             if ($receivedBackorder->type === 'physical_count_adjustment') {
+                logger()->info('Processing physical count adjustment received backorder', [
+                    'received_backorder_id' => $receivedBackorder->id,
+                    'warehouse_id' => $receivedBackorder->warehouse_id,
+                    'items_count' => $receivedBackorder->items->count()
+                ]);
                 $this->handlePhysicalCountAdjustmentInventory($receivedBackorder);
             }
             // Determine if this is an order or transfer and handle inventory accordingly
@@ -306,7 +311,8 @@ class ReceivedBackorderController extends Controller
             }
 
             // Update the packing list quantity if packing_list_id exists
-            if ($receivedBackorder->packing_list_id) {
+            // Note: For physical count adjustments, packing list updates are handled in the job
+            if ($receivedBackorder->packing_list_id && $receivedBackorder->type !== 'physical_count_adjustment') {
                 $packingList = PackingListItem::where('packing_list_id', $receivedBackorder->packing_list_id)
                     ->where('product_id', $receivedBackorder->product_id)
                     ->first();
