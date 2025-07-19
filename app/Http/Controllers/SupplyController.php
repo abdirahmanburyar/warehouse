@@ -457,36 +457,59 @@ class SupplyController extends Controller
                 }
             }
             
-            // Create a received back order record (pending approval)
-            $receivedBackorder = \App\Models\ReceivedBackorder::create([
-                'received_by' => auth()->user()->id,
-                'received_at' => now(),
-                'status' => 'pending',
-                'type' => $backOrderType,
-                'warehouse_id' => $packingListItem->warehouse_id ?? null,
-                'facility_id' => $facilityId,
-                'back_order_id' => $request->back_order_id,
-                'packing_list_id' => $backOrder->packing_list_id,
-                'order_id' => $orderId,
-                'transfer_id' => $transferId,
-                'packing_list_number' => $request->packing_list_number,
-                'purchase_order_id' => $request->purchase_order_id,
-            ]);
+            // Check if a received back order already exists for this packing list and back order
+            $receivedBackorder = \App\Models\ReceivedBackorder::where('back_order_id', $request->back_order_id)
+                ->where('packing_list_id', $backOrder->packing_list_id)
+                ->where('status', 'pending')
+                ->first();
             
-            // Create the received backorder item
-            $receivedBackorder->items()->create([
-                'product_id' => $request->product_id,
-                'quantity' => $receivedQuantity,
-                'unit_cost' => $packingListItem->unit_cost ?? 0,
-                'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity,
-                'barcode' => $packingListItem->barcode ?? null,
-                'batch_number' => $packingListItem->batch_number ?? null,
-                'expire_date' => $packingListItem->expire_date ?? null,
-                'uom' => $packingListItem->uom ?? null,
-                'warehouse_id' => $packingListItem->warehouse_id ?? null,
-                'location' => $packingListItem->location ?? null,
-                'note' => "Received from Back Order: {$request->packing_list_number}",
-            ]);
+            if (!$receivedBackorder) {
+                // Create a new received back order record (pending approval) only if one doesn't exist
+                $receivedBackorder = \App\Models\ReceivedBackorder::create([
+                    'received_by' => auth()->user()->id,
+                    'received_at' => now(),
+                    'status' => 'pending',
+                    'type' => $backOrderType,
+                    'warehouse_id' => $packingListItem->warehouse_id ?? null,
+                    'facility_id' => $facilityId,
+                    'back_order_id' => $request->back_order_id,
+                    'packing_list_id' => $backOrder->packing_list_id,
+                    'order_id' => $orderId,
+                    'transfer_id' => $transferId,
+                    'packing_list_number' => $request->packing_list_number,
+                    'purchase_order_id' => $request->purchase_order_id,
+                ]);
+            }
+            
+            // Check if this specific item already exists in the received back order
+            $existingItem = $receivedBackorder->items()
+                ->where('product_id', $request->product_id)
+                ->where('batch_number', $packingListItem->batch_number ?? null)
+                ->where('barcode', $packingListItem->barcode ?? null)
+                ->first();
+            
+            if ($existingItem) {
+                // Update existing item quantity
+                $existingItem->increment('quantity', $receivedQuantity);
+                $existingItem->update([
+                    'total_cost' => ($packingListItem->unit_cost ?? 0) * ($existingItem->quantity + $receivedQuantity),
+                ]);
+            } else {
+                // Create a new received backorder item
+                $receivedBackorder->items()->create([
+                    'product_id' => $request->product_id,
+                    'quantity' => $receivedQuantity,
+                    'unit_cost' => $packingListItem->unit_cost ?? 0,
+                    'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity,
+                    'barcode' => $packingListItem->barcode ?? null,
+                    'batch_number' => $packingListItem->batch_number ?? null,
+                    'expire_date' => $packingListItem->expire_date ?? null,
+                    'uom' => $packingListItem->uom ?? null,
+                    'warehouse_id' => $packingListItem->warehouse_id ?? null,
+                    'location' => $packingListItem->location ?? null,
+                    'note' => "Received from Back Order: {$request->packing_list_number}",
+                ]);
+            }
             
             // Handle the packing list difference record based on remaining quantity
             if ($remainingQuantity <= 0) {
