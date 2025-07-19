@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('back_order_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('packing_list_id')->constrained('packing_lists')->onDelete('cascade');
+            $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
             $table->foreignId('transfer_item_id')->nullable()->constrained('transfer_items')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('order_item_id')->nullable()->constrained('order_items')->onDelete('cascade');
