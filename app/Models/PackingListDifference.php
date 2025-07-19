@@ -46,4 +46,9 @@ class PackingListDifference extends Model
     {
         return $this->belongsTo(InventoryAllocation::class, 'inventory_allocation_id');
     }
+
+    public function packingListItem()
+    {
+        return $this->belongsTo(PackingListItem::class, 'packing_listitem_id');
+    }
 } 
