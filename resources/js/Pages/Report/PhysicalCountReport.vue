@@ -443,8 +443,8 @@ function submitPhysicalCount(){
                 clearInterval(timerInterval);
                 Swal.close();
                 Swal.fire({
-                    title: response.data.success,
-                    text: response.data.message,
+                    title: "Success!",
+                    text: response.data,
                     icon: 'success'
                 })
                 .then(() => {
@@ -517,7 +517,11 @@ function reviewPhysicalCount(){
                     icon: 'success'
                 })
                 .then(() => {
-                    router.get(route('reports.physicalCount'));
+                    router.get(route('reports.physicalCount'), {}, {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['physicalCountReport']
+                    });
                 })
             })
             .catch(error => {
@@ -588,7 +592,11 @@ function approvePhysicalCount(){
                     icon: 'success'
                 })
                 .then(() => {
-                    router.get(route('reports.physicalCount'));
+                    router.get(route('reports.physicalCount'), {}, {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['physicalCountReport']
+                    });
                 })
             })
             .catch(error => {
