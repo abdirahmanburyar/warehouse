@@ -398,21 +398,7 @@ class ReportController extends Controller
                         ->orderBy('created_at', 'desc')
                         ->first();
                     
-                    if ($recentInventoryItem) {
-                        $unitCost = $recentInventoryItem->unit_cost;
-                        logger()->info('Using recent unit cost for product', [
-                            'product_id' => $inventoryItem->product_id,
-                            'original_unit_cost' => $inventoryItem->unit_cost,
-                            'recent_unit_cost' => $unitCost,
-                            'source_inventory_item_id' => $recentInventoryItem->id
-                        ]);
-                    } else {
-                        $unitCost = 0;
-                        logger()->warning('No valid unit cost found for product', [
-                            'product_id' => $inventoryItem->product_id,
-                            'product_name' => $inventoryItem->product->name ?? 'Unknown'
-                        ]);
-                    }
+                    $unitCost = $recentInventoryItem ? $recentInventoryItem->unit_cost : 0;
                 }
                 
                 InventoryAdjustmentItem::create([
@@ -429,16 +415,6 @@ class ReportController extends Controller
                     'total_cost' => $inventoryItem->quantity * $unitCost,
                     'expiry_date' => $inventoryItem->expiry_date,
                     'uom' => $inventoryItem->uom,
-                ]);
-                
-                // Log the adjustment item creation for debugging
-                logger()->info('Created inventory adjustment item', [
-                    'product_id' => $inventoryItem->product_id,
-                    'warehouse_id' => $inventoryItem->warehouse_id,
-                    'quantity' => $inventoryItem->quantity,
-                    'unit_cost' => $unitCost,
-                    'total_cost' => $inventoryItem->quantity * $unitCost,
-                    'batch_number' => $inventoryItem->batch_number ?? 'N/A'
                 ]);
             }
             

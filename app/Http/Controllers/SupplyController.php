@@ -372,13 +372,20 @@ class SupplyController extends Controller
             // Start a database transaction
             DB::beginTransaction();
             
-            // Find the packing list difference record
-            $packingListDiff = PackingListDifference::with('packingListItem')->find($request->id);
+            // Find the packing list difference record and back order
+            $packingListDiff = PackingListDifference::with(['packingListItem', 'backOrder'])->find($request->id);
             $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            $backOrder = BackOrder::with(['packingList', 'order', 'transfer'])->find($request->back_order_id);
             
             if (!$packingListDiff) {
                 return response()->json([
                     'message' => 'Back order item not found'
+                ], 404);
+            }
+            
+            if (!$backOrder) {
+                return response()->json([
+                    'message' => 'Back order not found'
                 ], 404);
             }
             
@@ -389,7 +396,9 @@ class SupplyController extends Controller
             
             // Create a record in BackOrderHistory for the received items
             $backOrderHistory = BackOrderHistory::create([
-                'packing_list_id' => $packingListItem->packing_list_id,
+                'packing_list_id' => $backOrder->packing_list_id,
+                'order_id' => $backOrder->order_id,
+                'transfer_id' => $backOrder->transfer_id,
                 'product_id' => $packingListItem->product_id,
                 'quantity' => $receivedQuantity,
                 'status' => 'Received',
@@ -404,30 +413,60 @@ class SupplyController extends Controller
                 'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
             ]);
             
+            // Determine the back order type and set appropriate relationships
+            $backOrderType = 'backorder'; // Default
+            $orderId = null;
+            $transferId = null;
+            $facilityId = null;
+            
+            if ($backOrder->packing_list_id) {
+                $backOrderType = 'backorder';
+                // Packing list back order - already has packing_list_id
+            } elseif ($backOrder->order_id) {
+                $backOrderType = 'order';
+                $orderId = $backOrder->order_id;
+                // Get facility_id from the order if available
+                if ($backOrder->order && $backOrder->order->facility_id) {
+                    $facilityId = $backOrder->order->facility_id;
+                }
+            } elseif ($backOrder->transfer_id) {
+                $backOrderType = 'transfer';
+                $transferId = $backOrder->transfer_id;
+                // Get facility_id from the transfer if available
+                if ($backOrder->transfer && $backOrder->transfer->to_facility_id) {
+                    $facilityId = $backOrder->transfer->to_facility_id;
+                }
+            }
+            
             // Create a received back order record (pending approval)
-            \App\Models\ReceivedBackorder::create([
-                'product_id' => $request->product_id,
+            $receivedBackorder = \App\Models\ReceivedBackorder::create([
                 'received_by' => auth()->user()->id,
+                'received_at' => now(),
+                'status' => 'pending',
+                'type' => $backOrderType,
+                'warehouse_id' => $packingListItem->warehouse_id ?? null,
+                'facility_id' => $facilityId,
+                'back_order_id' => $request->back_order_id,
+                'packing_list_id' => $backOrder->packing_list_id,
+                'order_id' => $orderId,
+                'transfer_id' => $transferId,
+                'packing_list_number' => $request->packing_list_number,
+                'purchase_order_id' => $request->purchase_order_id,
+            ]);
+            
+            // Create the received backorder item
+            $receivedBackorder->items()->create([
+                'product_id' => $request->product_id,
+                'quantity' => $receivedQuantity,
+                'unit_cost' => $packingListItem->unit_cost ?? 0,
+                'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity,
                 'barcode' => $packingListItem->barcode ?? null,
                 'batch_number' => $packingListItem->batch_number ?? null,
                 'expire_date' => $packingListItem->expire_date ?? null,
                 'uom' => $packingListItem->uom ?? null,
-                'received_at' => now(),
-                'reported_by' => auth()->user()->load('warehouse')->warehouse->name ?? 'Unknown Warehouse',
-                'quantity' => $receivedQuantity,
-                'status' => 'pending',
-                'type' => $request->status ? strtolower($request->status) : 'backorder',
-                'unit_cost' => $packingListItem->unit_cost ?? 0,
-                'total_cost' => $packingListItem->unit_cost * $request->quantity ?? 0,
                 'warehouse_id' => $packingListItem->warehouse_id ?? null,
+                'location' => $packingListItem->location ?? null,
                 'note' => "Received from Back Order: {$request->packing_list_number}",
-                'back_order_id' => $request->back_order_id,
-                'packing_list_id' => $request->packing_list_id,
-                'packing_list_number' => $request->packing_list_number,
-                'purchase_order_id' => $request->purchase_order_id,
-                'purchase_order_number' => null, // Not provided in request
-                'supplier_id' => null, // Not provided in request
-                'supplier_name' => null, // Not provided in request
             ]);
             
             // Handle the packing list difference record based on remaining quantity
