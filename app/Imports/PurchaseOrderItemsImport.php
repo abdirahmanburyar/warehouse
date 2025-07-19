@@ -51,6 +51,18 @@ class PurchaseOrderItemsImport implements
     public function model(array $row)
     {
         try {
+            // Debug: Log the row data to see what columns are present
+            Log::info('Processing row in PurchaseOrderItemsImport', [
+                'row_keys' => array_keys($row),
+                'row_data' => $row
+            ]);
+
+            // Check if there's an ID column in the Excel that we should ignore
+            if (isset($row['id'])) {
+                Log::warning('Found ID column in Excel, ignoring it', ['id_value' => $row['id']]);
+                unset($row['id']);
+            }
+
             if (empty($row['item_description']) || empty($row['quantity']) || empty($row['unit_cost']) || empty($row['uom'])) {
                 $this->skippedCount++;
                 return null;
@@ -104,15 +116,35 @@ class PurchaseOrderItemsImport implements
             // Update progress in cache
             Cache::increment($this->importId);
 
-            // Create PurchaseOrderItem
-            return PurchaseOrderItem::create([
+            // Create PurchaseOrderItem (explicitly exclude ID to let database auto-increment)
+            $poiData = [
                 'purchase_order_id' => $this->purchaseOrderId,
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_cost' => $unit_cost,
                 'total_cost' => $total_cost,
                 'uom' => $uom
-            ]);
+            ];
+
+            // Ensure we're not accidentally including an ID field
+            unset($poiData['id']);
+
+            // Check if this product already exists in this purchase order
+            $existingItem = PurchaseOrderItem::where('purchase_order_id', $this->purchaseOrderId)
+                ->where('product_id', $product->id)
+                ->first();
+
+            if ($existingItem) {
+                Log::warning('Duplicate product found in purchase order, skipping', [
+                    'purchase_order_id' => $this->purchaseOrderId,
+                    'product_id' => $product->id,
+                    'product_name' => $itemName
+                ]);
+                $this->skippedCount++;
+                return null;
+            }
+
+            return PurchaseOrderItem::create($poiData);
 
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
