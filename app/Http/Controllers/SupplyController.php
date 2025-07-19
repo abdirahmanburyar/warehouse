@@ -2226,10 +2226,14 @@ class SupplyController extends Controller
             'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity
         ];
 
-        // Ensure no null values for required fields
-        $receivedQuantityData = array_map(function($value) {
+        // Ensure no null values for required fields, but preserve null for foreign keys
+        $receivedQuantityData = array_map(function($value, $key) {
+            // Don't convert foreign key fields to 'N/A'
+            if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
+                return $value;
+            }
             return $value === null ? 'N/A' : $value;
-        }, $receivedQuantityData);
+        }, $receivedQuantityData, array_keys($receivedQuantityData));
 
         ReceivedQuantity::create($receivedQuantityData);
     }
@@ -2446,10 +2450,14 @@ class SupplyController extends Controller
             'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity
         ];
 
-        // Ensure no null values for required fields
-        $receivedQuantityData = array_map(function($value) {
+        // Ensure no null values for required fields, but preserve null for foreign keys
+        $receivedQuantityData = array_map(function($value, $key) {
+            // Don't convert foreign key fields to 'N/A'
+            if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
+                return $value;
+            }
             return $value === null ? 'N/A' : $value;
-        }, $receivedQuantityData);
+        }, $receivedQuantityData, array_keys($receivedQuantityData));
 
         ReceivedQuantity::create($receivedQuantityData);
     }
