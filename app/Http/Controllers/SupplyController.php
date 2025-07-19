@@ -99,9 +99,6 @@ class SupplyController extends Controller
 
         $purchaseOrders->setPath(url()->current()); // Force Laravel to use full URLs
 
-        logger()->info($purchaseOrders);
-
-
         return Inertia::render('Supplies/Index', [
             'purchaseOrders' => PurchaseOrderResource::collection($purchaseOrders),
             'filters' => $request->only('search', 'page','per_page', 'supplier','status'),
@@ -1532,8 +1529,6 @@ class SupplyController extends Controller
     public function showBackOrder(Request $request){
         $query = BackOrder::query();
 
-        logger()->info($request->all());
-
         if($request->filled('search')){
             $query->whereHas('packingList', function($q) use ($request){
                 $q->where('packing_list_number', 'like', '%' . $request->search . '%')
@@ -2114,9 +2109,6 @@ class SupplyController extends Controller
             $backOrder = $receivedBackorder->backOrder;
             
             if (!$backOrder) {
-                logger()->warning('No back order found for received backorder', [
-                    'received_backorder_id' => $receivedBackorder->id
-                ]);
                 return;
             }
 
@@ -2140,13 +2132,6 @@ class SupplyController extends Controller
                     }
                 }
             }
-
-            logger()->info('Inventory updated successfully for received backorder', [
-                'received_backorder_id' => $receivedBackorder->id,
-                'back_order_id' => $backOrder->id,
-                'type' => $receivedBackorder->type,
-                'quantity' => $receivedQuantity
-            ]);
 
         } catch (\Exception $e) {
             logger()->error('Error updating inventory for received backorder', [
