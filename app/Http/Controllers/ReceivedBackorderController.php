@@ -854,15 +854,64 @@ class ReceivedBackorderController extends Controller
      */
     private function createFacilityInventoryMovement($receivedBackorder, $type)
     {
-        // Use facility_id directly from receivedBackorder
-        $facilityId = $receivedBackorder->facility_id;
-        $orderId = $receivedBackorder->order_id;
-        $productId = $receivedBackorder->product_id;
+        try {
+            // Use facility_id directly from receivedBackorder
+            $facilityId = $receivedBackorder->facility_id;
+            $orderId = $receivedBackorder->order_id;
+
+            // Load the items for this received backorder
+            $items = $receivedBackorder->items;
+            
+            if ($items->isEmpty()) {
+                // Handle single product from receivedBackorder
+                $this->createSingleFacilityInventoryMovement($receivedBackorder, $type, $facilityId, $orderId);
+            } else {
+                // Process each item
+                foreach ($items as $item) {
+                    $this->createSingleFacilityInventoryMovement($receivedBackorder, $type, $facilityId, $orderId, $item);
+                }
+            }
+
+            logger()->info('Facility inventory movement records created successfully', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'order_id' => $orderId,
+                'facility_id' => $facilityId,
+                'items_processed' => $items->count()
+            ]);
+
+        } catch (\Exception $e) {
+            logger()->error('Error in createFacilityInventoryMovement', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Create single facility inventory movement record
+     */
+    private function createSingleFacilityInventoryMovement($receivedBackorder, $type, $facilityId, $orderId, $item = null)
+    {
+        // Use item data if available, otherwise use receivedBackorder data
+        $productId = $item ? $item->product_id : $receivedBackorder->product_id;
+        $quantity = $item ? $item->quantity : $receivedBackorder->quantity;
+        $batchNumber = $item ? $item->batch_number : $receivedBackorder->batch_number;
+        $expiryDate = $item ? $item->expire_date : $receivedBackorder->expire_date;
+        $barcode = $item ? $item->barcode : $receivedBackorder->barcode;
+        $uom = $item ? $item->uom : $receivedBackorder->uom;
+
+        // Validate product_id is not null
+        if (!$productId) {
+            throw new \Exception('Product ID is required for facility inventory movement');
+        }
 
         // Find the order item for this product/order
         $orderItem = OrderItem::where('order_id', $orderId)
             ->where('product_id', $productId)
             ->first();
+        
         if (!$orderItem) {
             throw new \Exception('OrderItem not found for order_id ' . $orderId . ' and product_id ' . $productId);
         }
@@ -874,17 +923,24 @@ class ReceivedBackorderController extends Controller
             'source_type' => $type,
             'source_id' => $orderId,
             'source_item_id' => $orderItem->id,
-            'facility_received_quantity' => $receivedBackorder->quantity,
-            'batch_number' => $receivedBackorder->batch_number,
-            'expiry_date' => $receivedBackorder->expire_date,
-            'barcode' => $receivedBackorder->barcode,
-            'uom' => $receivedBackorder->uom,
+            'facility_received_quantity' => $quantity,
+            'batch_number' => $batchNumber,
+            'expiry_date' => $expiryDate,
+            'barcode' => $barcode,
+            'uom' => $uom,
             'movement_date' => now(),
             'reference_number' => $receivedBackorder->received_backorder_number,
             'notes' => 'Received from backorder approval',
         ];
 
         $facilityMovement = FacilityInventoryMovement::recordFacilityReceived($movementData);
+
+        logger()->info('Single facility inventory movement record created', [
+            'received_backorder_id' => $receivedBackorder->id,
+            'product_id' => $productId,
+            'order_item_id' => $orderItem->id,
+            'quantity' => $quantity
+        ]);
     }
 
     /**
