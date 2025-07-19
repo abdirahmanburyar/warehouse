@@ -2205,21 +2205,33 @@ class SupplyController extends Controller
             ]);
         }
 
-        // Create received quantity record
-        ReceivedQuantity::create([
+        // Validate required fields before creating received quantity record
+        if (!$receivedQuantity || $receivedQuantity <= 0) {
+            throw new \Exception('Invalid quantity for received quantity record');
+        }
+
+        // Create received quantity record with proper validation
+        $receivedQuantityData = [
             'quantity' => $receivedQuantity,
             'received_by' => auth()->id(),
             'received_at' => now(),
             'packing_list_id' => $receivedBackorder->packing_list_id,
             'product_id' => $productId,
-            'uom' => $packingListItem->uom,
-            'barcode' => $packingListItem->barcode,
-            'batch_number' => $packingListItem->batch_number,
+            'uom' => $packingListItem->uom ?? 'N/A',
+            'barcode' => $packingListItem->barcode ?? 'N/A',
+            'batch_number' => $packingListItem->batch_number ?? 'N/A',
             'warehouse_id' => $warehouseId,
-            'expiry_date' => $packingListItem->expire_date,
-            'unit_cost' => $packingListItem->unit_cost,
-            'total_cost' => $packingListItem->unit_cost * $receivedQuantity
-        ]);
+            'expiry_date' => $packingListItem->expire_date ?? now()->addYears(1)->toDateString(),
+            'unit_cost' => $packingListItem->unit_cost ?? 0,
+            'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity
+        ];
+
+        // Ensure no null values for required fields
+        $receivedQuantityData = array_map(function($value) {
+            return $value === null ? 'N/A' : $value;
+        }, $receivedQuantityData);
+
+        ReceivedQuantity::create($receivedQuantityData);
     }
 
     /**
@@ -2413,20 +2425,32 @@ class SupplyController extends Controller
             ]);
         }
 
-        // Create received quantity record
-        ReceivedQuantity::create([
+        // Validate required fields before creating received quantity record
+        if (!$receivedQuantity || $receivedQuantity <= 0) {
+            throw new \Exception('Invalid quantity for received quantity record');
+        }
+
+        // Create received quantity record with proper validation
+        $receivedQuantityData = [
             'quantity' => $receivedQuantity,
             'received_by' => auth()->id(),
             'received_at' => now(),
             'transfer_id' => $receivedBackorder->transfer_id,
             'product_id' => $productId,
-            'uom' => $packingListItem->uom,
-            'barcode' => $packingListItem->barcode,
-            'batch_number' => $packingListItem->batch_number,
+            'uom' => $packingListItem->uom ?? 'N/A',
+            'barcode' => $packingListItem->barcode ?? 'N/A',
+            'batch_number' => $packingListItem->batch_number ?? 'N/A',
             'warehouse_id' => $warehouseId,
-            'expiry_date' => $packingListItem->expire_date,
-            'unit_cost' => $packingListItem->unit_cost,
-            'total_cost' => $packingListItem->unit_cost * $receivedQuantity
-        ]);
+            'expiry_date' => $packingListItem->expire_date ?? now()->addYears(1)->toDateString(),
+            'unit_cost' => $packingListItem->unit_cost ?? 0,
+            'total_cost' => ($packingListItem->unit_cost ?? 0) * $receivedQuantity
+        ];
+
+        // Ensure no null values for required fields
+        $receivedQuantityData = array_map(function($value) {
+            return $value === null ? 'N/A' : $value;
+        }, $receivedQuantityData);
+
+        ReceivedQuantity::create($receivedQuantityData);
     }
 }
