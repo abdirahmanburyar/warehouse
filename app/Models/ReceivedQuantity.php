@@ -21,9 +21,7 @@ class ReceivedQuantity extends Model
         'received_at',
         'product_id',
         'transfer_id',
-        'order_id',
         'packing_list_id',
-        'facility_id',
         'expiry_date',
         'uom',
         'warehouse_id',
@@ -69,21 +67,5 @@ class ReceivedQuantity extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
-    }
-
-    /**
-     * Get the order associated with the received quantity.
-     */
-    public function order(): BelongsTo
-    {
-        return $this->belongsTo(Order::class);
-    }
-
-    /**
-     * Get the facility associated with the received quantity.
-     */
-    public function facility(): BelongsTo
-    {
-        return $this->belongsTo(Facility::class);
     }
 }
