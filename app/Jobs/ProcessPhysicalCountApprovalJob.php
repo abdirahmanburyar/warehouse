@@ -113,7 +113,9 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'expire_date' => $adjustmentItem->expiry_date,
                 'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
                 'uom' => $adjustmentItem->uom,
-                'location' => null,
+                'location' => $adjustmentItem->location,
+                'unit_cost' => $adjustmentItem->unit_cost,
+                'total_cost' => $adjustmentItem->quantity * $adjustmentItem->unit_cost,
                 'note' => $adjustmentItem->remarks
             ]);
             

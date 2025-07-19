@@ -376,8 +376,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/received-backorder/create', [ReceivedBackorderController::class, 'create'])->name('supplies.received-backorder.create');
         Route::post('/received-backorder', [ReceivedBackorderController::class, 'store'])->name('supplies.received-backorder.store');
         Route::get('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'show'])->name('supplies.received-backorder.show');
-        Route::get('/received-backorder/{receivedBackorder}/edit', [ReceivedBackorderController::class, 'edit'])->name('supplies.received-backorder.edit');
-        Route::put('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'update'])->name('supplies.received-backorder.update');
+
+
         Route::delete('/received-backorder/{receivedBackorder}', [ReceivedBackorderController::class, 'destroy'])->name('supplies.received-backorder.destroy');
         
         // Received Back Order Action Routes

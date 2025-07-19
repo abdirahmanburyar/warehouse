@@ -19,6 +19,7 @@ class ReceivedBackorderItem extends Model
         'barcode',
         'expire_date',
         'batch_number',
+        'warehouse_id',
         'uom',
         'location',
         'note'

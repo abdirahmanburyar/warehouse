@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->date('expire_date')->nullable();
             $table->string('batch_number')->nullable();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
             $table->string('uom')->nullable();
             $table->string('location')->nullable();
             $table->text('note')->nullable();

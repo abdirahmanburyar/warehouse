@@ -385,6 +385,9 @@ class ReportController extends Controller
                     'physical_count' => 0, // Default to 0, will be updated during physical count
                     'batch_number' => $inventoryItem->batch_number ?? 'N/A',
                     'barcode' => $inventoryItem->barcode,
+                    'location' => $inventoryItem->location,
+                    'unit_cost' => $inventoryItem->unit_cost,
+                    'total_cost' => $inventoryItem->quantity * $inventoryItem->unit_cost,
                     'expiry_date' => $inventoryItem->expiry_date,
                     'uom' => $inventoryItem->uom,
                 ]);

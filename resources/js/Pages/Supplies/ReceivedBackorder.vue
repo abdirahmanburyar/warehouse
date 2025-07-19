@@ -10,6 +10,7 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Link } from '@inertiajs/vue3';
 
 const toast = useToast();
 
@@ -196,6 +197,14 @@ const warehouse = ref(props.filters?.warehouse || "");
 const facility = ref(props.filters?.facility || "");
 const status = ref(props.filters?.status || "");
 
+const warehouseOptions = computed(() => {
+    const options = props.warehouses?.map(warehouse => ({
+        value: warehouse.name,
+        label: warehouse.name
+    })) || [];
+    return [{ value: "", label: 'All Warehouses' }, ...options];
+});
+
 const facilityOptions = computed(() => {
     const options = props.facilities?.map(name => ({
         value: name,
@@ -325,117 +334,81 @@ onUnmounted(() => {
     <Head title="Received Back Orders" />
     <AuthenticatedLayout title="Received Back Orders"
         description="Manage and track received back orders" img="/assets/images/supplies.png">
+        
         <!-- Header Section -->
-        <div class="">
-            <div class="flex items-center justify-between mb-4">
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
                 <div>
-                    <div class="flex items-center space-x-3 mb-1">
-                        <!-- Received Back Order Icon -->
-                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <h1 class="text-2xl font-bold text-gray-900">Received Back Orders</h1>
-                    </div>
-                    <p class="text-gray-600 text-sm">Manage and track all received back order activities</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-3 py-1.5 rounded-lg shadow-sm">
-                        <div class="text-xs font-medium">Total Records</div>
-                        <div class="text-lg font-bold">{{ props.receivedBackorders.total || 0 }}</div>
-                    </div>
+                    <h2 class="font-bold text-2xl text-gray-900 leading-tight">Received Back Orders</h2>
+                    <p class="text-gray-600 mt-1">Manage and track received back orders with comprehensive details</p>
                 </div>
             </div>
+        </div>
 
-            <!-- Search and Filter Section -->
-            <div class="bg-white p-4 mb-4">
-                <!-- First Row: Search, Warehouse, Facility, Status -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <!-- Search -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Search Records</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-                            <input 
-                                type="text" 
-                                v-model="search"
-                                placeholder="Search by ID, item name, barcode, batch number..."
-                                class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                            >
-                        </div>
-                    </div>
-                    
-                    <!-- Warehouse Filter -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
-                        <Multiselect
-                            v-model="warehouse"
-                            :options="props.warehouses"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :multiple="false"
-                            placeholder="Filter by Warehouse"
-                            :show-labels="false"
-                            class="text-sm text-black"
-                        />
-                    </div>
-                    
-                    <!-- Facility Filter -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
-                        <Multiselect
-                            v-model="facility"
-                            :options="facilityOptions"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :multiple="false"
-                            :show-labels="false"
-                            placeholder="Filter by Facility"
-                            label="label"
-                            track-by="value"
-                            class="text-sm text-black"
-                        />
-                    </div>
-                    
-                    <!-- Status Filter -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <Multiselect
-                            v-model="status"
-                            :options="statusOptions"
-                            :searchable="true"
-                            :allow-empty="true"
-                            :multiple="false"
-                            :show-labels="false"
-                            placeholder="Filter by Status"
-                            label="label"
-                            track-by="value"
-                            class="text-sm text-black"
-                        />
-                    </div>
+        <!-- Filters Section -->
+        <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <!-- Search Filter -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input 
+                        v-model="search" 
+                        type="text" 
+                        placeholder="Search by RB number, back order number..."
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
                 </div>
                 
-                <!-- Second Row: Per Page Filter (Right Aligned) -->
-                <div class="flex justify-end">
-                    <div class="w-48">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
-                        <select 
-                            v-model="per_page" 
-                            @change="props.filters.page = 1" 
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="5">5 per page</option>
-                            <option value="10">10 per page</option>
-                            <option value="25">25 per page</option>
-                            <option value="50">50 per page</option>
-                            <option value="100">100 per page</option>
-                        </select>
-                    </div>
+                <!-- Warehouse Filter -->
+                <div class="lg:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                    <Multiselect
+                        v-model="warehouse"
+                        :options="warehouseOptions"
+                        :searchable="true"
+                        :allow-empty="true"
+                        :multiple="false"
+                        :show-labels="false"
+                        placeholder="Filter by Warehouse"
+                        label="label"
+                        track-by="value"
+                        class="text-sm text-black"
+                    />
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="lg:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <Multiselect
+                        v-model="status"
+                        :options="statusOptions"
+                        :searchable="true"
+                        :allow-empty="true"
+                        :multiple="false"
+                        :show-labels="false"
+                        placeholder="Filter by Status"
+                        label="label"
+                        track-by="value"
+                        class="text-sm text-black"
+                    />
+                </div>
+            </div>
+            
+            <!-- Second Row: Per Page Filter (Right Aligned) -->
+            <div class="flex justify-end mt-4">
+                <div class="w-48">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
+                    <select 
+                        v-model="per_page" 
+                        @change="props.filters.page = 1" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="5">5 per page</option>
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -470,16 +443,16 @@ onUnmounted(() => {
                                 RB ID
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Item
+                                Details
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Quantity
+                                Items Count
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Batch Number
+                                Received Date
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
-                                Expiry Date
+                                Type
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 capitalize tracking-wider border-r border-gray-300">
                                 Status
@@ -493,278 +466,187 @@ onUnmounted(() => {
                         </tr>
                     </thead>
                     <tbody class="bg-white">
-                        <template v-for="(group, groupKey) in groupedReceivedBackorders" :key="groupKey">
-                            <!-- Group Header Row -->
-                            <tr class="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
-                                <td colspan="8" class="px-4 py-3">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            <button 
-                                                @click="toggleGroup(groupKey)"
-                                                class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-150"
-                                            >
-                                                <svg 
-                                                    class="w-4 h-4 text-green-600 transition-transform duration-150" 
-                                                    :class="{ 'rotate-90': expandedGroups.has(groupKey) }"
-                                                    fill="none" 
-                                                    stroke="currentColor" 
-                                                    viewBox="0 0 24 24"
+                        <tr 
+                            v-for="(receivedBackorder, index) in props.receivedBackorders.data" 
+                            :key="receivedBackorder.id"
+                            class="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-300"
+                        >
+                            <!-- RB ID -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="text-sm font-bold text-gray-900">
+                                    #{{ receivedBackorder.received_backorder_number }}
+                                </div>
+                            </td>
+
+                            <!-- Details -->
+                            <td class="px-4 py-3 border-r border-gray-300">
+                                <div class="space-y-1">
+                                    <div class="text-sm font-semibold text-gray-900 leading-tight">
+                                        {{ receivedBackorder.back_order ? receivedBackorder.back_order.back_order_number : 'Direct Received' }}
+                                    </div>
+                                    <div class="space-y-0.5 text-xs text-gray-600">
+                                        <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse.name || 'N/A' }}</div>
+                                        <div v-if="receivedBackorder.facility"><span class="font-medium">Facility:</span> {{ receivedBackorder.facility.name || 'N/A' }}</div>
+                                        <div v-if="receivedBackorder.note"><span class="font-medium">Note:</span> {{ receivedBackorder.note }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Items Count -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="text-sm">
+                                    <span class="font-semibold text-gray-900">{{ receivedBackorder.items_count || 0 }}</span>
+                                    <span class="text-gray-500 ml-1">items</span>
+                                </div>
+                            </td>
+
+                            <!-- Received Date -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
+                                </div>
+                            </td>
+
+                            <!-- Type -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ receivedBackorder.type || 'N/A' }}
+                                </div>
+                            </td>
+
+                            <!-- Status Column -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="flex items-center">
+                                    <span 
+                                        :class="getStatusBadge(receivedBackorder).class"
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                                    >
+                                        <img 
+                                            v-if="getStatusBadge(receivedBackorder).icon && getStatusBadge(receivedBackorder).icon.startsWith('/')" 
+                                            :src="getStatusBadge(receivedBackorder).icon" 
+                                            class="w-3 h-3 mr-1"
+                                            alt="Status"
+                                        />
+                                        <span v-else class="mr-1">{{ getStatusBadge(receivedBackorder).icon }}</span>
+                                        {{ getStatusBadge(receivedBackorder).text }}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Attachments Column -->
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
+                                <div class="relative">
+                                    <button 
+                                        @click="toggleDropdown(receivedBackorder.id)"
+                                        class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+                                    >
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    <!-- Dropdown -->
+                                    <div 
+                                        v-if="activeDropdown === receivedBackorder.id"
+                                        class="attachments-dropdown absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                                    >
+                                        <div class="p-3">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Attachments</h4>
+                                            <div v-if="parseAttachments(receivedBackorder.attachments).length > 0" class="space-y-2">
+                                                <div 
+                                                    v-for="(file, fileIndex) in parseAttachments(receivedBackorder.attachments)" 
+                                                    :key="fileIndex"
+                                                    class="flex items-center justify-between p-2 bg-gray-50 rounded"
                                                 >
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                </svg>
-                                            </button>
-                                            
-                                            <div class="flex items-center space-x-2">
-                                                <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-blue-600">
-                                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                    </svg>
-                                                </div>
-                                                
-                                                <div>
-                                                    <h3 class="text-sm font-bold text-gray-900">
-                                                        {{ groupKey === 'no_back_order' ? 'Direct Received Back Orders' : group.back_order?.back_order_number || 'Unknown Back Order' }}
-                                                    </h3>
-                                                    <p class="text-xs text-gray-600">
-                                                        {{ group.receivedBackorders.length }} received back order{{ group.receivedBackorders.length > 1 ? 's' : '' }}
-                                                        <span v-if="group.back_order && groupKey !== 'no_back_order'" class="ml-2">
-                                                            • {{ group.back_order.reported_by }}
-                                                            • {{ moment(group.back_order.back_order_date).format('DD/MM/YYYY') }}
-                                                        </span>
-                                                    </p>
+                                                    <div class="flex items-center space-x-2">
+                                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                        </svg>
+                                                        <span class="text-xs text-gray-700 truncate">{{ file.name }}</span>
+                                                    </div>
+                                                    <a 
+                                                        :href="file.url" 
+                                                        target="_blank"
+                                                        class="text-blue-600 hover:text-blue-800 text-xs"
+                                                    >
+                                                        View
+                                                    </a>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="flex items-center space-x-2">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                {{ group.receivedBackorders.length }} items
-                                            </span>
+                                            <div v-else class="text-xs text-gray-500">No attachments</div>
                                         </div>
                                     </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- Group Items -->
-                            <template v-if="expandedGroups.has(groupKey)">
-                                <tr 
-                                    v-for="(receivedBackorder, index) in group.receivedBackorders" 
-                                    :key="receivedBackorder.id"
-                                    class="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-300"
-                                >
-                                    <!-- RB ID -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm font-bold text-gray-900">
-                                            #{{ receivedBackorder.received_backorder_number }}
-                                        </div>
-                                    </td>
+                                </div>
+                            </td>
 
-                                    <!-- Product Information -->
-                                    <td class="px-4 py-3 border-r border-gray-300">
-                                        <div class="space-y-1">
-                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
-                                                <div class="text-sm font-semibold text-gray-900 leading-tight">
-                                                    {{ item.product ? item.product.name : 'N/A' }}
-                                                </div>
-                                                <div class="space-y-0.5 text-xs text-gray-600">
-                                                    <div><span class="font-medium">Barcode:</span> {{ item.barcode || 'N/A' }}</div>
-                                                    <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse.name || 'N/A' }}</div>
-                                                    <div v-if="item.location"><span class="font-medium">Location:</span> {{ item.location }}</div>
-                                                    <div class="text-gray-500">
-                                                        {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div v-else class="text-sm text-gray-500">No items</div>
-                                        </div>
-                                    </td>
+                            <!-- Actions Column -->
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
+                                    <!-- View Details Button -->
+                                    <Link 
+                                        :href="route('supplies.received-backorder.show', receivedBackorder.id)"
+                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
+                                    >
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        View
+                                    </Link>
 
-                                    <!-- Quantity -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm">
-                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
-                                                <span class="font-semibold text-gray-900">{{ item.quantity || 'N/A' }}</span>
-                                                <span class="text-gray-500 ml-1">{{ item.uom || '' }}</span>
-                                            </div>
-                                            <div v-else class="text-sm text-gray-500">N/A</div>
-                                        </div>
-                                    </td>
+                                    <!-- Review Button -->
+                                    <button 
+                                        v-if="receivedBackorder.status === 'pending' && $page.props.auth.can.received_backorder_review"
+                                        @click="reviewReceivedBackorder(receivedBackorder.id, index)"
+                                        :disabled="isReviewing[index]"
+                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150 disabled:opacity-50"
+                                    >
+                                        <svg v-if="isReviewing[index]" class="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Review
+                                    </button>
 
-                                    <!-- Batch Number -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
-                                                {{ item.batch_number || 'N/A' }}
-                                            </div>
-                                            <div v-else class="text-sm text-gray-500">N/A</div>
-                                        </div>
-                                    </td>
+                                    <!-- Approve Button -->
+                                    <button 
+                                        v-if="receivedBackorder.status === 'reviewed' && $page.props.auth.can.received_backorder_approve"
+                                        @click="approveReceivedBackorder(receivedBackorder.id, index)"
+                                        :disabled="isApproving[index]"
+                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150 disabled:opacity-50"
+                                    >
+                                        <svg v-if="isApproving[index]" class="animate-spin -ml-1 mr-1 h-3 w-3 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Approve
+                                    </button>
 
-                                    <!-- Expiry Date -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
-                                                {{ item.expire_date ? moment(item.expire_date).format('DD/MM/YYYY') : 'N/A' }}
-                                            </div>
-                                            <div v-else class="text-sm text-gray-500">N/A</div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Status Column -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <span :class="getStatusBadge(receivedBackorder).class" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border">
-                                            <img 
-                                                v-if="getStatusBadge(receivedBackorder).icon.startsWith('/assets')" 
-                                                :src="getStatusBadge(receivedBackorder).icon" 
-                                                :alt="getStatusBadge(receivedBackorder).text"
-                                                class="w-3 h-3 mr-1"
-                                            >
-                                            <span v-else class="mr-1">{{ getStatusBadge(receivedBackorder).icon }}</span>
-                                            {{ getStatusBadge(receivedBackorder).text }}
-                                        </span>
-                                    </td>
-
-                                    <!-- Attachments Column -->
-                                    <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
-                                        <div class="relative" v-if="parseAttachments(receivedBackorder.attachments).length > 0">
-                                            <button 
-                                                @click.stop="toggleDropdown(receivedBackorder.id)"
-                                                class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                            >
-                                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                                                </svg>
-                                                {{ parseAttachments(receivedBackorder.attachments).length }} file{{ parseAttachments(receivedBackorder.attachments).length > 1 ? 's' : '' }}
-                                                <svg class="w-4 h-4 ml-1 text-gray-500 transition-transform duration-150" :class="{ 'rotate-180': activeDropdown === receivedBackorder.id }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </button>
-                                            
-                                            <!-- Dropdown Menu -->
-                                            <div 
-                                                v-if="activeDropdown === receivedBackorder.id"
-                                                class="attachments-dropdown absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-                                            >
-                                                <div class="p-3 border-b border-gray-200">
-                                                    <h3 class="text-sm font-semibold text-gray-900">Attachments</h3>
-                                                    <p class="text-xs text-gray-500 mt-1">Click to view or download files</p>
-                                                </div>
-                                                <div class="max-h-60">
-                                                    <div 
-                                                        v-for="(attachment, index) in parseAttachments(receivedBackorder.attachments)" 
-                                                        :key="index"
-                                                        class="p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-150"
-                                                    >
-                                                        <div class="flex items-center justify-between">
-                                                            <div class="flex items-center space-x-3 flex-1 min-w-0">
-                                                                <!-- File Icon -->
-                                                                <div class="flex-shrink-0">
-                                                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                
-                                                                <!-- File Info -->
-                                                                <div class="flex-1 min-w-0">
-                                                                    <p class="text-sm font-medium text-gray-900 truncate" :title="attachment.name">
-                                                                        {{ attachment.name }}
-                                                                    </p>
-                                                                    <p class="text-xs text-gray-500">
-                                                                        {{ attachment.url.split('/').pop() }}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- Action Button -->
-                                                            <div class="flex items-center flex-shrink-0">
-                                                                <a 
-                                                                    :href="attachment.url" 
-                                                                    target="_blank"
-                                                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors duration-150"
-                                                                    title="Open file"
-                                                                >
-                                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                                                    </svg>
-                                                                    Open
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- No attachments -->
-                                        <div v-else class="text-center">
-                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded-md">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                                No files
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td class="px-4 py-3 whitespace-nowrap">
-                                        <div v-if="receivedBackorder.approved_at" class="text-center">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Closed
-                                            </span>
-                                        </div>
-
-                                        <div v-else class="flex flex-col space-y-2">
-                                            <button 
-                                                v-if="!receivedBackorder.reviewed_at && $page.props.auth.can.received_backorder_review" 
-                                                @click="reviewReceivedBackorder(receivedBackorder.id, index)"
-                                                :disabled="isReviewing[index]"
-                                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
-                                            >
-                                                <svg v-if="isReviewing[index]" class="animate-spin -ml-1 mr-2 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                {{ isReviewing[index] ? 'Processing...' : 'Review' }}
-                                            </button>
-
-                                            <!-- Show approve/reject buttons after review -->
-                                            <template v-if="receivedBackorder.reviewed_at && !receivedBackorder.approved_at">
-                                                <div class="flex space-x-2">
-                                                    <button 
-                                                        @click="approveReceivedBackorder(receivedBackorder.id, index)" 
-                                                        :disabled="isApproving[index]"
-                                                        v-if="$page.props.auth.can.received_backorder_approve"
-                                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-150"
-                                                    >
-                                                        <svg v-if="isApproving[index]" class="animate-spin -ml-1 mr-2 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        {{ isApproving[index] ? 'Approving...' : (receivedBackorder.rejected_at ? 'Re-approve' : 'Approve') }}
-                                                    </button>
-                                                    <button 
-                                                        v-if="!receivedBackorder.rejected_at && $page.props.auth.can.received_backorder_approve" 
-                                                        @click="rejectReceivedBackorder(receivedBackorder.id, index)"
-                                                        :disabled="isRejecting[index]"
-                                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-                                                    >
-                                                        <svg v-if="isRejecting[index]" class="animate-spin -ml-1 mr-2 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        {{ isRejecting[index] ? 'Rejecting...' : 'Reject' }}
-                                                    </button>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-                        </template>
+                                    <!-- Reject Button -->
+                                    <button 
+                                        v-if="receivedBackorder.status === 'reviewed' && $page.props.auth.can.received_backorder_approve"
+                                        @click="rejectReceivedBackorder(receivedBackorder.id, index)"
+                                        :disabled="isRejecting[index]"
+                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150 disabled:opacity-50"
+                                    >
+                                        <svg v-if="isRejecting[index]" class="animate-spin -ml-1 mr-1 h-3 w-3 text-red-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        Reject
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

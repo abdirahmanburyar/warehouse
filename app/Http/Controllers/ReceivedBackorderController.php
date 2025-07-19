@@ -32,19 +32,12 @@ class ReceivedBackorderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ReceivedBackorder::with(['items.product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy', 'backOrder', 'warehouse', 'facility']);
+        $query = ReceivedBackorder::with(['receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy', 'backOrder', 'warehouse', 'facility']);
 
         // Apply filters
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('received_backorder_number', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('items', function ($itemQuery) use ($request) {
-                      $itemQuery->where('barcode', 'like', '%' . $request->search . '%')
-                               ->orWhere('batch_number', 'like', '%' . $request->search . '%')
-                               ->orWhereHas('product', function ($productQuery) use ($request) {
-                                   $productQuery->where('name', 'like', '%' . $request->search . '%');
-                               });
-                  })
                   ->orWhereHas('backOrder', function ($backOrderQuery) use ($request) {
                       $backOrderQuery->where('back_order_number', 'like', '%' . $request->search . '%');
                   });
@@ -200,90 +193,25 @@ class ReceivedBackorderController extends Controller
      */
     public function show(ReceivedBackorder $receivedBackorder)
     {
-        $receivedBackorder->load(['product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy']);
+        $receivedBackorder->load([
+            'items.product',
+            'receivedBy',
+            'reviewedBy',
+            'approvedBy',
+            'rejectedBy',
+            'backOrder',
+            'warehouse',
+            'facility'
+        ]);
 
-        return Inertia::render('Supplies/ReceivedBackorder/Show', [
-            'receivedBackorder' => new ReceivedBackorderResource($receivedBackorder),
+        return inertia('Supplies/ReceivedBackorder/Show', [
+            'receivedBackorder' => $receivedBackorder,
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ReceivedBackorder $receivedBackorder)
-    {
-        $products = Product::select('id', 'name', 'productID')->get();
-        $warehouses = Warehouse::select('id', 'name')->get();
-        $locations = Location::select('id', 'location')->get();
-        $facilities = Facility::select('id', 'name')->get();
 
-        return Inertia::render('Supplies/ReceivedBackorder/Edit', [
-            'receivedBackorder' => new ReceivedBackorderResource($receivedBackorder),
-            'products' => $products,
-            'warehouses' => $warehouses,
-            'locations' => $locations,
-            'facilities' => $facilities,
-        ]);
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, ReceivedBackorder $receivedBackorder)
-    {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'barcode' => 'nullable|string|max:255',
-            'expire_date' => 'nullable|date',
-            'batch_number' => 'nullable|string|max:255',
-            'uom' => 'nullable|string|max:50',
-            'received_at' => 'required|date',
-            'quantity' => 'required|integer|min:1',
-            'type' => 'required|string|in:backorder,return,damaged,expired',
-            'location' => 'nullable|string|max:255',
-            'facility' => 'nullable|string|max:255',
-            'warehouse' => 'nullable|string|max:255',
-            'unit_cost' => 'nullable|numeric|min:0',
-            'total_cost' => 'nullable|numeric|min:0',
-            'note' => 'nullable|string',
-            'attachments.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
-        ]);
 
-        try {
-            DB::beginTransaction();
-
-            // Calculate total cost if not provided
-            if (!isset($validated['total_cost']) && isset($validated['unit_cost'])) {
-                $validated['total_cost'] = $validated['unit_cost'] * $validated['quantity'];
-            }
-
-            // Handle file uploads
-            $attachments = $receivedBackorder->attachments ?? [];
-            if ($request->hasFile('attachments')) {
-                foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('received-backorders', 'public');
-                    $attachments[] = [
-                        'name' => $file->getClientOriginalName(),
-                        'path' => $path,
-                        'size' => $file->getSize(),
-                        'type' => $file->getMimeType(),
-                    ];
-                }
-            }
-            $validated['attachments'] = $attachments;
-
-            $receivedBackorder->update($validated);
-
-            DB::commit();
-
-            return redirect()->route('supplies.received-backorder.index')
-                ->with('success', 'Received backorder updated successfully.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to update received backorder: ' . $e->getMessage());
-        }
-    }
 
     /**
      * Remove the specified resource from storage.
@@ -355,8 +283,12 @@ class ReceivedBackorderController extends Controller
                 'note' => $validated['note'] ?? $receivedBackorder->note,
             ]);
 
+            // Handle physical count adjustment type specifically
+            if ($receivedBackorder->type === 'physical_count_adjustment') {
+                $this->handlePhysicalCountAdjustmentInventory($receivedBackorder);
+            }
             // Determine if this is an order or transfer and handle inventory accordingly
-            if ($receivedBackorder->order_id) {
+            elseif ($receivedBackorder->order_id) {
                 // Handle ORDER - Use FacilityInventory and FacilityInventoryItem
                 $this->handleOrderInventory($receivedBackorder);
                 // Create facility inventory movement record for orders
@@ -397,6 +329,92 @@ class ReceivedBackorderController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return back()->with('error', 'Failed to approve received backorder: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Handle inventory for physical count adjustments
+     */
+    private function handlePhysicalCountAdjustmentInventory($receivedBackorder)
+    {
+        try {
+            // Get the warehouse ID from the received backorder
+            $warehouseId = $receivedBackorder->warehouse_id;
+            
+            if (!$warehouseId) {
+                throw new \Exception('No warehouse_id found in physical count adjustment received backorder');
+            }
+
+            // Load the items for this received backorder
+            $items = $receivedBackorder->items;
+            
+            if ($items->isEmpty()) {
+                throw new \Exception('No items found in physical count adjustment received backorder');
+            }
+
+            // Process each item
+            foreach ($items as $item) {
+                // Update or create main inventory
+                $inventory = Inventory::firstOrCreate([
+                    'product_id' => $item->product_id,
+                ], [
+                    'quantity' => 0,
+                ]);
+
+                $oldQuantity = $inventory->quantity;
+                $newQuantity = $oldQuantity + $item->quantity;
+                $inventory->update(['quantity' => $newQuantity]);
+
+                // Update or create inventory item with batch details
+                $inventoryItem = InventoryItem::where('inventory_id', $inventory->id)
+                    ->where('batch_number', $item->batch_number)
+                    ->where('warehouse_id', $warehouseId)
+                    ->first();
+
+                if ($inventoryItem) {
+                    $inventoryItem->increment('quantity', $item->quantity);
+                    $inventoryItem->save();
+                } else {
+                    $inventoryItem = InventoryItem::create([
+                        'inventory_id' => $inventory->id,
+                        'quantity' => $item->quantity,
+                        'batch_number' => $item->batch_number,
+                        'expiry_date' => $item->expire_date,
+                        'barcode' => $item->barcode,
+                        'warehouse_id' => $warehouseId,
+                        'location' => $item->location,
+                        'unit_cost' => $item->unit_cost,
+                        'total_cost' => $item->total_cost,
+                        'uom' => $item->uom,
+                        'status' => 'active'
+                    ]);
+                }
+
+                // Create received quantity record for each item
+                $this->createReceivedQuantityRecordForItem($receivedBackorder, $item);
+
+                logger()->info('Physical count adjustment item processed', [
+                    'received_backorder_id' => $receivedBackorder->id,
+                    'item_id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'quantity_added' => $item->quantity,
+                    'warehouse_id' => $warehouseId
+                ]);
+            }
+
+            logger()->info('Physical count adjustment inventory updated successfully', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'items_processed' => $items->count(),
+                'warehouse_id' => $warehouseId
+            ]);
+
+        } catch (\Exception $e) {
+            logger()->error('Error in handlePhysicalCountAdjustmentInventory', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 
@@ -733,6 +751,31 @@ class ReceivedBackorderController extends Controller
             'expiry_date' => $receivedBackorder->expire_date,
             'unit_cost' => $receivedBackorder->unit_cost,
             'total_cost' => $receivedBackorder->total_cost
+        ]);
+    }
+
+    /**
+     * Create received quantity record for individual items
+     */
+    private function createReceivedQuantityRecordForItem($receivedBackorder, $item)
+    {
+        // Create received quantity record for the specific item
+        $receivedQuantity = ReceivedQuantity::create([
+            'quantity' => $item->quantity,
+            'received_by' => auth()->id(),
+            'received_at' => now(),
+            'transfer_id' => $receivedBackorder->transfer_id,
+            'order_id' => $receivedBackorder->order_id,
+            'product_id' => $item->product_id,
+            'packing_list_id' => $receivedBackorder->packing_list_id,
+            'uom' => $item->uom,
+            'barcode' => $item->barcode,
+            'batch_number' => $item->batch_number,
+            'warehouse_id' => $receivedBackorder->warehouse_id,
+            'facility_id' => $receivedBackorder->facility_id,
+            'expiry_date' => $item->expire_date,
+            'unit_cost' => $item->unit_cost,
+            'total_cost' => $item->total_cost
         ]);
     }
 
