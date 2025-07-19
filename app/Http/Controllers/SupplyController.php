@@ -511,6 +511,9 @@ class SupplyController extends Controller
                 ]);
             }
             
+            // Update inventory based on the back order type FIRST
+            $this->updateInventoryForReceivedBackorder($receivedBackorder, $packingListItem, $receivedQuantity);
+            
             // Handle the packing list difference record based on remaining quantity
             if ($remainingQuantity <= 0) {
                 // If nothing remains, delete the record
@@ -520,9 +523,12 @@ class SupplyController extends Controller
                 $packingListDiff->quantity = $remainingQuantity;
                 $packingListDiff->save();
             }
-
-            // Update inventory based on the back order type
-            $this->updateInventoryForReceivedBackorder($receivedBackorder, $packingListItem, $receivedQuantity);
+            
+            // Update packing list item quantity to reflect received items
+            if ($packingListItem) {
+                $packingListItem->increment('quantity', $receivedQuantity);
+                $packingListItem->save();
+            }
             
             // Commit the transaction
             DB::commit();
@@ -2250,6 +2256,12 @@ class SupplyController extends Controller
         ];
 
         ReceivedQuantity::create($receivedQuantityData);
+        
+        // Update packing list item quantity to reflect received items
+        if ($packingListItem) {
+            $packingListItem->increment('quantity', $receivedQuantity);
+            $packingListItem->save();
+        }
     }
 
     /**

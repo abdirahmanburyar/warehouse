@@ -503,9 +503,9 @@ const receiveItems = async (item) => {
                     quantity: num,
                     original_quantity: item.quantity,
                     status: item.status,
-                    packing_list_id: selectedPo.value?.id,
-                    packing_list_number: selectedPo.value?.packing_list_number,
-                    purchase_order_id: selectedPo.value?.purchase_order?.id,
+                    packing_list_id: item.packing_list?.id || selectedPo.value?.id,
+                    packing_list_number: item.packing_list?.packing_list_number || selectedPo.value?.packing_list_number,
+                    purchase_order_id: item.packing_list?.purchase_order_id || selectedPo.value?.purchase_order_id,
                     total_cost: 0 // This will be calculated by the backend based on packing list item
                 })
                     .then(response => {
