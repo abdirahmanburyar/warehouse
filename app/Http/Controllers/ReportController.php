@@ -471,9 +471,15 @@ class ReportController extends Controller
                  'note' => 'Physical count adjustment - positive difference'
              ]);
             
-            // Dispatch the job to process in background
-            // Don't change status here - let the job handle it
-            ProcessPhysicalCountApprovalJob::dispatch($adjustment->id, Auth::id(), $receivedBackorder->id);
+                         // Dispatch the job to process in background
+             // Don't change status here - let the job handle it
+             Log::info("Dispatching ProcessPhysicalCountApprovalJob", [
+                 'adjustment_id' => $adjustment->id,
+                 'user_id' => Auth::id(),
+                 'received_backorder_id' => $receivedBackorder->id
+             ]);
+             
+             ProcessPhysicalCountApprovalJob::dispatch($adjustment->id, Auth::id(), $receivedBackorder->id);
             
             return response()->json([
                 'message' => 'Physical count approval has been queued for processing. You will be notified when it completes.',

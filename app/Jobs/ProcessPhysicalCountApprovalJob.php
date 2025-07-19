@@ -45,6 +45,11 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
     {
         try {
             Log::info("Starting physical count approval processing for adjustment ID: {$this->adjustmentId}");
+            Log::info("Job parameters", [
+                'adjustmentId' => $this->adjustmentId,
+                'userId' => $this->userId,
+                'receivedBackorderId' => $this->receivedBackorderId
+            ]);
             
             $adjustment = InventoryAdjustment::findOrFail($this->adjustmentId);
             
@@ -58,6 +63,18 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
             $adjustment->update(['status' => 'processing']);
 
             // Process adjustment items in chunks to handle large datasets
+            $totalItems = InventoryAdjustmentItem::where('parent_id', $this->adjustmentId)->count();
+            $positiveDifferences = InventoryAdjustmentItem::where('parent_id', $this->adjustmentId)
+                ->where('difference', '>', 0)
+                ->count();
+            
+            Log::info("Starting to process adjustment items", [
+                'adjustment_id' => $this->adjustmentId,
+                'total_items' => $totalItems,
+                'positive_differences' => $positiveDifferences,
+                'received_backorder_id' => $this->receivedBackorderId
+            ]);
+            
             InventoryAdjustmentItem::where('parent_id', $this->adjustmentId)
                 ->with('warehouse')
                 ->chunkById(100, function ($chunk) use ($adjustment) {
@@ -94,6 +111,13 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
     {
         $difference = $adjustmentItem->difference;
         
+        Log::info("Processing adjustment item", [
+            'adjustment_item_id' => $adjustmentItem->id,
+            'product_id' => $adjustmentItem->product_id,
+            'difference' => $difference,
+            'received_backorder_id' => $this->receivedBackorderId
+        ]);
+        
         if ($difference > 0) {
             // Positive difference - create ReceivedBackorder
             // $receivedBackorder = ReceivedBackorder::create([
@@ -124,9 +148,17 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
                 'uom' => $adjustmentItem->uom,
                 'location' => $location,
+                'warehouse_id' => $adjustmentItem->warehouse_id,
                 'unit_cost' => $adjustmentItem->unit_cost,
                 'total_cost' => $adjustmentItem->quantity * $adjustmentItem->unit_cost,
                 'note' => $adjustmentItem->remarks
+            ]);
+            
+            Log::info("Created ReceivedBackorderItem", [
+                'received_backorder_id' => $this->receivedBackorderId,
+                'product_id' => $adjustmentItem->product_id,
+                'quantity' => $difference,
+                'adjustment_item_id' => $adjustmentItem->id
             ]);
             
         } elseif ($difference < 0) {
