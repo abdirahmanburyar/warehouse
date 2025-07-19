@@ -327,12 +327,10 @@ class ReceivedBackorderController extends Controller
                             'to_warehouse_id' => $transfer->to_warehouse_id
                         ]);
                         $this->handleWarehouseTransferInventory($receivedBackorder, $transfer);
-                        $this->createReceivedQuantityRecord($receivedBackorder);
                     }
                 } else {
                     // Fallback for transfer without transfer record
                     $this->handleWarehouseInventory($receivedBackorder);
-                    $this->createReceivedQuantityRecord($receivedBackorder);
                 }
             }
             elseif ($receivedBackorder->packing_list_id) {
@@ -343,7 +341,6 @@ class ReceivedBackorderController extends Controller
                     'warehouse_id' => $receivedBackorder->warehouse_id
                 ]);
                 $this->handlePackingListInventory($receivedBackorder);
-                $this->createReceivedQuantityRecord($receivedBackorder);
             }
             else {
                 // Fallback: Use Inventory (warehouse inventory)
@@ -352,7 +349,6 @@ class ReceivedBackorderController extends Controller
                     'type' => $receivedBackorder->type
                 ]);
                 $this->handleWarehouseInventory($receivedBackorder);
-                $this->createReceivedQuantityRecord($receivedBackorder);
             }
 
             // Update the packing list quantity if packing_list_id exists
@@ -604,41 +600,108 @@ class ReceivedBackorderController extends Controller
      */
     private function handleWarehouseTransferInventory($receivedBackorder, $transfer)
     {
-        $warehouseId = $transfer->to_warehouse_id;
+        try {
+            $warehouseId = $transfer->to_warehouse_id;
 
-        // Update or create warehouse inventory
+            // Load the items for this received backorder
+            $items = $receivedBackorder->items;
+            
+            if ($items->isEmpty()) {
+                // Handle single product from receivedBackorder
+                $this->handleSingleWarehouseTransferProduct($receivedBackorder, $warehouseId);
+            } else {
+                // Process each item
+                foreach ($items as $item) {
+                    $this->handleSingleWarehouseTransferProduct($receivedBackorder, $warehouseId, $item);
+                }
+            }
+
+            logger()->info('Warehouse transfer inventory updated successfully', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'transfer_id' => $receivedBackorder->transfer_id,
+                'warehouse_id' => $warehouseId,
+                'items_processed' => $items->count()
+            ]);
+
+        } catch (\Exception $e) {
+            logger()->error('Error in handleWarehouseTransferInventory', [
+                'received_backorder_id' => $receivedBackorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Handle single product for warehouse transfer inventory
+     */
+    private function handleSingleWarehouseTransferProduct($receivedBackorder, $warehouseId, $item = null)
+    {
+        // Use item data if available, otherwise use receivedBackorder data
+        $productId = $item ? $item->product_id : $receivedBackorder->product_id;
+        $quantity = $item ? $item->quantity : $receivedBackorder->quantity;
+        $batchNumber = $item ? $item->batch_number : $receivedBackorder->batch_number;
+        $expiryDate = $item ? $item->expire_date : $receivedBackorder->expire_date;
+        $barcode = $item ? $item->barcode : $receivedBackorder->barcode;
+        $unitCost = $item ? $item->unit_cost : $receivedBackorder->unit_cost;
+        $totalCost = $item ? $item->total_cost : $receivedBackorder->total_cost;
+        $uom = $item ? $item->uom : $receivedBackorder->uom;
+        $location = $item ? $item->location : null;
+
+        // Update or create main inventory
         $inventory = Inventory::firstOrCreate([
-            'product_id' => $receivedBackorder->product_id,
+            'product_id' => $productId,
         ], [
             'quantity' => 0,
         ]);
 
-        $inventory->increment('quantity', $receivedBackorder->quantity);
-        $inventory->save();
+        $oldQuantity = $inventory->quantity;
+        $newQuantity = $oldQuantity + $quantity;
+        $inventory->update(['quantity' => $newQuantity]);
 
-        // Update or create warehouse inventory item
+        // Update or create inventory item with batch details
         $inventoryItem = InventoryItem::where('inventory_id', $inventory->id)
-            ->where('batch_number', $receivedBackorder->batch_number)
+            ->where('batch_number', $batchNumber)
+            ->where('warehouse_id', $warehouseId)
             ->first();
 
         if ($inventoryItem) {
-            $inventoryItem->increment('quantity', $receivedBackorder->quantity);
+            $inventoryItem->increment('quantity', $quantity);
             $inventoryItem->save();
         } else {
             $inventoryItem = InventoryItem::create([
                 'inventory_id' => $inventory->id,
-                'quantity' => $receivedBackorder->quantity,
-                'batch_number' => $receivedBackorder->batch_number,
-                'expiry_date' => $receivedBackorder->expire_date,
-                'barcode' => $receivedBackorder->barcode,
+                'quantity' => $quantity,
+                'batch_number' => $batchNumber,
+                'expiry_date' => $expiryDate,
+                'barcode' => $barcode,
                 'warehouse_id' => $warehouseId,
-                'location' => $receivedBackorder->location,
-                'unit_cost' => $receivedBackorder->unit_cost,
-                'total_cost' => $receivedBackorder->total_cost,
-                'uom' => $receivedBackorder->uom,
+                'location' => $location,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
+                'uom' => $uom,
                 'status' => 'active'
             ]);
         }
+
+        // Create received quantity record for this product
+        if ($item) {
+            $this->createReceivedQuantityRecordForItem($receivedBackorder, $item);
+        } else {
+            // Only create single record if there are no items and receivedBackorder has quantity
+            if ($receivedBackorder->quantity && $receivedBackorder->product_id) {
+                $this->createReceivedQuantityRecord($receivedBackorder);
+            }
+        }
+
+        logger()->info('Warehouse transfer product processed', [
+            'received_backorder_id' => $receivedBackorder->id,
+            'product_id' => $productId,
+            'quantity_added' => $quantity,
+            'warehouse_id' => $warehouseId,
+            'batch_number' => $batchNumber
+        ]);
     }
 
     /**
@@ -948,14 +1011,6 @@ class ReceivedBackorderController extends Controller
      */
     private function createReceivedQuantityRecord($receivedBackorder)
     {
-        // Validate required fields
-        if (!$receivedBackorder->quantity || $receivedBackorder->quantity <= 0) {
-            throw new \Exception('Invalid quantity for received quantity record');
-        }
-
-        if (!$receivedBackorder->product_id) {
-            throw new \Exception('Product ID is required for received quantity record');
-        }
 
         // Create received quantity record with proper validation
         $receivedQuantityData = [
@@ -988,14 +1043,6 @@ class ReceivedBackorderController extends Controller
      */
     private function createReceivedQuantityRecordForItem($receivedBackorder, $item)
     {
-        // Validate required fields
-        if (!$item->quantity || $item->quantity <= 0) {
-            throw new \Exception('Invalid quantity for received quantity record item');
-        }
-
-        if (!$item->product_id) {
-            throw new \Exception('Product ID is required for received quantity record item');
-        }
 
         // Create received quantity record for the specific item with proper validation
         $receivedQuantityData = [
@@ -1179,11 +1226,20 @@ class ReceivedBackorderController extends Controller
             ]);
         }
 
-        // Create received quantity record for this product
+        // Create received quantity record for this product using item quantity
         if ($item) {
             $this->createReceivedQuantityRecordForItem($receivedBackorder, $item);
         } else {
-            $this->createReceivedQuantityRecord($receivedBackorder);
+            // Only create single record if there are no items and receivedBackorder has quantity
+            if ($receivedBackorder->quantity && $receivedBackorder->product_id) {
+                $this->createReceivedQuantityRecord($receivedBackorder);
+            } else {
+                logger()->warning('No valid quantity found for received backorder', [
+                    'received_backorder_id' => $receivedBackorder->id,
+                    'quantity' => $receivedBackorder->quantity,
+                    'product_id' => $receivedBackorder->product_id
+                ]);
+            }
         }
 
         logger()->info('Packing list product processed', [
