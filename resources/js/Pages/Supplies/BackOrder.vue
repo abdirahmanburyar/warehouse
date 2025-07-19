@@ -503,17 +503,10 @@ const receiveItems = async (item) => {
                     quantity: num,
                     original_quantity: item.quantity,
                     status: item.status,
-                    packing_list_id: item.packing_list?.id,
-                    packing_list_number: item.packing_list?.packing_list_number,
-                    purchase_order_id: selectedPo.value?.id,
-                    purchase_order_number: selectedPo.value?.purchase_order_number,
-                    supplier_id: selectedPo.value?.supplier?.id,
-                    supplier_name: selectedPo.value?.supplier?.name,
-                    barcode: item.packing_list?.barcode,
-                    batch_number: item.packing_list?.batch_number,
-                    uom: item.packing_list?.uom,
-                    cost_per_unit: item.packing_list?.cost_per_unit,
-                    total_cost: (item.packing_list?.cost_per_unit || 0) * num
+                    packing_list_id: selectedPo.value?.id,
+                    packing_list_number: selectedPo.value?.packing_list_number,
+                    purchase_order_id: selectedPo.value?.purchase_order?.id,
+                    total_cost: 0 // This will be calculated by the backend based on packing list item
                 })
                     .then(response => {
                         Swal.fire({
