@@ -57,10 +57,16 @@ class PurchaseOrderItemsImport implements
                 'row_data' => $row
             ]);
 
-            // Check if there's an ID column in the Excel that we should ignore
-            if (isset($row['id'])) {
-                Log::warning('Found ID column in Excel, ignoring it', ['id_value' => $row['id']]);
-                unset($row['id']);
+            // Check for any ID-related columns in the Excel that we should ignore
+            $idColumns = ['id', 'ID', 'Id', 'item_id', 'product_id', 'po_item_id'];
+            foreach ($idColumns as $idColumn) {
+                if (isset($row[$idColumn])) {
+                    Log::warning('Found ID column in Excel, ignoring it', [
+                        'column' => $idColumn,
+                        'value' => $row[$idColumn]
+                    ]);
+                    unset($row[$idColumn]);
+                }
             }
 
             if (empty($row['item_description']) || empty($row['quantity']) || empty($row['unit_cost']) || empty($row['uom'])) {
@@ -144,7 +150,29 @@ class PurchaseOrderItemsImport implements
                 return null;
             }
 
-            return PurchaseOrderItem::create($poiData);
+            // Use insert() instead of create() to avoid any ID issues
+            $poiData['created_at'] = now();
+            $poiData['updated_at'] = now();
+            
+            // Explicitly exclude ID from the data array
+            $insertData = array_diff_key($poiData, ['id' => null]);
+            
+            Log::info('Inserting PurchaseOrderItem data', [
+                'data_keys' => array_keys($insertData),
+                'data' => $insertData
+            ]);
+
+            try {
+                $id = DB::table('purchase_order_items')->insertGetId($insertData);
+                Log::info('Successfully inserted PurchaseOrderItem', ['id' => $id]);
+                return PurchaseOrderItem::find($id);
+            } catch (\Exception $insertException) {
+                Log::error('Failed to insert PurchaseOrderItem', [
+                    'error' => $insertException->getMessage(),
+                    'data' => $insertData
+                ]);
+                throw $insertException;
+            }
 
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
