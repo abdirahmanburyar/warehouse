@@ -32,16 +32,18 @@ class ReceivedBackorderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ReceivedBackorder::with(['product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy', 'backOrder']);
+        $query = ReceivedBackorder::with(['items.product', 'receivedBy', 'reviewedBy', 'approvedBy', 'rejectedBy', 'backOrder', 'warehouse', 'facility']);
 
         // Apply filters
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('received_backorder_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('barcode', 'like', '%' . $request->search . '%')
-                  ->orWhere('batch_number', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('product', function ($productQuery) use ($request) {
-                      $productQuery->where('name', 'like', '%' . $request->search . '%');
+                  ->orWhereHas('items', function ($itemQuery) use ($request) {
+                      $itemQuery->where('barcode', 'like', '%' . $request->search . '%')
+                               ->orWhere('batch_number', 'like', '%' . $request->search . '%')
+                               ->orWhereHas('product', function ($productQuery) use ($request) {
+                                   $productQuery->where('name', 'like', '%' . $request->search . '%');
+                               });
                   })
                   ->orWhereHas('backOrder', function ($backOrderQuery) use ($request) {
                       $backOrderQuery->where('back_order_number', 'like', '%' . $request->search . '%');
@@ -88,8 +90,8 @@ class ReceivedBackorderController extends Controller
             'reviewed' => ReceivedBackorder::where('status', 'reviewed')->count(),
             'approved' => ReceivedBackorder::where('status', 'approved')->count(),
             'rejected' => ReceivedBackorder::where('status', 'rejected')->count(),
-            'total_quantity' => ReceivedBackorder::sum('quantity'),
-            'total_cost' => ReceivedBackorder::sum('total_cost'),
+            'total_quantity' => \App\Models\ReceivedBackorderItem::sum('quantity'),
+            'total_cost' => \App\Models\ReceivedBackorderItem::sum('total_cost'),
         ];
 
         // Get warehouses and facilities for filters

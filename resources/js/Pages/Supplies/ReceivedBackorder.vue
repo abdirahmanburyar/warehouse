@@ -562,39 +562,51 @@ onUnmounted(() => {
                                     <!-- Product Information -->
                                     <td class="px-4 py-3 border-r border-gray-300">
                                         <div class="space-y-1">
-                                            <div class="text-sm font-semibold text-gray-900 leading-tight">
-                                                {{ receivedBackorder.product ? receivedBackorder.product.name : 'N/A' }}
-                                            </div>
-                                            <div class="space-y-0.5 text-xs text-gray-600">
-                                                <div><span class="font-medium">Barcode:</span> {{ receivedBackorder.barcode || 'N/A' }}</div>
-                                                <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse }}</div>
-                                                <div v-if="receivedBackorder.location"><span class="font-medium">Location:</span> {{ receivedBackorder.location }}</div>
-                                                <div class="text-gray-500">
-                                                    {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
+                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
+                                                <div class="text-sm font-semibold text-gray-900 leading-tight">
+                                                    {{ item.product ? item.product.name : 'N/A' }}
+                                                </div>
+                                                <div class="space-y-0.5 text-xs text-gray-600">
+                                                    <div><span class="font-medium">Barcode:</span> {{ item.barcode || 'N/A' }}</div>
+                                                    <div v-if="receivedBackorder.warehouse"><span class="font-medium">Warehouse:</span> {{ receivedBackorder.warehouse.name || 'N/A' }}</div>
+                                                    <div v-if="item.location"><span class="font-medium">Location:</span> {{ item.location }}</div>
+                                                    <div class="text-gray-500">
+                                                        {{ receivedBackorder.received_at ? moment(receivedBackorder.received_at).format('DD/MM/YYYY') : 'N/A' }}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div v-else class="text-sm text-gray-500">No items</div>
                                         </div>
                                     </td>
 
                                     <!-- Quantity -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
                                         <div class="text-sm">
-                                            <span class="font-semibold text-gray-900">{{ receivedBackorder.quantity || 'N/A' }}</span>
-                                            <span class="text-gray-500 ml-1">{{ receivedBackorder.uom || '' }}</span>
+                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
+                                                <span class="font-semibold text-gray-900">{{ item.quantity || 'N/A' }}</span>
+                                                <span class="text-gray-500 ml-1">{{ item.uom || '' }}</span>
+                                            </div>
+                                            <div v-else class="text-sm text-gray-500">N/A</div>
                                         </div>
                                     </td>
 
                                     <!-- Batch Number -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
                                         <div class="text-sm font-medium text-gray-900">
-                                            {{ receivedBackorder.batch_number || 'N/A' }}
+                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
+                                                {{ item.batch_number || 'N/A' }}
+                                            </div>
+                                            <div v-else class="text-sm text-gray-500">N/A</div>
                                         </div>
                                     </td>
 
                                     <!-- Expiry Date -->
                                     <td class="px-4 py-3 whitespace-nowrap border-r border-gray-300">
                                         <div class="text-sm font-medium text-gray-900">
-                                            {{ receivedBackorder.expire_date ? moment(receivedBackorder.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                            <div v-if="receivedBackorder.items && receivedBackorder.items.length > 0" v-for="item in receivedBackorder.items" :key="item.id">
+                                                {{ item.expire_date ? moment(item.expire_date).format('DD/MM/YYYY') : 'N/A' }}
+                                            </div>
+                                            <div v-else class="text-sm text-gray-500">N/A</div>
                                         </div>
                                     </td>
 
