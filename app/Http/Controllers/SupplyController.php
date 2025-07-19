@@ -433,13 +433,13 @@ class SupplyController extends Controller
             $backOrderHistory = BackOrderHistory::create($backOrderHistoryData);
             
             // Determine the back order type and set appropriate relationships
-            $backOrderType = 'backorder'; // Default
+            $backOrderType = 'Packing List'; // Default
             $orderId = null;
             $transferId = null;
             $facilityId = null;
             
             if ($backOrder->packing_list_id) {
-                $backOrderType = 'backorder';
+                $backOrderType = 'Packing List';
                 // Packing list back order - already has packing_list_id
             } elseif ($backOrder->order_id) {
                 $backOrderType = 'order';
