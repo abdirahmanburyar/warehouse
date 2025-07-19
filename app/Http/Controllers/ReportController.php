@@ -389,6 +389,16 @@ class ReportController extends Controller
             
             // Create adjustment items for each inventory item
             foreach ($inventoryItems as $inventoryItem) {
+                // Get the most recent unit cost for this product if current one is 0 or null
+                $unitCost = $inventoryItem->unit_cost;
+                if (!$unitCost || $unitCost == 0) {
+                    $recentInventoryItem = InventoryItem::where('product_id', $inventoryItem->product_id)
+                        ->where('unit_cost', '>', 0)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    $unitCost = $recentInventoryItem ? $recentInventoryItem->unit_cost : 0;
+                }
+                
                 InventoryAdjustmentItem::create([
                     'parent_id' => $adjustment->id,
                     'user_id' => auth()->id(),
@@ -399,8 +409,8 @@ class ReportController extends Controller
                     'batch_number' => $inventoryItem->batch_number ?? 'N/A',
                     'barcode' => $inventoryItem->barcode,
                     'location' => $inventoryItem->location,
-                    'unit_cost' => $inventoryItem->unit_cost,
-                    'total_cost' => $inventoryItem->quantity * $inventoryItem->unit_cost,
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $inventoryItem->quantity * $unitCost,
                     'expiry_date' => $inventoryItem->expiry_date,
                     'uom' => $inventoryItem->uom,
                 ]);
