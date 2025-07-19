@@ -19,8 +19,8 @@ return new class extends Migration
             $table->integer('difference')->nullable();
             $table->text('remarks')->nullable();
             $table->date('expiry_date');
-            $table->double('unit_cost')->nullable();
-            $table->double('total_cost')->nullable();
+            $table->double('unit_cost');
+            $table->double('total_cost');
             $table->string('uom')->nullable();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('location')->nullable();
