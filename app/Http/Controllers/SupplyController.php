@@ -395,10 +395,8 @@ class SupplyController extends Controller
             $remainingQuantity = $originalQuantity - $receivedQuantity;
             
             // Create a record in BackOrderHistory for the received items
-            $backOrderHistory = BackOrderHistory::create([
+            $backOrderHistoryData = [
                 'packing_list_id' => $backOrder->packing_list_id,
-                'order_id' => $backOrder->order_id,
-                'transfer_id' => $backOrder->transfer_id,
                 'product_id' => $packingListItem->product_id,
                 'quantity' => $receivedQuantity,
                 'status' => 'Received',
@@ -411,7 +409,28 @@ class SupplyController extends Controller
                 'uom' => $packingListItem->uom,
                 'unit_cost' => $packingListItem->unit_cost,
                 'total_cost' => $packingListItem->unit_cost * $receivedQuantity,
-            ]);
+            ];
+
+            // Set order_item_id or transfer_item_id based on back order type
+            if ($backOrder->order_id) {
+                // Find the order item for this product/order
+                $orderItem = \App\Models\OrderItem::where('order_id', $backOrder->order_id)
+                    ->where('product_id', $packingListItem->product_id)
+                    ->first();
+                if ($orderItem) {
+                    $backOrderHistoryData['order_item_id'] = $orderItem->id;
+                }
+            } elseif ($backOrder->transfer_id) {
+                // Find the transfer item for this product/transfer
+                $transferItem = \App\Models\TransferItem::where('transfer_id', $backOrder->transfer_id)
+                    ->where('product_id', $packingListItem->product_id)
+                    ->first();
+                if ($transferItem) {
+                    $backOrderHistoryData['transfer_item_id'] = $transferItem->id;
+                }
+            }
+
+            $backOrderHistory = BackOrderHistory::create($backOrderHistoryData);
             
             // Determine the back order type and set appropriate relationships
             $backOrderType = 'backorder'; // Default
