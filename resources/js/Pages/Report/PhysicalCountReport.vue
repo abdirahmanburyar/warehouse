@@ -583,8 +583,8 @@ function approvePhysicalCount(){
                 clearInterval(timerInterval);
                 Swal.close();
                 Swal.fire({
-                    title: 'Success!',
-                    text: response.data,
+                    title: response.data.success,
+                    text: response.data.message,
                     icon: 'success'
                 })
                 .then(() => {
