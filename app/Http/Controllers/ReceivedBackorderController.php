@@ -948,8 +948,17 @@ class ReceivedBackorderController extends Controller
      */
     private function createReceivedQuantityRecord($receivedBackorder)
     {
-        // Create received quantity record
-        $receivedQuantity = ReceivedQuantity::create([
+        // Validate required fields
+        if (!$receivedBackorder->quantity || $receivedBackorder->quantity <= 0) {
+            throw new \Exception('Invalid quantity for received quantity record');
+        }
+
+        if (!$receivedBackorder->product_id) {
+            throw new \Exception('Product ID is required for received quantity record');
+        }
+
+        // Create received quantity record with proper validation
+        $receivedQuantityData = [
             'quantity' => $receivedBackorder->quantity,
             'received_by' => auth()->id(),
             'received_at' => now(),
@@ -957,15 +966,22 @@ class ReceivedBackorderController extends Controller
             'order_id' => $receivedBackorder->order_id,
             'product_id' => $receivedBackorder->product_id,
             'packing_list_id' => $receivedBackorder->packing_list_id,
-            'uom' => $receivedBackorder->uom,
-            'barcode' => $receivedBackorder->barcode,
-            'batch_number' => $receivedBackorder->batch_number,
+            'uom' => $receivedBackorder->uom ?? 'N/A',
+            'barcode' => $receivedBackorder->barcode ?? 'N/A',
+            'batch_number' => $receivedBackorder->batch_number ?? 'N/A',
             'warehouse_id' => $receivedBackorder->warehouse_id,
             'facility_id' => $receivedBackorder->facility_id,
-            'expiry_date' => $receivedBackorder->expire_date,
-            'unit_cost' => $receivedBackorder->unit_cost,
-            'total_cost' => $receivedBackorder->total_cost
-        ]);
+            'expiry_date' => $receivedBackorder->expire_date ?? now()->addYears(1)->toDateString(),
+            'unit_cost' => $receivedBackorder->unit_cost ?? 0,
+            'total_cost' => ($receivedBackorder->unit_cost ?? 0) * $receivedBackorder->quantity
+        ];
+
+        // Ensure no null values for required fields
+        $receivedQuantityData = array_map(function($value) {
+            return $value === null ? 'N/A' : $value;
+        }, $receivedQuantityData);
+
+        $receivedQuantity = ReceivedQuantity::create($receivedQuantityData);
     }
 
     /**
@@ -973,8 +989,17 @@ class ReceivedBackorderController extends Controller
      */
     private function createReceivedQuantityRecordForItem($receivedBackorder, $item)
     {
-        // Create received quantity record for the specific item
-        $receivedQuantity = ReceivedQuantity::create([
+        // Validate required fields
+        if (!$item->quantity || $item->quantity <= 0) {
+            throw new \Exception('Invalid quantity for received quantity record item');
+        }
+
+        if (!$item->product_id) {
+            throw new \Exception('Product ID is required for received quantity record item');
+        }
+
+        // Create received quantity record for the specific item with proper validation
+        $receivedQuantityData = [
             'quantity' => $item->quantity,
             'received_by' => auth()->id(),
             'received_at' => now(),
@@ -982,15 +1007,22 @@ class ReceivedBackorderController extends Controller
             'order_id' => $receivedBackorder->order_id,
             'product_id' => $item->product_id,
             'packing_list_id' => $receivedBackorder->packing_list_id,
-            'uom' => $item->uom,
-            'barcode' => $item->barcode,
-            'batch_number' => $item->batch_number,
+            'uom' => $item->uom ?? 'N/A',
+            'barcode' => $item->barcode ?? 'N/A',
+            'batch_number' => $item->batch_number ?? 'N/A',
             'warehouse_id' => $receivedBackorder->warehouse_id,
             'facility_id' => $receivedBackorder->facility_id,
-            'expiry_date' => $item->expire_date,
-            'unit_cost' => $item->unit_cost,
-            'total_cost' => $item->total_cost
-        ]);
+            'expiry_date' => $item->expire_date ?? now()->addYears(1)->toDateString(),
+            'unit_cost' => $item->unit_cost ?? 0,
+            'total_cost' => ($item->unit_cost ?? 0) * $item->quantity
+        ];
+
+        // Ensure no null values for required fields
+        $receivedQuantityData = array_map(function($value) {
+            return $value === null ? 'N/A' : $value;
+        }, $receivedQuantityData);
+
+        $receivedQuantity = ReceivedQuantity::create($receivedQuantityData);
     }
 
     /**
