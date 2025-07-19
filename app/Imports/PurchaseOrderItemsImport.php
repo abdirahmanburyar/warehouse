@@ -62,14 +62,14 @@ class PurchaseOrderItemsImport implements
             // Calculate total cost
             $total_cost = $quantity * $unit_cost;
 
-            // Get or create category
-            $category = $this->getOrCreateCategory($row['category'] ?? 'Drug');
+            // Get or create category (can be null)
+            $category = $this->getOrCreateCategory($row['category'] ?? null);
 
-            // Get or create dosage form
-            $dosageForm = $this->getOrCreateDosage($row['dosage_form'] ?? 'Tablet');
+            // Get or create dosage form (can be null)
+            $dosageForm = $this->getOrCreateDosage($row['dosage_form'] ?? null);
 
             // Get or create product
-            $product = $this->getOrCreateProduct($item_description, $category->id, $dosageForm->id);
+            $product = $this->getOrCreateProduct($item_description, $category?->id, $dosageForm?->id);
 
             // Create PurchaseOrderItem
             $poi = PurchaseOrderItem::create([
@@ -104,8 +104,15 @@ class PurchaseOrderItemsImport implements
         }
     }
 
+
+
     protected function getOrCreateCategory($categoryName)
     {
+        // If category name is null or empty, return null
+        if (empty($categoryName)) {
+            return null;
+        }
+
         if (isset($this->categoryCache[$categoryName])) {
             return $this->categoryCache[$categoryName];
         }
@@ -121,6 +128,11 @@ class PurchaseOrderItemsImport implements
 
     protected function getOrCreateDosage($dosageName)
     {
+        // If dosage name is null or empty, return null
+        if (empty($dosageName)) {
+            return null;
+        }
+
         if (isset($this->dosageCache[$dosageName])) {
             return $this->dosageCache[$dosageName];
         }
@@ -134,7 +146,7 @@ class PurchaseOrderItemsImport implements
         return $dosage;
     }
 
-    protected function getOrCreateProduct($itemName, $categoryId, $dosageId)
+    protected function getOrCreateProduct($itemName, $categoryId = null, $dosageId = null)
     {
         if (isset($this->productCache[$itemName])) {
             return $this->productCache[$itemName];
