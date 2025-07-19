@@ -104,6 +104,14 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'note' => 'Physical count adjustment - positive difference'
             ]);
             
+            // Get current location from InventoryItem to ensure we have the most up-to-date location
+            $currentInventoryItem = \App\Models\InventoryItem::where('product_id', $adjustmentItem->product_id)
+                ->where('batch_number', $adjustmentItem->batch_number)
+                ->where('warehouse_id', $adjustmentItem->warehouse_id)
+                ->first();
+            
+            $location = $currentInventoryItem ? $currentInventoryItem->location : $adjustmentItem->location;
+            
             // Create ReceivedBackorderItem
             ReceivedBackorderItem::create([
                 'received_backorder_id' => $receivedBackorder->id,
@@ -113,7 +121,7 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'expire_date' => $adjustmentItem->expiry_date,
                 'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
                 'uom' => $adjustmentItem->uom,
-                'location' => $adjustmentItem->location,
+                'location' => $location,
                 'unit_cost' => $adjustmentItem->unit_cost,
                 'total_cost' => $adjustmentItem->quantity * $adjustmentItem->unit_cost,
                 'note' => $adjustmentItem->remarks
@@ -130,6 +138,14 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'inventory_adjustment_id' => $adjustment->id
             ]);
             
+            // Get current location from InventoryItem for liquidate items too
+            $currentInventoryItem = \App\Models\InventoryItem::where('product_id', $adjustmentItem->product_id)
+                ->where('batch_number', $adjustmentItem->batch_number)
+                ->where('warehouse_id', $adjustmentItem->warehouse_id)
+                ->first();
+            
+            $location = $currentInventoryItem ? $currentInventoryItem->location : $adjustmentItem->location;
+            
             // Create LiquidateItem
             LiquidateItem::create([
                 'liquidate_id' => $liquidate->id,
@@ -139,7 +155,7 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
                 'expire_date' => $adjustmentItem->expiry_date,
                 'batch_number' => $adjustmentItem->batch_number === 'N/A' ? null : $adjustmentItem->batch_number,
                 'uom' => $adjustmentItem->uom,
-                'location' => null,
+                'location' => $location,
                 'note' => $adjustmentItem->remarks,
                 'type' => 'physical_count_adjustment'
             ]);

@@ -97,14 +97,29 @@ class ReportController extends Controller
             
             return DB::transaction(function () use ($request) {
                 $adjustment = InventoryAdjustment::findOrFail($request->id);
-                foreach ($request->items as $item) {
-                    $adjustmentItem = InventoryAdjustmentItem::findOrFail($item['id']);
-                    $adjustmentItem->update([
-                        'physical_count' => $item['physical_count'],
-                        'difference' => $item['difference'],
-                        'remarks' => $item['remarks']
-                    ]);
-                }
+                
+                // Process items in chunks to avoid memory issues and timeouts
+                $chunkSize = 10; // Process 10 items at a time
+                $items = collect($request->items);
+                
+                $items->chunk($chunkSize)->each(function ($chunk) {
+                    // Get all IDs in this chunk
+                    $chunkIds = $chunk->pluck('id')->toArray();
+                    
+                    // Get all adjustment items for this chunk in one query
+                    $adjustmentItems = InventoryAdjustmentItem::whereIn('id', $chunkIds)->get()->keyBy('id');
+                    
+                    // Update each item in the chunk
+                    foreach ($chunk as $item) {
+                        if (isset($adjustmentItems[$item['id']])) {
+                            $adjustmentItems[$item['id']]->update([
+                                'physical_count' => $item['physical_count'],
+                                'difference' => $item['difference'],
+                                'remarks' => $item['remarks'] ?? null
+                            ]);
+                        }
+                    }
+                });
                 
                 $adjustment->update([
                     'status' => 'submitted'
@@ -153,7 +168,6 @@ class ReportController extends Controller
                     },
                     'product',
                     'warehouse:id,name',
-                    'location:id,location',
                 ])
                 ->get();
                 
@@ -371,7 +385,7 @@ class ReportController extends Controller
             // Get all inventory items with active products
             $inventoryItems = InventoryItem::whereHas('product', function($query) {
                 $query->where('is_active', true);
-            })->with(['product', 'warehouse'])->get();
+            })->get();
             
             // Create adjustment items for each inventory item
             foreach ($inventoryItems as $inventoryItem) {
@@ -379,7 +393,6 @@ class ReportController extends Controller
                     'parent_id' => $adjustment->id,
                     'user_id' => auth()->id(),
                     'product_id' => $inventoryItem->product_id,
-                    'location_id' => null, // location is stored as string in inventory_items, not as foreign key
                     'warehouse_id' => $inventoryItem->warehouse_id,
                     'quantity' => $inventoryItem->quantity,
                     'physical_count' => 0, // Default to 0, will be updated during physical count

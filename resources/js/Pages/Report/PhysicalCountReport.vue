@@ -60,8 +60,6 @@
                 </div>
             </div>
 
-            {{ props.physicalCountReport.items }}
-
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Status Card -->
@@ -256,7 +254,7 @@
                             <td class="px-4 py-4">
                                 <div class="space-y-1">
                                     <div class="text-sm font-medium text-gray-900">{{ item.warehouse?.name || 'N/A' }}</div>
-                                    <div class="text-xs text-gray-500">{{ item.location?.location || 'N/A' }}</div>
+                                    <div class="text-xs text-gray-500">{{ item.location || 'N/A' }}</div>
                                 </div>
                             </td>
 
