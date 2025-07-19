@@ -546,7 +546,7 @@ const handlePoChange = async (po) => {
     await axios.get(route('supplies.get-back-order', po.id))
         .then((response) => {
             isLoading.value = false;
-            console.log(response.data);
+
 
             // Sort items by created_at to ensure consistent grouping
             items.value = response.data.sort((a, b) =>
@@ -571,7 +571,6 @@ const handlePoChange = async (po) => {
 const submitLiquidation = async () => {
     isSubmitting.value = true;
     const formData = new FormData();
-    console.log(selectedItem.value);
     formData.append('id', selectedItem.value.id);
     formData.append('product_id', selectedItem.value.product.id);
     formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
@@ -631,10 +630,7 @@ const submitLiquidation = async () => {
 
 
 const handleAction = async (action, item) => {
-    console.log(item);
     selectedItem.value = item;
-    console.log(selectedItem.value);
-    console.log(backOrderInfo.value);
 
     switch (action) {
         case 'Receive':
@@ -664,7 +660,6 @@ const handleAction = async (action, item) => {
 };
 
 const submitDisposal = async () => {
-    console.log(selectedItem.value);
     isSubmitting.value = true;
     const formData = new FormData();
     formData.append('id', selectedItem.value.id);
