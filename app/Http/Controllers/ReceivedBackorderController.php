@@ -982,6 +982,10 @@ class ReceivedBackorderController extends Controller
             if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
                 return $value;
             }
+            // Don't convert numeric fields to 'N/A'
+            if (in_array($key, ['quantity', 'unit_cost', 'total_cost'])) {
+                return $value === null ? 0 : $value;
+            }
             return $value === null ? 'N/A' : $value;
         }, $receivedQuantityData, array_keys($receivedQuantityData));
 
@@ -1026,6 +1030,10 @@ class ReceivedBackorderController extends Controller
             // Don't convert foreign key fields to 'N/A'
             if (in_array($key, ['transfer_id', 'order_id', 'packing_list_id', 'warehouse_id', 'facility_id'])) {
                 return $value;
+            }
+            // Don't convert numeric fields to 'N/A'
+            if (in_array($key, ['quantity', 'unit_cost', 'total_cost'])) {
+                return $value === null ? 0 : $value;
             }
             return $value === null ? 'N/A' : $value;
         }, $receivedQuantityData, array_keys($receivedQuantityData));
