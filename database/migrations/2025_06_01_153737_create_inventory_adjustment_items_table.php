@@ -19,9 +19,11 @@ return new class extends Migration
             $table->integer('difference')->nullable();
             $table->text('remarks')->nullable();
             $table->date('expiry_date');
+            $table->double('unit_cost')->nullable();
+            $table->double('total_cost')->nullable();
             $table->string('uom')->nullable();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('location_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('location')->nullable();
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('set null');
             $table->string('batch_number');
             $table->string('barcode')->nullable();
