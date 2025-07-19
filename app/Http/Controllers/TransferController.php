@@ -669,6 +669,7 @@ class TransferController extends Controller
                 'dispatch.driver',
                 'dispatch.logistic_company',
                 'items.inventory_allocations.location',
+                'items.inventory_allocations.warehouse',
                 'items.inventory_allocations.differences', 
                 'backorders', 
                 'toFacility', 
@@ -1723,11 +1724,15 @@ class TransferController extends Controller
                         foreach ($item->inventory_allocations as $allocation) {
                             // Calculate total back order quantity for this allocation using PackingListDifference
                             $backOrderQuantity = $allocation->differences()->whereNull('finalized')->sum('quantity');
-                            if((int) $allocation->allocated_quantity < (int) $backOrderQuantity){
+                            
+                            // Use update_quantity if it's set (not zero), otherwise use allocated_quantity
+                            $effectiveQuantity = ($allocation->update_quantity ?? 0) !== 0 ? $allocation->update_quantity : $allocation->allocated_quantity;
+                            
+                            if((int) $effectiveQuantity < (int) $backOrderQuantity){
                                 DB::rollback();
                                 return response()->json('Backorder quantities exceeded the allocated quantity', 500);
                             }
-                            $finalQuantity = (int) $allocation->allocated_quantity - (int) $backOrderQuantity;
+                            $finalQuantity = (int) $effectiveQuantity - (int) $backOrderQuantity;
                             
                             $inventory = Inventory::where('product_id', $allocation->product_id)
                                 ->first();
@@ -1813,6 +1818,7 @@ class TransferController extends Controller
                                     'total_cost' => $allocation->unit_cost * $finalQuantity,
                                 ]);
                             }
+                            
                         }
                     }
                     

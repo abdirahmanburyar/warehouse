@@ -138,7 +138,7 @@
                                                     <td class="px-6 py-3 text-sm border-r border-black">
                                                         <div class="flex gap-2">
                                                             <button
-                                                                v-if="row.status === 'Missing'"
+                                                                v-if="row.status === 'Missing' || row.status === 'Damaged' ||  row.status === 'Lost' || row.status === 'Expired' || row.status === 'Low quality'"
                                                                 @click="handleAction('Receive', { ...item, status: row.status, quantity: row.quantity })"
                                                                 class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
                                                                 :disabled="isLoading">
@@ -503,10 +503,17 @@ const receiveItems = async (item) => {
                     quantity: num,
                     original_quantity: item.quantity,
                     status: item.status,
-                    packing_list_id: item.packing_list?.id || selectedPo.value?.id,
-                    packing_list_number: item.packing_list?.packing_list_number || selectedPo.value?.packing_list_number,
-                    purchase_order_id: item.packing_list?.purchase_order_id || selectedPo.value?.purchase_order_id,
-                    total_cost: 0 // This will be calculated by the backend based on packing list item
+                    packing_list_id: item.packing_list?.id,
+                    packing_list_number: item.packing_list?.packing_list_number,
+                    purchase_order_id: selectedPo.value?.id,
+                    purchase_order_number: selectedPo.value?.purchase_order_number,
+                    supplier_id: selectedPo.value?.supplier?.id,
+                    supplier_name: selectedPo.value?.supplier?.name,
+                    barcode: item.packing_list?.barcode,
+                    batch_number: item.packing_list?.batch_number,
+                    uom: item.packing_list?.uom,
+                    cost_per_unit: item.packing_list?.cost_per_unit,
+                    total_cost: (item.packing_list?.cost_per_unit || 0) * num
                 })
                     .then(response => {
                         Swal.fire({
@@ -546,7 +553,7 @@ const handlePoChange = async (po) => {
     await axios.get(route('supplies.get-back-order', po.id))
         .then((response) => {
             isLoading.value = false;
-
+            console.log(response.data);
 
             // Sort items by created_at to ensure consistent grouping
             items.value = response.data.sort((a, b) =>
@@ -571,6 +578,7 @@ const handlePoChange = async (po) => {
 const submitLiquidation = async () => {
     isSubmitting.value = true;
     const formData = new FormData();
+    console.log(selectedItem.value);
     formData.append('id', selectedItem.value.id);
     formData.append('product_id', selectedItem.value.product.id);
     formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
@@ -630,7 +638,10 @@ const submitLiquidation = async () => {
 
 
 const handleAction = async (action, item) => {
+    console.log(item);
     selectedItem.value = item;
+    console.log(selectedItem.value);
+    console.log(backOrderInfo.value);
 
     switch (action) {
         case 'Receive':
@@ -660,6 +671,7 @@ const handleAction = async (action, item) => {
 };
 
 const submitDisposal = async () => {
+    console.log(selectedItem.value);
     isSubmitting.value = true;
     const formData = new FormData();
     formData.append('id', selectedItem.value.id);
