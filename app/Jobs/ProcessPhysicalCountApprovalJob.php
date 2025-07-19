@@ -26,14 +26,16 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
 
     protected $adjustmentId;
     protected $userId;
+    protected $receivedBackorderId;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($adjustmentId, $userId)
+    public function __construct($adjustmentId, $userId, $receivedBackorderId)
     {
         $this->adjustmentId = $adjustmentId;
         $this->userId = $userId;
+        $this->receivedBackorderId = $receivedBackorderId;
     }
 
     /**
@@ -94,15 +96,15 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
         
         if ($difference > 0) {
             // Positive difference - create ReceivedBackorder
-            $receivedBackorder = ReceivedBackorder::create([
-                'received_by' => $this->userId,
-                'received_at' => now(),
-                'status' => 'pending',
-                'type' => 'physical_count_adjustment',
-                'warehouse_id' => $adjustmentItem->warehouse_id,
-                'inventory_adjustment_id' => $adjustment->id,
-                'note' => 'Physical count adjustment - positive difference'
-            ]);
+            // $receivedBackorder = ReceivedBackorder::create([
+            //     'received_by' => $this->userId,
+            //     'received_at' => now(),
+            //     'status' => 'pending',
+            //     'type' => 'physical_count_adjustment',
+            //     'warehouse_id' => $adjustmentItem->warehouse_id,
+            //     'inventory_adjustment_id' => $adjustment->id,
+            //     'note' => 'Physical count adjustment - positive difference'
+            // ]);
             
             // Get current location from InventoryItem to ensure we have the most up-to-date location
             $currentInventoryItem = \App\Models\InventoryItem::where('product_id', $adjustmentItem->product_id)
@@ -114,7 +116,7 @@ class ProcessPhysicalCountApprovalJob implements ShouldQueue
             
             // Create ReceivedBackorderItem
             ReceivedBackorderItem::create([
-                'received_backorder_id' => $receivedBackorder->id,
+                'received_backorder_id' => $this->receivedBackorderId,
                 'product_id' => $adjustmentItem->product_id,
                 'quantity' => $difference,
                 'barcode' => $adjustmentItem->barcode,

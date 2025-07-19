@@ -456,10 +456,24 @@ class ReportController extends Controller
             if($adjustment->status !== 'reviewed') {
                 return response()->json("Physical count status must be reviewed before approval", 500);
             }
+
+                          // Get the warehouse_id from the first adjustment item (all items should have the same warehouse)
+             $firstAdjustmentItem = InventoryAdjustmentItem::where('parent_id', $adjustment->id)->first();
+             $warehouseId = $firstAdjustmentItem ? $firstAdjustmentItem->warehouse_id : auth()->user()->warehouse_id;
+             
+             $receivedBackorder = ReceivedBackorder::create([
+                 'received_by' => Auth::id(),
+                 'received_at' => now(),
+                 'status' => 'pending',
+                 'type' => 'physical_count_adjustment',
+                 'warehouse_id' => $warehouseId,
+                 'inventory_adjustment_id' => $adjustment->id,
+                 'note' => 'Physical count adjustment - positive difference'
+             ]);
             
             // Dispatch the job to process in background
             // Don't change status here - let the job handle it
-            ProcessPhysicalCountApprovalJob::dispatch($adjustment->id, Auth::id());
+            ProcessPhysicalCountApprovalJob::dispatch($adjustment->id, Auth::id(), $receivedBackorder->id);
             
             return response()->json([
                 'message' => 'Physical count approval has been queued for processing. You will be notified when it completes.',
