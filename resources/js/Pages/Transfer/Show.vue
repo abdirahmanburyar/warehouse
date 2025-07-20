@@ -1912,8 +1912,10 @@ const handleQuantityInput = async (event, allocation) => {
                 allocation_id: allocation.id,
                 quantity: allocation.updated_quantity
             });
+
+            isUpdatingQuantity.value[allocation.id] = false;
+
             
-            toast.success('Quantity updated successfully');
         } catch (error) {
             console.error('Error updating quantity:', error);
             toast.error(error.response?.data?.message || 'Failed to update quantity');
