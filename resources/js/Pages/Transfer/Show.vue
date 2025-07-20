@@ -2020,26 +2020,19 @@ const openBackOrderModal = (item, allocation = null) => {
     // Initialize batchBackOrders with existing differences for THIS SPECIFIC ALLOCATION
     batchBackOrders.value = {};
     
-    // If item has existing differences, filter by the specific allocation
-    if (item.differences && item.differences.length > 0) {
-        console.log('Found existing differences:', item.differences);
-        
-        // Filter differences by the specific inventory_allocation_id
-        const allocationDifferences = item.differences.filter(difference => 
-            difference.inventory_allocation_id === allocation.id
-        );
-        
-        console.log('Filtered differences for allocation:', allocation.id, allocationDifferences);
+    // If allocation has existing differences, load them
+    if (allocation.differences && allocation.differences.length > 0) {
+        console.log('Found existing differences for allocation:', allocation.differences);
         
         if (!batchBackOrders.value[allocation.id]) {
             batchBackOrders.value[allocation.id] = [];
         }
         
-        allocationDifferences.forEach((difference) => {
+        allocation.differences.forEach((difference) => {
             batchBackOrders.value[allocation.id].push({
                 id: difference.id,
                 transfer_item_id: item.id,
-                inventory_allocation_id: difference.inventory_allocation_id,
+                inventory_allocation_id: allocation.id,
                 quantity: difference.quantity,
                 status: difference.status,
                 notes: difference.notes || '',
@@ -2047,7 +2040,7 @@ const openBackOrderModal = (item, allocation = null) => {
             });
         });
         
-        console.log('Initialized batchBackOrders with filtered differences:', batchBackOrders.value);
+        console.log('Initialized batchBackOrders with existing differences:', batchBackOrders.value);
     } else {
         console.log('No existing differences found, starting with empty form');
         if (!batchBackOrders.value[allocation.id]) {
