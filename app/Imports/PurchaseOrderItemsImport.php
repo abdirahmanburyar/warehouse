@@ -45,101 +45,103 @@ class PurchaseOrderItemsImport implements
     public function model(array $row)
     {
         try {
-            // Skip if required fields are empty
             if (empty($row['item_description']) || empty($row['quantity']) || empty($row['unit_cost']) || empty($row['uom'])) {
                 $this->skippedCount++;
                 return null;
             }
 
-            // Find or create product with category and dosage
+            $itemName = trim($row['item_description']);
+
+            if (strlen($itemName) > 255) {
+                $this->errors[] = "Item description too long: " . substr($itemName, 0, 50) . "...";
+                $this->skippedCount++;
+                return null;
+            }
+
+            // Find or create product
             $product = $this->getOrCreateProduct($row);
             
             // Calculate total cost
             $totalCost = $row['quantity'] * $row['unit_cost'];
 
-            // Create PurchaseOrderItem record (without category_id and dosage_id)
-            $poItem = PurchaseOrderItem::create([
+            $this->importedCount++;
+
+            // Update progress in cache
+            Cache::increment($this->importId);
+
+            // Create PurchaseOrderItem
+            return PurchaseOrderItem::create([
                 'purchase_order_id' => $this->purchaseOrderId,
                 'product_id' => $product->id,
                 'quantity' => $row['quantity'],
                 'original_quantity' => $row['quantity'],
-                'original_uom' => $row['uom'],
                 'uom' => $row['uom'],
                 'unit_cost' => $row['unit_cost'],
                 'total_cost' => $totalCost,
             ]);
 
-            $this->importedCount++;
-            
-            // Update progress
-            Cache::put($this->importId, $this->importedCount, 3600);
-
-            return $poItem;
-
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
             $this->skippedCount++;
-            Log::error('PurchaseOrderItems import error', [
-                'row' => $row,
-                'error' => $e->getMessage(),
-                'importId' => $this->importId
-            ]);
-            return null;
+            throw $e;
         }
     }
 
     protected function getOrCreateProduct($row)
     {
-        $productName = $row['item_description'];
+        $productName = trim($row['item_description']);
         
         // Check cache first
         if (isset($this->productCache[$productName])) {
             return $this->productCache[$productName];
         }
 
-        // Try to find existing product
-        $product = Product::where('name', $productName)->first();
-        
-        if (!$product) {
-            // Find or create category
-            $category = null;
-            if (!empty($row['category'])) {
-                $category = $this->getOrCreateCategory($row['category']);
+        // Category
+        $categoryId = null;
+        if (!empty($row['category'])) {
+            $category = trim($row['category']);
+            if (strlen($category) > 255) {
+                $this->errors[] = "Category name too long: " . substr($category, 0, 50) . "...";
+                $this->skippedCount++;
+                return null;
             }
 
-            // Find or create dosage form
-            $dosage = null;
-            if (!empty($row['dosage_form'])) {
-                $dosage = $this->getOrCreateDosage($row['dosage_form']);
+            if (!isset($this->categoryCache[$category])) {
+                $categoryModel = Category::firstOrCreate(
+                    ['name' => $category],
+                    ['is_active' => true]
+                );
+                $this->categoryCache[$category] = $categoryModel->id;
             }
-
-            // Create new product with category and dosage
-            $product = Product::create([
-                'name' => $productName,
-                'category_id' => $category?->id,
-                'dosage_id' => $dosage?->id,
-                'is_active' => true,
-            ]);
-        } else {
-            // If product exists, update category and dosage if provided and not already set
-            $updated = false;
-            
-            if (!empty($row['category']) && !$product->category_id) {
-                $category = $this->getOrCreateCategory($row['category']);
-                $product->category_id = $category->id;
-                $updated = true;
-            }
-            
-            if (!empty($row['dosage_form']) && !$product->dosage_id) {
-                $dosage = $this->getOrCreateDosage($row['dosage_form']);
-                $product->dosage_id = $dosage->id;
-                $updated = true;
-            }
-            
-            if ($updated) {
-                $product->save();
-            }
+            $categoryId = $this->categoryCache[$category];
         }
+
+        // Dosage
+        $dosageId = null;
+        if (!empty($row['dosage_form'])) {
+            $dosageForm = trim($row['dosage_form']);
+            if (strlen($dosageForm) > 255) {
+                $this->errors[] = "Dosage form name too long: " . substr($dosageForm, 0, 50) . "...";
+                $this->skippedCount++;
+                return null;
+            }
+
+            if (!isset($this->dosageCache[$dosageForm])) {
+                $dosageModel = Dosage::firstOrCreate(['name' => $dosageForm]);
+                $this->dosageCache[$dosageForm] = $dosageModel->id;
+            }
+            $dosageId = $this->dosageCache[$dosageForm];
+        }
+
+        // Find or create product
+        $product = Product::updateOrCreate([
+            'name' => $productName,
+        ], [
+            'name' => $productName,
+            'category_id' => $categoryId,
+            'dosage_id' => $dosageId,
+            'is_active' => true,
+        ]);
 
         // Cache the product
         $this->productCache[$productName] = $product;
@@ -147,54 +149,7 @@ class PurchaseOrderItemsImport implements
         return $product;
     }
 
-    protected function getOrCreateCategory($categoryName)
-    {
-        // Check cache first
-        if (isset($this->categoryCache[$categoryName])) {
-            return $this->categoryCache[$categoryName];
-        }
 
-        // Try to find existing category
-        $category = Category::where('name', $categoryName)->first();
-        
-        if (!$category) {
-            // Create new category
-            $category = Category::create([
-                'name' => $categoryName,
-                'description' => $categoryName,
-                'is_active' => true,
-            ]);
-        }
-
-        // Cache the category
-        $this->categoryCache[$categoryName] = $category;
-        
-        return $category;
-    }
-
-    protected function getOrCreateDosage($dosageName)
-    {
-        // Check cache first
-        if (isset($this->dosageCache[$dosageName])) {
-            return $this->dosageCache[$dosageName];
-        }
-
-        // Try to find existing dosage
-        $dosage = Dosage::where('name', $dosageName)->first();
-        
-        if (!$dosage) {
-            // Create new dosage
-            $dosage = Dosage::create([
-                'name' => $dosageName,
-                'is_active' => true,
-            ]);
-        }
-
-        // Cache the dosage
-        $this->dosageCache[$dosageName] = $dosage;
-        
-        return $dosage;
-    }
 
     public function rules(): array
     {

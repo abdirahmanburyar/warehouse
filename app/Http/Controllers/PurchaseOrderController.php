@@ -404,19 +404,9 @@ class PurchaseOrderController extends Controller
             // Generate unique import ID
             $importId = 'po_items_' . time() . '_' . uniqid();
             
-            Log::info('Starting purchase order items import', [
-                'import_id' => $importId,
-                'purchase_order_id' => $request->purchase_order_id,
-                'original_name' => $request->file('file')->getClientOriginalName(),
-                'file_size' => $request->file('file')->getSize()
-            ]);
-
             // Process the import directly
             $import = new PurchaseOrderItemsImport($request->purchase_order_id, $importId);
             Excel::import($import, $request->file('file'));
-
-            // Get import results
-            $results = $import->getResults();
 
             Log::info('Purchase order items import completed', [
                 'import_id' => $importId,

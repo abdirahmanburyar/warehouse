@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Vite;
 use App\Observers\AssetObserver;
 use App\Models\Asset;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\DB;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +25,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
         Asset::observe(AssetObserver::class);
+
+        DB::listen(function ($query) {
+            logger()->info("SQL", [
+                'sql' => $query->sql,
+                'bindings' => $query->bindings,
+            ]);
+        });
     }
 }
