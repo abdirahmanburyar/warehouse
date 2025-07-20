@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\PoItem;
+use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\BackOrder;
 use App\Models\PackingList;
 use App\Models\Warehouse;
-use App\Models\PurchaseOrderItem;
 use App\Models\Approval;
 use App\Imports\PurchaseOrderItemsImport;
 use Illuminate\Http\Request;
@@ -356,8 +355,8 @@ class PurchaseOrderController extends Controller
                     'damage_quantity' => $item['damage_quantity'],
                 ]);
 
-                // Find and update corresponding PoItem
-                $poItem = PoItem::where('item_description', $item['product_name'])
+                            // Find and update corresponding PurchaseOrderItem
+            $poItem = PurchaseOrderItem::where('item_description', $item['product_name'])
                     ->where('purchase_order_id', $validated['purchase_order_id'])
                     ->first();
 
@@ -405,24 +404,31 @@ class PurchaseOrderController extends Controller
             // Generate unique import ID
             $importId = 'po_items_' . time() . '_' . uniqid();
             
-            // Initialize progress tracking
-            Cache::put($importId, 0, 3600); // 1 hour expiry
-            
-            Log::info('Queueing purchase order items import', [
+            Log::info('Starting purchase order items import', [
                 'import_id' => $importId,
                 'purchase_order_id' => $request->purchase_order_id,
                 'original_name' => $request->file('file')->getClientOriginalName(),
                 'file_size' => $request->file('file')->getSize()
             ]);
 
-            // Queue the import job
-            Excel::queueImport(new PurchaseOrderItemsImport($request->purchase_order_id, $importId), $request->file('file'))
-                ->onQueue('imports');
+            // Process the import directly
+            $import = new PurchaseOrderItemsImport($request->purchase_order_id, $importId);
+            Excel::import($import, $request->file('file'));
+
+            // Get import results
+            $results = $import->getResults();
+
+            Log::info('Purchase order items import completed', [
+                'import_id' => $importId,
+                'purchase_order_id' => $request->purchase_order_id,
+                'results' => $results
+            ]);
 
             return response()->json([
-                'message' => 'Purchase order items import started successfully',
+                'message' => 'Purchase order items imported successfully',
                 'import_id' => $importId,
-                'status' => 'processing'
+                'status' => 'completed',
+                'results' => $results
             ], 200);
 
         } catch (\Throwable $th) {
@@ -448,7 +454,7 @@ class PurchaseOrderController extends Controller
             return response()->json([
                 'import_id' => $importId,
                 'progress' => $progress,
-                'status' => $progress > 0 ? 'processing' : 'pending'
+                'status' => 'completed' // Since import is now synchronous
             ]);
 
         } catch (\Throwable $th) {
@@ -798,7 +804,7 @@ class PurchaseOrderController extends Controller
 
             // Check each item if it can be deleted
             foreach ($request->items as $itemId) {
-                $item = PoItem::where('id', $itemId)
+                $item = PurchaseOrderItem::where('id', $itemId)
                     ->where('purchase_order_id', $request->purchase_order_id)
                     ->first();
 
@@ -814,7 +820,7 @@ class PurchaseOrderController extends Controller
 
             // Delete items that can be deleted
             if (count($canDelete) > 0) {
-                PoItem::whereIn('id', $canDelete)
+                PurchaseOrderItem::whereIn('id', $canDelete)
                     ->where('purchase_order_id', $request->purchase_order_id)
                     ->delete();
             }
