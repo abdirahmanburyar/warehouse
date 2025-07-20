@@ -1388,7 +1388,8 @@
                                             </p>
                                         </div>
                                     </div>
-                                    <button @click="addBatchBackOrder(allocation)"
+                                    <button v-if="props.transfer.status !== 'received'"
+                                        @click="addBatchBackOrder(allocation)"
                                         :disabled="!canAddMoreToAllocation(allocation) || isSaving"
                                         class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1423,7 +1424,11 @@
                                                     class="hover:bg-gray-50 transition-colors duration-150">
                                                     <td class="px-4 py-3">
                                                         <select v-model="row.status"
-                                                            class="w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm">
+                                                            :disabled="props.transfer.status === 'received'"
+                                                            :class="[
+                                                                'w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm',
+                                                                props.transfer.status === 'received' ? 'bg-gray-100 cursor-not-allowed' : ''
+                                                            ]">
                                                             <option v-for="status in ['Missing', 'Damaged', 'Expired', 'Lost']" 
                                                                 :key="status" :value="status">
                                                                 {{ status }}
@@ -1433,16 +1438,25 @@
                                                     <td class="px-4 py-3">
                                                         <input type="number" v-model="row.quantity" 
                                                             @input="validateBatchBackOrderQuantity(row, allocation)"
+                                                            :disabled="props.transfer.status === 'received'"
                                                             min="0" :max="allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity"
-                                                            class="w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm" />
+                                                            :class="[
+                                                                'w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm',
+                                                                props.transfer.status === 'received' ? 'bg-gray-100 cursor-not-allowed' : ''
+                                                            ]" />
                                                     </td>
                                                     <td class="px-4 py-3">
                                                         <input type="text" v-model="row.notes" 
+                                                            :disabled="props.transfer.status === 'received'"
                                                             placeholder="Optional notes..."
-                                                            class="w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm" />
+                                                            :class="[
+                                                                'w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm',
+                                                                props.transfer.status === 'received' ? 'bg-gray-100 cursor-not-allowed' : ''
+                                                            ]" />
                                                     </td>
                                                     <td class="px-4 py-3">
-                                                        <button @click="removeBatchBackOrder(row, rowIndex)"
+                                                        <button v-if="props.transfer.status !== 'received'"
+                                                            @click="removeBatchBackOrder(row, rowIndex)"
                                                             class="text-red-600 hover:text-red-800 transition-colors duration-150">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -1490,7 +1504,8 @@
                                 class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                 Exit
                             </button>
-                            <button @click="saveBackOrders"
+                            <button v-if="props.transfer.status !== 'received'"
+                                @click="saveBackOrders"
                                 :disabled="!isValidForSave || isSaving"
                                 class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
                                 {{ isSaving ? "Saving..." : "Save Differences and Exit" }}
