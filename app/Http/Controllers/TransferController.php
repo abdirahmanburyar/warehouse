@@ -580,7 +580,9 @@ class TransferController extends Controller
                         ->sum('quantity');
                 } else {
                     $totalQuantityOnHand = FacilityInventoryItem::where('product_id', $item['product_id'])
-                        ->where('facility_id', $request->source_id)
+                        ->whereHas('inventory', function($query) use ($request) {
+                            $query->where('facility_id', $request->source_id);
+                        })
                         ->where('quantity', '>', 0)
                         ->where('expiry_date', '>', \Carbon\Carbon::now())
                         ->sum('quantity');
