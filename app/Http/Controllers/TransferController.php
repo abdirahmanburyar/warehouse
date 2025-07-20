@@ -1734,8 +1734,8 @@ class TransferController extends Controller
                             // Calculate total back order quantity for this allocation using PackingListDifference
                             $backOrderQuantity = $allocation->differences()->whereNull('finalized')->sum('quantity');
                             
-                            // Use update_quantity if it's set (not zero), otherwise use allocated_quantity
-                            $effectiveQuantity = ($allocation->update_quantity ?? 0) !== 0 ? $allocation->update_quantity : $allocation->allocated_quantity;
+                            // Use updated_quantity if it's set (not zero), otherwise use allocated_quantity
+                            $effectiveQuantity = ($allocation->updated_quantity ?? 0) !== 0 ? $allocation->updated_quantity : $allocation->allocated_quantity;
                             
                             if((int) $effectiveQuantity < (int) $backOrderQuantity){
                                 DB::rollback();
