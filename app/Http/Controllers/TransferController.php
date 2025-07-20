@@ -1091,7 +1091,6 @@ class TransferController extends Controller
             $request->validate([
                 'transfer_id' => 'required|exists:transfers,id',
                 'packing_list_differences' => 'required|array',
-                'packing_list_differences.*.id' => 'nullable|exists:packing_list_differences,id',
                 'packing_list_differences.*.quantity' => 'required|numeric|min:0',
                 'packing_list_differences.*.status' => 'required|in:Missing,Damaged,Expired,Lost,Low Quality',
                 'packing_list_differences.*.notes' => 'nullable|string',
@@ -1128,14 +1127,30 @@ class TransferController extends Controller
                     throw new \Exception('Transfer item not found: ' . $differenceData['transfer_item_id']);
                 }
                 
-                $difference = PackingListDifference::updateOrCreate(['id' => $differenceData['id']], [
-                    'back_order_id' => $backOrder->id,
-                    'product_id' => $transferItem->product_id,
-                    'inventory_allocation_id' => $differenceData['inventory_allocation_id'] ?? null,
-                    'quantity' => $differenceData['quantity'],
-                    'status' => $differenceData['status'],
-                    'notes' => $differenceData['notes'] ?? null,
-                ]);
+                if (isset($differenceData['id']) && $differenceData['id']) {
+                    // Update existing difference
+                    $difference = PackingListDifference::find($differenceData['id']);
+                    if ($difference) {
+                        $difference->update([
+                            'back_order_id' => $backOrder->id,
+                            'product_id' => $transferItem->product_id,
+                            'inventory_allocation_id' => $differenceData['inventory_allocation_id'] ?? null,
+                            'quantity' => $differenceData['quantity'],
+                            'status' => $differenceData['status'],
+                            'notes' => $differenceData['notes'] ?? null,
+                        ]);
+                    }
+                } else {
+                    // Create new difference
+                    $difference = PackingListDifference::create([
+                        'back_order_id' => $backOrder->id,
+                        'product_id' => $transferItem->product_id,
+                        'inventory_allocation_id' => $differenceData['inventory_allocation_id'] ?? null,
+                        'quantity' => $differenceData['quantity'],
+                        'status' => $differenceData['status'],
+                        'notes' => $differenceData['notes'] ?? null,
+                    ]);
+                }
                 
                 $totalQuantity += $differenceData['quantity'];
                 $totalItems++;
