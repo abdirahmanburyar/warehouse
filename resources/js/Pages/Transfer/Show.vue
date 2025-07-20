@@ -494,8 +494,7 @@
                                         <!-- Quantity -->
                                         <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             {{
-                                                (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity) ||
-                                                0
+                                                allocation.allocated_quantity
                                             }}
                                         </td>
 
