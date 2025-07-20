@@ -545,9 +545,9 @@ class TransferController extends Controller
                 'items.*.product_id' => 'required|integer',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.details' => 'required|array',
-                'items.*.details.*.quantity_to_transfer' => 'required|integer|min:1',
+                'items.*.details.*.quantity_to_transfer' => 'required_if:items.*.details.*.transfer_reason,!=,null|integer|min:1',
                 'items.*.details.*.id' => 'required|integer',
-                'items.*.details.*.transfer_reason' => 'required|string',
+                'items.*.details.*.transfer_reason' => 'required_if:items.*.details.*.quantity_to_transfer,!=,0|string',
                 'notes' => 'nullable|string',
                 'transfer_type' => 'nullable|string'
             ]);
