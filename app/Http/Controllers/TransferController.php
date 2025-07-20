@@ -1404,6 +1404,15 @@ class TransferController extends Controller
                 ]);
                 
                 $allocation = InventoryAllocation::find($request->allocation_id);
+                
+                // Use updated_quantity if it's set (not null), otherwise use allocated_quantity
+                $effectiveQuantity = ($allocation->updated_quantity !== null) ? $allocation->updated_quantity : $allocation->allocated_quantity;
+                
+                // Validate received quantity doesn't exceed effective quantity
+                if ($request->received_quantity > $effectiveQuantity) {
+                    return response()->json("Received quantity cannot exceed effective quantity (updated_quantity if set, else allocated_quantity)", 400);
+                }
+                
                 $allocation->received_quantity = $request->received_quantity;
                 $allocation->save();
                 PackingListDifference::where('inventory_allocation_id', $request->allocation_id)->delete();
