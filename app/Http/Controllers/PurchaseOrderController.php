@@ -400,32 +400,14 @@ class PurchaseOrderController extends Controller
             ], [
                 'file.mimes' => 'The file must be an Excel file (xlsx or xls)',
             ]);
-
-            // Generate unique import ID
-            $importId = 'po_items_' . time() . '_' . uniqid();
             
             // Process the import directly
-            $import = new PurchaseOrderItemsImport($request->purchase_order_id, $importId);
+            $import = new PurchaseOrderItemsImport($request->purchase_order_id);
             Excel::import($import, $request->file('file'));
 
-            Log::info('Purchase order items import completed', [
-                'import_id' => $importId,
-                'purchase_order_id' => $request->purchase_order_id,
-                'results' => $results
-            ]);
-
-            return response()->json([
-                'message' => 'Purchase order items imported successfully',
-                'import_id' => $importId,
-                'status' => 'completed',
-                'results' => $results
-            ], 200);
+            return redirect()->route('supplies.editPO', $request->purchase_order_id)->with('success', 'Purchase order items imported successfully');
 
         } catch (\Throwable $th) {
-            Log::error('Purchase order items import error', [
-                'error' => $th->getMessage(),
-                'trace' => $th->getTraceAsString()
-            ]);
             return response()->json($th->getMessage(), 500);
         }
     }

@@ -333,53 +333,41 @@ async function handleFileUpload(event) {
 
     uploadStatus.value = 'Creating purchase order...';
 
-    // First create/update the purchase order
-    const poData = {
-        supplier_id: form.value.supplier_id,
-        po_date: moment(form.value.po_date).format('YYYY-MM-DD'),
-        po_number: form.value.po_number
-    };
+    try {
+        // Step 1: Create PO via Inertia (or Axios if needed)
+        const poPayload = {
+            supplier_id: form.value.supplier_id,
+            po_date: moment(form.value.po_date).format('YYYY-MM-DD'),
+            po_number: form.value.po_number
+        };
 
-    const poResponse = await axios.post(route('purchase-orders.store'), poData);
-    const purchaseOrderId = poResponse.data.id;
+        const poResponse = await axios.post(route('purchase-orders.store'), poPayload);
+        const purchaseOrderId = poResponse.data.id;
+        form.value.id = purchaseOrderId;
 
-    // Now upload the Excel file
-    uploadStatus.value = 'Uploading items...';
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('purchase_order_id', purchaseOrderId);
-    form.value.id = purchaseOrderId;
+        // Step 2: Upload Excel file via Inertia
+        uploadStatus.value = 'Uploading items...';
 
-    const response = await axios.post(route('purchase-orders.import'), formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-    .then((response) => {
-        // Handle queue-based import response
-        if (response.data.import_id) {
-            // Import is queued, show progress message
-            toast.success('Import started successfully. Processing in background...');
-            uploadStatus.value = "Import queued successfully. Processing...";
-            
-            // Start progress tracking
-            checkImportProgress(response.data.import_id);
-        } else {
-            // Fallback for direct import response (if any)
-            toast.success('Items imported successfully');
-            uploadStatus.value = "";
-        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('purchase_order_id', purchaseOrderId);
 
-        // Clear file input
-        event.target.value = '';
-    })
-    .catch((error) => {
-        console.error('Upload failed:', error);
+        router.post(route('purchase-orders.import'), formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                toast.success('Items imported successfully');
+            },
+            onError: (errors) => {
+                console.error(errors);
+                uploadStatus.value = 'Upload failed.';
+            }
+        });
+    } catch (error) {
+        console.error('Error during file upload:', error);
         uploadStatus.value = 'Upload failed: ' + (error.response?.data?.message || error.message);
-    });
-
-    // Clear the file input
-    event.target.value = '';
+    } finally {
+        event.target.value = '';
+    }
 }
 
 // Function to check import progress

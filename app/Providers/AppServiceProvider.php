@@ -25,12 +25,5 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
         Asset::observe(AssetObserver::class);
-
-        DB::listen(function ($query) {
-            logger()->info("SQL", [
-                'sql' => $query->sql,
-                'bindings' => $query->bindings,
-            ]);
-        });
     }
 }
