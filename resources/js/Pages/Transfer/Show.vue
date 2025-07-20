@@ -2267,6 +2267,14 @@ const saveBackOrders = async () => {
 };
 
 const attemptCloseModal = () => {
+    // If transfer status is 'received', allow free exit regardless of validation issues
+    if (props.transfer.status === 'received') {
+        showBackOrderModal.value = false;
+        showIncompleteBackOrderModal.value = false;
+        return;
+    }
+    
+    // For other statuses, check validation as before
     if (totalBatchBackOrderQuantity.value > 0 && totalBatchBackOrderQuantity.value !== missingQuantity.value) {
         showIncompleteBackOrderModal.value = true;
     } else {
