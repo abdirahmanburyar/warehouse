@@ -566,13 +566,13 @@
                                                 <input 
                                                     type="number" 
                                                     v-model="allocation.received_quantity" 
-                                                    :readonly="!['delivered', 'received'].includes(props.transfer.status)"
+                                                    :readonly="props.transfer.status !== 'delivered'"
                                                     :max="getMaxReceivedQuantity(allocation)"
                                                     min="0"
                                                     @input="validateAllocationReceivedQuantity(allocation, allocIndex)"
                                                     :class="[
                                                         'w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
-                                                        !['delivered', 'received'].includes(props.transfer.status) ? 'bg-gray-100 cursor-not-allowed' : ''
+                                                        props.transfer.status !== 'delivered' ? 'bg-gray-100 cursor-not-allowed' : ''
                                                     ]"
                                                 />
                                                 <span v-if="isReceived[allocIndex]" class="text-xs text-gray-500">Updating...</span>
