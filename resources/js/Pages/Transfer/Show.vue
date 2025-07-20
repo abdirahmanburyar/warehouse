@@ -1918,7 +1918,7 @@ const handleQuantityInput = async (event, allocation) => {
             
         } catch (error) {
             console.error('Error updating quantity:', error);
-            toast.error(error.response?.data?.message || 'Failed to update quantity');
+            toast.error(error.response?.data || 'Failed to update quantity');
             
             // Revert the value on error to effective quantity
             const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
