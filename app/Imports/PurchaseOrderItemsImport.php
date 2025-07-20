@@ -116,8 +116,6 @@ class PurchaseOrderItemsImport implements
             // Create new product with category and dosage
             $product = Product::create([
                 'name' => $productName,
-                'barcode' => $row['item_code'] ?? $productName,
-                'description' => $row['description'] ?? $productName,
                 'category_id' => $category?->id,
                 'dosage_id' => $dosage?->id,
                 'is_active' => true,
@@ -188,7 +186,6 @@ class PurchaseOrderItemsImport implements
             // Create new dosage
             $dosage = Dosage::create([
                 'name' => $dosageName,
-                'description' => $dosageName,
                 'is_active' => true,
             ]);
         }
