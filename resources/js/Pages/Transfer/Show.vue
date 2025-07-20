@@ -540,7 +540,7 @@
                                         <!-- Quantity to Transfer - per allocation -->
                                         <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             <div class="flex flex-col items-center gap-1">
-                                                <span class="font-medium">{{ (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity) || 0 }}</span>
+                                                <span class="font-medium">{{ allocation.allocated_quantity }}</span>
                                                 <!-- v-if="props.transfer.status === 'pending' && allocation.id" -->
                                                 <input 
                                                     :readonly="!['pending', 'reviewed'].includes(props.transfer.status)"
