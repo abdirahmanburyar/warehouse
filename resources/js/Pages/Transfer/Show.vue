@@ -541,7 +541,6 @@
                                         <td class="px-2 py-1 text-xs border-b text-center text-gray-900">
                                             <div class="flex flex-col items-center gap-1">
                                                 <span class="font-medium">{{ allocation.allocated_quantity }}</span>
-                                                <!-- v-if="props.transfer.status === 'pending' && allocation.id" -->
                                                 <input 
                                                     :readonly="!['pending', 'reviewed'].includes(props.transfer.status)"
                                                     type="number" 
