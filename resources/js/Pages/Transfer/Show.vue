@@ -2374,7 +2374,7 @@ const canAddMoreToAllocation = (allocation) => {
     
     // Calculate remaining quantity that can be allocated
     const remainingOverall = missingQuantity.value - totalBatchBackOrderQuantity.value;
-    const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+    const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
     
     return totalBackOrdered < effectiveQuantity && remainingOverall > 0;
 };
