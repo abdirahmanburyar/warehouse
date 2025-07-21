@@ -1151,8 +1151,6 @@ class ReportController extends Controller
         $facilities = Facility::get()->pluck('name')->toArray();
         $warehouses = Warehouse::get()->pluck('name')->toArray();
 
-        logger()->info($request->all());
-    
         $query = Transfer::query();
     
         // Eager load nested relationships
@@ -1162,7 +1160,7 @@ class ReportController extends Controller
             'fromFacility',
             'toWarehouse',
             'fromWarehouse',
-            'createdBy',
+            // 'createdBy',
             'approvedBy',
             'rejectedBy',
             'dispatchedBy'
@@ -1203,7 +1201,8 @@ class ReportController extends Controller
             ['*'],
             'page',
             $request->input('page', 1)
-        )->withQueryString();
+        )
+            ->withQueryString();
     
         // Set full path to keep proper pagination links
         $transfers->setPath(url()->current());

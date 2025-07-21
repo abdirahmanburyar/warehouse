@@ -131,6 +131,11 @@ class Transfer extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
     
     /**
      * Get the source name (warehouse or facility)
