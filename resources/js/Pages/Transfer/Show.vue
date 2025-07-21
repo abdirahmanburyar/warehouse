@@ -566,13 +566,13 @@
                                                 <input 
                                                     type="number" 
                                                     v-model="allocation.received_quantity" 
-                                                    :readonly="props.transfer.status !== 'delivered'"
                                                     :max="getMaxReceivedQuantity(allocation)"
+                                                    @input="validateReceivedQuantity(allocation, allocIndex)"
                                                     min="0"
-                                                    @input="validateAllocationReceivedQuantity(allocation, allocIndex)"
+                                                    :readonly="props.transfer.to_warehouse_id !== $page.props.auth.user?.warehouse_id || props.transfer.status !== 'delivered'"
                                                     :class="[
                                                         'w-20 text-center border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
-                                                        props.transfer.status !== 'delivered' ? 'bg-gray-100 cursor-not-allowed' : ''
+                                                        (props.transfer.to_warehouse_id !== $page.props.auth.user?.warehouse_id || props.transfer.status !== 'delivered') ? 'bg-gray-100 cursor-not-allowed' : ''
                                                     ]"
                                                 />
                                                 <span v-if="isReceived[allocIndex]" class="text-xs text-gray-500">Updating...</span>
@@ -590,7 +590,7 @@
                                                     </span>
                                                 </div>
                                                 <button 
-                                                    v-if="((allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity) || 0) > (allocation.received_quantity || 0) && ['delivered', 'received'].includes(props.transfer.status)"
+                                                    v-if="((allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity) || 0) !== (allocation.received_quantity || 0) && ['delivered', 'received'].includes(props.transfer.status)"
                                                     @click="openBackOrderModal(item, allocation)"
                                                     class="text-xs text-orange-600 underline hover:text-orange-800 cursor-pointer mt-1 block">
                                                     Back Order
@@ -2201,8 +2201,7 @@ const handleQuantityInput = async (event, allocation) => {
 
 // removeItem function removed
 
-// Validate allocation received quantity
-const validateAllocationReceivedQuantity = async (allocation, allocIndex) => {
+async function validateReceivedQuantity(allocation, allocIndex) {
     // Clear existing timeout for this allocation
     if (receivedQuantityTimeouts.value[allocIndex]) {
         clearTimeout(receivedQuantityTimeouts.value[allocIndex]);
@@ -2211,23 +2210,17 @@ const validateAllocationReceivedQuantity = async (allocation, allocIndex) => {
     // Set loading state
     isReceived.value[allocIndex] = true;
 
-    // Calculate the maximum allowed received quantity
-    // Use updated_quantity if it's set (not null/undefined), otherwise use allocated_quantity
-    const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
-    const maxAllowedQuantity = effectiveQuantity || 0;
-    const currentReceivedQuantity = allocation.received_quantity || 0;
-    
     // PRIMARY VALIDATION: Check against effective quantity (updated_quantity or allocated_quantity)
-    if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined) {
-        // If updated_quantity is set, received_quantity cannot exceed it
-        if (currentReceivedQuantity > allocation.updated_quantity) {
+    if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) {
+        // If updated_quantity is set and greater than 0, received_quantity cannot exceed it
+        if (allocation.received_quantity > allocation.updated_quantity) {
             allocation.received_quantity = allocation.updated_quantity;
             toast.warning(`Received quantity cannot exceed updated quantity. Reset to ${allocation.updated_quantity}`);
             return; // Exit early - don't proceed with back order validation
         }
     } else {
-        // If no updated_quantity, validate against allocated_quantity
-        if (currentReceivedQuantity > allocation.allocated_quantity) {
+        // If no updated_quantity or it's 0, validate against allocated_quantity
+        if (allocation.received_quantity > allocation.allocated_quantity) {
             allocation.received_quantity = allocation.allocated_quantity;
             toast.warning(`Received quantity cannot exceed allocated quantity. Reset to ${allocation.allocated_quantity}`);
             return; // Exit early - don't proceed with back order validation
@@ -2239,15 +2232,15 @@ const validateAllocationReceivedQuantity = async (allocation, allocIndex) => {
     if (allocation.differences && allocation.differences.length > 0) {
         const totalBackOrderQuantity = allocation.differences.reduce((sum, diff) => sum + (diff.quantity || 0), 0);
         
-        if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined) {
-            // If updated_quantity is set, use it minus back orders
+        if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) {
+            // If updated_quantity is set and greater than 0, use it minus back orders
             const maxReceivedQuantity = allocation.updated_quantity - totalBackOrderQuantity;
             if (allocation.received_quantity > maxReceivedQuantity) {
                 allocation.received_quantity = maxReceivedQuantity;
                 toast.warning(`Received quantity cannot exceed updated quantity minus back orders. Reset to ${maxReceivedQuantity}`);
             }
         } else {
-            // If no updated_quantity, use allocated_quantity minus back orders
+            // If no updated_quantity or it's 0, use allocated_quantity minus back orders
             const maxReceivedQuantity = allocation.allocated_quantity - totalBackOrderQuantity;
             if (allocation.received_quantity > maxReceivedQuantity) {
                 allocation.received_quantity = maxReceivedQuantity;
@@ -2261,6 +2254,11 @@ const validateAllocationReceivedQuantity = async (allocation, allocIndex) => {
         await axios.post(route("transfers.receivedQuantity"), {
             allocation_id: allocation.id,
             received_quantity: allocation.received_quantity,
+            // Backend should handle:
+            // 1. Update received_quantity for the allocation
+            // 2. If allocated_quantity == received_quantity, DELETE ALL PackingListDifference records for this allocation_id
+            // 3. Recalculate total back order quantity for the entire transfer
+            // 4. This ensures no orphaned back order records exist when quantities are fully received
         })
         .then((response) => {
             console.log(response.data);
@@ -2276,7 +2274,7 @@ const validateAllocationReceivedQuantity = async (allocation, allocIndex) => {
             console.log(error);
         });
     }, 500);
-};
+}
 
 // Functions for back order modal
 const openBackOrderModal = (item, allocation = null) => {
