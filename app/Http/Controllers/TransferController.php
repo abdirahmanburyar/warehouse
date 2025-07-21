@@ -2031,5 +2031,89 @@ class TransferController extends Controller
         }
     }
 
+    /**
+     * Mark transfer as delivered with delivery form data
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function markDelivered(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            
+            // Validate request
+            $request->validate([
+                'transfer_id' => 'required|exists:transfers,id',
+                'received_cartons' => 'required|array',
+                'received_cartons.*' => 'required|numeric|min:0',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240', // 10MB max per image
+            ]);
+            
+            $transfer = Transfer::with(['dispatch'])->findOrFail($request->transfer_id);
+            
+            // Validate transfer status
+            if ($transfer->status !== 'dispatched') {
+                return response()->json('Transfer must be in dispatched status to mark as delivered', 400);
+            }
+            
+            $receivedCartons = $request->received_cartons;
+            
+            // Handle image uploads
+            $imagePaths = [];
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                foreach ($images as $image) {
+                    if ($image->isValid()) {
+                        $filename = 'transfer_delivery_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                        $image->move(public_path('transfer-delivery-images'), $filename);
+                        $imagePaths[] = 'transfer-delivery-images/' . $filename;
+                    }
+                }
+            }
+            
+            // Update dispatch info with received cartons and images
+            if ($transfer->dispatch && count($transfer->dispatch) > 0) {
+                foreach ($transfer->dispatch as $dispatch) {
+                    if (isset($receivedCartons[$dispatch->id])) {
+                        $dispatch->received_cartons = $receivedCartons[$dispatch->id];
+                        // Save images to the first dispatch record
+                        if (!empty($imagePaths)) {
+                            $dispatch->image = json_encode($imagePaths);
+                        }
+                        $dispatch->save();
+                    }
+                }
+            }
+            
+            // Update transfer status to delivered
+            $transfer->status = 'delivered';
+            $transfer->delivered_at = Carbon::now();
+            $transfer->delivered_by = auth()->user()->id;
+            
+            $transfer->save();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Transfer marked as delivered successfully',
+                'data' => [
+                    'transfer_id' => $transfer->id,
+                    'status' => $transfer->status,
+                    'delivered_at' => $transfer->delivered_at,
+                    'images_uploaded' => count($imagePaths)
+                ]
+            ], 200);
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark transfer as delivered: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 }

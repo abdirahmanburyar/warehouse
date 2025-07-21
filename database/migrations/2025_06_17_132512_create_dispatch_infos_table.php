@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('driver_id')->nullable()->constrained()->cascadeOnDelete();
             $table->date('dispatch_date');
             $table->string('no_of_cartoons');
-            $table->string('received_cartoons')->nullable();
+            $table->string('received_cartons')->nullable();
             $table->string('driver_number');
             $table->string('plate_number');
             $table->string('image')->nullable();

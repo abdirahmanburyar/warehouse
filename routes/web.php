@@ -558,6 +558,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
           Route::post('/dispatch-info', [TransferController::class, 'dispatchInfo'])->name('transfers.dispatch-info');
 
+            // mark transfer as delivered
+            Route::post('/mark-delivered', [TransferController::class, 'markDelivered'])->name('transfers.mark-delivered');
+
             // Add routes for drivers and logistics companies
             Route::get('/get-drivers', [TransferController::class, 'getDrivers'])->name('transfers.get-drivers');
             Route::get('/get-logistic-companies', [TransferController::class, 'getLogisticCompanies'])->name('transfers.get-logistic-companies');
