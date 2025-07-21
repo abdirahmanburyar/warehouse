@@ -183,8 +183,9 @@ class EligibleItemController extends Controller
             $filePath = $file->storeAs('excel-imports', $fileName, 'public');
             $fullPath = storage_path('app/public/' . $filePath);
 
-            // Dispatch job to process the file
-            EligibleItemImport::dispatch($fullPath, $importId);
+            // Import the file directly
+            $import = new EligibleItemImport($importId);
+            Excel::import($import, $fullPath);
 
             // Clean up the temporary file
             if (file_exists($tempFile)) {
