@@ -1427,6 +1427,7 @@
                                                                 'w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm',
                                                                 props.transfer.status === 'received' ? 'bg-gray-100 cursor-not-allowed' : ''
                                                             ]" />
+
                                                     </td>
                                                     <td class="px-4 py-3">
                                                         <input type="text" v-model="row.notes" 
@@ -2349,7 +2350,7 @@ const validateBatchBackOrderQuantity = (row, allocation) => {
     }, 0) + currentQuantity;
     
     // Check if total exceeds effective quantity (updated_quantity or allocated_quantity)
-    const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+    const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
     if (totalForAllocation > effectiveQuantity) {
         row.quantity = effectiveQuantity - totalForAllocation + currentQuantity;
     }
