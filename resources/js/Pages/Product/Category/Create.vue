@@ -88,8 +88,7 @@ const submit = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data,
-                icon: 'success',
+                text: form.value.id ? 'Dosage Form has been updated successfully' : 'Dosage Form has been created successfully',                icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {
                 router.get(route('products.categories.index'));

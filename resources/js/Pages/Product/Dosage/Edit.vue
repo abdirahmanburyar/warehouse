@@ -94,7 +94,7 @@ const submit = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data,
+                text: form.value.id ? 'Dosage form has been updated successfully' : 'Dosage form has been created successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {

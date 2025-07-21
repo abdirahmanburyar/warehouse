@@ -94,7 +94,7 @@ const submit = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data.message,
+                text: form.value.id ? 'Category has been updated successfully' : 'Category has been created successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {
