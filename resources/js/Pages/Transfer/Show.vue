@@ -2122,8 +2122,8 @@ const isExpiringItem = (expiryDate) => {
 const getMaxReceivedQuantity = (allocation) => {
     if (!allocation) return 0;
     
-    // Use updated_quantity if it's set (not null/undefined), otherwise use allocated_quantity
-    const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+    // Use updated_quantity if it's set and greater than 0, otherwise use allocated_quantity
+    const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
     
     // Calculate total back order quantity
     const backOrderQuantity = allocation.differences?.reduce((sum, diff) => sum + (diff.quantity || 0), 0) || 0;
@@ -2140,8 +2140,8 @@ const getTotalExpectedQuantity = () => {
     
     if (selectedItem.value.inventory_allocations) {
         selectedItem.value.inventory_allocations.forEach(allocation => {
-            // Use updated_quantity if it's set (not null/undefined), otherwise use allocated_quantity
-            const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+            // Use updated_quantity if it's set and greater than 0, otherwise use allocated_quantity
+            const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
             totalExpectedQuantity += effectiveQuantity || 0;
         });
     }
@@ -2191,7 +2191,7 @@ const handleQuantityInput = async (event, allocation) => {
             toast.error(error.response?.data || 'Failed to update quantity');
             
             // Revert the value on error to effective quantity
-            const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+            const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
             allocation.updated_quantity = effectiveQuantity;
         } finally {
             isUpdatingQuantity.value[allocation.id] = false;
