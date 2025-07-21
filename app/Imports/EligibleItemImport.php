@@ -12,7 +12,6 @@ use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
-use Maatwebsite\Excel\Concerns\WithProgressBar;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Validators\Failure;
 
@@ -24,7 +23,6 @@ class EligibleItemImport implements
     WithValidation, 
     SkipsOnError, 
     SkipsEmptyRows,
-    WithProgressBar,
     WithCalculatedFormulas
 {
     protected $importedCount = 0;
@@ -194,11 +192,5 @@ class EligibleItemImport implements
         $this->skippedCount++;
     }
 
-    /**
-     * Get console output for progress bar
-     */
-    public function getConsoleOutput()
-    {
-        return app(\Symfony\Component\Console\Output\OutputInterface::class);
-    }
+
 } 
