@@ -567,7 +567,6 @@
                                                 type="number" 
                                                 v-model="allocation.received_quantity" 
                                                 min="0"
-                                                :max="allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity"
                                                 :placeholder="allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity"
                                                 @input="validateReceivedQuantity(allocation, allocIndex)"
                                                 :readonly="props.transfer.to_warehouse_id !== $page.props.auth.user?.warehouse_id || props.transfer.status !== 'delivered'"
@@ -2204,10 +2203,21 @@ async function validateReceivedQuantity(allocation, allocIndex) {
 
     const finalQuantity = updatedQuantity > 0 ? updatedQuantity : allocatedQuantity;
 
+    // Debug logging
+    console.log('Validation Debug:', {
+        updatedQuantity,
+        allocatedQuantity,
+        receivedQuantity,
+        finalQuantity,
+        updatedQuantityType: typeof updatedQuantity,
+        allocatedQuantityType: typeof allocatedQuantity
+    });
+
     // If updated_quantity is set and greater than 0, received_quantity cannot exceed it
     if (receivedQuantity > finalQuantity) {
         allocation.received_quantity = finalQuantity;
-        toast.warning(`Received quantity cannot exceed updated quantity. Reset to ${finalQuantity}`);
+        const quantityType = updatedQuantity > 0 ? 'updated quantity' : 'allocated quantity';
+        toast.warning(`Received quantity cannot exceed ${quantityType}. Reset to ${finalQuantity}`);
         return; // Exit early - don't proceed with back order validation
     }
         
@@ -2217,18 +2227,12 @@ async function validateReceivedQuantity(allocation, allocIndex) {
         const totalBackOrderQuantity = allocation.differences.reduce((sum, diff) => sum + (diff.quantity || 0), 0);
         
         if (finalQuantity > 0) {
-            // If updated_quantity is set and greater than 0, use it minus back orders
+            // Use effective quantity minus back orders
             const maxReceivedQuantity = finalQuantity - totalBackOrderQuantity;
             if (receivedQuantity > maxReceivedQuantity) {
                 allocation.received_quantity = maxReceivedQuantity;
-                toast.warning(`Received quantity cannot exceed updated quantity minus back orders. Reset to ${maxReceivedQuantity}`);
-            }
-        } else {
-            // If no updated_quantity or it's 0, use allocated_quantity minus back orders
-            const maxReceivedQuantity = allocatedQuantity - totalBackOrderQuantity;
-            if (receivedQuantity > maxReceivedQuantity) {
-                allocation.received_quantity = maxReceivedQuantity;
-                toast.warning(`Received quantity cannot exceed allocated quantity minus back orders. Reset to ${maxReceivedQuantity}`);
+                const quantityType = updatedQuantity > 0 ? 'updated quantity' : 'allocated quantity';
+                toast.warning(`Received quantity cannot exceed ${quantityType} minus back orders. Reset to ${maxReceivedQuantity}`);
             }
         }
     }
@@ -3035,20 +3039,15 @@ const autoValidateReceivedQuantities = () => {
                     const currentReceivedQuantity = allocation.received_quantity || 0;
                     
                     // PRIMARY VALIDATION: Check against effective quantity (updated_quantity or allocated_quantity)
-                    if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined) {
-                        // If updated_quantity is set, received_quantity cannot exceed it
-                        if (currentReceivedQuantity > allocation.updated_quantity) {
-                            allocation.received_quantity = allocation.updated_quantity;
-                            toast.warning(`Received quantity cannot exceed updated quantity. Reset to ${allocation.updated_quantity}`);
-                            return; // Exit early - don't proceed with back order validation
-                        }
-                    } else {
-                        // If no updated_quantity, check against allocated_quantity
-                        if (currentReceivedQuantity > allocation.allocated_quantity) {
-                            allocation.received_quantity = allocation.allocated_quantity;
-                            toast.warning(`Received quantity cannot exceed allocated quantity. Reset to ${allocation.allocated_quantity}`);
-                            return; // Exit early - don't proceed with back order validation
-                        }
+                    const updatedQuantity = Number(allocation.updated_quantity);
+                    const allocatedQuantity = Number(allocation.allocated_quantity);
+                    const finalQuantity = updatedQuantity > 0 ? updatedQuantity : allocatedQuantity;
+                    
+                    if (currentReceivedQuantity > finalQuantity) {
+                        allocation.received_quantity = finalQuantity;
+                        const quantityType = updatedQuantity > 0 ? 'updated quantity' : 'allocated quantity';
+                        toast.warning(`Received quantity cannot exceed ${quantityType}. Reset to ${finalQuantity}`);
+                        return; // Exit early - don't proceed with back order validation
                     }
                     
                     // SECONDARY VALIDATION: Check if there are existing back orders
@@ -3056,19 +3055,13 @@ const autoValidateReceivedQuantities = () => {
                     if (allocation.differences && allocation.differences.length > 0) {
                         const totalBackOrderQuantity = allocation.differences.reduce((sum, diff) => sum + (diff.quantity || 0), 0);
                         
-                        if (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined) {
-                            // If updated_quantity is set, use it minus back orders
-                            const maxReceivedQuantity = allocation.updated_quantity - totalBackOrderQuantity;
+                        if (finalQuantity > 0) {
+                            // Use effective quantity minus back orders
+                            const maxReceivedQuantity = finalQuantity - totalBackOrderQuantity;
                             if (allocation.received_quantity > maxReceivedQuantity) {
                                 allocation.received_quantity = maxReceivedQuantity;
-                                toast.warning(`Received quantity cannot exceed updated quantity minus back orders. Reset to ${maxReceivedQuantity}`);
-                            }
-                        } else {
-                            // If no updated_quantity, use allocated_quantity minus back orders
-                            const maxReceivedQuantity = allocation.allocated_quantity - totalBackOrderQuantity;
-                            if (allocation.received_quantity > maxReceivedQuantity) {
-                                allocation.received_quantity = maxReceivedQuantity;
-                                toast.warning(`Received quantity cannot exceed allocated quantity minus back orders. Reset to ${maxReceivedQuantity}`);
+                                const quantityType = updatedQuantity > 0 ? 'updated quantity' : 'allocated quantity';
+                                toast.warning(`Received quantity cannot exceed ${quantityType} minus back orders. Reset to ${maxReceivedQuantity}`);
                             }
                         }
                     }
