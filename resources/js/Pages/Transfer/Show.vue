@@ -2122,14 +2122,16 @@ const isExpiringItem = (expiryDate) => {
 const getMaxReceivedQuantity = (allocation) => {
     if (!allocation) return 0;
     
-    // Use updated_quantity if it's set and greater than 0, otherwise use allocated_quantity
-    const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
+    // Use updated_quantity if it's set (not null/undefined and greater than 0), otherwise use allocated_quantity
+    const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity;
     
-    // Calculate total back order quantity
-    const backOrderQuantity = allocation.differences?.reduce((sum, diff) => sum + (diff.quantity || 0), 0) || 0;
+    // If there are differences (back orders), subtract them from the effective quantity
+    if (allocation.differences && allocation.differences.length > 0) {
+        const totalDifferences = allocation.differences.reduce((sum, diff) => sum + (diff.quantity || 0), 0);
+        return Math.max(0, effectiveQuantity - totalDifferences);
+    }
     
-    // Return the effective quantity minus back order quantity
-    return Math.max(0, effectiveQuantity - backOrderQuantity);
+    return effectiveQuantity || 0;
 };
 
 // Get total expected quantity for the selected item
