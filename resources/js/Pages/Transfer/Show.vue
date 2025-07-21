@@ -1366,8 +1366,8 @@
                                         <div>
                                             <h4 class="text-sm font-semibold text-gray-900">Batch: {{ allocation.batch_number }}</h4>
                                             <p class="text-xs text-gray-500">
-                                                {{ allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity }} units 
-                                                {{ allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? 'updated' : 'allocated' }}
+                                                {{ allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity }} units 
+                                                {{ allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0 ? 'updated' : 'allocated' }}
                                             </p>
                                         </div>
                                     </div>
@@ -1422,7 +1422,7 @@
                                                         <input type="number" v-model="row.quantity" 
                                                             @input="validateBatchBackOrderQuantity(row, allocation)"
                                                             :disabled="props.transfer.status === 'received'"
-                                                            min="0" :max="allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity"
+                                                            min="0" :max="allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0 ? allocation.updated_quantity : allocation.allocated_quantity"
                                                             :class="[
                                                                 'w-full rounded-lg border-gray-200 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm',
                                                                 props.transfer.status === 'received' ? 'bg-gray-100 cursor-not-allowed' : ''
@@ -2389,8 +2389,8 @@ const missingQuantity = computed(() => {
     
     if (selectedItem.value.inventory_allocations) {
         selectedItem.value.inventory_allocations.forEach(allocation => {
-            // Use updated_quantity if it's set (not null/undefined), otherwise use allocated_quantity
-            const effectiveQuantity = allocation.updated_quantity !== null && allocation.updated_quantity !== undefined ? allocation.updated_quantity : allocation.allocated_quantity;
+            // Use updated_quantity if it's set and greater than 0, otherwise use allocated_quantity
+            const effectiveQuantity = (allocation.updated_quantity !== null && allocation.updated_quantity !== undefined && allocation.updated_quantity > 0) ? allocation.updated_quantity : allocation.allocated_quantity;
             totalExpectedQuantity += effectiveQuantity || 0;
             totalReceivedQuantity += allocation.received_quantity || 0;
         });
