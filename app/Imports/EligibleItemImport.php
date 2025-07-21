@@ -184,4 +184,21 @@ class EligibleItemImport implements
     {
         return $this->skippedCount;
     }
+
+    /**
+     * Handle errors during import
+     */
+    public function onError(\Throwable $e)
+    {
+        $this->errors[] = "Error: " . $e->getMessage();
+        $this->skippedCount++;
+    }
+
+    /**
+     * Get console output for progress bar
+     */
+    public function getConsoleOutput()
+    {
+        return app(\Symfony\Component\Console\Output\OutputInterface::class);
+    }
 } 
