@@ -396,13 +396,7 @@ const handleFileUpload = async (event) => {
     @page {
         size: A4;
         margin: 0.5in;
-    }
-    
-    body {
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
-    }
-    
+    }    
     .print\:hidden {
         display: none !important;
     }
