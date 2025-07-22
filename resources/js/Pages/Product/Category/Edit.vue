@@ -1,16 +1,24 @@
 <template>
     <AuthenticatedLayout title="Categories" description="Manage product categories" img="/assets/images/products.png">
         <div class="mb-6">
-            <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Products
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Products
-            </Link>
+                <Link :href="route('products.categories.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Categories
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-gray-900">Edit</span>
+            </div>
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Category</h2>
-                    <p class="text-sm text-gray-600 mt-1">Update the category information</p>
                 </div>
             </div>
         </div>
@@ -94,7 +102,7 @@ const submit = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: form.value.id ? 'Category has been updated successfully' : 'Category has been created successfully',
+                text: 'Category updated successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {

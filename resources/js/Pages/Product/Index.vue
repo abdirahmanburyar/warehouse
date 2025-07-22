@@ -4,16 +4,6 @@
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <div class="flex items-center space-x-3 mb-1">
-                        <!-- Product Icon -->
-                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-400 to-indigo-500 rounded-lg">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </div>
-                        <h1 class="text-2xl font-bold text-gray-900">Products Management</h1>
-                    </div>
-                    <p class="text-gray-600 text-sm">Manage and track all products in your inventory</p>
                 </div>
                 <div class="flex items-center space-x-3">
                     <button
@@ -72,6 +62,15 @@
                     </svg>
                     Eligible Items
                 </Link>
+                <Link
+                    :href="route('products.uom.index')"
+                    class="inline-flex items-center px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                    <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2"></path>
+                    </svg>
+                    UOM
+                </Link>
             </div>
         </div>
 
@@ -90,7 +89,7 @@
                         <input
                             v-model="search"
                             type="text"
-                            placeholder="Search by name or barcode..."
+                            placeholder="Search by name"
                             class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
                         />
                     </div>
@@ -207,12 +206,12 @@
                 <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
                     <thead>
                         <tr style="background-color: #F4F7FB;">
-                            <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Category</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Dosage Form</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Eligibility Level</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Status</th>
-                            <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Actions</th>
+                            <th class="px-3 py-2 text-xs font-bold text-right" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -264,7 +263,7 @@
                                 </span>
                             </td>
                             <td class="px-3 py-2 whitespace-nowrap text-center">
-                                <div class="flex items-center justify-center space-x-2">
+                                <div class="flex items-end justify-end space-x-2">
                                     <Link
                                         :href="route('products.edit', product.id)"
                                         class="inline-flex items-center p-1.5 border border-transparent rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
@@ -280,8 +279,8 @@
                                         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                         :class="{
                                             'opacity-50 cursor-not-allowed': loadingProducts.has(product.id),
-                                            'bg-gray-200': !product.is_active,
-                                            'bg-indigo-600': product.is_active,
+                                            'bg-red-500': !product.is_active,
+                                            'bg-green-500': product.is_active,
                                         }"
                                         :title="product.is_active ? 'Deactivate Product' : 'Activate Product'"
                                     >

@@ -6,6 +6,7 @@ use App\Http\Resources\EligibleItemResource;
 use App\Models\EligibleItem;
 use App\Models\Product;
 use App\Models\Facility;
+use App\Models\FacilityType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,26 +15,27 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Jobs\ProcessEligibleItemImport;
 use App\Imports\EligibleItemImport;
+use App\Http\Resources\FacilityTypeResource;
 
 class EligibleItemController extends Controller
 {
     public function index(Request $request)
     {
-        $query = EligibleItem::query()->with('product');
+        $query = FacilityType::query();
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
+            $query->where('name', 'like', "%{$search}%");
         }
 
         if ($request->filled('facility_type')) {
             $type = $request->input('facility_type');
             if($type == 'All'){
-                $query->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit']);
+                // Get all active facility types
+                $facilityTypes = FacilityType::where('is_active', true)->pluck('name')->toArray();
+                $query->whereIn('name', $facilityTypes);
             }else{
-                $query->where('facility_type', 'like', "%{$type}%");
+                $query->where('name', 'like', "%{$type}%");
             }
         }
         
@@ -41,16 +43,30 @@ class EligibleItemController extends Controller
         ->withQueryString();
         $query->setPath(url()->current()); // Force Laravel to use full URLs
 
+        // Get facility types for filter dropdown
+        $facilityTypes = FacilityType::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
         return Inertia::render('Product/Eligible/Index', [
-            'eligibleItems' => EligibleItemResource::collection($query),
+            'eligibleItems' => FacilityTypeResource::collection($query),
             'filters' => $request->only(['search', 'per_page','facility_type']),
+            'facilityTypes' => $facilityTypes,
         ]);
     }
 
     public function create()
     {
+        // Get facility types for dropdown
+        $facilityTypes = FacilityType::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
         return Inertia::render('Product/Eligible/Create', [
-            'products' => Product::select('id', 'name')->orderBy('name')->get()
+            'products' => Product::select('id', 'name')->orderBy('name')->get(),
+            'facilityTypes' => $facilityTypes,
         ]);
     }
 
@@ -63,7 +79,8 @@ class EligibleItemController extends Controller
                 'facility_types' => 'required|array|min:1',
             ]);
     
-            $allTypes = ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit'];
+            // Get all active facility types from database
+            $allTypes = FacilityType::where('is_active', true)->pluck('name')->toArray();
     
             foreach ($request->products as $product) {
                 $productId = $product['product_id'];
@@ -126,9 +143,17 @@ class EligibleItemController extends Controller
     public function edit($eligibleItem)
     {
         $eligible = EligibleItem::with('product')->find($eligibleItem);
+        
+        // Get facility types for dropdown
+        $facilityTypes = FacilityType::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+            
         return inertia('Product/Eligible/Edit', [
             'eligible' => $eligible,
-            'products' => Product::select('id', 'name')->orderBy('name')->get()
+            'products' => Product::select('id', 'name')->orderBy('name')->get(),
+            'facilityTypes' => $facilityTypes,
         ]);
     }
 

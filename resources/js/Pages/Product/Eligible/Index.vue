@@ -1,84 +1,51 @@
 <template>
     <AuthenticatedLayout
-        title="Eligible Items"
-        description="Manage product eligibility for facilities"
+        title="Facility Types"
+        description="Manage facility types for product organization"
         img="/assets/images/products.png"
-        >
-        <div class="mb-6">
-            <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Products
+    >
+        <Head title="Facility Types" />
+
+        <!-- Breadcrumb -->
+        <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+            <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                Products
             </Link>
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 leading-tight">Eligible Items</h2>
-                    <p class="text-sm text-gray-600 mt-1">Manage product eligibility for different facility types</p>
-                </div>
-                <Link
-                    :href="route('products.eligible.create')"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
-                    Create Eligible Item
-                </Link>
-            </div>
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span class="text-gray-900">Facility Types</span>
         </div>
 
-        <!-- Import Section -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Import Eligible Items</h3>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex-1">
-                        <input
-                            type="file"
-                            id="importFile"
-                            accept=".xlsx,.xls"
-                            @change="handleFileUpload"
-                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors duration-200"
-                        />
+        <div class="bg-white">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Facility Types</h2>
                     </div>
-                    <button
-                        @click="submitImport"
-                        :disabled="importing || !selectedFile"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <svg v-if="importing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {{ importing ? "Importing..." : "Import" }}
-                    </button>
-                </div>
-                <div v-if="importError" class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div class="flex">
-                        <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm text-red-600">{{ importError }}</span>
+                    <div class="flex items-center space-x-3">
+                        <Link
+                            :href="route('products.eligible.create')"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                        >
+                            <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Create Eligible Item
+                        </Link>
+                        <Link
+                            :href="route('products.facility-types.create')"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                        >
+                            <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            New Facility Type
+                        </Link>
                     </div>
-                </div>
-                <div v-if="importSuccess" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div class="flex">
-                        <svg class="h-5 w-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm text-green-600">{{ importSuccess }}</span>
-                    </div>
-                </div>
-                <div class="mt-3 text-sm text-gray-600">
-                    <p class="font-medium mb-1">Upload an Excel file (.xlsx/.xls) with columns:</p>
-                    <ul class="list-disc list-inside space-y-1 text-gray-500">
-                        <li>item_description</li>
-                        <li>facility_type</li>
-                    </ul>
                 </div>
             </div>
-        </div>
 
         <!-- Search and Filters Section -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -94,23 +61,12 @@
                             <input
                                 v-model="search"
                                 type="text"
-                                placeholder="Search eligible items..."
+                                placeholder="Search facility types..."
                                 class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm"
                             />
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
-                        <div class="w-64">
-                            <Multiselect
-                                v-model="facilityType"
-                                :options="facilityTypes"
-                                :close-on-select="true"
-                                :searchable="true"
-                                :show-labels="false"
-                                placeholder="Select Facility Type"
-                                class="text-sm"
-                            />
-                        </div>
                         <select 
                             v-model="perPage" 
                             class="px-3 py-2.5 w-[200px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm"
@@ -126,69 +82,106 @@
             </div>
         </div>
 
-        <!-- Eligible Items Table -->
+        <!-- Facility Types Table -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div v-if="!eligibleItems.data.length" class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No eligible items</h3>
-                <p class="mt-1 text-sm text-gray-500">Get started by creating a new eligible item or importing from Excel.</p>
-                <div class="mt-6 flex justify-center space-x-3">
-                    <Link :href="route('products.eligible.create')" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No facility types found</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating a new facility type.</p>
+                <div class="mt-6">
+                    <Link :href="route('products.facility-types.create')" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
-                        Create Eligible Item
+                        New Facility Type
                     </Link>
                 </div>
             </div>
             <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 w-[350px] py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
-                                Item Name
+                <table class="w-full text-sm text-left">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Facility Type Name
                             </th>
-                            <th class="px-6 w-[350px] py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
-                                Facility Type
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Status
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="item in eligibleItems.data" :key="item.id" class="hover:bg-gray-50 transition-colors duration-150">
+                        <tr
+                            v-for="item in eligibleItems.data"
+                            :key="item.id"
+                            class="hover:bg-gray-50 transition-colors duration-200"
+                        >
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ item.product?.name }}
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-8 w-8">
+                                        <div class="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                            <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        {{ item.name }}
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ item.facility_type }}
+                                <span
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                                    :class="{
+                                        'bg-green-100 text-green-800': item.is_active,
+                                        'bg-red-100 text-red-800': !item.is_active,
+                                    }"
+                                >
+                                    <span 
+                                        class="w-2 h-2 rounded-full mr-2" 
+                                        :class="{
+                                            'bg-green-400': item.is_active,
+                                            'bg-red-400': !item.is_active,
+                                        }"
+                                    ></span>
+                                    {{ item.is_active ? "Active" : "Inactive" }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex items-center space-x-3">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex items-center justify-end space-x-3">
                                     <Link
-                                        :href="route('products.eligible.edit', item.id)"
-                                        class="text-blue-600 hover:text-blue-900 transition-colors duration-200 p-1 rounded-md hover:bg-blue-50"
-                                        title="Edit Eligible Item"
+                                        :href="route('products.facility-types.edit', { facilityType: item.id })"
+                                        class="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                                        title="Edit Facility Type"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </Link>
                                     <button
-                                        @click="destroy(item)"
-                                        class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-md hover:bg-red-50"
-                                        title="Delete Eligible Item"
+                                        @click="confirmToggleStatus(item)"
+                                        :class="{
+                                            'opacity-50 cursor-wait': loadingItems.has(item.id),
+                                            'bg-gray-200': !item.is_active,
+                                            'bg-green-600': item.is_active,
+                                        }"
+                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                        :disabled="loadingItems.has(item.id)"
+                                        title="Toggle Status"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                                        <span
+                                            :class="{
+                                                'translate-x-5': item.is_active,
+                                                'translate-x-0': !item.is_active,
+                                                'bg-gray-400 animate-pulse': loadingItems.has(item.id),
+                                            }"
+                                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        ></span>
                                     </button>
                                 </div>
                             </td>
@@ -206,21 +199,20 @@
                 @pagination-change-page="getResults"
             />
         </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Link, router } from "@inertiajs/vue3";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import axios from "axios";
 import { debounce } from "lodash";
 import { useToast } from "vue-toastification";
 import { TailwindPagination } from "laravel-vue-pagination";
 import Swal from "sweetalert2";
-import Multiselect from "vue-multiselect";
-import "vue-multiselect/dist/vue-multiselect.css";
-import "@/Components/multiselect.css";
+
 import * as XLSX from "xlsx";
 
 const toast = useToast();
@@ -232,83 +224,21 @@ const importError = ref("");
 const importSuccess = ref("");
 
 const props = defineProps({
-    eligibleItems: Object,
-    filters: Object,
+    eligibleItems: {
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object,
+        required: true,
+    },
+
 });
 
-const handleFileUpload = (e) => {
-    selectedFile.value = e.target.files[0];
-};
 
-const submitImport = async () => {
-    const maxFileSize = 50 * 1024 * 1024; // 50MB
-    if (!selectedFile.value) {
-        importError.value = "Please select a file to import";
-        return;
-    }
-
-    if (selectedFile.value.size > maxFileSize) {
-        importError.value = "File size must be less than 50MB";
-        return;
-    }
-
-    // Validate file type
-    if (
-        ![
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel",
-        ].includes(selectedFile.value.type)
-    ) {
-        importError.value = "Please select a file to import";
-        return;
-    }
-
-    importing.value = true;
-    importError.value = "";
-    importSuccess.value = "";
-
-    try {
-        const formData = new FormData();
-        formData.append("file", selectedFile.value);
-
-        const response = await axios.post(
-            route("products.eligible.import"),
-            formData,
-            {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-
-        importSuccess.value = response.data.message;
-        selectedFile.value = null;
-        // Reset file input
-        document.getElementById("importFile").value = "";
-        toast.success("Import started successfully");
-        toast.info(
-            "Processing in background. This may take a few minutes for large files."
-        );
-    } catch (error) {
-        console.error("Import error:", error);
-        importError.value = error.response?.data?.message || "Import failed";
-        toast.error(importError.value);
-    } finally {
-        importing.value = false;
-    }
-};
-
-const facilityTypes = [
-    'All',
-    "Regional Hospital",
-    "District Hospital",
-    "Health Centre",
-    "Primary Health Unit",
-];
 
 const search = ref(props.filters.search || "");
 const perPage = ref(props.filters.per_page || "10");
-const facilityType = ref(props.filters.facility_type || "");
 
 function getResults(page = 1) {
     props.filters.page = page;
@@ -318,7 +248,6 @@ function updateRoute() {
     const query = {};
 
     if (search.value) query.search = search.value;
-    if (facilityType.value) query.facility_type = facilityType.value;
     if (perPage.value) {
         // props.filters.page = 1;
         query.per_page = perPage.value;
@@ -337,7 +266,6 @@ watch(
         () => search.value,
         () => perPage.value,
         () => props.filters.page,
-        () => facilityType.value,
     ],
     () => {
         updateRoute();
@@ -346,31 +274,44 @@ watch(
 
 const isDeleteing = ref(false);
 const isImporting = ref(false);
-function destroy(item) {
+const loadingItems = ref(new Set());
+
+function confirmToggleStatus(item) {
     Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
+        title: 'Are you sure?',
+        text: `Do you want to ${item.is_active ? 'deactivate' : 'activate'} this facility type?`,
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, proceed!'
+    }).then((result) => {
         if (result.isConfirmed) {
-            isDeleteing.value = true;
-            await axios
-                .get(route("products.eligible.destroy", item.id))
-                .then(() => {
-                    isDeleteing.value = false;
-                    toast.success("Eligible item deleted successfully");
-                    updateRoute();
-                })
-                .catch(() => {
-                    isDeleteing.value = false;
-                    toast.error("Error deleting eligible item");
-                });
+            toggleStatus(item);
         }
     });
+}
+
+function toggleStatus(item) {
+    loadingItems.value.add(item.id);
+    
+    axios.get(route('products.facility-types.toggle-status', { facilityType: item.id }))
+        .then(response => {
+            if (response.data.success) {
+                toast.success(response.data.message);
+                // Refresh the page to get updated data
+                router.reload();
+            } else {
+                toast.error(response.data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling status:', error);
+            toast.error('An error occurred while updating the status');
+        })
+        .finally(() => {
+            loadingItems.value.delete(item.id);
+        });
 }
 
 async function handleExcelUpload(event) {

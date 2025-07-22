@@ -1,16 +1,24 @@
 <template>
     <AuthenticatedLayout title="Edit Eligible Item" description="Edit an eligible item">
         <div class="mb-6">
-            <Link :href="route('products.eligible.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Products
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Eligible Items
-            </Link>
+                <Link :href="route('products.eligible.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Eligible Items
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-gray-900">Edit</span>
+            </div>
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Eligible Item</h2>
-                    <p class="text-sm text-gray-600 mt-1">Update product eligibility information</p>
                 </div>
             </div>
         </div>
@@ -41,18 +49,30 @@
 
                     <div>
                         <InputLabel for="facility_type" value="Facility Type" class="text-sm font-medium text-gray-700 mb-2" />
-                        <select
-                            id="facility_type"
-                            v-model="form.facility_type"
-                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm"
-                            required
-                        >
-                            <option value="">Select a facility type</option>
-                            <option value="District Hospital">District Hospital</option>
-                            <option value="Primary Health Unit">Primary Health Unit</option>
-                            <option value="Health Centre">Health Centre</option>
-                            <option value="Regional Hospital">Regional Hospital</option>
-                        </select>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <select
+                                    id="facility_type"
+                                    v-model="form.facility_type"
+                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm"
+                                    required
+                                >
+                                    <option value="">Select a facility type</option>
+                                    <option v-for="facilityType in facilityTypes" :key="facilityType" :value="facilityType">
+                                        {{ facilityType }}
+                                    </option>
+                                </select>
+                            </div>
+                            <Link
+                                :href="route('products.facility-types.create')"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                New Facility Type
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
@@ -102,6 +122,10 @@ const props = defineProps({
     products: {
         type: Array,
         required: true
+    },
+    facilityTypes: {
+        type: Array,
+        required: true
     }
 });
 
@@ -128,7 +152,7 @@ const submit = () => {
             await axios.post(route('products.eligible.update'), form.value)
                 .then((response) => {
                     processing.value = false;
-                    toast.success(response.data);
+                    toast.success('Eligible item updated successfully');
                     Swal.fire(
                         'Updated!',
                         'The eligible item has been updated.',

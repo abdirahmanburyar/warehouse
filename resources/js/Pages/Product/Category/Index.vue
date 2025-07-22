@@ -2,15 +2,17 @@
     <AuthenticatedLayout title="Categories" description="Manage product categories" img="/assets/images/products.png">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                    <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                        Products
+                    </Link>
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to Products
-                </Link>
+                    <span class="text-gray-900">Categories</span>
+                </div>
                 <div>
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">Categories</h2>
-                    <p class="text-sm text-gray-600 mt-1">Manage product categories and classifications</p>
                 </div>
             </div>
             <Link
@@ -77,66 +79,48 @@
                 </div>
             </div>
             <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
+                <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                    <thead>
+                        <tr style="background-color: #F4F7FB;">
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Name</th>
+                            <th class="px-3 py-2 text-xs font-bold text-right" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="category in categories.data" :key="category.id" class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
+                    <tbody>
+                        <tr
+                            v-for="category in categories.data"
+                            :key="category.id"
+                            class="hover:bg-gray-50 transition-colors duration-150 border-b"
+                            style="border-bottom: 1px solid #B7C6E6;"
+                        >
+                            <td class="px-3 py-2">
+                                <div class="text-xs font-medium text-gray-800 capitalize">
                                     {{ category.name }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span 
-                                    :class="[
-                                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                                        category.is_active 
-                                            ? 'bg-green-100 text-green-800' 
-                                            : 'bg-red-100 text-red-800'
-                                    ]"
-                                >
-                                    <span :class="[
-                                        'w-2 h-2 rounded-full mr-1.5',
-                                        category.is_active ? 'bg-green-400' : 'bg-red-400'
-                                    ]"></span>
-                                    {{ category.is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex items-center space-x-3">
-                                    <Link 
-                                        :href="route('products.categories.edit', category.id)" 
-                                        class="text-blue-600 hover:text-blue-900 transition-colors duration-200 p-1 rounded-md hover:bg-blue-50"
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <Link
+                                        :href="route('products.categories.edit', { category: category.id })"
+                                        class="inline-flex items-center p-1.5 border border-transparent rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
                                         title="Edit Category"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </Link>
-                                    <button 
-                                        @click="confirmToggleStatus(category)" 
-                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    <button
+                                        @click="confirmToggleStatus(category)"
                                         :class="{
                                             'opacity-50 cursor-wait': loadingCategories.has(category.id),
                                             'bg-gray-200': !category.is_active,
-                                            'bg-green-500': category.is_active,
+                                            'bg-indigo-600': category.is_active,
                                         }"
+                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                         :disabled="loadingCategories.has(category.id)"
                                         title="Toggle Status"
                                     >
-                                        <span 
+                                        <span
                                             :class="{
                                                 'translate-x-5': category.is_active,
                                                 'translate-x-0': !category.is_active,

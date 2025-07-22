@@ -1,16 +1,24 @@
 <template>
     <AuthenticatedLayout title="Create Eligible Item" description="Create a new eligible item">
         <div class="mb-6">
-            <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Products
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Products
-            </Link>
+                <Link :href="route('products.eligible.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Eligible Items
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-gray-900">Create</span>
+            </div>
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create Eligible Item</h2>
-                    <p class="text-sm text-gray-600 mt-1">Add products to facility type eligibility</p>
                 </div>
             </div>
         </div>
@@ -26,24 +34,37 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <InputLabel for="facility_types" value="Facility Types" class="text-sm font-medium text-gray-700 mb-2" />
-                        <Multiselect
-                            v-model="form.facility_types"
-                            :options="facilityTypeOptions"
-                            :multiple="true"
-                            :searchable="true"
-                            :close-on-select="false"
-                            :clear-on-select="false"
-                            :preserve-search="true"
-                            :show-labels="false"
-                            placeholder="Select facility types"
-                            class="w-full"
-                        >
-                            <template v-slot:selection="{ values, search, isOpen }">
-                                <span class="multiselect__single" v-if="values.length && !isOpen">
-                                    {{ values.join(', ') }}
-                                </span>
-                            </template>
-                        </Multiselect>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <Multiselect
+                                    v-model="form.facility_types"
+                                    :options="facilityTypeOptions"
+                                    :multiple="true"
+                                    :searchable="true"
+                                    :close-on-select="false"
+                                    :clear-on-select="false"
+                                    :preserve-search="true"
+                                    :show-labels="false"
+                                    placeholder="Select facility types"
+                                    class="w-full"
+                                >
+                                    <template v-slot:selection="{ values, search, isOpen }">
+                                        <span class="multiselect__single" v-if="values.length && !isOpen">
+                                            {{ values.join(', ') }}
+                                        </span>
+                                    </template>
+                                </Multiselect>
+                            </div>
+                            <Link
+                                :href="route('products.facility-types.create')"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                New Facility Type
+                            </Link>
+                        </div>
                         <p class="text-sm text-gray-500 mt-1">Select one or more facility types</p>
                     </div>
                 </div>
@@ -142,7 +163,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios'
 import Swal from 'sweetalert2'
 
@@ -156,17 +177,17 @@ const props = defineProps({
     products: {
         type: Array,
         required: true
+    },
+    facilityTypes: {
+        type: Array,
+        required: true
     }
 });
 
-// Define facility type options
-const facilityTypeOptions = [
-    'All',
-    'District Hospital',
-    'Primary Health Unit',
-    'Health Centre',
-    'Regional Hospital'
-];
+// Define facility type options with 'All' option and database values
+const facilityTypeOptions = computed(() => {
+    return ['All', ...props.facilityTypes];
+});
 
 const form = ref({
     products: [],
@@ -232,7 +253,7 @@ const submit = async () => {
             processing.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data,
+                text: 'Eligible items created successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {

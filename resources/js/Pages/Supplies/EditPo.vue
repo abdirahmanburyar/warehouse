@@ -247,7 +247,7 @@
                                         min="1" 
                                         placeholder="Qty"
                                     />
-                                    <div v-if="item.original_quantity" class="text-xs mt-1 text-red-500 line-through">
+                                    <div  class="text-xs mt-1 text-red-500 line-through">
                                         Original: {{ item.original_quantity }}
                                     </div>
                                 </td>

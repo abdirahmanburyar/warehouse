@@ -1,30 +1,38 @@
 <template>
     <AuthenticatedLayout title="Create UOM" description="Create a new UOM" img="/assets/images/products.png">
         <div class="mb-6">
-            <Link :href="route('products.index')" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                <Link :href="route('products.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    Products
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Products
-            </Link>
+                <Link :href="route('products.uom.index')" class="hover:text-gray-900 transition-colors duration-200">
+                    UOM
+                </Link>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-gray-900">Create</span>
+            </div>
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create UOM</h2>
-                    <p class="text-sm text-gray-600 mt-1">Add a new UOM to organize your products</p>
                 </div>
             </div>
         </div>
 
         <div class="mb-[100px]">
             <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-900">Dosage Form Information</h3>
-                <p class="text-sm text-gray-600 mt-1">Enter the details for the new dosage form</p>
+                <h3 class="text-lg font-medium text-gray-900">UOM Information</h3>
+                <p class="text-sm text-gray-600 mt-1">Enter the details for the new UOM</p>
             </div>
 
             <form @submit.prevent="submit" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <InputLabel for="name" value="Dosage Form Name" class="text-sm font-medium text-gray-700 mb-2" />
+                        <InputLabel for="name" value="UOM Name" class="text-sm font-medium text-gray-700 mb-2" />
                         <TextInput
                             id="name"
                             type="text"
@@ -32,7 +40,7 @@
                             v-model="form.name"
                             required
                             autofocus
-                            placeholder="Enter dosage form name"
+                            placeholder="Enter UOM name"
                         />
                     </div>
                 </div>
@@ -86,7 +94,7 @@ const submit = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data,
+                text: 'UOM created successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {

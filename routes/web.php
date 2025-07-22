@@ -299,6 +299,27 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/import', [EligibleItemController::class, 'import'])->middleware(PermissionMiddleware::class . ':eligible-item.create')->name('products.eligible.import');
     });
 
+    // UOM Management Routes
+    Route::prefix('uom')->group(function () {
+        Route::get('/', [\App\Http\Controllers\UomController::class, 'index'])->middleware(PermissionMiddleware::class . ':uom.view')->name('products.uom.index');
+        Route::get('/create', [\App\Http\Controllers\UomController::class, 'create'])->middleware(PermissionMiddleware::class . ':uom.create')->name('products.uom.create');
+        Route::post('/store', [\App\Http\Controllers\UomController::class, 'store'])->middleware(PermissionMiddleware::class . ':uom.create')->name('products.uom.store');
+        Route::get('/{uom}/edit', [\App\Http\Controllers\UomController::class, 'edit'])->middleware(PermissionMiddleware::class . ':uom.edit')->name('products.uom.edit');
+        Route::put('/{uom}', [\App\Http\Controllers\UomController::class, 'update'])->middleware(PermissionMiddleware::class . ':uom.edit')->name('products.uom.update');
+        Route::delete('/{uom}', [\App\Http\Controllers\UomController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':uom.delete')->name('products.uom.destroy');
+        Route::get('/{uom}/toggle-status', [\App\Http\Controllers\UomController::class, 'toggleStatus'])->name('products.uom.toggle-status');
+    });
+
+    // Facility Type Management Routes
+    Route::prefix('facility-types')->group(function () {
+        Route::get('/', [\App\Http\Controllers\FacilityTypeController::class, 'index'])->middleware(PermissionMiddleware::class . ':facility-type.view')->name('products.facility-types.index');
+        Route::get('/create', [\App\Http\Controllers\FacilityTypeController::class, 'create'])->middleware(PermissionMiddleware::class . ':facility-type.create')->name('products.facility-types.create');
+        Route::post('/store', [\App\Http\Controllers\FacilityTypeController::class, 'store'])->middleware(PermissionMiddleware::class . ':facility-type.create')->name('products.facility-types.store');
+        Route::get('/{facilityType}/edit', [\App\Http\Controllers\FacilityTypeController::class, 'edit'])->middleware(PermissionMiddleware::class . ':facility-type.edit')->name('products.facility-types.edit');
+        Route::delete('/{facilityType}', [\App\Http\Controllers\FacilityTypeController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':facility-type.delete')->name('products.facility-types.destroy');
+        Route::get('/{facilityType}/toggle-status', [\App\Http\Controllers\FacilityTypeController::class, 'toggleStatus'])->name('products.facility-types.toggle-status');
+    });
+
     // Supply Management Routes
     Route::prefix('supplies')->group(function () {
         Route::get('/', [SupplyController::class, 'index'])->middleware(PermissionMiddleware::class . ':supply.view')->name('supplies.index');
