@@ -12,6 +12,7 @@ use App\Models\Facility;
 use App\Models\Category;
 use App\Models\Dosage;
 use App\Models\Reason;
+use App\Models\Location;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -122,6 +123,12 @@ class ExpiredController extends Controller
         $warehouses = Warehouse::pluck('name')->toArray();
         $category = Category::pluck('name')->toArray();
         $dosage = Dosage::pluck('name')->toArray();
+        
+        // Load locations based on selected warehouse
+        $locations = [];
+        if ($request->filled('warehouse')) {
+            $locations = Location::where('warehouse', $request->warehouse)->pluck('location')->toArray();
+        }
     
         // Calculate summary based on current tab filter
         $summary = [];
@@ -230,6 +237,7 @@ class ExpiredController extends Controller
             'warehouses' => $warehouses,
             'categories' => $category,
             'dosage' => $dosage,
+            'locations' => $locations,
             'filters' => $request->only('search', 'product_id', 'warehouse', 'dosage','category', 'location', 'batch_number', 'expiry_date_from', 'expiry_date_to', 'per_page', 'page', 'tab'),
         ]);
     }

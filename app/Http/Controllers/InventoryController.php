@@ -196,7 +196,13 @@ class InventoryController extends Controller
     
     public function getLocations(Request $request){
         try {
-            $locations = Location::where('warehouse', $request->warehouse)
+            $warehouse = $request->input('warehouse');
+            
+            if (!$warehouse) {
+                return response()->json([], 200);
+            }
+            
+            $locations = Location::where('warehouse', $warehouse)
                 ->select('id', 'location', 'warehouse')
                 ->get()
                 ->map(function($location) {

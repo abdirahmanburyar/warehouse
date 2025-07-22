@@ -84,42 +84,42 @@
                         <thead>
                             <tr style="background-color: #EFF6FF;">
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tl-lg w-[300px]"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b rounded-tl-lg w-[300px]"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Item
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Quantity
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Batch Number
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Location
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Expiry Date
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Days Until Expiry
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Status
                                 </th>
                                 <th
-                                    class="px-3 py-3 text-left text-xs font-bold uppercase border-b rounded-tr-lg"
+                                    class="px-3 py-3 text-left text-xs font-bold border-b rounded-tr-lg"
                                     style="color: #979ECD; border-bottom: 2px solid #B7C6E6;">
                                     Action
                                 </th>
@@ -393,7 +393,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { format, addMonths, addYears } from 'date-fns'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import axios from 'axios'
 import Swal from 'sweetalert2'
@@ -476,6 +476,13 @@ const warehouse = ref(props.filters.warehouse || "");
 const per_page = ref(props.filters.per_page || 25);
 
 const loadedLocation = ref([]);
+
+// Initialize locations if warehouse is already selected
+onMounted(() => {
+    if (warehouse.value) {
+        loadLocations();
+    }
+});
 
 // Apply filters
 const applyFilters = () => {
@@ -643,22 +650,25 @@ const filteredStats = computed(() => {
 watch([() => warehouse.value], () => {
     if (warehouse.value == null) {
         location.value = null;
+        loadedLocation.value = [];
         return;
     }
     loadLocations();
 });
+
 async function loadLocations() {
-    await axios
-        .post(route("invetnories.getLocations"), {
-            warehouse: warehouse.value,
-        })
-        .then((response) => {
-            loadedLocation.value = response.data;
-        })
-        .catch((error) => {
-            console.log(error);
-            toast.error(error.response.data);
+    try {
+        const response = await axios.get(route("invetnories.getLocations"), {
+            params: {
+                warehouse: warehouse.value,
+            }
         });
+        loadedLocation.value = response.data.map(item => item.location);
+    } catch (error) {
+        console.log(error);
+        toast.error('Failed to load locations');
+        loadedLocation.value = [];
+    }
 }
 
 </script>
