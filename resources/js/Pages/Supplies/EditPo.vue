@@ -201,7 +201,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">#</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200" style="width: 350px;">Item</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Quantity</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Unit</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 w-[300px]">Unit</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Unit Cost</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Total</th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Actions</th>
@@ -247,19 +247,18 @@
                                         min="1" 
                                         placeholder="Qty"
                                     />
-                                    <div  class="text-xs mt-1 text-red-500 line-through">
+                                    <div v-if="item.original_quantity" class="text-xs mt-1 text-red-500 line-through">
                                         Original: {{ item.original_quantity }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 border-r border-gray-200">
-                                    <input 
-                                        type="text" 
-                                        v-model="item.uom" 
-                                        required
-                                        :disabled="form.approved_at"
-                                        class="w-full text-sm border-gray-300 rounded-lg focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-3 py-2 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                                        placeholder="e.g. PCS"
-                                    />
+                                    <Multiselect v-model="item.uom" :value="item.uom"
+                                        :options="['Add new UoM',...props.uom]"
+                                        :searchable="true" :close-on-select="true" :show-labels="false" required
+                                        :allow-empty="true" placeholder="Search and select UoM..." 
+                                        class="multiselect-modern text-sm"
+                                        @select="handleUomSelect(index, $event)">
+                                    </Multiselect>
                                     <div v-if="item.original_uom" class="text-xs mt-1 text-red-500 line-through">
                                         Original: {{ item.original_uom }}
                                     </div>
@@ -500,6 +499,59 @@
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <!-- UOM Creation Modal -->
+    <div v-if="showUomModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Create New UOM</h3>
+                    <button @click="closeUomModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="createUom" class="space-y-4">
+                    <div>
+                        <label for="uom-name" class="block text-sm font-medium text-gray-700 mb-2">UOM Name</label>
+                        <input
+                            id="uom-name"
+                            type="text"
+                            v-model="uomForm.name"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                            placeholder="Enter UOM name"
+                            required
+                            autofocus
+                        />
+                    </div>
+                    
+                    <div class="flex items-center justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            @click="closeUomModal"
+                            :disabled="isUomSubmitting"
+                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="isUomSubmitting"
+                            class="px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                        >
+                            <svg v-if="isUomSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ isUomSubmitting ? 'Creating...' : 'Create UOM' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -523,7 +575,8 @@ const props = defineProps({
     suppliers: Array,
     po: Object,
     users: Array,
-    error: String
+    error: String,
+    uom: Array
 });
 
 const form = ref({
@@ -533,7 +586,7 @@ const form = ref({
     original_po_no: props.po?.original_po_no,
     notes: props.po?.notes,
     po_number: props.po?.po_number,
-    po_date: props.po?.po_date || new Date().toISOString().split('T')[0],
+    po_date: props.po?.po_date ? new Date(props.po.po_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     items: props.po?.items || [],
     reviewed_at: props.po?.reviewed_at,
     reviewed_by: props.po?.reviewed_by,
@@ -550,6 +603,24 @@ const isProcessing = ref({
     approve: false,
     reject: false
 });
+
+// UOM Modal state
+const showUomModal = ref(false);
+const currentUomIndex = ref(null);
+const uomForm = ref({
+    name: ''
+});
+const isUomSubmitting = ref(false);
+
+ async function handleUomSelect(index, selected){
+     form.value.items[index].uom = selected;
+     // calculateTotal(index);
+     if(selected === 'Add new UoM'){
+         form.value.items[index].uom = '';
+         showUomModal.value = true;
+         currentUomIndex.value = index;
+     }
+ }
 
 function addItem() {
     // Check if there are existing items and if the last item has no product_id
@@ -607,6 +678,43 @@ function formatCurrency(value) {
     }).format(value || 0);
 }
 
+// UOM Modal functions
+async function createUom() {
+    if (!uomForm.value.name.trim()) {
+        toast.error('Please enter a UOM name');
+        return;
+    }
+
+    try {
+        isUomSubmitting.value = true;
+        const response = await axios.post(route('products.uom.store'), uomForm.value);
+        
+        // Update the form item with the new UOM name
+        form.value.items[currentUomIndex.value].uom = response.data;
+        
+        // Update the props.uom array to include the new UOM
+        props.uom.push(response.data);
+        
+        // Close modal and reset form
+        showUomModal.value = false;
+        uomForm.value.name = '';
+        currentUomIndex.value = null;
+        
+        toast.success('UOM created successfully');
+    } catch (error) {
+        console.error('Error creating UOM:', error);
+        toast.error(error.response?.data || 'Failed to create UOM');
+    } finally {
+        isUomSubmitting.value = false;
+    }
+}
+
+function closeUomModal() {
+    showUomModal.value = false;
+    uomForm.value.name = '';
+    currentUomIndex.value = null;
+}
+
 const formatDate = (dateString) => {
     if (!dateString) return '';
     return moment(dateString).format('MM/DD/YYYY hh:mm A');
@@ -640,7 +748,7 @@ async function reviewPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.visit(route('supplies.index'));
+        router.reload();
     } catch (error) {
         console.error('Error reviewing PO:', error);
         Swal.fire({
@@ -682,7 +790,7 @@ async function approvePO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.visit(route('supplies.index'));
+        router.reload();
     } catch (error) {
         console.error('Error approving PO:', error);
         Swal.fire({
@@ -734,7 +842,7 @@ async function rejectPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.visit(route('supplies.index'));
+        router.reload();
     } catch (error) {
         console.error('Error rejecting PO:', error);
         Swal.fire({
@@ -794,8 +902,12 @@ async function submitForm() {
     isSubmitting.value = true;
 
     try {
-        // Send only filtered items
-        const payload = { ...form.value, items: filteredItems };
+        // Send only filtered items with properly formatted date
+        const payload = { 
+            ...form.value, 
+            items: filteredItems,
+            po_date: moment(form.value.po_date).format('YYYY-MM-DD')
+        };
         const response = await axios.put(route('supplies.updatePO', form.value.id), payload);
         await Swal.fire({
             icon: 'success',
@@ -803,7 +915,11 @@ async function submitForm() {
             text: 'Purchase order has been updated successfully',
             confirmButtonColor: '#3085d6'
         });
-        router.visit(route('supplies.index'));
+        router.get(route('supplies.editPO', form.value.id), {}, {
+            preserveState: false,
+            preserveScroll: true,
+            only: ['products', 'uom', 'suppliers']
+        });
     } catch (error) {
         console.error('Error updating PO:', error);
         let errorMessage = 'Failed to update purchase order';
