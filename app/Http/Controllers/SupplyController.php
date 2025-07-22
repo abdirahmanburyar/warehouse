@@ -1409,21 +1409,20 @@ class SupplyController extends Controller
                             logger()->info('No quantity change detected');
                         }
                         
-                        // Check if UOM has changed
-                        if ($existingItem->uom != $item['uom']) {
-                            // If original_uom is not set, capture it (first change)
+                        if ($existingItem->original_uom !== null && (int)$item['uom'] == (int)$existingItem->original_uom) {
+                            // Rollback detected - clear original_uom
+                            $itemData['original_uom'] = null;
+                            $itemData['edited_by'] = auth()->id();
+                            logger()->info('Rolling back uom to original, clearing original_uom');
+                        } elseif ($existingItem->uom != $item['uom']) {
+                            // uom changed - capture original if not already set
                             if ($existingItem->original_uom === null) {
                                 $itemData['original_uom'] = $existingItem->uom;
-                                logger()->info('Capturing original UOM: ' . $existingItem->uom);
+                                logger()->info('Capturing original uom: ' . $existingItem->uom);
                             }
                             $itemData['edited_by'] = auth()->id();
                         } else {
-                            // If UOM is rolled back to original, clear original_uom
-                            if ($existingItem->original_uom !== null && $item['uom'] == $existingItem->original_uom) {
-                                $itemData['original_uom'] = null;
-                                $itemData['edited_by'] = auth()->id();
-                                logger()->info('Rolling back UOM to original, clearing original_uom');
-                            }
+                            logger()->info('No uom change detected');
                         }
 
                         // Force update even if data hasn't changed to ensure original tracking is processed
