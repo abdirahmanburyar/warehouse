@@ -56,14 +56,14 @@
                     </Link>
                     <button
                         type="submit"
-                        :disabled="form.processing"
+                        :disabled="isUpdating"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg v-if="isUpdating" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        {{ form.processing ? 'Updating...' : 'Update Facility Type' }}
+                        {{ isUpdating ? 'Updating...' : 'Update Facility Type' }}
                     </button>
                 </div>
             </form>
@@ -73,11 +73,10 @@
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
 import { ref } from "vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import TextInput from "@/Components/TextInput.vue";
-import InputError from "@/Components/InputError.vue";
 import Swal from "sweetalert2";
 import axios from "axios";
 import { useToast } from "vue-toastification";
@@ -96,9 +95,13 @@ const form = ref({
     name: props.facilityType.name,
 });
 
+const isUpdating = ref(false);
+
 async function submit() {
+    isUpdating.value = true;
     await axios.post(route('products.facility-types.store'), form.value)
         .then(response => {
+            isUpdating.value = false;
             Swal.fire({
                 title: 'Success!',
                 text: 'Facility Type updated successfully',
@@ -109,6 +112,7 @@ async function submit() {
             });
         })
         .catch(error => {
+            isUpdating.value = false;
             console.log(error.response.data);
             toast.error(error.response.data);
         });
