@@ -59,7 +59,7 @@ class FacilityTypeController extends Controller
     {
         try {
             $validator = $request->validate([
-                'id' => ['required', 'exists:facility_types,id'],
+                'id' => ['nullable', 'exists:facility_types,id'],
                 'name' => ['required', 'string', 'max:255', 'unique:facility_types,name,' . $request->id],
             ]);
 
