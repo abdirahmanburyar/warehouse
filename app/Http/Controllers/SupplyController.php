@@ -917,14 +917,17 @@ class SupplyController extends Controller
                                 }
                             }
                             
-                            // Check if UOM has changed
-                            if ($existingItem->uom != $item['uom']) {
+                            // Check if UOM has changed (handle null/empty values properly)
+                            $currentUom = $existingItem->uom ?? '';
+                            $newUom = $item['uom'] ?? '';
+                            
+                            if ($currentUom !== $newUom) {
                                 // Always update original_uom to the previous value (current existing value)
                                 $itemData['original_uom'] = $existingItem->uom;
                                 $hasChanges = true;
                             } else {
                                 // If new UOM equals current UOM (no change), clear the original_uom
-                                if ($existingItem->original_uom && $item['uom'] == $existingItem->uom) {
+                                if ($existingItem->original_uom && $newUom === $currentUom) {
                                     $itemData['original_uom'] = null;
                                     $hasChanges = true;
                                 }

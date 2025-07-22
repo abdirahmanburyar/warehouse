@@ -748,7 +748,10 @@ async function reviewPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.get(route('supplies.editPO', form.value.id), {}, {
+            preserveState: false,
+            preserveScroll: true
+        });
     } catch (error) {
         console.error('Error reviewing PO:', error);
         Swal.fire({
@@ -790,7 +793,10 @@ async function approvePO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.get(route('supplies.editPO', form.value.id), {}, {
+            preserveState: false,
+            preserveScroll: true
+        });
     } catch (error) {
         console.error('Error approving PO:', error);
         Swal.fire({
@@ -842,7 +848,10 @@ async function rejectPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.reload();
+        router.get(route('supplies.editPO', form.value.id), {}, {
+            preserveState: false,
+            preserveScroll: true
+        });
     } catch (error) {
         console.error('Error rejecting PO:', error);
         Swal.fire({
