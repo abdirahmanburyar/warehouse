@@ -901,43 +901,51 @@ class SupplyController extends Controller
                     // Track original values when editing an existing item
                     if (isset($item['id'])) {
                         $existingItem = PurchaseOrderItem::find($item['id']);
-                        if ($existingItem) {
-                            $hasChanges = false;
-                            
-                            // Check if quantity has changed
-                            if ($existingItem->quantity != $item['quantity']) {
-                                // Always update original_quantity to the previous value (current existing value)
+                        
+                        // Check if quantity has changed
+                        if ($existingItem->quantity != $item['quantity']) {
+                            // If original_quantity is not set, capture it (first change)
+                            if ($existingItem->original_quantity === null) {
                                 $itemData['original_quantity'] = $existingItem->quantity;
-                                $hasChanges = true;
-                            } else {
-                                // If new quantity equals current quantity (no change), clear the original_quantity
-                                if ($existingItem->original_quantity && $item['quantity'] == $existingItem->quantity) {
-                                    $itemData['original_quantity'] = null;
-                                    $hasChanges = true;
-                                }
+                                logger()->info('Capturing original quantity: ' . $existingItem->quantity);
                             }
-                            
-                            // Check if UOM has changed (handle null/empty values properly)
-                            $currentUom = $existingItem->uom ?? '';
-                            $newUom = $item['uom'] ?? '';
-                            
-                            if ($currentUom !== $newUom) {
-                                // Always update original_uom to the previous value (current existing value)
-                                $itemData['original_uom'] = $existingItem->uom;
-                                $hasChanges = true;
-                            } else {
-                                // If new UOM equals current UOM (no change), clear the original_uom
-                                if ($existingItem->original_uom && $newUom === $currentUom) {
-                                    $itemData['original_uom'] = null;
-                                    $hasChanges = true;
-                                }
-                            }
-                            
-                            // Add edited_by to track who made the change if any changes occurred
-                            if ($hasChanges) {
+                            $itemData['edited_by'] = auth()->id();
+                        } else {
+                            // If quantity is rolled back to original, clear original_quantity
+                            if ($existingItem->original_quantity !== null && $item['quantity'] == $existingItem->original_quantity) {
+                                $itemData['original_quantity'] = null;
                                 $itemData['edited_by'] = auth()->id();
+                                logger()->info('Rolling back quantity to original, clearing original_quantity');
                             }
                         }
+                        
+                        // Check if UOM has changed
+                        if ($existingItem->uom != $item['uom']) {
+                            // If original_uom is not set, capture it (first change)
+                            if ($existingItem->original_uom === null) {
+                                $itemData['original_uom'] = $existingItem->uom;
+                                logger()->info('Capturing original UOM: ' . $existingItem->uom);
+                            }
+                            $itemData['edited_by'] = auth()->id();
+                        } else {
+                            // If UOM is rolled back to original, clear original_uom
+                            if ($existingItem->original_uom !== null && $item['uom'] == $existingItem->original_uom) {
+                                $itemData['original_uom'] = null;
+                                $itemData['edited_by'] = auth()->id();
+                                logger()->info('Rolling back UOM to original, clearing original_uom');
+                            }
+                        }
+                        
+                        logger()->info('PO Item Changes (storePO)', [
+                            'item_id' => $existingItem->id,
+                            'old_quantity' => $existingItem->quantity,
+                            'new_quantity' => $item['quantity'],
+                            'old_uom' => $existingItem->uom,
+                            'new_uom' => $item['uom'],
+                            'original_quantity' => $itemData['original_quantity'] ?? null,
+                            'original_uom' => $itemData['original_uom'] ?? null,
+                            'edited_by' => $itemData['edited_by'] ?? null
+                        ]);
                     }
                     
                     // Update or create the purchase order item
@@ -1322,6 +1330,7 @@ class SupplyController extends Controller
                 'po_date' => 'required|date',
                 'items' => 'required|array|min:1',                
                 'items.*.product_id' => 'required|exists:products,id',
+                'items.*.id' => 'nullable|exists:purchase_order_items,id',
                 'items.*.unit_cost' => 'required|numeric|min:0',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.total_cost' => 'required|numeric|min:0',
@@ -1354,60 +1363,51 @@ class SupplyController extends Controller
                     
                     $itemData = [
                         'purchase_order_id' => $po->id,
+                        'id' => $item['id'] ?? null,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_cost' => $item['unit_cost'],
                         'total_cost' => $item['total_cost'],
                         'uom' => $item['uom'] ?? null
                     ];
-                    
-                    // Check if this item already exists to preserve original tracking
-                    $existingItem = $po->items()->where('product_id', $item['product_id'])->first();
-                    if ($existingItem) {
-                        $hasChanges = false;
+                    if (isset($item['id'])) {
+                        $existingItem = PurchaseOrderItem::find($item['id']);
                         
-                        // If quantity has changed, track original quantity
+                        // Check if quantity has changed
                         if ($existingItem->quantity != $item['quantity']) {
-                            if (!$existingItem->original_quantity) {
+                            // If original_quantity is not set, capture it (first change)
+                            if ($existingItem->original_quantity === null) {
                                 $itemData['original_quantity'] = $existingItem->quantity;
-                            } else {
-                                $itemData['original_quantity'] = $existingItem->original_quantity;
+                                logger()->info('Capturing original quantity: ' . $existingItem->quantity);
                             }
-                            $hasChanges = true;
-                        } else {
-                            // If new quantity equals original_quantity, clear the original_quantity
-                            if ($existingItem->original_quantity && $item['quantity'] == $existingItem->original_quantity) {
-                                $itemData['original_quantity'] = null;
-                                $hasChanges = true;
-                            }
-                        }
-                        
-                        // If UOM has changed, track original UOM
-                        if ($existingItem->uom != $item['uom']) {
-                            if (!$existingItem->original_uom) {
-                                $itemData['original_uom'] = $existingItem->uom;
-                            } else {
-                                $itemData['original_uom'] = $existingItem->original_uom;
-                            }
-                            $hasChanges = true;
-                        } else {
-                            // If new UOM equals original_uom, clear the original_uom
-                            if ($existingItem->original_uom && $item['uom'] == $existingItem->original_uom) {
-                                $itemData['original_uom'] = null;
-                                $hasChanges = true;
-                            }
-                        }
-                        
-                        // Only set edited_by if there are actual changes
-                        if ($hasChanges) {
                             $itemData['edited_by'] = auth()->id();
+                        } else {
+                            // If quantity is rolled back to original, clear original_quantity
+                            if ($existingItem->original_quantity !== null && $item['quantity'] == $existingItem->original_quantity) {
+                                $itemData['original_quantity'] = null;
+                                $itemData['edited_by'] = auth()->id();
+                                logger()->info('Rolling back quantity to original, clearing original_quantity');
+                            }
                         }
                         
-                        // Update existing item
-                        $existingItem->update($itemData);
-                    } else {
-                        // Create new item
-                        $po->items()->create($itemData);
+                        // Check if UOM has changed
+                        if ($existingItem->uom != $item['uom']) {
+                            // If original_uom is not set, capture it (first change)
+                            if ($existingItem->original_uom === null) {
+                                $itemData['original_uom'] = $existingItem->uom;
+                                logger()->info('Capturing original UOM: ' . $existingItem->uom);
+                            }
+                            $itemData['edited_by'] = auth()->id();
+                        } else {
+                            // If UOM is rolled back to original, clear original_uom
+                            if ($existingItem->original_uom !== null && $item['uom'] == $existingItem->original_uom) {
+                                $itemData['original_uom'] = null;
+                                $itemData['edited_by'] = auth()->id();
+                                logger()->info('Rolling back UOM to original, clearing original_uom');
+                            }
+                        }
+
+                        PurchaseOrderItem::updateOrCreate(['id' => $item['id']], $itemData);
                     }
                 }
 

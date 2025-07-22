@@ -748,9 +748,12 @@ async function reviewPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveScroll: true,
-            only: ['po', 'products', 'suppliers', 'uom', 'users']
+        // Force a complete page reload to get fresh data from the server
+        router.visit(route('supplies.editPO', form.value.id), { 
+            method: 'get',
+            preserveState: false,
+            preserveScroll: false,
+            replace: true
         });
     } catch (error) {
         console.error('Error reviewing PO:', error);
@@ -793,9 +796,12 @@ async function approvePO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveScroll: true,
-            only: ['po', 'products', 'suppliers', 'uom', 'users']
+        // Force a complete page reload to get fresh data from the server
+        router.visit(route('supplies.editPO', form.value.id), { 
+            method: 'get',
+            preserveState: false,
+            preserveScroll: false,
+            replace: true
         });
     } catch (error) {
         console.error('Error approving PO:', error);
@@ -848,9 +854,12 @@ async function rejectPO() {
             confirmButtonColor: '#3085d6'
         });
         
-        router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveScroll: true,
-            only: ['po', 'products', 'suppliers', 'uom', 'users']
+        // Force a complete page reload to get fresh data from the server
+        router.visit(route('supplies.editPO', form.value.id), { 
+            method: 'get',
+            preserveState: false,
+            preserveScroll: false,
+            replace: true
         });
     } catch (error) {
         console.error('Error rejecting PO:', error);
@@ -924,9 +933,12 @@ async function submitForm() {
             text: 'Purchase order has been updated successfully',
             confirmButtonColor: '#3085d6'
         });
-        router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveScroll: true,
-            only: ['po', 'products', 'suppliers', 'uom', 'users']
+        // Force a complete page reload to get fresh data from the server
+        router.visit(route('supplies.editPO', form.value.id), { 
+            method: 'get',
+            preserveState: false,
+            preserveScroll: false,
+            replace: true
         });
     } catch (error) {
         console.error('Error updating PO:', error);
