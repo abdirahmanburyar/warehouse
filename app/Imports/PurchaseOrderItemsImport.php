@@ -17,6 +17,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
+use App\Models\Uom;
 
 class PurchaseOrderItemsImport implements 
     ToModel, 
@@ -38,6 +39,7 @@ class PurchaseOrderItemsImport implements
             DB::beginTransaction();
             $category = Category::firstOrCreate(['name' => $row['category']]);
             $dosage = Dosage::firstOrCreate(['name' => $row['dosage_form']]);
+            $uom = Uom::firstOrCreate(['name' => $row['uom']]);
             $product = Product::firstOrCreate([
                 'name' => $row['item_description'],
                 'category_id' => $category->id,
@@ -47,7 +49,7 @@ class PurchaseOrderItemsImport implements
                 'purchase_order_id' => $this->purchaseOrderId,
                 'product_id' => $product->id,
                 'quantity' => $row['quantity'],
-                'uom' => $row['uom'],
+                'uom' => $uom->name,
                 'unit_cost' => $row['unit_cost'],
                 'total_cost' => $row['total_cost'],
                 'edited_by' => auth()->user()->id,
