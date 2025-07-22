@@ -105,11 +105,6 @@
                             <tr class="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-200">
                                     <div class="flex items-center">
-                                        <span class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
-                                            </svg>
-                                        </span>
                                         S/N
                                     </div>
                                 </th>
@@ -199,11 +194,6 @@
                                 </td>
                                 <td class="px-6 py-5 whitespace-nowrap border-r border-gray-100">
                                     <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-4">
-                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                            </svg>
-                                        </div>
                                         <div>
                                             <Link :href="route('facilities.show', facility.id)" 
                                                 class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200">
@@ -221,11 +211,6 @@
                                 <td class="px-6 py-5 border-r border-gray-100">
                                     <div class="space-y-2">
                                         <div class="flex items-center">
-                                            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                                                <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                </svg>
-                                            </div>
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900">{{ facility.user?.name || 'Not assigned' }}</div>
                                                 <div class="text-xs text-gray-500">Manager</div>
@@ -309,8 +294,8 @@
                                             @click="confirmToggleStatus(facility)"
                                             class="relative inline-flex flex-shrink-0 h-10 w-16 border-2 border-transparent rounded-xl cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:scale-105"
                                             :class="{
-                                                'bg-red-500 hover:bg-red-600': facility.is_active,
-                                                'bg-green-500 hover:bg-green-600': !facility.is_active,
+                                                'bg-green-500 hover:bg-green-600': facility.is_active,
+                                                'bg-red-500 hover:bg-red-600': !facility.is_active,
                                                 'opacity-50 cursor-wait': loadingProducts.has(facility.id)
                                             }"
                                             :disabled="loadingProducts.has(facility.id)"
@@ -337,11 +322,11 @@
             <div class="bg-gray-50 px-8 py-6 border-t border-gray-200">
                 <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                     <div class="text-sm text-gray-700 font-medium">
-                        Showing <span class="font-bold text-gray-900">{{ props.facilities.from || 0 }}</span> to 
-                        <span class="font-bold text-gray-900">{{ props.facilities.to || 0 }}</span> of 
-                        <span class="font-bold text-gray-900">{{ props.facilities.total || 0 }}</span> facilities
+                        Showing <span class="font-bold text-gray-900">{{ props.facilities.meta.from || 0 }}</span> to 
+                        <span class="font-bold text-gray-900">{{ props.facilities.meta.to || 0 }}</span> of 
+                        <span class="font-bold text-gray-900">{{ props.facilities.meta.total || 0 }}</span> facilities
                     </div>
-                    <TailwindPagination
+                    <TailwindPagination 
                         :data="props.facilities"
                         :limit="2"
                         class="flex items-center space-x-2"

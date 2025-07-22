@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Create Facility">
+    <AuthenticatedLayout title="Manage Facilities" description="Create New Facility" img="/assets/images/facility.png">
         <div class="p-6 bg-white border-b flex justify-between items-center">
             <h1 class="text-sm font-bold text-gray-900">
                 Create New Facility
@@ -99,7 +99,7 @@
                         <label for="region">Region</label>
                         <Multiselect
                             v-model="form.region"
-                            :options="[...props.regions, ADD_NEW_REGION_OPTION]"
+                            :options="[...regions, ADD_NEW_REGION_OPTION]"
                             :searchable="true"
                             :close-on-select="true"
                             :show-labels="false"
@@ -334,6 +334,8 @@ const props = defineProps({
     regions: Array,
 });
 
+// Create reactive arrays (regions starts with props data, districts starts empty)
+const regions = ref([...props.regions]);
 const districts = ref([]);
 
 const showRegionModal = ref(false);
@@ -394,10 +396,14 @@ const createRegion = async () => {
         .post(route("assets.regions.store"), { name: newRegion.value })
         .then((response) => {
             isNewRegion.value = false;
+            // Add the new region to the reactive options array
+            regions.value.push(response.data);
+            // Set it as the selected value
             form.value.region = response.data;
-            props.regions.push(response.data);
             newRegion.value = "";
             showRegionModal.value = false;
+            // Load districts for the newly created region
+            loadDistrict();
         })
         .catch((error) => {
             isNewRegion.value = false;
@@ -418,8 +424,10 @@ const createDistrict = async () => {
         })
         .then((response) => {
             isNewDistrict.value = false;
-            form.value.district = response.data;
+            // Add the new district to the reactive options array
             districts.value.push(response.data);
+            // Set it as the selected value
+            form.value.district = response.data;
             newDistrict.value = "";
             showDistrictModal.value = false;
         })
