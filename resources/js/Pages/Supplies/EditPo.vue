@@ -749,8 +749,8 @@ async function reviewPO() {
         });
         
         router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveState: false,
-            preserveScroll: true
+            preserveScroll: true,
+            only: ['po', 'products', 'suppliers', 'uom', 'users']
         });
     } catch (error) {
         console.error('Error reviewing PO:', error);
@@ -794,8 +794,8 @@ async function approvePO() {
         });
         
         router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveState: false,
-            preserveScroll: true
+            preserveScroll: true,
+            only: ['po', 'products', 'suppliers', 'uom', 'users']
         });
     } catch (error) {
         console.error('Error approving PO:', error);
@@ -849,8 +849,8 @@ async function rejectPO() {
         });
         
         router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveState: false,
-            preserveScroll: true
+            preserveScroll: true,
+            only: ['po', 'products', 'suppliers', 'uom', 'users']
         });
     } catch (error) {
         console.error('Error rejecting PO:', error);
@@ -925,9 +925,8 @@ async function submitForm() {
             confirmButtonColor: '#3085d6'
         });
         router.get(route('supplies.editPO', form.value.id), {}, {
-            preserveState: false,
             preserveScroll: true,
-            only: ['products', 'uom', 'suppliers']
+            only: ['po', 'products', 'suppliers', 'uom', 'users']
         });
     } catch (error) {
         console.error('Error updating PO:', error);
