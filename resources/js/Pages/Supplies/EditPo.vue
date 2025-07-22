@@ -251,7 +251,7 @@
                                         Original: {{ item.original_quantity }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 border-r border-gray-200">
+                                <td class="px-4 py-3 border-r border-gray-200 w-20">
                                     <Multiselect v-model="item.uom" :value="item.uom"
                                         :options="['Add new UoM',...props.uom]"
                                         :searchable="true" :close-on-select="true" :show-labels="false" required

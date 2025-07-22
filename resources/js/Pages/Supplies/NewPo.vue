@@ -155,21 +155,21 @@
                 <table class="w-full">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="w-12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 350px;">Item</th>
-                            <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                            <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UoM</th>
-                            <th class="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                            <th class="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th class="w-12 px-3 py-3"></th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200" style="width: 350px;">Item</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Qty</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 w-[300px]">UoM</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Unit Cost</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Amount</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="(item, index) in form.items" :key="index" 
                             class="hover:bg-gray-50 transition-colors duration-150"
                             :data-item-index="index">
-                            <td class="px-3 py-3 text-sm text-gray-500 align-middle">{{ index + 1 }}</td>
-                            <td class="px-3 py-3" style="width: 350px;">
+                            <td class="px-4 py-3 text-sm text-gray-500 border-r border-gray-200">{{ index + 1 }}</td>
+                            <td class="px-4 py-3 border-r border-gray-200" style="width: 350px;">
                                 <Multiselect v-model="item.product" :value="item.product_id"
                                     :options="props.products"
                                     :searchable="true" :close-on-select="true" :show-labels="false" required
@@ -178,12 +178,12 @@
                                     @select="hadleProductSelect(index, $event)">
                                 </Multiselect>
                             </td>
-                            <td class="px-3 py-3">
+                            <td class="px-4 py-3 border-r border-gray-200">
                                 <input type="number" v-model="item.quantity" @input="calculateTotal(index)" required
-                                    class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-2 py-1"
-                                    min="1" placeholder="Enter quantity">
+                                    class="w-full text-sm border-gray-300 rounded-lg focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-3 py-2"
+                                    min="1" placeholder="Qty">
                             </td>
-                            <td class="px-3 py-3 w-20">
+                            <td class="px-4 py-3 border-r border-gray-200 w-[300px]">
                                 <Multiselect v-model="item.uom"
                                     :options="['Add new UoM',...props.uom]"
                                     :searchable="true" :close-on-select="true" :show-labels="false" required
@@ -192,17 +192,17 @@
                                     @select="handleUomSelect(index, $event)">
                                 </Multiselect>
                             </td>
-                            <td class="px-3 py-3">
+                            <td class="px-4 py-3 border-r border-gray-200">
                                 <input type="number" v-model="item.unit_cost" @input="calculateTotal(index)" required
-                                    class="block w-full rounded-lg border-gray-200 text-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-2 py-1"
-                                    step="0.01" min="0" placeholder="Enter cost">
+                                    class="w-full text-sm border-gray-300 rounded-lg focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all duration-200 px-3 py-2"
+                                    step="0.01" min="0" placeholder="0.00">
                             </td>
-                            <td class="px-3 py-3">
-                                <input type="text" :value="formatCurrency(item.total_cost)" readonly
-                                    class="block w-full rounded-lg bg-gray-50 border-gray-200 text-sm text-gray-500 px-2 py-1"
-                                    placeholder="$0.00">
+                            <td class="px-4 py-3 border-r border-gray-200">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ formatCurrency(item.total_cost) }}
+                                </div>
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="px-4 py-3 text-center">
                                 <button type="button" @click="removeItem(index)"
                                     class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1 rounded-lg hover:bg-red-50">
                                     <TrashIcon class="h-4 w-4" />
