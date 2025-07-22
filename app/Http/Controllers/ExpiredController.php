@@ -11,7 +11,7 @@ use App\Models\Transfer;
 use App\Models\Facility;
 use App\Models\Category;
 use App\Models\Dosage;
-use App\Models\Reason;
+use App\Models\Reason
 use App\Models\Location;
 use Carbon\Carbon;
 use Illuminate\Http\Request;

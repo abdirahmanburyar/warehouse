@@ -402,7 +402,7 @@
                                     "
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                    <span class="text-sm font-bold text-white">Review</span>
+                                    <span class="text-sm font-bold text-white">{{ form.reviewed_at ? 'Reviewed' : 'Review' }}</span>
                                 </button>
                                 <div v-if="form.reviewed_at" class="mt-2 text-center">
                                     <div class="text-xs text-gray-600">{{ moment(form.reviewed_at).format('DD/MM/YYYY HH:mm') }}</div>
@@ -427,7 +427,7 @@
                                     :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at || !$page.props.auth.can.purchase_order_approve"
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                    <span class="text-sm font-bold text-white">Approve</span>
+                                    <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
                                 </button>
                                 <div v-if="form.approved_at" class="mt-2 text-center">
                                     <div class="text-xs text-gray-600">{{ moment(form.approved_at).format('DD/MM/YYYY HH:mm') }}</div>
@@ -460,7 +460,7 @@
                                     "
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
-                                    <span class="text-sm font-bold text-white">Reject</span>
+                                    <span class="text-sm font-bold text-white">{{ form.rejected_at ? 'Rejected' : 'Reject' }}</span>
                                 </button>
                                 <div v-if="form.rejected_at" class="mt-2 text-center">
                                     <div class="text-xs text-gray-600">{{ moment(form.rejected_at).format('DD/MM/YYYY HH:mm') }}</div>

@@ -1358,7 +1358,6 @@ class SupplyController extends Controller
         }
     }
 
-
     public function deletePurchaseOrder(Request $request, $id){
         try {
             $po = PurchaseOrder::find($id);
@@ -1384,7 +1383,6 @@ class SupplyController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
-
 
     public function storeLocation(Request $request){
         try {

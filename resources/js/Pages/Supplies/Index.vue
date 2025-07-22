@@ -8,7 +8,7 @@
                 <div class="flex flex-wrap items-center justify-end gap-3 mb-8">
                     <div class="relative inline-block text-left z-20" ref="backOrderDropdownRef">
                         <button type="button"
-                            class="inline-flex items-center px-4 py-2.5 bg-green-600 border border-transparent rounded-3xl font-medium text-sm text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 shadow-sm"
+                            class="inline-flex items-center px-4 py-2.5 bg-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm"
                             id="back-order-menu" :aria-expanded="showBackOrderDropdown" aria-haspopup="true"
                             @click.stop="toggleBackOrderDropdown">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
@@ -48,7 +48,7 @@
                     </div>
                     <div class="relative inline-block text-left z-20" ref="supplyDropdownRef">
                         <button type="button"
-                            class="inline-flex items-center px-4 py-2.5 bg-green-600 border border-transparent rounded-3xl font-medium text-sm text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 shadow-sm"
+                            class="inline-flex items-center px-4 py-2.5 bg-purple-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200 shadow-sm"
                             id="supply-menu" :aria-expanded="showSupplyDropdown" aria-haspopup="true"
                             @click.stop="toggleSupplyDropdown">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
@@ -172,122 +172,99 @@
                     </div>
                 </div>
 
-                <!-- Per Page Row -->
-                <div class="mb-3">
-                    <div class="">
-                        <div class="flex items-center justify-end">
-                            <div class="w-48">
-                                <select v-model="per_page" @change="props.filters.page = 1"
-                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
-                                    <option value="10">10 per page</option>
-                                    <option value="25">25 per page</option>
-                                    <option value="50">50 per page</option>
-                                    <option value="100">100 per page</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Status Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 shadow-sm border border-yellow-200 hover:shadow-md transition-all duration-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-semibold text-yellow-700 uppercase tracking-wider mb-2">Supply Received</p>
-                                <p class="text-2xl font-bold text-yellow-800">{{ stats.total_items }}</p>
-                            </div>
-                            <div class="p-3 bg-yellow-100 rounded-xl">
-                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-sm border border-green-200 hover:shadow-md transition-all duration-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2">Cost of Supplies</p>
-                                <p class="text-2xl font-bold text-green-800">{{ formatCurrency(stats.total_cost) }}</p>
-                            </div>
-                            <div class="p-3 bg-green-100 rounded-xl">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 shadow-sm border border-orange-200 hover:shadow-md transition-all duration-200">
-                        <div class="flex items-center justify-between">
-                            <div class="w-full">
-                                <p class="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-3">Lead Times</p>
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-medium text-orange-600">Max:</span>
-                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.max }}</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Supply Received Card -->
+                    <div class="relative overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <!-- Background Pattern -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 opacity-50"></div>
+                        
+                        <!-- Content -->
+                        <div class="relative p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <div class="w-2 h-2 bg-amber-500 rounded-full mr-3"></div>
+                                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Supply Received</p>
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-medium text-orange-600">Avg:</span>
-                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.avg }}</span>
+                                    <p class="text-3xl font-bold text-gray-900">{{ stats.total_items }}</p>
+                                </div>
+                                
+                                <!-- Icon Container -->
+                                <div class="relative">
+                                    <div class="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-medium text-orange-600">Min:</span>
-                                        <span class="text-sm font-bold text-orange-800">{{ stats.lead_times?.low }}</span>
-                                    </div>
+                                    <!-- Decorative Element -->
+                                    <div class="absolute -top-2 -right-2 w-5 h-5 bg-amber-200 rounded-full opacity-60"></div>
                                 </div>
                             </div>
-                            <div class="p-3 bg-orange-100 rounded-xl ml-4">
-                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
                         </div>
+                        
+                        <!-- Bottom Border -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 shadow-sm border border-teal-200 hover:shadow-md transition-all duration-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-semibold text-teal-700 uppercase tracking-wider mb-2">Back Orders</p>
-                                <p class="text-2xl font-bold text-teal-800">{{ stats.back_orders }}</p>
-                            </div>
-                            <div class="p-3 bg-teal-100 rounded-xl">
-                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
+                    <!-- Cost of Supplies Card -->
+                    <div class="relative overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <!-- Background Pattern -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 opacity-50"></div>
+                        
+                        <!-- Content -->
+                        <div class="relative p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <div class="w-2 h-2 bg-emerald-500 rounded-full mr-3"></div>
+                                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Cost of Supplies</p>
+                                    </div>
+                                    <p class="text-3xl font-bold text-gray-900">{{ formatCurrency(stats.total_cost) }}</p>
+                                </div>
+                                
+                                <!-- Icon Container -->
+                                <div class="relative">
+                                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <!-- Decorative Element -->
+                                    <div class="absolute -top-2 -right-2 w-5 h-5 bg-emerald-200 rounded-full opacity-60"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 shadow-sm border border-purple-200 hover:shadow-md transition-all duration-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-semibold text-purple-700 uppercase tracking-wider mb-2">Pending Orders</p>
-                                <p class="text-2xl font-bold text-purple-800">{{ stats.pending_orders }}</p>
-                            </div>
-                            <div class="p-3 bg-purple-100 rounded-xl">
-                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                            </div>
-                        </div>
+                        
+                        <!-- Bottom Border -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
                     </div>
                 </div>
+
+
 
                 <!-- Purchase Orders Table and Statistics Row -->
                 <div class="mb-6">
                     <div class="grid grid-cols-12 gap-6">
                         <!-- Table Column (10/12) -->
                         <div class="col-span-12 lg:col-span-10">
-                            <!-- Icon Legend Button -->
-                            <div class="flex justify-end mb-4">
+                            <!-- Icon Legend Button and Per Page Selector -->
+                            <div class="flex items-center justify-end gap-4 mb-4">
+                                <div class="w-48">
+                                    <select v-model="per_page" @change="props.filters.page = 1"
+                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                        <option value="10">10 per page</option>
+                                        <option value="25">25 per page</option>
+                                        <option value="50">50 per page</option>
+                                        <option value="100">100 per page</option>
+                                    </select>
+                                </div>
                                 <button @click="showIconLegend = true"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    class="inline-flex items-center justify-center p-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                                    title="Icon Legend">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Icon Legend
                                 </button>
                             </div>
 
@@ -420,7 +397,7 @@
                         <!-- Statistics Column (2/12) -->
                         <div class="col-span-12 lg:col-span-2">
                             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
-                                <h3 class="text-sm font-semibold text-gray-900 mb-6">Order Statistics</h3>
+                                <h3 class="text-sm font-semibold text-gray-900 mb-6">PO Statistics</h3>
                                 <div class="space-y-8">
                                     <!-- Pending -->
                                     <div class="relative">
