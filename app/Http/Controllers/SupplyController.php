@@ -895,7 +895,8 @@ class SupplyController extends Controller
                         'quantity' => $item['quantity'],
                         'uom' => $item['uom'],
                         'unit_cost' => $item['unit_cost'],
-                        'total_cost' => $item['total_cost']
+                        'total_cost' => $item['total_cost'],
+                        'updated_at' => now() // Force update by changing timestamp
                     ];
                     
                     // Track original values when editing an existing item
@@ -903,20 +904,23 @@ class SupplyController extends Controller
                         $existingItem = PurchaseOrderItem::find($item['id']);
                         
                         // Check if quantity has changed
-                        if ($existingItem->quantity != $item['quantity']) {
-                            // If original_quantity is not set, capture it (first change)
+                        logger()->info('Quantity comparison - Current: ' . $existingItem->quantity . ', New: ' . $item['quantity'] . ', Original: ' . $existingItem->original_quantity);
+                        
+                        // Check if this is a rollback to original value
+                        if ($existingItem->original_quantity !== null && (int)$item['quantity'] == (int)$existingItem->original_quantity) {
+                            // Rollback detected - clear original_quantity
+                            $itemData['original_quantity'] = null;
+                            $itemData['edited_by'] = auth()->id();
+                            logger()->info('Rolling back quantity to original, clearing original_quantity');
+                        } elseif ($existingItem->quantity != $item['quantity']) {
+                            // Quantity changed - capture original if not already set
                             if ($existingItem->original_quantity === null) {
                                 $itemData['original_quantity'] = $existingItem->quantity;
                                 logger()->info('Capturing original quantity: ' . $existingItem->quantity);
                             }
                             $itemData['edited_by'] = auth()->id();
                         } else {
-                            // If quantity is rolled back to original, clear original_quantity
-                            if ($existingItem->original_quantity !== null && $item['quantity'] == $existingItem->original_quantity) {
-                                $itemData['original_quantity'] = null;
-                                $itemData['edited_by'] = auth()->id();
-                                logger()->info('Rolling back quantity to original, clearing original_quantity');
-                            }
+                            logger()->info('No quantity change detected');
                         }
                         
                         // Check if UOM has changed
@@ -949,7 +953,18 @@ class SupplyController extends Controller
                     }
                     
                     // Update or create the purchase order item
-                    $poItem = PurchaseOrderItem::updateOrCreate(['id' => $item['id'] ?? null], $itemData);
+                    if (isset($item['id'])) {
+                        // Force update even if data hasn't changed to ensure original tracking is processed
+                        $existingItem = PurchaseOrderItem::find($item['id']);
+                        if ($existingItem) {
+                            $existingItem->update($itemData);
+                            $poItem = $existingItem;
+                        } else {
+                            $poItem = PurchaseOrderItem::create($itemData);
+                        }
+                    } else {
+                        $poItem = PurchaseOrderItem::create($itemData);
+                    }
                 }
                 
                 return response()->json($request->id ? 'Purchase order updated successfully' : 'Purchase order created successfully', 200);
@@ -1368,26 +1383,30 @@ class SupplyController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_cost' => $item['unit_cost'],
                         'total_cost' => $item['total_cost'],
-                        'uom' => $item['uom'] ?? null
+                        'uom' => $item['uom'] ?? null,
+                        'updated_at' => now() // Force update by changing timestamp
                     ];
                     if (isset($item['id'])) {
                         $existingItem = PurchaseOrderItem::find($item['id']);
                         
                         // Check if quantity has changed
-                        if ($existingItem->quantity != $item['quantity']) {
-                            // If original_quantity is not set, capture it (first change)
+                        logger()->info('Quantity comparison - Current: ' . $existingItem->quantity . ', New: ' . $item['quantity'] . ', Original: ' . $existingItem->original_quantity);
+                        
+                        // Check if this is a rollback to original value
+                        if ($existingItem->original_quantity !== null && (int)$item['quantity'] == (int)$existingItem->original_quantity) {
+                            // Rollback detected - clear original_quantity
+                            $itemData['original_quantity'] = null;
+                            $itemData['edited_by'] = auth()->id();
+                            logger()->info('Rolling back quantity to original, clearing original_quantity');
+                        } elseif ($existingItem->quantity != $item['quantity']) {
+                            // Quantity changed - capture original if not already set
                             if ($existingItem->original_quantity === null) {
                                 $itemData['original_quantity'] = $existingItem->quantity;
                                 logger()->info('Capturing original quantity: ' . $existingItem->quantity);
                             }
                             $itemData['edited_by'] = auth()->id();
                         } else {
-                            // If quantity is rolled back to original, clear original_quantity
-                            if ($existingItem->original_quantity !== null && $item['quantity'] == $existingItem->original_quantity) {
-                                $itemData['original_quantity'] = null;
-                                $itemData['edited_by'] = auth()->id();
-                                logger()->info('Rolling back quantity to original, clearing original_quantity');
-                            }
+                            logger()->info('No quantity change detected');
                         }
                         
                         // Check if UOM has changed
@@ -1407,7 +1426,13 @@ class SupplyController extends Controller
                             }
                         }
 
-                        PurchaseOrderItem::updateOrCreate(['id' => $item['id']], $itemData);
+                        // Force update even if data hasn't changed to ensure original tracking is processed
+                        $existingItem = PurchaseOrderItem::find($item['id']);
+                        if ($existingItem) {
+                            $existingItem->update($itemData);
+                        } else {
+                            PurchaseOrderItem::create($itemData);
+                        }
                     }
                 }
 
