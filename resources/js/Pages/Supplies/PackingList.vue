@@ -267,14 +267,14 @@
                             style="border-bottom: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.location" required
                                 :disabled="item.status === 'approved' || !item.warehouse_id"
-                                :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]" :searchable="true"
+                                :options="['Add new location', ...loadedLocation]" :searchable="true"
                                 :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 placeholder="Select Location" @select="hadleLocationSelect(index, $event)"
                                 track-by="location" label="location"
-                                :custom-label="(option) => option && option.isAddNew ? option.location : (option && option.location ? option.location : '')">
+                                :custom-label="(option) => typeof option === 'string' ? option : (option && option.location ? option.location : '')">
                                 <template v-slot:option="{ option }">
-                                    <div :class="{ 'add-new-option': option && option.isAddNew }">
-                                        <span v-if="option && option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                    <div :class="{ 'add-new-option': typeof option === 'string' }">
+                                        <span v-if="typeof option === 'string'" class="text-indigo-600 font-medium">+ {{ option }}</span>
                                         <span v-else-if="option && option.location">{{ option.location }}</span>
                                         <span v-else>Select Location</span>
                                     </div>
@@ -582,7 +582,7 @@ const subTotal = computed(() => {
 
 function hadleLocationSelect(index, selected) {
     console.log(selected);
-    if (selected.isAddNew) {
+    if (selected === 'Add new location') {
         // Check if warehouse is selected
         if (!form.value.items[index].warehouse_id) {
             toast.error("Please select a warehouse first");
@@ -596,7 +596,7 @@ function hadleLocationSelect(index, selected) {
         return;
     }
     // Set the location name for backend (packing list items use location name, not location_id)
-    form.value.items[index].location = selected.location;
+    form.value.items[index].location = selected;
 }
 
 function closeLocationModal() {
