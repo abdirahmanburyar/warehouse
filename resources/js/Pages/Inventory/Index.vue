@@ -39,10 +39,8 @@ const category = ref(props.filters.category);
 const warehouse = ref(props.filters.warehouse);
 const per_page = ref(props.filters.per_page || 25);
 const loadedLocation = ref([]);
-const isSubmitting = ref(false);
 
 // Modal states
-const showAddModal = ref(false);
 const showLegend = ref(false);
 const showEditLocationModal = ref(false);
 
@@ -60,18 +58,7 @@ const uploadProgress = ref(0);
 const uploadResults = ref(null);
 const importId = ref(null);
 
-// Form states
-const form = ref({
-    product_id: null,
-    product: null,
-    warehouse: "",
-    quantity: 0,
-    manufacturing_date: "",
-    batch_number: "",
-    location: "",
-    notes: "",
-    is_active: true,
-});
+
 
 // Set up real-time inventory updates
 let echoChannel = null;
@@ -153,6 +140,11 @@ watch(
         applyFilters();
     }
 );
+
+function formatQty(qty) {
+    // 123,456.789
+    return Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(qty);
+}
 
 // Edit location functions
 const openEditLocationModal = (item, inventory) => {
@@ -340,25 +332,7 @@ const downloadTemplate = () => {
     toast.success('Template downloaded successfully! Open with Excel to use.');
 };
 
-// Submit form
-const submitForm = async () => {
-    isSubmitting.value = true;
 
-    await axios
-        .post(route("inventories.store"), form.value)
-        .then(() => {
-            showAddModal.value = false;
-            toast("Inventory item added successfully", "success");
-            isSubmitting.value = false;
-            applyFilters();
-        })
-        .catch((errors) => {
-            console.log(errors);
-            formErrors.value = errors;
-            isSubmitting.value = false;
-            toast.error(errors.response.data);
-        });
-};
 
 // Format date
 const formatDate = (date) => {
@@ -445,7 +419,7 @@ function getResults(page = 1) {
                         </svg>
                         {{ isUploading ? 'Uploading...' : 'Upload Excel' }}
                     </button>
-                    <button @click="showAddModal = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm">Add Inventory</button>
+
                     <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         Locations List
@@ -519,7 +493,7 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
@@ -548,8 +522,8 @@ function getResults(page = 1) {
                                         </div>
                                     </td>
                                     
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0 }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ inventory.reorder_level }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ formatQty(inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ formatQty(inventory.reorder_level) }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">
                                         <div class="flex items-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
@@ -628,40 +602,7 @@ function getResults(page = 1) {
         </div>
 
         <!-- Modals: Add Inventory, Upload Progress, Icon Legend -->
-        <!-- Add Inventory Modal -->
-        <Modal :show="showAddModal" @close="showAddModal = false">
-            <div class="p-8 rounded-xl shadow-xl bg-white">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Add New Inventory Item</h2>
-                <form @submit.prevent="submitForm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                            <Multiselect v-model="form.product" :options="props.products" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a product" track-by="id" label="name" class="multiselect--with-icon w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                            <input v-model="form.quantity" type="number" min="0" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
-                            <input v-model="form.batch_number" type="text" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Manufacturing Date</label>
-                            <input v-model="form.manufacturing_date" type="date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                            <textarea v-model="form.notes" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
-                        </div>
-                    </div>
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <SecondaryButton @click="showAddModal = false">Cancel</SecondaryButton>
-                        <button type="submit" :disabled="isSubmitting" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">{{ isSubmitting ? 'Adding...' : 'Add Item' }}</button>
-                    </div>
-                </form>
-            </div>
-        </Modal>
+
         <!-- Excel Upload Modal -->
         <div
             v-if="showUploadModal"
