@@ -556,8 +556,9 @@ class SupplyController extends Controller
             // Decrement the packing list difference quantity
             $packingListDiff->decrement('quantity', $receivedQuantity);
             
-            // Update inventory based on the back order type
-            $this->updateInventoryForReceivedBackorder($receivedBackorder, $packingListItem, $receivedQuantity);
+            // Note: Inventory is not updated directly during receive action
+            // The received quantities are stored in ReceivedBackorder and BackOrderHistory
+            // Inventory will be updated only when the received backorder is approved
             
             // Commit the transaction
             DB::commit();
