@@ -397,7 +397,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white">
-                            <tr v-if="props.transfers.data.length === 0">
+                            <tr v-if="props.transfers.data.length === 0" class="items-center">
                                 <td
                                     colspan="7"
                                     class="px-2 py-2 text-center text-sm text-gray-600 border-b"
@@ -409,7 +409,7 @@
                             <tr
                                 v-for="transfer in props.transfers.data"
                                 :key="transfer.id"
-                                class="border-b"
+                                class="border-b items-center"
                                 :class="{
                                     'hover:bg-gray-50': true,
                                     'text-red-500':
