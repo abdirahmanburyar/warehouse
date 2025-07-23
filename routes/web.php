@@ -703,8 +703,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/{inventory}/edit', [InventoryController::class, 'edit'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.edit');
         Route::put('/{inventory}', [InventoryController::class, 'update'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update');
         Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->middleware(PermissionMiddleware::class . ':inventory.delete')->name('inventories.destroy');
-
-        Route::get('/get-locations', [InventoryController::class, 'getLocations'])->name('invetnories.getLocations');
+        Route::patch('/update-location', [InventoryController::class, 'updateLocation'])->middleware(PermissionMiddleware::class . ':inventory.edit')->name('inventories.update-location');
+        Route::get('/get-locations', [InventoryController::class, 'getLocations'])->name('inventories.getLocations');
+        Route::get('/get-all-locations', [InventoryController::class, 'getAllLocations'])->name('inventories.getAllLocations');
         Route::post('/import', [InventoryController::class, 'import'])->middleware(PermissionMiddleware::class . ':inventory.create')->name('inventories.import');
     });
 

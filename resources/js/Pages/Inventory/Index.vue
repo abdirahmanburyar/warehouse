@@ -23,6 +23,7 @@ const props = defineProps({
     products: Array,
     dosage: Array,
     category: Array,
+    locations: Array,
     warehouses: Array,
     filters: Object,
     inventoryStatusCounts: Object,
@@ -43,6 +44,12 @@ const isSubmitting = ref(false);
 // Modal states
 const showAddModal = ref(false);
 const showLegend = ref(false);
+const showEditLocationModal = ref(false);
+
+// Edit location states
+const editingItem = ref(null);
+const newLocation = ref("");
+const isUpdatingLocation = ref(false);
 
 // Upload states
 const showUploadModal = ref(false);
@@ -146,6 +153,56 @@ watch(
         applyFilters();
     }
 );
+
+// Edit location functions
+const openEditLocationModal = (item, inventory) => {
+    editingItem.value = { ...item, inventory: inventory };
+    newLocation.value = item.location || "";
+    showEditLocationModal.value = true;
+};
+
+const closeEditLocationModal = () => {
+    showEditLocationModal.value = false;
+    editingItem.value = null;
+    newLocation.value = "";
+    isUpdatingLocation.value = false;
+};
+
+const updateLocation = async () => {
+    if (!newLocation.value.trim()) {
+        toast.error("Please enter a location");
+        return;
+    }
+
+    isUpdatingLocation.value = true;
+
+    try {
+        const response = await axios.patch(route("inventories.update-location"), {
+            inventory_item_id: editingItem.value.id,
+            location: newLocation.value.trim()
+        });
+
+        if (response.data.success) {
+            // Update the item location in the local state
+            const inventoryIndex = props.inventories.data.findIndex(inv => inv.id === editingItem.value.inventory.id);
+            if (inventoryIndex !== -1) {
+                const itemIndex = props.inventories.data[inventoryIndex].items.findIndex(item => item.id === editingItem.value.id);
+                if (itemIndex !== -1) {
+                    props.inventories.data[inventoryIndex].items[itemIndex].location = newLocation.value.trim();
+                }
+            }
+            toast.success("Location updated successfully");
+            closeEditLocationModal();
+        } else {
+            toast.error(response.data.message || "Failed to update location");
+        }
+    } catch (error) {
+        console.error("Error updating location:", error);
+        toast.error(error.response?.data?.message || "Failed to update location");
+    } finally {
+        isUpdatingLocation.value = false;
+    }
+};
 
 // Upload modal functions
 const openUploadModal = () => {
@@ -438,7 +495,6 @@ function getResults(page = 1) {
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status</th>
-                                <th class="px-3 py-2 text-xs font-bold rounded-tr-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                             </tr>
                             <tr style="background-color: #F4F7FB;">
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
@@ -450,7 +506,7 @@ function getResults(page = 1) {
                         <tbody>
                             <template v-if="props.inventories.data.length === 0">
                                 <tr>
-                                    <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
+                                    <td colspan="10" class="text-center py-8 text-gray-500 bg-gray-50">
                                         <div class="flex flex-col items-center justify-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
                                             <span>No inventory data found.</span>
@@ -460,17 +516,41 @@ function getResults(page = 1) {
                             </template>
                             <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
                                 <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-top">{{ inventory.product.name }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.product.category.name }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-top">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.location }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle">{{ inventory.product.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.product.category.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.items[0].uom }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span>{{ item.location }}</span>
+                                            <button
+                                                @click="openEditLocationModal(item, inventory)"
+                                                class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
+                                                title="Edit Location"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-4 w-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
                                     
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0 }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.reorder_level }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0 }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ inventory.reorder_level }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">
                                         <div class="flex items-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
                                                 <img
@@ -500,30 +580,6 @@ function getResults(page = 1) {
                                                     alt="In Stock"
                                                 />
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-4 whitespace-nowrap text-xs font-medium align-top">
-                                        <div class="flex items-center space-x-3">
-                                            <Link
-                                                :href="route('supplies.purchase_order')"
-                                                v-if="isLowStock(inventory)"
-                                                class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    class="h-5 w-5"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                                    />
-                                                </svg>
-                                            </Link>
                                         </div>
                                     </td>
                                 </tr>
@@ -837,6 +893,67 @@ function getResults(page = 1) {
             </div>
           </div>
         </transition>
+
+        <!-- Edit Location Modal -->
+        <Modal :show="showEditLocationModal" @close="closeEditLocationModal" maxWidth="md">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Edit Location</h2>
+                    <button @click="closeEditLocationModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600 font-medium">Product:</span>
+                            <p class="text-gray-900 font-semibold">{{ editingItem?.inventory?.product?.name || 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Current Location:</span>
+                            <p class="text-gray-900 font-semibold">{{ editingItem?.location || 'Not set' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Batch Number:</span>
+                            <p class="text-gray-900 font-semibold">{{ editingItem?.batch_number || 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 font-medium">Quantity:</span>
+                            <p class="text-gray-900 font-semibold">{{ editingItem?.quantity || 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="new_location" class="block text-sm font-medium text-gray-700 mb-2">New Location</label>
+                    <Multiselect v-model="newLocation" :options="props.locations" :multiple="false" :searchable="true" :close-on-select="true" :clear-on-select="false" :hide-selected="true" :loading="isUpdatingLocation" :internal-search="false" :placeholder="isUpdatingLocation ? 'Loading locations...' : 'Select location'"/>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button
+                        @click="closeEditLocationModal"
+                        :disabled="isUpdatingLocation"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="updateLocation"
+                        :disabled="isUpdatingLocation || !newLocation.trim()"
+                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <svg v-if="isUpdatingLocation" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ isUpdatingLocation ? 'Updating...' : 'Update Location' }}
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 

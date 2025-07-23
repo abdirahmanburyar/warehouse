@@ -125,6 +125,7 @@ class InventoryController extends Controller
             'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'per_page', 'page']),
             'category'   => Category::pluck('name')->toArray(),
             'dosage'     => Dosage::pluck('name')->toArray(),
+            'locations'  => Location::pluck('location')->toArray(),
         ]);
     }
 
@@ -155,7 +156,7 @@ class InventoryController extends Controller
             $validated
         );
 
-        event(new InventoryUpdated());
+        // event(new InventoryUpdated());
         
         return response()->json( $request->id ? 'Inventory updated successfully' : 'Inventory created successfully', 200);
         } catch (\Throwable $th) {
@@ -201,7 +202,7 @@ class InventoryController extends Controller
             if (!$warehouse) {
                 return response()->json([], 200);
             }
-            
+
             $locations = Location::where('warehouse', $warehouse)
                 ->select('id', 'location', 'warehouse')
                 ->get()
@@ -212,13 +213,44 @@ class InventoryController extends Controller
                         'warehouse' => $location->warehouse
                     ];
                 });
-            
+
             return response()->json($locations, 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
     }
-    
+
+    public function updateLocation(Request $request)
+    {
+        $request->validate([
+            'inventory_item_id' => 'required|exists:inventory_items,id',
+            'location' => 'required|string|max:255'
+        ]);
+
+        try {
+            $inventoryItem = InventoryItem::findOrFail($request->inventory_item_id);
+            $inventoryItem->update([
+                'location' => $request->location
+            ]);
+
+            // Trigger inventory update event
+            // event(new InventoryUpdated($inventoryItem->inventory));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Location updated successfully',
+                'data' => $inventoryItem
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating inventory location: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update location: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Import inventory items from Excel file
      */
