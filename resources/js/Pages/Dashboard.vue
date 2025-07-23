@@ -718,7 +718,11 @@ const horizontalBarChartOptions = {
             },
             callbacks: {
                 title: function(context) {
-                    return context[0].label;
+                    // Get the full name from the chart data
+                    const dataIndex = context[0].dataIndex;
+                    const chartData = warehouseFacilitiesChartData.value;
+                    const fullName = chartData.fullNames[dataIndex] || context[0].label;
+                    return fullName;
                 },
                 label: function(context) {
                     return formatLargeNumberForTooltip(context.parsed.x);
@@ -771,11 +775,7 @@ const horizontalBarChartOptions = {
                     weight: '600',
                     family: 'Segoe UI, Arial, sans-serif'
                 },
-                padding: 6,
-                callback: function(value, index, values) {
-                    // Use the actual data labels from the chart data
-                    return value;
-                }
+                padding: 6
             }
         }
     },
@@ -1347,10 +1347,7 @@ const productCategoryChartData = computed(() => ({
 }));
 
 const warehouseFacilitiesChartData = computed(() => {
-    // Debug: Log the data being processed
-    console.log('Processing dashboard data:', props.dashboardData.summary);
-    
-    // Get the actual data from dashboardData.summary and use fullName for labels
+    // Get the actual data from dashboardData.summary and use abbreviated labels
     const facilityData = props.dashboardData.summary.map(item => {
         // Map colors based on facility type
         const colorMap = {
@@ -1362,14 +1359,12 @@ const warehouseFacilitiesChartData = computed(() => {
             'MT': 'rgba(91, 155, 213, 0.85)', // Light Blue for Mobile Team
         };
 
-        const chartItem = {
+        return {
             label: item.label, // Use abbreviated label (WH, HC, PHU, etc.)
+            fullName: item.fullName, // Store full name for tooltip
             count: item.value,
             color: colorMap[item.label] || 'rgba(68, 114, 196, 0.85)' // Default blue
         };
-        
-        console.log(`Processing ${item.label}: fullName="${item.fullName}", label="${chartItem.label}", count=${chartItem.count}`);
-        return chartItem;
     });
 
     // Sort by count in descending order (highest to lowest)
@@ -1377,6 +1372,7 @@ const warehouseFacilitiesChartData = computed(() => {
 
     return {
         labels: sortedData.map(item => item.label),
+        fullNames: sortedData.map(item => item.fullName), // Store full names in order
         datasets: [{
             label: 'Facility Count',
             data: sortedData.map(item => item.count),
