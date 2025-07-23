@@ -1228,8 +1228,9 @@ async function reviewPackingList() {
 
             // Refresh the page with updated data
             router.get(route('supplies.packing-list.edit', form.value.id), {}, {
-                preserveScroll: true,
-                only: ['packingList']
+                preserveScroll: false,
+                preserveState: false,
+                only: ['packingList', 'warehouses']
             });
 
         } catch (error) {
@@ -1291,8 +1292,9 @@ async function approvePackingList() {
 
             // Refresh the page with updated data
             router.get(route('supplies.packing-list.edit', form.value.id), {}, {
-                preserveScroll: true,
-                only: ['packingList']
+                preserveScroll: false,
+                preserveState: false,
+                only: ['packingList', 'warehouses']
             });
 
 
@@ -1344,8 +1346,9 @@ async function rejectPackingList() {
 
             // Refresh the page with updated data
             router.get(route('supplies.packing-list.edit', form.value.id), {}, {
-                preserveScroll: true,
-                only: ['packingList']
+                preserveScroll: false,
+                preserveState: false,
+                only: ['packingList', 'warehouses']
             });
 
         } catch (error) {
