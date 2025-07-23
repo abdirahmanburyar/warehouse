@@ -123,16 +123,16 @@
                 </colgroup>
                 <thead class="bg-gray-50 border border-black">
                     <tr>
-                        <th class="text-left text-xs text-black capitalize sticky left-0 bg-gray-50 z-10 w-8">#</th>
-                        <th class="text-left text-xs text-black capitalize sticky left-8 bg-gray-50 z-10 w-48">Item</th>
-                        <th class="text-left text-xs text-black capitalize">UOM</th>
-                        <th class="text-left text-xs text-black capitalize">QTY</th>
-                        <th class="text-left text-xs text-black capitalize">Warehouse</th>
-                        <th class="text-left text-xs text-black capitalize">Location</th>
-                        <th class="text-left text-xs text-black capitalize">Item Detail</th>
-                        <th class="text-left text-xs text-black capitalize">Unit Cost</th>
-                        <th class="text-left text-xs text-black capitalize">Total Cost</th>
-                        <th class="text-left text-xs text-black capitalize">Fulfillment</th>
+                        <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">#</th>
+                        <th class="px-3 py-2 text-xs font-bold sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">UOM</th>
+                        <th class="px-3 py-2 text-xs font-bold w-32" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">QTY</th>
+                        <th class="px-3 py-2 text-xs font-bold w-48" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Warehouse</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Location</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item Detail</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Unit Cost</th>
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Total Cost</th>
+                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg w-20" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Fulfillment</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -156,13 +156,11 @@
                                 {{ item.product?.name }}
                             </p>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900 sticky left-8 z-10 bg-white w-[100px]"
+                        <td class="px-3 py-2 text-xs text-gray-900"
                             style="border-bottom: 1px solid #B7C6E6;">
-                            <p class="text-xs text-break">
-                                {{ item.uom }}
-                            </p>
+                            <span class="font-bold text-xs text-gray-500">{{ item.uom }}</span>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900 w-[100px]"
+                        <td class="px-3 py-2 text-xs text-gray-900 w-32"
                             style="border-bottom: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
                                 <div>
@@ -198,7 +196,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900 w-[150px]"
+                        <td class="px-3 py-2 text-xs text-gray-900 w-48"
                             style="border-bottom: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.warehouse" :value="item.warehouse_id" :options="props.warehouses"
                                 :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
