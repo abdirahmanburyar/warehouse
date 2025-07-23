@@ -559,7 +559,7 @@ async function loadLocations(warehouse) {
         return;
     }
     await axios
-        .get(route("invetnories.getLocations"), {
+        .get(route("inventories.getLocations"), {
             params: {
                 warehouse: warehouse,
             },
