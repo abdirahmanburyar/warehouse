@@ -219,12 +219,12 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white">
-                        <tr v-if="disposal.items?.length === 0">
+                        <tr v-if="disposal.items?.length === 0" class="align-middle">
                             <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
                                 No items found
                             </td>
                         </tr>
-                        <tr v-for="item in disposal.items" :key="item.id" class="hover:bg-gray-50 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                        <tr v-for="item in disposal.items" :key="item.id" class="hover:bg-gray-50 border-b align-middle" style="border-bottom: 1px solid #B7C6E6;">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ item.product?.name || 'N/A' }}</div>
