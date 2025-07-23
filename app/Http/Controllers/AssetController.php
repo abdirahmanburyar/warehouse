@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\SubLocation;
 use App\Models\AssetLocation;
 use App\Models\Region;
+use App\Models\User;
 use App\Models\AssetCategory;
 use App\Models\CustodyHistory;
 use App\Models\FundSource;
