@@ -66,56 +66,15 @@ class InventoryController extends Controller
             $query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
         }
 
+        // Get paginated results for display
         $inventories = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
         ->withQueryString();
         $inventories->setPath(url()->current()); // Force Laravel to use full URLs
 
-        $statusCounts = [
-            'in_stock' => 0,
-            'low_stock' => 0,
-            'out_of_stock' => 0,
-            'soon_expiring' => 0,
-            'expired' => 0,
-        ];
+        // Calculate status counts independently of pagination
+        $statusCounts = $this->calculateInventoryStatusCounts($request);
 
         $now = now();
-        foreach ($inventories as $inventory) {
-            $amc = $inventory->amc ?: 0;
-            $reorderLevel = $inventory->reorder_level ?: 0; // Use the calculated reorder level from the model
-            
-            // Calculate total quantity for this inventory
-            $totalQuantity = 0;
-            $hasExpiredItems = false;
-            $hasSoonExpiringItems = false;
-            
-            foreach ($inventory->items ?? [] as $item) {
-                $totalQuantity += $item->quantity;
-                
-                if ($item->expiry_date) {
-                    if ($item->expiry_date < $now) {
-                        $hasExpiredItems = true;
-                    } elseif ($item->expiry_date <= $now->copy()->addDays(160)) {
-                        $hasSoonExpiringItems = true;
-                    }
-                }
-            }
-            
-            // Count at inventory level (not item level)
-            if ($totalQuantity == 0) {
-                $statusCounts['out_of_stock']++;
-            } elseif ($totalQuantity <= $reorderLevel) {
-                $statusCounts['low_stock']++;
-            } else {
-                $statusCounts['in_stock']++;
-            }
-            
-            // Count expiry status
-            if ($hasExpiredItems) {
-                $statusCounts['expired']++;
-            } elseif ($hasSoonExpiringItems) {
-                $statusCounts['soon_expiring']++;
-            }
-        }
 
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),
@@ -318,6 +277,100 @@ class InventoryController extends Controller
                 'message' => 'Import failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Calculate inventory status counts independently of pagination
+     */
+    private function calculateInventoryStatusCounts(Request $request)
+    {
+        $query = Inventory::query()
+            ->with([
+                'items.warehouse:id,name',
+                'product:id,name,category_id,dosage_id',
+                'product.category:id,name',
+                'product.dosage:id,name'
+            ])
+            ->leftJoin('reorder_levels', 'inventories.product_id', '=', 'reorder_levels.product_id')
+            ->addSelect('inventories.*')
+            ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
+            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, 0) as reorder_level'));
+
+        // Apply the same filters as the main query
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('items', function($q) use($search) {
+                $q->where('barcode', 'like', "%{$search}%");
+                $q->orWhere('batch_number', 'like', "%{$search}%");
+            })
+            ->orWhereHas('product', function($q) use($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('category')) {
+            $query->whereHas('product.category', fn($q) => $q->where('name', $request->category));
+        }
+
+        if ($request->filled('dosage')) {
+            $query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
+        }
+
+        // Get all results without pagination for counting
+        $allInventories = $query->get();
+
+        $statusCounts = [
+            'in_stock' => 0,
+            'low_stock' => 0,
+            'out_of_stock' => 0,
+            'soon_expiring' => 0,
+            'expired' => 0,
+        ];
+
+        $now = now();
+        foreach ($allInventories as $inventory) {
+            $amc = $inventory->amc ?: 0;
+            $reorderLevel = $inventory->reorder_level ?: 0;
+            
+            // Calculate total quantity for this inventory
+            $totalQuantity = 0;
+            $hasExpiredItems = false;
+            $hasSoonExpiringItems = false;
+            
+            foreach ($inventory->items ?? [] as $item) {
+                $totalQuantity += $item->quantity;
+                
+                if ($item->expiry_date) {
+                    if ($item->expiry_date < $now) {
+                        $hasExpiredItems = true;
+                    } elseif ($item->expiry_date <= $now->copy()->addDays(160)) {
+                        $hasSoonExpiringItems = true;
+                    }
+                }
+            }
+            
+            // Count at inventory level (not item level)
+            if ($totalQuantity == 0) {
+                $statusCounts['out_of_stock']++;
+            } elseif ($totalQuantity <= $reorderLevel) {
+                $statusCounts['low_stock']++;
+            } else {
+                $statusCounts['in_stock']++;
+            }
+            
+            // Count expiry status
+            if ($hasExpiredItems) {
+                $statusCounts['expired']++;
+            } elseif ($hasSoonExpiringItems) {
+                $statusCounts['soon_expiring']++;
+            }
+        }
+
+        return $statusCounts;
     }
 
 }
