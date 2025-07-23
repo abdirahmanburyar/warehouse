@@ -956,7 +956,6 @@ const hasRequiredFields = (item) => {
            item.location && 
            item.batch_number && 
            item.expire_date && 
-           item.barcode && 
            item.uom;
 };
 
