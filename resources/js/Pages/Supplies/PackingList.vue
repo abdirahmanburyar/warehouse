@@ -159,7 +159,7 @@
 
         <!-- Items Section -->
         <div v-if="!isLoading && form" class="mt-4 w-full">
-            <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+            <table class="w-full text-sm text-left table-sm rounded-t-lg">
                 <thead>
                     <tr style="background-color: #F4F7FB;">
                         <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
