@@ -19,7 +19,7 @@
                             </div>
                             <div class="flex items-center">
                                 <div class="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                                <span class="text-sm">{{ props.facilities.total }} Total</span>
+                                <span class="text-sm">{{ totalCount }} Total</span>
                             </div>
                         </div>
                     </div>
@@ -374,6 +374,15 @@ const props = defineProps({
         type: Object,
         required: true
     },
+    facilityCounts: {
+        type: Object,
+        required: true,
+        default: () => ({
+            total: 0,
+            active: 0,
+            inactive: 0
+        })
+    },
     users: {
         type: Array,
         required: true
@@ -392,13 +401,17 @@ const props = defineProps({
     }
 })
 
-// Computed properties for statistics
+// Computed properties for statistics - now using independent counts from controller
 const activeCount = computed(() => {
-    return props.facilities.data?.filter(facility => facility.is_active).length || 0
+    return props.facilityCounts?.active || 0
 })
 
 const inactiveCount = computed(() => {
-    return props.facilities.data?.filter(facility => !facility.is_active).length || 0
+    return props.facilityCounts?.inactive || 0
+})
+
+const totalCount = computed(() => {
+    return props.facilityCounts?.total || 0
 })
 
 const per_page = ref(props.filters.per_page || 25)
