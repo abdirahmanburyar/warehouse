@@ -210,6 +210,7 @@
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Category</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Dosage Form</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Eligibility Level</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Tracertable</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Status</th>
                             <th class="px-3 py-2 text-xs font-bold text-right" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Actions</th>
                         </tr>
@@ -238,7 +239,7 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     {{ product.dosage?.name || "N/A" }}
                                 </span>
-                            </td>
+                            </td>                            
                             <td class="px-3 py-2 text-xs text-gray-800">
                                 <div v-if="product.eligible && product.eligible.length > 0" class="space-y-1">
                                     <span v-for="(item, index) in product.eligible" :key="index" class="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-md mr-1 mb-1">
@@ -246,6 +247,9 @@
                                     </span>
                                 </div>
                                 <span v-else class="text-gray-500">N/A</span>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                {{ product.tracert_type }}
                             </td>
                             <td class="px-3 py-2 whitespace-nowrap">
                                 <span
