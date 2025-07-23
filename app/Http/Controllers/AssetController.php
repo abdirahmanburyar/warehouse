@@ -456,52 +456,77 @@ class AssetController extends Controller
     }
 
     // transfer submission with approval
-    public function transferAsset(Request $request)
+    public function transferAsset(Request $request, Asset $asset)
     {
         try {
-            return DB::transaction(function() use($request) {
-                $validated = $request->validate([
-                    'asset_id' => 'required|exists:assets,id',
-                    'custodian' => 'required|string|max:255',
-                    'transfer_date' => 'required|date',
-                    'assignment_notes' => 'nullable|string',
+            // Check transfer_initiate permission
+            if (!auth()->user()->can('transfer_initiate')) {
+                return response()->json('You do not have permission to initiate transfers', 403);
+            }
+
+            $validated = $request->validate([
+                'custodian' => 'required|string',
+                'assignment_notes' => 'nullable|string'
+            ]);
+
+            // Check if asset is available for transfer
+            if ($asset->status !== Asset::STATUS_IN_USE) {
+                return response()->json('Asset is not available for transfer', 400);
+            }
+
+            // Check if asset is already submitted for approval
+            if ($asset->submitted_for_approval) {
+                return response()->json('Asset is already submitted for approval', 400);
+            }
+
+            DB::transaction(function () use ($asset, $validated) {
+                // Set asset status to in transfer process
+                $oldStatus = $asset->status;
+                $asset->update([
+                    'status' => Asset::STATUS_IN_TRANSFER_PROCESS,
+                    'submitted_for_approval' => true,
+                    'submitted_at' => now(),
+                    'submitted_by' => auth()->id()
                 ]);
 
-                $asset = Asset::findOrFail($validated['asset_id']);
-                
-                // Check if asset is approved and in use
-                if ($asset->status !== Asset::STATUS_IN_USE && $asset->status !== Asset::STATUS_ACTIVE) {
-                    return response()->json('Asset must be approved and in use before transfer', 400);
-                }
+                // Create history record for transfer initiation
+                $asset->createHistoryRecord(
+                    'transfer_initiated',
+                    'transfer',
+                    ['status' => $oldStatus, 'person_assigned' => $asset->person_assigned],
+                    ['status' => Asset::STATUS_IN_TRANSFER_PROCESS, 'new_custodian' => $validated['custodian']],
+                    "Transfer initiated: {$asset->person_assigned} → {$validated['custodian']}"
+                );
 
-                // Create transfer approval
-                $transferApproval = $asset->approvals()->create([
-                    'role_id' => 2, // asset_manager role ID - adjust based on your role structure
-                    'action' => 'transfer_approval',
-                    'sequence' => 1,
-                    'status' => 'pending',
-                    'created_by' => auth()->id(),
-                    'notes' => "Transfer request: {$asset->person_assigned} → {$validated['custodian']}"
+                // Clear any existing approvals for this asset
+                $asset->approvals()->delete();
+
+                // Create transfer approval steps: Single review step
+                $asset->createApprovalSteps([
+                    [
+                        'role_id' => 1, // Use a general role ID that all users can have
+                        'action' => 'review',
+                        'sequence' => 1,
+                        'notes' => "Transfer request: {$asset->person_assigned} → {$validated['custodian']}"
+                    ]
                 ]);
 
                 // Store transfer data in the approval
-                $transferData = [
-                    'old_custodian' => $asset->person_assigned,
-                    'new_custodian' => $validated['custodian'],
-                    'transfer_date' => $validated['transfer_date'],
-                    'assignment_notes' => $validated['assignment_notes'] ?? null,
-                ];
-                
-                $transferApproval->update([
-                    'transfer_data' => json_encode($transferData)
+                $approval = $asset->approvals()->first();
+                $approval->update([
+                    'transfer_data' => json_encode([
+                        'old_custodian' => $asset->person_assigned,
+                        'new_custodian' => $validated['custodian'],
+                        'assignment_notes' => $validated['assignment_notes'] ?? null
+                    ])
                 ]);
-
-                return response()->json([
-                    'message' => 'Transfer request submitted for approval',
-                    'transfer_approval' => $transferApproval,
-                    'asset' => $asset->fresh()
-                ], 200);
             });
+
+            return response()->json([
+                'message' => 'Asset transfer request submitted for approval',
+                'asset' => $asset->fresh()
+            ], 200);
+
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);
         }
@@ -515,24 +540,74 @@ class AssetController extends Controller
         try {
             $validated = $request->validate([
                 'approval_id' => 'required|exists:asset_approvals,id',
-                'action' => 'required|in:approve,reject',
+                'action' => 'required|in:review,approve,reject',
                 'notes' => 'nullable|string'
             ]);
 
             $approval = AssetApproval::findOrFail($validated['approval_id']);
             
-            if ($approval->action !== 'transfer_approval') {
+            if ($approval->action !== 'review') {
                 return response()->json('Invalid approval type', 400);
             }
 
-            if ($validated['action'] === 'approve') {
-                // Get transfer data
+            if ($validated['action'] === 'review') {
+                // Check transfer_review permission
+                if (!auth()->user()->can('transfer_review')) {
+                    return response()->json('You do not have permission to review transfers', 403);
+                }
+
+                // Handle review step
+                if ($approval->status !== 'pending') {
+                    return response()->json('Current step is not a pending review step', 400);
+                }
+
+                $approval->update([
+                    'status' => 'reviewed',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'transfer_reviewed',
+                    'transfer',
+                    null,
+                    null,
+                    $validated['notes'] ?? 'Transfer reviewed',
+                    $approval->id
+                );
+
+                return response()->json([
+                    'message' => 'Transfer reviewed successfully, waiting for final approval',
+                    'asset' => $asset->fresh()
+                ], 200);
+
+            } elseif ($validated['action'] === 'approve') {
+                // Check transfer_approve permission
+                if (!auth()->user()->can('transfer_approve')) {
+                    return response()->json('You do not have permission to approve transfers', 403);
+                }
+
+                // Handle approve step - execute the transfer
+                if ($approval->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                // Get transfer data from the approval
+                if (!$approval->transfer_data) {
+                    return response()->json('Transfer data not found', 400);
+                }
+
                 $transferData = json_decode($approval->transfer_data, true);
+                $oldCustodian = $asset->person_assigned;
+                $oldStatus = $asset->status;
                 
                 // Update asset
                 $asset->update([
                     'person_assigned' => $transferData['new_custodian'],
-                    'transfer_date' => $transferData['transfer_date']
+                    'status' => Asset::STATUS_IN_USE,
+                    'submitted_for_approval' => false
                 ]);
 
                 // Create custody history
@@ -554,19 +629,63 @@ class AssetController extends Controller
                     'notes' => $validated['notes'] ?? null
                 ]);
 
+                // Create history record
+                $asset->createHistoryRecord(
+                    'transfer_approved',
+                    'transfer',
+                    [
+                        'status' => $oldStatus,
+                        'person_assigned' => $oldCustodian
+                    ],
+                    [
+                        'status' => Asset::STATUS_IN_USE,
+                        'person_assigned' => $transferData['new_custodian']
+                    ],
+                    $validated['notes'] ?? 'Transfer approved and executed',
+                    $approval->id
+                );
+
                 return response()->json([
-                    'message' => 'Transfer approved successfully',
+                    'message' => 'Transfer approved and executed successfully',
                     'asset' => $asset->fresh(),
                     'custody_history' => $custodyHistory
                 ], 200);
+
             } else {
-                // Reject transfer
+                // Check transfer_reject permission
+                if (!auth()->user()->can('transfer_reject')) {
+                    return response()->json('You do not have permission to reject transfers', 403);
+                }
+
+                // Handle reject step
+                if ($approval->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                // Update approval status
                 $approval->update([
                     'status' => 'rejected',
                     'approved_by' => auth()->id(),
                     'approved_at' => now(),
                     'notes' => $validated['notes'] ?? null
                 ]);
+
+                // Set asset status back to IN_USE (original status before transfer)
+                $oldStatus = $asset->status;
+                $asset->update([
+                    'status' => Asset::STATUS_IN_USE,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'transfer_rejected',
+                    'transfer',
+                    ['status' => $oldStatus],
+                    ['status' => Asset::STATUS_IN_USE],
+                    $validated['notes'] ?? 'Transfer rejected',
+                    $approval->id
+                );
 
                 return response()->json([
                     'message' => 'Transfer rejected',
@@ -577,6 +696,234 @@ class AssetController extends Controller
             return response()->json($th->getMessage(), 500);
         }
     }
+    /**
+     * Retire asset with approval process
+     */
+    public function retireAsset(Request $request, Asset $asset)
+    {
+        try {
+            // Check retirement_initiate permission
+            if (!auth()->user()->can('retirement_initiate')) {
+                return response()->json('You do not have permission to initiate retirements', 403);
+            }
+
+            $validated = $request->validate([
+                'retirement_reason' => 'required|string|max:500',
+                'retirement_date' => 'required|date'
+            ]);
+
+            // Check if asset is available for retirement
+            if ($asset->status !== Asset::STATUS_IN_USE && $asset->status !== Asset::STATUS_ACTIVE) {
+                return response()->json('Asset is not available for retirement', 400);
+            }
+
+            // Check if asset is already submitted for approval
+            if ($asset->submitted_for_approval) {
+                return response()->json('Asset is already submitted for approval', 400);
+            }
+
+            DB::transaction(function () use ($asset, $validated) {
+                // Set asset status to pending approval for retirement
+                $oldStatus = $asset->status;
+                $asset->update([
+                    'status' => Asset::STATUS_PENDING_APPROVAL,
+                    'submitted_for_approval' => true,
+                    'submitted_at' => now(),
+                    'submitted_by' => auth()->id()
+                ]);
+
+                // Create history record for retirement initiation
+                $asset->createHistoryRecord(
+                    'retirement_initiated',
+                    'retirement',
+                    ['status' => $oldStatus],
+                    ['status' => Asset::STATUS_PENDING_APPROVAL],
+                    "Retirement initiated: {$validated['retirement_reason']}"
+                );
+
+                // Clear any existing approvals for this asset
+                $asset->approvals()->delete();
+
+                // Create retirement approval steps: Single review step
+                $asset->createApprovalSteps([
+                    [
+                        'role_id' => 1, // Use a general role ID that all users can have
+                        'action' => 'review',
+                        'sequence' => 1,
+                        'notes' => "Retirement request for asset: {$asset->asset_tag}"
+                    ]
+                ]);
+
+                // Store retirement data in the approval
+                $approval = $asset->approvals()->first();
+                $approval->update([
+                    'transfer_data' => json_encode([
+                        'retirement_reason' => $validated['retirement_reason'],
+                        'retirement_date' => $validated['retirement_date'],
+                        'previous_status' => $oldStatus
+                    ])
+                ]);
+            });
+
+            return response()->json([
+                'message' => 'Asset retirement request submitted for approval',
+                'asset' => $asset->fresh()
+            ], 200);
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Approve retirement
+     */
+    public function approveRetirement(Request $request, Asset $asset)
+    {
+        try {
+            $validated = $request->validate([
+                'approval_id' => 'required|exists:asset_approvals,id',
+                'action' => 'required|in:review,approve,reject',
+                'notes' => 'nullable|string'
+            ]);
+
+            $approval = AssetApproval::findOrFail($validated['approval_id']);
+            
+            if ($approval->action !== 'review') {
+                return response()->json('Invalid approval type', 400);
+            }
+
+            if ($validated['action'] === 'review') {
+                // Check retirement_review permission
+                if (!auth()->user()->can('retirement_review')) {
+                    return response()->json('You do not have permission to review retirements', 403);
+                }
+
+                // Handle review step
+                if ($approval->status !== 'pending') {
+                    return response()->json('Current step is not a pending review step', 400);
+                }
+
+                $approval->update([
+                    'status' => 'reviewed',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'retirement_reviewed',
+                    'retirement',
+                    null,
+                    null,
+                    $validated['notes'] ?? 'Retirement reviewed',
+                    $approval->id
+                );
+
+                return response()->json([
+                    'message' => 'Retirement reviewed successfully, waiting for final approval',
+                    'asset' => $asset->fresh()
+                ], 200);
+
+            } elseif ($validated['action'] === 'approve') {
+                // Check retirement_approve permission
+                if (!auth()->user()->can('retirement_approve')) {
+                    return response()->json('You do not have permission to approve retirements', 403);
+                }
+
+                // Handle approve step - execute the retirement
+                if ($approval->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                // Get retirement data from the approval
+                if (!$approval->transfer_data) {
+                    return response()->json('Retirement data not found', 400);
+                }
+
+                $retirementData = json_decode($approval->transfer_data, true);
+                $oldStatus = $asset->status;
+                
+                // Update asset status to retired
+                $asset->update([
+                    'status' => Asset::STATUS_RETIRED,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Update approval status
+                $approval->update([
+                    'status' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'retirement_approved',
+                    'retirement',
+                    ['status' => $oldStatus],
+                    ['status' => Asset::STATUS_RETIRED],
+                    $validated['notes'] ?? 'Retirement approved and executed',
+                    $approval->id
+                );
+
+                return response()->json([
+                    'message' => 'Asset retirement approved and executed successfully',
+                    'asset' => $asset->fresh()
+                ], 200);
+
+            } else {
+                // Check retirement_reject permission
+                if (!auth()->user()->can('retirement_reject')) {
+                    return response()->json('You do not have permission to reject retirements', 403);
+                }
+
+                // Handle reject step
+                if ($approval->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                // Update approval status
+                $approval->update([
+                    'status' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                // Get retirement data to restore previous status
+                $retirementData = json_decode($approval->transfer_data, true);
+                $previousStatus = $retirementData['previous_status'] ?? Asset::STATUS_IN_USE;
+                $oldStatus = $asset->status;
+
+                // Set asset status back to previous status
+                $asset->update([
+                    'status' => $previousStatus,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'retirement_rejected',
+                    'retirement',
+                    ['status' => $oldStatus],
+                    ['status' => $previousStatus],
+                    $validated['notes'] ?? 'Retirement rejected',
+                    $approval->id
+                );
+
+                return response()->json([
+                    'message' => 'Retirement rejected',
+                    'asset' => $asset->fresh()
+                ], 200);
+            }
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
     /**
      * Store a new sub-location.
      *
@@ -638,7 +985,7 @@ class AssetController extends Controller
 
             $validated = $request->validate([
                 'notes' => 'nullable|string',
-                'action' => 'required|in:approve,reject'
+                'action' => 'required|in:review,approve,reject'
             ]);
 
             $nextStep = $asset->getNextApprovalStep();
@@ -646,8 +993,52 @@ class AssetController extends Controller
                 return response()->json('No pending approval step found', 400);
             }
 
-            if ($validated['action'] === 'approve') {
-                // Approve the current step
+            if ($validated['action'] === 'review') {
+                // Check asset_review permission
+                if (!auth()->user()->can('asset_review')) {
+                    return response()->json('You do not have permission to review assets', 403);
+                }
+
+                // Handle review step
+                if ($nextStep->action !== 'review' || $nextStep->status !== 'pending') {
+                    return response()->json('Current step is not a pending review step', 400);
+                }
+
+                $nextStep->update([
+                    'status' => 'reviewed',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'notes' => $validated['notes'] ?? null
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'reviewed',
+                    'approval',
+                    null,
+                    null,
+                    $validated['notes'] ?? 'Asset reviewed',
+                    $nextStep->id
+                );
+
+                return response()->json([
+                    'message' => 'Asset reviewed successfully, waiting for final approval',
+                    'asset' => $asset->fresh()
+                ], 200);
+
+            } elseif ($validated['action'] === 'approve') {
+                // Check asset_approve permission
+                if (!auth()->user()->can('asset_approve')) {
+                    return response()->json('You do not have permission to approve assets', 403);
+                }
+
+                // Handle approve step
+                if ($nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                $oldStatus = $asset->status;
+                
                 $nextStep->update([
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
@@ -655,25 +1046,40 @@ class AssetController extends Controller
                     'notes' => $validated['notes'] ?? null
                 ]);
 
-                // Check if all approvals are complete
-                if ($asset->isFullyApproved()) {
-                    $asset->update([
-                        'status' => Asset::STATUS_IN_USE,
-                        'submitted_for_approval' => false
-                    ]);
-                    
-                    return response()->json([
-                        'message' => 'Asset fully approved and ready for use',
-                        'asset' => $asset->fresh()
-                    ], 200);
-                } else {
-                    return response()->json([
-                        'message' => 'Asset step approved, waiting for next approval',
-                        'asset' => $asset->fresh()
-                    ], 200);
-                }
+                // Asset is fully approved, set status to IN_USE
+                $asset->update([
+                    'status' => Asset::STATUS_IN_USE,
+                    'submitted_for_approval' => false
+                ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'approved',
+                    'approval',
+                    ['status' => $oldStatus],
+                    ['status' => Asset::STATUS_IN_USE],
+                    $validated['notes'] ?? 'Asset approved',
+                    $nextStep->id
+                );
+                
+                return response()->json([
+                    'message' => 'Asset fully approved and ready for use',
+                    'asset' => $asset->fresh()
+                ], 200);
+
             } else {
-                // Reject the asset
+                // Check asset_reject permission
+                if (!auth()->user()->can('asset_reject')) {
+                    return response()->json('You do not have permission to reject assets', 403);
+                }
+
+                // Handle reject step
+                if ($nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
+                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                }
+
+                $oldStatus = $asset->status;
+                
                 $nextStep->update([
                     'status' => 'rejected',
                     'approved_by' => auth()->id(),
@@ -681,10 +1087,21 @@ class AssetController extends Controller
                     'notes' => $validated['notes'] ?? null
                 ]);
 
+                // Asset is rejected, set status back to ACTIVE
                 $asset->update([
                     'status' => Asset::STATUS_ACTIVE,
                     'submitted_for_approval' => false
                 ]);
+
+                // Create history record
+                $asset->createHistoryRecord(
+                    'rejected',
+                    'approval',
+                    ['status' => $oldStatus],
+                    ['status' => Asset::STATUS_ACTIVE],
+                    $validated['notes'] ?? 'Asset rejected',
+                    $nextStep->id
+                );
 
                 return response()->json([
                     'message' => 'Asset rejected',

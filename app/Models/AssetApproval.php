@@ -20,6 +20,8 @@ class AssetApproval extends Model
         'notes',
         'approved_by',
         'approved_at',
+        'reviewed_by',
+        'reviewed_at',
         'created_by',
         'updated_by',
         'transfer_data',
@@ -28,6 +30,7 @@ class AssetApproval extends Model
     protected $casts = [
         'sequence' => 'integer',
         'approved_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     /**
@@ -55,6 +58,14 @@ class AssetApproval extends Model
     }
 
     /**
+     * Get the user who reviewed this step.
+     */
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
      * Get the user who created this approval step.
      */
     public function creator(): BelongsTo
@@ -76,6 +87,14 @@ class AssetApproval extends Model
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    /**
+     * Scope a query to only include reviewed items.
+     */
+    public function scopeReviewed($query)
+    {
+        return $query->where('status', 'reviewed');
     }
 
     /**

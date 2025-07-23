@@ -676,6 +676,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
             // asset transfer submission
             Route::post('/assets/{asset}/transfer', 'transferAsset')->name('assets.transfer');
+            Route::post('/assets/retire', 'retireAsset')->name('assets.retire');
+            Route::post('/assets/import', 'import')->name('assets.import');
 
             // upload assets excel file 
             Route::post('/assets/import', 'import')->name('assets.import');
@@ -691,6 +693,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::post('/{asset}/submit-approval', 'submitForApproval')->name('assets.submit-approval');
             Route::post('/{asset}/approve', 'approveAsset')->name('assets.approve');
             Route::post('/{asset}/approve-transfer', 'approveTransfer')->name('assets.approve-transfer');
+            Route::post('/{asset}/approve-retirement', 'approveRetirement')->name('assets.approve-retirement');
             Route::get('/pending-approvals', 'getPendingApprovals')->name('assets.pending-approvals');
             Route::get('/{asset}/approval-history', 'getApprovalHistory')->name('assets.approval-history');
         });

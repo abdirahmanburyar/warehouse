@@ -74,6 +74,11 @@ class Asset extends Model
         return $this->hasMany(CustodyHistory::class);
     }
 
+    public function assetHistory()
+    {
+        return $this->hasMany(AssetHistory::class);
+    }
+
     public function submittedBy()
     {
         return $this->belongsTo(User::class, 'submitted_by');
@@ -85,6 +90,7 @@ class Asset extends Model
     const STATUS_RETIRED = 'retired';
     const STATUS_DISPOSED = 'disposed';
     const STATUS_PENDING_APPROVAL = 'pending_approval';
+    const STATUS_IN_TRANSFER_PROCESS = 'in_transfer_process';
 
     public static function getStatuses(): array
     {
@@ -95,6 +101,7 @@ class Asset extends Model
             self::STATUS_RETIRED => 'Retired',
             self::STATUS_DISPOSED => 'Disposed',
             self::STATUS_PENDING_APPROVAL => 'Pending Approval',
+            self::STATUS_IN_TRANSFER_PROCESS => 'In Transfer Process',
         ];
     }
 
@@ -103,6 +110,11 @@ class Asset extends Model
      */
     public function submitForApproval()
     {
+        // Check if approvals already exist for this asset
+        if ($this->approvals()->exists()) {
+            return $this; // Approvals already exist, don't create duplicates
+        }
+
         $this->update([
             'submitted_for_approval' => true,
             'submitted_at' => now(),
@@ -110,17 +122,12 @@ class Asset extends Model
             'status' => self::STATUS_PENDING_APPROVAL
         ]);
 
-        // Create approval steps
+        // Create single review step for asset approval
         $this->createApprovalSteps([
             [
-                'role_id' => 2, // asset_manager role ID
-                'action' => 'verify',
+                'role_id' => 1, // Use a general role ID that all users can have
+                'action' => 'review',
                 'sequence' => 1
-            ],
-            [
-                'role_id' => 3, // finance_manager role ID
-                'action' => 'approve',
-                'sequence' => 2
             ]
         ]);
 
@@ -132,6 +139,11 @@ class Asset extends Model
      */
     public function createAutomaticApprovals()
     {
+        // Check if approvals already exist for this asset
+        if ($this->approvals()->exists()) {
+            return $this; // Approvals already exist, don't create duplicates
+        }
+
         // Set status to pending approval
         $this->update([
             'status' => self::STATUS_PENDING_APPROVAL,
@@ -140,17 +152,12 @@ class Asset extends Model
             'submitted_by' => auth()->id()
         ]);
 
-        // Create approval steps
+        // Create single review step for asset approval
         $this->createApprovalSteps([
             [
-                'role_id' => 2, // asset_manager role ID
-                'action' => 'verify',
+                'role_id' => 1, // Use a general role ID that all users can have
+                'action' => 'review',
                 'sequence' => 1
-            ],
-            [
-                'role_id' => 3, // finance_manager role ID
-                'action' => 'approve',
-                'sequence' => 2
             ]
         ]);
 
@@ -171,5 +178,82 @@ class Asset extends Model
     public function canBeApprovedByCurrentUser(): bool
     {
         return $this->canApproveNextStep();
+    }
+
+    /**
+     * Check if asset can be reviewed by current user
+     */
+    public function canBeReviewedByCurrentUser(): bool
+    {
+        return $this->canReviewNextStep();
+    }
+
+    /**
+     * Check if asset can be approved/rejected by current user after review
+     */
+    public function canBeApprovedRejectedByCurrentUser(): bool
+    {
+        return $this->canApproveRejectNextStep();
+    }
+
+    /**
+     * Get the current approval status for this asset
+     */
+    public function getApprovalStatus(): string
+    {
+        if (!$this->submitted_for_approval) {
+            return 'not_submitted';
+        }
+
+        $pendingApprovals = $this->approvals()->where('status', 'pending')->count();
+        $reviewedApprovals = $this->approvals()->where('status', 'reviewed')->count();
+        $approvedApprovals = $this->approvals()->where('status', 'approved')->count();
+        $rejectedApprovals = $this->approvals()->where('status', 'rejected')->count();
+
+        if ($rejectedApprovals > 0) {
+            return 'rejected';
+        }
+
+        if ($approvedApprovals > 0) {
+            return 'approved';
+        }
+
+        if ($reviewedApprovals > 0) {
+            return 'reviewed';
+        }
+
+        return 'pending';
+    }
+
+    /**
+     * Clear all approvals for this asset
+     */
+    public function clearApprovals()
+    {
+        $this->approvals()->delete();
+        $this->update([
+            'submitted_for_approval' => false,
+            'submitted_at' => null,
+            'submitted_by' => null
+        ]);
+        
+        return $this;
+    }
+
+    /**
+     * Create asset history record
+     */
+    public function createHistoryRecord($action, $actionType, $oldValue = null, $newValue = null, $notes = null, $approvalId = null)
+    {
+        return $this->assetHistory()->create([
+            'action' => $action,
+            'action_type' => $actionType,
+            'old_value' => $oldValue,
+            'new_value' => $newValue,
+            'notes' => $notes,
+            'performed_by' => auth()->id(),
+            'performed_at' => now(),
+            'approval_id' => $approvalId
+        ]);
     }
 }

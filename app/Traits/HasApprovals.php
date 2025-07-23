@@ -29,7 +29,7 @@ trait HasApprovals
     public function isFullyApproved(): bool
     {
         return $this->approvals()
-            ->where('status', '!=', 'approved')
+            ->whereNotIn('status', ['approved', 'rejected'])
             ->doesntExist();
     }
 
@@ -55,7 +55,7 @@ trait HasApprovals
     public function getNextApprovalStep()
     {
         return $this->approvals()
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'reviewed'])
             ->orderBy('sequence')
             ->first();
     }
@@ -67,6 +67,32 @@ trait HasApprovals
     {
         $nextStep = $this->getNextApprovalStep();
         if (!$nextStep) {
+            return false;
+        }
+
+        return auth()->user()->hasRole($nextStep->role->name);
+    }
+
+    /**
+     * Check if the current user can review the next step.
+     */
+    public function canReviewNextStep(): bool
+    {
+        $nextStep = $this->getNextApprovalStep();
+        if (!$nextStep || $nextStep->action !== 'review' || $nextStep->status !== 'pending') {
+            return false;
+        }
+
+        return auth()->user()->hasRole($nextStep->role->name);
+    }
+
+    /**
+     * Check if the current user can approve/reject the reviewed step.
+     */
+    public function canApproveRejectNextStep(): bool
+    {
+        $nextStep = $this->getNextApprovalStep();
+        if (!$nextStep || $nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
             return false;
         }
 

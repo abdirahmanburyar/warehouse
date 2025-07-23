@@ -510,7 +510,18 @@
                                                     </svg>
                                                     Transfer Asset
                                                 </button>
-                                                <template v-if="asset.status === 'pending_approval' && canApproveAsset(asset)">
+                                                <template v-if="asset.status === 'pending_approval' && canReviewAsset(asset)">
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <button @click="openApprovalModal(asset, 'review'); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
+                                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A11.008 11.008 0 0110 1.5c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A11.008 11.008 0 0110 15.5c-4.257 0-7.893-2.66-9.336-6.91zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Review Asset
+                                                    </button>
+                                                </template>
+                                                <template v-if="asset.status === 'pending_approval' && canApproveRejectAsset(asset)">
                                                     <div class="border-t border-gray-100"></div>
                                                     <button @click="openApprovalModal(asset, 'approve'); closeDropdown()"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -525,6 +536,54 @@
                                                             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                                                         </svg>
                                                         Reject Asset
+                                                    </button>
+                                                </template>
+                                                <template v-if="(asset.status === 'active' || asset.status === 'in_use') && canInitiateTransfer(asset)">
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <button @click="openTransferModal(asset); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
+                                                            <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 00.04 1.06L15.54 5H9.5a7 7 0 000 14h.75a.75.75 0 000-1.5H9.5A5.5 5.5 0 019.5 6.5h6.04l-2.3 1.7a.75.75 0 001.02 1.1l3.5-2.6a.75.75 0 000-1.2l-3.5-2.6a.75.75 0 00-1.06.04z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Transfer Asset
+                                                    </button>
+                                                </template>
+                                                <template v-if="(asset.status === 'active' || asset.status === 'in_use') && canInitiateRetirement(asset)">
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <button @click="openRetirementModal(asset); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-orange-600">
+                                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Retire Asset
+                                                    </button>
+                                                </template>
+                                                <template v-if="asset.status === 'in_transfer_process' && canReviewTransfer(asset)">
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <button @click="openTransferApprovalModal(asset, 'review'); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
+                                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A11.008 11.008 0 0110 1.5c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A11.008 11.008 0 0110 15.5c-4.257 0-7.893-2.66-9.336-6.91zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Review Transfer
+                                                    </button>
+                                                </template>
+                                                <template v-if="asset.status === 'in_transfer_process' && canApproveRejectTransfer(asset)">
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <button @click="openTransferApprovalModal(asset, 'approve'); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
+                                                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Approve Transfer
+                                                    </button>
+                                                    <button @click="openTransferApprovalModal(asset, 'reject'); closeDropdown()"
+                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-red-600">
+                                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                                        </svg>
+                                                        Reject Transfer
                                                     </button>
                                                 </template>
                                             </div>
@@ -760,7 +819,7 @@
                                     @click="processApproval" 
                                     :disabled="processingApproval"
                                     class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
-                                    :class="approvalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'">
+                                    :class="approvalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                     <svg v-if="processingApproval" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -773,6 +832,166 @@
                                     : 'Reject') }}
                                 </button>
                                 <button type="button" @click="showApprovalModal = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </TransitionChild>
+                </div>
+            </Dialog>
+        </TransitionRoot>
+
+        <!-- Transfer Approval Modal -->
+        <TransitionRoot as="template" :show="showTransferApprovalModal">
+            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferApprovalModal = false">
+                <div class="flex items-center justify-center min-h-screen p-4 text-center">
+                    <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
+                        enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
+                        leave-to="opacity-0">
+                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                    </TransitionChild>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <TransitionChild as="template" enter="ease-out duration-300"
+                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200"
+                        leave-from="opacity-100 translate-y-0 sm:scale-100"
+                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                        <div
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
+                                        :class="transferApprovalData.action === 'approve' ? 'bg-green-100' : 'bg-red-100'">
+                                        <svg v-if="transferApprovalData.action === 'approve'" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-green-600">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                            fill="currentColor" class="w-6 h-6 text-red-600">
+                                            <path d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
+                                            {{ transferApprovalData.action === 'approve' ? 'Approve' : 'Reject' }} Transfer
+                                        </DialogTitle>
+                                        <div class="mt-2">
+                                            <p class="text-sm text-gray-600 mb-2">
+                                                Transfer ID: {{ transferApprovalData.approval_id }}
+                                            </p>
+                                            <label for="transfer-approval-notes"
+                                                class="block text-sm font-medium text-gray-700 mb-2">
+                                                Notes (Optional)
+                                            </label>
+                                            <textarea id="transfer-approval-notes" v-model="transferApprovalData.notes" rows="3"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Add any notes about your decision..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button type="button" 
+                                    @click="processTransferApproval" 
+                                    :disabled="processingApproval"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
+                                    :class="transferApprovalData.action === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                                    <svg v-if="processingApproval" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    {{ processingApproval ? 'Processing...' : (transferApprovalData.action === 'approve' ? 'Approve'
+                                    : 'Reject') }}
+                                </button>
+                                <button type="button" @click="showTransferApprovalModal = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </TransitionChild>
+                </div>
+            </Dialog>
+        </TransitionRoot>
+
+        <!-- Retirement Modal -->
+        <TransitionRoot as="template" :show="showRetirementModal">
+            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showRetirementModal = false">
+                <div class="flex items-center justify-center min-h-screen p-4 text-center">
+                    <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
+                        enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
+                        leave-to="opacity-0">
+                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                    </TransitionChild>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <TransitionChild as="template" enter="ease-out duration-300"
+                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200"
+                        leave-from="opacity-100 translate-y-0 sm:scale-100"
+                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                        <div
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                                                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
+                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-orange-600">
+                                             <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                         </svg>
+                                     </div>
+                                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                         <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
+                                             Initiate Asset Retirement
+                                         </DialogTitle>
+                                         <div class="mt-2">
+                                             <p class="text-sm text-gray-600 mb-4">
+                                                 Submit this asset for retirement approval. The retirement request will be reviewed by authorized personnel.
+                                             </p>
+                                             <div class="space-y-4">
+                                                 <div>
+                                                     <label for="retirement-reason" class="block text-sm font-medium text-gray-700 mb-2">
+                                                         Retirement Reason <span class="text-red-500">*</span>
+                                                     </label>
+                                                     <textarea id="retirement-reason" v-model="retirementData.retirement_reason" rows="3"
+                                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                         placeholder="Enter the reason for retiring this asset..."></textarea>
+                                                 </div>
+                                                 <div>
+                                                     <label for="retirement-date" class="block text-sm font-medium text-gray-700 mb-2">
+                                                         Retirement Date <span class="text-red-500">*</span>
+                                                     </label>
+                                                     <input id="retirement-date" v-model="retirementData.retirement_date" type="date"
+                                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button type="button" 
+                                    @click="processRetirement" 
+                                    :disabled="processingApproval || !retirementData.retirement_reason || !retirementData.retirement_date"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
+                                    <svg v-if="processingApproval" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    {{ processingApproval ? 'Submitting...' : 'Submit for Retirement' }}
+                                </button>
+                                <button type="button" @click="showRetirementModal = false"
                                     class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                     Cancel
                                 </button>
@@ -1289,13 +1508,63 @@ const clearFilters = () => {
 
 // Approval system
 const showApprovalModal = ref(false);
+const showTransferApprovalModal = ref(false);
+const showRetirementModal = ref(false);
 const approvalAction = ref('');
 const approvalNotes = ref('');
 const processingApproval = ref(false);
 
+// Transfer approval data
+const transferApprovalData = reactive({
+    asset_id: null,
+    approval_id: null,
+    action: '',
+    notes: ''
+});
+
+// Retirement data
+const retirementData = reactive({
+    asset_id: null,
+    retirement_reason: '',
+    retirement_date: ''
+});
+
+// Permission functions
+function canReviewAsset(asset) {
+    return page.props.auth.can.asset_review;
+}
+
+function canApproveRejectAsset(asset) {
+    return page.props.auth.can.asset_approve || page.props.auth.can.asset_reject;
+}
+
+function canInitiateTransfer(asset) {
+    return page.props.auth.can.transfer_initiate;
+}
+
+function canReviewTransfer(asset) {
+    return page.props.auth.can.transfer_review;
+}
+
+function canApproveRejectTransfer(asset) {
+    return page.props.auth.can.transfer_approve || page.props.auth.can.transfer_reject;
+}
+
+function canInitiateRetirement(asset) {
+    return page.props.auth.can.retirement_initiate;
+}
+
+function canReviewRetirement(asset) {
+    return page.props.auth.can.retirement_review;
+}
+
+function canApproveRejectRetirement(asset) {
+    return page.props.auth.can.retirement_approve || page.props.auth.can.retirement_reject;
+}
+
+// Legacy function for backward compatibility
 function canApproveAsset(asset) {
-    // Check if user has approval permissions
-    return page.props.auth.can.asset_approve || page.props.auth.can.transfer_approve;
+    return canApproveRejectAsset(asset);
 }
 
 function openApprovalModal(asset, action) {
@@ -1303,6 +1572,26 @@ function openApprovalModal(asset, action) {
     approvalAction.value = action;
     approvalNotes.value = '';
     showApprovalModal.value = true;
+}
+
+function openTransferApprovalModal(asset, action) {
+    selectedAsset.value = asset;
+    transferApprovalData.asset_id = asset.id;
+    transferApprovalData.action = action;
+    transferApprovalData.notes = '';
+    // Get the approval ID from the asset's approvals
+    if (asset.approvals && asset.approvals.length > 0) {
+        transferApprovalData.approval_id = asset.approvals[0].id;
+    }
+    showTransferApprovalModal.value = true;
+}
+
+function openRetirementModal(asset) {
+    selectedAsset.value = asset;
+    retirementData.asset_id = asset.id;
+    retirementData.retirement_reason = '';
+    retirementData.retirement_date = '';
+    showRetirementModal.value = true;
 }
 
 async function processApproval() {
@@ -1320,6 +1609,50 @@ async function processApproval() {
         router.reload();
     } catch (error) {
         toast.error(error.response?.data || 'Failed to process approval');
+    } finally {
+        processingApproval.value = false;
+    }
+}
+
+async function processTransferApproval() {
+    if (!selectedAsset.value || !transferApprovalData.approval_id) return;
+
+    processingApproval.value = true;
+    try {
+        const response = await axios.post(route('assets.transfer.approve', selectedAsset.value.id), {
+            approval_id: transferApprovalData.approval_id,
+            action: transferApprovalData.action,
+            notes: transferApprovalData.notes
+        });
+
+        toast.success(response.data.message);
+        showTransferApprovalModal.value = false;
+        router.reload();
+    } catch (error) {
+        toast.error(error.response?.data || 'Failed to process transfer approval');
+    } finally {
+        processingApproval.value = false;
+    }
+}
+
+async function processRetirement() {
+    if (!selectedAsset.value || !retirementData.retirement_reason || !retirementData.retirement_date) {
+        toast.error('Retirement reason and date are required.');
+        return;
+    }
+
+    processingApproval.value = true;
+    try {
+        const response = await axios.post(route('assets.retire', selectedAsset.value.id), {
+            retirement_reason: retirementData.retirement_reason,
+            retirement_date: retirementData.retirement_date
+        });
+
+        toast.success(response.data.message);
+        showRetirementModal.value = false;
+        router.reload();
+    } catch (error) {
+        toast.error(error.response?.data || 'Failed to initiate retirement');
     } finally {
         processingApproval.value = false;
     }

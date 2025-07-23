@@ -27,11 +27,15 @@ return new class extends Migration
             $table->integer('sequence')->default(1);
             
             // Status of this approval step
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'reviewed', 'approved', 'rejected'])->default('pending');
             
             // Who performed the approval action
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
+            
+            // Review fields for the review step
+            $table->foreignId('reviewed_by')->nullable()->constrained('users');
+            $table->timestamp('reviewed_at')->nullable();
             
             // Comments or notes for this approval step
             $table->text('notes')->nullable();
