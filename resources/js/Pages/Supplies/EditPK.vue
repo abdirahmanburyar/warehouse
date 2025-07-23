@@ -123,16 +123,16 @@
                 </colgroup>
                 <thead class="bg-gray-50 border border-black">
                     <tr>
-                        <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">#</th>
-                        <th class="px-3 py-2 text-xs font-bold sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
-                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">UOM</th>
-                        <th class="px-3 py-2 text-xs font-bold w-32" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">QTY</th>
-                        <th class="px-3 py-2 text-xs font-bold w-48" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Warehouse</th>
-                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Location</th>
-                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item Detail</th>
-                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Unit Cost</th>
-                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Total Cost</th>
-                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg w-20" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Fulfillment</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">#</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">UOM</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold w-32" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">QTY</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold w-48" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Warehouse</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Location</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item Detail</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Unit Cost</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Total Cost</th>
+                        <th class="px-3 py-2 text-xs text-left font-bold rounded-tr-lg w-20" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Fulfillment</th>
                     </tr>
                 </thead>
                 <tbody>
