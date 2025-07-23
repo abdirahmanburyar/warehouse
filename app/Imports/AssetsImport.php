@@ -59,6 +59,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sh
                     'fund_source_id' => $fundSource->id,
                     'region_id' => $region->id,
                     'acquisition_date' => $acquisitionDate,
+                    "status" => 'in_use',
                     'original_value' => is_numeric($row['original_value']) ? $row['original_value'] : 0,
                 ]);
             } catch (\Throwable $e) {

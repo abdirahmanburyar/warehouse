@@ -774,11 +774,11 @@ const horizontalBarChartOptions = {
                     // Add custom labels for each facility type (sorted order)
                     const labels = [
                         'Warehouses',
-                        'Health Centers', 
+                        'Health Centre', 
                         'Primary Health Units',
                         'Regional Hospitals',
                         'District Hospitals',
-                        'Medical Teams'
+                        'Mobile Teams'
                     ];
                     return labels[index] || value;
                 }
