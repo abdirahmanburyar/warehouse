@@ -979,7 +979,7 @@ class AssetController extends Controller
     public function approveAsset(Request $request, Asset $asset)
     {
         try {
-            \Log::info('Asset approval request', [
+            logger()->info('Asset approval request', [
                 'asset_id' => $asset->id,
                 'user_id' => auth()->id(),
                 'action' => $request->action,
@@ -988,7 +988,7 @@ class AssetController extends Controller
 
             // Check if current user can approve this asset
             if (!$asset->canBeApprovedByCurrentUser()) {
-                \Log::warning('User not authorized to approve asset', [
+                logger()->warning('User not authorized to approve asset', [
                     'asset_id' => $asset->id,
                     'user_id' => auth()->id()
                 ]);
@@ -1002,14 +1002,14 @@ class AssetController extends Controller
 
             $nextStep = $asset->getNextApprovalStep();
             if (!$nextStep) {
-                \Log::warning('No pending approval step found', [
+                logger()->warning('No pending approval step found', [
                     'asset_id' => $asset->id,
                     'approval_steps' => $asset->getAllApprovalSteps()->toArray()
                 ]);
                 return response()->json('No pending approval step found', 400);
             }
 
-            \Log::info('Processing approval step', [
+            logger()->info('Processing approval step', [
                 'step_id' => $nextStep->id,
                 'step_status' => $nextStep->status,
                 'step_action' => $nextStep->action,
@@ -1155,7 +1155,7 @@ class AssetController extends Controller
                 ], 200);
             }
         } catch (\Throwable $th) {
-            \Log::error('Asset approval error', [
+            logger()->error('Asset approval error', [
                 'asset_id' => $asset->id,
                 'user_id' => auth()->id(),
                 'error' => $th->getMessage(),
