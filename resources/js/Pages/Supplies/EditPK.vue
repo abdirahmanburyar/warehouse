@@ -25,6 +25,8 @@
                         class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Approved</div>
                     <div v-else-if="form.status === 'reviewed'"
                         class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">Reviewed</div>
+                    <div v-else-if="form.status === 'rejected'"
+                        class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Rejected</div>
                     <div v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">Processing
                     </div>
                 </div>
@@ -303,19 +305,21 @@
                                         ? 'bg-green-500'
                                         : 'bg-yellow-500 hover:bg-yellow-600'
                                 ]"
-                                :disabled="isReviewing || hasReviewedItems || !hasPendingItems || hasAllApproved && $page.props.auth.can.purchase_order_review"
+                                :disabled="isReviewing || hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_review"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                <span class="text-sm font-bold text-white">Review</span>
+                                <span class="text-sm font-bold text-white">{{ form.reviewed_at ? 'Reviewed' : 'Review' }}</span>
                             </button>
-                            <div v-if="props.packing_list.reviewed_at" class="mt-2 text-center">
-                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.reviewed_at).format('DD/MM/YYYY HH:mm') }}</div>
-                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.reviewed_by?.name }}</div>
+                            <div v-if="form.reviewed_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(form.reviewed_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ form.reviewed_by?.name }}</div>
                             </div>
                         </div>
                         <div v-if="!hasReviewedItems && !hasAllApproved"
                             class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                     </div>
+
+
 
                     <!-- Approve button -->
                     <div class="relative">
@@ -328,14 +332,14 @@
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-green-500 hover:bg-green-600'
                                 ]"
-                                :disabled="isApproving || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_approve"
+                                :disabled="isApproving || !hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_approve"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                <span class="text-sm font-bold text-white">Approve</span>
+                                <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
                             </button>
-                            <div v-if="props.packing_list.approved_at" class="mt-2 text-center">
-                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.approved_at).format('DD/MM/YYYY HH:mm') }}</div>
-                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.approved_by?.name }}</div>
+                            <div v-if="form.approved_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(form.approved_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ form.approved_by?.name }}</div>
                             </div>
                         </div>
                         <div v-if="hasReviewedItems && !hasAllApproved"
@@ -353,14 +357,14 @@
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-red-500 hover:bg-red-600'
                                 ]"
-                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved && !$page.props.auth.can.purchase_order_reject"
+                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_reject"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
-                                <span class="text-sm font-bold text-white">Reject</span>
+                                <span class="text-sm font-bold text-white">{{ form.rejected_at ? 'Rejected' : 'Reject' }}</span>
                             </button>
-                            <div v-if="props.packing_list.rejected_at" class="mt-2 text-center">
-                                <div class="text-xs text-gray-600">{{ moment(props.packing_list.rejected_at).format('DD/MM/YYYY HH:mm') }}</div>
-                                <div class="text-xs font-medium text-gray-700">By {{ props.packing_list.rejected_by?.name }}</div>
+                            <div v-if="form.rejected_at" class="mt-2 text-center">
+                                <div class="text-xs text-gray-600">{{ moment(form.rejected_at).format('DD/MM/YYYY HH:mm') }}</div>
+                                <div class="text-xs font-medium text-gray-700">By {{ form.rejected_by?.name }}</div>
                             </div>
                         </div>
                         <div v-if="hasReviewedItems && !hasAllApproved && !hasRejected"
@@ -645,19 +649,19 @@ const canAddMoreRows = computed(() => {
 });
 
 const hasAllApproved = computed(() => {
-    return props.packing_list?.status == 'approved';
+    return form.value?.status === 'approved';
 });
 
 const hasPendingItems = computed(() => {
-    return props.packing_list?.status == 'pending';
+    return form.value?.status === 'pending';
 });
 
 const hasReviewedItems = computed(() => {
-    return props.packing_list?.status == 'reviewed';
+    return form.value?.status === 'reviewed';
 });
 
 const hasRejected = computed(() => {
-    return props.packing_list?.status == 'rejected';
+    return form.value?.status === 'rejected';
 });
 
 onMounted(async () => {
@@ -1173,6 +1177,10 @@ const availableStatuses = computed(() => {
 const isReviewing = ref(false);
 
 async function reviewPackingList() {
+    console.log('Review function called');
+    console.log('Form status:', form.value?.status);
+    console.log('User permissions:', $page.props.auth.can);
+    
     const confirm = await Swal.fire({
         title: 'Review Packing List',
         text: 'Are you sure you want to mark these items as reviewed?',
@@ -1184,24 +1192,32 @@ async function reviewPackingList() {
     });
 
     if (confirm.isConfirmed) {
+        console.log('User confirmed review');
         isReviewing.value = true;
         try {
-            await axios.post(route('supplies.reviewPK'), {
+            console.log('Sending review request to:', route('supplies.reviewPK'));
+            const response = await axios.post(route('supplies.reviewPK'), {
                 id: form.value.id,
                 status: 'reviewed'
             });
+            
+            console.log('Review response:', response.data);
 
             await Swal.fire({
                 title: 'Success!',
                 text: 'Items have been reviewed',
                 icon: 'success',
                 confirmButtonColor: '#10B981',
-            })
-                .then(() => {
-                    router.visit(route('supplies.packing-list.showPK'));
-                });
+            });
+
+            // Refresh the page with updated data
+            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+                preserveState: false,
+                preserveScroll: false
+            });
 
         } catch (error) {
+            console.error('Review error:', error);
             toast.error(error.response?.data || 'An error occurred while reviewing the items');
         } finally {
             isReviewing.value = false;
@@ -1212,6 +1228,10 @@ async function reviewPackingList() {
 const isApproving = ref(false);
 
 async function approvePackingList() {
+    console.log('Approve function called');
+    console.log('Form status:', form.value?.status);
+    console.log('User permissions:', $page.props.auth.can);
+    
     const confirm = await Swal.fire({
         title: 'Approve Packing List',
         text: 'Are you sure you want to approve these items?',
@@ -1223,34 +1243,47 @@ async function approvePackingList() {
     });
 
     if (confirm.isConfirmed) {
+        console.log('User confirmed approve');
         isApproving.value = true;
-        await axios.post(route('supplies.approvePK'), {
-            id: form.value.id,
-            status: 'approved',
-            items: form.value.items
-        })
-            .then((response) => {
-                isApproving.value = false;
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Items have been approved',
-                    icon: 'success',
-                    confirmButtonColor: '#10B981',
-                }).then(() => {
-                    router.visit(route('supplies.packing-list.showPK'));
-                });
-            })
-            .catch((error) => {
-                console.log(error);
-                isApproving.value = false;
-                toast.error(error.response?.data || 'An error occurred while approving the items');
+        try {
+            console.log('Sending approve request to:', route('supplies.approvePK'));
+            const response = await axios.post(route('supplies.approvePK'), {
+                id: form.value.id,
+                status: 'approved',
+                items: form.value.items
             });
+            
+            console.log('Approve response:', response.data);
+
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Items have been approved',
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            });
+
+            // Refresh the page with updated data
+            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+                preserveState: false,
+                preserveScroll: false
+            });
+
+        } catch (error) {
+            console.error('Approve error:', error);
+            toast.error(error.response?.data || 'An error occurred while approving the items');
+        } finally {
+            isApproving.value = false;
+        }
     }
 }
 
 const isRejecting = ref(false);
 
 async function rejectPackingList() {
+    console.log('Reject function called');
+    console.log('Form status:', form.value?.status);
+    console.log('User permissions:', $page.props.auth.can);
+    
     const confirm = await Swal.fire({
         title: 'Reject Packing List',
         text: 'Are you sure you want to reject these items?',
@@ -1262,28 +1295,37 @@ async function rejectPackingList() {
     });
 
     if (confirm.isConfirmed) {
+        console.log('User confirmed reject');
         isRejecting.value = true;
-        await axios.post(route('supplies.rejectPK'), {
-            id: form.value.id,
-            status: 'rejected',
-            items: form.value.items
-        })
-            .then((response) => {
-                isRejecting.value = false;
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Items have been rejected',
-                    icon: 'success',
-                    confirmButtonColor: '#10B981',
-                }).then(() => {
-                    router.visit(route('supplies.packing-list.showPK'));
-                });
-            })
-            .catch((error) => {
-                console.log(error);
-                isRejecting.value = false;
-                toast.error(error.response?.data || 'An error occurred while rejecting the items');
+        try {
+            console.log('Sending reject request to:', route('supplies.rejectPK'));
+            const response = await axios.post(route('supplies.rejectPK'), {
+                id: form.value.id,
+                status: 'rejected',
+                items: form.value.items
             });
+            
+            console.log('Reject response:', response.data);
+
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Items have been rejected',
+                icon: 'success',
+                confirmButtonColor: '#10B981',
+            });
+
+            // Refresh the page with updated data
+            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+                preserveState: false,
+                preserveScroll: false
+            });
+
+        } catch (error) {
+            console.error('Reject error:', error);
+            toast.error(error.response?.data || 'An error occurred while rejecting the items');
+        } finally {
+            isRejecting.value = false;
+        }
     }
 }
 
