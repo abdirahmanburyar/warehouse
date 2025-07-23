@@ -151,20 +151,11 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Debug Information (remove in production) -->
-                                    <div class="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-                                        <div><strong>Debug Info:</strong></div>
-                                        <div>Status: {{ approval.status }}</div>
-                                        <div>Action: {{ approval.action }}</div>
-                                        <div>Can Review: {{ canReview(approval) }}</div>
-                                        <div>Can Approve: {{ canApprove(approval) }}</div>
-                                        <div>Can Reject: {{ canReject(approval) }}</div>
-                                        <div>User Permissions: {{ JSON.stringify(page.props.auth.can) }}</div>
-                                    </div>
+
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div v-if="approval.status === 'pending' && canReview(approval)" class="ml-6 flex flex-col space-y-2">
+                                <div v-if="canReview(approval)" class="ml-6 flex flex-col space-y-2">
                                     <button
                                         @click="showApprovalModal(approval, 'review')"
                                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -177,7 +168,7 @@
                                 </div>
                                 
                                 <!-- Approve/Reject Buttons (only show after review) -->
-                                <div v-if="approval.status === 'reviewed' && (canApprove(approval) || canReject(approval))" class="ml-6 flex flex-col space-y-2">
+                                <div v-if="canApprove(approval) || canReject(approval)" class="ml-6 flex flex-col space-y-2">
                                     <button
                                         v-if="canApprove(approval)"
                                         @click="showApprovalModal(approval, 'approve')"
@@ -315,19 +306,19 @@ async function loadApprovals() {
     }
 }
 
-function canApprove(approval) {
-    // Check if user has asset_approve permission
-    return page.props.auth.can.asset_approve;
+function canReview(approval) {
+    // Can review only if status is pending and user has asset_review permission
+    return approval.status === 'pending' && page.props.auth.can.asset_review;
 }
 
-function canReview(approval) {
-    // Check if user has asset_review permission
-    return page.props.auth.can.asset_review;
+function canApprove(approval) {
+    // Can approve only if status is reviewed and user has asset_approve permission
+    return approval.status === 'reviewed' && page.props.auth.can.asset_approve;
 }
 
 function canReject(approval) {
-    // Check if user has asset_reject permission
-    return page.props.auth.can.asset_reject;
+    // Can reject only if status is reviewed and user has asset_reject permission
+    return approval.status === 'reviewed' && page.props.auth.can.asset_reject;
 }
 
 function showApprovalModal(approval, action) {

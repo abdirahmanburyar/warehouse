@@ -1161,6 +1161,108 @@ class AssetController extends Controller
     }
 
     /**
+     * Get complete asset history
+     */
+    public function getAssetHistory(Request $request, Asset $asset)
+    {
+        try {
+            $query = $asset->assetHistory()
+                ->with(['performer', 'approval'])
+                ->orderBy('performed_at', 'desc');
+
+            // Apply filters
+            if ($request->filled('actionType')) {
+                $query->where('action_type', $request->actionType);
+            }
+
+            if ($request->filled('performedBy')) {
+                $query->where('performed_by', $request->performedBy);
+            }
+
+            // Date range filter
+            if ($request->filled('dateRange')) {
+                $now = now();
+                switch ($request->dateRange) {
+                    case 'today':
+                        $query->whereDate('performed_at', $now->toDateString());
+                        break;
+                    case 'week':
+                        $query->whereBetween('performed_at', [$now->startOfWeek(), $now->endOfWeek()]);
+                        break;
+                    case 'month':
+                        $query->whereBetween('performed_at', [$now->startOfMonth(), $now->endOfMonth()]);
+                        break;
+                    case 'quarter':
+                        $query->whereBetween('performed_at', [$now->startOfQuarter(), $now->endOfQuarter()]);
+                        break;
+                    case 'year':
+                        $query->whereBetween('performed_at', [$now->startOfYear(), $now->endOfYear()]);
+                        break;
+                }
+            }
+
+            $history = $query->paginate(10);
+
+            // Get users for filter
+            $users = User::whereIn('id', $asset->assetHistory()->distinct('performed_by')->pluck('performed_by'))->get();
+
+            return Inertia::render('Assets/History', [
+                'asset' => $asset->load(['category', 'location', 'subLocation']),
+                'history' => $history,
+                'users' => $users,
+                'filters' => $request->only('actionType', 'dateRange', 'performedBy'),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get all asset history (general history page)
+     */
+    public function getAllAssetHistory(Request $request)
+    {
+        try {
+            $query = AssetHistory::with(['asset', 'performer', 'approval'])
+                ->orderBy('performed_at', 'desc');
+
+            // Apply filters
+            if ($request->filled('asset_id')) {
+                $query->where('asset_id', $request->asset_id);
+            }
+
+            if ($request->filled('action_type')) {
+                $query->where('action_type', $request->action_type);
+            }
+
+            if ($request->filled('performer')) {
+                $query->whereHas('performer', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->performer . '%');
+                });
+            }
+
+            if ($request->filled('date_from')) {
+                $query->where('performed_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->where('performed_at', '<=', $request->date_to . ' 23:59:59');
+            }
+
+            $perPage = $request->get('per_page', 15);
+            $history = $query->paginate($perPage);
+
+            return Inertia::render('Assets/History/Index', [
+                'history' => $history,
+                'filters' => $request->only(['asset_id', 'action_type', 'performer', 'date_from', 'date_to']),
+                'assets' => Asset::select('id', 'asset_tag', 'serial_number')->get(),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
      * Display the approvals index page
      */
     public function approvalsIndex(Request $request)

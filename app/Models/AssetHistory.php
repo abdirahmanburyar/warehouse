@@ -82,4 +82,78 @@ class AssetHistory extends Model
     {
         return $query->where('action_type', 'approval');
     }
+
+    /**
+     * Scope a query to only include actions by a specific user.
+     */
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('performed_by', $userId);
+    }
+
+    /**
+     * Scope a query to only include actions within a date range.
+     */
+    public function scopeInDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('performed_at', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope a query to only include recent actions.
+     */
+    public function scopeRecent($query, $days = 30)
+    {
+        return $query->where('performed_at', '>=', now()->subDays($days));
+    }
+
+    /**
+     * Get formatted action title for display.
+     */
+    public function getActionTitleAttribute()
+    {
+        $titles = [
+            'reviewed' => 'Asset Reviewed',
+            'approved' => 'Asset Approved',
+            'rejected' => 'Asset Rejected',
+            'transfer_reviewed' => 'Transfer Reviewed',
+            'transfer_approved' => 'Transfer Approved',
+            'transfer_rejected' => 'Transfer Rejected',
+            'retirement_reviewed' => 'Retirement Reviewed',
+            'retirement_approved' => 'Retirement Approved',
+            'retirement_rejected' => 'Retirement Rejected',
+            'status_changed' => 'Status Changed',
+            'custody_changed' => 'Custody Changed',
+        ];
+
+        return $titles[$this->action] ?? ucfirst(str_replace('_', ' ', $this->action));
+    }
+
+    /**
+     * Get the formatted old value for display.
+     */
+    public function getFormattedOldValueAttribute()
+    {
+        if (!$this->old_value) return null;
+        
+        if (is_array($this->old_value)) {
+            return json_encode($this->old_value, JSON_PRETTY_PRINT);
+        }
+        
+        return $this->old_value;
+    }
+
+    /**
+     * Get the formatted new value for display.
+     */
+    public function getFormattedNewValueAttribute()
+    {
+        if (!$this->new_value) return null;
+        
+        if (is_array($this->new_value)) {
+            return json_encode($this->new_value, JSON_PRETTY_PRINT);
+        }
+        
+        return $this->new_value;
+    }
 }

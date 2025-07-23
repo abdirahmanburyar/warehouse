@@ -11,12 +11,14 @@ return new class extends Migration
         Schema::create('asset_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_id')->constrained()->cascadeOnDelete();
-            $table->string('field_name'); // custody, status, transfer_date, quantity
-            $table->string('old_value')->nullable();
-            $table->string('new_value');
-            $table->date('transfer_date');
-            $table->foreignId('changed_by')->constrained('users');
-            $table->text('notes')->nullable();
+            $table->string('action'); // 'reviewed', 'approved', 'rejected', 'transfer_reviewed', etc.
+            $table->string('action_type'); // 'approval', 'transfer', 'retirement', 'status_change'
+            $table->json('old_value')->nullable(); // Previous state (can be complex data)
+            $table->json('new_value'); // New state (can be complex data)
+            $table->text('notes')->nullable(); // Additional notes or comments
+            $table->foreignId('performed_by')->constrained('users'); // Who performed the action
+            $table->timestamp('performed_at'); // When the action was performed
+            $table->foreignId('approval_id')->nullable()->constrained('asset_approvals'); // Link to approval record
             $table->timestamps();
         });
     }

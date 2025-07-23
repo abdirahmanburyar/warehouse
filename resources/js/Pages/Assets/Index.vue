@@ -558,6 +558,14 @@
                                                         Retire Asset
                                                     </button>
                                                 </template>
+                                                <div class="border-t border-gray-100"></div>
+                                                <Link :href="route('assets.history', asset.id)"
+                                                    class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
+                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                    </svg>
+                                                    View History
+                                                </Link>
                                                 <template v-if="asset.status === 'in_transfer_process' && canReviewTransfer(asset)">
                                                     <div class="border-t border-gray-100"></div>
                                                     <button @click="openTransferApprovalModal(asset, 'review'); closeDropdown()"

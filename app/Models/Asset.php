@@ -256,4 +256,63 @@ class Asset extends Model
             'approval_id' => $approvalId
         ]);
     }
+
+    /**
+     * Create history record for status change
+     */
+    public function createStatusChangeHistory($oldStatus, $newStatus, $notes = null, $approvalId = null)
+    {
+        return $this->createHistoryRecord(
+            'status_changed',
+            'status_change',
+            ['status' => $oldStatus],
+            ['status' => $newStatus],
+            $notes,
+            $approvalId
+        );
+    }
+
+    /**
+     * Create history record for custody change
+     */
+    public function createCustodyChangeHistory($oldCustodian, $newCustodian, $notes = null, $approvalId = null)
+    {
+        return $this->createHistoryRecord(
+            'custody_changed',
+            'transfer',
+            ['person_assigned' => $oldCustodian],
+            ['person_assigned' => $newCustodian],
+            $notes,
+            $approvalId
+        );
+    }
+
+    /**
+     * Get recent history records
+     */
+    public function getRecentHistory($limit = 10)
+    {
+        return $this->assetHistory()
+            ->with(['performer', 'approval'])
+            ->orderBy('performed_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Get history by action type
+     */
+    public function getHistoryByType($actionType, $limit = null)
+    {
+        $query = $this->assetHistory()
+            ->with(['performer', 'approval'])
+            ->where('action_type', $actionType)
+            ->orderBy('performed_at', 'desc');
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
+    }
 }

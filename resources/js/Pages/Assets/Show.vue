@@ -52,6 +52,20 @@
                         </div>
                         <div class="mt-6 sm:mt-0 flex space-x-3">
                             <Link
+                                :href="route('assets.history', asset.id)"
+                                class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-blue-700 bg-white hover:bg-blue-50 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    class="w-4 h-4 mr-2"
+                                >
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                View History
+                            </Link>
+                            <Link
                                 :href="route('assets.edit', asset.id)"
                                 class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors"
                             >
@@ -812,6 +826,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Recent History Section -->
+                <div class="mt-8">
+                    <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-blue-500 mr-2">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                    Recent Activity
+                                </h2>
+                                <Link
+                                    :href="route('assets.history', asset.id)"
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    View Full History
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 ml-1">
+                                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                                    </svg>
+                                </Link>
+                            </div>
+                            
+                            <div v-if="recentHistory.length === 0" class="text-center py-8">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-12 h-12 text-gray-400 mx-auto mb-4">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                <p class="text-gray-500">No recent activity found</p>
+                            </div>
+                            
+                            <div v-else class="space-y-4">
+                                <div v-for="record in recentHistory" :key="record.id" class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                                             :class="getActionIconClass(record.action_type)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-white">
+                                                <path v-if="record.action_type === 'approval'" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                <path v-else-if="record.action_type === 'transfer'" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                <path v-else-if="record.action_type === 'retirement'" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                <path v-else d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">
+                                            {{ formatActionTitle(record.action, record.action_type) }}
+                                        </p>
+                                        <p class="text-sm text-gray-500">
+                                            by {{ record.performer?.name || 'Unknown' }} • {{ formatDate(record.performed_at) }}
+                                        </p>
+                                        <p v-if="record.notes" class="text-sm text-gray-600 mt-1">
+                                            {{ record.notes }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -843,6 +916,9 @@ const canApprove = ref(false);
 const approvalNotes = ref('');
 const approvalLoading = ref(false);
 const submitLoading = ref(false);
+
+// History related reactive variables
+const recentHistory = ref([]);
 
 function addDocumentRow() {
     newDocuments.value.push({ type: "", file: null, asset_id: props.asset.id });
@@ -1080,5 +1156,56 @@ async function approveAsset(action) {
 
 // Load approval history when component mounts
 loadApprovalHistory();
+
+// History helper functions
+function getActionIconClass(actionType) {
+    const classes = {
+        'approval': 'bg-green-500',
+        'transfer': 'bg-blue-500',
+        'retirement': 'bg-red-500',
+        'status_change': 'bg-yellow-500'
+    };
+    return classes[actionType] || 'bg-gray-500';
+}
+
+function formatActionTitle(action, actionType) {
+    const titles = {
+        'reviewed': 'Asset Reviewed',
+        'approved': 'Asset Approved',
+        'rejected': 'Asset Rejected',
+        'transfer_reviewed': 'Transfer Reviewed',
+        'transfer_approved': 'Transfer Approved',
+        'transfer_rejected': 'Transfer Rejected',
+        'retirement_reviewed': 'Retirement Reviewed',
+        'retirement_approved': 'Retirement Approved',
+        'retirement_rejected': 'Retirement Rejected',
+        'status_changed': 'Status Changed',
+        'custody_changed': 'Custody Changed',
+    };
+    return titles[action] || ucfirst(action.replace('_', ' '));
+}
+
+function ucfirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function formatDate(date) {
+    return moment(date).fromNow();
+}
+
+// Load recent history
+async function loadRecentHistory() {
+    try {
+        const response = await axios.get(route('assets.history', props.asset.id), {
+            params: { per_page: 5 } // Get only 5 recent records
+        });
+        recentHistory.value = response.data.data || [];
+    } catch (error) {
+        console.error('Error loading recent history:', error);
+    }
+}
+
+// Load recent history when component mounts
+loadRecentHistory();
 
 </script>

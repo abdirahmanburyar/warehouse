@@ -696,6 +696,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::post('/{asset}/approve-retirement', 'approveRetirement')->name('assets.approve-retirement');
             Route::get('/pending-approvals', 'getPendingApprovals')->name('assets.pending-approvals');
             Route::get('/{asset}/approval-history', 'getApprovalHistory')->name('assets.approval-history');
+            Route::get('/{asset}/history', 'getAssetHistory')->name('assets.history');
+            Route::get('/history', 'getAllAssetHistory')->name('assets.history.index');
         });
 
     // Inventory Management Routes
