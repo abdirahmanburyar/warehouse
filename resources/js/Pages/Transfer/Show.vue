@@ -424,14 +424,14 @@
                         <div class="overflow-x-auto">
                             <table class="min-w-full text-sm text-left table-sm">
                                 <thead>
-                                    <tr style="background-color: #F4F7FB;">
+                                    <tr style="background-color: #F4F7FB;" class="items-center">
                                         <th class="min-w-[300px] px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB;" rowspan="2">
                                             Item Name
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
+                                        <th class="px-3 py-2 items-center text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             Category
                                         </th>
-                                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
+                                        <th class="px-3 py-2 items-center text-xs font-bold" style="color: #4F6FCB;" rowspan="2">
                                             UoM
                                         </th>
                                         <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB;" colspan="4">
