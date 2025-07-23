@@ -1281,7 +1281,15 @@ class TransferController extends Controller
                         $inventory->quantity += $quantityToRestore;
                         $inventory->save();
                     } else {
+                        // First, get or create the main inventory record
+                        $mainInventory = Inventory::firstOrCreate([
+                            'product_id' => $allocation->product_id,
+                        ], [
+                            'quantity' => 0,
+                        ]);
+                        
                         InventoryItem::create([
+                            'inventory_id' => $mainInventory->id,
                             'product_id'   => $allocation->product_id,
                             'warehouse_id' => $allocation->warehouse_id,
                             'location_id'  => $allocation->location_id,
