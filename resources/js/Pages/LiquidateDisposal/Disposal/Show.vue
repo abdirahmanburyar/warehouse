@@ -227,8 +227,7 @@
                         <tr v-for="item in disposal.items" :key="item.id" class="hover:bg-gray-50 border-b align-middle" style="border-bottom: 1px solid #B7C6E6;">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div>
-                                    <div class="font-medium text-gray-900">{{ item.product?.name || 'N/A' }}</div>
-                                    <div class="text-sm text-gray-500">{{ item.product?.productID || 'N/A' }}</div>
+                                    <div class="font-medium text-gray-900">{{ item || 'N/A' }}</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

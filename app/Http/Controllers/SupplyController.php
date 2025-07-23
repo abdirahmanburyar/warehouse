@@ -318,7 +318,7 @@ class SupplyController extends Controller
             // Create disposal item
             $disposalItem = DisposalItem::create([
                 'disposal_id' => $disposal->id,
-                'product_id' => $request->product_id,
+                'product_id' => $packingListItem->product_id,
                 'quantity' => $request->quantity,
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
