@@ -47,7 +47,7 @@
 
             <!-- Enhanced Filters Section -->
             <div class="bg-gray-50 px-8 py-6 border-b border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <!-- Search Bar -->
                     <div class="lg:col-span-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-3">Search Facilities</label>
@@ -73,6 +73,20 @@
                             v-model="district"
                             :options="props.districts"
                             placeholder="All Districts"
+                            :searchable="true"
+                            :allow-empty="true"
+                            :show-labels="false"
+                            class="multiselect-professional"
+                        />
+                    </div>
+                    
+                    <!-- Facility Type Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Type</label>
+                        <Multiselect
+                            v-model="facilityType"
+                            :options="props.facilityTypes"
+                            placeholder="All Types"
                             :searchable="true"
                             :allow-empty="true"
                             :show-labels="false"
@@ -371,6 +385,10 @@ const props = defineProps({
     districts: {
         type: Array,
         required: true
+    },
+    facilityTypes: {
+        type: Array,
+        required: true
     }
 })
 
@@ -386,6 +404,7 @@ const inactiveCount = computed(() => {
 const per_page = ref(props.filters.per_page || 25)
 const search = ref(props.filters.search)
 const district = ref(props.filters.district)
+const facilityType = ref(props.filters.facility_type)
 const loadingProducts = ref(new Set());
 
 // Handle file selection
@@ -444,7 +463,8 @@ watch([
     () => per_page.value,
     () => props.filters.page,
     () => search.value,
-    () => district.value
+    () => district.value,
+    () => facilityType.value
 ], () => {
     reloadFacility();
 })
@@ -455,6 +475,7 @@ const reloadFacility = () => {
     if (props.filters.page) query.page = props.filters.page
     if (search.value) query.search = search.value
     if (district.value) query.district = district.value
+    if (facilityType.value) query.facility_type = facilityType.value
     
     router.get(route('facilities.index'), query, {
         preserveScroll: true,
