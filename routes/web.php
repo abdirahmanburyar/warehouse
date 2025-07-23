@@ -698,6 +698,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::get('/{asset}/approval-history', 'getApprovalHistory')->name('assets.approval-history');
             Route::get('/{asset}/history', 'getAssetHistory')->name('assets.history');
             Route::get('/history', 'getAllAssetHistory')->name('assets.history.index');
+            Route::get('/{asset}/debug-approval', 'debugApprovalWorkflow')->name('assets.debug-approval');
         });
 
     // Inventory Management Routes

@@ -308,17 +308,23 @@ async function loadApprovals() {
 
 function canReview(approval) {
     // Can review only if status is pending and user has asset_review permission
-    return approval.status === 'pending' && page.props.auth.can.asset_review;
+    return approval.status === 'pending' && 
+           approval.action === 'review' && 
+           page.props.auth.can.asset_review;
 }
 
 function canApprove(approval) {
     // Can approve only if status is reviewed and user has asset_approve permission
-    return approval.status === 'reviewed' && page.props.auth.can.asset_approve;
+    return approval.status === 'reviewed' && 
+           approval.action === 'review' && 
+           page.props.auth.can.asset_approve;
 }
 
 function canReject(approval) {
     // Can reject only if status is reviewed and user has asset_reject permission
-    return approval.status === 'reviewed' && page.props.auth.can.asset_reject;
+    return approval.status === 'reviewed' && 
+           approval.action === 'review' && 
+           page.props.auth.can.asset_reject;
 }
 
 function showApprovalModal(approval, action) {

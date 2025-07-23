@@ -979,8 +979,19 @@ class AssetController extends Controller
     public function approveAsset(Request $request, Asset $asset)
     {
         try {
+            \Log::info('Asset approval request', [
+                'asset_id' => $asset->id,
+                'user_id' => auth()->id(),
+                'action' => $request->action,
+                'user_permissions' => auth()->user()->getAllPermissions()->pluck('name')
+            ]);
+
             // Check if current user can approve this asset
             if (!$asset->canBeApprovedByCurrentUser()) {
+                \Log::warning('User not authorized to approve asset', [
+                    'asset_id' => $asset->id,
+                    'user_id' => auth()->id()
+                ]);
                 return response()->json('You are not authorized to approve this asset', 403);
             }
 
@@ -991,8 +1002,19 @@ class AssetController extends Controller
 
             $nextStep = $asset->getNextApprovalStep();
             if (!$nextStep) {
+                \Log::warning('No pending approval step found', [
+                    'asset_id' => $asset->id,
+                    'approval_steps' => $asset->getAllApprovalSteps()->toArray()
+                ]);
                 return response()->json('No pending approval step found', 400);
             }
+
+            \Log::info('Processing approval step', [
+                'step_id' => $nextStep->id,
+                'step_status' => $nextStep->status,
+                'step_action' => $nextStep->action,
+                'requested_action' => $validated['action']
+            ]);
 
             if ($validated['action'] === 'review') {
                 // Check asset_review permission
@@ -1009,15 +1031,16 @@ class AssetController extends Controller
                     'status' => 'reviewed',
                     'reviewed_by' => auth()->id(),
                     'reviewed_at' => now(),
-                    'notes' => $validated['notes'] ?? null
+                    'notes' => $validated['notes'] ?? null,
+                    'updated_by' => auth()->id()
                 ]);
 
                 // Create history record
                 $asset->createHistoryRecord(
                     'reviewed',
                     'approval',
-                    null,
-                    null,
+                    ['status' => 'pending'],
+                    ['status' => 'reviewed'],
                     $validated['notes'] ?? 'Asset reviewed',
                     $nextStep->id
                 );
@@ -1044,29 +1067,50 @@ class AssetController extends Controller
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
                     'approved_at' => now(),
-                    'notes' => $validated['notes'] ?? null
+                    'notes' => $validated['notes'] ?? null,
+                    'updated_by' => auth()->id()
                 ]);
 
-                // Asset is fully approved, set status to IN_USE
-                $asset->update([
-                    'status' => Asset::STATUS_IN_USE,
-                    'submitted_for_approval' => false
-                ]);
-
-                // Create history record
-                $asset->createHistoryRecord(
-                    'approved',
-                    'approval',
-                    ['status' => $oldStatus],
-                    ['status' => Asset::STATUS_IN_USE],
-                    $validated['notes'] ?? 'Asset approved',
-                    $nextStep->id
-                );
+                // Check if this is the final approval step
+                $remainingSteps = $asset->approvals()->where('status', 'pending')->count();
                 
-                return response()->json([
-                    'message' => 'Asset fully approved and ready for use',
-                    'asset' => $asset->fresh()
-                ], 200);
+                if ($remainingSteps === 0) {
+                    // Asset is fully approved, set status to IN_USE
+                    $asset->update([
+                        'status' => Asset::STATUS_IN_USE,
+                        'submitted_for_approval' => false
+                    ]);
+
+                    // Create history record
+                    $asset->createHistoryRecord(
+                        'approved',
+                        'approval',
+                        ['status' => $oldStatus],
+                        ['status' => Asset::STATUS_IN_USE],
+                        $validated['notes'] ?? 'Asset approved',
+                        $nextStep->id
+                    );
+                    
+                    return response()->json([
+                        'message' => 'Asset fully approved and ready for use',
+                        'asset' => $asset->fresh()
+                    ], 200);
+                } else {
+                    // Create history record for step approval
+                    $asset->createHistoryRecord(
+                        'step_approved',
+                        'approval',
+                        ['status' => 'reviewed'],
+                        ['status' => 'approved'],
+                        $validated['notes'] ?? 'Approval step completed',
+                        $nextStep->id
+                    );
+                    
+                    return response()->json([
+                        'message' => 'Approval step completed, waiting for next step',
+                        'asset' => $asset->fresh()
+                    ], 200);
+                }
 
             } else {
                 // Check asset_reject permission
@@ -1085,7 +1129,8 @@ class AssetController extends Controller
                     'status' => 'rejected',
                     'approved_by' => auth()->id(),
                     'approved_at' => now(),
-                    'notes' => $validated['notes'] ?? null
+                    'notes' => $validated['notes'] ?? null,
+                    'updated_by' => auth()->id()
                 ]);
 
                 // Asset is rejected, set status back to ACTIVE
@@ -1110,7 +1155,69 @@ class AssetController extends Controller
                 ], 200);
             }
         } catch (\Throwable $th) {
+            \Log::error('Asset approval error', [
+                'asset_id' => $asset->id,
+                'user_id' => auth()->id(),
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString()
+            ]);
             return response()->json($th->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Debug approval workflow for an asset
+     */
+    public function debugApprovalWorkflow(Asset $asset)
+    {
+        try {
+            $user = auth()->user();
+            $approvalSteps = $asset->getAllApprovalSteps();
+            $nextStep = $asset->getNextApprovalStep();
+            
+            $debug = [
+                'asset' => [
+                    'id' => $asset->id,
+                    'asset_tag' => $asset->asset_tag,
+                    'status' => $asset->status,
+                    'submitted_for_approval' => $asset->submitted_for_approval,
+                    'submitted_at' => $asset->submitted_at,
+                    'submitted_by' => $asset->submitted_by
+                ],
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'roles' => $user->roles->pluck('name'),
+                    'permissions' => $user->getAllPermissions()->pluck('name')
+                ],
+                'approval_steps' => $approvalSteps->map(function($step) {
+                    return [
+                        'id' => $step->id,
+                        'role' => $step->role->name,
+                        'action' => $step->action,
+                        'sequence' => $step->sequence,
+                        'status' => $step->status,
+                        'reviewed_by' => $step->reviewer?->name,
+                        'reviewed_at' => $step->reviewed_at,
+                        'approved_by' => $step->approver?->name,
+                        'approved_at' => $step->approved_at
+                    ];
+                }),
+                'next_step' => $nextStep ? [
+                    'id' => $nextStep->id,
+                    'role' => $nextStep->role->name,
+                    'action' => $nextStep->action,
+                    'sequence' => $nextStep->sequence,
+                    'status' => $nextStep->status
+                ] : null,
+                'can_review' => $asset->canBeReviewedByCurrentUser(),
+                'can_approve' => $asset->canBeApprovedByCurrentUser(),
+                'can_approve_reject' => $asset->canBeApprovedRejectedByCurrentUser()
+            ];
+
+            return response()->json($debug);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 

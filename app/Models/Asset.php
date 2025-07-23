@@ -79,6 +79,11 @@ class Asset extends Model
         return $this->hasMany(AssetHistory::class);
     }
 
+    public function approvals()
+    {
+        return $this->morphMany(AssetApproval::class, 'approvable');
+    }
+
     public function submittedBy()
     {
         return $this->belongsTo(User::class, 'submitted_by');
@@ -160,6 +165,25 @@ class Asset extends Model
                 'sequence' => 1
             ]
         ]);
+
+        return $this;
+    }
+
+    /**
+     * Create approval steps for this asset
+     */
+    public function createApprovalSteps(array $steps)
+    {
+        foreach ($steps as $step) {
+            $this->approvals()->create([
+                'role_id' => $step['role_id'],
+                'action' => $step['action'],
+                'sequence' => $step['sequence'],
+                'status' => 'pending',
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id()
+            ]);
+        }
 
         return $this;
     }
@@ -314,5 +338,107 @@ class Asset extends Model
         }
 
         return $query->get();
+    }
+
+    /**
+     * Check if current user can approve the next step
+     */
+    public function canApproveNextStep(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        $nextStep = $this->getNextApprovalStep();
+        if (!$nextStep) return false;
+
+        // Check if user has the required role
+        $userRoles = $user->roles->pluck('name')->toArray();
+        if (!in_array($nextStep->role->name, $userRoles)) {
+            return false;
+        }
+
+        // Check if user has the required permission
+        if ($nextStep->action === 'review') {
+            return $user->can('asset_review');
+        } elseif ($nextStep->action === 'approve') {
+            return $user->can('asset_approve');
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if current user can review the next step
+     */
+    public function canReviewNextStep(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        $nextStep = $this->getNextApprovalStep();
+        if (!$nextStep) return false;
+
+        // Can only review if step is pending and action is review
+        if ($nextStep->status !== 'pending' || $nextStep->action !== 'review') {
+            return false;
+        }
+
+        // Check if user has the required role
+        $userRoles = $user->roles->pluck('name')->toArray();
+        if (!in_array($nextStep->role->name, $userRoles)) {
+            return false;
+        }
+
+        // Check if user has the required permission
+        return $user->can('asset_review');
+    }
+
+    /**
+     * Check if current user can approve/reject after review
+     */
+    public function canApproveRejectNextStep(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        $nextStep = $this->getNextApprovalStep();
+        if (!$nextStep) return false;
+
+        // Can only approve/reject if step is reviewed and action is review
+        if ($nextStep->status !== 'reviewed' || $nextStep->action !== 'review') {
+            return false;
+        }
+
+        // Check if user has the required role
+        $userRoles = $user->roles->pluck('name')->toArray();
+        if (!in_array($nextStep->role->name, $userRoles)) {
+            return false;
+        }
+
+        // Check if user has the required permission
+        return $user->can('asset_approve') || $user->can('asset_reject');
+    }
+
+    /**
+     * Get the next approval step that needs attention
+     */
+    public function getNextApprovalStep()
+    {
+        return $this->approvals()
+            ->with(['role', 'approver', 'reviewer'])
+            ->whereIn('status', ['pending', 'reviewed'])
+            ->orderBy('sequence')
+            ->first();
+    }
+
+    /**
+     * Get all approval steps for this asset
+     */
+    public function getAllApprovalSteps()
+    {
+        return $this->approvals()
+            ->with(['role', 'approver', 'reviewer'])
+            ->orderBy('sequence')
+            ->get();
     }
 }
