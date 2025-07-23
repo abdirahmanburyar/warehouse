@@ -444,7 +444,7 @@ function getResults(page = 1) {
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Status</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -466,13 +466,8 @@ function getResults(page = 1) {
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.quantity }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center">
-                                        <div class="flex items-center justify-center">
-                                            <div v-if="isItemOutOfStock(item)" class="mr-1">
-                                                <img src="/assets/images/out_stock.png" title="Out of Stock" class="w-5 h-5" alt="Out of Stock" />
-                                            </div>
-                                        </div>
-                                    </td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.location }}</td>
+                                    
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0 }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">{{ inventory.reorder_level }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-top">
