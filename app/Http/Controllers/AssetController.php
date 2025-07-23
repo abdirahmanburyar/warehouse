@@ -1165,7 +1165,7 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        $query = AssetApproval::with(['approvable', 'role', 'approver', 'creator'])
+        $query = AssetApproval::with(['approvable', 'role', 'approver', 'reviewer', 'creator'])
             ->where('approvable_type', Asset::class);
 
         // Apply filters
@@ -1181,9 +1181,7 @@ class AssetController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('role')) {
-            $query->where('role_id', $request->role);
-        }
+
 
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
@@ -1193,13 +1191,9 @@ class AssetController extends Controller
         $approvedCount = AssetApproval::where('approvable_type', Asset::class)
             ->where('status', 'approved')->count();
 
-        // Get roles for filter
-        $roles = \App\Models\Role::all();
-
         return Inertia::render('Assets/Approvals', [
             'approvals' => $approvals,
-            'roles' => $roles,
-            'filters' => $request->only('search', 'status', 'role'),
+            'filters' => $request->only('search', 'status'),
             'pendingCount' => $pendingCount,
             'approvedCount' => $approvedCount,
         ]);

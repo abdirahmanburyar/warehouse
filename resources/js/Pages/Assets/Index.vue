@@ -828,8 +828,7 @@
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                         </path>
                                     </svg>
-                                    {{ processingApproval ? 'Processing...' : (approvalAction === 'approve' ? 'Approve'
-                                    : 'Reject') }}
+                                    {{ processingApproval ? 'Processing...' : (approvalAction === 'approve' ? 'Approve' : 'Reject') }}
                                 </button>
                                 <button type="button" @click="showApprovalModal = false"
                                     class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
@@ -907,8 +906,7 @@
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                         </path>
                                     </svg>
-                                    {{ processingApproval ? 'Processing...' : (transferApprovalData.action === 'approve' ? 'Approve'
-                                    : 'Reject') }}
+                                    {{ processingApproval ? 'Processing...' : (transferApprovalData.action === 'approve' ? 'Approve' : 'Reject') }}
                                 </button>
                                 <button type="button" @click="showTransferApprovalModal = false"
                                     class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
