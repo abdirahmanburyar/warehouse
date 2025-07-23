@@ -281,60 +281,31 @@
                 </Link>
 
                 <!-- Assets Menu with Dropdown -->
-                <div class="menu-item relative" :class="{ active: route().current('assets.*') }">
-                    <div class="menu-content cursor-pointer" @click="toggleAssetsMenu">
+                <Link
+                    v-if="$page.props.auth.can.settings_view"
+                    :href="route('assets.index')"
+                    class="menu-item"
+                    :class="{ active: route().current('assets.*') }"
+                    @click="setCurrentPage('assets')"
+                >
+                    <div class="menu-content">
                         <div class="menu-icon">
                             <img
                                 v-if="route().current('assets.*')"
-                                src="/assets/images/assets-b.png"
-                                class="assets-icon"
+                                src="/assets/images/setting-b.png"
+                                class="setting-icon"
                                 style="height: 15px"
                             />
                             <img
                                 v-else
-                                src="/assets/images/assets-w.png"
-                                class="assets-icon"
+                                src="/assets/images/setting-w.png"
+                                class="setting-icon"
                                 style="height: 15px"
                             />
                         </div>
                         <span class="menu-text">Assets</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-                             class="w-4 h-4 ml-auto transition-transform duration-200"
-                             :class="{ 'rotate-180': assetsMenuOpen }">
-                            <path d="M7 10l5 5 5-5z"/>
-                        </svg>
                     </div>
-                    
-                    <!-- Assets Dropdown Menu -->
-                    <div v-if="assetsMenuOpen" class="absolute left-full top-0 ml-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                        <div class="py-1">
-                            <Link
-                                v-if="$page.props.auth.can.asset_view"
-                                :href="route('assets.index')"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                @click="closeAssetsMenu"
-                            >
-                                All Assets
-                            </Link>
-                            <Link
-                                v-if="$page.props.auth.can.asset_view"
-                                :href="route('assets.approvals')"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                @click="closeAssetsMenu"
-                            >
-                                Approvals
-                            </Link>
-                            <Link
-                                v-if="$page.props.auth.can.asset_view"
-                                :href="route('assets.history.index')"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                @click="closeAssetsMenu"
-                            >
-                                Asset History
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                </Link>
 
                 <Link
                     v-if="$page.props.auth.can.settings_view"
