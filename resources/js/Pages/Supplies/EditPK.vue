@@ -1116,7 +1116,7 @@ const submit = async () => {
                 confirmButtonColor: '#10B981',
             })
                 .then(() => {
-                    router.visit(route('supplies.packing-list.edit', form.value.id));
+                    router.get(route('supplies.packing-list.edit', form.value.id));
                 });
         })
         .catch((error) => {
@@ -1227,9 +1227,9 @@ async function reviewPackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.edit', form.value.id), {
-                preserveState: false,
-                preserveScroll: false
+            router.get(route('supplies.packing-list.edit', form.value.id), {}, {
+                preserveScroll: true,
+                only: ['packingList']
             });
 
         } catch (error) {
@@ -1290,10 +1290,11 @@ async function approvePackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.edit', form.value.id), {
-                preserveState: false,
-                preserveScroll: false
+            router.get(route('supplies.packing-list.edit', form.value.id), {}, {
+                preserveScroll: true,
+                only: ['packingList']
             });
+
 
         } catch (error) {
             console.error('Approve error:', error);
@@ -1342,9 +1343,9 @@ async function rejectPackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.edit', form.value.id), {
-                preserveState: false,
-                preserveScroll: false
+            router.get(route('supplies.packing-list.edit', form.value.id), {}, {
+                preserveScroll: true,
+                only: ['packingList']
             });
 
         } catch (error) {
