@@ -658,7 +658,7 @@ watch([() => warehouse.value], () => {
 
 async function loadLocations() {
     try {
-        const response = await axios.get(route("invetnories.getLocations"), {
+        const response = await axios.get(route("inventories.getLocations"), {
             params: {
                 warehouse: warehouse.value,
             }
