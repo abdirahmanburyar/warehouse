@@ -25,9 +25,21 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Get distinct facility types and their counts (only main types)
+        // Get warehouse count and add it first
+        $warehouseCount = Warehouse::count();
+        $warehouseData = collect([
+            [
+                'label' => 'WH',
+                'fullName' => 'Warehouses',
+                'value' => $warehouseCount,
+                'color' => 'blue',
+            ]
+        ]);
+
+        // Get distinct facility types and their counts (all types)
         $facilityTypes = Facility::select('facility_type', DB::raw('count(*) as count'))
-            ->whereIn('facility_type', ['Health Centre', 'Primary Health Unit', 'Regional Hospital', 'District Hospital'])
+            ->whereNotNull('facility_type')
+            ->where('facility_type', '!=', '')
             ->groupBy('facility_type')
             ->orderBy('count', 'desc')
             ->get()
@@ -39,6 +51,19 @@ class DashboardController extends Controller
                     'color' => $this->getFacilityTypeColor($type->facility_type),
                 ];
             });
+
+        // Add Mobile Team manually at the end
+        $facilityTypes->push([
+            'label' => 'MT',
+            'fullName' => 'Mobile Team',
+            'value' => 5,
+            'color' => 'lightblue',
+        ]);
+
+        // Combine warehouse data first, then facility types
+        $facilityTypes = $warehouseData->concat($facilityTypes);
+
+        logger()->info($facilityTypes);
         
         $filter = $request->input('order_filter', 'PO'); // default to PO
 
@@ -518,7 +543,11 @@ class DashboardController extends Controller
             'Regional Hospital' => 'red',
             'District Hospital' => 'orange',
             'Health Centre' => 'blue',
-            'Primary Health Unit' => 'green'
+            'Primary Health Unit' => 'green',
+            'regional hospital' => 'red',
+            'district hospital' => 'orange',
+            'health centre' => 'blue',
+            'primary health unit' => 'green'
         ];
 
         return $colors[$facilityType] ?? 'gray';
@@ -530,7 +559,11 @@ class DashboardController extends Controller
             'Regional Hospital' => 'RH',
             'District Hospital' => 'DH',
             'Health Centre' => 'HC',
-            'Primary Health Unit' => 'PHU'
+            'Primary Health Unit' => 'PHU',
+            'regional hospital' => 'RH',
+            'district hospital' => 'DH',
+            'health centre' => 'HC',
+            'primary health unit' => 'PHU'
         ];
 
         return $abbreviations[$facilityType] ?? $facilityType;

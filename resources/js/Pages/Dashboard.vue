@@ -16,6 +16,8 @@ import 'vue-datepicker-next/index.css';
 // Register the datalabels plugin
 Chart.register(ChartDataLabels);
 
+
+
 const props = defineProps({
     dashboardData: {
         type: Object,
@@ -1355,12 +1357,12 @@ const productCategoryChartData = computed(() => ({
 const warehouseFacilitiesChartData = computed(() => {
     // Create facility data array with distinct colors
     const facilityData = [
-        { label: 'Warehouses', count: filteredWarehouseCountCard.value || 0, color: 'rgba(68, 114, 196, 0.85)' }, // Blue
-        { label: 'Health Centers', count: getCount('HC'), color: 'rgba(237, 125, 49, 0.85)' }, // Orange
+        { label: 'Warehouses', count: getCount('WH') || 0, color: 'rgba(68, 114, 196, 0.85)' }, // Blue
+        { label: 'Health Centre', count: getCount('HC'), color: 'rgba(237, 125, 49, 0.85)' }, // Orange
         { label: 'Primary Health Units', count: getCount('PHU'), color: 'rgba(165, 165, 165, 0.85)' }, // Gray
         { label: 'Regional Hospitals', count: getCount('RH'), color: 'rgba(255, 192, 0, 0.85)' }, // Yellow
         { label: 'District Hospitals', count: getCount('DH'), color: 'rgba(112, 173, 71, 0.85)' }, // Green
-        { label: 'Medical Teams', count: 5, color: 'rgba(91, 155, 213, 0.85)' } // Light Blue
+        { label: 'Mobile Teams', count: getCount('MT'), color: 'rgba(91, 155, 213, 0.85)' } // Light Blue
     ];
 
     // Sort by count in descending order (highest to lowest)
