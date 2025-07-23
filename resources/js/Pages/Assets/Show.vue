@@ -874,7 +874,7 @@
                                             {{ formatActionTitle(record.action, record.action_type) }}
                                         </p>
                                         <p class="text-sm text-gray-500">
-                                            by {{ record.performer?.name || 'Unknown' }} • {{ formatDate(record.performed_at) }}
+                                            by {{ record.performer?.name || 'Unknown' }} • {{ formatRelativeDate(record.performed_at) }}
                                         </p>
                                         <p v-if="record.notes" class="text-sm text-gray-600 mt-1">
                                             {{ record.notes }}
@@ -1189,7 +1189,7 @@ function ucfirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function formatDate(date) {
+function formatRelativeDate(date) {
     return moment(date).fromNow();
 }
 
