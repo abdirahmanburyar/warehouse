@@ -305,7 +305,7 @@
                                         ? 'bg-green-500'
                                         : 'bg-yellow-500 hover:bg-yellow-600'
                                 ]"
-                                :disabled="isReviewing || hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_review"
+                                :disabled="isReviewing || hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_review"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                 <span class="text-sm font-bold text-white">{{ form.reviewed_at ? 'Reviewed' : 'Review' }}</span>
@@ -332,7 +332,7 @@
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-green-500 hover:bg-green-600'
                                 ]"
-                                :disabled="isApproving || !hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_approve"
+                                :disabled="isApproving || !hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_approve"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                 <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
@@ -357,7 +357,7 @@
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-red-500 hover:bg-red-600'
                                 ]"
-                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved || !$page.props.auth.can.purchase_order_reject"
+                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_reject"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                 <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                 <span class="text-sm font-bold text-white">{{ form.rejected_at ? 'Rejected' : 'Reject' }}</span>
@@ -537,7 +537,7 @@
 </template>
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, router, Link, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import axios from 'axios';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -554,6 +554,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
+const page = usePage();
 
 const props = defineProps({
     warehouses: {
@@ -1179,7 +1180,7 @@ const isReviewing = ref(false);
 async function reviewPackingList() {
     console.log('Review function called');
     console.log('Form status:', form.value?.status);
-    console.log('User permissions:', $page.props.auth.can);
+    console.log('User permissions:', page.props.auth.can);
     
     const confirm = await Swal.fire({
         title: 'Review Packing List',
@@ -1193,12 +1194,27 @@ async function reviewPackingList() {
 
     if (confirm.isConfirmed) {
         console.log('User confirmed review');
+        
+        // Check if all required fields are present
+        const incompleteItems = form.value.items?.filter(item => !hasRequiredFields(item)) || [];
+        if (incompleteItems.length > 0) {
+            const itemNames = incompleteItems.map(item => item.product?.name || 'Unknown Item').join(', ');
+            toast.error(`Please complete all required fields for: ${itemNames}`);
+            return;
+        }
+        
         isReviewing.value = true;
         try {
             console.log('Sending review request to:', route('supplies.reviewPK'));
+            console.log('Form data being sent:', {
+                id: form.value.id,
+                status: 'reviewed',
+                items: form.value.items
+            });
             const response = await axios.post(route('supplies.reviewPK'), {
                 id: form.value.id,
-                status: 'reviewed'
+                status: 'reviewed',
+                items: form.value.items
             });
             
             console.log('Review response:', response.data);
@@ -1211,14 +1227,25 @@ async function reviewPackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+            router.visit(route('supplies.packing-list.edit', form.value.id), {
                 preserveState: false,
                 preserveScroll: false
             });
 
         } catch (error) {
             console.error('Review error:', error);
-            toast.error(error.response?.data || 'An error occurred while reviewing the items');
+            console.error('Error response:', error.response);
+            console.error('Error message:', error.message);
+            
+            if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else if (error.response?.data) {
+                toast.error(error.response.data);
+            } else if (error.message) {
+                toast.error(error.message);
+            } else {
+                toast.error('An error occurred while reviewing the items');
+            }
         } finally {
             isReviewing.value = false;
         }
@@ -1230,7 +1257,7 @@ const isApproving = ref(false);
 async function approvePackingList() {
     console.log('Approve function called');
     console.log('Form status:', form.value?.status);
-    console.log('User permissions:', $page.props.auth.can);
+    console.log('User permissions:', page.props.auth.can);
     
     const confirm = await Swal.fire({
         title: 'Approve Packing List',
@@ -1263,7 +1290,7 @@ async function approvePackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+            router.visit(route('supplies.packing-list.edit', form.value.id), {
                 preserveState: false,
                 preserveScroll: false
             });
@@ -1282,7 +1309,7 @@ const isRejecting = ref(false);
 async function rejectPackingList() {
     console.log('Reject function called');
     console.log('Form status:', form.value?.status);
-    console.log('User permissions:', $page.props.auth.can);
+    console.log('User permissions:', page.props.auth.can);
     
     const confirm = await Swal.fire({
         title: 'Reject Packing List',
@@ -1315,7 +1342,7 @@ async function rejectPackingList() {
             });
 
             // Refresh the page with updated data
-            router.visit(route('supplies.packing-list.editPK', form.value.id), {
+            router.visit(route('supplies.packing-list.edit', form.value.id), {
                 preserveState: false,
                 preserveScroll: false
             });
