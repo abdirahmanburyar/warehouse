@@ -190,7 +190,7 @@
                                 {{ packingList.fulfillment_rate }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span :class="getStatusClasses(packingList.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+                                <span :class="getStatusClasses(packingList.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize">
                                     {{ packingList.status }}
                                 </span>
                             </td>
