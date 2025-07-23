@@ -235,12 +235,29 @@ class SupplyController extends Controller
             ]);
             
             // Update the packing list difference to mark as finalized
-            PackingListDifference::where('id', $request->id)->update([
-                'finalized' => 'liquidated'
-            ]);
+            $packingListDiff = PackingListDifference::find($request->id);
+            if ($packingListDiff) {
+                $packingListDiff->update([
+                    'finalized' => 'liquidated'
+                ]);
+                
+                // Update inventory allocation if it exists
+                if ($packingListDiff->inventory_allocation_id) {
+                    $inventoryAllocation = \App\Models\InventoryAllocation::find($packingListDiff->inventory_allocation_id);
+                    if ($inventoryAllocation) {
+                        $inventoryAllocation->increment('received_quantity', $request->quantity);
+                        $inventoryAllocation->save();
+                    }
+                }
+            }
             
             // Handle attachments if any
             if ($request->hasFile('attachments')) {
+                // Validate attachments without size restrictions
+                $request->validate([
+                    'attachments.*' => 'file|mimes:pdf|nullable'
+                ]);
+                
                 $attachments = [];
                 foreach ($request->file('attachments') as $file) {
                     $path = $file->store('attachments/liquidations', 'public');
@@ -317,12 +334,29 @@ class SupplyController extends Controller
             ]);
             
             // Update the packing list difference to mark as finalized
-            PackingListDifference::where('id', $request->id)->update([
-                'finalized' => 'disposed'
-            ]);
+            $packingListDiff = PackingListDifference::find($request->id);
+            if ($packingListDiff) {
+                $packingListDiff->update([
+                    'finalized' => 'disposed'
+                ]);
+                
+                // Update inventory allocation if it exists
+                if ($packingListDiff->inventory_allocation_id) {
+                    $inventoryAllocation = \App\Models\InventoryAllocation::find($packingListDiff->inventory_allocation_id);
+                    if ($inventoryAllocation) {
+                        $inventoryAllocation->increment('received_quantity', $request->quantity);
+                        $inventoryAllocation->save();
+                    }
+                }
+            }
             
             // Handle attachments if any
             if ($request->hasFile('attachments')) {
+                // Validate attachments without size restrictions
+                $request->validate([
+                    'attachments.*' => 'file|mimes:pdf|nullable'
+                ]);
+                
                 $attachments = [];
                 foreach ($request->file('attachments') as $file) {
                     $path = $file->store('attachments/disposals', 'public');
@@ -371,13 +405,37 @@ class SupplyController extends Controller
             DB::beginTransaction();
             
             // Find the packing list difference record and back order
-            $packingListDiff = PackingListDifference::with(['packingListItem', 'backOrder'])->find($request->id);
+            $packingListDiff = PackingListDifference::with(['packingListItem', 'backOrder'])
+                ->where('id', $request->id)
+                ->first();
+                
+            // Log for debugging
+            logger()->info('Receive request:', [
+                'id' => $request->id,
+                'status' => $request->status,
+                'found_diff' => $packingListDiff ? $packingListDiff->status : 'not found',
+                'found_diff_id' => $packingListDiff ? $packingListDiff->id : 'not found',
+                'found_diff_finalized' => $packingListDiff ? $packingListDiff->finalized : 'not found'
+            ]);
+            
+            // Also check if there are any records with this ID at all
+            $allRecordsWithId = PackingListDifference::where('id', $request->id)->get();
+            logger()->info('All records with ID ' . $request->id . ':', $allRecordsWithId->toArray());
+            
+            // Check all records for this packing_listitem_id to see if there are separate records for different statuses
+            $allRecordsForPackingListItem = PackingListDifference::where('packing_listitem_id', $request->packing_listitem_id)->get();
+            logger()->info('All records for packing_listitem_id ' . $request->packing_listitem_id . ':', $allRecordsForPackingListItem->toArray());
             $packingListItem = PackingListItem::find($request->packing_listitem_id);
             $backOrder = BackOrder::with(['packingList', 'order', 'transfer'])->find($request->back_order_id);
             
             if (!$packingListDiff) {
                 return response()->json([
-                    'message' => 'Back order item not found'
+                    'message' => 'Back order item not found',
+                    'debug' => [
+                        'requested_id' => $request->id,
+                        'requested_status' => $request->status,
+                        'back_order_id' => $request->back_order_id
+                    ]
                 ], 404);
             }
             
@@ -486,26 +544,28 @@ class SupplyController extends Controller
                 'note' => "Received from Back Order: {$request->packing_list_number}",
             ]);
             
-            // Handle the packing list difference record based on remaining quantity
-            // if ($remainingQuantity <= 0) {
-            //     // If nothing remains, delete the record
-            //     $packingListDiff->delete();
-            // } else {
-            //     // If some items remain, update the quantity
-            //     $packingListDiff->quantity = $remainingQuantity;
-            //     $packingListDiff->save();
-            // }
-
+            // Update inventory allocation if it exists
+            if ($packingListDiff->inventory_allocation_id) {
+                $inventoryAllocation = \App\Models\InventoryAllocation::find($packingListDiff->inventory_allocation_id);
+                if ($inventoryAllocation) {
+                    $inventoryAllocation->increment('received_quantity', $receivedQuantity);
+                    $inventoryAllocation->save();
+                }
+            }
+            
+            // Decrement the packing list difference quantity
+            $packingListDiff->decrement('quantity', $receivedQuantity);
+            
             // Update inventory based on the back order type
-            // $this->updateInventoryForReceivedBackorder($receivedBackorder, $packingListItem, $receivedQuantity);
+            $this->updateInventoryForReceivedBackorder($receivedBackorder, $packingListItem, $receivedQuantity);
             
             // Commit the transaction
             DB::commit();
             
             return response()->json([
-                'message' => "Successfully created received back order for {$receivedQuantity} items" . ($remainingQuantity > 0 ? ", {$remainingQuantity} items remaining" : ""),
+                'message' => "Successfully received {$receivedQuantity} items from back order",
                 'received_quantity' => $receivedQuantity,
-                'remaining_quantity' => $remainingQuantity
+                'remaining_quantity' => $packingListDiff->quantity
             ], 200);
             
         } catch (\Throwable $th) {

@@ -53,39 +53,23 @@
                 </div>
 
                 <div class="mt-4 flex flex-col">
-                    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                            <div class="border border-black overflow-hidden">
-                                <table class="min-w-full border-collapse">
-                                    <thead>
-                                        <tr class="border-b border-black">
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Item ID</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Item Name</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Packing List</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Date</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Quantity</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-black">
-                                                Status</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                Actions</th>
-                                        </tr>
-                                    </thead>
+                    <div class="overflow-auto w-full">
+                        <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                            <thead>
+                                <tr style="background-color: #F4F7FB;">
+                                    <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Item ID</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Item Name</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Packing List</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Date</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Quantity</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
+                                </tr>
+                            </thead>
                                     <tbody>
                                         <template v-if="isLoading">
                                             <tr v-for="i in 3" :key="i">
-                                                <td v-for="j in 7" :key="j" class="px-6 py-4">
+                                                <td v-for="j in 7" :key="j" class="px-3 py-2">
                                                     <div class="animate-pulse h-4 bg-gray-200 rounded"></div>
                                                 </td>
                                             </tr>
@@ -93,27 +77,27 @@
                                         <template v-else>
                                             <template v-for="item in groupedItems" :key="item.id">
                                                 <tr v-for="(row, index) in item.rows" :key="index"
-                                                    class="border-b border-black hover:bg-gray-50 last:border-b-0">
-                                                    <td class="px-6 py-3 text-sm border-r border-black"
+                                                    class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                                    <td class="px-3 py-2 text-xs font-medium text-gray-800 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
                                                         {{ item.product.productID }}
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm border-r border-black"
+                                                    <td class="px-3 py-2 text-xs text-gray-700 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
                                                         {{ item.product.name }}
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm border-r border-black"
+                                                    <td class="px-3 py-2 text-xs text-gray-700 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
                                                         {{ item.packing_list?.packing_list_number }}
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm border-r border-black"
+                                                    <td class="px-3 py-2 text-xs text-gray-700 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
                                                         {{ moment(item.created_at).format('DD/MM/YYYY') }}
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm font-medium border-r border-black">
+                                                    <td class="px-3 py-2 text-xs text-gray-900 text-center align-middle">
                                                         {{ row.quantity }}
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm border-r border-black">
+                                                    <td class="px-3 py-2 text-xs text-center align-middle">
                                                         <span v-if="row.status === 'Missing'"
                                                             class="text-yellow-600 font-medium">
                                                             Missing
@@ -135,24 +119,30 @@
                                                             Low quality
                                                         </span>
                                                     </td>
-                                                    <td class="px-6 py-3 text-sm border-r border-black">
-                                                        <div class="flex gap-2">
+                                                    <td class="px-3 py-2 text-xs text-center align-middle">
+                                                        <div class="flex items-center justify-center space-x-2">
+                                                            <!-- Receive action - available for all statuses -->
                                                             <button
-                                                                v-if="row.status === 'Missing' || row.status === 'Damaged' ||  row.status === 'Lost' || row.status === 'Expired' || row.status === 'Low quality'"
-                                                                @click="handleAction('Receive', { ...item, status: row.status, quantity: row.quantity })"
-                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
+                                                                @click="handleAction('Receive', { ...item, id: row.id, status: row.status, quantity: row.quantity })"
+                                                                class="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors duration-150"
                                                                 :disabled="isLoading">
                                                                 Receive
                                                             </button>
-                                                            <button v-if="row.status === 'Missing' || row.status === 'Lost'"
-                                                                @click="handleAction('Liquidate', { ...item, status: row.status, quantity: row.quantity })"
-                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                                                            
+                                                            <!-- Liquidate action - only for Missing status -->
+                                                            <button 
+                                                                v-if="row.status === 'Missing'"
+                                                                @click="handleAction('Liquidate', { ...item, id: row.id, status: row.status, quantity: row.quantity })"
+                                                                class="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600 transition-colors duration-150"
                                                                 :disabled="isLoading">
                                                                 Liquidate
                                                             </button>
-                                                            <button v-if="row.status === 'Damaged' || row.status === 'Expired' || row.status === 'Low quality'"
-                                                                @click="handleAction('Dispose', { ...item, status: row.status, quantity: row.quantity })"
-                                                                class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
+                                                            
+                                                            <!-- Dispose action - for all statuses except Missing -->
+                                                            <button 
+                                                                v-if="row.status !== 'Missing'"
+                                                                @click="handleAction('Dispose', { ...item, id: row.id, status: row.status, quantity: row.quantity })"
+                                                                class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors duration-150"
                                                                 :disabled="isLoading">
                                                                 Dispose
                                                             </button>
@@ -161,16 +151,20 @@
                                                 </tr>
                                             </template>
                                             <tr v-if="items.length === 0">
-                                                <td colspan="7" class="px-6 py-4 text-sm text-gray-500 text-center">No
-                                                    back order items found</td>
+                                                <td colspan="7" class="text-center py-8 text-gray-500 bg-gray-50">
+                                                    <div class="flex flex-col items-center justify-center gap-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" />
+                                                        </svg>
+                                                        <span>No back order items found.</span>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </template>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -379,6 +373,7 @@ const groupedItems = computed(() => {
                 created_at: item.created_at,
                 back_order_id: item.back_order_id,
                 rows: [{
+                    id: item.id, // Include the specific row ID
                     quantity: item.quantity,
                     status: item.status,
                     actions: getAvailableActions(item.status),
@@ -388,6 +383,7 @@ const groupedItems = computed(() => {
             });
         } else {
             existingGroup.rows.push({
+                id: item.id, // Include the specific row ID
                 quantity: item.quantity,
                 status: item.status,
                 actions: getAvailableActions(item.status)
@@ -401,10 +397,10 @@ const groupedItems = computed(() => {
 const getAvailableActions = (status) => {
     if (status === 'Missing') return ['Receive', 'Liquidate'];
     if (status === 'Damaged') return ['Receive', 'Dispose'];
-    if (status === 'Lost') return ['Receive'];
+    if (status === 'Lost') return ['Receive', 'Dispose'];
     if (status === 'Expired') return ['Receive', 'Dispose'];
     if (status === 'Low quality') return ['Receive', 'Dispose'];
-    return [];
+    return ['Receive']; // Default fallback
 };
 
 const getBackOrderStatusClass = (status) => {
@@ -495,8 +491,15 @@ const receiveItems = async (item) => {
 
             try {
                 isLoading.value = true;
-                await axios.post(route('back-order.receive'), {
+                console.log('Sending receive request:', {
                     id: item.id,
+                    status: item.status,
+                    quantity: num,
+                    original_quantity: item.quantity
+                });
+                console.log('Full item object:', item);
+                await axios.post(route('back-order.receive'), {
+                    id: item.id, // This is now the specific row ID from the merged object
                     back_order_id: backOrderInfo.value.id,
                     product_id: item.product.id,
                     packing_listitem_id: item.packing_listitem_id,
