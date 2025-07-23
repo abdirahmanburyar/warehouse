@@ -116,9 +116,9 @@
                     <col class="w-8" />
                     <col class="w-48" />
                     <col class="w-[120px]" />
-                    <col class="w-[200px]" />
-                    <col class="w-48" />
-                    <col class="w-32" />
+                    <col class="w-[150px]" />
+                    <col class="w-64" />
+                    <col class="w-56" />
                     <col class="w-28" />
                 </colgroup>
                 <thead class="bg-gray-50 border border-black">
@@ -126,9 +126,9 @@
                         <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sticky left-0 z-10 w-8 text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">#</th>
                         <th class="px-3 py-2 text-xs font-bold sticky left-8 z-10 w-[200px] text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
                         <th class="px-3 py-2 text-xs font-bold text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">UOM</th>
-                        <th class="px-3 py-2 text-xs font-bold w-32 text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">QTY</th>
-                        <th class="px-3 py-2 text-xs font-bold w-48 text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Warehouse</th>
-                        <th class="px-3 py-2 text-xs font-bold text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Location</th>
+                        <th class="px-3 py-2 text-xs font-bold w-[150px] text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">QTY</th>
+                        <th class="px-3 py-2 text-xs font-bold w-64 text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Warehouse</th>
+                        <th class="px-3 py-2 text-xs font-bold w-56 text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Location</th>
                         <th class="px-3 py-2 text-xs font-bold text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item Detail</th>
                         <th class="px-3 py-2 text-xs font-bold text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Unit Cost</th>
                         <th class="px-3 py-2 text-xs font-bold text-left" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Total Cost</th>
@@ -160,7 +160,7 @@
                             style="border-bottom: 1px solid #B7C6E6;">
                             <span class="font-bold text-xs text-gray-500">{{ item.uom }}</span>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900 w-32"
+                        <td class="px-3 py-2 text-xs text-gray-900 w-[150px]"
                             style="border-bottom: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
                                 <div>
@@ -196,7 +196,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900 w-48"
+                        <td class="px-3 py-2 text-xs text-gray-900 w-64"
                             style="border-bottom: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.warehouse" :value="item.warehouse_id" :options="props.warehouses"
                                 :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
@@ -204,7 +204,7 @@
                                 :append-to-body="true" label="name" @select="handleWarehouseSelect(index, $event)">
                             </Multiselect>
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-900"
+                        <td class="px-3 py-2 text-xs text-gray-900 w-56"
                             style="border-bottom: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.location" required
                                 :disabled="props.packing_list.status === 'approved' || !item.warehouse_id"
@@ -821,7 +821,7 @@ function openBackOrderModal(index) {
 
 async function loadLocationsByWarehouse(warehouseName) {
     try {
-        const response = await axios.get(route('invetnories.getLocations'), {
+        const response = await axios.get(route('inventories.getLocations'), {
             params: { warehouse: warehouseName }
         });
 
