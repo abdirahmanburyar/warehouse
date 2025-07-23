@@ -159,92 +159,84 @@
 
         <!-- Items Section -->
         <div v-if="!isLoading && form" class="mt-4 w-full">
-            <table class="w-full table-sm">
-                <thead style="background-color: #F4F7FB;">
-                    <tr>
-                        <th class="text-left text-xs font-bold uppercase rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border: 1px solid #B7C6E6; border-bottom: 2px solid #B7C6E6;">
+            <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                <thead>
+                    <tr style="background-color: #F4F7FB;">
+                        <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sticky left-0 z-10 w-8" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             #
                         </th>
-                        <th class="text-left text-xs font-bold uppercase sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="px-3 py-2 text-xs font-bold sticky left-8 z-10 w-[200px]" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             Item
                         </th>
-                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
+                            UoM
+                        </th>
+                        <th class="px-3 py-2 text-xs font-bold w-32" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             Qty
                         </th>
-                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="px-3 py-2 text-xs font-bold w-48" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             Warehouse
                         </th>
-                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             Locations
                         </th>
-                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                             Item Detail
                         </th>
-                        <th class="text-left text-xs font-bold uppercase" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
-                            Cost (Unit/Total)
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
+                            Unit Cost
                         </th>
-                        <th class="text-left text-xs font-bold uppercase rounded-tr-lg" style="color: #4F6FCB; border: 1px solid #B7C6E6;">
-                            Fullfillment
+                        <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
+                            Total Cost
+                        </th>
+                        <th class="px-3 py-2 text-xs font-bold rounded-tr-lg w-20" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
+                            Fulfillment
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white">
+                <tbody>
                     <tr v-for="(item, index) in form.items" :key="index"
                         :class="{
-                            'hover:bg-gray-50': true,
+                            'hover:bg-gray-50 transition-colors duration-150': true,
                             'bg-red-50': hasIncompleteBackOrder(item),
                             'border-red-500 border-2': item.hasError,
                             'bg-red-50/20': item.hasError,
                         }"
-                        style="border: 1px solid #B7C6E6;"
+                        style="border-bottom: 1px solid #B7C6E6;"
                         :data-row="index + 1"
                     >
-                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-0 z-10 bg-white w-8"
-                            :class="{
-                                'border-green-600 border-2': item.status === 'approved',
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                                'border-black border': !item.status || item.status === 'pending',
-                            }"
-                            style="border: 1px solid #B7C6E6;">
+                        <td class="px-3 py-2 text-xs text-gray-900 sticky left-0 z-10 bg-white w-8"
+                            style="border-bottom: 1px solid #B7C6E6;">
                             {{ index + 1 }}
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900 sticky left-8 z-10 bg-white w-[200px]"
-                            :class="{
-                                'border-green-600 border-2': item.status === 'approved',
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                                'border-black border': !item.status || item.status === 'pending',
-                            }"
-                            style="border: 1px solid #B7C6E6;">
-                            <div class="flex flex-col">
-                                <p class="text-xs text-break">
-                                    {{ item.product?.name }}
-                                </p>
-                                <span class="font-bold mt-2 text-xs text-gray-500">UoM: {{ item.uom }}</span>
-                            </div>
+                        <td class="px-3 py-2 text-xs text-gray-900 sticky left-8 z-10 bg-white w-[200px]"
+                            style="border-bottom: 1px solid #B7C6E6;">
+                            <p class="text-xs text-break">
+                                {{ item.product?.name }}
+                            </p>
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900"
-                            :class="{
-                                'border-green-600 border-2': item.status === 'approved',
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                                'border-black border': !item.status || item.status === 'pending',
-                            }"
-                            style="border: 1px solid #B7C6E6;">
+                        <td class="px-3 py-2 text-xs text-gray-900"
+                            style="border-bottom: 1px solid #B7C6E6;">
+                            <span class="font-bold text-xs text-gray-500">{{ item.uom }}</span>
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-900 w-32"
+                            style="border-bottom: 1px solid #B7C6E6;">
                             <div class="flex flex-col">
                                 <div>
                                     <input type="number" v-model="item.quantity" readonly
-                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm" />
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm border-0 bg-transparent border-b border-gray-300" />
                                 </div>
                                 <div>
                                     <label for="received_quantity text-xs" class="text-xs">Received QTY</label>
                                     <input type="number" v-model="item.received_quantity" required min="1"
                                         :disabled="item.status == 'approved'"
-                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm"
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm border-0 bg-transparent border-b border-gray-300"
                                         @input="handleReceivedQuantityChange(index)" />
                                 </div>
                                 <div>
                                     <label for="mismatches" class="text-xs">Mismatches</label>
                                     <input type="text" :value="calculateMismatches(item)" readonly
-                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm" />
+                                        class="block w-full text-left text-black focus:ring-0 sm:text-sm border-0 bg-transparent border-b border-gray-300" />
                                 </div>
                                 <button v-if="calculateFulfillmentRate(item) < 100" @click="openBackOrderModal(index)"
                                     class="mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500">
@@ -252,57 +244,51 @@
                                 </button>
 
                                 <!-- Add tooltip for incomplete back orders -->
-                                <div v-if="hasIncompleteBackOrder(item)"
-                                    class="mt-8 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                    Please record the mismatch
+                                <div v-if="calculateFulfillmentRate(item) < 100 || !hasRequiredFields(item)" 
+                                    :class="{
+                                        'mt-2 text-xs px-2 py-1 rounded': true,
+                                        'bg-red-100 text-red-800': !hasRequiredFields(item) || getMismatchStatus(item).status === 'unrecorded' || getMismatchStatus(item).status === 'partial',
+                                        'bg-yellow-100 text-yellow-800': getMismatchStatus(item).status === 'excess',
+                                        'bg-green-100 text-green-800': hasRequiredFields(item) && getMismatchStatus(item).status === 'complete'
+                                    }">
+                                    {{ !hasRequiredFields(item) ? 'Missing required fields' : getMismatchStatus(item).message }}
                                 </div>
                             </div>
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900"
-                            :class="{
-                                'border-green-600 border-2': item.status === 'approved',
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                                'border-black border': !item.status || item.status === 'pending',
-                            }"
-                            style="border: 1px solid #B7C6E6;">
+                        <td class="px-3 py-2 text-xs text-gray-900 w-48"
+                            style="border-bottom: 1px solid #B7C6E6;">
                             <Multiselect v-model="item.warehouse" :value="item.warehouse_id" :options="props.warehouses"
                                 :searchable="true" :close-on-select="true" :show-labels="false" :allow-empty="true"
                                 placeholder="Select Warehouse" required track-by="id" :disabled="item.status === 'approved'"
                                 :append-to-body="true" label="name" @select="hadleWarehouseSelect(index, $event)">
                             </Multiselect>
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900"
-                            :class="{
-                                'border-green-600 border-2': item.status === 'approved',
-                                'border-yellow-500 border-2': item.status === 'reviewed',
-                                'border-black border': !item.status || item.status === 'pending',
-                            }"
-                            style="border: 1px solid #B7C6E6;">
-                            <Multiselect v-model="item.location" :value="item.location_id" required
+                        <td class="px-3 py-2 text-xs text-gray-900"
+                            style="border-bottom: 1px solid #B7C6E6;">
+                            <Multiselect v-model="item.location" required
                                 :disabled="item.status === 'approved' || !item.warehouse_id"
                                 :options="[ADD_NEW_LOCATION_OPTION, ...loadedLocation]" :searchable="true"
                                 :close-on-select="true" :show-labels="false" :allow-empty="true"
-                                placeholder="Select Location" @select="hadleLocationSelect(index, $event)">
+                                placeholder="Select Location" @select="hadleLocationSelect(index, $event)"
+                                track-by="location" label="location"
+                                :custom-label="(option) => option && option.isAddNew ? option.location : (option && option.location ? option.location : '')">
                                 <template v-slot:option="{ option }">
-                                    <div :class="{ 'add-new-option': option.isAddNew }">
-                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
-                                        <span v-else>{{ option.location }}</span>
+                                    <div :class="{ 'add-new-option': option && option.isAddNew }">
+                                        <span v-if="option && option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                        <span v-else-if="option && option.location">{{ option.location }}</span>
+                                        <span v-else>Select Location</span>
                                     </div>
                                 </template>
                             </Multiselect>
                         </td>
-                        <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-900 border-b" :class="{
-                            'border-green-600 border-2': item.status === 'approved',
-                            'border-yellow-500 border-2': item.status === 'reviewed',
-                            'border-black border': !item.status || item.status === 'pending',
-                        }"
+                        <td class="px-3 py-2 text-xs text-gray-900"
                         style="border-bottom: 1px solid #B7C6E6;">
                             <div class="space-y-1">
                                 <div>
                                     <label class="text-[10px] text-block">Batch</label>
                                     <input type="text" v-model="item.batch_number" required
                                         :disabled="item.status === 'approved'"
-                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border-0 bg-transparent border-b border-gray-300" />
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-block">Expiry</label>
@@ -310,43 +296,32 @@
                                         @input="item.expire_date = $event.target.value"
                                         :min="moment().add(6, 'months').format('YYYY-MM-DD')"
                                         :disabled="item.status === 'approved'"
-                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border-0 bg-transparent border-b border-gray-300" />
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-block">Barcode</label>
                                     <input type="text" v-model="item.barcode" required
                                         :disabled="item.status === 'approved'"
-                                        class="block w-full text-xs text-black focus:ring-0 p-1 border rounded" />
+                                        class="block w-full text-xs text-black focus:ring-0 p-1 border-0 bg-transparent border-b border-gray-300" />
                                 </div>
                             </div>
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900" :class="{
-                            'border-green-600 border-2': item.status === 'approved',
-                            'border-yellow-500 border-2': item.status === 'reviewed',
-                            'border-black border': !item.status || item.status === 'pending',
-                        }"
-                        style="border: 1px solid #B7C6E6;">
-                            <div class="flex flex-col space-y-1">
-                                <div class="text-sm">
-                                    <span class="text-gray-500 text-xs">Unit: </span>
-                                    {{ Number(item.unit_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
-                                </div>
-                                <div class="text-sm">
-                                    <span class="text-gray-500 text-xs">Total: </span>
-                                    {{ Number(item.total_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
-                                </div>
+                        <td class="px-3 py-2 text-xs text-gray-900"
+                        style="border-bottom: 1px solid #B7C6E6;">
+                            <div class="text-sm">
+                                {{ Number(item.unit_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
                             </div>
                         </td>
-                        <td class="whitespace-nowrap text-xs text-gray-900 text-left" :class="{
-                            'border-green-600 border-2': item.status === 'approved',
-                            'border-yellow-500 border-2': item.status === 'reviewed',
-                            'border-gray-500 border': !item.status || item.status === 'pending',
-                        }"
-                        style="border: 1px solid #B7C6E6;">
-                            <div class="space-y-2">
-                                <div class="flex items-center flex-col">
-                                    <span>{{ calculateFulfillmentRate(item) }}%</span>
-                                </div>
+                        <td class="px-3 py-2 text-xs text-gray-900"
+                        style="border-bottom: 1px solid #B7C6E6;">
+                            <div class="text-sm">
+                                {{ Number(item.total_cost).toLocaleString("en-US", { style: "currency", currency: "USD" }) }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-900 text-center w-20"
+                        style="border-bottom: 1px solid #B7C6E6;">
+                            <div class="text-sm">
+                                <span>{{ calculateFulfillmentRate(item) }}%</span>
                             </div>
                         </td>
                     </tr>
@@ -514,7 +489,7 @@
 </template>
 
 <script setup>
-import { nextTick } from "vue";
+import { nextTick, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, router, Link } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -591,6 +566,8 @@ async function loadLocations(warehouse) {
         })
         .then((response) => {
             loadedLocation.value = response.data;
+            // Normalize existing form locations after new locations are loaded
+            normalizeFormLocations();
         })
         .catch((error) => {
             toast.error(error.response.data);
@@ -670,10 +647,9 @@ async function createLocation() {
         // Add to loadedLocation array (for the current warehouse)
         loadedLocation.value.push(formattedLocation);
 
-        // Update the selected item's location
+        // Update the selected item's location with the object
         if (selectedItemIndex.value !== null) {
-            form.value.items[selectedItemIndex.value].location =
-                formattedLocation.location;
+            form.value.items[selectedItemIndex.value].location = formattedLocation;
         }
 
         toast.success(response.data.message);
@@ -724,6 +700,8 @@ async function handlePOSelect(selected) {
         .then((response) => {
             isLoading.value = false;
             form.value = response.data;
+            // Normalize location data after form is loaded
+            normalizeFormLocations();
         })
         .catch((error) => {
             isLoading.value = false;
@@ -823,19 +801,30 @@ async function submit() {
         toast.error("No items to submit");
         return;
     }
-    console.log(form.value);
 
-    // Check for incomplete back orders
-    const incompleteItems = form.value.items.filter(hasIncompleteBackOrder);
+    // Prepare form data - ensure location is a string
+    const preparedForm = {
+        ...form.value,
+        items: form.value.items.map(item => ({
+            ...item,
+            location: item.location && typeof item.location === 'object' ? item.location.location : item.location
+        }))
+    };
+
+    console.log(preparedForm);
+
+    // Check for incomplete back orders with enhanced validation
+    const incompleteItems = preparedForm.items.filter(item => !validateMismatchRecording(item));
     if (incompleteItems.length > 0) {
+        const itemNames = incompleteItems.map(item => item.product?.name || 'Unknown Item').join(', ');
         toast.error(
-            `Please complete back orders for ${incompleteItems.length} item(s) before submitting`
+            `Please record all mismatches for: ${itemNames}`
         );
         return;
     }
 
     // Format dates properly for all items
-    form.value.items.forEach((item) => {
+    preparedForm.items.forEach((item) => {
         if (item.expire_date) {
             item.expire_date = formatDateForInput(item.expire_date);
         }
@@ -855,7 +844,7 @@ async function submit() {
         isSubmitting.value = true;
 
         await axios
-            .post(route("supplies.storePK"), form.value)
+            .post(route("supplies.storePK"), preparedForm)
             .then((response) => {
                 console.log(response.data);
                 isSubmitting.value = false;
@@ -956,18 +945,86 @@ const hasIncompleteBackOrder = (item) => {
         0
     );
 
+    // Check if mismatch quantity equals total recorded back order quantity
     return totalDifferences !== mismatches;
+};
+
+// Function to check if item has all required fields
+const hasRequiredFields = (item) => {
+    return item.received_quantity && 
+           item.warehouse_id && 
+           item.location && 
+           item.batch_number && 
+           item.expire_date && 
+           item.barcode && 
+           item.uom;
+};
+
+// Enhanced validation to check if all mismatches are properly recorded
+const validateMismatchRecording = (item) => {
+    if (!item?.received_quantity || item.received_quantity === item?.quantity)
+        return true; // No mismatch, so it's valid
+
+    const mismatchQuantity = item.quantity - item.received_quantity;
+    const recordedBackOrderQuantity = (item.differences || []).reduce(
+        (total, diff) => total + (parseInt(diff?.quantity) || 0),
+        0
+    );
+
+    return recordedBackOrderQuantity === mismatchQuantity;
+};
+
+// Get mismatch status for display
+const getMismatchStatus = (item) => {
+    if (!item?.received_quantity || item.received_quantity === item?.quantity)
+        return { status: 'none', message: 'No mismatch' };
+
+    const mismatchQuantity = item.quantity - item.received_quantity;
+    const recordedBackOrderQuantity = (item.differences || []).reduce(
+        (total, diff) => total + (parseInt(diff?.quantity) || 0),
+        0
+    );
+
+    if (recordedBackOrderQuantity === 0) {
+        return { status: 'unrecorded', message: `${mismatchQuantity} mismatch not recorded` };
+    } else if (recordedBackOrderQuantity < mismatchQuantity) {
+        return { status: 'partial', message: `${mismatchQuantity - recordedBackOrderQuantity} remaining` };
+    } else if (recordedBackOrderQuantity === mismatchQuantity) {
+        return { status: 'complete', message: 'All mismatches recorded' };
+    } else {
+        return { status: 'excess', message: `${recordedBackOrderQuantity - mismatchQuantity} excess recorded` };
+    }
 };
 
 const canSubmit = computed(() => {
     if (!form.value?.items?.length) return false;
-    return !form.value.items.some(hasIncompleteBackOrder);
+    
+    // Check if all items have basic required fields
+    const hasAllRequiredFields = form.value.items.every(hasRequiredFields);
+    
+    if (!hasAllRequiredFields) return false;
+    
+    // Check if all items have their mismatches properly recorded
+    return form.value.items.every(validateMismatchRecording);
 });
 
 const submitButtonTitle = computed(() => {
     if (!form.value?.items?.length) return "No items to submit";
-    if (form.value.items.some(hasIncompleteBackOrder))
-        return "Please complete all back orders before submitting";
+    
+    // Check for missing required fields
+    const itemsWithMissingFields = form.value.items.filter(item => !hasRequiredFields(item));
+    if (itemsWithMissingFields.length > 0) {
+        const itemNames = itemsWithMissingFields.map(item => item.product?.name || 'Unknown Item').join(', ');
+        return `Please complete all required fields for: ${itemNames}`;
+    }
+    
+    // Check for incomplete mismatch recording
+    const incompleteItems = form.value.items.filter(item => !validateMismatchRecording(item));
+    if (incompleteItems.length > 0) {
+        const itemNames = incompleteItems.map(item => item.product?.name || 'Unknown Item').join(', ');
+        return `Please record all mismatches for: ${itemNames}`;
+    }
+    
     return "";
 });
 
@@ -1165,6 +1222,43 @@ const syncBackOrdersWithDifferences = () => {
         })
     );
 };
+
+// Watch for changes in loadedLocation and normalize form locations
+watch(loadedLocation, () => {
+    normalizeFormLocations();
+}, { deep: true });
+
+// Watch for form changes to update validation status in real-time
+watch(() => form.value?.items, () => {
+    if (form.value?.items) {
+        form.value.items.forEach(item => {
+            // Update validation status in real-time
+            item.hasValidationError = !hasRequiredFields(item) || !validateMismatchRecording(item);
+        });
+    }
+}, { deep: true });
+
+// Function to normalize location data for multiselect
+const normalizeLocationData = (locationData) => {
+    if (!locationData) return null;
+    if (typeof locationData === 'string') {
+        // If it's a string, find the corresponding object in loadedLocation
+        const locationObj = loadedLocation.value.find(loc => loc.location === locationData);
+        return locationObj || { location: locationData };
+    }
+    return locationData;
+};
+
+// Function to normalize all items' location data
+const normalizeFormLocations = () => {
+    if (!form.value?.items) return;
+    form.value.items.forEach(item => {
+        if (item.location) {
+            item.location = normalizeLocationData(item.location);
+        }
+    });
+};
+
 </script>
 
 <style>

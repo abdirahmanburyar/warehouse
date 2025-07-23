@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Location extends Model
 {
-    protected $fillable = ['location', 'warehouse_id'];
+    protected $fillable = ['location', 'warehouse'];
 
     public function warehouse(): BelongsTo
     {
