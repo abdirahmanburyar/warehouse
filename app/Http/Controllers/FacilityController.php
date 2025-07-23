@@ -41,6 +41,12 @@ class FacilityController extends Controller
     }
     public function index(Request $request)
     {
+        // Get facility counts before pagination (independent of filters)
+        $totalFacilities = Facility::count();
+        $activeFacilities = Facility::where('is_active', true)->count();
+        $inactiveFacilities = Facility::where('is_active', false)->count();
+
+        // Get paginated facilities with filters
         $facilities = Facility::query()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->where('name', 'like', "%{$request->search}%");
@@ -58,6 +64,11 @@ class FacilityController extends Controller
 
         return inertia('Facility/Index', [
             'facilities' => FacilityResource::collection($facilities),
+            'facilityCounts' => [
+                'total' => $totalFacilities,
+                'active' => $activeFacilities,
+                'inactive' => $inactiveFacilities,
+            ],
             'users' => User::get(),
             'filters' => $request->only('page', 'per_page', 'search', 'district', 'facility_type'),
             'districts' => District::pluck('name')->toArray(),
