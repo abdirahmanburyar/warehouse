@@ -489,10 +489,10 @@ function getResults(page = 1) {
                                 </tr>
                             </template>
                             <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
-                                <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #B7C6E6;">
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle">{{ inventory.product.name }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.product.category.name }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle">{{ inventory.items[0].uom }}</td>
+                                <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b text-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle text-center">{{ inventory.product.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle text-center">{{ inventory.product.category.name }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle text-center">{{ inventory.items[0].uom }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] text-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
@@ -522,10 +522,10 @@ function getResults(page = 1) {
                                         </div>
                                     </td>
                                     
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ formatQty(inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0) }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">{{ formatQty(inventory.reorder_level) }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle">
-                                        <div class="flex items-center space-x-2">
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle text-center">{{ formatQty(inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle text-center">{{ formatQty(inventory.reorder_level) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle text-center">
+                                        <div class="flex items-center justify-center space-x-2">
                                             <div v-if="isLowStock(inventory)" class="flex items-center">
                                                 <img
                                                     src="/assets/images/low_stock.png"
