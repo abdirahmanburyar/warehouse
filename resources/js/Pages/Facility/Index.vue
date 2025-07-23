@@ -493,7 +493,7 @@ const reloadFacility = () => {
     router.get(route('facilities.index'), query, {
         preserveScroll: true,
         preserveState: true,
-        only: ['facilities']
+        only: ['facilities', 'facilityCounts', 'users', 'districts', 'facilityTypes']
     })
 }
 
