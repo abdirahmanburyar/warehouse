@@ -773,16 +773,8 @@ const horizontalBarChartOptions = {
                 },
                 padding: 6,
                 callback: function(value, index, values) {
-                    // Add custom labels for each facility type (sorted order)
-                    const labels = [
-                        'Warehouses',
-                        'Health Centre', 
-                        'Primary Health Units',
-                        'Regional Hospitals',
-                        'District Hospitals',
-                        'Mobile Teams'
-                    ];
-                    return labels[index] || value;
+                    // Use the actual data labels from the chart data
+                    return value;
                 }
             }
         }
@@ -1355,15 +1347,30 @@ const productCategoryChartData = computed(() => ({
 }));
 
 const warehouseFacilitiesChartData = computed(() => {
-    // Create facility data array with distinct colors
-    const facilityData = [
-        { label: 'Warehouses', count: getCount('WH') || 0, color: 'rgba(68, 114, 196, 0.85)' }, // Blue
-        { label: 'Health Centre', count: getCount('HC'), color: 'rgba(237, 125, 49, 0.85)' }, // Orange
-        { label: 'Primary Health Units', count: getCount('PHU'), color: 'rgba(165, 165, 165, 0.85)' }, // Gray
-        { label: 'Regional Hospitals', count: getCount('RH'), color: 'rgba(255, 192, 0, 0.85)' }, // Yellow
-        { label: 'District Hospitals', count: getCount('DH'), color: 'rgba(112, 173, 71, 0.85)' }, // Green
-        { label: 'Mobile Teams', count: getCount('MT'), color: 'rgba(91, 155, 213, 0.85)' } // Light Blue
-    ];
+    // Debug: Log the data being processed
+    console.log('Processing dashboard data:', props.dashboardData.summary);
+    
+    // Get the actual data from dashboardData.summary and use fullName for labels
+    const facilityData = props.dashboardData.summary.map(item => {
+        // Map colors based on facility type
+        const colorMap = {
+            'WH': 'rgba(68, 114, 196, 0.85)', // Blue for Warehouses
+            'HC': 'rgba(237, 125, 49, 0.85)', // Orange for Health Centre
+            'PHU': 'rgba(165, 165, 165, 0.85)', // Gray for Primary Health Unit
+            'DH': 'rgba(112, 173, 71, 0.85)', // Green for District Hospital
+            'RH': 'rgba(255, 192, 0, 0.85)', // Yellow for Regional Hospital
+            'MT': 'rgba(91, 155, 213, 0.85)', // Light Blue for Mobile Team
+        };
+
+        const chartItem = {
+            label: item.label, // Use abbreviated label (WH, HC, PHU, etc.)
+            count: item.value,
+            color: colorMap[item.label] || 'rgba(68, 114, 196, 0.85)' // Default blue
+        };
+        
+        console.log(`Processing ${item.label}: fullName="${item.fullName}", label="${chartItem.label}", count=${chartItem.count}`);
+        return chartItem;
+    });
 
     // Sort by count in descending order (highest to lowest)
     const sortedData = [...facilityData].sort((a, b) => b.count - a.count);
@@ -1994,7 +2001,7 @@ const assetStatsCards = computed(() => [
                     <h3 class="text-xl font-bold text-gray-900">Warehouse & Facilities</h3>
                             </div>
                 <div class="h-64">
-                    <Bar :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
+                    <Bar :key="JSON.stringify(warehouseFacilitiesChartData)" :data="warehouseFacilitiesChartData" :options="horizontalBarChartOptions" />
                         </div>
                             </div>
 
