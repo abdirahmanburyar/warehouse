@@ -1512,6 +1512,7 @@ const createDispatch = async () => {
                 });
             })
             .catch((error) => {
+                showDispatchForm.value = false;
                 console.log(error);
                 if (error.response?.status === 422) {
                     console.log('Validation errors:', error.response.data.errors); // Debug validation errors
@@ -1524,13 +1525,7 @@ const createDispatch = async () => {
                         message: error.message
                     }); // Debug detailed error info
                     
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.response?.data?.message || error.message || 'Something went wrong',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#3085d6',
-                    });
+                    toast.error(error.response?.data || error.response?.data?.message || 'Something went wrong');
                 }
             });
 };
