@@ -1032,6 +1032,7 @@
                             <label class="block text-sm font-medium text-gray-700">Dispatch Date</label>
                             <input 
                                 type="date" 
+                                required
                                 v-model="dispatchForm.dispatch_date"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                 :class="{ 'border-red-500': dispatchErrors.dispatch_date }"
@@ -1054,7 +1055,8 @@
                             <label class="block text-sm font-medium text-gray-700">Driver Phone</label>
                             <input 
                                 type="text" 
-                                v-model="dispatchForm.driver_number"
+                                required
+                                v-model="dispatchForm.driver_number"    
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                 :class="{ 'border-red-500': dispatchErrors.driver_number }"
                             >
@@ -1065,6 +1067,7 @@
                             <label class="block text-sm font-medium text-gray-700">Vehicle Plate Number</label>
                             <input 
                                 type="text" 
+                                required
                                 v-model="dispatchForm.plate_number"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                 :class="{ 'border-red-500': dispatchErrors.plate_number }"
@@ -1327,7 +1330,7 @@ const driverForm = ref({
 
 const dispatchForm = ref({
     driver: null,
-    dispatch_date: '',
+    dispatch_date: new Date().toISOString().split('T')[0],
     no_of_cartoons: '',
     driver_number: '',
     plate_number: '',
@@ -1474,6 +1477,7 @@ const createDispatch = async () => {
         if (!dispatchForm.value.driver) {
             console.error('Driver not selected');
             dispatchErrors.value.driver_id = ['Please select a driver'];
+            isSaving.value = false;
             return;
         }
 
