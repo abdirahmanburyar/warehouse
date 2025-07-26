@@ -1491,6 +1491,7 @@ const createDispatch = async () => {
          await axios.post(route('orders.dispatch-info'), formData)
             .then((response) => {
                 console.log(response.data);
+                isSaving.value = false;
                 showDispatchForm.value = false;
                 dispatchForm.value = {
                     driver: null,
@@ -1512,7 +1513,7 @@ const createDispatch = async () => {
                 });
             })
             .catch((error) => {
-                showDispatchForm.value = false;
+                isSaving.value = false;
                 console.log(error);
                 if (error.response?.status === 422) {
                     console.log('Validation errors:', error.response.data.errors); // Debug validation errors
