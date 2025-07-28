@@ -160,7 +160,7 @@ class UserController extends Controller
             // Sync permissions
             $user->syncPermissions($newDirectPermissions);
 
-            event(new GlobalPermissionChanged($user));
+            // event(new GlobalPermissionChanged($user));
                         
             // Reload the user with relationships for the email
             $user->load(['roles', 'warehouse', 'facility']);
