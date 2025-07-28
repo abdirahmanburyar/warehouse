@@ -81,7 +81,13 @@ class UploadInventory implements
 
     protected function getProduct($itemName)
     {
-        return Product::where('name', $itemName)->first();
+        $product = Product::where('name', $itemName)->first();
+        if (!$product) {
+            $product = Product::create([
+                'name' => $itemName,
+            ]);
+        }
+        return $product;
     }
 
     protected function getInventory($productId)
