@@ -77,13 +77,25 @@ class UploadInventory implements
             $updated = InventoryItem::where($inventoryItemKey)->first();
             
             if($updated){
-            $updated->update([
-                'quantity' => DB::raw('quantity + ' . (float) $row['quantity']), 
-                'expiry_date' => $expiryDate, 
-                'warehouse_id' => $warehouseId,
-                'uom' => $row['uom'] ?? null,
-                'location' => $row['location'] ?? null, 
-            ]);
+                $oldQuantity = $updated->quantity;
+                $newQuantity = $oldQuantity + (float) $row['quantity'];
+                
+                $updated->update([
+                    'quantity' => $newQuantity,
+                    'expiry_date' => $expiryDate, 
+                    'warehouse_id' => $warehouseId,
+                    'uom' => $row['uom'] ?? null,
+                    'location' => $row['location'] ?? null, 
+                ]);
+
+                \Log::info('Updated existing inventory item', [
+                    'item_id' => $updated->id,
+                    'product_id' => $product->id,
+                    'batch_number' => $batchNumber,
+                    'old_quantity' => $oldQuantity,
+                    'new_quantity' => $newQuantity,
+                    'added_quantity' => (float) $row['quantity']
+                ]);
             }else{
                 // Create new inventory item
                 InventoryItem::create([
