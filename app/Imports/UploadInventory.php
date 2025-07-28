@@ -69,7 +69,7 @@ class UploadInventory implements
 
             // Try to find existing inventory item by product and batch number (across all inventories)
             $existingItem = InventoryItem::where('product_id', $product->id)
-                ->where('batch_number', $batchNumber)
+                ->where('batch_number', 'like', '%' . $batchNumber . '%')
                 ->first();
             
             if($existingItem){
@@ -93,56 +93,23 @@ class UploadInventory implements
                     'added_quantity' => (float) $row['quantity']
                 ]);
             }else{
-                // Try to create new inventory item, but handle duplicate key error
-                try {
-                    $inventory->items()->create([
-                        'product_id' => $product->id,
-                        'warehouse_id' => $warehouseId,
-                        'quantity' => (float) $row['quantity'],
-                        'batch_number' => $batchNumber,
-                        'expiry_date' => $expiryDate,
-                        'location' => $row['location'] ?? null,
-                        'uom' => $row['uom'] ?? null,
-                        'unit_cost' => 0.00,
-                        'total_cost' => 0.00,
-                    ]);
+                $inventory->items()->create([
+                    'product_id' => $product->id,
+                    'warehouse_id' => $warehouseId,
+                    'quantity' => (float) $row['quantity'],
+                    'batch_number' => $batchNumber,
+                    'expiry_date' => $expiryDate,
+                    'location' => $row['location'] ?? null,
+                    'uom' => $row['uom'] ?? null,
+                    'unit_cost' => 0.00,
+                    'total_cost' => 0.00,
+                ]);
 
-                    \Log::info('Created new inventory item', [
-                        'product_id' => $product->id,
-                        'batch_number' => $batchNumber,
-                        'quantity' => (float) $row['quantity'],
-                    ]);
-                } catch (\Illuminate\Database\QueryException $e) {
-                    // Handle duplicate key error by updating existing record
-                    if ($e->getCode() == 23000 && strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                        $existingItem = InventoryItem::where('product_id', $product->id)
-                            ->where('batch_number', $batchNumber)
-                            ->first();
-                        if ($existingItem) {
-                            $oldQuantity = $existingItem->quantity;
-                            $newQuantity = $oldQuantity + (float) $row['quantity'];
-                            
-                            $existingItem->update([
-                                'quantity' => $newQuantity,
-                                'expiry_date' => $expiryDate, 
-                                'warehouse_id' => $warehouseId,
-                                'uom' => $row['uom'] ?? null,
-                                'location' => $row['location'] ?? null, 
-                            ]);
-
-                            \Log::info('Updated existing inventory item (from duplicate error)', [
-                                'item_id' => $existingItem->id,
-                                'product_id' => $product->id,
-                                'batch_number' => $batchNumber,
-                                'old_quantity' => $oldQuantity,
-                                'new_quantity' => $newQuantity,
-                                'added_quantity' => (float) $row['quantity']
-                            ]);
-                        }
-                    } else {
-                        throw $e; // Re-throw if it's not a duplicate key error
-                    }
-                }
+                \Log::info('Created new inventory item', [
+                    'product_id' => $product->id,
+                    'batch_number' => $batchNumber,
+                    'quantity' => (float) $row['quantity'],
+                ]);
             }
 
             // Update import progress
