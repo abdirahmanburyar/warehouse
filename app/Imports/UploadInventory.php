@@ -45,23 +45,14 @@ class UploadInventory implements
         try {
             // Validate required fields
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-                Log::warning('Row skipped: Missing required fields', $row);
                 return null;
             }
 
             // Check if product exists (with caching)
             $product = $this->getProduct($row['item']);
             if (!$product) {
-                Log::warning("Row skipped: Product '{$row['item']}' not found", $row);
                 return null;
             }
-
-            Log::info('Processing row', [
-                'item' => $row['item'],
-                'product_id' => $product->id,
-                'quantity' => $row['quantity'],
-                'batch_no' => $row['batch_no']
-            ]);
 
             // Check if Inventory exists for this product (with caching)
             $inventory = $this->getInventory($product->id);
@@ -72,7 +63,6 @@ class UploadInventory implements
                     'quantity' => 0,
                 ]);
                 $this->inventoryCache[$product->id] = $inventory;
-                Log::info('New Inventory created', ['inventory_id' => $inventory->id]);
             }
 
             // Parse expiry date - handle Excel serial numbers
@@ -80,11 +70,6 @@ class UploadInventory implements
 
             // Validate that we have all required data
             if (!$inventory || !$product) {
-                Log::error('Missing required data for InventoryItem creation', [
-                    'inventory_id' => $inventory ? $inventory->id : 'null',
-                    'product_id' => $product ? $product->id : 'null',
-                    'expiry_date' => $expiryDate ? $expiryDate : 'null'
-                ]);
                 return null;
             }
 
@@ -105,14 +90,6 @@ class UploadInventory implements
                     'location' => $row['location'] ?? $existingInventoryItem->location,
                     'uom' => $row['uom'] ?? $existingInventoryItem->uom,
                 ]);
-
-                Log::info('Existing InventoryItem updated', [
-                    'inventory_item_id' => $existingInventoryItem->id,
-                    'batch_number' => $existingInventoryItem->batch_number,
-                    'old_quantity' => $oldQuantity,
-                    'new_quantity' => $newQuantity,
-                    'added_quantity' => (float) $row['quantity']
-                ]);
             } else {
                 // Create new InventoryItem
                 $inventoryItemData = [
@@ -128,24 +105,10 @@ class UploadInventory implements
                     'total_cost' => 0.00, // Default value since it's required
                 ];
 
-                Log::info('Attempting to create new InventoryItem', $inventoryItemData);
-
                 try {
                     // Create InventoryItem
                     $inventoryItem = InventoryItem::create($inventoryItemData);
-
-                    Log::info('New InventoryItem created successfully', [
-                        'inventory_item_id' => $inventoryItem->id,
-                        'inventory_id' => $inventory->id,
-                        'batch_number' => $inventoryItem->batch_number,
-                        'quantity' => $inventoryItem->quantity
-                    ]);
                 } catch (\Exception $e) {
-                    Log::error('Failed to create InventoryItem', [
-                        'data' => $inventoryItemData,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
                     throw $e; // Re-throw to be caught by the outer try-catch
                 }
             }
@@ -157,11 +120,6 @@ class UploadInventory implements
             return null;
 
         } catch (\Throwable $e) {
-            Log::error('UploadInventory error', [
-                'row' => $row,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return null;
         }
     }
@@ -217,11 +175,8 @@ class UploadInventory implements
                 // Set to first day of the month for month-year format
                 return $date->startOfMonth()->format('Y-m-d');
             } catch (\Exception $e) {
-                // If M-y format fails, try normal date formats
-                Log::info('M-y format failed, trying normal date formats', [
-                    'original' => $expiryDateValue,
-                    'error' => $e->getMessage()
-                ]);
+                // If M-y format fails, continue to try normal date formats
+                // Don't throw exception, just continue
             }
 
             // Try various normal date formats
@@ -244,19 +199,9 @@ class UploadInventory implements
                     continue;
                 }
             }
-
-            // If all formats fail, log error and return null
-            Log::error('Failed to parse expiry date - all formats failed', [
-                'original' => $expiryDateValue,
-                'tried_formats' => $dateFormats
-            ]);
             return null;
 
         } catch (\Exception $e) {
-            Log::error('Failed to parse expiry date', [
-                'original' => $expiryDateValue,
-                'error' => $e->getMessage()
-            ]);
             return null; // Return null since the field is nullable
         }
     }
@@ -274,11 +219,7 @@ class UploadInventory implements
     public function registerEvents(): array
     {
         return [
-            AfterImport::class => function (AfterImport $event) {
-                Log::info('Inventory import completed', [
-                    'importId' => $this->importId
-                ]);
-                
+            AfterImport::class => function (AfterImport $event) {                
                 Cache::forget($this->importId);
             },
         ];
