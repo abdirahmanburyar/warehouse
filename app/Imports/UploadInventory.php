@@ -48,7 +48,7 @@ class UploadInventory implements
 
             $product = $this->getProduct($row['item']);
             $inventory = $this->getInventory($product->id);
-            Log::info('Inventory', $inventory);
+            Log::info($inventory);
 
             DB::commit();
 
