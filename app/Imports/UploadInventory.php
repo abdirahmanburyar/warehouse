@@ -71,6 +71,7 @@ class UploadInventory implements
             $inventoryItemKey = [
                 'product_id' => $product->id,
                 'batch_number' => $batchNumber,
+                'inventory_id' => $inventory->id,
             ];
 
             // Try to increment existing record
