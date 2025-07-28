@@ -53,18 +53,24 @@ class UploadInventory implements
 
             $batchNumber = trim($row['batch_no']);
             
-            $inventory->items()->where('batch_number', $batchNumber)
-            ->where('product_id', $product->id)
-            ->update([
-                'quantity' => DB::raw('quantity + ' . (float) $row['quantity']),
-                'expiry_date' => $expiryDate,
-                'warehouse_id' => 1,
-                'uom' => $row['uom'] ?? null,
-                'batch_number' => $batchNumber,
-                'location' => $row['location'] ?? null,
-                'unit_cost' => 0.00,
-                'total_cost' => 0.00,
-            ]);
+            $item = InventoryItem::where('batch_number', $batchNumber)
+            ->where('product_id', $product->id)->first();
+
+            if($item){
+                $item->increment('quantity', (float) $row['quantity']);
+            }else{
+                $item = InventoryItem::create([
+                    'product_id' => $product->id,
+                    'quantity' => (float) $row['quantity'],
+                    'expiry_date' => $expiryDate,
+                    'warehouse_id' => 1,
+                    'uom' => $row['uom'] ?? null,
+                    'batch_number' => $batchNumber,
+                    'location' => $row['location'] ?? null,
+                    'unit_cost' => 0.00,
+                    'total_cost' => 0.00,
+                ]);
+            }
 
             DB::commit();
 
