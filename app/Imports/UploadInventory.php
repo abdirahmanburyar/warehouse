@@ -67,21 +67,14 @@ class UploadInventory implements
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
             $warehouseId = 1; // static for now
 
-            // Prepare lookup key
-            $inventoryItemKey = [
-                'product_id' => $product->id,
-                'batch_number' => $batchNumber,
-                'inventory_id' => $inventory->id,
-            ];
-
-            // Try to increment existing record
-            $updated = InventoryItem::where($inventoryItemKey)->first();
+            // Try to find existing inventory item through inventory relationship
+            $existingItem = $inventory->items()->where('batch_number', $batchNumber)->first();
             
-            if($updated){
-                $oldQuantity = $updated->quantity;
+            if($existingItem){
+                $oldQuantity = $existingItem->quantity;
                 $newQuantity = $oldQuantity + (float) $row['quantity'];
                 
-                $updated->update([
+                $existingItem->update([
                     'quantity' => $newQuantity,
                     'expiry_date' => $expiryDate, 
                     'warehouse_id' => $warehouseId,
@@ -90,7 +83,7 @@ class UploadInventory implements
                 ]);
 
                 \Log::info('Updated existing inventory item', [
-                    'item_id' => $updated->id,
+                    'item_id' => $existingItem->id,
                     'product_id' => $product->id,
                     'batch_number' => $batchNumber,
                     'old_quantity' => $oldQuantity,
@@ -98,25 +91,54 @@ class UploadInventory implements
                     'added_quantity' => (float) $row['quantity']
                 ]);
             }else{
-                // Create new inventory item
-                InventoryItem::create([
-                    'inventory_id' => $inventory->id,
-                    'product_id' => $product->id,
-                    'warehouse_id' => $warehouseId,
-                    'quantity' => (float) $row['quantity'],
-                    'batch_number' => $batchNumber,
-                    'expiry_date' => $expiryDate,
-                    'location' => $row['location'] ?? null,
-                    'uom' => $row['uom'] ?? null,
-                    'unit_cost' => 0.00,
-                    'total_cost' => 0.00,
-                ]);
+                // Try to create new inventory item, but handle duplicate key error
+                try {
+                    $inventory->items()->create([
+                        'product_id' => $product->id,
+                        'warehouse_id' => $warehouseId,
+                        'quantity' => (float) $row['quantity'],
+                        'batch_number' => $batchNumber,
+                        'expiry_date' => $expiryDate,
+                        'location' => $row['location'] ?? null,
+                        'uom' => $row['uom'] ?? null,
+                        'unit_cost' => 0.00,
+                        'total_cost' => 0.00,
+                    ]);
 
-                \Log::info('Created new inventory item', [
-                    'product_id' => $product->id,
-                    'batch_number' => $batchNumber,
-                    'quantity' => (float) $row['quantity'],
-                ]);
+                    \Log::info('Created new inventory item', [
+                        'product_id' => $product->id,
+                        'batch_number' => $batchNumber,
+                        'quantity' => (float) $row['quantity'],
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Handle duplicate key error by updating existing record
+                    if ($e->getCode() == 23000 && strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                        $existingItem = $inventory->items()->where('batch_number', $batchNumber)->first();
+                        if ($existingItem) {
+                            $oldQuantity = $existingItem->quantity;
+                            $newQuantity = $oldQuantity + (float) $row['quantity'];
+                            
+                            $existingItem->update([
+                                'quantity' => $newQuantity,
+                                'expiry_date' => $expiryDate, 
+                                'warehouse_id' => $warehouseId,
+                                'uom' => $row['uom'] ?? null,
+                                'location' => $row['location'] ?? null, 
+                            ]);
+
+                            \Log::info('Updated existing inventory item (from duplicate error)', [
+                                'item_id' => $existingItem->id,
+                                'product_id' => $product->id,
+                                'batch_number' => $batchNumber,
+                                'old_quantity' => $oldQuantity,
+                                'new_quantity' => $newQuantity,
+                                'added_quantity' => (float) $row['quantity']
+                            ]);
+                        }
+                    } else {
+                        throw $e; // Re-throw if it's not a duplicate key error
+                    }
+                }
             }
 
             // Update import progress
