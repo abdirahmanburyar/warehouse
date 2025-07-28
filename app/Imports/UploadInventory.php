@@ -68,49 +68,23 @@ class UploadInventory implements
             $warehouseId = 1; // static for now
 
             // Try to find existing inventory item by product and batch number (across all inventories)
-            $existingItem = InventoryItem::where('product_id', $product->id)
-                ->where('batch_number', 'like', '%' . $batchNumber . '%')
-                ->first();
-            
-            if($existingItem){
-                $oldQuantity = $existingItem->quantity;
-                $newQuantity = $oldQuantity + (float) $row['quantity'];
-                
-                $existingItem->update([
-                    'quantity' => $newQuantity,
-                    'expiry_date' => $expiryDate, 
-                    'warehouse_id' => $warehouseId,
-                    'uom' => $row['uom'] ?? null,
-                    'location' => $row['location'] ?? null, 
-                ]);
-
-                \Log::info('Updated existing inventory item', [
-                    'item_id' => $existingItem->id,
-                    'product_id' => $product->id,
-                    'batch_number' => $batchNumber,
-                    'old_quantity' => $oldQuantity,
-                    'new_quantity' => $newQuantity,
-                    'added_quantity' => (float) $row['quantity']
-                ]);
-            }else{
-                $inventory->items()->create([
-                    'product_id' => $product->id,
-                    'warehouse_id' => $warehouseId,
-                    'quantity' => (float) $row['quantity'],
-                    'batch_number' => $batchNumber,
-                    'expiry_date' => $expiryDate,
-                    'location' => $row['location'] ?? null,
-                    'uom' => $row['uom'] ?? null,
-                    'unit_cost' => 0.00,
-                    'total_cost' => 0.00,
-                ]);
-
-                \Log::info('Created new inventory item', [
-                    'product_id' => $product->id,
-                    'batch_number' => $batchNumber,
-                    'quantity' => (float) $row['quantity'],
-                ]);
-            }
+            // $existingItem = InventoryItem::where('product_id', $product->id)
+            //     ->where('batch_number', 'like', '%' . $batchNumber . '%')
+            //     ->first();
+            $inventory->items()->updateOrCreate([
+                'product_id' => $product->id,
+                'batch_number' => $batchNumber,
+            ], [
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouseId,
+                'quantity' => DB::raw('quantity + ' . (float) $row['quantity']),
+                'batch_number' => $batchNumber,
+                'expiry_date' => $expiryDate,
+                'location' => $row['location'] ?? null,
+                'uom' => $row['uom'] ?? null,
+                'unit_cost' => 0.00,
+                'total_cost' => 0.00,
+            ]);            
 
             // Update import progress
             $currentProgress = Cache::get($this->importId, 0);
