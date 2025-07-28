@@ -32,11 +32,9 @@ class FacilityUploadInventory implements
     use Queueable, InteractsWithQueue;
 
     public $importId;
-    protected $productCache = [];
-    protected $inventoryCache = [];
-    protected $facilityId;
+    public $facilityId;
 
-    public function __construct(string $importId)
+    public function __construct(string $importId, string $facilityId)
     {
         $this->importId = $importId;
         $this->facilityId = auth()->user()->facility_id;
@@ -45,126 +43,70 @@ class FacilityUploadInventory implements
     public function model(array $row)
     {
         try {
-            // Validate required fields
-            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-                Log::warning('Row skipped: Missing required fields', $row);
+            DB::beginTransaction();
+            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no']) || empty($row['expiry_date'])) {
                 return null;
             }
 
-            // Check if product exists (with caching)
             $product = $this->getProduct($row['item']);
             if (!$product) {
-                Log::warning("Row skipped: Product '{$row['item']}' not found", $row);
                 return null;
             }
-
-            Log::info('Processing row', [
-                'item' => $row['item'],
-                'product_id' => $product->id,
-                'quantity' => $row['quantity'],
-                'batch_no' => $row['batch_no']
-            ]);
-
-            // Check if FacilityInventory exists for this product and facility (with caching)
             $inventory = $this->getInventory($product->id);
-            if (!$inventory) {
-                // Create new FacilityInventory record
-                $inventory = FacilityInventory::create([
-                    'product_id' => $product->id,
-                    'facility_id' => $this->facilityId,
-                    'quantity' => 0,
-                ]);
-                $this->inventoryCache[$product->id] = $inventory;
-                Log::info('New FacilityInventory created', ['inventory_id' => $inventory->id]);
-            }
 
-            // Parse expiry date - handle Excel serial numbers
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
 
-            // Validate that we have all required data
-            if (!$inventory || !$product) {
-                Log::error('Missing required data for FacilityInventoryItem creation', [
-                    'inventory_id' => $inventory ? $inventory->id : 'null',
-                    'product_id' => $product ? $product->id : 'null',
-                    'expiry_date' => $expiryDate ? $expiryDate : 'null'
+            $batchNumber = trim($row['batch_no']);
+            
+            $item = FacilityInventoryItem::where('batch_number', $batchNumber)
+            ->where('product_id', $product->id)->first();
+
+            if($item){
+                $item->increment('quantity', (float) $row['quantity']);
+            }else{
+                $item = FacilityInventoryItem::create([
+                    'facility_inventory_id' => $inventory->id,
+                    'product_id' => $product->id,
+                    'quantity' => (float) $row['quantity'],
+                    'expiry_date' => $expiryDate,
+                    'warehouse_id' => 1,
+                    'uom' => $row['uom'] ?? null,
+                    'batch_number' => $batchNumber,
+                    // 'location' => $row['location'] ?? null,
+                    'unit_cost' => 0.00,
+                    'total_cost' => 0.00,
                 ]);
-                return null;
             }
 
-            // Prepare FacilityInventoryItem data
-            $inventoryItemData = [
-                'facility_inventory_id' => $inventory->id,
-                'product_id' => $product->id,
-                'quantity' => (float) $row['quantity'],
-                'batch_number' => $row['batch_no'],
-                'expiry_date' => $expiryDate,
-                'uom' => $row['uom'] ?? null,
-                'unit_cost' => 0.00, // Default value since it's required
-                'total_cost' => 0.00, // Default value since it's required
-            ];
-
-            Log::info('Attempting to create FacilityInventoryItem', $inventoryItemData);
-
-            try {
-                // Create FacilityInventoryItem
-                $inventoryItem = FacilityInventoryItem::create($inventoryItemData);
-
-                Log::info('FacilityInventoryItem created successfully', [
-                    'inventory_item_id' => $inventoryItem->id,
-                    'inventory_id' => $inventory->id,
-                    'batch_number' => $inventoryItem->batch_number,
-                    'quantity' => $inventoryItem->quantity
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to create FacilityInventoryItem', [
-                    'data' => $inventoryItemData,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                throw $e; // Re-throw to be caught by the outer try-catch
-            }
-
-            // Update progress
-            $currentProgress = Cache::get($this->importId, 0);
-            Cache::put($this->importId, $currentProgress + 1, 3600);
+            DB::commit();
 
             return null;
 
         } catch (\Throwable $e) {
-            Log::error('UploadInventory error', [
-                'row' => $row,
+            DB::rollBack();
+            Log::error('Inventory import error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'row' => $row
             ]);
             return null;
         }
     }
 
+
     protected function getProduct($itemName)
     {
-        if (isset($this->productCache[$itemName])) {
-            return $this->productCache[$itemName];
-        }
-
-        $product = Product::where('name', $itemName)->first();
-        if ($product) {
-            $this->productCache[$itemName] = $product;
-        }
-
-        return $product;
+        return Product::where('name', $itemName)->first();
     }
 
     protected function getInventory($productId)
     {
-        if (isset($this->inventoryCache[$productId])) {
-            return $this->inventoryCache[$productId];
-        }
-
-        $inventory = FacilityInventory::where('product_id', $productId)
-            ->where('facility_id', $this->facilityId)
-            ->first();
-        if ($inventory) {
-            $this->inventoryCache[$productId] = $inventory;
+        $inventory = FacilityInventory::where('product_id', $productId)->where('facility_id', $this->facilityId)->first();
+        if (!$inventory) {
+            $inventory = FacilityInventory::create([
+                'facility_id' => $this->facilityId,
+                'product_id' => $productId,
+                'quantity' => 0,
+            ]);
         }
 
         return $inventory;
@@ -184,19 +126,42 @@ class FacilityUploadInventory implements
                 $excelDate = (int) $expiryDateValue;
                 $unixTimestamp = ($excelDate - 25569) * 86400; // Convert to Unix timestamp
                 $date = Carbon::createFromTimestamp($unixTimestamp);
-                // Set to first day of the month
-                return $date->startOfMonth()->format('Y-m-d');
-            } else {
-                // Try to parse as "M-y" format (Feb-25, Jun-27)
-                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
-                // Set to first day of the month
-                return $date->startOfMonth()->format('Y-m-d');
+                return $date->format('Y-m-d');
             }
+
+            // Try to parse as "M-y" format (Feb-25, Jun-27) - Default format
+            try {
+                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
+                // Set to first day of the month for month-year format
+                return $date->startOfMonth()->format('Y-m-d');
+            } catch (\Exception $e) {
+                // If M-y format fails, continue to try normal date formats
+                // Don't throw exception, just continue
+            }
+
+            // Try various normal date formats
+            $dateFormats = [
+                'd-m-Y',    // 15-02-2025
+                'Y-m-d',    // 2025-02-15
+                'd/m/Y',    // 15/02/2025
+                'Y/m/d',    // 2025/02/15
+                'm-d-Y',    // 02-15-2025
+                'Y-m-d H:i:s', // 2025-02-15 00:00:00
+                'd-m-Y H:i:s', // 15-02-2025 00:00:00
+            ];
+
+            foreach ($dateFormats as $format) {
+                try {
+                    $date = Carbon::createFromFormat($format, $expiryDateValue);
+                    return $date->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Continue to next format
+                    continue;
+                }
+            }
+            return null;
+
         } catch (\Exception $e) {
-            Log::error('Failed to parse expiry date', [
-                'original' => $expiryDateValue,
-                'error' => $e->getMessage()
-            ]);
             return null; // Return null since the field is nullable
         }
     }
@@ -214,11 +179,7 @@ class FacilityUploadInventory implements
     public function registerEvents(): array
     {
         return [
-            AfterImport::class => function (AfterImport $event) {
-                Log::info('Facility inventory import completed', [
-                    'importId' => $this->importId
-                ]);
-                
+            AfterImport::class => function (AfterImport $event) {                
                 Cache::forget($this->importId);
             },
         ];
