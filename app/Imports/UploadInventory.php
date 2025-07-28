@@ -42,11 +42,11 @@ class UploadInventory implements
     {
         try {
             DB::beginTransaction();
-            // if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-            //     return null;
-            // }
+            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no']) || empty($row['expiry_date'])) {
+                return null;
+            }
 
-            logger()->info('Inventory', $row);  
+            $inventory = $this->getInventory($row['item']);
 
             DB::commit();
 
@@ -71,12 +71,12 @@ class UploadInventory implements
     protected function getInventory($productId)
     {
         $inventory = Inventory::where('product_id', $productId)->first();
-        // if (!$inventory) {
-        //     $inventory = Inventory::create([
-        //         'product_id' => $productId,
-        //         'quantity' => 0,
-        //     ]);
-        // }
+        if (!$inventory) {
+            $inventory = Inventory::create([
+                'product_id' => $productId,
+                'quantity' => 0,
+            ]);
+        }
 
         return $inventory;
     }
