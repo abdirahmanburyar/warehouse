@@ -32,8 +32,6 @@ class UploadInventory implements
     use Queueable, InteractsWithQueue;
 
     public $importId;
-    protected $productCache = [];
-    protected $inventoryCache = [];
 
     public function __construct(string $importId)
     {
@@ -105,24 +103,11 @@ class UploadInventory implements
 
     protected function getProduct($itemName)
     {
-        if (isset($this->productCache[$itemName])) {
-            return $this->productCache[$itemName];
-        }
-
-        $product = Product::where('name', $itemName)->first();
-        if ($product) {
-            $this->productCache[$itemName] = $product;
-        }
-
-        return $product;
+        return Product::where('name', $itemName)->first();
     }
 
     protected function getInventory($productId)
     {
-        if (isset($this->inventoryCache[$productId])) {
-            return $this->inventoryCache[$productId];
-        }
-
         $inventory = Inventory::where('product_id', $productId)->first();
         if (!$inventory) {
             $inventory = Inventory::create([
@@ -130,7 +115,6 @@ class UploadInventory implements
                 'quantity' => 0,
             ]);
         }
-        $this->inventoryCache[$productId] = $inventory;            
 
         return $inventory;
     }
