@@ -109,12 +109,12 @@ class UploadInventory implements
     protected function getInventory($productId)
     {
         $inventory = Inventory::where('product_id', $productId)->first();
-        if (!$inventory) {
-            $inventory = Inventory::create([
-                'product_id' => $productId,
-                'quantity' => 0,
-            ]);
-        }
+        // if (!$inventory) {
+        //     $inventory = Inventory::create([
+        //         'product_id' => $productId,
+        //         'quantity' => 0,
+        //     ]);
+        // }
 
         return $inventory;
     }
