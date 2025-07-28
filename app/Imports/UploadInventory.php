@@ -79,7 +79,7 @@ class UploadInventory implements
             // Find existing item by batch_number, product_id, and warehouse_id only
             $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
                 ->where('product_id', $product->id)
-                ->where('warehouse_id', 1)
+                // ->where('warehouse_id', 1)
                 ->first();
 
             // Debug: Log the search criteria and result
