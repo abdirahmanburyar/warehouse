@@ -170,6 +170,12 @@ class UploadInventory implements
         $product = Product::where('name', $itemName)->first();
         if ($product) {
             $this->productCache[$itemName] = $product;
+        }else{
+            $product = Product::create([
+                'name' => $itemName,
+            ]);
+            $this->productCache[$itemName] = $product;
+            return $product;
         }
 
         return $product;
