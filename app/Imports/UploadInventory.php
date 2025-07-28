@@ -60,6 +60,7 @@ class UploadInventory implements
                 $item->increment('quantity', (float) $row['quantity']);
             }else{
                 $item = InventoryItem::create([
+                    'inventory_id' => $inventory->id,
                     'product_id' => $product->id,
                     'quantity' => (float) $row['quantity'],
                     'expiry_date' => $expiryDate,
