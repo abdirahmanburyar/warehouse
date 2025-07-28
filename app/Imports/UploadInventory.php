@@ -67,8 +67,10 @@ class UploadInventory implements
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
             $warehouseId = 1; // static for now
 
-            // Try to find existing inventory item through inventory relationship
-            $existingItem = $inventory->items()->where('batch_number', $batchNumber)->first();
+            // Try to find existing inventory item by product and batch number (across all inventories)
+            $existingItem = InventoryItem::where('product_id', $product->id)
+                ->where('batch_number', $batchNumber)
+                ->first();
             
             if($existingItem){
                 $oldQuantity = $existingItem->quantity;
@@ -113,7 +115,9 @@ class UploadInventory implements
                 } catch (\Illuminate\Database\QueryException $e) {
                     // Handle duplicate key error by updating existing record
                     if ($e->getCode() == 23000 && strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                        $existingItem = $inventory->items()->where('batch_number', $batchNumber)->first();
+                        $existingItem = InventoryItem::where('product_id', $product->id)
+                            ->where('batch_number', $batchNumber)
+                            ->first();
                         if ($existingItem) {
                             $oldQuantity = $existingItem->quantity;
                             $newQuantity = $oldQuantity + (float) $row['quantity'];
