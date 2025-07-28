@@ -64,35 +64,37 @@ class UploadInventory implements
                 $this->inventoryCache[$product->id] = $inventory;
             }
 
-            $batchNumber = trim($row['batch_no']);
-            $expiryDate = $this->parseExpiryDate($row['expiry_date']);
-            $warehouseId = 1; // static for now
+            logger()->info('Inventory', $inventory);  
 
-            $item = $inventory->items()->where([
-                'product_id' => $product->id,
-                'batch_number' => $batchNumber,
-            ])->first();
+            // $batchNumber = trim($row['batch_no']);
+            // $expiryDate = $this->parseExpiryDate($row['expiry_date']);
+            // $warehouseId = 1; // static for now
+
+            // $item = $inventory->items()->where([
+            //     'product_id' => $product->id,
+            //     'batch_number' => $batchNumber,
+            // ])->first();
             
-            if ($item) {
-                $item->increment('quantity', (float) $row['quantity']);
-            } else {
-                $inventory->items()->create([
-                    'product_id' => $product->id,
-                    'warehouse_id' => 1,
-                    'quantity' => (float) $row['quantity'],
-                    'batch_number' => $batchNumber,
-                    'expiry_date' => $expiryDate,
-                    'location' => $row['location'] ?? null,
-                    'uom' => $row['uom'] ?? null,
-                    'unit_cost' => 0.00,
-                    'total_cost' => 0.00,
-                ]);
-            }
+            // if ($item) {
+            //     $item->increment('quantity', (float) $row['quantity']);
+            // } else {
+            //     $inventory->items()->create([
+            //         'product_id' => $product->id,
+            //         'warehouse_id' => 1,
+            //         'quantity' => (float) $row['quantity'],
+            //         'batch_number' => $batchNumber,
+            //         'expiry_date' => $expiryDate,
+            //         'location' => $row['location'] ?? null,
+            //         'uom' => $row['uom'] ?? null,
+            //         'unit_cost' => 0.00,
+            //         'total_cost' => 0.00,
+            //     ]);
+            // }
                   
 
-            // Update import progress
-            $currentProgress = Cache::get($this->importId, 0);
-            Cache::put($this->importId, $currentProgress + 1, 3600);
+            // // Update import progress
+            // $currentProgress = Cache::get($this->importId, 0);
+            // Cache::put($this->importId, $currentProgress + 1, 3600);
             DB::commit();
 
             return null;
