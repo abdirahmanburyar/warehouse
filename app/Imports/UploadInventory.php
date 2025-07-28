@@ -43,6 +43,7 @@ class UploadInventory implements
     public function model(array $row)
     {
         try {
+            DB::beginTransaction();
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
                 return null;
             }
@@ -67,32 +68,37 @@ class UploadInventory implements
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
             $warehouseId = 1; // static for now
 
-            // Try to find existing inventory item by product and batch number (across all inventories)
-            // $existingItem = InventoryItem::where('product_id', $product->id)
-            //     ->where('batch_number', 'like', '%' . $batchNumber . '%')
-            //     ->first();
-            $inventory->items()->updateOrCreate([
+            $item = $inventory->items()->where([
                 'product_id' => $product->id,
                 'batch_number' => $batchNumber,
-            ], [
-                'product_id' => $product->id,
-                'warehouse_id' => $warehouseId,
-                'quantity' => DB::raw('quantity + ' . (float) $row['quantity']),
-                'batch_number' => $batchNumber,
-                'expiry_date' => $expiryDate,
-                'location' => $row['location'] ?? null,
-                'uom' => $row['uom'] ?? null,
-                'unit_cost' => 0.00,
-                'total_cost' => 0.00,
-            ]);            
+            ])->first();
+            
+            if ($item) {
+                $item->increment('quantity', (float) $row['quantity']);
+            } else {
+                $inventory->items()->create([
+                    'product_id' => $product->id,
+                    'warehouse_id' => 1,
+                    'quantity' => (float) $row['quantity'],
+                    'batch_number' => $batchNumber,
+                    'expiry_date' => $expiryDate,
+                    'location' => $row['location'] ?? null,
+                    'uom' => $row['uom'] ?? null,
+                    'unit_cost' => 0.00,
+                    'total_cost' => 0.00,
+                ]);
+            }
+                  
 
             // Update import progress
             $currentProgress = Cache::get($this->importId, 0);
             Cache::put($this->importId, $currentProgress + 1, 3600);
+            DB::commit();
 
             return null;
 
         } catch (\Throwable $e) {
+            DB::rollBack();
             \Log::error('Inventory import error', [
                 'error' => $e->getMessage(),
                 'row' => $row

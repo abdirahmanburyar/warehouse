@@ -20,8 +20,8 @@ return new class extends Migration
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
             $table->integer('quantity');
-            $table->double('unit_cost');
-            $table->double('total_cost');
+            $table->double('unit_cost')->default(0.00);
+            $table->double('total_cost')->default(0.00);
             $table->string('barcode')->nullable();
             $table->string('uom')->nullable();
             $table->timestamps();
