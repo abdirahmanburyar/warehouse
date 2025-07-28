@@ -56,13 +56,6 @@ class UploadInventory implements
 
             // Get or cache the inventory
             $inventory = $this->getInventory($product->id);
-            if (!$inventory) {
-                $inventory = Inventory::create([
-                    'product_id' => $product->id,
-                    'quantity' => 0,
-                ]);
-                $this->inventoryCache[$product->id] = $inventory;
-            }
 
             logger()->info('Inventory', $inventory);  
 
@@ -137,9 +130,13 @@ class UploadInventory implements
         }
 
         $inventory = Inventory::where('product_id', $productId)->first();
-        if ($inventory) {
-            $this->inventoryCache[$productId] = $inventory;
+        if (!$inventory) {
+            $inventory = Inventory::create([
+                'product_id' => $productId,
+                'quantity' => 0,
+            ]);
         }
+        $this->inventoryCache[$productId] = $inventory;            
 
         return $inventory;
     }
