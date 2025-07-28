@@ -18,11 +18,9 @@ use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
-use Maatwebsite\Excel\Events\BeforeImport;
-use Maatwebsite\Excel\Events\AfterSheet;
 use Carbon\Carbon;
 
-class FacilityUploadInventory implements 
+class UploadInventory implements 
     ToModel, 
     WithHeadingRow, 
     WithChunkReading, 
@@ -34,81 +32,60 @@ class FacilityUploadInventory implements
     use Queueable, InteractsWithQueue;
 
     public $importId;
-    public $facilityId;
-    public $timeout = 300; // 5 minutes timeout
-    public $tries = 3; // Retry 3 times on failure
 
     public function __construct(string $importId)
     {
         $this->importId = $importId;
-        $this->facilityId = auth()->user()->facility_id;
     }
 
     public function model(array $row)
     {
         try {
             // DB::beginTransaction();
-            
-            // Skip empty rows
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no']) || empty($row['expiry_date'])) {
-                DB::rollBack();
                 return null;
             }
 
             $product = $this->getProduct($row['item']);
             if (!$product) {
-                Log::warning('Product not found during import', ['item' => $row['item']]);
-                DB::rollBack();
                 return null;
             }
-
             $inventory = $this->getInventory($product->id);
+
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
+
             $batchNumber = trim($row['batch_no']);
             
-            // Check if item already exists
             $item = FacilityInventoryItem::where('batch_number', $batchNumber)
-                ->where('product_id', $product->id)
-                ->where('facility_inventory_id', $inventory->id)
-                ->first();
+            ->where('facility_inventory_id', $inventory->id)
+            ->where('product_id', $product->id)->first();
 
-            if ($item) {
-                // Update existing item
+            if($item){
                 $item->increment('quantity', (float) $row['quantity']);
-                Log::info('Updated existing inventory item', [
-                    'batch_number' => $batchNumber,
-                    'product' => $product->name,
-                    'quantity_added' => $row['quantity']
-                ]);
-            } else {
-                // Create new item
+            }else{
                 $item = FacilityInventoryItem::create([
-                    'facility_inventory_id' => $inventory->id,
+                    'inventory_id' => $inventory->id,
                     'product_id' => $product->id,
                     'quantity' => (float) $row['quantity'],
                     'expiry_date' => $expiryDate,
                     'warehouse_id' => 1,
                     'uom' => $row['uom'] ?? null,
                     'batch_number' => $batchNumber,
+                    'location' => $row['location'] ?? null,
                     'unit_cost' => 0.00,
                     'total_cost' => 0.00,
-                ]);
-                Log::info('Created new inventory item', [
-                    'batch_number' => $batchNumber,
-                    'product' => $product->name,
-                    'quantity' => $row['quantity']
                 ]);
             }
 
             // DB::commit();
+
             return null;
 
         } catch (\Throwable $e) {
             // DB::rollBack();
             Log::error('Inventory import error', [
                 'error' => $e->getMessage(),
-                'row' => $row,
-                'trace' => $e->getTraceAsString()
+                'row' => $row
             ]);
             return null;
         }
@@ -122,21 +99,12 @@ class FacilityUploadInventory implements
 
     protected function getInventory($productId)
     {
-        $inventory = FacilityInventory::where('product_id', $productId)
-            ->where('facility_id', $this->facilityId)
-            ->first();
-            
+        $inventory = FacilityInventory::where('product_id', $productId)->where('facility_id', auth()->user()->facility_id)->first();
         if (!$inventory) {
             $inventory = FacilityInventory::create([
-                'facility_id' => $this->facilityId,
+                'facility_id' => auth()->user()->facility_id,
                 'product_id' => $productId,
                 'quantity' => 0,
-                'reorder_level' => 0,
-            ]);
-            
-            Log::info('Created new facility inventory', [
-                'product_id' => $productId,
-                'facility_id' => $this->facilityId
             ]);
         }
 
@@ -210,27 +178,7 @@ class FacilityUploadInventory implements
     public function registerEvents(): array
     {
         return [
-            BeforeImport::class => function (BeforeImport $event) {
-                Log::info('Starting inventory import process', [
-                    'import_id' => $this->importId,
-                    'facility_id' => $this->facilityId
-                ]);
-                Cache::put($this->importId, 0);
-            },
-            AfterSheet::class => function (AfterSheet $event) {
-                $progress = 50; // Approximate progress after sheet processing
-                Cache::put($this->importId, $progress);
-                Log::info('Sheet processing completed', [
-                    'import_id' => $this->importId,
-                    'progress' => $progress
-                ]);
-            },
-            AfterImport::class => function (AfterImport $event) {
-                Cache::put($this->importId, 100);
-                Log::info('Inventory import completed successfully', [
-                    'import_id' => $this->importId,
-                    'facility_id' => $this->facilityId
-                ]);
+            AfterImport::class => function (AfterImport $event) {                
                 Cache::forget($this->importId);
             },
         ];
