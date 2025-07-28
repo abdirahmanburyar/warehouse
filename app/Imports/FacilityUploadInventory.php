@@ -129,8 +129,9 @@ class FacilityUploadInventory implements
     protected function getEligibleItem($itemName)
     {
         // Get current user's facility
-        $userFacility = auth()->user()->facility;
-        if (!$userFacility) {
+        $facilityId = auth()->user()->facility_id;
+        $facility = Facility::find($facilityId);
+        if (!$facility) {
             Log::error('User facility not found', ['user_id' => auth()->id()]);
             return null;
         }
@@ -138,7 +139,7 @@ class FacilityUploadInventory implements
         // First try to find by product name directly for the specific facility type
         $eligibleItem = EligibleItem::whereHas('product', function($query) use ($itemName) {
             $query->where('name', $itemName);
-        })->where('facility_type', $userFacility->facility_type)->first();
+        })->where('facility_type', $facility->facility_type)->first();
         
         if ($eligibleItem) {
             return $eligibleItem;
@@ -147,7 +148,7 @@ class FacilityUploadInventory implements
         // If not found, try to find by partial match for the specific facility type
         $eligibleItem = EligibleItem::whereHas('product', function($query) use ($itemName) {
             $query->where('name', 'LIKE', '%' . $itemName . '%');
-        })->where('facility_type', $userFacility->facility_type)->first();
+        })->where('facility_type', $facility->facility_type)->first();
         
         if ($eligibleItem) {
             return $eligibleItem;
@@ -161,9 +162,9 @@ class FacilityUploadInventory implements
         if ($eligibleItem) {
             Log::warning('Item found but not eligible for this facility type', [
                 'item' => $itemName,
-                'user_facility_type' => $userFacility->facility_type,
+                'user_facility_type' => $facility->facility_type,
                 'eligible_for' => $eligibleItem->facility_type,
-                'user_facility_id' => $userFacility->id
+                'user_facility_id' => $facility->id
             ]);
         }
         
