@@ -54,12 +54,6 @@ class FacilityUploadInventory implements
             // Check if item exists in eligible_items table
             $eligibleItem = $this->getEligibleItem($row['item']);
             if (!$eligibleItem) {
-                $userFacility = auth()->user()->facility;
-                Log::warning('Item not found in eligible items', [
-                    'item' => $row['item'],
-                    'facility_type' => $userFacility ? $userFacility->facility_type : 'unknown',
-                    'facility_id' => $userFacility ? $userFacility->id : 'unknown'
-                ]);
                 return null;
             }
 
@@ -133,7 +127,6 @@ class FacilityUploadInventory implements
         // Get current user's facility
         $facility = Facility::find($this->facilityId);
         if (!$facility) {
-            Log::error('User facility not found', ['user_id' => auth()->id()]);
             return null;
         }
         
@@ -175,12 +168,12 @@ class FacilityUploadInventory implements
     protected function getInventory($productId)
     {
         $inventory = FacilityInventory::where('product_id', $productId)
-            ->where('facility_id', auth()->user()->facility_id)
+            ->where('facility_id', $this->facilityId)
             ->first();
             
         if (!$inventory) {
             $inventory = FacilityInventory::create([
-                'facility_id' => auth()->user()->facility_id,
+                'facility_id' => $this->facilityId,
                 'product_id' => $productId,
                 'quantity' => 0,
             ]);
