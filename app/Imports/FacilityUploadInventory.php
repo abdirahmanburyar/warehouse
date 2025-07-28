@@ -34,10 +34,12 @@ class FacilityUploadInventory implements
     use Queueable, InteractsWithQueue;
 
     public $importId;
+    public $facilityId;
 
     public function __construct(string $importId)
     {
         $this->importId = $importId;
+        $this->facilityId = auth()->user()->facility_id;
     }
 
     public function model(array $row)
@@ -129,8 +131,7 @@ class FacilityUploadInventory implements
     protected function getEligibleItem($itemName)
     {
         // Get current user's facility
-        $facilityId = auth()->user()->facility_id;
-        $facility = Facility::find($facilityId);
+        $facility = Facility::find($this->facilityId);
         if (!$facility) {
             Log::error('User facility not found', ['user_id' => auth()->id()]);
             return null;
