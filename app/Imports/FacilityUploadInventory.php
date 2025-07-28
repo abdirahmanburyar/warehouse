@@ -34,7 +34,7 @@ class FacilityUploadInventory implements
     public $importId;
     public $facilityId;
 
-    public function __construct(string $importId, string $facilityId)
+    public function __construct(string $importId)
     {
         $this->importId = $importId;
         $this->facilityId = auth()->user()->facility_id;
