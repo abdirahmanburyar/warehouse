@@ -74,10 +74,33 @@ class UploadInventory implements
             }
 
             // Check if InventoryItem with same batch_number already exists
-            $existingInventoryItem = InventoryItem::where('batch_number', $row['batch_no'])
+            $batchNumber = trim($row['batch_no']); // Trim whitespace
+            
+            // First try to find exact match (batch, product, warehouse, expiry, location)
+            $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
                 ->where('product_id', $product->id)
                 ->where('warehouse_id', 1)
+                ->where('expiry_date', $expiryDate)
+                ->where('location', $row['location'] ?? '')
                 ->first();
+
+            // If not found, try to find by batch, product, warehouse only (for updating)
+            if (!$existingInventoryItem) {
+                $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
+                    ->where('product_id', $product->id)
+                    ->where('warehouse_id', 1)
+                    ->first();
+            }
+
+            // Debug: Log the search criteria and result
+            \Log::info('Checking for existing inventory item', [
+                'batch_number' => $batchNumber,
+                'product_id' => $product->id,
+                'warehouse_id' => 1,
+                'found_existing' => $existingInventoryItem ? 'YES' : 'NO',
+                'existing_id' => $existingInventoryItem ? $existingInventoryItem->id : null,
+                'existing_quantity' => $existingInventoryItem ? $existingInventoryItem->quantity : null
+            ]);
 
             if ($existingInventoryItem) {
                 // Update existing inventory item by incrementing quantity
@@ -90,6 +113,14 @@ class UploadInventory implements
                     'location' => $row['location'] ?? $existingInventoryItem->location,
                     'uom' => $row['uom'] ?? $existingInventoryItem->uom,
                 ]);
+
+                \Log::info('Updated existing inventory item', [
+                    'item_id' => $existingInventoryItem->id,
+                    'batch_number' => $batchNumber,
+                    'old_quantity' => $oldQuantity,
+                    'new_quantity' => $newQuantity,
+                    'added_quantity' => (float) $row['quantity']
+                ]);
             } else {
                 // Create new InventoryItem
                 $inventoryItemData = [
@@ -97,7 +128,7 @@ class UploadInventory implements
                     'product_id' => $product->id,
                     'warehouse_id' => 1, // Using warehouse_id = 1 as specified
                     'quantity' => (float) $row['quantity'],
-                    'batch_number' => $row['batch_no'],
+                    'batch_number' => $batchNumber, // Use trimmed batch number
                     'expiry_date' => $expiryDate,
                     'location' => $row['location'] ?? null,
                     'uom' => $row['uom'] ?? null,
@@ -108,6 +139,13 @@ class UploadInventory implements
                 try {
                     // Create InventoryItem
                     $inventoryItem = InventoryItem::create($inventoryItemData);
+
+                    \Log::info('Created new inventory item', [
+                        'item_id' => $inventoryItem->id,
+                        'batch_number' => $batchNumber,
+                        'quantity' => $inventoryItem->quantity,
+                        'product_id' => $product->id
+                    ]);
                 } catch (\Exception $e) {
                     throw $e; // Re-throw to be caught by the outer try-catch
                 }
