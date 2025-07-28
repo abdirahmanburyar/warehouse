@@ -76,21 +76,11 @@ class UploadInventory implements
             // Check if InventoryItem with same batch_number already exists
             $batchNumber = trim($row['batch_no']); // Trim whitespace
             
-            // First try to find exact match (batch, product, warehouse, expiry, location)
+            // Find existing item by batch_number, product_id, and warehouse_id only
             $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
                 ->where('product_id', $product->id)
                 ->where('warehouse_id', 1)
-                ->where('expiry_date', $expiryDate)
-                ->where('location', $row['location'] ?? '')
                 ->first();
-
-            // If not found, try to find by batch, product, warehouse only (for updating)
-            if (!$existingInventoryItem) {
-                $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
-                    ->where('product_id', $product->id)
-                    ->where('warehouse_id', 1)
-                    ->first();
-            }
 
             // Debug: Log the search criteria and result
             \Log::info('Checking for existing inventory item', [
