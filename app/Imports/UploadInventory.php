@@ -46,46 +46,8 @@ class UploadInventory implements
             //     return null;
             // }
 
-            // // Get or cache the product
-            // $product = $this->getProduct($row['item']);
-            // if (!$product) {
-            //     return null;
-            // }
-
-            // // Get or cache the inventory
-            // $inventory = $this->getInventory($product->id);
-
             logger()->info('Inventory', $row);  
 
-            // $batchNumber = trim($row['batch_no']);
-            // $expiryDate = $this->parseExpiryDate($row['expiry_date']);
-            // $warehouseId = 1; // static for now
-
-            // $item = $inventory->items()->where([
-            //     'product_id' => $product->id,
-            //     'batch_number' => $batchNumber,
-            // ])->first();
-            
-            // if ($item) {
-            //     $item->increment('quantity', (float) $row['quantity']);
-            // } else {
-            //     $inventory->items()->create([
-            //         'product_id' => $product->id,
-            //         'warehouse_id' => 1,
-            //         'quantity' => (float) $row['quantity'],
-            //         'batch_number' => $batchNumber,
-            //         'expiry_date' => $expiryDate,
-            //         'location' => $row['location'] ?? null,
-            //         'uom' => $row['uom'] ?? null,
-            //         'unit_cost' => 0.00,
-            //         'total_cost' => 0.00,
-            //     ]);
-            // }
-                  
-
-            // // Update import progress
-            // $currentProgress = Cache::get($this->importId, 0);
-            // Cache::put($this->importId, $currentProgress + 1, 3600);
             DB::commit();
 
             return null;
