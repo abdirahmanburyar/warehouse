@@ -44,20 +44,20 @@ class UploadInventory implements
     {
         try {
             DB::beginTransaction();
-            if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
-                return null;
-            }
+            // if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
+            //     return null;
+            // }
 
-            // Get or cache the product
-            $product = $this->getProduct($row['item']);
-            if (!$product) {
-                return null;
-            }
+            // // Get or cache the product
+            // $product = $this->getProduct($row['item']);
+            // if (!$product) {
+            //     return null;
+            // }
 
-            // Get or cache the inventory
-            $inventory = $this->getInventory($product->id);
+            // // Get or cache the inventory
+            // $inventory = $this->getInventory($product->id);
 
-            logger()->info('Inventory', $inventory);  
+            logger()->info('Inventory', $row);  
 
             // $batchNumber = trim($row['batch_no']);
             // $expiryDate = $this->parseExpiryDate($row['expiry_date']);
