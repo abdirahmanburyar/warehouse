@@ -48,7 +48,19 @@ class UploadInventory implements
 
             $product = $this->getProduct($row['item']);
             $inventory = $this->getInventory($product->id);
-            Log::info($inventory);
+            
+            $inventory->items()->updateOrCreate([
+                'product_id' => $product->id,
+                'batch_number' => $row['batch_no'],
+            ], [
+                'quantity' => DB::raw('quantity + ' . (float) $row['quantity']),
+                'expiry_date' => $row['expiry_date'],
+                'warehouse_id' => 1,
+                'uom' => $row['uom'] ?? null,
+                'location' => $row['location'] ?? null,
+                'unit_cost' => 0.00,
+                'total_cost' => 0.00,
+            ]);
 
             DB::commit();
 
