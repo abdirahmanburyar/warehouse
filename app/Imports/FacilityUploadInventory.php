@@ -20,7 +20,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
 use Carbon\Carbon;
 
-class UploadInventory implements 
+class FacilityUploadInventory implements 
     ToModel, 
     WithHeadingRow, 
     WithChunkReading, 
