@@ -55,7 +55,7 @@ class UploadInventory implements
 
         } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error('Inventory import error', [
+            Log::error('Inventory import error', [
                 'error' => $e->getMessage(),
                 'row' => $row
             ]);
