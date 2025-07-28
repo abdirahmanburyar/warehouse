@@ -88,39 +88,66 @@ class UploadInventory implements
                 return null;
             }
 
-            // Prepare InventoryItem data
-            $inventoryItemData = [
-                'inventory_id' => $inventory->id,
-                'product_id' => $product->id,
-                'warehouse_id' => 1, // Using warehouse_id = 1 as specified
-                'quantity' => (float) $row['quantity'],
-                'batch_number' => $row['batch_no'],
-                'expiry_date' => $expiryDate,
-                'location' => $row['location'] ?? null,
-                'uom' => $row['uom'] ?? null,
-                'unit_cost' => 0.00, // Default value since it's required
-                'total_cost' => 0.00, // Default value since it's required
-            ];
+            // Check if InventoryItem with same batch_number already exists
+            $existingInventoryItem = InventoryItem::where('batch_number', $row['batch_no'])
+                ->where('product_id', $product->id)
+                ->where('warehouse_id', 1)
+                ->first();
 
-            Log::info('Attempting to create InventoryItem', $inventoryItemData);
+            if ($existingInventoryItem) {
+                // Update existing inventory item by incrementing quantity
+                $oldQuantity = $existingInventoryItem->quantity;
+                $newQuantity = $oldQuantity + (float) $row['quantity'];
+                
+                $existingInventoryItem->update([
+                    'quantity' => $newQuantity,
+                    'expiry_date' => $expiryDate, // Update expiry date if provided
+                    'location' => $row['location'] ?? $existingInventoryItem->location,
+                    'uom' => $row['uom'] ?? $existingInventoryItem->uom,
+                ]);
 
-            try {
-                // Create InventoryItem
-                $inventoryItem = InventoryItem::create($inventoryItemData);
-
-                Log::info('InventoryItem created successfully', [
-                    'inventory_item_id' => $inventoryItem->id,
+                Log::info('Existing InventoryItem updated', [
+                    'inventory_item_id' => $existingInventoryItem->id,
+                    'batch_number' => $existingInventoryItem->batch_number,
+                    'old_quantity' => $oldQuantity,
+                    'new_quantity' => $newQuantity,
+                    'added_quantity' => (float) $row['quantity']
+                ]);
+            } else {
+                // Create new InventoryItem
+                $inventoryItemData = [
                     'inventory_id' => $inventory->id,
-                    'batch_number' => $inventoryItem->batch_number,
-                    'quantity' => $inventoryItem->quantity
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to create InventoryItem', [
-                    'data' => $inventoryItemData,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                throw $e; // Re-throw to be caught by the outer try-catch
+                    'product_id' => $product->id,
+                    'warehouse_id' => 1, // Using warehouse_id = 1 as specified
+                    'quantity' => (float) $row['quantity'],
+                    'batch_number' => $row['batch_no'],
+                    'expiry_date' => $expiryDate,
+                    'location' => $row['location'] ?? null,
+                    'uom' => $row['uom'] ?? null,
+                    'unit_cost' => 0.00, // Default value since it's required
+                    'total_cost' => 0.00, // Default value since it's required
+                ];
+
+                Log::info('Attempting to create new InventoryItem', $inventoryItemData);
+
+                try {
+                    // Create InventoryItem
+                    $inventoryItem = InventoryItem::create($inventoryItemData);
+
+                    Log::info('New InventoryItem created successfully', [
+                        'inventory_item_id' => $inventoryItem->id,
+                        'inventory_id' => $inventory->id,
+                        'batch_number' => $inventoryItem->batch_number,
+                        'quantity' => $inventoryItem->quantity
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create InventoryItem', [
+                        'data' => $inventoryItemData,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw $e; // Re-throw to be caught by the outer try-catch
+                }
             }
 
             // Update progress
@@ -181,14 +208,50 @@ class UploadInventory implements
                 $excelDate = (int) $expiryDateValue;
                 $unixTimestamp = ($excelDate - 25569) * 86400; // Convert to Unix timestamp
                 $date = Carbon::createFromTimestamp($unixTimestamp);
-                // Set to first day of the month
-                return $date->startOfMonth()->format('Y-m-d');
-            } else {
-                // Try to parse as "M-y" format (Feb-25, Jun-27)
-                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
-                // Set to first day of the month
-                return $date->startOfMonth()->format('Y-m-d');
+                return $date->format('Y-m-d');
             }
+
+            // Try to parse as "M-y" format (Feb-25, Jun-27) - Default format
+            try {
+                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
+                // Set to first day of the month for month-year format
+                return $date->startOfMonth()->format('Y-m-d');
+            } catch (\Exception $e) {
+                // If M-y format fails, try normal date formats
+                Log::info('M-y format failed, trying normal date formats', [
+                    'original' => $expiryDateValue,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Try various normal date formats
+            $dateFormats = [
+                'd-m-Y',    // 15-02-2025
+                'Y-m-d',    // 2025-02-15
+                'd/m/Y',    // 15/02/2025
+                'Y/m/d',    // 2025/02/15
+                'm-d-Y',    // 02-15-2025
+                'Y-m-d H:i:s', // 2025-02-15 00:00:00
+                'd-m-Y H:i:s', // 15-02-2025 00:00:00
+            ];
+
+            foreach ($dateFormats as $format) {
+                try {
+                    $date = Carbon::createFromFormat($format, $expiryDateValue);
+                    return $date->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Continue to next format
+                    continue;
+                }
+            }
+
+            // If all formats fail, log error and return null
+            Log::error('Failed to parse expiry date - all formats failed', [
+                'original' => $expiryDateValue,
+                'tried_formats' => $dateFormats
+            ]);
+            return null;
+
         } catch (\Exception $e) {
             Log::error('Failed to parse expiry date', [
                 'original' => $expiryDateValue,

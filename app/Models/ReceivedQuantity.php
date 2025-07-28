@@ -28,6 +28,7 @@ class ReceivedQuantity extends Model
         'barcode',
         'batch_number',
         'unit_cost',
+        'source',
         'total_cost',
     ];
 

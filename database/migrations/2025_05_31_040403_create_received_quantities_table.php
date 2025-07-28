@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->double('unit_cost');
             $table->double('total_cost');
+            $table->string('source')->nullable();
             $table->string('batch_number')->nullable();
             $table->timestamps();
         });
