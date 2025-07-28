@@ -50,15 +50,17 @@ class UploadInventory implements
             $inventory = $this->getInventory($product->id);
 
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
+
+            $batchNumber = trim($row['batch_no']);
             
-            $inventory->items()->updateOrCreate([
-                'product_id' => $product->id,
-                'batch_number' => $row['batch_no'],
-            ], [
+            $inventory->items()->where('batch_number', $batchNumber)
+            ->where('product_id', $product->id)
+            ->update([
                 'quantity' => DB::raw('quantity + ' . (float) $row['quantity']),
                 'expiry_date' => $expiryDate,
                 'warehouse_id' => 1,
                 'uom' => $row['uom'] ?? null,
+                'batch_number' => $batchNumber,
                 'location' => $row['location'] ?? null,
                 'unit_cost' => 0.00,
                 'total_cost' => 0.00,
