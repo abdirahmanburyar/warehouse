@@ -47,7 +47,7 @@ class FacilityUploadInventory implements
     public function model(array $row)
     {
         try {
-            DB::beginTransaction();
+            // DB::beginTransaction();
             
             // Skip empty rows
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no']) || empty($row['expiry_date'])) {
@@ -100,11 +100,11 @@ class FacilityUploadInventory implements
                 ]);
             }
 
-            DB::commit();
+            // DB::commit();
             return null;
 
         } catch (\Throwable $e) {
-            DB::rollBack();
+            // DB::rollBack();
             Log::error('Inventory import error', [
                 'error' => $e->getMessage(),
                 'row' => $row,
