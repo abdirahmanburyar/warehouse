@@ -43,21 +43,19 @@ class UploadInventory implements
     public function model(array $row)
     {
         try {
-            // Validate required fields
             if (empty($row['item']) || empty($row['quantity']) || empty($row['batch_no'])) {
                 return null;
             }
 
-            // Check if product exists (with caching)
+            // Get or cache the product
             $product = $this->getProduct($row['item']);
             if (!$product) {
                 return null;
             }
 
-            // Check if Inventory exists for this product (with caching)
+            // Get or cache the inventory
             $inventory = $this->getInventory($product->id);
             if (!$inventory) {
-                // Create new Inventory record
                 $inventory = Inventory::create([
                     'product_id' => $product->id,
                     'quantity' => 0,
@@ -65,92 +63,70 @@ class UploadInventory implements
                 $this->inventoryCache[$product->id] = $inventory;
             }
 
-            // Parse expiry date - handle Excel serial numbers
+            $batchNumber = trim($row['batch_no']);
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
+            $warehouseId = 1; // static for now
 
-            // Validate that we have all required data
-            if (!$inventory || !$product) {
-                return null;
-            }
-
-            // Check if InventoryItem with same batch_number already exists
-            $batchNumber = trim($row['batch_no']); // Trim whitespace
-            
-            // Find existing item by batch_number, product_id, and warehouse_id only
-            $existingInventoryItem = InventoryItem::where('batch_number', $batchNumber)
-                ->where('product_id', $product->id)
-                // ->where('warehouse_id', 1)
-                ->first();
-
-            // Debug: Log the search criteria and result
-            \Log::info('Checking for existing inventory item', [
-                'batch_number' => $batchNumber,
+            // Prepare lookup key
+            $inventoryItemKey = [
                 'product_id' => $product->id,
-                'warehouse_id' => 1,
-                'found_existing' => $existingInventoryItem ? 'YES' : 'NO',
-                'existing_id' => $existingInventoryItem ? $existingInventoryItem->id : null,
-                'existing_quantity' => $existingInventoryItem ? $existingInventoryItem->quantity : null
-            ]);
+                'batch_number' => $batchNumber,
+                'warehouse_id' => $warehouseId,
+            ];
 
-            if ($existingInventoryItem) {
-                // Update existing inventory item by incrementing quantity
-                $oldQuantity = $existingInventoryItem->quantity;
-                $newQuantity = $oldQuantity + (float) $row['quantity'];
-                
-                $existingInventoryItem->update([
-                    'quantity' => $newQuantity,
-                    'expiry_date' => $expiryDate, // Update expiry date if provided
-                    'location' => $row['location'] ?? $existingInventoryItem->location,
-                    'uom' => $row['uom'] ?? $existingInventoryItem->uom,
-                ]);
+            // Try to increment existing record
+            $updated = InventoryItem::where($inventoryItemKey)->increment('quantity', (float) $row['quantity']);
 
-                \Log::info('Updated existing inventory item', [
-                    'item_id' => $existingInventoryItem->id,
-                    'batch_number' => $batchNumber,
-                    'old_quantity' => $oldQuantity,
-                    'new_quantity' => $newQuantity,
-                    'added_quantity' => (float) $row['quantity']
-                ]);
-            } else {
-                // Create new InventoryItem
-                $inventoryItemData = [
-                    'inventory_id' => $inventory->id,
-                    'product_id' => $product->id,
-                    'warehouse_id' => 1, // Using warehouse_id = 1 as specified
-                    'quantity' => (float) $row['quantity'],
-                    'batch_number' => $batchNumber, // Use trimmed batch number
+            if ($updated) {
+                // Update expiry, location, uom if needed (non-critical fields)
+                InventoryItem::where($inventoryItemKey)->update([
                     'expiry_date' => $expiryDate,
                     'location' => $row['location'] ?? null,
                     'uom' => $row['uom'] ?? null,
-                    'unit_cost' => 0.00, // Default value since it's required
-                    'total_cost' => 0.00, // Default value since it's required
-                ];
+                ]);
 
-                try {
-                    // Create InventoryItem
-                    $inventoryItem = InventoryItem::create($inventoryItemData);
+                \Log::info('Updated existing inventory item', [
+                    'product_id' => $product->id,
+                    'batch_number' => $batchNumber,
+                    'added_quantity' => (float) $row['quantity'],
+                ]);
+            } else {
+                // Create new inventory item
+                InventoryItem::create([
+                    'inventory_id' => $inventory->id,
+                    'product_id' => $product->id,
+                    'warehouse_id' => $warehouseId,
+                    'quantity' => (float) $row['quantity'],
+                    'batch_number' => $batchNumber,
+                    'expiry_date' => $expiryDate,
+                    'location' => $row['location'] ?? null,
+                    'uom' => $row['uom'] ?? null,
+                    'unit_cost' => 0.00,
+                    'total_cost' => 0.00,
+                ]);
 
-                    \Log::info('Created new inventory item', [
-                        'item_id' => $inventoryItem->id,
-                        'batch_number' => $batchNumber,
-                        'quantity' => $inventoryItem->quantity,
-                        'product_id' => $product->id
-                    ]);
-                } catch (\Exception $e) {
-                    throw $e; // Re-throw to be caught by the outer try-catch
-                }
+                \Log::info('Created new inventory item', [
+                    'product_id' => $product->id,
+                    'batch_number' => $batchNumber,
+                    'quantity' => (float) $row['quantity'],
+                ]);
             }
 
-            // Update progress
+            // Update import progress
             $currentProgress = Cache::get($this->importId, 0);
             Cache::put($this->importId, $currentProgress + 1, 3600);
 
             return null;
 
         } catch (\Throwable $e) {
+            \Log::error('Inventory import error', [
+                'error' => $e->getMessage(),
+                'row' => $row
+            ]);
             return null;
         }
     }
+
 
     protected function getProduct($itemName)
     {
