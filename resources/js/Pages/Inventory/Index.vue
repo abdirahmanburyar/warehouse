@@ -404,15 +404,7 @@ function getResults(page = 1) {
         img="/assets/images/inventory.png"
         title="Management Your Inventory"
         description="Keeping Essentials Ready, Every Time"
-    >
-        <!-- Debug Section -->
-        <div class="bg-yellow-100 p-4 mb-4 rounded-lg">
-            <h3 class="font-bold text-yellow-800">Debug Info:</h3>
-            <p class="text-sm text-yellow-700">Inventories count: {{ props.inventories?.data?.length || 0 }}</p>
-            <p class="text-sm text-yellow-700">Status counts: {{ JSON.stringify(props.inventoryStatusCounts) }}</p>
-            <p class="text-sm text-yellow-700">Products count: {{ props.products?.length || 0 }}</p>
-        </div>
-        
+    >        
         <div class="mb-[100px]">
             <!-- Header & Actions -->
             <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
