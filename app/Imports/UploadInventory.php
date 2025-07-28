@@ -47,6 +47,9 @@ class UploadInventory implements
             }
 
             $product = $this->getProduct($row['item']);
+            if (!$product) {
+                return null;
+            }
             $inventory = $this->getInventory($product->id);
 
             $expiryDate = $this->parseExpiryDate($row['expiry_date']);
@@ -90,13 +93,7 @@ class UploadInventory implements
 
     protected function getProduct($itemName)
     {
-        $product = Product::where('name', $itemName)->first();
-        if (!$product) {
-            $product = Product::create([
-                'name' => $itemName,
-            ]);
-        }
-        return $product;
+        return Product::where('name', $itemName)->first();
     }
 
     protected function getInventory($productId)

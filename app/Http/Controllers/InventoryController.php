@@ -31,6 +31,7 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
+        try {
         $query = Inventory::query()
             ->with([
                 'items.warehouse:id,name',
@@ -73,8 +74,7 @@ class InventoryController extends Controller
 
         // Calculate status counts independently of pagination
         $statusCounts = $this->calculateInventoryStatusCounts($request);
-
-        $now = now();
+        logger()->info('[PUSHER-DEBUG] Status counts: ' . json_encode($inventories));
 
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),
@@ -85,7 +85,14 @@ class InventoryController extends Controller
             'category'   => Category::pluck('name')->toArray(),
             'dosage'     => Dosage::pluck('name')->toArray(),
             'locations'  => Location::pluck('location')->toArray(),
+            'errors'     => null,
         ]);
+        } catch (\Throwable $th) {
+            logger()->error('[PUSHER-DEBUG] Error in index method: ' . $th->getMessage());
+            return Inertia::render('Inventory/Index', [
+                'errors' => $th->getMessage(),
+            ]);
+        }
     }
 
     /**
