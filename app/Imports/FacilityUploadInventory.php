@@ -36,10 +36,15 @@ class FacilityUploadInventory implements
     public $importId;
     public $facilityId;
 
-    public function __construct(string $importId)
+    public function __construct(string $importId, int $facilityId)
     {
         $this->importId = $importId;
-        $this->facilityId = auth()->user()->facility_id;
+        $this->facilityId = $facilityId;
+        
+        Log::info('FacilityUploadInventory initialized', [
+            'import_id' => $importId,
+            'facility_id' => $this->facilityId
+        ]);
     }
 
     public function model(array $row)
@@ -127,8 +132,18 @@ class FacilityUploadInventory implements
         // Get current user's facility
         $facility = Facility::find($this->facilityId);
         if (!$facility) {
+            Log::error('Facility not found', [
+                'facility_id' => $this->facilityId,
+                'import_id' => $this->importId
+            ]);
             return null;
         }
+        
+        Log::info('Searching for eligible item', [
+            'item_name' => $itemName,
+            'facility_id' => $this->facilityId,
+            'facility_type' => $facility->facility_type
+        ]);
         
         // First try to find by product name directly for the specific facility type
         $eligibleItem = EligibleItem::whereHas('product', function($query) use ($itemName) {
@@ -136,6 +151,11 @@ class FacilityUploadInventory implements
         })->where('facility_type', $facility->facility_type)->first();
         
         if ($eligibleItem) {
+            Log::info('Found eligible item (exact match)', [
+                'item_name' => $itemName,
+                'facility_type' => $facility->facility_type,
+                'product_name' => $eligibleItem->product->name
+            ]);
             return $eligibleItem;
         }
         
@@ -145,6 +165,11 @@ class FacilityUploadInventory implements
         })->where('facility_type', $facility->facility_type)->first();
         
         if ($eligibleItem) {
+            Log::info('Found eligible item (partial match)', [
+                'item_name' => $itemName,
+                'facility_type' => $facility->facility_type,
+                'product_name' => $eligibleItem->product->name
+            ]);
             return $eligibleItem;
         }
         
@@ -159,6 +184,11 @@ class FacilityUploadInventory implements
                 'user_facility_type' => $facility->facility_type,
                 'eligible_for' => $eligibleItem->facility_type,
                 'user_facility_id' => $facility->id
+            ]);
+        } else {
+            Log::warning('Item not found in eligible items', [
+                'item' => $itemName,
+                'facility_type' => $facility->facility_type
             ]);
         }
         
