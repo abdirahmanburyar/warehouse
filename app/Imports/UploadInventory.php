@@ -46,7 +46,8 @@ class UploadInventory implements
                 return null;
             }
 
-            $inventory = $this->getInventory($row['item']);
+            $product = $this->getProduct($row['item']);
+            $inventory = $this->getInventory($product->id);
             logger()->info('Inventory', $inventory);
 
             DB::commit();
