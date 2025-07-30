@@ -17,6 +17,7 @@ use App\Models\Warehouse;
 use App\Models\Order;
 use App\Models\Supplier;
 use App\Models\InventoryReport;
+use App\Models\Category;
 use Carbon\Carbon;
 use App\Models\IssueQuantityReport;
 use Illuminate\Support\Facades\Log;
@@ -73,12 +74,12 @@ class DashboardController extends Controller
             'BO'  => BackOrder::count(),
         ];
 
-        // Product category counts
-        $productCategoryCounts = [
-            'Drugs' => Product::whereHas('category', function($q) { $q->where('name', 'Durgs'); })->count(),
-            'Consumable' => Product::whereHas('category', function($q) { $q->where('name', 'Consumables'); })->count(),
-            'Lab' => Product::whereHas('category', function($q) { $q->where('name', 'Lab'); })->count(),
-        ];
+        // Product category counts - dynamically read from database
+        $productCategoryCounts = [];
+        $categories = Category::withCount('products')->get();
+        foreach ($categories as $category) {
+            $productCategoryCounts[$category->name] = $category->products_count;
+        }
 
         // Transfer received count
         $transferReceivedCount = Transfer::where('status', 'received')->count();
@@ -308,10 +309,11 @@ class DashboardController extends Controller
             // Get the inventory report for the specified month
             $inventoryReport = InventoryReport::where('month_year', $month)->first();
             
-            // Get all warehouse products
-            $warehouseProducts = Product::whereRaw('JSON_CONTAINS(tracert_type, ?)', ['"Warehouse"'])
+            // Get all warehouse products with their categories
+            $warehouseProducts = Product::with('category')
+                ->whereRaw('JSON_CONTAINS(tracert_type, ?)', ['"Warehouse"'])
                 ->orWhere('tracert_type', 'like', '%Warehouse%')
-                ->select('id', 'name', 'productID', 'tracert_type')
+                ->select('id', 'name', 'productID', 'tracert_type', 'category_id')
                 ->get();
 
             if ($warehouseProducts->isEmpty()) {
@@ -335,10 +337,15 @@ class DashboardController extends Controller
                         ->first();
                 }
                 
+                // Get category name from the product's category relationship
+                $categoryName = $product->category ? $product->category->name : 'Uncategorized';
+
                 // Create a mock item with the product data and inventory values (or zeros if no data)
                 $mockItem = (object) [
                     'id' => $inventoryItem ? $inventoryItem->id : 'mock_' . $product->id,
                     'product' => $product,
+                    'category' => $product->category,
+                    'category_name' => $categoryName,
                     'beginning_balance' => $inventoryItem ? $inventoryItem->beginning_balance : 0,
                     'received_quantity' => $inventoryItem ? $inventoryItem->received_quantity : 0,
                     'issued_quantity' => $inventoryItem ? $inventoryItem->issued_quantity : 0,
@@ -375,6 +382,7 @@ class DashboardController extends Controller
                         'id' => $item->id,
                         'product_name' => $item->product->name,
                         'product_id' => $item->product->productID,
+                        'category_name' => $item->category_name,
                         'value' => $item->{$type},
                         'beginning_balance' => $item->beginning_balance,
                         'received_quantity' => $item->received_quantity,
@@ -400,7 +408,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Process data for chart visualization - returns multiple charts with 4 items each
+     * Process data for chart visualization - chunk by 4 but organized by category
      */
     private function processChartData($items, $type)
     {
@@ -425,39 +433,50 @@ class DashboardController extends Controller
             ['bg' => 'rgba(251, 191, 36, 0.8)', 'border' => 'rgb(251, 191, 36)'] // Amber
         ];
 
-        // Split items into chunks of 4
-        $itemChunks = $items->chunk(4);
+        // Group items by category and create separate charts for each category
+        $itemsByCategory = $items->groupBy('category_name');
         $charts = [];
+        $chartId = 1;
         
-        foreach ($itemChunks as $chunkIndex => $chunk) {
-            $labels = [];
-            $data = [];
-            $backgroundColors = [];
-            $borderColors = [];
-
-            foreach ($chunk as $index => $item) {
-                // Truncate long product names for better chart display
-                $productName = strlen($item->product->name) > 20 
-                    ? substr($item->product->name, 0, 20) . '...'
-                    : $item->product->name;
-                    
-                $labels[] = $productName;
-                $data[] = (float) $item->{$type};
+        foreach ($itemsByCategory as $categoryName => $categoryItems) {
+            // Sort items within this category by the selected type (descending)
+            $sortedCategoryItems = $categoryItems->sortByDesc($type);
+            
+            // Chunk items within this category by 4
+            $categoryChunks = $sortedCategoryItems->chunk(4);
+            
+            foreach ($categoryChunks as $chunkIndex => $chunk) {
+                $labels = [];
+                $data = [];
+                $backgroundColors = [];
+                $borderColors = [];
                 
-                $colorIndex = $index % count($colors);
-                $backgroundColors[] = $colors[$colorIndex]['bg'];
-                $borderColors[] = $colors[$colorIndex]['border'];
-            }
+                foreach ($chunk as $index => $item) {
+                    // Truncate long product names for better chart display
+                    $productName = strlen($item->product->name) > 20 
+                        ? substr($item->product->name, 0, 20) . '...'
+                        : $item->product->name;
+                        
+                    $labels[] = $productName;
+                    $data[] = (float) $item->{$type};
+                    
+                    $colorIndex = $index % count($colors);
+                    $backgroundColors[] = $colors[$colorIndex]['bg'];
+                    $borderColors[] = $colors[$colorIndex]['border'];
+                }
 
-            $charts[] = [
-                'id' => $chunkIndex + 1,
-                'labels' => $labels,
-                'data' => $data,
-                'backgroundColors' => $backgroundColors,
-                'borderColors' => $borderColors,
-                'total' => array_sum($data),
-                'count' => count($data)
-            ];
+                $charts[] = [
+                    'id' => $chartId++,
+                    'category' => $categoryName,
+                    'categoryDisplay' => $categoryName,
+                    'labels' => $labels,
+                    'data' => $data,
+                    'backgroundColors' => $backgroundColors,
+                    'borderColors' => $borderColors,
+                    'total' => array_sum($data),
+                    'count' => count($data)
+                ];
+            }
         }
 
         return [
@@ -498,6 +517,8 @@ class DashboardController extends Controller
     {
         return [
             'id' => 1,
+            'category' => 'No Data',
+            'categoryDisplay' => 'No Data Available',
             'labels' => ['No Data Available'],
             'data' => [0],
             'backgroundColors' => ['rgba(156, 163, 175, 0.8)'],
@@ -629,6 +650,119 @@ class DashboardController extends Controller
         return [
             'categories' => $categoryCounts,
             'statuses' => $statusCounts
+        ];
+    }
+
+    /**
+     * Process categorized chart data
+     */
+    private function processCategorizedChartData($categoryTotals, $type)
+    {
+        if ($categoryTotals->isEmpty()) {
+            return $this->getEmptyChartData();
+        }
+
+        // Create a main chart for category totals
+        $labels = $categoryTotals->pluck('category_name')->toArray();
+        $data = $categoryTotals->pluck('total_value')->toArray();
+        
+        // Generate colors for each category
+        $colors = $this->generateCategoryColors(count($labels));
+        
+        $mainChart = [
+            'id' => 'main',
+            'labels' => $labels,
+            'data' => $data,
+            'backgroundColors' => $colors['background'],
+            'borderColors' => $colors['border'],
+            'total' => array_sum($data),
+            'count' => $categoryTotals->sum('product_count')
+        ];
+
+        // Create individual charts for each category
+        $categoryCharts = [];
+        foreach ($categoryTotals as $index => $category) {
+            $categoryItems = $category['items'];
+            
+            if ($categoryItems->isNotEmpty()) {
+                // Take top 10 items for each category chart
+                $topItems = $categoryItems->take(10);
+                
+                $itemLabels = $topItems->pluck('product_name')->toArray();
+                $itemData = $topItems->pluck($type)->toArray();
+                
+                $categoryCharts[] = [
+                    'id' => 'category_' . $index,
+                    'labels' => $itemLabels,
+                    'data' => $itemData,
+                    'backgroundColors' => array_fill(0, count($itemData), $colors['background'][(int)$index % count($colors['background'])]),
+                    'borderColors' => array_fill(0, count($itemData), $colors['border'][(int)$index % count($colors['border'])]),
+                    'total' => $category['total_value'],
+                    'count' => $category['product_count'],
+                    'category_name' => $category['category_name']
+                ];
+            }
+        }
+
+        return [
+            'charts' => array_merge([$mainChart], $categoryCharts),
+            'totalCharts' => count($categoryCharts) + 1
+        ];
+    }
+
+    /**
+     * Process categorized summary data
+     */
+    private function processCategorizedSummaryData($categoryTotals, $type)
+    {
+        if ($categoryTotals->isEmpty()) {
+            return $this->getEmptySummary();
+        }
+
+        $total = $categoryTotals->sum('total_value');
+        $average = $categoryTotals->avg('total_value');
+        $max = $categoryTotals->max('total_value');
+        $min = $categoryTotals->where('total_value', '>', 0)->min('total_value');
+
+        return [
+            'total' => number_format($total),
+            'average' => number_format($average, 2),
+            'max' => number_format($max),
+            'min' => number_format($min ?? 0),
+            'count' => $categoryTotals->sum('product_count'),
+            'category_count' => $categoryTotals->count(),
+            'type_label' => $this->getTypeLabel($type)
+        ];
+    }
+
+    /**
+     * Generate colors for categories
+     */
+    private function generateCategoryColors($count)
+    {
+        $baseColors = [
+            ['background' => 'rgba(59, 130, 246, 0.8)', 'border' => 'rgba(59, 130, 246, 1)'], // Blue
+            ['background' => 'rgba(16, 185, 129, 0.8)', 'border' => 'rgba(16, 185, 129, 1)'], // Green
+            ['background' => 'rgba(245, 158, 11, 0.8)', 'border' => 'rgba(245, 158, 11, 1)'], // Yellow
+            ['background' => 'rgba(239, 68, 68, 0.8)', 'border' => 'rgba(239, 68, 68, 1)'], // Red
+            ['background' => 'rgba(139, 92, 246, 0.8)', 'border' => 'rgba(139, 92, 246, 1)'], // Purple
+            ['background' => 'rgba(236, 72, 153, 0.8)', 'border' => 'rgba(236, 72, 153, 1)'], // Pink
+            ['background' => 'rgba(14, 165, 233, 0.8)', 'border' => 'rgba(14, 165, 233, 1)'], // Sky
+            ['background' => 'rgba(34, 197, 94, 0.8)', 'border' => 'rgba(34, 197, 94, 1)'], // Emerald
+        ];
+
+        $backgroundColors = [];
+        $borderColors = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $colorIndex = $i % count($baseColors);
+            $backgroundColors[] = $baseColors[$colorIndex]['background'];
+            $borderColors[] = $baseColors[$colorIndex]['border'];
+        }
+
+        return [
+            'background' => $backgroundColors,
+            'border' => $borderColors
         ];
     }
 }

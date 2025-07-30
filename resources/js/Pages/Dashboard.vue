@@ -332,6 +332,7 @@ const warehouseDataType = ref('beginning_balance');
 // Chart data state
 const localWarehouseChartData = ref([]);
 const chartCount = ref(0);
+const categorizedData = ref([]);
 
 // Computed property to group charts into rows of 3
 const chartRows = computed(() => {
@@ -391,6 +392,8 @@ async function handleTracertItems() {
             const charts = response.data.chartData.charts;
             localWarehouseChartData.value = charts.map(chart => ({
                 id: chart.id,
+                category: chart.category,
+                categoryDisplay: chart.categoryDisplay,
                 labels: chart.labels || ['No Data'],
                 datasets: [{
                     label: getTypeLabel(warehouseDataType.value),
@@ -402,11 +405,18 @@ async function handleTracertItems() {
             }));
             chartCount.value = response.data.chartData.totalCharts;
             chartError.value = null;
+            
+            // Store items data if available
+            if (response.data.items) {
+                categorizedData.value = response.data.items;
+            }
         } else {
             // Handle API success but no data
             chartError.value = response.data.message || 'No data available for the selected period';
             localWarehouseChartData.value = [{
                 id: 1,
+                category: 'No Data',
+                categoryDisplay: 'No Data Available',
                 labels: ['No Data'],
                 datasets: [{
                     label: 'Quantity',
@@ -417,6 +427,7 @@ async function handleTracertItems() {
                 }]
             }];
             chartCount.value = 1;
+            categorizedData.value = [];
         }
     } catch (error) {
         console.error('Error fetching tracert items:', error);
@@ -424,6 +435,8 @@ async function handleTracertItems() {
         // Set empty chart data on error
         localWarehouseChartData.value = [{
             id: 1,
+            category: 'Error',
+            categoryDisplay: 'Error Loading Data',
             labels: ['Error'],
             datasets: [{
                 label: 'Quantity',
@@ -1924,12 +1937,25 @@ const assetStatsCards = computed(() => [
                                 <div v-else class="h-full">
                                     <!-- Single Chart -->
                                     <div v-if="chartCount === 1" class="h-full">
-                                        <Bar :data="localWarehouseChartData[0]" :options="issuedChartOptions" />
+                                        <div class="mb-4 text-center">
+                                            <h3 class="text-lg font-semibold text-gray-800 bg-gray-50 px-4 py-2 rounded-md border inline-block">
+                                                {{ localWarehouseChartData[0]?.categoryDisplay || localWarehouseChartData[0]?.category || 'Unknown Category' }}
+                                            </h3>
+                                        </div>
+                                        <div class="h-full">
+                                            <Bar :data="localWarehouseChartData[0]" :options="issuedChartOptions" />
+                                        </div>
                                     </div>
                                     <!-- Multiple Charts Grid - 3 charts per row -->
                                     <div v-else class="space-y-6">
                                         <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+                                                <!-- Category Title -->
+                                                <div class="mb-3 flex items-start">
+                                                    <span class="text-sm font-semibold text-gray-700">
+                                                        {{ chart.categoryDisplay || chart.category || 'Unknown Category' }}
+                                                    </span>
+                                                </div>
                                                 <div class="h-64">
                                                     <Bar :data="chart" :options="issuedChartOptions" />
                                                 </div>
@@ -1939,6 +1965,8 @@ const assetStatsCards = computed(() => [
                                 </div>
                             </div>
                         </div>
+                        
+
                     </div>
                     <!-- Facilities Tab -->
                     <div v-if="activeTab === 'facilities'" class="space-y-6">
