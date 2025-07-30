@@ -686,7 +686,7 @@ const logout = () => {
     padding: 10px;
     z-index: 1;
     width: 100%;
-    height: 46px;
+    height: 58px;
 }
 
 .menu-item:hover {
