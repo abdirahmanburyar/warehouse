@@ -746,7 +746,7 @@ function calculateAverage(row) {
     const monthValues = sortedMonths.value.map(month => row[month] || 0);
     
     // If no months available or less than 4 months, don't calculate AMC
-    if (monthValues.length === 0 || monthValues.length < 4) return 'N/A';
+    if (monthValues.length === 0 || monthValues.length < 3) return 'N/A';
     
     // Calculate average using all months, including zeros
     const sum = monthValues.reduce((acc, val) => acc + val, 0);
