@@ -415,6 +415,8 @@ class DashboardController extends Controller
             $month = $request->month ?? now()->subMonth()->format('Y-m');
             $facilityId = $request->facility_id ?? null;
             
+            // Note: Only products with 'Facility' in their tracert_type array will be included
+            
             // Validate the type is one of the allowed columns
             // opening_balance = Beginning Balance, stock_received = QTY Received, 
             // stock_issued = Issued Quantity (Monthly Consumption), closing_balance = Closing Balance
@@ -477,6 +479,26 @@ class DashboardController extends Controller
                     
                     if (!$reportItem->product) continue;
                     
+                    // Only include products that are traceable for facilities
+                    $tracertType = $reportItem->product->tracert_type ?? '';
+                    $isFacilityTraceable = false;
+                    
+                    if (is_string($tracertType)) {
+                        // Handle string format
+                        $isFacilityTraceable = str_contains($tracertType, 'Facility');
+                    } elseif (is_array($tracertType)) {
+                        // Handle array format
+                        $isFacilityTraceable = in_array('Facility', $tracertType);
+                    } else {
+                        // Handle JSON string format
+                        $decoded = json_decode($tracertType, true);
+                        if (is_array($decoded)) {
+                            $isFacilityTraceable = in_array('Facility', $decoded);
+                        }
+                    }
+                    
+                    if (!$isFacilityTraceable) continue;
+                    
                     // Get category name from the product's category relationship
                     $categoryName = $reportItem->product->category ? $reportItem->product->category->name : 'Uncategorized';
 
@@ -502,9 +524,10 @@ class DashboardController extends Controller
             if ($items->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => "No facility items found",
+                    'message' => "No facility traceable items found for {$month}",
                     'chartData' => $this->getEmptyChartData(),
-                    'summary' => $this->getEmptySummary()
+                    'summary' => $this->getEmptySummary(),
+                    'facilities' => $facilities
                 ], 404);
             }
 
