@@ -329,10 +329,20 @@ const handleFilterChange = () => {
 const warehouseDataType = ref('beginning_balance');
 // Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
 
+const facilityDataType = ref('opening_balance');
+// Available data types: 'opening_balance' (Beginning Balance), 'stock_received' (QTY Received), 'stock_issued' (Issued Quantity), 'closing_balance' (Closing Balance)
+
+// Facility filtering
+const facilities = ref([]);
+const selectedFacility = ref(null);
+
 // Chart data state
 const localWarehouseChartData = ref([]);
+const localFacilityChartData = ref([]);
 const chartCount = ref(0);
+const facilityChartCount = ref(0);
 const categorizedData = ref([]);
+const facilityCategorizedData = ref([]);
 
 // Computed property to group charts into rows of 3
 const chartRows = computed(() => {
@@ -343,13 +353,25 @@ const chartRows = computed(() => {
     return rows;
 });
 
+// Computed property to group facility charts into rows of 3
+const facilityChartRows = computed(() => {
+    const rows = [];
+    for (let i = 0; i < localFacilityChartData.value.length; i += 3) {
+        rows.push(localFacilityChartData.value.slice(i, i + 3));
+    }
+    return rows;
+});
+
 const isLoadingChart = ref(false);
 const chartError = ref(null);
+const isLoadingFacilityChart = ref(false);
+const facilityChartError = ref(null);
 
 const months = Array.from({ length: 12 }, (_, i) =>
   dayjs().subtract(i, 'month').format('YYYY-MM')
 );
 const issuedMonth = ref(months[1]); // Use previous month as default to match backend
+const facilityMonth = ref(months[1]); // Use previous month as default to match backend
 
 watch([
     () => warehouseDataType.value,
@@ -358,12 +380,31 @@ watch([
     handleTracertItems();
 });
 
+watch([
+    () => facilityDataType.value,
+    () => facilityMonth.value,
+    () => selectedFacility.value
+], () => {
+    handleFacilityTracertItems();
+});
+
 // Get human-readable label for data type
 function getTypeLabel(type) {
     const labels = {
         'beginning_balance': 'Beginning Balance',
         'received_quantity': 'Quantity Received',
         'issued_quantity': 'Quantity Issued', 
+        'closing_balance': 'Closing Balance'
+    };
+    return labels[type] || 'Quantity';
+}
+
+// Get human-readable label for facility data type
+function getFacilityTypeLabel(type) {
+    const labels = {
+        'opening_balance': 'Beginning Balance',
+        'stock_received': 'QTY Received',
+        'stock_issued': 'Issued Quantity', 
         'closing_balance': 'Closing Balance'
     };
     return labels[type] || 'Quantity';
@@ -449,6 +490,103 @@ async function handleTracertItems() {
         chartCount.value = 1;
     } finally {
         isLoadingChart.value = false;
+    }
+}
+
+async function handleFacilityTracertItems() {
+    isLoadingFacilityChart.value = true;
+    facilityChartError.value = null;
+    
+    const query = {};
+    if (facilityDataType.value){
+        query.type = facilityDataType.value;
+    } else {
+        query.type = 'opening_balance';
+    }
+    if (facilityMonth.value){
+        query.month = facilityMonth.value;
+    }
+    if (selectedFacility.value && selectedFacility.value.id) {
+        query.facility_id = selectedFacility.value.id;
+    }
+
+    try {
+        const response = await axios.post(route('dashboard.facility.tracert-items'), query);
+        console.log('Facility API Response:', response.data);
+        
+        // Update facilities list if provided
+        if (response.data.facilities) {
+            facilities.value = response.data.facilities;
+        }
+        
+        if (response.data.success && response.data.chartData && response.data.chartData.charts) {
+            // Handle successful response with multiple charts
+            const charts = response.data.chartData.charts;
+            localFacilityChartData.value = charts.map(chart => ({
+                id: chart.id,
+                category: chart.category,
+                categoryDisplay: chart.categoryDisplay,
+                labels: chart.labels || ['No Data'],
+                datasets: [{
+                    label: getFacilityTypeLabel(facilityDataType.value),
+                    data: chart.data || [0],
+                    backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
+                    borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
+                    borderWidth: 2
+                }]
+            }));
+            facilityChartCount.value = response.data.chartData.totalCharts;
+            facilityChartError.value = null;
+            
+            // Store items data if available
+            if (response.data.items) {
+                facilityCategorizedData.value = response.data.items;
+            }
+        } else {
+            // Handle API success but no data
+            facilityChartError.value = response.data.message || 'No facility data available for the selected period';
+            localFacilityChartData.value = [{
+                id: 1,
+                category: 'No Data',
+                categoryDisplay: 'No Data Available',
+                labels: ['No Data'],
+                datasets: [{
+                    label: 'Quantity',
+                    data: [0],
+                    backgroundColor: ['rgba(156, 163, 175, 0.8)'],
+                    borderColor: ['rgba(156, 163, 175, 1)'],
+                    borderWidth: 2
+                }]
+            }];
+            facilityChartCount.value = 1;
+            facilityCategorizedData.value = [];
+        }
+    } catch (error) {
+        console.error('Error fetching facility tracert items:', error);
+        facilityChartError.value = error.response?.data?.message || 'Network error occurred while loading facility data';
+        
+        // Update facilities list if provided in error response
+        if (error.response?.data?.facilities) {
+            facilities.value = error.response.data.facilities;
+        }
+        
+        // Set empty chart data on error
+        localFacilityChartData.value = [{
+            id: 1,
+            category: 'Error',
+            categoryDisplay: 'Error Loading Data',
+            labels: ['Error'],
+            datasets: [{
+                label: 'Quantity',
+                data: [0],
+                backgroundColor: ['rgba(239, 68, 68, 0.8)'],
+                borderColor: ['rgba(239, 68, 68, 1)'],
+                borderWidth: 2
+            }]
+        }];
+        facilityChartCount.value = 1;
+    } finally {
+        isLoadingFacilityChart.value = false;
     }
 }
 
@@ -1252,6 +1390,7 @@ function formatLargeNumberForTooltip(value) {
 // Load initial data on component mount
 onMounted(() => {
     handleTracertItems();
+    handleFacilityTracertItems();
 });
 
 // Helper function to get selected supplier value
@@ -1969,14 +2108,90 @@ const assetStatsCards = computed(() => [
 
                     </div>
                     <!-- Facilities Tab -->
-                    <div v-if="activeTab === 'facilities'" class="space-y-6">
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Facilities Data</h3>
-                            <div class="text-gray-600 text-sm">
-                                Facilities information will be displayed here.
+                    <div v-if="activeTab === 'facilities'" class="">
+                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+                                <div class="flex gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
+                                        <Multiselect
+                                            v-model="selectedFacility"
+                                            :options="facilities"
+                                            :searchable="true"
+                                            :close-on-select="true"
+                                            :show-labels="false"
+                                            label="name"
+                                            track-by="id"
+                                            placeholder="Select facility..."
+                                            class="w-full sm:w-48"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                                        <input type="month" v-model="facilityMonth" class="border border-gray-300 rounded-md px-3 py-2" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
+                                        <select v-model="facilityDataType" class="border border-gray-300 rounded-md px-3 py-2 min-w-[180px]">
+                                            <option value="opening_balance">Beginning Balance</option>
+                                            <option value="stock_received">QTY Received</option>
+                                            <option value="stock_issued">Issued Quantity</option>
+                                            <option value="closing_balance">Closing Balance</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
+                            <!-- Chart Container -->
+                            <div class="relative" :class="facilityChartCount > 1 ? 'min-h-96' : 'h-80'">
+                                <!-- Loading State -->
+                                <div v-if="isLoadingFacilityChart" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                        <span class="text-gray-600">Loading facility chart data...</span>
+                                    </div>
+                                </div>
+                                <!-- Error State -->
+                                <div v-else-if="facilityChartError" class="absolute inset-0 flex items-center justify-center bg-red-50 rounded-lg">
+                                    <div class="text-center">
+                                        <div class="text-red-600 font-medium">{{ facilityChartError }}</div>
+                                        <button @click="handleFacilityTracertItems" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                            Retry
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Charts Grid -->
+                                <div v-else class="h-full">
+                                    <!-- Single Chart -->
+                                    <div v-if="facilityChartCount === 1" class="h-full">
+                                        <div class="mb-4 text-center">
+                                            <h3 class="text-lg font-semibold text-gray-800 bg-gray-50 px-4 py-2 rounded-md border inline-block">
+                                                {{ localFacilityChartData[0]?.categoryDisplay || localFacilityChartData[0]?.category || 'Unknown Category' }}
+                                            </h3>
+                                        </div>
+                                        <div class="h-full">
+                                            <Bar :data="localFacilityChartData[0]" :options="issuedChartOptions" />
+                                        </div>
+                                    </div>
+                                    <!-- Multiple Charts Grid - 3 charts per row -->
+                                    <div v-else class="space-y-6">
+                                        <div v-for="(chartRow, rowIndex) in facilityChartRows" :key="'facility-row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div v-for="chart in chartRow" :key="'facility-' + chart.id" class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+                                                <!-- Category Title -->
+                                                <div class="mb-3 flex items-start">
+                                                    <span class="text-sm font-semibold text-gray-700">
+                                                        {{ chart.categoryDisplay || chart.category || 'Unknown Category' }}
+                                                    </span>
+                                                </div>
+                                                <div class="h-64">
+                                                    <Bar :data="chart" :options="issuedChartOptions" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

@@ -96,6 +96,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     ->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard');
         Route::post('/warehouse/tracert-items', 'warehouseTracertItems')->name('dashboard.warehouse.tracert-items');
+        Route::post('/facility/tracert-items', 'facilityTracertItems')->name('dashboard.facility.tracert-items');
     });
 
 

@@ -20,6 +20,7 @@ use App\Models\InventoryReport;
 use App\Models\Category;
 use Carbon\Carbon;
 use App\Models\IssueQuantityReport;
+use App\Models\FacilityMonthlyReport;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -403,6 +404,159 @@ class DashboardController extends Controller
                 'message' => 'Failed to fetch warehouse data: ' . $th->getMessage(),
                 'chartData' => $this->getEmptyChartData(),
                 'summary' => $this->getEmptySummary()
+            ], 500);
+        }        
+    }
+
+    public function facilityTracertItems(Request $request)
+    {
+        try {
+            $type = $request->type ?? 'opening_balance';
+            $month = $request->month ?? now()->subMonth()->format('Y-m');
+            $facilityId = $request->facility_id ?? null;
+            
+            // Validate the type is one of the allowed columns
+            // opening_balance = Beginning Balance, stock_received = QTY Received, 
+            // stock_issued = Issued Quantity (Monthly Consumption), closing_balance = Closing Balance
+            $allowedTypes = ['opening_balance', 'stock_received', 'stock_issued', 'closing_balance'];
+            if (!in_array($type, $allowedTypes)) {
+                $type = 'opening_balance';
+            }
+            
+            // Get facilities list for frontend
+            $facilities = Facility::select('id', 'name', 'facility_type')
+                ->orderBy('name')
+                ->get();
+            
+            // Build query for facility monthly reports
+            $query = FacilityMonthlyReport::where('report_period', $month)
+                ->with(['facility', 'items.product.category']);
+                
+            // Filter by facility if specified, otherwise get all facilities
+            if ($facilityId) {
+                $query->where('facility_id', $facilityId);
+                $facilityReports = [$query->first()];
+                $selectedFacilityName = $facilityReports[0]->facility->name ?? 'Unknown Facility';
+            } else {
+                $facilityReports = $query->get()->toArray();
+                $selectedFacilityName = 'All Facilities';
+            }
+            
+            // Filter out null reports and check if we have any data
+            $facilityReports = array_filter($facilityReports, function($report) {
+                return $report && !empty($report['items']);
+            });
+                
+            if (empty($facilityReports)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No facility reports found for {$month}",
+                    'chartData' => $this->getEmptyChartData(),
+                    'summary' => $this->getEmptySummary(),
+                    'facilities' => $facilities
+                ], 404);
+            }
+            
+            // Create a collection to hold all items from all facilities
+            $items = collect();
+            
+            foreach ($facilityReports as $facilityReport) {
+                if (!$facilityReport || empty($facilityReport['items'])) continue;
+                
+                foreach ($facilityReport['items'] as $reportItem) {
+                    // Convert array to object if needed
+                    if (is_array($reportItem)) {
+                        $reportItem = (object) $reportItem;
+                        if (isset($reportItem->product) && is_array($reportItem->product)) {
+                            $reportItem->product = (object) $reportItem->product;
+                            if (isset($reportItem->product->category) && is_array($reportItem->product->category)) {
+                                $reportItem->product->category = (object) $reportItem->product->category;
+                            }
+                        }
+                    }
+                    
+                    if (!$reportItem->product) continue;
+                    
+                    // Get category name from the product's category relationship
+                    $categoryName = $reportItem->product->category ? $reportItem->product->category->name : 'Uncategorized';
+
+                    // Create a mock item with the report item data
+                    $mockItem = (object) [
+                        'id' => $reportItem->id,
+                        'product' => $reportItem->product,
+                        'category' => $reportItem->product->category,
+                        'category_name' => $categoryName,
+                        'opening_balance' => $reportItem->opening_balance,
+                        'stock_received' => $reportItem->stock_received,
+                        'stock_issued' => $reportItem->stock_issued,
+                        'closing_balance' => $reportItem->closing_balance,
+                    ];
+                    
+                    $items->push($mockItem);
+                }
+            }
+            
+            // Sort by the selected type in descending order
+            $items = $items->sortByDesc($type);
+
+            if ($items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No facility items found",
+                    'chartData' => $this->getEmptyChartData(),
+                    'summary' => $this->getEmptySummary()
+                ], 404);
+            }
+
+            // Process data for charts
+            $chartData = $this->processChartData($items, $type);
+            $summary = $this->processSummaryData($items, $type);
+
+            return response()->json([
+                'success' => true,
+                'month' => $month,
+                'type' => $type,
+                'facility' => $selectedFacilityName,
+                'facilities' => $facilities,
+                'chartData' => $chartData,
+                'summary' => $summary,
+                'items' => $items->map(function ($item) use ($type) {
+                    return [
+                        'id' => $item->id,
+                        'product_name' => $item->product->name,
+                        'product_id' => $item->product->productID,
+                        'category_name' => $item->category_name,
+                        'value' => $item->{$type},
+                        'opening_balance' => $item->opening_balance,
+                        'stock_received' => $item->stock_received,
+                        'stock_issued' => $item->stock_issued,
+                        'closing_balance' => $item->closing_balance,
+                    ];
+                })
+            ], 200);
+
+        } catch (\Throwable $th) {
+            logger()->error('Error fetching facility tracert items', [
+                'error' => $th->getMessage(),
+                'request' => $request->all()
+            ]);
+            
+            // Try to get facilities list even on error
+            $facilities = collect();
+            try {
+                $facilities = Facility::select('id', 'name', 'facility_type')
+                    ->orderBy('name')
+                    ->get();
+            } catch (\Exception $e) {
+                // If facilities can't be loaded, use empty collection
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch facility data: ' . $th->getMessage(),
+                'chartData' => $this->getEmptyChartData(),
+                'summary' => $this->getEmptySummary(),
+                'facilities' => $facilities
             ], 500);
         }        
     }
