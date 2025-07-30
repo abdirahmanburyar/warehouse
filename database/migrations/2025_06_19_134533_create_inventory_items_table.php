@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->string('uom')->nullable();
             $table->timestamps();
-            $table->unique(['product_id','batch_number'], 'unique_inventory_item');
         });
     }
 
