@@ -19,7 +19,7 @@ class SettingsController extends Controller
         $tab = $request->query('tab', 'General');
         
         // Get users with filtering if tab is 'users'
-        $users = User::with('roles', 'warehouse','facility');
+        $users = User::with('warehouse','facility');
         
         if ($tab === 'users') {
             // Apply search filter if provided
@@ -42,25 +42,7 @@ class SettingsController extends Controller
             }
         }
         
-        // Get roles with filtering if tab is 'roles'
-        $roles = Role::with('permissions');
-        
-        if ($tab === 'roles') {
-            // Apply search filter if provided
-            if ($request->filled('search')) {
-                $search = $request->input('search');
-                $roles->where('name', 'like', "%{$search}%");
-            }
-            
-            // Apply sorting if provided
-            if ($request->filled('sort_field')) {
-                $sortField = $request->input('sort_field', 'created_at');
-                $sortDirection = $request->input('sort_direction', 'desc');
-                $roles->orderBy($sortField, $sortDirection);
-            } else {
-                $roles->orderBy('name', 'asc');
-            }
-        }
+
 
         // Get approvals with filtering if tab is 'approvals'
         $approvals = Approval::query();
@@ -72,14 +54,11 @@ class SettingsController extends Controller
                 $approvals->where(function($q) use ($search) {
                     $q->where('activity_type', 'like', "%{$search}%")
                       ->orWhere('approval_level', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                      ->orWhereHas('role', function($query) use ($search) {
-                        $query->where('name', 'like', "%{$search}%");
-                      });
+                      ->orWhere('description', 'like', "%{$search}%");
                 });
             }
             
-            $approvals = $approvals->with('role');
+
         }
         
         // Extract filters but only include non-empty ones
@@ -91,7 +70,6 @@ class SettingsController extends Controller
         return Inertia::render('Settings/Index', [
             'approvals' => ApprovalResource::collection($approvals->paginate(10)),
             'users' => UserResource::collection($users->paginate(10)->withQueryString()),
-            'roles' => $roles->get(),
             'permissions' => Permission::all(),
             'warehouses' => Warehouse::get(),
             'activeTab' => $tab,
