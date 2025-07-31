@@ -330,7 +330,7 @@ const warehouseDataType = ref('beginning_balance');
 // Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
 
 const facilityDataType = ref('opening_balance');
-// Available data types: 'opening_balance' (Beginning Balance), 'stock_received' (QTY Received), 'stock_issued' (Issued Quantity), 'closing_balance' (Closing Balance)
+// Available data types: 'opening_balance' (Beginning Balance), 'stock_received' (QTY Received), 'stock_issued' (Issued Quantity), 'closing_balance' (Closing Balance), 'positive_adjustments', 'negative_adjustments'
 
 // Facility filtering
 const facilities = ref([]);
@@ -405,7 +405,9 @@ function getFacilityTypeLabel(type) {
         'opening_balance': 'Beginning Balance',
         'stock_received': 'QTY Received',
         'stock_issued': 'Issued Quantity', 
-        'closing_balance': 'Closing Balance'
+        'closing_balance': 'Closing Balance (Calculated)',
+        'positive_adjustments': 'Positive Adjustments',
+        'negative_adjustments': 'Negative Adjustments'
     };
     return labels[type] || 'Quantity';
 }
@@ -2136,7 +2138,9 @@ const assetStatsCards = computed(() => [
                                             <option value="opening_balance">Beginning Balance</option>
                                             <option value="stock_received">QTY Received</option>
                                             <option value="stock_issued">Issued Quantity</option>
-                                            <option value="closing_balance">Closing Balance</option>
+                                            <option value="positive_adjustments">Positive Adjustments</option>
+                                            <option value="negative_adjustments">Negative Adjustments</option>
+                                            <option value="closing_balance">Closing Balance (Calculated)</option>
                                         </select>
                                     </div>
                                 </div>

@@ -192,7 +192,7 @@ class FacilityMonthlyReport extends Model
      */
     public function canApprove(): bool
     {
-        return $this->status === 'submitted';
+        return $this->status === 'reviewed';
     }
 
     /**

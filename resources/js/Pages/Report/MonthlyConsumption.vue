@@ -745,12 +745,17 @@ function calculateAverage(row) {
     // Get all month values (excluding product_id and product_name)
     const monthValues = sortedMonths.value.map(month => row[month] || 0);
     
-    // If no months available or less than 4 months, don't calculate AMC
-    if (monthValues.length === 0 || monthValues.length < 3) return 'N/A';
+    // If no months available, don't calculate AMC
+    if (monthValues.length === 0) return 'N/A';
     
-    // Calculate average using all months, including zeros
+    // Calculate sum using all months, including zeros
     const sum = monthValues.reduce((acc, val) => acc + val, 0);
-    return Math.round((sum / monthValues.length) * 100) / 100;
+    
+    // AMC calculation logic: Always divide by actual number of months (true average)
+    // This gives the average monthly consumption across all available months
+    const divisor = monthValues.length;
+    
+    return Math.round((sum / divisor) * 100) / 100;
 }
 
 // Export data to Excel

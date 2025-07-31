@@ -183,6 +183,9 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/reports/purchase-orders', [ReportController::class, 'purchaseOrders'])->name('reports.purchase-orders');
         Route::get('/reports/packing-list', [ReportController::class, 'packingList'])->name('reports.packing-list');
         Route::get('/reports/lmis-monthly-report', [ReportController::class, 'lmisMonthlyReport'])->name('reports.lmis-monthly');
+        Route::put('/reports/lmis-monthly-report/review', [ReportController::class, 'reviewLmisReport'])->name('reports.lmis-monthly.review');
+        Route::put('/reports/lmis-monthly-report/approve', [ReportController::class, 'approveLmisReport'])->name('reports.lmis-monthly.approve');
+        Route::put('/reports/lmis-monthly-report/reject', [ReportController::class, 'rejectLmisReport'])->name('reports.lmis-monthly.reject');
         Route::post('/reports/orders/exportToExcel', [ReportController::class, 'exportOrdersToExcel'])->name('reports.orders.exportToExcel');
         Route::get('/reports/order-tracking/export', [\App\Http\Controllers\ReportController::class, 'exportOrderTrackingExcel'])->name('reports.order-tracking.export');
 
@@ -212,6 +215,13 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::get('/reports/facilities-list', [ReportController::class, 'facilitiesListReport'])->name('reports.facilities-list');
         Route::get('/reports/lmis-monthly-consumption', [ReportController::class, 'lmisMonthlyConsumptionReport'])->name('reports.lmis-monthly-consumption');
         Route::get('/reports/facility-compliance', [ReportController::class, 'facilityComplianceReport'])->name('reports.facility-compliance');
+        
+        // LMIS Report Routes
+        Route::get('/reports/facility-lmis-report', [ReportController::class, 'facilityLmisReport'])->name('reports.facility-lmis-report');
+        Route::post('/reports/facility-lmis-report/store', [ReportController::class, 'storeFacilityLmisReport'])->name('reports.facility-lmis-report.store');
+        Route::post('/reports/facility-lmis-report/submit', [ReportController::class, 'submitFacilityLmisReport'])->name('reports.facility-lmis-report.submit');
+        Route::post('/reports/facility-lmis-report/generate-from-movements', [ReportController::class, 'generateFacilityLmisReportFromMovements'])->name('reports.facility-lmis-report.generate-from-movements');
+        Route::get('/reports/facility-lmis-report/create', [ReportController::class, 'createFacilityLmisReport'])->name('reports.facility-lmis-report.create');
     });
 
     Route::post('/users/{user}/roles', [RoleController::class, 'assignRoles'])

@@ -419,8 +419,9 @@ class DashboardController extends Controller
             
             // Validate the type is one of the allowed columns
             // opening_balance = Beginning Balance, stock_received = QTY Received, 
-            // stock_issued = Issued Quantity (Monthly Consumption), closing_balance = Closing Balance
-            $allowedTypes = ['opening_balance', 'stock_received', 'stock_issued', 'closing_balance'];
+            // stock_issued = Issued Quantity (Monthly Consumption), closing_balance = Closing Balance (Calculated)
+            // positive_adjustments = Positive Adjustments, negative_adjustments = Negative Adjustments
+            $allowedTypes = ['opening_balance', 'stock_received', 'stock_issued', 'closing_balance', 'positive_adjustments', 'negative_adjustments'];
             if (!in_array($type, $allowedTypes)) {
                 $type = 'opening_balance';
             }
@@ -502,16 +503,27 @@ class DashboardController extends Controller
                     // Get category name from the product's category relationship
                     $categoryName = $reportItem->product->category ? $reportItem->product->category->name : 'Uncategorized';
 
+                    // Calculate closing balance using LMIS formula: 
+                    // Opening Balance + Stock Received - Stock Issued + Positive Adjustments - Negative Adjustments
+                    $calculatedClosingBalance = ($reportItem->opening_balance ?? 0)
+                                              + ($reportItem->stock_received ?? 0)
+                                              - ($reportItem->stock_issued ?? 0)
+                                              + ($reportItem->positive_adjustments ?? 0)
+                                              - ($reportItem->negative_adjustments ?? 0);
+                    
                     // Create a mock item with the report item data
                     $mockItem = (object) [
                         'id' => $reportItem->id,
                         'product' => $reportItem->product,
                         'category' => $reportItem->product->category,
                         'category_name' => $categoryName,
-                        'opening_balance' => $reportItem->opening_balance,
-                        'stock_received' => $reportItem->stock_received,
-                        'stock_issued' => $reportItem->stock_issued,
-                        'closing_balance' => $reportItem->closing_balance,
+                        'opening_balance' => $reportItem->opening_balance ?? 0,
+                        'stock_received' => $reportItem->stock_received ?? 0,
+                        'stock_issued' => $reportItem->stock_issued ?? 0,
+                        'positive_adjustments' => $reportItem->positive_adjustments ?? 0,
+                        'negative_adjustments' => $reportItem->negative_adjustments ?? 0,
+                        'closing_balance' => $calculatedClosingBalance, // Use calculated value
+                        'stored_closing_balance' => $reportItem->closing_balance ?? 0, // Keep original for reference
                     ];
                     
                     $items->push($mockItem);
@@ -553,7 +565,10 @@ class DashboardController extends Controller
                         'opening_balance' => $item->opening_balance,
                         'stock_received' => $item->stock_received,
                         'stock_issued' => $item->stock_issued,
-                        'closing_balance' => $item->closing_balance,
+                        'positive_adjustments' => $item->positive_adjustments,
+                        'negative_adjustments' => $item->negative_adjustments,
+                        'closing_balance' => $item->closing_balance, // Calculated value
+                        'stored_closing_balance' => $item->stored_closing_balance, // Original stored value
                     ];
                 })
             ], 200);

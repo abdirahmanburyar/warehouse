@@ -1625,6 +1625,194 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Review LMIS Monthly Report
+     */
+    public function reviewLmisReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'report_period' => 'required|string',
+                'facility_id' => 'required|integer',
+            ]);
+
+            Log::info('Review LMIS Report Request:', $request->all());
+
+            $report = FacilityMonthlyReport::where('report_period', $request->report_period)
+                ->where('facility_id', $request->facility_id)
+                ->first();
+
+            if (!$report) {
+                Log::warning('LMIS Report not found:', [
+                    'report_period' => $request->report_period,
+                    'facility_id' => $request->facility_id
+                ]);
+                return response()->json(['message' => 'Report not found for the specified facility and period.'], 404);
+            }
+
+            if ($report->status !== 'submitted') {
+                Log::warning('LMIS Report wrong status:', [
+                    'current_status' => $report->status,
+                    'expected_status' => 'submitted'
+                ]);
+                return response()->json(['message' => "Only submitted reports can be reviewed. Current status: {$report->status}"], 403);
+            }
+
+            $report->update([
+                'status' => 'reviewed',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            Log::info('LMIS Report reviewed successfully:', ['report_id' => $report->id]);
+
+            return response()->json([
+                'message' => 'LMIS report marked as reviewed.',
+                'status' => 'reviewed'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Review LMIS Report Validation Error:', $e->errors());
+            return response()->json([
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $th) {
+            Log::error('Review LMIS Report Error: ' . $th->getMessage(), [
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Failed to review LMIS report: ' . $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Approve LMIS Monthly Report
+     */
+    public function approveLmisReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'report_period' => 'required|string',
+                'facility_id' => 'required|integer',
+            ]);
+
+            Log::info('Approve LMIS Report Request:', $request->all());
+
+            $report = FacilityMonthlyReport::where('report_period', $request->report_period)
+                ->where('facility_id', $request->facility_id)
+                ->first();
+
+            if (!$report) {
+                Log::warning('LMIS Report not found for approval:', [
+                    'report_period' => $request->report_period,
+                    'facility_id' => $request->facility_id
+                ]);
+                return response()->json(['message' => 'Report not found for the specified facility and period.'], 404);
+            }
+
+            if ($report->status !== 'reviewed') {
+                Log::warning('LMIS Report wrong status for approval:', [
+                    'current_status' => $report->status,
+                    'expected_status' => 'reviewed'
+                ]);
+                return response()->json(['message' => "Only reviewed reports can be approved. Current status: {$report->status}"], 403);
+            }
+
+            $report->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            Log::info('LMIS Report approved successfully:', ['report_id' => $report->id]);
+
+            return response()->json([
+                'message' => 'LMIS report approved successfully.',
+                'status' => 'approved'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Approve LMIS Report Validation Error:', $e->errors());
+            return response()->json([
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $th) {
+            Log::error('Approve LMIS Report Error: ' . $th->getMessage(), [
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Failed to approve LMIS report: ' . $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject LMIS Monthly Report
+     */
+    public function rejectLmisReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'report_period' => 'required|string',
+                'facility_id' => 'required|integer',
+                'reason' => 'nullable|string|max:500',
+            ]);
+
+            Log::info('Reject LMIS Report Request:', $request->all());
+
+            $report = FacilityMonthlyReport::where('report_period', $request->report_period)
+                ->where('facility_id', $request->facility_id)
+                ->first();
+
+            if (!$report) {
+                Log::warning('LMIS Report not found for rejection:', [
+                    'report_period' => $request->report_period,
+                    'facility_id' => $request->facility_id
+                ]);
+                return response()->json(['message' => 'Report not found for the specified facility and period.'], 404);
+            }
+
+            if ($report->status !== 'reviewed') {
+                Log::warning('LMIS Report wrong status for rejection:', [
+                    'current_status' => $report->status,
+                    'expected_status' => 'reviewed'
+                ]);
+                return response()->json(['message' => "Only reviewed reports can be rejected. Current status: {$report->status}"], 403);
+            }
+
+            $report->update([
+                'status' => 'rejected',
+                'rejected_by' => auth()->id(),
+                'rejected_at' => now(),
+                'comments' => $request->reason, // Using comments field for rejection reason
+            ]);
+
+            Log::info('LMIS Report rejected successfully:', ['report_id' => $report->id]);
+
+            return response()->json([
+                'message' => 'LMIS report rejected successfully.',
+                'status' => 'rejected'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Reject LMIS Report Validation Error:', $e->errors());
+            return response()->json([
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $th) {
+            Log::error('Reject LMIS Report Error: ' . $th->getMessage(), [
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Failed to reject LMIS report: ' . $th->getMessage()], 500);
+        }
+    }
+
     public function export($monthYear, Request $request)
     {
         $format = $request->input('format', 'excel');
@@ -2814,5 +3002,388 @@ class ReportController extends Controller
                 ];
             }
         }, $filename);
+    }
+    
+    /**
+     * Display the LMIS Report interface for facilities
+     */
+    public function facilityLmisReport(Request $request)
+    {
+        // Get all facilities for the dropdown
+        $facilities = Facility::select('id', 'name', 'facility_type', 'district', 'region')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        // Get all products for filtering
+        $products = Product::select('id', 'name', 'productID')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        $reports = null;
+        
+        // If filters are provided, get the report data
+        if ($request->filled(['month_year', 'facility_id'])) {
+            $facilityId = $request->facility_id;
+            $monthYear = $request->month_year;
+            
+            // Get or create facility monthly report
+            $reports = FacilityMonthlyReport::where('facility_id', $facilityId)
+                ->where('report_period', $monthYear)
+                ->with([
+                    'items.product.category:id,name',
+                    'items.product.dosage:id,name',
+                    'facility:id,name,facility_type,district,region',
+                    'approvedBy:id,name',
+                    'submittedBy:id,name',
+                    'reviewedBy:id,name',
+                    'rejectedBy:id,name'
+                ])
+                ->first();
+        }
+        
+        return inertia('Report/FacilityLmisReport', [
+            'reports' => $reports,
+            'facilities' => $facilities,
+            'products' => $products,
+            'filters' => $request->only(['month_year', 'status', 'facility_id', 'product_id']),
+        ]);
+    }
+    
+    /**
+     * Store facility LMIS report data
+     */
+    public function storeFacilityLmisReport(Request $request)
+    {
+        $request->validate([
+            'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            'month' => 'required|integer|min:1|max:12',
+            'facility_id' => 'required|exists:facilities,id',
+            'reports' => 'required|array',
+            'reports.*.product_id' => 'required|exists:products,id',
+            'reports.*.opening_balance' => 'required|numeric|min:0',
+            'reports.*.stock_received' => 'required|numeric|min:0',
+            'reports.*.stock_issued' => 'required|numeric|min:0',
+            'reports.*.positive_adjustments' => 'nullable|numeric|min:0',
+            'reports.*.negative_adjustments' => 'nullable|numeric|min:0',
+            'reports.*.stockout_days' => 'nullable|integer|min:0|max:31',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $year = $request->input('year');
+                $month = $request->input('month');
+                $facilityId = $request->input('facility_id');
+                $reportPeriod = sprintf('%04d-%02d', $year, $month);
+                
+                // Get or create the monthly report
+                $monthlyReport = FacilityMonthlyReport::firstOrCreate([
+                    'facility_id' => $facilityId,
+                    'report_period' => $reportPeriod,
+                ], [
+                    'status' => 'draft',
+                ]);
+
+                $createdCount = 0;
+                $updatedCount = 0;
+
+                foreach ($request->input('reports') as $reportData) {
+                    $existingItem = $monthlyReport->items()
+                        ->where('product_id', $reportData['product_id'])
+                        ->first();
+
+                    if ($existingItem) {
+                        $existingItem->update($reportData);
+                        $updatedCount++;
+                    } else {
+                        $monthlyReport->items()->create($reportData);
+                        $createdCount++;
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'LMIS report saved successfully',
+                    'data' => [
+                        'created_count' => $createdCount,
+                        'updated_count' => $updatedCount,
+                        'report_id' => $monthlyReport->id,
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to store facility LMIS report', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save LMIS report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Submit facility LMIS report for approval
+     */
+    public function submitFacilityLmisReport(Request $request)
+    {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer',
+            'facility_id' => 'required|exists:facilities,id',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $year = $request->input('year');
+                $month = $request->input('month');
+                $facilityId = $request->input('facility_id');
+                $reportPeriod = sprintf('%04d-%02d', $year, $month);
+                
+                $monthlyReport = FacilityMonthlyReport::where('facility_id', $facilityId)
+                    ->where('report_period', $reportPeriod)
+                    ->where('status', 'draft')
+                    ->firstOrFail();
+
+                $monthlyReport->update([
+                    'status' => 'submitted',
+                    'submitted_by' => auth()->id(),
+                    'submitted_at' => now(),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'LMIS report submitted successfully for approval',
+                ]);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to submit facility LMIS report', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit LMIS report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Generate facility LMIS report from movements
+     */
+    public function generateFacilityLmisReportFromMovements(Request $request)
+    {
+        $request->validate([
+            'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            'month' => 'required|integer|min:1|max:12',
+            'facility_id' => 'required|exists:facilities,id',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $year = $request->input('year');
+                $month = $request->input('month');
+                $facilityId = $request->input('facility_id');
+                $reportPeriod = sprintf('%04d-%02d', $year, $month);
+                
+                // Check if report already exists
+                $existingReport = FacilityMonthlyReport::where('facility_id', $facilityId)
+                    ->where('report_period', $reportPeriod)
+                    ->first();
+                
+                if ($existingReport && $existingReport->status !== 'draft') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'A report for this period already exists and cannot be regenerated.'
+                    ], 422);
+                }
+
+                // Get or create the monthly report
+                $monthlyReport = FacilityMonthlyReport::firstOrCreate([
+                    'facility_id' => $facilityId,
+                    'report_period' => $reportPeriod,
+                ], [
+                    'status' => 'draft',
+                ]);
+
+                // Get the facility
+                $facility = Facility::findOrFail($facilityId);
+                
+                // Get all eligible products for this facility
+                $eligibleProducts = $facility->eligibleProducts()->get();
+                
+                $createdCount = 0;
+                $updatedCount = 0;
+                $movementsProcessed = 0;
+
+                foreach ($eligibleProducts as $product) {
+                    // Calculate movements for this product in the given month
+                    $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+                    $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+                    
+                    // Get opening balance (closing balance from previous month or current inventory)
+                    $openingBalance = $this->calculateOpeningBalance($facilityId, $product->id, $startDate);
+                    
+                    // Get received quantities (transfers, orders)
+                    $stockReceived = $this->calculateStockReceived($facilityId, $product->id, $startDate, $endDate);
+                    
+                    // Get issued quantities (dispenses, transfers out)
+                    $stockIssued = $this->calculateStockIssued($facilityId, $product->id, $startDate, $endDate);
+                    
+                    // Calculate closing balance
+                    $closingBalance = $openingBalance + $stockReceived - $stockIssued;
+                    
+                    $reportData = [
+                        'product_id' => $product->id,
+                        'opening_balance' => $openingBalance,
+                        'stock_received' => $stockReceived,
+                        'stock_issued' => $stockIssued,
+                        'positive_adjustments' => 0,
+                        'negative_adjustments' => 0,
+                        'closing_balance' => $closingBalance,
+                        'stockout_days' => 0, // This would need to be calculated based on historical data
+                    ];
+
+                    $existingItem = $monthlyReport->items()
+                        ->where('product_id', $product->id)
+                        ->first();
+
+                    if ($existingItem) {
+                        $existingItem->update($reportData);
+                        $updatedCount++;
+                    } else {
+                        $monthlyReport->items()->create($reportData);
+                        $createdCount++;
+                    }
+                    
+                    $movementsProcessed++;
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'LMIS report generated successfully from facility movements',
+                    'data' => [
+                        'created_count' => $createdCount,
+                        'updated_count' => $updatedCount,
+                        'total_products' => $eligibleProducts->count(),
+                        'movements_processed' => $movementsProcessed,
+                        'report_id' => $monthlyReport->id,
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to generate facility LMIS report from movements', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate LMIS report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Create/edit facility LMIS report interface
+     */
+    public function createFacilityLmisReport(Request $request)
+    {
+        $year = $request->get('year', date('Y'));
+        $month = $request->get('month', date('n'));
+        $facilityId = $request->get('facility_id');
+        
+        if (!$facilityId) {
+            return redirect()->route('reports.facility-lmis-report')
+                ->with('error', 'Please select a facility first.');
+        }
+        
+        $facility = Facility::findOrFail($facilityId);
+        $reportPeriod = sprintf('%04d-%02d', $year, $month);
+        
+        // Get or create the monthly report for this period
+        $monthlyReport = FacilityMonthlyReport::firstOrCreate([
+            'facility_id' => $facilityId,
+            'report_period' => $reportPeriod,
+        ], [
+            'status' => 'draft',
+        ]);
+        
+        // Get eligible products for this facility type
+        $eligibleProducts = $facility->eligibleProducts()->select('products.id', 'products.name')->get();
+        
+        return inertia('Report/FacilityLmisReportCreate', [
+            'monthlyReport' => $monthlyReport->load([
+                'items.product.category:id,name',
+                'items.product.dosage:id,name'
+            ]),
+            'facility' => $facility,
+            'eligibleProducts' => $eligibleProducts,
+            'year' => $year,
+            'month' => $month,
+        ]);
+    }
+    
+    /**
+     * Helper method to calculate opening balance
+     */
+    private function calculateOpeningBalance($facilityId, $productId, $startDate)
+    {
+        // This is a simplified calculation - in practice, you might need more complex logic
+        // to get the actual opening balance from inventory or previous reports
+        return 0;
+    }
+    
+    /**
+     * Helper method to calculate stock received
+     */
+    private function calculateStockReceived($facilityId, $productId, $startDate, $endDate)
+    {
+        // Calculate received quantities from transfers and orders
+        $transfersReceived = DB::table('transfer_items')
+            ->join('transfers', 'transfers.id', '=', 'transfer_items.transfer_id')
+            ->where('transfers.to_facility_id', $facilityId)
+            ->where('transfer_items.product_id', $productId)
+            ->where('transfers.status', 'delivered')
+            ->whereBetween('transfers.delivered_at', [$startDate, $endDate])
+            ->sum('transfer_items.received_quantity');
+            
+        $ordersReceived = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.facility_id', $facilityId)
+            ->where('order_items.product_id', $productId)
+            ->where('orders.status', 'received')
+            ->whereBetween('orders.updated_at', [$startDate, $endDate])
+            ->sum('order_items.received_quantity');
+        
+        return ($transfersReceived ?? 0) + ($ordersReceived ?? 0);
+    }
+    
+    /**
+     * Helper method to calculate stock issued
+     */
+    private function calculateStockIssued($facilityId, $productId, $startDate, $endDate)
+    {
+        // Calculate issued quantities from dispenses and transfers out
+        $dispenseIssued = DB::table('dispence_items')
+            ->join('dispences', 'dispences.id', '=', 'dispence_items.dispence_id')
+            ->where('dispences.facility_id', $facilityId)
+            ->where('dispence_items.product_id', $productId)
+            ->whereBetween('dispences.created_at', [$startDate, $endDate])
+            ->sum('dispence_items.quantity');
+            
+        $transfersIssued = DB::table('transfer_items')
+            ->join('transfers', 'transfers.id', '=', 'transfer_items.transfer_id')
+            ->where('transfers.from_facility_id', $facilityId)
+            ->where('transfer_items.product_id', $productId)
+            ->where('transfers.status', 'delivered')
+            ->whereBetween('transfers.created_at', [$startDate, $endDate])
+            ->sum('transfer_items.allocated_quantity');
+        
+        return ($dispenseIssued ?? 0) + ($transfersIssued ?? 0);
     }
 }
