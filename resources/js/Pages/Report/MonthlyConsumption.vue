@@ -159,15 +159,18 @@
                                         </div>
                                     </div>
                                 </th>
-                                <!-- Month columns -->
-                                <th v-for="month in sortedMonths" :key="month"
-                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {{ formatMonthShort(month) }}-{{ formatYear(month) }}
-                                </th>
-                                <!-- Average column -->
-                                <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
-                                    AMC
-                                </th>
+                                <!-- Month groups with AMC columns -->
+                                <template v-for="(group, groupIndex) in monthGroups" :key="groupIndex">
+                                    <!-- Month columns for this group -->
+                                    <th v-for="month in group.months" :key="month"
+                                        class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {{ formatMonthShort(month) }}-{{ formatYear(month) }}
+                                    </th>
+                                    <!-- AMC column for this group -->
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
+                                        AMC
+                                    </th>
+                                </template>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -178,15 +181,18 @@
                                 <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
                                     {{ row.product_name }}
                                 </td>
-                                <!-- Month columns with consumption values -->
-                                <td v-for="month in sortedMonths" :key="month"
-                                    class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200 text-center">
-                                    {{ row[month] || 0 }}
-                                </td>
-                                <!-- Average column -->
-                                <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-white border-r border-gray-200 text-center bg-sky-500">
-                                    {{ calculateAverage(row) }}
-                                </td>
+                                <!-- Month groups with AMC columns -->
+                                <template v-for="(group, groupIndex) in monthGroups" :key="groupIndex">
+                                    <!-- Month columns with consumption values for this group -->
+                                    <td v-for="month in group.months" :key="month"
+                                        class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200 text-center">
+                                        {{ row[month] || 0 }}
+                                    </td>
+                                    <!-- AMC column for this group -->
+                                    <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-white border-r border-gray-200 text-center bg-sky-500">
+                                        {{ calculateGroupAMC(row, group) }}
+                                    </td>
+                                </template>
                             </tr>
                         </tbody>
                     </table>
@@ -339,6 +345,23 @@ const months = computed(() => {
 // Sort months chronologically
 const sortedMonths = computed(() => {
     return [...months.value].sort();
+});
+
+// Group months into 3-month periods with AMC columns
+const monthGroups = computed(() => {
+    const groups = [];
+    const months = sortedMonths.value;
+    
+    for (let i = 0; i < months.length; i += 3) {
+        const group = months.slice(i, i + 3);
+        groups.push({
+            months: group,
+            startIndex: i,
+            endIndex: Math.min(i + 2, months.length - 1)
+        });
+    }
+    
+    return groups;
 });
 
 // Transform data into pivot table format
@@ -740,22 +763,25 @@ async function uploadFile() {
         });
 }
 
-// Calculate average monthly consumption for a product
-function calculateAverage(row) {
-    // Get all month values (excluding product_id and product_name)
-    const monthValues = sortedMonths.value.map(month => row[month] || 0);
+// Calculate AMC for a specific group of months
+function calculateGroupAMC(row, group) {
+    const groupValues = group.months.map(month => row[month] || 0);
     
-    // If no months available, don't calculate AMC
-    if (monthValues.length === 0) return 'N/A';
+    if (groupValues.length === 0) return 'N/A';
     
-    // Calculate sum using all months, including zeros
-    const sum = monthValues.reduce((acc, val) => acc + val, 0);
-    
-    // AMC calculation logic: Always divide by actual number of months (true average)
-    // This gives the average monthly consumption across all available months
-    const divisor = monthValues.length;
+    const sum = groupValues.reduce((acc, val) => acc + val, 0);
+    const divisor = groupValues.length;
     
     return Math.round((sum / divisor) * 100) / 100;
+}
+
+// Calculate average monthly consumption for a product (legacy function for compatibility)
+function calculateAverage(row) {
+    // This function is kept for compatibility but now uses the last group's AMC
+    if (monthGroups.value.length === 0) return 'N/A';
+    
+    const lastGroup = monthGroups.value[monthGroups.value.length - 1];
+    return calculateGroupAMC(row, lastGroup);
 }
 
 // Export data to Excel
