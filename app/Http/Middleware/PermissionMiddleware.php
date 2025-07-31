@@ -15,11 +15,11 @@ class PermissionMiddleware
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        if (!$request->user() || !$request->user()->can($permission)) {
+        if (!$request->user() || !$request->user()->hasPermission($permission)) {
             if ($request->wantsJson()) {
-                return response()->json('Unauthorized', 500);
+                return response()->json('Unauthorized', 403);
             }
-            abort(500, 'Unauthorized');
+            abort(403, 'Unauthorized');
         }
 
         return $next($request);

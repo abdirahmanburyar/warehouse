@@ -15,7 +15,6 @@
                     class="py-2 px-4 text-sm font-medium border-b-2 -mb-[2px] transition-colors"
                     :class="{
                         'border-blue-500 text-blue-600': $page.component.startsWith('User/'),
-                        'border-green-500 text-green-600': $page.component.startsWith('Role/'),
                         // 'border-yellow-500 text-yellow-600': $page.component.startsWith('Permission/'),
                         // 'border-red-500 text-red-600': $page.component.startsWith('Audit/'),
                         'border-transparent text-gray-600 hover:text-blue-500 hover:border-blue-300': !$page.component.startsWith(tab.component)
@@ -38,10 +37,9 @@ import { ref } from "vue";
 
 const tabs = [
     { name: 'settings.users.index', label: 'Manage Users', component: 'User' },
-    { name: 'settings.roles.index', label: 'Role-Based Access', component: 'Role' },
     // { name: '#', label: 'Permissions', component: 'Permission' },
     // { name: '#', label: 'Audit Trials', component: 'Audit' }
 ];
 
-const currentTab = ref('roles');
+const currentTab = ref('users');
 </script>

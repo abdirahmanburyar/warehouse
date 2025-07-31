@@ -127,33 +127,10 @@
                     </div>
                 </div>
 
-                <!-- Role Selection -->
-                <div class="mt-6">
-                    <InputLabel value="Roles" />
-                    <div class="mt-2">
-                        <Multiselect
-                            v-model="form.roles"
-                            :options="roles"
-                            track-by="id"
-                            label="name"
-                            placeholder="Select roles"
-                            :searchable="true"
-                            :multiple="true"
-                            :allow-empty="true"
-                            @select="handleRoleSelect"
-                            @remove="handleRoleRemove"
-                            class="mt-1"
-                        />
-                        <p v-if="form.roles && form.roles.length > 0" class="mt-2 text-sm text-gray-600">
-                            Role permissions: {{ getRolePermissionNames() }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Direct Permissions -->
+                <!-- User Permissions -->
                 <div class="mt-6">
                     <div class="flex items-center justify-between">
-                        <InputLabel value="Additional Permissions" />
+                        <InputLabel value="User Permissions" />
                         <button 
                             type="button" 
                             @click="toggleAllPermissions" 
@@ -164,24 +141,27 @@
                     </div>
                     
                     <div class="mt-2 border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
-                        <div v-if="!availablePermissions.length" class="text-gray-500 text-center py-4">
-                            No additional permissions available
+                        <div v-if="!permissions.length" class="text-gray-500 text-center py-4">
+                            No permissions available
                         </div>
                         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <div v-for="permission in availablePermissions" :key="permission.id" class="flex items-start">
+                            <div v-for="permission in permissions" :key="permission.id" class="flex items-start">
                                 <div class="flex items-center h-5">
                                     <input
                                         :id="`permission-${permission.id}`"
                                         type="checkbox"
                                         :value="permission.id"
-                                        v-model="form.direct_permissions"
+                                        v-model="form.permissions"
                                         class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                 </div>
                                 <div class="ml-3 text-sm">
                                     <label :for="`permission-${permission.id}`" class="font-medium text-gray-700">
-                                        {{ permission.name }}
+                                        {{ permission.display_name || permission.name }}
                                     </label>
+                                    <p v-if="permission.description" class="text-xs text-gray-500">
+                                        {{ permission.description }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -220,7 +200,6 @@ const toast = useToast();
 const processing = ref(false);
 
 const props = defineProps({
-    roles: Array,
     warehouses: Array,
     facilities: Array,
     permissions: {
@@ -237,104 +216,25 @@ const form = ref({
     email: '',
     password: '',
     password_confirmation: '',
-    roles: [],
-    role_ids: [],
     warehouse_id: null,
     warehouse: null,
     facility_id: null,
     facility: null,
-    direct_permissions: []
+    permissions: []
 });
-
-// Fetch all permissions if not provided
-const allPermissions = ref(props.permissions || []);
-const fetchingPermissions = ref(false);
-
-if (!props.permissions || props.permissions.length === 0) {
-    fetchingPermissions.value = true;
-    axios.get('/api/permissions')
-        .then(response => {
-            allPermissions.value = response.data;
-            fetchingPermissions.value = false;
-        })
-        .catch(error => {
-            console.error('Failed to fetch permissions:', error);
-            fetchingPermissions.value = false;
-        });
-}
 
 // Computed properties for permissions
-const rolePermissionIds = computed(() => {
-    if (!form.value.roles || form.value.roles.length === 0) return [];
-    
-    // Collect all permission IDs from all selected roles
-    const permissionIds = [];
-    form.value.roles.forEach(role => {
-        if (role.permissions) {
-            role.permissions.forEach(permission => {
-                if (!permissionIds.includes(permission.id)) {
-                    permissionIds.push(permission.id);
-                }
-            });
-        }
-    });
-    
-    return permissionIds;
-});
-
-const availablePermissions = computed(() => {
-    return allPermissions.value;
-});
-
 const allPermissionsSelected = computed(() => {
-    if (availablePermissions.value.length === 0) return false;
-    return form.value.direct_permissions.length === availablePermissions.value.length;
+    if (props.permissions.length === 0) return false;
+    return form.value.permissions.length === props.permissions.length;
 });
-
-// Handle role selection
-function handleRoleSelect(selectedRole) {
-    if (selectedRole && selectedRole.permissions) {
-        // Update the role_ids array
-        updateRoleIds();
-    }
-}
-
-// Handle role removal
-function handleRoleRemove(removedRole) {
-    // Update the role_ids array
-    updateRoleIds();
-}
-
-// Update the role_ids array based on selected roles
-function updateRoleIds() {
-    form.value.role_ids = form.value.roles.map(role => role.id);
-}
-
-// Get readable list of role permissions
-function getRolePermissionNames() {
-    if (!form.value.roles || form.value.roles.length === 0) {
-        return 'None';
-    }
-    
-    // Collect all unique permission names from all selected roles
-    const permissionNames = new Set();
-    form.value.roles.forEach(role => {
-        if (role.permissions) {
-            role.permissions.forEach(permission => {
-                permissionNames.add(permission.name);
-            });
-        }
-    });
-    
-    return Array.from(permissionNames).join(', ');
-}
 
 // Toggle all permissions
 function toggleAllPermissions() {
     if (allPermissionsSelected.value) {
-        form.value.direct_permissions = [];
+        form.value.permissions = [];
     } else {
-        form.value.direct_permissions = availablePermissions.value.map(p => p.id);
+        form.value.permissions = props.permissions.map(p => p.id);
     }
 }
 
@@ -368,10 +268,9 @@ const submit = async () => {
         email: form.value.email,
         password: form.value.password,
         password_confirmation: form.value.password_confirmation,
-        role_ids: form.value.role_ids,
         warehouse_id: form.value.warehouse_id,
         facility_id: form.value.facility_id,
-        direct_permissions: form.value.direct_permissions
+        permissions: form.value.permissions
     };
 
     await axios.post(route('settings.users.store'), formData)
@@ -379,7 +278,7 @@ const submit = async () => {
             processing.value = false;
             Swal.fire({
                 title: 'Success!',
-                text: response.data,
+                text: response.data.message || 'User created successfully',
                 icon: 'success',
                 confirmButtonText: 'OK'
             }).then(() => {
@@ -389,7 +288,8 @@ const submit = async () => {
         })
         .catch((error) => {
             processing.value = false;
-            toast.error(error.response.data);
+            const errorMessage = error.response?.data?.message || error.response?.data || 'An error occurred';
+            toast.error(errorMessage);
         });
 };
 </script>

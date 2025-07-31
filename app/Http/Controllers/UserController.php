@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Http\Resources\UserResource;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 use App\Events\GlobalPermissionChanged;
 use Throwable;
 
@@ -34,12 +33,7 @@ class UserController extends Controller
             });
         }
         
-        // Role filter
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('roles.name', $request->role);
-            });
-        }
+
 
         // is active
         if ($request->has('status') && $request->status != 'All') {
@@ -60,15 +54,14 @@ class UserController extends Controller
             });
         }
 
-        $query->with(['roles', 'warehouse', 'facility'])->latest();
+        $query->with(['warehouse', 'facility'])->latest();
 
         
         $users = $query->paginate($request->per_page, ['*'], 'page', $request->page)->withQueryString();
 
         $users->setPath(url()->current());
         
-        // Get all roles for filtering and the roles modal
-        $roles = \Spatie\Permission\Models\Role::pluck('name')->toArray();
+
         
         // Get all warehouses for filtering and selection
         $warehouses = Warehouse::pluck('name')->toArray();
@@ -78,7 +71,6 @@ class UserController extends Controller
         
         return Inertia::render('User/Index', [
             'users' => UserResource::collection($users),
-            'roles' => $roles,
             'warehouses' => $warehouses,
             'filters' => $request->only(['search', 'role', 'status', 'warehouse', 'facility', 'per_page']),
             'facilities' => $facilities
@@ -105,11 +97,10 @@ class UserController extends Controller
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
                 'facility_id' => 'nullable|exists:facilities,id',
-                'role_ids' => 'nullable|array',
-                'role_ids.*' => 'exists:roles,id',
-                'direct_permissions' => 'nullable|array',
-                'direct_permissions.*' => 'exists:permissions,id',
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'exists:permissions,id',
                 'title' => 'required|string|max:255',
+                'is_active' => 'nullable|boolean',
             ]);
 
             $userData = [
@@ -119,6 +110,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'warehouse_id' => $request->warehouse_id,
                 'facility_id' => $request->facility_id,
+                'is_active' => $request->has('is_active') ? $request->is_active : true,
             ];
 
             // Store the original password for email notification
@@ -137,33 +129,18 @@ class UserController extends Controller
                 $userData
             );
             
-            // Store original permissions and roles for comparison
-            $originalDirectPermissions = $isNewUser ? [] : $user->getDirectPermissions()->pluck('id')->toArray();
-            $originalRoleIds = $isNewUser ? [] : $user->roles()->pluck('id')->toArray();
-            
-            // Assign roles if provided
-            if ($request->has('role_ids') && is_array($request->role_ids) && count($request->role_ids) > 0) {
-                // Sync roles (this will detach any existing roles not in the array)
-                $user->syncRoles($request->role_ids);
-                
-                // Track role changes for events
-                $addedRoleIds = array_diff($request->role_ids, $originalRoleIds);
-                $removedRoleIds = array_diff($originalRoleIds, $request->role_ids);
-                
-            }
-            
-            // Assign direct permissions if provided
-            $newDirectPermissions = $request->has('direct_permissions') && is_array($request->direct_permissions) 
-                ? $request->direct_permissions 
+            // Handle permissions
+            $newPermissions = $request->has('permissions') && is_array($request->permissions) 
+                ? $request->permissions 
                 : [];
                 
-            // Sync permissions
-            $user->syncPermissions($newDirectPermissions);
+            // Sync permissions using the custom User-Permission pivot table
+            $user->permissions()->sync($newPermissions);
 
             // event(new GlobalPermissionChanged($user));
                         
             // Reload the user with relationships for the email
-            $user->load(['roles', 'warehouse', 'facility']);
+            $user->load(['warehouse', 'facility']);
             
             // Send email notification for new users asynchronously
             if ($isNewUser) {
@@ -179,30 +156,16 @@ class UserController extends Controller
         }             
     }
 
-    /**
-     * Display the roles management page for a specific user.
-     */
-    public function showRoles(User $user)
-    {
-        $user->load('roles');
-        $roles = \Spatie\Permission\Models\Role::with('permissions')->get();
-        
-        return Inertia::render('User/Roles', [
-            'user' => $user,
-            'roles' => $roles
-        ]);
-    }
+
 
     public function create(Request $request)
     {
         $warehouses = Warehouse::all();
-        $roles = Role::with('permissions')->get();
         $permissions = Permission::all();
         $facilities = Facility::all();
         
         return Inertia::render('User/Create', [
             'warehouses' => $warehouses,
-            'roles' => $roles,
             'permissions' => $permissions,
             'facilities' => $facilities
         ]);
@@ -213,16 +176,14 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $user->load(['roles.permissions', 'permissions', 'warehouse', 'facility']);
+        $user->load(['permissions', 'warehouse', 'facility']);
         $warehouses = Warehouse::all();
-        $roles = Role::with('permissions')->get();
         $permissions = Permission::all();
         $facilities = Facility::all();
         
         return Inertia::render('User/Edit', [
             'user' => $user,
             'warehouses' => $warehouses,
-            'roles' => $roles,
             'permissions' => $permissions,
             'facilities' => $facilities
         ]);
@@ -274,35 +235,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Assign roles to a user.
-     */
-    public function assignRoles(Request $request, User $user)
-    {
-        $request->validate([
-            'roles' => 'required|array',
-            'roles.*' => 'exists:roles,id',
-        ]);
 
-        $user->syncRoles($request->roles);
-
-        $isFromSettings = $request->header('X-From-Settings') || 
-                         ($request->has('_headers') && $request->_headers && isset($request->_headers['X-From-Settings']));
-        
-        if ($isFromSettings) {
-            return redirect()->route('settings.index', ['tab' => 'users'])->with('success', 'Roles assigned successfully');
-        }
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Roles assigned successfully',
-                'user' => $user->load('roles')
-            ]);
-        }
-
-        return back()->with('success', 'Roles assigned successfully');
-    }
     
     /**
      * Toggle a user's active status.

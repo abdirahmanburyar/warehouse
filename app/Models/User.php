@@ -6,12 +6,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -71,5 +70,144 @@ class User extends Authenticatable
     public function trustedDevices()
     {
         return $this->hasMany(TrustedDevice::class);
+    }
+
+    /**
+     * Get the permissions for the user.
+     */
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'permission_user')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Check if user has a specific permission.
+     */
+    public function hasPermission($permission)
+    {
+        // Admin users have all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Regular permission check
+        if (is_string($permission)) {
+            return $this->permissions()->where('name', $permission)->exists();
+        }
+
+        if (is_object($permission)) {
+            return $this->permissions()->where('id', $permission->id)->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has any of the given permissions.
+     */
+    public function hasAnyPermission($permissions)
+    {
+        // Admin users have all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (is_string($permissions)) {
+            $permissions = [$permissions];
+        }
+
+        return $this->permissions()->whereIn('name', $permissions)->exists();
+    }
+
+    /**
+     * Assign a permission to the user.
+     */
+    public function givePermissionTo($permission)
+    {
+        if (is_string($permission)) {
+            $permission = Permission::where('name', $permission)->first();
+        }
+
+        if ($permission && !$this->hasPermission($permission)) {
+            $this->permissions()->attach($permission->id);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove a permission from the user.
+     */
+    public function revokePermissionTo($permission)
+    {
+        if (is_string($permission)) {
+            $permission = Permission::where('name', $permission)->first();
+        }
+
+        if ($permission && $this->hasPermission($permission)) {
+            $this->permissions()->detach($permission->id);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get all permissions for the user.
+     * This method provides compatibility with Spatie package.
+     */
+    public function getAllPermissions()
+    {
+        return $this->permissions;
+    }
+
+    /**
+     * Check if user has a specific permission (Spatie compatibility).
+     */
+    public function hasPermissionTo($permission)
+    {
+        return $this->hasPermission($permission);
+    }
+
+    /**
+     * Check if user has a role (compatibility method - always returns false since we removed roles).
+     */
+    public function hasRole($role)
+    {
+        return false;
+    }
+
+    /**
+     * Check if user has any role (compatibility method - always returns false since we removed roles).
+     */
+    public function hasAnyRole($roles)
+    {
+        return false;
+    }
+
+    /**
+     * Assign role to user (compatibility method - does nothing since we removed roles).
+     */
+    public function assignRole($role)
+    {
+        return $this;
+    }
+
+    /**
+     * Get user roles (compatibility method - always returns empty collection since we removed roles).
+     */
+    public function getRoleNames()
+    {
+        return collect();
+    }
+
+    /**
+     * Check if user is a system administrator.
+     */
+    public function isAdmin()
+    {
+        // Check if user has admin email or username
+        return in_array($this->email, ['admin@warehouse.com', 'admin@admin.com']) || 
+               in_array($this->username, ['admin', 'administrator']);
     }
 }

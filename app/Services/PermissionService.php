@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 use App\Events\GlobalPermissionChanged;
 
 class PermissionService
