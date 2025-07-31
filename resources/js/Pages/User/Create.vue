@@ -166,6 +166,21 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Status -->
+                    <div>
+                        <InputLabel value="Status" />
+                        <div class="mt-2">
+                            <label class="inline-flex items-center">
+                                <input
+                                    type="checkbox"
+                                    v-model="form.is_active"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <span class="ml-2 text-sm text-gray-600">Active</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end mt-6 gap-4">
@@ -220,7 +235,8 @@ const form = ref({
     warehouse: null,
     facility_id: null,
     facility: null,
-    permissions: []
+    permissions: [],
+    is_active: true
 });
 
 // Computed properties for permissions
@@ -270,7 +286,8 @@ const submit = async () => {
         password_confirmation: form.value.password_confirmation,
         warehouse_id: form.value.warehouse_id,
         facility_id: form.value.facility_id,
-        permissions: form.value.permissions
+        permissions: form.value.permissions,
+        is_active: form.value.is_active
     };
 
     await axios.post(route('settings.users.store'), formData)

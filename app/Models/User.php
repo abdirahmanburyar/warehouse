@@ -25,6 +25,7 @@ class User extends Authenticatable
         'facility_id',
         'password',
         'title',
+        'is_active',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'permission_updated_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
     }
 
