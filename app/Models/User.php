@@ -93,6 +93,11 @@ class User extends Authenticatable
             return true;
         }
 
+        // Manager System permission grants full access
+        if ($this->permissions()->where('name', 'manager-system')->exists()) {
+            return true;
+        }
+
         // Regular permission check
         if (is_string($permission)) {
             return $this->permissions()->where('name', $permission)->exists();
@@ -112,6 +117,11 @@ class User extends Authenticatable
     {
         // Admin users have all permissions
         if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Manager System permission grants full access
+        if ($this->permissions()->where('name', 'manager-system')->exists()) {
             return true;
         }
 

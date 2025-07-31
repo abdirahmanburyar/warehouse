@@ -164,7 +164,7 @@
                                 Contact
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Roles
+                                Title
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Location
@@ -200,18 +200,9 @@
                                 <div class="text-sm text-gray-500">{{ user.email }}</div>
                             </td>
                             
-                            <!-- Roles -->
+                            <!-- Title -->
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex flex-wrap gap-1">
-                                    <span v-for="role in user.roles" :key="role.id"
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                    >
-                                        {{ role.name }}
-                                    </span>
-                                    <span v-if="!user.roles || user.roles.length === 0" class="text-sm text-gray-500 italic">
-                                        No roles
-                                    </span>
-                                </div>
+                                <div class="text-sm text-gray-900">{{ user.title || 'No title' }}</div>
                             </td>
                             
                             <!-- Location -->

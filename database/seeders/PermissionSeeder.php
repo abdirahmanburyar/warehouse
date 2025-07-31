@@ -14,6 +14,9 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            // System Management (Full Access)
+            'manager-system',
+            
             // User Management
             'user-manage',
             'user-view',
