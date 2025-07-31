@@ -9,8 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Models\Facility;
 use Inertia\Inertia;
-use App\Models\Approval;
-use App\Http\Resources\ApprovalResource;
+
 
 class SettingsController extends Controller
 {
@@ -44,22 +43,7 @@ class SettingsController extends Controller
         
 
 
-        // Get approvals with filtering if tab is 'approvals'
-        $approvals = Approval::query();
 
-        if ($tab === 'approvals') {
-            // Apply search filter if provided
-            if ($request->filled('search')) {
-                $search = $request->input('search');
-                $approvals->where(function($q) use ($search) {
-                    $q->where('activity_type', 'like', "%{$search}%")
-                      ->orWhere('approval_level', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
-                });
-            }
-            
-
-        }
         
         // Extract filters but only include non-empty ones
         $filters = [];
@@ -68,7 +52,6 @@ class SettingsController extends Controller
         if ($request->filled('sort_direction')) $filters['sort_direction'] = $request->input('sort_direction');
         
         return Inertia::render('Settings/Index', [
-            'approvals' => ApprovalResource::collection($approvals->paginate(10)),
             'users' => UserResource::collection($users->paginate(10)->withQueryString()),
             'permissions' => Permission::all(),
             'warehouses' => Warehouse::get(),
