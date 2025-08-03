@@ -99,7 +99,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/facility/tracert-items', 'facilityTracertItems')->name('dashboard.facility.tracert-items');
     });
 
-
     // Unauthorized access page
     Route::get('/unauthorized', function () {
         return Inertia::render('Unauthorized');
@@ -186,8 +185,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         // monthlyConsumption
         Route::get('/reports/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->name('reports.monthly-consumption');
         
-
-
         // Facilities Reports
         Route::get('/reports/facilities-list', [ReportController::class, 'facilitiesListReport'])->name('reports.facilities-list');
         Route::get('/reports/lmis-monthly-consumption', [ReportController::class, 'lmisMonthlyConsumptionReport'])->name('reports.lmis-monthly-consumption');
@@ -200,8 +197,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         Route::post('/reports/facility-lmis-report/generate-from-movements', [ReportController::class, 'generateFacilityLmisReportFromMovements'])->name('reports.facility-lmis-report.generate-from-movements');
         Route::get('/reports/facility-lmis-report/create', [ReportController::class, 'createFacilityLmisReport'])->name('reports.facility-lmis-report.create');
     });
-
-
 
     // Category Management Routes
     Route::middleware([\App\Http\Middleware\TwoFactorAuth::class, PermissionMiddleware::class . ':category.view'])
@@ -237,7 +232,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
         });
 
      // Warehouse Management Routes
-     Route::controller(LocationController::class)
+Route::controller(LocationController::class)
      ->prefix('/inventories/locations')
      ->group(function () {
          Route::get('/', 'index')->name('inventories.location.index');
@@ -248,7 +243,7 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
 
         // 'warehouse.locations
         Route::get('/{id}/locations', 'getLocations')->name('warehouse.locations');
-     });
+    });
 
     // Dosage Management Routes
     Route::prefix('product/dosages')->group(function () {

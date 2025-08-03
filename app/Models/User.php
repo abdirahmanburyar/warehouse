@@ -181,37 +181,7 @@ class User extends Authenticatable
         return $this->hasPermission($permission);
     }
 
-    /**
-     * Check if user has a role (compatibility method - always returns false since we removed roles).
-     */
-    public function hasRole($role)
-    {
-        return false;
-    }
 
-    /**
-     * Check if user has any role (compatibility method - always returns false since we removed roles).
-     */
-    public function hasAnyRole($roles)
-    {
-        return false;
-    }
-
-    /**
-     * Assign role to user (compatibility method - does nothing since we removed roles).
-     */
-    public function assignRole($role)
-    {
-        return $this;
-    }
-
-    /**
-     * Get user roles (compatibility method - always returns empty collection since we removed roles).
-     */
-    public function getRoleNames()
-    {
-        return collect();
-    }
 
     /**
      * Check if user is a system administrator.

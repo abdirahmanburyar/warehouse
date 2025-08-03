@@ -1915,11 +1915,11 @@ const assetStatsCards = computed(() => [
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <!-- Total PO Cost Card -->
             <Link :href="route('purchase-orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-green-500 to-green-400"></div>
+                <div class="relative overflow-hidden rounded-lg cursor-pointer">
+                    <div class="absolute inset-0" style="background: linear-gradient(to bottom left, #E7E2F2 0%, #888892 55%, #5F5C65 86%);"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Total PO Cost</h3>
+                            <h3 class="text-sm font-medium text-white mb-1">Total P.O Cost</h3>
                             <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
                 </div>
                         <div class="flex-shrink-0">
@@ -1933,8 +1933,8 @@ const assetStatsCards = computed(() => [
 
             <!-- Transfers Card -->
             <Link :href="route('transfers.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-pink-500 to-orange-400"></div>
+                <div class="relative overflow-hidden rounded-lg cursor-pointer">
+                    <div class="absolute inset-0" style="background: linear-gradient(to bottom right, #DCFFF6 0%, #37FFCB 54%, #00D79F 97%);"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
@@ -1951,8 +1951,8 @@ const assetStatsCards = computed(() => [
 
             <!-- Delayed Orders Card -->
             <Link :href="route('orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
+                <div class="relative overflow-hidden rounded-lg cursor-pointer">
+                    <div class="absolute inset-0" style="background: linear-gradient(to top left, #FFDDB7 0%, #FFB15C 31%, #FF8500 59%);"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
@@ -1969,7 +1969,7 @@ const assetStatsCards = computed(() => [
 
             <!-- Low Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+                <div class="relative overflow-hidden rounded-2xl cursor-pointer">
                     <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
@@ -1987,17 +1987,15 @@ const assetStatsCards = computed(() => [
 
             <!-- Out of Stock Card -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-400"></div>
+                <div class="relative overflow-hidden rounded-2xl cursor-pointer">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-orange-500"></div>
                     <div class="relative p-6 flex items-center justify-between">
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Out of Stock</h3>
                             <div class="text-2xl font-bold text-white">{{ outOfStockCount || 0 }}</div>
                         </div>
                         <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
-                            </svg>
+                            <img src="/assets/images/out_of_stock.png" alt="Out of Stock" class="w-12 h-12" />
                         </div>
                     </div>
                     </div>

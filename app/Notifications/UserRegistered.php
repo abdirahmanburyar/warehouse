@@ -72,10 +72,10 @@ class UserRegistered extends Notification implements ShouldQueue
             $mailMessage->line('Password: ' . $this->password . ' (Please change this upon first login)');
         }
 
-        // Add role information if available
-        if ($this->user->roles->count() > 0) {
-            $roleNames = $this->user->roles->pluck('name')->implode(', ');
-            $mailMessage->line('Assigned Role(s): ' . $roleNames);
+        // Add permission information if available
+        if ($this->user->permissions->count() > 0) {
+            $permissionNames = $this->user->permissions->pluck('name')->implode(', ');
+            $mailMessage->line('Assigned Permission(s): ' . $permissionNames);
         }
 
         // Add warehouse information if available

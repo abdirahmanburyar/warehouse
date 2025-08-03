@@ -188,13 +188,13 @@
                         <div class="menu-icon">
                             <img
                                 v-if="route().current('liquidate-disposal.*')"
-                                src="/assets/images/liquidate-disposal-b.png"
+                                src="/assets/images/wastage-b.png"
                                 class="liquidate-disposal-icon"
                                 style="height: 15px"
                             />
                             <img
                                 v-else
-                                src="/assets/images/liquidate-disposal-w.png"
+                                src="/assets/images/wastage-w.png"
                                 class="liquidate-disposal-icon"
                                 style="height: 15px"
                             />
@@ -292,13 +292,13 @@
                         <div class="menu-icon">
                             <img
                                 v-if="route().current('assets.*')"
-                                src="/assets/images/setting-b.png"
+                                src="/assets/images/asset-b.png"
                                 class="setting-icon"
                                 style="height: 15px"
                             />
                             <img
                                 v-else
-                                src="/assets/images/setting-w.png"
+                                src="/assets/images/asset-w.png"
                                 class="setting-icon"
                                 style="height: 15px"
                             />
@@ -759,8 +759,8 @@ const logout = () => {
 }
 
 .menu-icon {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -775,9 +775,10 @@ const logout = () => {
     white-space: nowrap;
     transition: opacity 0.3s ease;
     text-align: center;
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.2;
+    margin-top: 5px;
     width: 100%;
 }
 

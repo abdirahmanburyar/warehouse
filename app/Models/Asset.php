@@ -351,17 +351,11 @@ class Asset extends Model
         $nextStep = $this->getNextApprovalStep();
         if (!$nextStep) return false;
 
-        // Check if user has the required role
-        $userRoles = $user->roles->pluck('name')->toArray();
-        if (!in_array($nextStep->role->name, $userRoles)) {
-            return false;
-        }
-
         // Check if user has the required permission
         if ($nextStep->action === 'review') {
-            return $user->can('asset_review');
+            return $user->hasPermission('asset-review');
         } elseif ($nextStep->action === 'approve') {
-            return $user->can('asset_approve');
+            return $user->hasPermission('asset-approve');
         }
 
         return false;
@@ -383,14 +377,8 @@ class Asset extends Model
             return false;
         }
 
-        // Check if user has the required role
-        $userRoles = $user->roles->pluck('name')->toArray();
-        if (!in_array($nextStep->role->name, $userRoles)) {
-            return false;
-        }
-
         // Check if user has the required permission
-        return $user->can('asset_review');
+        return $user->hasPermission('asset-review');
     }
 
     /**
@@ -409,14 +397,8 @@ class Asset extends Model
             return false;
         }
 
-        // Check if user has the required role
-        $userRoles = $user->roles->pluck('name')->toArray();
-        if (!in_array($nextStep->role->name, $userRoles)) {
-            return false;
-        }
-
         // Check if user has the required permission
-        return $user->can('asset_approve') || $user->can('asset_reject');
+        return $user->hasPermission('asset-approve') || $user->hasPermission('asset-reject');
     }
 
     /**
@@ -425,7 +407,7 @@ class Asset extends Model
     public function getNextApprovalStep()
     {
         return $this->approvals()
-            ->with(['role', 'approver', 'reviewer'])
+            ->with(['approver', 'reviewer'])
             ->whereIn('status', ['pending', 'reviewed'])
             ->orderBy('sequence')
             ->first();
@@ -437,7 +419,7 @@ class Asset extends Model
     public function getAllApprovalSteps()
     {
         return $this->approvals()
-            ->with(['role', 'approver', 'reviewer'])
+            ->with(['approver', 'reviewer'])
             ->orderBy('sequence')
             ->get();
     }
