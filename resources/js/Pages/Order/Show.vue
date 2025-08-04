@@ -364,7 +364,7 @@
                                     {{ item.quantity }}
                                 </td>
                                 <td v-if="invIndex === 0" :rowspan="item.inventory_allocations.length"
-                                    class="px-3 py-3 text-xs text-gray-900 align-top">
+                                    class="px-3 py-3 text-xs text-gray-900 align-top" style="width: 200px;">
                                     <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
                                         handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'"
                                         class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />
@@ -420,7 +420,7 @@
                                 </td>
                                 <td class="px-3 py-3 text-xs text-gray-900 align-top">{{ item.no_of_days }}</td>
                                 <td class="px-3 py-3 text-xs text-center text-black align-top">{{ item.quantity }}</td>
-                                <td class="px-3 py-3 text-xs text-gray-900 align-top">
+                                <td class="px-3 py-3 text-xs text-gray-900 align-top" style="width: 200px;">
                                     <input type="number" placeholder="0" v-model="item.quantity_to_release" @input="
                                         handleQuantityInput(item, 'quantity_to_release', index)" :readonly="props.order.status != 'pending'"
                                         class="w-full rounded-md border border-gray-300 focus:border-orange-500 focus:ring-orange-500 sm:text-sm mb-1" />

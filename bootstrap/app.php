@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,5 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->renderable(function (\Illuminate\Http\Exceptions\HttpExceptionInterface $e, $request) {
+            if ($e->getStatusCode() === 403 && $request->is('login')) {
+                return Inertia::render('Auth/Login', [
+                    'error' => $e->getMessage(),
+                    'canResetPassword' => Route::has('password.request'),
+                    'status' => session('status'),
+                ])->toResponse($request)->setStatusCode(403);
+            }
+        });
     })->create();

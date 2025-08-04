@@ -85,7 +85,7 @@ class UserController extends Controller
         try {
             DB::beginTransaction();
             
-            $request->validate([
+            $validationRules = [
                 'id' => 'nullable|exists:users,id',
                 'name' => 'required|string|max:255',
                 'username' => ['required', 'string', 'max:255'],
@@ -97,11 +97,17 @@ class UserController extends Controller
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
                 'facility_id' => 'nullable|exists:facilities,id',
-                'permissions' => 'nullable|array',
-                'permissions.*' => 'exists:permissions,id',
                 'title' => 'required|string|max:255',
                 'is_active' => 'nullable|boolean',
-            ]);
+            ];
+
+            // Only validate permissions if user doesn't have a facility
+            if (!$request->facility_id) {
+                $validationRules['permissions'] = 'nullable|array';
+                $validationRules['permissions.*'] = 'exists:permissions,id';
+            }
+
+            $request->validate($validationRules);
 
             $userData = [
                 'name' => $request->name,
@@ -129,13 +135,19 @@ class UserController extends Controller
                 $userData
             );
             
-            // Handle permissions
-            $newPermissions = $request->has('permissions') && is_array($request->permissions) 
-                ? $request->permissions 
-                : [];
-                
-            // Sync permissions using the custom User-Permission pivot table
-            $user->permissions()->sync($newPermissions);
+            // Handle permissions - if user has facility_id, don't assign permissions
+            if ($request->facility_id) {
+                // User has facility, so no permissions should be assigned
+                $user->permissions()->sync([]);
+            } else {
+                // User has no facility, so assign permissions if provided
+                $newPermissions = $request->has('permissions') && is_array($request->permissions) 
+                    ? $request->permissions 
+                    : [];
+                    
+                // Sync permissions using the custom User-Permission pivot table
+                $user->permissions()->sync($newPermissions);
+            }
 
             // event(new GlobalPermissionChanged($user));
                         

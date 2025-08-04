@@ -1,5 +1,5 @@
 <template>
-    <AuthenticatedLayout title="Manage Facilities" description="Edit facility" img="/assets/images/facility.png">
+    <AuthenticatedLayout title="Manage Facilities" description="Edit Facility" img="/assets/images/facility.png">
         <div class="p-6 bg-white border-b flex justify-between items-center">
             <h1 class="text-sm font-bold text-gray-900">
                 Edit Facility
@@ -99,7 +99,7 @@
                         <label for="region">Region</label>
                         <Multiselect
                             v-model="form.region"
-                            :options="[...props.regions, ADD_NEW_REGION_OPTION]"
+                            :options="[...regions, ADD_NEW_REGION_OPTION]"
                             :searchable="true"
                             :close-on-select="true"
                             :show-labels="false"
@@ -170,8 +170,7 @@
                             :allow-empty="true"
                             track-by="id"
                             label="name"
-                            required
-                            placeholder="Select Facility Manager"
+                            placeholder="Select Facility Manager (Optional)"
                         ></Multiselect>
                         <InputError :message="errors.user_id" class="mt-2" />
                     </div>
@@ -207,13 +206,16 @@
                         >
                     </label>
 
-                    <div class="flex items-center">
-                        <label for="is_active" class="ml-2 text-sm text-gray-600">Active</label>
-                        <select name="is_active" id="is_active" class="ml-2">
-                            <option value="1">Active</option>
-                            <option value="0">Inactive</option>
-                        </select>
-                    </div>
+                    <label class="flex items-center">
+                        <Checkbox
+                            :checked="form.is_active"
+                            :modelValue="form.is_active"
+                            @update:modelValue="
+                                (value) => (form.is_active = value)
+                            "
+                        />
+                        <span class="ml-2 text-sm text-gray-600">Active</span>
+                    </label>
                 </div>
 
                 <div class="flex items-center justify-end mt-6">
@@ -223,7 +225,7 @@
                         >
                     </Link>
                     <PrimaryButton :disabled="isSubmitting">
-                        {{ isSubmitting ? "Creating..." : "Create Facility" }}
+                        {{ isSubmitting ? "Updating..." : "Update Facility" }}
                     </PrimaryButton>
                 </div>
             </form>
@@ -332,6 +334,8 @@ const props = defineProps({
     facility: Object,
 });
 
+// Create reactive arrays (regions starts with props data, districts starts empty)
+const regions = ref([...props.regions]);
 const districts = ref([]);
 
 const showRegionModal = ref(false);
@@ -356,17 +360,21 @@ const form = ref({
     phone: props.facility.phone,
     address: props.facility.address,
     facility_type: props.facility.facility_type,
-    has_cold_storage: props.facility.has_cold_storage,
-    is_active: props.facility.is_active,
+    has_cold_storage: Boolean(props.facility.has_cold_storage),
+    is_active: Boolean(props.facility.is_active),
     user_id: props.facility.user_id,
     district: props.facility.district,
     region: props.facility.region,
-    handled_by: props.facility.handled_by,
+    handled_by: handledBy.value?.id,
 });
 
 onMounted(() => {
     form.value.handled_by = props.users.find(user => user.id == props.facility.handled_by);
     form.value.user_id = props.users.find(user => user.id == props.facility.user_id);
+    
+    // Ensure boolean values are properly converted
+    form.value.is_active = Boolean(props.facility.is_active);
+    form.value.has_cold_storage = Boolean(props.facility.has_cold_storage);
 })
 
 async function handleRegionSelect(option) {
@@ -398,10 +406,14 @@ const createRegion = async () => {
         .post(route("assets.regions.store"), { name: newRegion.value })
         .then((response) => {
             isNewRegion.value = false;
+            // Add the new region to the reactive options array
+            regions.value.push(response.data);
+            // Set it as the selected value
             form.value.region = response.data;
-            props.regions.push(response.data);
             newRegion.value = "";
             showRegionModal.value = false;
+            // Load districts for the newly created region
+            loadDistrict();
         })
         .catch((error) => {
             isNewRegion.value = false;
@@ -422,8 +434,10 @@ const createDistrict = async () => {
         })
         .then((response) => {
             isNewDistrict.value = false;
-            form.value.district = response.data;
+            // Add the new district to the reactive options array
             districts.value.push(response.data);
+            // Set it as the selected value
+            form.value.district = response.data;
             newDistrict.value = "";
             showDistrictModal.value = false;
         })
@@ -453,7 +467,7 @@ const submitForm = async () => {
             isSubmitting.value = false;
             Swal.fire({
                 title: "Success!",
-                text: "Facility created successfully.",
+                text: "Facility updated successfully.",
                 icon: "success",
                 confirmButtonText: "OK",
             }).then(() => {
@@ -466,7 +480,7 @@ const submitForm = async () => {
                 title: "Error!",
                 text:
                     error.response?.data ||
-                    "There was an error creating the facility",
+                    "There was an error updating the facility",
                 icon: "error",
                 confirmButtonText: "OK",
             });

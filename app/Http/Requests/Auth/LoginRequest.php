@@ -50,6 +50,13 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Check if user has facility_id and prevent login
+        $user = Auth::user();
+        if ($user && $user->facility_id) {
+            Auth::logout();
+            abort(403, 'access denied. please go to hc.psivista.com for facility access.');
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

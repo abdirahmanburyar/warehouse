@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 html, body {
-    background-color: rgb(245, 245, 245) !important;
+    background-color: rgb(255, 255, 255) !important;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
 #app {
-    background-color: white !important;
-    min-height: 100vh;
+    background-color: rgb(255, 255, 255) !important;
+    /* min-height: 100vh; */
 }

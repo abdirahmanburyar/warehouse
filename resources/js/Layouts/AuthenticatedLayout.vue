@@ -3,23 +3,6 @@
         <!-- Permission changes are now handled globally in app.js -->
         <!-- Sidebar -->
         <div :class="['sidebar', { 'sidebar-open': sidebarOpen }]" class="p-0">
-            <div class="white-box" style="border-color: white">
-                <Link
-                    :href="route('dashboard')"
-                    class="logo-container flex justify-between"
-                >
-                    <img
-                        src="/assets/images/moh.png"
-                        class="moh-logo"
-                        style="height: 30px"
-                    />
-                    <img
-                        src="/assets/images/psi.jpg"
-                        class="psi-logo"
-                        style="height: 30px"
-                    />
-                </Link>
-            </div>
             <div class="sidebar-menu">
                 <Link
                     :href="route('dashboard')"
@@ -71,7 +54,6 @@
                         <span class="menu-text">Orders</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.transfer_view"
                     :href="route('transfers.index')"
@@ -97,7 +79,6 @@
                         <span class="menu-text">Transfers</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.product_view"
                     :href="route('products.index')"
@@ -123,7 +104,6 @@
                         <span class="menu-text">Product List</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.inventory_view"
                     :href="route('inventories.index')"
@@ -149,7 +129,6 @@
                         <span class="menu-text">Inventory</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.inventory_view"
                     :href="route('expired.index')"
@@ -175,7 +154,6 @@
                         <span class="menu-text">Expires</span>
                     </div>
                 </Link>
-
                 <!-- Liquidate and disposals -->
                 <Link
                     v-if="$page.props.auth.can.liquidate_view"
@@ -202,7 +180,6 @@
                         <span class="menu-text">Wastages</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.supply_view"
                     :href="route('supplies.index')"
@@ -253,7 +230,6 @@
                         <span class="menu-text">Reports</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.facility_view"
                     :href="route('facilities.index')"
@@ -279,7 +255,6 @@
                         <span class="menu-text">Facilities</span>
                     </div>
                 </Link>
-
                 <!-- Assets Menu with Dropdown -->
                 <Link
                     v-if="$page.props.auth.can.settings_view"
@@ -306,7 +281,6 @@
                         <span class="menu-text">Assets</span>
                     </div>
                 </Link>
-
                 <Link
                     v-if="$page.props.auth.can.settings_view"
                     :href="route('settings.index')"
@@ -332,35 +306,51 @@
                         <span class="menu-text">Settings</span>
                     </div>
                 </Link>
+                
+                <!-- Toggle Sidebar Button at Bottom -->
+                <button @click="toggleSidebar" class="sidebar-toggle-bottom">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            v-if="sidebarOpen"
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                        />
+                        <path
+                            v-else
+                            d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
+                        />
+                    </svg>
+                </button>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div
-            :class="['main-content', { 'main-content-expanded': !sidebarOpen }]"
-        >
-            <!-- Top Navigation -->
-            <div class="top-nav h-16 text-xs">
-                <div class="inventory-banner">
-                    <div class="flex justify-between items-center">
-                        <!-- <div class="flex flex-col"> -->
-                        <button @click="toggleSidebar" class="back-button">
+        <!-- Top Navigation - Full Width -->
+        <div class="top-nav-full-width h-16 text-xs">
+            <div class="inventory-banner-full">
+                <div class="flex justify-between items-center w-full">
+                    <div class="flex items-center" style="margin-left: 62px">
+                        <button @click="goBack" class="back-button">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 24 24"
                                 width="24"
                                 height="24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
                             >
-                                <path
-                                    v-if="sidebarOpen"
-                                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                                    fill="currentColor"
-                                />
-                                <path
-                                    v-else
-                                    d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
-                                    fill="currentColor"
-                                />
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
                             </svg>
                         </button>
                         <div class="inventory-text">
@@ -369,7 +359,6 @@
                                 "{{ description }}"
                             </h3>
                         </div>
-                        <!-- </div> -->
                         <div v-if="img">
                             <img
                                 :src="img"
@@ -379,61 +368,77 @@
                             />
                         </div>
                     </div>
-                    <div class="user-section">
-                        <div class="flex flex-row">
-                            <div class="user-info">
-                                <div class="user-avatar">
-                                    <span>A</span>
+                    <div class="flex items-center gap-4">
+                        <div class="user-section-inline">
+                            <div class="flex flex-row items-center">
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        <span>A</span>
+                                    </div>
+                                    <div class="user-details">
+                                        <span class="user-role">{{
+                                            $page.props.auth.user?.title
+                                        }} </span>
+                                        <span class="user-name">{{
+                                            $page.props.auth.user?.name
+                                        }}</span>
+                                        <span class="user-name">{{
+                                            $page.props.warehouse?.name
+                                        }}</span>
+                                    </div>
                                 </div>
-                                <div class="user-details">
-                                    <span class="user-role">{{
-                                        $page.props.auth.user?.title
-                                    }} </span>
-                                    <span class="user-name">{{
-                                        $page.props.auth.user?.name
-                                    }}</span>
-                                    <span class="user-name">{{
-                                        $page.props.warehouse?.name
-                                    }}</span>
-                                </div>
+                                <button class="logout-button ml-4" @click="logout">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        width="24"
+                                        height="24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path
+                                            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                                        ></path>
+                                        <polyline
+                                            points="16 17 21 12 16 7"
+                                        ></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                </button>
                             </div>
-                            <button class="logout-button" @click="logout">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    width="24"
-                                    height="24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <path
-                                        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-                                    ></path>
-                                    <polyline
-                                        points="16 17 21 12 16 7"
-                                    ></polyline>
-                                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                            </button>
                         </div>
-                        <!-- <img src="/assets/images/head_web.gif" alt="Inventory illustration" class="svg-image" /> -->
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Main Content -->
+        <div
+            :class="['main-content', { 'main-content-expanded': !sidebarOpen }]"
+        >
             <!-- Page Content -->
             <main class="flex flex-col">
                 <div class="flex-1">
                     <slot />
                 </div>
                 <div
-                    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 text-xs"
+                    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 text-xs mt-3"
                 >
-                    <div class="container mx-auto text-xs py-2">
-                        <div class="flex justify-center text-xs items-center gap-4">
+                    <div class="container mx-auto text-xs">
+                        <div class="flex justify-center text-xs items-center gap-3">
+                            <img
+                                src="/assets/images/moh.png"
+                                alt="Vista"
+                                class="w-[30px]"
+                            />
+                            <img
+                                src="/assets/images/psi.jpg"
+                                alt="Vista"
+                                class="w-[30px]"
+                            />
                             <img
                                 src="/assets/images/vista.png"
                                 alt="Vista"
@@ -469,9 +474,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
-import { computed } from "vue";
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
@@ -538,7 +542,6 @@ const setupPermissionChangeListener = () => {
 // Function to handle the permission event
 const handlePermissionEvent = (event) => {
     console.log("🔄 Permission change detected, reloading page...");
-
     toast.info(
         "Your permissions have been updated. The page will reload to apply changes."
     );
@@ -569,6 +572,15 @@ const closeAssetsMenu = () => {
 const logout = () => {
     router.post(route("logout"));
 };
+
+const goBack = () => {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        // If no previous page, go to dashboard
+        router.visit(route('dashboard'));
+    }
+};
 </script>
 
 <style scoped>
@@ -596,44 +608,32 @@ const logout = () => {
     transform: translateX(0);
     opacity: 1;
     visibility: visible;
-    margin-top: 29px;
+    margin-top: 68px;
+}
+
+.sidebar:not(.sidebar-open) {
+    width: 0;
+    min-width: 0;
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
 }
 
 .white-box {
     background-color: white;
-    /* padding: 1.5rem 0; */
+    padding: 1rem 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
     position: relative;
-}
-
-.moh-logo {
-    height: 45px;
-    width: auto;
-    margin-bottom: 0.5rem;
-    object-fit: contain;
-}
-
-.psi-logo {
-    height: 35px;
-    width: auto;
-    object-fit: contain;
+    min-height: 40px;
 }
 
 .sidebar-collapsed .white-box {
     padding: 0.5rem 0;
-}
-
-.sidebar-collapsed .moh-logo {
-    height: 30px;
-    margin-bottom: 0.25rem;
-}
-
-.sidebar-collapsed .psi-logo {
-    height: 22px;
+    min-height: 50px;
 }
 
 .sidebar-toggle {
@@ -654,6 +654,26 @@ const logout = () => {
 
 .sidebar-toggle:hover {
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-toggle-bottom {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+    margin: 10px auto;
+    width: 40px;
+    height: 40px;
+}
+
+.sidebar-toggle-bottom:hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .sidebar-menu {
@@ -786,9 +806,16 @@ const logout = () => {
 .main-content {
     flex-grow: 1;
     margin-left: 0;
-    transition: margin-left 0.3s ease, width 0.3s ease;
+    margin-top: 68px;
+    transition: margin-left 0.3s ease;
     display: flex;
     flex-direction: column;
+    width: 100%; 
+    overflow-x: hidden;
+}
+
+.main-content-expanded {
+    margin-left: 0;
     width: 100%;
 }
 
@@ -796,16 +823,19 @@ const logout = () => {
     margin-left: 0;
 }
 
-/* Top Navigation Styles */
-.top-nav {
+/* Top Navigation Styles - Full Width */
+.top-nav-full-width {
     background-color: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
     z-index: 40;
 }
 
-.inventory-banner {
+.inventory-banner-full {
     display: flex;
     align-items: center;
     background-color: #81c4f6;
@@ -861,15 +891,9 @@ const logout = () => {
     margin-left: 30px;
 }
 
-.user-section {
+.user-section-inline {
     display: flex;
-    flex-direction: column;
-    align-items: start;
-    padding: 0.5rem;
-    position: absolute;
-    top: 0;
-    right: 10px;
-    height: 100%;
+    align-items: center;
 }
 
 .notification-icon {
@@ -946,45 +970,30 @@ main {
         opacity: 1;
         visibility: visible;
     }
-
     .main-content {
-        margin-left: 0;
+        margin-left: 100px;
+        width: calc(100vw - 120px);
     }
-
     .main-content-expanded {
         margin-left: 0;
-    }
-}
-
-/* When sidebar is open, adjust the main content margin on desktop */
-@media (min-width: 1025px) {
-    .sidebar-open + .main-content {
-        margin-left: 100px;
+        width: 100vw;
     }
 }
 
 @media (max-width: 640px) {
-    .top-nav {
+    .top-nav-full-width {
         padding: 0.75rem 1rem;
     }
-
     .page-content {
         padding: 1rem;
     }
-
     .banner-title {
         font-size: 1rem;
     }
-
     .banner-subtitle {
         font-size: 0.75rem;
     }
 }
-
-/* Adjust margin for Dashboard menu item specifically */
-/* .menu-item[href="/"] {
-    margin-top: 30px;
-} */
 
 /* Add helper class for SVG icons */
 .menu-icon svg {
@@ -993,8 +1002,9 @@ main {
     fill: currentColor;
 }
 
-/* When sidebar is open, set appropriate margin */
+/* When sidebar is open, adjust main content */
 .sidebar-open + .main-content {
-    width: calc(100% - 100px);
+    margin-left: 100px;
+    width: calc(100vw - 100px);
 }
 </style>
