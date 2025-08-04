@@ -16,8 +16,8 @@
         <div class="bg-white rounded-lg shadow-sm">
             <form @submit.prevent="submit" class="p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Name and Username -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
                         <!-- Name -->
                         <div>
                             <InputLabel for="name" value="Name" />
@@ -29,6 +29,18 @@
                                 required
                             />
                         </div>
+                        <!-- Title -->
+                        <div>
+                            <InputLabel for="title" value="Title" />
+                            <TextInput
+                                id="title"
+                                type="text"
+                                v-model="form.title"
+                                class="mt-1 block w-full"
+                                placeholder="e.g., Manager, Supervisor, etc."
+                            />
+                        </div>
+                        <!-- Username -->
                         <div>
                             <InputLabel for="username" value="Username" />
                             <TextInput
@@ -41,34 +53,20 @@
                         </div>
                     </div>
 
-                    <!-- Title -->
-                    <div>
-                        <InputLabel for="title" value="Title" />
-                        <TextInput
-                            id="title"
-                            type="text"
-                            v-model="form.title"
-                            class="mt-1 block w-full"
-                            placeholder="e.g., Manager, Supervisor, etc."
-                        />
-                    </div>
-
-
-                    <!-- Email -->
-                    <div>
-                        <InputLabel for="email" value="Email" />
-                        <TextInput
-                            id="email"
-                            type="email"
-                            v-model="form.email"
-                            class="mt-1 block w-full"
-                            required
-                        />
-                    </div>
-
-                    <!-- Password and Confirm Password in one row -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Password (Optional for edit) -->
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Email -->
+                        <div>
+                            <InputLabel for="email" value="Email" />
+                            <TextInput
+                                id="email"
+                                type="email"
+                                v-model="form.email"
+                                class="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                        <!-- Password -->
                         <div>
                             <InputLabel for="password" value="New Password (leave blank to keep current)" />
                             <TextInput
@@ -78,7 +76,6 @@
                                 class="mt-1 block w-full"
                             />
                         </div>
-
                         <!-- Password Confirmation -->
                         <div>
                             <InputLabel for="password_confirmation" value="Confirm New Password" />
@@ -90,43 +87,42 @@
                             />
                         </div>
                     </div>
+                </div>
 
-
-
-                    <!-- Warehouse and Facility in one row -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Warehouse -->
-                        <div>
-                            <InputLabel value="Warehouse" />
-                            <Multiselect
-                                v-model="form.warehouse"
-                                :options="warehouses"
-                                track-by="id"
-                                label="name"
-                                placeholder="Select warehouse"
-                                :searchable="true"
-                                :allow-empty="true"
-                                @select="handleSelectWarehouse"
-                                class="mt-1"
-                            />
-                        </div>
-                        
-                        <!-- Facility -->
-                        <div>
-                            <InputLabel value="Facility" />
-                            <Multiselect
-                                v-model="form.facility"
-                                :options="facilities"
-                                track-by="id"
-                                label="name"
-                                placeholder="Select facility"
-                                :searchable="true"
-                                :allow-empty="true"
-                                @select="handleSelectFacility"
-                                class="mt-1"
-                            />
-                        </div>
+                <!-- Warehouse and Facility in one row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Warehouse -->
+                    <div>
+                        <InputLabel value="Warehouse" />
+                        <Multiselect
+                            v-model="form.warehouse"
+                            :options="warehouses"
+                            track-by="id"
+                            label="name"
+                            placeholder="Select warehouse"
+                            :searchable="true"
+                            :allow-empty="true"
+                            @select="handleSelectWarehouse"
+                            class="mt-1"
+                        />
                     </div>
+                    
+                    <!-- Facility -->
+                    <div>
+                        <InputLabel value="Facility" />
+                        <Multiselect
+                            v-model="form.facility"
+                            :options="facilities"
+                            track-by="id"
+                            label="name"
+                            placeholder="Select facility"
+                            :searchable="true"
+                            :allow-empty="true"
+                            @select="handleSelectFacility"
+                            class="mt-1"
+                        />
+                    </div>
+                </div>
 
                 <!-- User Permissions -->
                 <div v-if="!hasFacility">
@@ -181,19 +177,18 @@
                     </div>
                 </div>
 
-                    <!-- Status -->
-                    <div>
-                        <InputLabel value="Status" />
-                        <div class="mt-2">
-                            <label class="inline-flex items-center">
-                                <input
-                                    type="checkbox"
-                                    v-model="form.is_active"
-                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                                />
-                                <span class="ml-2 text-sm text-gray-600">Active</span>
-                            </label>
-                        </div>
+                <!-- Status -->
+                <div>
+                    <InputLabel value="Status" />
+                    <div class="mt-2">
+                        <label class="inline-flex items-center">
+                            <input
+                                type="checkbox"
+                                v-model="form.is_active"
+                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                            />
+                            <span class="ml-2 text-sm text-gray-600">Active</span>
+                        </label>
                     </div>
                 </div>
 
