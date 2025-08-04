@@ -150,11 +150,11 @@ class FacilityController extends Controller
                 'facility_type' => 'required|string|max:50',
                 'has_cold_storage' => 'boolean',
                 'is_active' => 'boolean',
-                'user_id' => 'required'
+                'user_id' => 'nullable'
             ]);
 
             $validated['handled_by'] = $request->handled_by['id'];
-            $validated['user_id'] = $request->user_id['id'];
+            $validated['user_id'] = $request->user_id ? $request->user_id['id'] : null;
             Facility::updateOrCreate(['id' => $request->id], $validated);
 
             return response()->json($request->id ? 'Facility updated successfully.' : 'Facility created successfully.', 200);
