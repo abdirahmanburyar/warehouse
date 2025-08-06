@@ -1142,7 +1142,7 @@
                                 <label class="block text-sm font-medium text-gray-700">Company</label>
                                 <Multiselect
                                     v-model="driverForm.company"
-                                    :options="companyOptions"
+                                    :options="companyOptionsWithAdd"
                                     :searchable="true"
                                     :close-on-select="true"
                                     :show-labels="false"
@@ -1702,6 +1702,19 @@ const driverOptions = computed(() => {
     return options;
 });
 
+const companyOptionsWithAdd = computed(() => {
+    const options = [...props.companyOptions];
+    
+    // Add the "Add New" option at the end
+    options.push({
+        id: 'new',
+        name: 'Add New Company',
+        isAddNew: true
+    });
+    
+    return options;
+});
+
 const handleDriverSelect = (selected) => {
     if (selected && selected.isAddNew) {
         // Reset the selection
@@ -1753,7 +1766,16 @@ const submitDriver = async () => {
         isSubmittingDriver.value = true;
         driverErrors.value = {};
         
-        const response = await axios.post(route('settings.drivers.store'), driverForm.value);
+        // Prepare the data to send, ensuring logistic_company_id is set
+        const dataToSend = {
+            ...driverForm.value,
+            logistic_company_id: driverForm.value.company?.id || driverForm.value.logistic_company_id
+        };
+        
+        // Remove the company object from the data to send
+        delete dataToSend.company;
+        
+        const response = await axios.post(route('settings.drivers.store'), dataToSend);
         
         // Create a new driver option
         const newDriver = {
@@ -1801,11 +1823,17 @@ const handleCompanySelect = (selected) => {
     if (selected && selected.isAddNew) {
         // Reset the selection
         driverForm.value.company = null;
+        driverForm.value.logistic_company_id = '';
         // Open the company modal
         openCompanyModal();
     } else if (selected) {
         // Set the company info
+        driverForm.value.company = selected;
         driverForm.value.logistic_company_id = selected.id;
+    } else {
+        // Clear the company info if deselected
+        driverForm.value.company = null;
+        driverForm.value.logistic_company_id = '';
     }
 };
 

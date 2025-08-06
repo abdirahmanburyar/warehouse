@@ -47,7 +47,12 @@ class DriverController extends Controller
                 $validated
             );
 
-            return response()->json($request->id ? 'Driver updated successfully' : 'Driver created successfully', 200);
+            return response()->json([
+                'message' => $request->id ? 'Driver updated successfully' : 'Driver created successfully',
+                'id' => $driver->id,
+                'name' => $driver->name,
+                'phone' => $driver->phone
+            ], 200);
         } catch (\Exception $e) {
             return response()->json($e->getMessage(), 500);
         }
