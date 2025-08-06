@@ -18,6 +18,17 @@
                             Export to Excel
                         </button>
                         
+                        <!-- Download Template Button -->
+                        <button 
+                            @click="downloadTemplate"
+                            class="px-2 py-1 bg-purple-600 text-white text-[11px] font-medium rounded hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-purple-500 flex items-center gap-1"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Download Template
+                        </button>
+                        
                         <!-- Excel Upload Button -->
                         <button 
                             @click="openUploadModal"
@@ -230,25 +241,22 @@
                     </button>
                 </div>
 
-                <div class="grid md:grid-cols-2 sm:grid-cols-1 gap-4">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Facility</label>
-                        <Multiselect v-model="modalFacilityId" :options="facilities" :searchable="true"
-                            :close-on-select="true" :show-labels="false" :allow-empty="false"
-                            placeholder="Select Facility" track-by="id" label="name" class="mt-1">
-                            <template v-slot:option="{ option }">
-                                <div>
-                                    <span>{{ option.name }} {{ option.facility_type ? `(${option.facility_type})` : ''
-                                        }}</span>
-                                </div>
-                            </template>
-                        </Multiselect>
-                        <p v-if="modalFacilityError" class="mt-1 text-sm text-red-600">{{ modalFacilityError }}</p>
-                    </div>
-                    <div>
-                        <label for="month_year" class="block text-sm font-medium text-gray-700 mb-1">Month Year</label>
-                        <input type="month" id="month_year" v-model="month_year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-                    </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Facility</label>
+                    <Multiselect v-model="modalFacilityId" :options="facilities" :searchable="true"
+                        :close-on-select="true" :show-labels="false" :allow-empty="false"
+                        placeholder="Select Facility" track-by="id" label="name" class="mt-1">
+                        <template v-slot:option="{ option }">
+                            <div>
+                                <span>{{ option.name }} {{ option.facility_type ? `(${option.facility_type})` : ''
+                                    }}</span>
+                            </div>
+                        </template>
+                    </Multiselect>
+                    <p v-if="modalFacilityError" class="mt-1 text-sm text-red-600">{{ modalFacilityError }}</p>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <strong>Note:</strong> The Excel file should contain "Item Description" in the first column and month-year columns (e.g., Jan-25, Feb-25) for consumption data.
+                    </p>
                 </div>
 
                 <div class="mb-4">
@@ -687,8 +695,6 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-const month_year = ref('');
-
 // Upload file from the modal
 async function uploadFile() {
     // Reset errors
@@ -713,10 +719,21 @@ async function uploadFile() {
     const formData = new FormData();
     formData.append('file', selectedFile.value);
     formData.append('facility_id', parseInt(facilityId));
-    formData.append('month_year', month_year.value);
 
     // Set uploading state
     uploading.value = true;
+
+    // Show uploading indicator
+    Swal.fire({
+        title: 'Uploading...',
+        text: 'Processing your consumption data file...',
+        icon: 'info',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
 
     // Upload the file
     await axios.post(route('reports.upload-consumption'), formData, {
@@ -727,6 +744,7 @@ async function uploadFile() {
         .then((response) => {
             uploading.value = false;
             console.log(response);
+            
             // Close modal and reset form
             showUploadModal.value = false;
             selectedFile.value = null;
@@ -734,33 +752,139 @@ async function uploadFile() {
             // Store the facility object before resetting modalFacilityId
             const uploadedFacility = modalFacilityId.value;
             modalFacilityId.value = null;
-            month_year.value = null;
             
-            // Set date range from February to December of current year
+            // Set date range from January to December of current year
             const currentYear = new Date().getFullYear();
             const newFilters = {
                 facility_id: uploadedFacility.id,
-                start_month: `${currentYear}-02`, // February
+                start_month: `${currentYear}-01`, // January
                 end_month: `${currentYear}-12`    // December
             };
             
             // Emit event to update filters in parent component
             emit('update:filters', newFilters);
             
-            // Refresh report data with explicit facility_id
-            applyFilters();
+            // Show success message
+            Swal.fire({
+                title: 'Upload Successful!',
+                text: response.data?.message || 'Consumption data has been imported successfully.',
+                icon: 'success',
+                confirmButtonColor: '#f97316',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
+                // Refresh report data with explicit facility_id
+                applyFilters();
+            });
         })
         .catch((error) => {
             uploading.value = false;
             console.log(error);
+            
             // Show error message
             Swal.fire({
                 title: 'Upload Failed',
-                text: error.response.data?.message,
+                text: error.response?.data?.message || 'An error occurred while uploading the file.',
                 icon: 'error',
                 confirmButtonColor: '#f97316'
             });
         });
+}
+
+// Download template with current year months
+function downloadTemplate() {
+    try {
+        // Create template data
+        const templateData = [];
+        
+        // Get current year
+        const currentYear = new Date().getFullYear();
+        
+        // Create header row with Item Description and month columns for current year
+        const headerRow = ['Item Description'];
+        
+        // Add all 12 months for current year
+        const months = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        
+        months.forEach(month => {
+            headerRow.push(`${month}-${currentYear.toString().slice(-2)}`); // e.g., Jan-25
+        });
+        
+        templateData.push(headerRow);
+        
+        // Add a few sample rows with product examples
+        const sampleProducts = [
+            'Albendazole Tab, 400mg',
+            'Amoxicillin Caps, 500mg',
+            'Paracetamol Tab, 500mg',
+            'ORS Sachet (Low Osmolarity, 2004 WHO Formula), 20.5g/1L',
+            'Cotrimoxazole Tab, 960mg'
+        ];
+        
+        sampleProducts.forEach(product => {
+            const row = [product];
+            // Add empty cells for each month
+            months.forEach(() => {
+                row.push(''); // Empty cells for data entry
+            });
+            templateData.push(row);
+        });
+        
+        // Create worksheet
+        const ws = XLSX.utils.aoa_to_sheet(templateData);
+        
+        // Set column widths
+        const colWidths = [{ wch: 50 }]; // Item Description column width
+        months.forEach(() => {
+            colWidths.push({ wch: 12 }); // Month columns width
+        });
+        ws['!cols'] = colWidths;
+        
+        // Style the header row
+        const headerRange = XLSX.utils.decode_range(ws['!ref']);
+        for (let col = 0; col <= headerRange.e.c; col++) {
+            const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+            if (!ws[cellRef]) continue;
+            
+            if (!ws[cellRef].s) ws[cellRef].s = {};
+            ws[cellRef].s.fill = { fgColor: { rgb: "4F46E5" } }; // Blue background
+            ws[cellRef].s.font = { color: { rgb: "FFFFFF" }, bold: true }; // White bold text
+            ws[cellRef].s.alignment = { horizontal: "center" };
+        }
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Monthly Consumption Template');
+        
+        // Generate filename
+        const filename = `Monthly_Consumption_Template_${currentYear}.xlsx`;
+        
+        // Download the file
+        XLSX.writeFile(wb, filename);
+        
+        // Show success message
+        Swal.fire({
+            title: 'Template Downloaded!',
+            text: `Template for ${currentYear} has been downloaded successfully.`,
+            icon: 'success',
+            confirmButtonColor: '#f97316',
+            timer: 2000,
+            timerProgressBar: true
+        });
+        
+    } catch (error) {
+        console.error('Error creating template:', error);
+        
+        Swal.fire({
+            title: 'Download Error',
+            text: 'There was an error creating the template file.',
+            icon: 'error',
+            confirmButtonColor: '#f97316'
+        });
+    }
 }
 
 // Calculate AMC for a specific group of months

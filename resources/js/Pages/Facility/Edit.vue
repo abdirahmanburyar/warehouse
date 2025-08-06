@@ -71,24 +71,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <InputLabel for="facility_type" value="Facility Type" />
-                        <select
-                            id="facility_type"
+                        <Multiselect
                             v-model="form.facility_type"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            required
-                        >
-                            <option value="">Select Type</option>
-                            <option value="District Hospital">
-                                District Hospital
-                            </option>
-                            <option value="Regional Hospital">
-                                Regional Hospital
-                            </option>
-                            <option value="Health Centre">Health Centre</option>
-                            <option value="Primary Health Unit">
-                                Primary Health Unit
-                            </option>
-                        </select>
+                            :options="props.facilityTypes"
+                            :searchable="true"
+                            :close-on-select="true"
+                            :show-labels="false"
+                            :allow-empty="true"
+                            placeholder="Select Facility Type"
+                        ></Multiselect>
                         <InputError
                             :message="errors.facility_type"
                             class="mt-2"

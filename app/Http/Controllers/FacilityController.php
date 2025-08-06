@@ -132,7 +132,8 @@ class FacilityController extends Controller
         return inertia('Facility/Edit', [
             'facility' => $facility,
             'users' => User::get(),
-            'regions' => Region::pluck('name')->toArray()
+            'regions' => Region::pluck('name')->toArray(),
+            'facilityTypes' => FacilityType::where('is_active', true)->pluck('name')->toArray(),
         ]);
     }
 
