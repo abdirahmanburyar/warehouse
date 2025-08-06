@@ -69,7 +69,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {{ props.facilityTypes }}
                     <div>
                         <InputLabel for="facility_type" value="Facility Type" />
                         <Multiselect
