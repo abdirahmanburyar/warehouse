@@ -359,6 +359,58 @@ class ReportController extends Controller
         ]);
     }
 
+    public function getTemplateProducts(Request $request)
+    {
+        try {
+            $facilityId = $request->input('facility_id');
+            
+            if (!$facilityId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Facility ID is required'
+                ], 400);
+            }
+
+            // Get the facility and its facility_type
+            $facility = Facility::find($facilityId);
+            
+            if (!$facility) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Facility not found'
+                ], 404);
+            }
+
+            // Get eligible products for this facility type
+            $eligibleProducts = Product::whereHas('eligible', function ($query) use ($facility) {
+                $query->where('facility_type', $facility->facility_type);
+            })
+            ->where('is_active', true)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+            return response()->json([
+                'success' => true,
+                'products' => $eligibleProducts,
+                'facility' => [
+                    'id' => $facility->id,
+                    'name' => $facility->name,
+                    'facility_type' => $facility->facility_type
+                ],
+                'count' => $eligibleProducts->count()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching template products: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching eligible products'
+            ], 500);
+        }
+    }
+
     public function generatePhysicalCountReport(Request $request)
     {
         try {

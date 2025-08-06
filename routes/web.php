@@ -702,6 +702,7 @@ Route::controller(LocationController::class)
     Route::prefix('reports')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/facilities/monthly-consumption', [ReportController::class, 'monthlyConsumption'])->name('reports.monthlyConsumption');
+            Route::get('/template-products', [ReportController::class, 'getTemplateProducts'])->name('reports.template-products');
             Route::get('/receivedQuantities', [ReportController::class, 'receivedQuantities'])->name('reports.receivedQuantities');
             Route::get('/physicalCount', [ReportController::class, 'physicalCountReport'])->name('reports.physicalCount');
         

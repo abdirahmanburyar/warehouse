@@ -792,8 +792,44 @@ async function uploadFile() {
 }
 
 // Download template with current year months
-function downloadTemplate() {
+async function downloadTemplate() {
+    // Check if a facility is selected
+    if (!props.filters.facility_id) {
+        Swal.fire({
+            title: 'No Facility Selected',
+            text: 'Please select a facility first to download the template with eligible products.',
+            icon: 'warning',
+            confirmButtonColor: '#f97316'
+        });
+        return;
+    }
+
     try {
+        // Show loading indicator
+        Swal.fire({
+            title: 'Generating Template...',
+            text: 'Fetching eligible products for the selected facility...',
+            icon: 'info',
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Get the facility ID
+        const facilityId = typeof props.filters.facility_id === 'object' ? 
+            props.filters.facility_id.id : props.filters.facility_id;
+
+        // Fetch eligible products for the facility
+        const response = await axios.get(route('reports.template-products'), {
+            params: {
+                facility_id: facilityId
+            }
+        });
+
+        const eligibleProducts = response.data.products || [];
+        
         // Create template data
         const templateData = [];
         
@@ -815,23 +851,35 @@ function downloadTemplate() {
         
         templateData.push(headerRow);
         
-        // Add a few sample rows with product examples
-        const sampleProducts = [
-            'Albendazole Tab, 400mg',
-            'Amoxicillin Caps, 500mg',
-            'Paracetamol Tab, 500mg',
-            'ORS Sachet (Low Osmolarity, 2004 WHO Formula), 20.5g/1L',
-            'Cotrimoxazole Tab, 960mg'
-        ];
-        
-        sampleProducts.forEach(product => {
-            const row = [product];
-            // Add empty cells for each month
-            months.forEach(() => {
-                row.push(''); // Empty cells for data entry
+        // Add eligible products or sample products if none found
+        if (eligibleProducts.length > 0) {
+            eligibleProducts.forEach(product => {
+                const row = [product.name];
+                // Add empty cells for each month
+                months.forEach(() => {
+                    row.push(''); // Empty cells for data entry
+                });
+                templateData.push(row);
             });
-            templateData.push(row);
-        });
+        } else {
+            // Fallback to sample products if no eligible products found
+            const sampleProducts = [
+                'Albendazole Tab, 400mg',
+                'Amoxicillin Caps, 500mg',
+                'Paracetamol Tab, 500mg',
+                'ORS Sachet (Low Osmolarity, 2004 WHO Formula), 20.5g/1L',
+                'Cotrimoxazole Tab, 960mg'
+            ];
+            
+            sampleProducts.forEach(product => {
+                const row = [product];
+                // Add empty cells for each month
+                months.forEach(() => {
+                    row.push(''); // Empty cells for data entry
+                });
+                templateData.push(row);
+            });
+        }
         
         // Create worksheet
         const ws = XLSX.utils.aoa_to_sheet(templateData);
@@ -859,8 +907,12 @@ function downloadTemplate() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Monthly Consumption Template');
         
+        // Get facility name for filename
+        const selectedFacility = props.facilities.find(f => f.id === facilityId);
+        const facilityName = selectedFacility ? selectedFacility.name.replace(/\s+/g, '_') : 'Facility';
+        
         // Generate filename
-        const filename = `Monthly_Consumption_Template_${currentYear}.xlsx`;
+        const filename = `Monthly_Consumption_Template_${facilityName}_${currentYear}.xlsx`;
         
         // Download the file
         XLSX.writeFile(wb, filename);
@@ -868,10 +920,10 @@ function downloadTemplate() {
         // Show success message
         Swal.fire({
             title: 'Template Downloaded!',
-            text: `Template for ${currentYear} has been downloaded successfully.`,
+            text: `Template for ${selectedFacility?.name || 'the selected facility'} (${eligibleProducts.length} eligible products) has been downloaded successfully.`,
             icon: 'success',
             confirmButtonColor: '#f97316',
-            timer: 2000,
+            timer: 3000,
             timerProgressBar: true
         });
         
@@ -880,7 +932,7 @@ function downloadTemplate() {
         
         Swal.fire({
             title: 'Download Error',
-            text: 'There was an error creating the template file.',
+            text: error.response?.data?.message || 'There was an error creating the template file.',
             icon: 'error',
             confirmButtonColor: '#f97316'
         });
