@@ -206,7 +206,7 @@
                 <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
                     <thead>
                         <tr style="background-color: #F4F7FB;">
-                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">No.</th>
+                            <th class="w-[50px] px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">No.</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Category</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Dosage Form</th>
