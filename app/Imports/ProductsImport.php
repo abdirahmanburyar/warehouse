@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Models\EligibleItem;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -102,9 +103,9 @@ class ProductsImport implements
             // Update progress in cache
             Cache::increment($this->importId);
 
-            event(new UpdateProductUpload($this->importId, Cache::get($this->importId)));
+            // event(new UpdateProductUpload($this->importId, Cache::get($this->importId)));
 
-            Product::updateOrCreate([
+            $product = Product::updateOrCreate([
                 'name' => $itemName,
             ], [
                 'name' => $itemName,
@@ -113,10 +114,49 @@ class ProductsImport implements
                 'is_active' => true,
             ]);
 
+            // Handle eligibility levels
+            $this->handleEligibilityLevels($product, $row);
+
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row: " . $e->getMessage();
             $this->skippedCount++;
             throw $e;
+        }
+    }
+
+    /**
+     * Handle eligibility levels for a product
+     */
+    protected function handleEligibilityLevels(Product $product, array $row)
+    {
+        if (empty($row['eligibility_level'])) {
+            return;
+        }
+
+        $eligibilityLevels = trim($row['eligibility_level']);
+        
+        if (empty($eligibilityLevels)) {
+            return;
+        }
+
+        // Split by comma and clean up each level
+        $levels = array_map('trim', explode(',', $eligibilityLevels));
+        $levels = array_filter($levels); // Remove empty values
+
+        // Clear existing eligibility items for this product to avoid duplicates
+        EligibleItem::where('product_id', $product->id)->delete();
+
+        // Create new eligibility items
+        foreach ($levels as $level) {
+            if (!empty($level)) {
+                // Convert to snake_case for consistency (e.g., "General Hospital" -> "general_hospital")
+                $facilityType = strtolower(str_replace(' ', '_', $level));
+                
+                EligibleItem::create([
+                    'product_id' => $product->id,
+                    'facility_type' => $facilityType,
+                ]);
+            }
         }
     }
 
@@ -126,6 +166,7 @@ class ProductsImport implements
             'item_description' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
             'dosage_form' => 'nullable|string|max:255',
+            'eligibility_level' => 'nullable|string',
         ];
     }
 
@@ -145,7 +186,7 @@ class ProductsImport implements
             AfterImport::class => function (AfterImport $event) {
                 Cache::forget($this->importId);
                 Log::info('Product import completed', ['importId' => $this->importId]);
-                event(new UpdateProductUpload($this->importId, 'completed'));
+                // event(new UpdateProductUpload($this->importId, 'completed'));
             },
         ];
     }
