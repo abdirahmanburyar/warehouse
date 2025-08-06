@@ -43,6 +43,6 @@ class EligibleItem extends Model
      */
     public function getFacilityTypeLabelAttribute()
     {
-        return ucwords(str_replace('_', ' ', $this->facility_type));
+        return $this->facility_type;
     }
 }

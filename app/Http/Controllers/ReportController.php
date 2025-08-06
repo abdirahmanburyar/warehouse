@@ -2007,7 +2007,7 @@ class ReportController extends Controller
             ->map(function($type) {
                 return [
                     'value' => $type,
-                    'label' => ucwords(str_replace('_', ' ', $type))
+                    'label' => $type
                 ];
             });
 
