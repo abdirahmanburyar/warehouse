@@ -58,7 +58,11 @@ class LogisticCompanyController extends Controller
                 $validated
             );
 
-            return response()->json($request->id ? 'Company updated successfully' : 'Company created successfully', 200);
+            return response()->json([
+                'message' => $request->id ? 'Company updated successfully' : 'Company created successfully',
+                'id' => $company->id,
+                'name' => $company->name
+            ], 200);
         } catch (\Exception $e) {
             return response()->json($e->getMessage(), 500);
         }

@@ -1069,6 +1069,11 @@ class SupplyController extends Controller
     public function reviewPO($id)
     {
         try {
+            // Check permission
+            if (!auth()->user()->hasPermission('purchase-order-review')) {
+                return response()->json('Unauthorized: You do not have permission to review purchase orders', 403);
+            }
+            
             $po = PurchaseOrder::findOrFail($id);
             $po->reviewed_by = auth()->id();
             $po->reviewed_at = now();
@@ -1116,6 +1121,11 @@ class SupplyController extends Controller
     public function approvePO($id)
     {
         try {
+            // Check permission
+            if (!auth()->user()->hasPermission('purchase-order-approve')) {
+                return response()->json('Unauthorized: You do not have permission to approve purchase orders', 403);
+            }
+            
             return DB::transaction(function () use ($id) {
                 $po = PurchaseOrder::with(['items', 'approvedBy'])->findOrFail($id);
                 

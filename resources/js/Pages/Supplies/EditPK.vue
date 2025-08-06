@@ -1230,7 +1230,7 @@ async function reviewPackingList() {
             router.get(route('supplies.packing-list.edit', form.value.id), {}, {
                 preserveScroll: false,
                 preserveState: false,
-                only: ['packingList', 'warehouses']
+                only: ['packing_list', 'warehouses', 'locations']
             });
 
         } catch (error) {
@@ -1294,7 +1294,7 @@ async function approvePackingList() {
             router.get(route('supplies.packing-list.edit', form.value.id), {}, {
                 preserveScroll: false,
                 preserveState: false,
-                only: ['packingList', 'warehouses']
+                only: ['packing_list', 'warehouses', 'locations']
             });
 
 

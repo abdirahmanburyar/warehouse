@@ -1224,14 +1224,25 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                <label class="block text-sm font-medium text-gray-700">Incharge Person</label>
                                 <input 
                                     type="text" 
-                                    v-model="companyForm.phone" 
+                                    v-model="companyForm.incharge_person" 
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                    :class="{ 'border-red-500': companyErrors.phone }"
+                                    :class="{ 'border-red-500': companyErrors.incharge_person }"
                                 >
-                                <p v-if="companyErrors.phone" class="mt-1 text-sm text-red-600">{{ companyErrors.phone[0] }}</p>
+                                <p v-if="companyErrors.incharge_person" class="mt-1 text-sm text-red-600">{{ companyErrors.incharge_person[0] }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Incharge Phone</label>
+                                <input 
+                                    type="text" 
+                                    v-model="companyForm.incharge_phone" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    :class="{ 'border-red-500': companyErrors.incharge_phone }"
+                                >
+                                <p v-if="companyErrors.incharge_phone" class="mt-1 text-sm text-red-600">{{ companyErrors.incharge_phone[0] }}</p>
                             </div>
 
                             <div>
@@ -1340,7 +1351,8 @@ const dispatchForm = ref({
 const companyForm = ref({
     name: '',
     email: '',
-    phone: '',
+    incharge_person: '',
+    incharge_phone: '',
     address: '',
     is_active: true
 });
@@ -1802,7 +1814,8 @@ const openCompanyModal = () => {
     companyForm.value = {
         name: '',
         email: '',
-        phone: '',
+        incharge_person: '',
+        incharge_phone: '',
         address: '',
         is_active: true
     };
@@ -1814,7 +1827,8 @@ const closeCompanyModal = () => {
     companyForm.value = {
         name: '',
         email: '',
-        phone: '',
+        incharge_person: '',
+        incharge_phone: '',
         address: '',
         is_active: true
     };
@@ -1826,7 +1840,7 @@ const submitCompany = async () => {
         isSubmittingCompany.value = true;
         companyErrors.value = {};
         
-        const response = await axios.post(route('settings.companies.store'), companyForm.value);
+        const response = await axios.post(route('settings.logistics.companies.store'), companyForm.value);
         
         // Create a new company option
         const newCompany = {
