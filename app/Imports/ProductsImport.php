@@ -149,12 +149,9 @@ class ProductsImport implements
         // Create new eligibility items
         foreach ($levels as $level) {
             if (!empty($level)) {
-                // Convert to snake_case for consistency (e.g., "General Hospital" -> "general_hospital")
-                $facilityType = strtolower(str_replace(' ', '_', $level));
-                
                 EligibleItem::create([
                     'product_id' => $product->id,
-                    'facility_type' => $facilityType,
+                    'facility_type' => $level,
                 ]);
             }
         }
