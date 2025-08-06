@@ -223,7 +223,7 @@
                             class="hover:bg-gray-50 transition-colors duration-150 border-b"
                             style="border-bottom: 1px solid #B7C6E6;"
                         >
-                            <td class="px-3 py-2 w-[200px] max-w-[200px] text-center">
+                            <td class="px-3 py-2 w-[50px] max-w-[50px] text-center">
                                 {{ index + 1 }}
                             </td>
                             <td class="px-3 py-2 w-[200px] max-w-[200px]">
