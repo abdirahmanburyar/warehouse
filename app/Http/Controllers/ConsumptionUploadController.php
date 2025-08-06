@@ -75,7 +75,6 @@ class ConsumptionUploadController extends Controller
             $import = new ProcessMonthlyConsumptionImport(
                 $filePath,
                 $request->facility_id,
-                $request->month_year,
                 $importId
             );
 

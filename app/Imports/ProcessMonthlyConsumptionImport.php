@@ -115,17 +115,18 @@ class ProcessMonthlyConsumptionImport
 
                     // Process each month column
                     foreach ($this->monthColumns as $columnIndex => $monthYear) {
-                        $quantity = isset($values[$columnIndex]) ? (int)$values[$columnIndex] : 0;
+                        // Handle empty, null, or non-numeric values by setting them to 0
+                        $rawValue = isset($values[$columnIndex]) ? $values[$columnIndex] : '';
+                        $quantity = is_numeric($rawValue) ? (int)$rawValue : 0;
                         
-                        if ($quantity > 0) {
-                            $allItems[] = [
-                                'product_id' => $product->id,
-                                'quantity' => $quantity,
-                                'month_year' => $monthYear,
-                                'product_name' => $description
-                            ];
-                            $this->importedCount++;
-                        }
+                        // Save all records, including those with 0 quantity
+                        $allItems[] = [
+                            'product_id' => $product->id,
+                            'quantity' => $quantity,
+                            'month_year' => $monthYear,
+                            'product_name' => $description
+                        ];
+                        $this->importedCount++;
                     }
                 }
             }

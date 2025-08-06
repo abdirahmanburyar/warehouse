@@ -341,7 +341,7 @@ class ReportController extends Controller
         // Only fetch data if the form has been submitted with valid filters
         if ($isSubmitted && $facilityId && $startMonth && $endMonth) {
             $monthlyConsumptionReport = MonthlyConsumptionReport::where('facility_id', $facilityId)
-                ->with('facility','items.product')
+                ->with('facility.user','items.product')
                 ->whereBetween('month_year', [$startMonth, $endMonth])
                 ->get();
         }

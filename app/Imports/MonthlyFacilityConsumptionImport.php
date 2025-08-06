@@ -53,28 +53,28 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
                 
                 // Process each month column
                 foreach ($this->monthColumns as $columnKey => $monthYear) {
-                    $quantity = $this->getRowValue($row, [$columnKey]);
-                    $quantity = is_numeric($quantity) ? (int)$quantity : 0;
+                    $rawQuantity = $this->getRowValue($row, [$columnKey]);
+                    // Handle empty, null, or non-numeric values by setting them to 0
+                    $quantity = is_numeric($rawQuantity) ? (int)$rawQuantity : 0;
                     
-                    if ($quantity > 0) {
-                        // Create or find the monthly report for this month
-                        $report = MonthlyConsumptionReport::updateOrCreate(
-                            [
-                                'facility_id' => $this->facilityId,
-                                'month_year' => $monthYear
-                            ],
-                            ['generated_by' => auth()->user()->name ?? "System"]
-                        );
-                        
-                        $allItems[] = [
-                            'parent_id' => $report->id,
-                            'product_id' => $product->id,
-                            'quantity' => $quantity,
-                            'month_year' => $monthYear,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ];
-                    }
+                    // Create or find the monthly report for this month
+                    $report = MonthlyConsumptionReport::updateOrCreate(
+                        [
+                            'facility_id' => $this->facilityId,
+                            'month_year' => $monthYear
+                        ],
+                        ['generated_by' => auth()->user()->name ?? "System"]
+                    );
+                    
+                    // Save all records, including those with 0 quantity
+                    $allItems[] = [
+                        'parent_id' => $report->id,
+                        'product_id' => $product->id,
+                        'quantity' => $quantity,
+                        'month_year' => $monthYear,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
                 }
             }
             
