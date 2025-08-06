@@ -2089,7 +2089,7 @@ class SupplyController extends Controller
             $items = PurchaseOrderItem::where('purchase_order_id', $id)->get();
             return response()->json($items, 200);
         } catch (\Throwable $th) {
-            return response()->json($$th->getMessage(), 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
 
