@@ -43,7 +43,7 @@ class ProductController extends Controller
             $type = $request->input('eligible');
             if($type == 'All'){
                 $query->whereHas('eligible', function ($q) use ($request) {
-                    $q->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Centre', 'Primary Health Unit']);
+                    $q->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Center', 'Primary Health Unit']);
                 });
             }else{
                 $query->whereHas('eligible', function ($q) use ($type) {
