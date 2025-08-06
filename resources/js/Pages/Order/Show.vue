@@ -520,6 +520,18 @@
                                             <ClockIcon class="w-4 h-4 text-gray-400 mr-2" />
                                             <span class="text-sm text-gray-600">Dispatched on {{ moment(dispatch.created_at).format('MMMM D, YYYY h:mm A') }}</span>
                                         </div>
+                                        <!-- View Images Button -->
+                                        <div v-if="dispatch.image" class="mt-3">
+                                            <button
+                                                @click="viewDispatchImages(dispatch)"
+                                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            >
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                View Images
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -527,6 +539,110 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Dispatch Images Modal -->
+            <Modal :show="showDispatchImagesModal" @close="closeDispatchImagesModal">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-medium text-gray-900">Dispatch Images</h2>
+                        <button @click="closeDispatchImagesModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div v-if="dispatchImages.length > 0" class="space-y-4">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div
+                                v-for="(image, index) in dispatchImages"
+                                :key="index"
+                                class="relative group cursor-pointer"
+                                @click="openImageLightbox(index)"
+                            >
+                                <img
+                                    :src="getImageUrl(image)"
+                                    :alt="`Dispatch image ${index + 1}`"
+                                    class="w-full h-32 object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                                    @error="handleImageError"
+                                />
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity rounded-lg flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-else class="text-center py-8">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-gray-500">No images available for this dispatch</p>
+                    </div>
+                </div>
+            </Modal>
+
+            <!-- Image Lightbox Modal -->
+            <Modal :show="showImageLightbox" @close="closeImageLightbox">
+                <div class="relative bg-black">
+                    <div class="flex items-center justify-between p-4 bg-black bg-opacity-75">
+                        <h3 class="text-white font-medium">
+                            Image {{ currentImageIndex + 1 }} of {{ dispatchImages.length }}
+                        </h3>
+                        <button @click="closeImageLightbox" class="text-white hover:text-gray-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="relative">
+                        <img
+                            v-if="dispatchImages[currentImageIndex]"
+                            :src="getImageUrl(dispatchImages[currentImageIndex])"
+                            :alt="`Dispatch image ${currentImageIndex + 1}`"
+                            class="w-full max-h-screen object-contain"
+                            @error="handleImageError"
+                        />
+                        
+                        <!-- Navigation arrows -->
+                        <button
+                            v-if="dispatchImages.length > 1 && currentImageIndex > 0"
+                            @click="previousImage"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        
+                        <button
+                            v-if="dispatchImages.length > 1 && currentImageIndex < dispatchImages.length - 1"
+                            @click="nextImage"
+                            class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Image counter dots -->
+                    <div v-if="dispatchImages.length > 1" class="flex justify-center space-x-2 p-4 bg-black bg-opacity-75">
+                        <button
+                            v-for="(image, index) in dispatchImages"
+                            :key="index"
+                            @click="currentImageIndex = index"
+                            :class="[
+                                'w-2 h-2 rounded-full transition-all',
+                                index === currentImageIndex ? 'bg-white' : 'bg-gray-500 hover:bg-gray-400'
+                            ]"
+                        />
+                    </div>
+                </div>
+            </Modal>
 
             <!-- Order Status Actions -->
             <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm">
@@ -1328,8 +1444,12 @@ const selectedBackOrder = ref(null);
 const showDispatchForm = ref(false);
 const showDriverModal = ref(false);
 const showCompanyModal = ref(false);
+const showDispatchImagesModal = ref(false);
+const showImageLightbox = ref(false);
 const isSubmittingDriver = ref(false);
 const isSubmittingCompany = ref(false);
+const dispatchImages = ref([]);
+const currentImageIndex = ref(0);
 const driverForm = ref({
     driver_id: '',
     name: '',
@@ -1917,5 +2037,71 @@ const printDispatchNote = (dispatch) => {
 const trackDispatch = (dispatch) => {
     // Implement tracking functionality
     console.log('Tracking dispatch:', dispatch);
+};
+
+// Dispatch images modal methods
+const viewDispatchImages = (dispatch) => {
+    dispatchImages.value = [];
+    
+    if (dispatch.image) {
+        try {
+            const images = JSON.parse(dispatch.image);
+            if (Array.isArray(images)) {
+                dispatchImages.value.push(...images);
+            } else if (typeof images === 'string') {
+                // If it's a single image path as string
+                dispatchImages.value.push(images);
+            }
+        } catch (e) {
+            // If parsing fails, treat it as a single image path
+            if (typeof dispatch.image === 'string') {
+                dispatchImages.value.push(dispatch.image);
+            }
+            console.error('Error parsing dispatch images:', e);
+        }
+    }
+    
+    showDispatchImagesModal.value = true;
+};
+
+const closeDispatchImagesModal = () => {
+    showDispatchImagesModal.value = false;
+    dispatchImages.value = [];
+    currentImageIndex.value = 0;
+};
+
+const getImageUrl = (imagePath) => {
+    // Convert storage path to public URL
+    if (!imagePath) return '';
+    return '/' + imagePath;
+};
+
+const handleImageError = (event) => {
+    console.error('Failed to load image:', event.target.src);
+    event.target.style.display = 'none';
+};
+
+const openImageLightbox = (index) => {
+    if (dispatchImages.value[index]) {
+        currentImageIndex.value = index;
+        showImageLightbox.value = true;
+    }
+};
+
+const closeImageLightbox = () => {
+    showImageLightbox.value = false;
+    currentImageIndex.value = 0;
+};
+
+const previousImage = () => {
+    if (currentImageIndex.value > 0) {
+        currentImageIndex.value--;
+    }
+};
+
+const nextImage = () => {
+    if (currentImageIndex.value < dispatchImages.value.length - 1) {
+        currentImageIndex.value++;
+    }
 };
 </script>

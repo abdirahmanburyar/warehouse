@@ -16,6 +16,7 @@ class DispatchInfo extends Model
         'received_cartons',
         'driver_number',
         'plate_number',
+        'image',
     ];
 
     public function driver()
