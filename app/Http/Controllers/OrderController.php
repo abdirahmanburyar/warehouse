@@ -336,11 +336,6 @@ class OrderController extends Controller
     
             // Check if the OrderItem exists manually to provide better error info
             $orderItemExists = \App\Models\OrderItem::where('id', $request->item_id)->exists();
-            logger()->info('OrderItem exists check:', [
-                'item_id' => $request->item_id,
-                'exists' => $orderItemExists,
-                'with_trashed' => \App\Models\OrderItem::withTrashed()->where('id', $request->item_id)->exists()
-            ]);
             
             $request->validate([
                 'item_id'  => 'required|exists:order_items,id',
@@ -634,7 +629,7 @@ class OrderController extends Controller
     
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['error' => $th->getMessage()], 500);
+            return response()->json($th->getMessage(), 500);
         }
     }
     
