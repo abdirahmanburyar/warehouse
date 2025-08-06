@@ -145,7 +145,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Eligibility Level</label>
                     <Multiselect
                         v-model="eligible"
-                        :options="eligibleItems"
+                        :options="['All', ...props.eligibleItems]"
                         :searchable="true"
                         :close-on-select="true"
                         :show-labels="false"
@@ -309,6 +309,12 @@
             </div>
 
             <!-- Pagination -->
+           <div class="flex justify-between items-center p-3">
+            <div>
+                <p class="text-sm text-gray-500">
+                    Showing {{ products.meta.from }} to {{ products.meta.to }} of {{ products.meta.total }} products
+                </p>
+            </div>
             <div v-if="products.data.length" class="flex justify-end mb-4 bg-white px-6 py-4 border-t border-gray-200">
                 <TailwindPagination
                     :data="props.products"
@@ -316,6 +322,8 @@
                     @pagination-change-page="getResults"
                 />
             </div>
+           </div>
+
         </div>
 
         <!-- Excel Upload Modal -->
@@ -499,15 +507,11 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    eligibleItems: {
+        type: Array,
+        required: true,
+    },
 });
-
-const eligibleItems = [
-    "All",
-    "Health Centre",
-    "Primary Health Unit",
-    "District Hospital",
-    "Regional Hospital",
-];
 
 const eligible = ref(props.filters.eligible || "");
 

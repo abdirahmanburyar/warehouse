@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\DosageResource;
+use App\Models\FacilityType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Throwable;
@@ -38,13 +39,23 @@ class ProductController extends Controller
             });
         }
 
+        $eligibleItems = FacilityType::pluck('name')->toArray();
+
         // EligibleItem
         if($request->filled('eligible')){
             $type = $request->input('eligible');
             if($type == 'All'){
-                $query->whereHas('eligible', function ($q) use ($request) {
-                    $q->whereIn('facility_type', ['Regional Hospital', 'District Hospital', 'Health Center', 'Primary Health Unit']);
-                });
+                // Filter products that have eligible items for ALL facility types
+                $facilityCount = count($eligibleItems);
+                if ($facilityCount > 0) {
+                    $query->where(function($q) use ($eligibleItems, $facilityCount) {
+                        $q->whereHas('eligible', function ($subQ) use ($eligibleItems) {
+                            $subQ->whereIn('facility_type', $eligibleItems);
+                        })
+                        ->whereRaw('(SELECT COUNT(DISTINCT facility_type) FROM eligible_items WHERE product_id = products.id AND facility_type IN (' . implode(',', array_fill(0, count($eligibleItems), '?')) . ')) = ?', 
+                            array_merge($eligibleItems, [$facilityCount]));
+                    });
+                }
             }else{
                 $query->whereHas('eligible', function ($q) use ($type) {
                     $q->where('facility_type', 'like', "%{$type}%");
@@ -89,6 +100,7 @@ class ProductController extends Controller
             'products' => ProductResource::collection($products),
             'categories' => Category::pluck('name')->toArray(),
             'dosages' => Dosage::pluck('name')->toArray(),
+            'eligibleItems' => $eligibleItems,
             'filters' => $request->only(['search', 'category', 'dosage', 'per_page', 'page','eligible', 'status'])
         ]);
     }
