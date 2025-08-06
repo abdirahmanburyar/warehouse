@@ -332,11 +332,11 @@ class OrderController extends Controller
             DB::beginTransaction();
             
             // Log the incoming request for debugging
-            \Log::info('UpdateQuantity Request Data:', $request->all());
+            logger()->info('UpdateQuantity Request Data:', $request->all());
     
             // Check if the OrderItem exists manually to provide better error info
             $orderItemExists = \App\Models\OrderItem::where('id', $request->item_id)->exists();
-            \Log::info('OrderItem exists check:', [
+            logger()->info('OrderItem exists check:', [
                 'item_id' => $request->item_id,
                 'exists' => $orderItemExists,
                 'with_trashed' => \App\Models\OrderItem::withTrashed()->where('id', $request->item_id)->exists()
@@ -353,7 +353,7 @@ class OrderController extends Controller
             $orderItem = OrderItem::find($request->item_id);
             
             if (!$orderItem) {
-                \Log::error('OrderItem not found:', ['item_id' => $request->item_id]);
+                logger()->error('OrderItem not found:', ['item_id' => $request->item_id]);
                 return response()->json(['error' => 'Order item not found'], 404);
             }
             
