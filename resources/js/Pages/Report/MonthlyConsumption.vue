@@ -109,39 +109,43 @@
                     <div class="flex flex-col md:flex-row justify-between max-w-4xl mx-auto mb-4 text-sm">
                         <div class="flex-1 p-3">
                             <table class="w-full">
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Name:</td>
-                                    <td>{{ facilityInfo.name }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Type:</td>
-                                    <td>{{ facilityInfo.facility_type }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Email:</td>
-                                    <td>{{ facilityInfo.email || 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Phone:</td>
-                                    <td>{{ facilityInfo.phone || 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Address:</td>
-                                    <td>{{ facilityInfo.address || 'N/A' }}</td>
-                                </tr>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Name:</td>
+                                        <td>{{ facilityInfo.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Type:</td>
+                                        <td>{{ facilityInfo.facility_type }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Email:</td>
+                                        <td>{{ facilityInfo.email || 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Phone:</td>
+                                        <td>{{ facilityInfo.phone || 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Address:</td>
+                                        <td>{{ facilityInfo.address || 'N/A' }}</td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
 
                         <div class="flex-1 p-3 border-t md:border-t-0 md:border-l border-gray-200">
                             <table class="w-full" v-if="facilityInfo.user">
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Manager:</td>
-                                    <td>{{ facilityInfo.user.name }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-medium pr-2 py-1 align-top">Email:</td>
-                                    <td>{{ facilityInfo.user.email }}</td>
-                                </tr>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Manager:</td>
+                                        <td>{{ facilityInfo.user.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium pr-2 py-1 align-top">Email:</td>
+                                        <td>{{ facilityInfo.user.email }}</td>
+                                    </tr>
+                                </tbody>
                             </table>
                             <p v-else class="text-gray-500 italic py-2">No manager assigned</p>
                         </div>
