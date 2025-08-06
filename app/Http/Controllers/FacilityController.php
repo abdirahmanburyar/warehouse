@@ -123,7 +123,8 @@ class FacilityController extends Controller
         return inertia('Facility/Create', [
             'users' => User::get(),
             'districts' => District::pluck('name')->toArray(),
-            'regions' => Region::pluck('name')->toArray()
+            'regions' => Region::pluck('name')->toArray(),
+            'facilityTypes' => FacilityType::where('is_active', true)->pluck('name')->toArray(),
         ]);
     }
     
