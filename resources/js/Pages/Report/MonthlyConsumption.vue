@@ -19,15 +19,22 @@
                         </button>
                         
                         <!-- Download Template Button -->
-                        <button 
-                            @click="downloadTemplate"
-                            class="px-2 py-1 bg-purple-600 text-white text-[11px] font-medium rounded hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-purple-500 flex items-center gap-1"
-                        >
+                        <div class="relative group">
+                            <button 
+                                @click="downloadTemplate"
+                                :disabled="!props.filters.facility_id"
+                                class="px-2 py-1 text-[11px] font-medium rounded focus:outline-none focus:ring-1 focus:ring-offset-1 flex items-center gap-1 transition-all duration-200"
+                                :class="props.filters.facility_id 
+                                    ? 'bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500 cursor-pointer' 
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'"
+                                :title="!props.filters.facility_id ? 'Please select a facility first' : 'Download template with eligible products'"
+                            >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Download Template
                         </button>
+                        </div>
                         
                         <!-- Excel Upload Button -->
                         <button 
@@ -793,15 +800,9 @@ async function uploadFile() {
 
 // Download template with current year months
 async function downloadTemplate() {
-    // Check if a facility is selected
+    // Check if a facility is selected (this should be disabled by the button state, but double-check)
     if (!props.filters.facility_id) {
-        Swal.fire({
-            title: 'No Facility Selected',
-            text: 'Please select a facility first to download the template with eligible products.',
-            icon: 'warning',
-            confirmButtonColor: '#f97316'
-        });
-        return;
+        return; // Button should be disabled, so this shouldn't happen
     }
 
     try {
