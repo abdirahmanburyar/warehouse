@@ -206,6 +206,7 @@
                 <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
                     <thead>
                         <tr style="background-color: #F4F7FB;">
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">No.</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Item</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Category</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Dosage Form</th>
@@ -217,11 +218,14 @@
                     </thead>
                     <tbody>
                         <tr
-                            v-for="product in products.data"
+                            v-for="(product, index) in products.data"
                             :key="product.id"
                             class="hover:bg-gray-50 transition-colors duration-150 border-b"
                             style="border-bottom: 1px solid #B7C6E6;"
                         >
+                            <td class="px-3 py-2 w-[200px] max-w-[200px] text-center">
+                                {{ index + 1 }}
+                            </td>
                             <td class="px-3 py-2 w-[200px] max-w-[200px]">
                                 <div class="text-xs font-medium text-gray-800 capitalize">
                                     {{ product.name }}
