@@ -323,6 +323,7 @@ const props = defineProps({
     },
     regions: Array,
     facility: Object,
+    facilityTypes: Array,
 });
 
 // Create reactive arrays (regions starts with props data, districts starts empty)
