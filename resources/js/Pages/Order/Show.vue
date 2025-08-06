@@ -446,7 +446,7 @@
             </table>
 
             <!-- dispatch information -->
-            <div v-if="props.order.status === 'dispatched' && props.order.dispatch?.length > 0" class="mt-8 mb-6">
+            <div v-if="props.order.dispatch?.length > 0" class="mt-8 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">
                         Dispatch Note (Driver Handover Log)
