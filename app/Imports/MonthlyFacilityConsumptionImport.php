@@ -119,19 +119,34 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
         $this->monthColumns = [];
         
         foreach ($firstRow as $columnKey => $value) {
-            $columnKey = strtolower(trim($columnKey));
-            
-            // Skip the item description column
-            if (in_array($columnKey, ['item_description', 'item', 'description'])) {
-                continue;
-            }
-            
-            // Check if column matches month-year pattern (Jan-25, Feb-25, etc.)
-            if ($this->isMonthYearColumn($columnKey)) {
-                $monthYear = $this->parseMonthYear($columnKey);
-                if ($monthYear) {
-                    $this->monthColumns[$columnKey] = $monthYear;
+            try {
+                // Convert columnKey to string if it's not already
+                if ($columnKey instanceof \DateTime) {
+                    // If Excel interpreted the header as a date, convert it back to string
+                    $columnKey = $columnKey->format('M-y'); // This will give us Jan-25 format
+                } elseif (is_object($columnKey)) {
+                    $columnKey = (string)$columnKey;
+                } elseif (!is_string($columnKey)) {
+                    $columnKey = (string)$columnKey;
                 }
+                
+                $columnKey = strtolower(trim($columnKey));
+                
+                // Skip the item description column
+                if (in_array($columnKey, ['item_description', 'item', 'description'])) {
+                    continue;
+                }
+                
+                // Check if column matches month-year pattern (Jan-25, Feb-25, etc.)
+                if ($this->isMonthYearColumn($columnKey)) {
+                    $monthYear = $this->parseMonthYear($columnKey);
+                    if ($monthYear) {
+                        $this->monthColumns[$columnKey] = $monthYear;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning("Error processing column key: " . json_encode($columnKey) . " - " . $e->getMessage());
+                continue;
             }
         }
         
@@ -184,6 +199,8 @@ class MonthlyFacilityConsumptionImport implements ToCollection, WithHeadingRow, 
     protected function getRowValue($row, array $possibleKeys)
     {
         foreach ($possibleKeys as $key) {
+            // Ensure key is a string
+            $key = is_string($key) ? $key : (string)$key;
             $key = strtolower($key);
             if (isset($row[$key])) {
                 return $row[$key];
