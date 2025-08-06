@@ -27,7 +27,6 @@ class ConsumptionUploadController extends Controller
             $request->validate([
                 'file' => 'required|mimes:xlsx,xls',
                 'facility_id' => 'required|exists:facilities,id',
-                'month_year' => 'required|date_format:Y-m'
             ]);
 
             if (!$request->hasFile('file')) {
