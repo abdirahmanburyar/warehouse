@@ -12,12 +12,12 @@ class ProcessMonthlyConsumptionImport
 {
     protected $filePath;
     protected $facilityId;
-    protected $monthYear;
     protected $importId;
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
     protected $reader;
+    protected $monthColumns = [];
 
     // Define possible column header variations
     protected $itemDescriptionHeaders = [
@@ -31,21 +31,13 @@ class ProcessMonthlyConsumptionImport
         'product_name'
     ];
 
-    protected $quantityHeaders = [
-        'quantity',
-        'qty',
-        'amount',
-        'count'
-    ];
-
     /**
      * Create a new import instance.
      */
-    public function __construct($filePath, $facilityId, $monthYear, $importId)
+    public function __construct($filePath, $facilityId, $importId)
     {
         $this->filePath = $filePath;
         $this->facilityId = $facilityId;
-        $this->monthYear = $monthYear;
         $this->importId = $importId;
     }
 
@@ -63,19 +55,9 @@ class ProcessMonthlyConsumptionImport
             $this->reader = ReaderEntityFactory::createReaderFromFile($this->filePath);
             $this->reader->open($this->filePath);
 
-            // Create or find the monthly report
-            $report = MonthlyConsumptionReport::updateOrCreate(
-                [
-                    'facility_id' => $this->facilityId,
-                    'month_year' => $this->monthYear
-                ],
-                ['generated_by' => auth()->user()->name ?? "System"]
-            );
-
-            $validRows = [];
+            $allItems = [];
             $headers = null;
             $itemDescriptionIndex = null;
-            $quantityIndex = null;
 
             // Iterate through all sheets
             foreach ($this->reader->getSheetIterator() as $sheet) {
@@ -85,27 +67,28 @@ class ProcessMonthlyConsumptionImport
 
                     // Handle headers
                     if (!$headers) {
-                        $headers = array_map('strtolower', array_map('trim', $values));
-
+                        $headers = $values;
+                        
+                        // Identify month columns and item description column
+                        $this->identifyColumns($headers);
+                        
                         // Find item description column
                         foreach ($headers as $index => $header) {
-                            if (in_array($header, $this->itemDescriptionHeaders)) {
+                            $headerLower = strtolower(trim($header));
+                            if (in_array($headerLower, $this->itemDescriptionHeaders)) {
                                 $itemDescriptionIndex = $index;
                                 break;
                             }
                         }
 
-                        // Find quantity column
-                        foreach ($headers as $index => $header) {
-                            if (in_array($header, $this->quantityHeaders)) {
-                                $quantityIndex = $index;
-                                break;
-                            }
+                        if ($itemDescriptionIndex === null) {
+                            throw new \Exception('Item Description column not found in Excel file.');
                         }
-
-                        if ($itemDescriptionIndex === null || $quantityIndex === null) {
-                            throw new \Exception('Required columns not found in Excel file. Please ensure the file has "Item Description" and "Quantity" columns.');
+                        
+                        if (empty($this->monthColumns)) {
+                            throw new \Exception('No month-year columns found in Excel file. Please ensure columns are named like "Jan-25", "Feb-25", etc.');
                         }
+                        
                         continue;
                     }
 
@@ -116,15 +99,13 @@ class ProcessMonthlyConsumptionImport
 
                     // Process data row
                     $description = trim($values[$itemDescriptionIndex] ?? '');
-                    $quantity = (int)($values[$quantityIndex] ?? 0);
 
                     if (empty($description)) {
                         continue;
                     }
 
                     // Find product by description
-                    $product = Product::where('name', $description)
-                        ->first();
+                    $product = Product::where('name', $description)->first();
 
                     if (!$product) {
                         $this->errors[] = "Product not found: {$description}";
@@ -132,11 +113,20 @@ class ProcessMonthlyConsumptionImport
                         continue;
                     }
 
-                    $validRows[] = [
-                        'product_id' => $product->id,
-                        'quantity' => $quantity
-                    ];
-                    $this->importedCount++;
+                    // Process each month column
+                    foreach ($this->monthColumns as $columnIndex => $monthYear) {
+                        $quantity = isset($values[$columnIndex]) ? (int)$values[$columnIndex] : 0;
+                        
+                        if ($quantity > 0) {
+                            $allItems[] = [
+                                'product_id' => $product->id,
+                                'quantity' => $quantity,
+                                'month_year' => $monthYear,
+                                'product_name' => $description
+                            ];
+                            $this->importedCount++;
+                        }
+                    }
                 }
             }
 
@@ -144,23 +134,37 @@ class ProcessMonthlyConsumptionImport
             $this->reader->close();
             $this->reader = null;
 
-            // Delete existing items for this report
-            MonthlyConsumptionItem::where('parent_id', $report->id)->delete();
+            // Group items by month_year and process each month
+            $itemsByMonth = collect($allItems)->groupBy('month_year');
+            
+            foreach ($itemsByMonth as $monthYear => $monthItems) {
+                // Create or find the monthly report for this month
+                $report = MonthlyConsumptionReport::updateOrCreate(
+                    [
+                        'facility_id' => $this->facilityId,
+                        'month_year' => $monthYear
+                    ],
+                    ['generated_by' => auth()->user()->name ?? "System"]
+                );
 
-            // Create new items
-            $items = array_map(function($item) use ($report) {
-                return [
-                    'parent_id' => $report->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
-            }, $validRows);
+                // Delete existing items for this report
+                MonthlyConsumptionItem::where('parent_id', $report->id)->delete();
 
-            // Batch insert for better performance
-            if (!empty($items)) {
-                MonthlyConsumptionItem::insert($items);
+                // Prepare items for insertion
+                $itemsToInsert = $monthItems->map(function($item) use ($report) {
+                    return [
+                        'parent_id' => $report->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+                })->toArray();
+
+                // Batch insert for better performance
+                if (!empty($itemsToInsert)) {
+                    MonthlyConsumptionItem::insert($itemsToInsert);
+                }
             }
 
             // Clean up the file
@@ -188,6 +192,91 @@ class ProcessMonthlyConsumptionImport
 
             throw $e;
         }
+    }
+
+    /**
+     * Identify month columns and item description column from headers
+     */
+    protected function identifyColumns($headers)
+    {
+        $this->monthColumns = [];
+        
+        foreach ($headers as $index => $header) {
+            try {
+                // Convert header to string if it's not already (handle DateTime objects from Excel)
+                if ($header instanceof \DateTime) {
+                    // If Excel interpreted the header as a date, convert it back to string
+                    $header = $header->format('M-y'); // This will give us Jan-25 format
+                } elseif (is_object($header)) {
+                    $header = (string)$header;
+                } elseif (!is_string($header)) {
+                    $header = (string)$header;
+                }
+                
+                $headerLower = strtolower(trim($header));
+                
+                // Skip the item description column
+                if (in_array($headerLower, $this->itemDescriptionHeaders)) {
+                    continue;
+                }
+                
+                // Check if column matches month-year pattern (Jan-25, Feb-25, etc.)
+                if ($this->isMonthYearColumn($headerLower)) {
+                    $monthYear = $this->parseMonthYear($headerLower);
+                    if ($monthYear) {
+                        $this->monthColumns[$index] = $monthYear;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning("Error processing column header: " . json_encode($header) . " - " . $e->getMessage());
+                continue;
+            }
+        }
+        
+        Log::info("Identified month columns: " . json_encode($this->monthColumns));
+    }
+    
+    /**
+     * Check if a column name looks like a month-year format
+     */
+    protected function isMonthYearColumn($columnName)
+    {
+        // Pattern: Mon-YY or Month-YY (Jan-25, Feb-25, January-25, etc.)
+        return preg_match('/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)-\d{2}$/i', $columnName);
+    }
+    
+    /**
+     * Parse month-year column to standard format (YYYY-MM)
+     */
+    protected function parseMonthYear($columnName)
+    {
+        // Extract month and year
+        if (preg_match('/^([a-z]+)-(\d{2})$/i', $columnName, $matches)) {
+            $monthStr = strtolower($matches[1]);
+            $year = '20' . $matches[2]; // Convert 25 to 2025
+            
+            // Map month names to numbers
+            $monthMap = [
+                'jan' => '01', 'january' => '01',
+                'feb' => '02', 'february' => '02',
+                'mar' => '03', 'march' => '03',
+                'apr' => '04', 'april' => '04',
+                'may' => '05',
+                'jun' => '06', 'june' => '06',
+                'jul' => '07', 'july' => '07',
+                'aug' => '08', 'august' => '08',
+                'sep' => '09', 'september' => '09',
+                'oct' => '10', 'october' => '10',
+                'nov' => '11', 'november' => '11',
+                'dec' => '12', 'december' => '12',
+            ];
+            
+            if (isset($monthMap[$monthStr])) {
+                return $year . '-' . $monthMap[$monthStr];
+            }
+        }
+        
+        return null;
     }
 
     /**
