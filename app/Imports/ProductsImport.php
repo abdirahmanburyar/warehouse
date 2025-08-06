@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
 use App\Models\EligibleItem;
+use App\Models\FacilityType;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -38,6 +39,7 @@ class ProductsImport implements
     protected $errors = [];
     protected $categoryCache = [];
     protected $dosageCache = [];
+    protected $facilityTypeCache = [];
     protected $importId;
 
     public function __construct(string $importId)
@@ -149,9 +151,21 @@ class ProductsImport implements
         // Create new eligibility items
         foreach ($levels as $level) {
             if (!empty($level)) {
+                // Check if facility type exists in FacilityType model, create if not
+                if (!isset($this->facilityTypeCache[$level])) {
+                    $facilityTypeModel = FacilityType::firstOrCreate(
+                        ['name' => $level],
+                        ['is_active' => true]
+                    );
+                    $this->facilityTypeCache[$level] = $facilityTypeModel->name;
+                }
+                
+                // Use the exact name from the FacilityType model
+                $facilityTypeName = $this->facilityTypeCache[$level];
+                
                 EligibleItem::create([
                     'product_id' => $product->id,
-                    'facility_type' => $level,
+                    'facility_type' => $facilityTypeName,
                 ]);
             }
         }
