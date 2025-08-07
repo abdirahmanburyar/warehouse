@@ -2112,7 +2112,7 @@ const assetStatsCards = computed(() => [
                         <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                                 <div class="flex gap-4">
-                                    <div>
+                                    <div class="w-[300px]">
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
                                         <Multiselect
                                             v-model="selectedFacility"
@@ -2136,9 +2136,7 @@ const assetStatsCards = computed(() => [
                                             <option value="opening_balance">Beginning Balance</option>
                                             <option value="stock_received">QTY Received</option>
                                             <option value="stock_issued">Issued Quantity</option>
-                                            <option value="positive_adjustments">Positive Adjustments</option>
-                                            <option value="negative_adjustments">Negative Adjustments</option>
-                                            <option value="closing_balance">Closing Balance (Calculated)</option>
+                                            <option value="closing_balance">Closing Balance</option>
                                         </select>
                                     </div>
                                 </div>
