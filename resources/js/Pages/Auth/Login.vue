@@ -140,13 +140,13 @@ const togglePasswordVisibility = () => {
                             <Checkbox name="remember" v-model:checked="form.remember" :disabled="isLoading" />
                             <span class="ml-2 text-sm text-gray-600">Remember me</span>
                         </label>
-                        <Link
+                        <!-- <Link
                             v-if="canResetPassword"
                             :href="route('password.request')"
                             class="text-xs text-blue-600 hover:underline ml-2"
                         >
                             Forgot your password?
-                        </Link>
+                        </Link> -->
                     </div>
 
                     <PrimaryButton
