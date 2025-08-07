@@ -1911,96 +1911,122 @@ const assetStatsCards = computed(() => [
 <template>
     <Head title="Dashboard" />
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
-        <!-- Quick Stats Cards Row -->
+        <!-- Modern Gradient Dashboard Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <!-- Total PO Cost Card -->
+            <!-- Teal Card -->
             <Link :href="route('purchase-orders.index')" class="block">
                 <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(to bottom left, #E7E2F2 0%, #888892 55%, #5F5C65 86%);"></div>
-                    <div class="relative p-6 flex items-center justify-between">
+                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #00D79F 0%, #37FFCB 54%, #DCFFF6 100%);"></div>
+                    <div class="relative p-4">
+
+                        <!-- Content -->
                         <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Total P.O Cost</h3>
-                            <div class="text-2xl font-bold text-white">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <h3 class="text-sm font-medium text-gray-800 mb-1">Total P.O Cost</h3>
+                            <div class="text-2xl font-bold text-gray-900">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
+                            <div class="text-xs font-light text-gray-700 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
+                        </div>
+                        
+                        <!-- Icon in bottom-right corner -->
+                        <div class="absolute bottom-3 right-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
                         </div>
                     </div>
-                        </div>
+                </div>
             </Link>
 
-            <!-- Transfers Card -->
+            <!-- Gray Card -->
             <Link :href="route('transfers.index')" class="block">
                 <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(to bottom right, #DCFFF6 0%, #37FFCB 54%, #00D79F 97%);"></div>
-                    <div class="relative p-6 flex items-center justify-between">
+                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #5F5C65 0%, #888892 55%, #E7E2F2 100%);"></div>
+                    <div class="relative p-4">
+
+                        <!-- Content -->
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
                             <div class="text-2xl font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
+                            <div class="text-xs font-light text-gray-200 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        
+                        <!-- Icon in bottom-right corner -->
+                        <div class="absolute bottom-3 right-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                             </svg>
                         </div>
                     </div>
-                    </div>
+                </div>
             </Link>
 
-            <!-- Delayed Orders Card -->
+            <!-- Blue Card - Delayed Orders -->
             <Link :href="route('orders.index')" class="block">
                 <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(to top left, #FFDDB7 0%, #FFB15C 31%, #FF8500 59%);"></div>
-                    <div class="relative p-6 flex items-center justify-between">
+                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #007BFF 0%, #6FB9FF 50%, #D0E7FF 100%);"></div>
+                    <div class="relative p-4">
+                        <!-- Content -->
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
                             <div class="text-2xl font-bold text-white">{{ filteredOrdersDelayedCount || 0 }}</div>
+                            <div class="text-xs font-light text-white mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        
+                        <!-- Icon in bottom-right corner -->
+                        <div class="absolute bottom-3 right-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                     </div>
-                    </div>
+                </div>
             </Link>
 
-            <!-- Low Stock Card -->
+            <!-- Orange Card - Low Stock -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl cursor-pointer">
-                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-400"></div>
-                    <div class="relative p-6 flex items-center justify-between">
+                <div class="relative overflow-hidden rounded-lg cursor-pointer">
+                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #FF8500 0%, #FFB15C 31%, #FFDBB7 100%);"></div>
+                    <div class="relative p-4">
+                        <!-- Content -->
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Low Stock</h3>
                             <div class="text-2xl font-bold text-white">{{ lowStockCount || 0 }}</div>
+                            <div class="text-xs font-light text-white mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        
+                        <!-- Icon in bottom-right corner -->
+                        <div class="absolute bottom-3 right-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                             </svg>
                         </div>
                     </div>
-                    </div>
+                </div>
             </Link>
 
-            <!-- Out of Stock Card -->
+            <!-- Red Card - Out of Stock -->
             <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-2xl cursor-pointer">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-orange-500"></div>
-                    <div class="relative p-6 flex items-center justify-between">
+                <div class="relative overflow-hidden rounded-lg cursor-pointer">
+                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #DC2626 0%, #FF8A8A 50%, #FFE5E5 100%);"></div>
+                    <div class="relative p-4">
+                        <!-- Content -->
                         <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Out of Stock</h3>
                             <div class="text-2xl font-bold text-white">{{ outOfStockCount || 0 }}</div>
+                            <div class="text-xs font-light text-white mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <img src="/assets/images/out_of_stock.png" alt="Out of Stock" class="w-12 h-12" />
+                        
+                        <!-- Icon in bottom-right corner -->
+                        <div class="absolute bottom-3 right-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                         </div>
                     </div>
-                    </div>
+                </div>
             </Link>
-            </div>
+        </div>
+
+     
 
         <!-- Tabs, Total Cost, and Order Statistics Row -->
         <div class="flex flex-col lg:flex-row justify-between items-start gap-6 mb-6">
