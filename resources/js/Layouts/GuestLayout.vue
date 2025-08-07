@@ -20,7 +20,7 @@ import { Link } from '@inertiajs/vue3';
             </div>
 
             <div class="flex items-center">
-                <img src="/assets/images/psi.jpg" alt="Government Logo" class="h-16 w-16" />
+                <img src="/assets/images/psi.png" alt="Government Logo" class="h-16 w-16" />
             </div>
         </div>
     </div>
